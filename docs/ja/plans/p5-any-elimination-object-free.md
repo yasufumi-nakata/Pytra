@@ -131,8 +131,8 @@
 
 ### S7: 回帰・検証・ドキュメント同期
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-01] 全 fixture / sample で transpile / compile / run / parity の非退行を確認する。
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-02] selfhost ビルドおよび selfhost diff で非退行を確認する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-01] 全 fixture / sample で transpile / compile / run / parity の非退行を確認する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-02] selfhost ビルドおよび selfhost diff で非退行を確認する。
 - [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-03] `docs/ja/spec/` / `README.md` / `docs/en/` ミラーを新設計に同期する。
 
 ---
@@ -358,4 +358,21 @@
 
   **テスト結果:** 319 件実行（削除済み 4 件分減）。13 失敗 + 1 エラーはすべて pre-existing。`test_py2cpp_features.py` は `ModuleNotFoundError: No module named 'test.unit'` により 124+ 件がロード不可（pre-existing）。
   - cpp バージョン `0.580`、shared バージョン `0.120`。
+
+- 2026-03-18 [S7-01/S7-02 完了]: parity 非退行確認・selfhost diff 確認。
+
+  **S7-01 追加修正（S6 起因の regressions）:**
+  - `assertions.h/cpp`: `_eq_any`/`py_assert_eq`/`py_assert_stdout` を C++ template 化（union 型パラメータを C++ で表現できないため）。
+  - `call.py`: `_coerce_py_assert_args` の boxing を完全除去（return args）。
+  - `module.py`: `_coerce_args_for_module_function` に `py_assert_*` 早期リターンを追加（`_coerce_call_arg` が `object` 引数を `make_object` でラップしていた）。
+  - `contains.h/cpp`: `py_contains_dict_object` 等 4 関数を除去（`rc<RcObject> == str` コンパイルエラー、dead code）。
+  - `iter_ops.h/cpp`: `py_reversed_object`/`py_enumerate_object` を除去（`make_object(::std::make_tuple(...))` 未定義、dead code）。
+  - `py_runtime.h`: `py_to_string(const object&)` overload を追加（`"<object>"` 返却、デバッグ用）。
+  - `test_cpp_runtime_iterable.py`: inventory assertions を更新（deleted functions の assertIn → assertNotIn に変更）。
+  - fixture parity: 3/3 pass。sample parity: 18/18 pass。unit tests: 319 件実行、13 失敗 + 1 エラーはすべて pre-existing。
+  - cpp バージョン `0.580 → 0.581`。
+
+  **S7-02 結果:**
+  - `check_selfhost_cpp_diff.py`: mismatches=0 / known_diffs=0 / skipped=0 → PASS。
+  - `check_selfhost_direct_compile.py`: failures=0 → PASS。
 
