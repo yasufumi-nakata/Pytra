@@ -1,6 +1,6 @@
 # P5: `Any` アノテーション禁止と `object`/`PyObj` フリーランタイムへの移行
 
-最終更新: 2026-03-18（S4 全完了）
+最終更新: 2026-03-18（S5-01 完了）
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P5-ANY-ELIM-OBJECT-FREE-01`
@@ -111,7 +111,7 @@
 
 ### S5: `extern` 型の透過的処理
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S5-01] `extern` 宣言された変数・関数の型を C++ テンプレート / 前方宣言として emit する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S5-01] `extern` 宣言された変数・関数の型を C++ テンプレート / 前方宣言として emit する。
   - S1-02 の設計に基づき EAST3 と C++ emitter を実装する。
   - `object` にボックス化せず、C++ コンパイラが型解決するよう生成コードを変更する。
 
@@ -321,4 +321,14 @@
   - `py_runtime_value_isinstance(const rc<T>& value, uint32)` 特殊化（T : RcObject && !T : PyObj）が `value->py_type_id()` を呼び、`py_runtime_type_id_is_subtype` でサブタイプ判定する。
   - `PYTRA_DECLARE_CLASS_TYPE` マクロはそのまま維持（`py_type_id() override` が RcObject 仮想に対して正しく動作）。
   - 継承チェーンのサブタイプ判定は既存の `py_type_id_registry` を使用。
+
+- 2026-03-18 [S5-01 完了]: `extern` 変数の `object` アノテーション除去と C++ 型省略。
+
+  **変更内容:**
+  - `src/pytra/std/sys.py`: `stderr: object = extern(__s.stderr)` / `stdout: object = extern(__s.stdout)` → アノテーション省略形 `stderr = extern(...)` に変更。Python 動作は同じ（`extern` が値をそのまま返す）。
+  - `src/runtime/cpp/generated/std/sys.h`: `extern object stderr;` / `extern object stdout;` が除去された（bare Assign → `decl_t == ""` → header_builder がスキップ）。
+  - `core_extern_semantics.py`: `annotation == "Any"` 限定 → `annotation in {"Any", "object", ""}` に拡張（将来の concrete 型アノテーション対応の準備）。
+  - `gen_runtime_from_manifest.py` + `src/backends/cpp/cli.py --emit-runtime-cpp` で sys.h を再生成。非 cpp 生成ファイル（rs, cs, nim, lua）も更新。
+  - `shared` バージョン `0.118 → 0.119`。
+  - pre-existing 失敗以外の非退行なし。
 
