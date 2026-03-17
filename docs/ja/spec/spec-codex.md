@@ -97,6 +97,9 @@
 - 上記 2 コマンドのいずれかが失敗した状態でのコミットは禁止します。
 - 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`）を変更する場合は、`src/toolchain/compiler/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
 - sample 再生成は `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` を使用し、バージョン更新で差分が出た C++ ケースを compile/run 検証します。
+- アドホックな C++ コンパイル実験（デバッグ・調査目的）を行う場合は、ソースと成果物をリポジトリ直下ではなく `/tmp/` または `work/tmp/` 以下に置いて実行します（`tempfile.TemporaryDirectory()` パターンを参照）。
+- GCC ダンプフラグ（`-fdump-tree-all` 等）はカレントディレクトリに出力するため、リポジトリ直下では使用しません。使う場合は `-dumpdir /tmp/` を明示します。
+- コンパイルを伴う実験の後は `git status --short` でリポジトリ直下に意図しない生成物が残っていないことを確認します。
 
 ## 7. selfhost 運用ノウハウ
 

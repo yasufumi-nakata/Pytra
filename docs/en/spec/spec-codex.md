@@ -96,6 +96,9 @@ This document defines the operational rules Codex follows while working.
 - Committing while either of the two commands above fails is prohibited.
 - When changing transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`), bump the corresponding version in `src/toolchain/compiler/transpiler_versions.json` by at least minor and pass `python3 tools/check_transpiler_version_gate.py`.
 - For sample regeneration, use `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` to compile/run-check C++ cases that changed after version bump.
+- For ad-hoc C++ compilation experiments (debugging/investigation), place sources and artifacts under `/tmp/` or `work/tmp/`, never under the repository root (see the `tempfile.TemporaryDirectory()` pattern in tests).
+- GCC dump flags (e.g. `-fdump-tree-all`) write to the current working directory; do not use them in the repository root. If needed, specify `-dumpdir /tmp/` explicitly.
+- After any compilation experiment, run `git status --short` to confirm no unintended generated files remain under the repository root.
 
 ## 7. Selfhost Operations Know-How
 
