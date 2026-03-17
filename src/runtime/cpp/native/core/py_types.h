@@ -19,6 +19,7 @@
 #include "gc.h"
 #include "io.h"
 
+using RcObject = pytra::gc::RcObject;
 using PyObj = pytra::gc::PyObj;
 
 template <class T>
