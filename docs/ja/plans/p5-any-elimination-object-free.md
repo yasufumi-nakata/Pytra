@@ -1,6 +1,6 @@
 # P5: `Any` アノテーション禁止と `object`/`PyObj` フリーランタイムへの移行
 
-最終更新: 2026-03-17（S2 全完了）
+最終更新: 2026-03-17（S3-01 完了）
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P5-ANY-ELIM-OBJECT-FREE-01`
@@ -88,7 +88,7 @@
 
 ### S3: stdlib 内部 `object` 依存の除去
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S3-01] `json.py` の内部表現を `object` から closed 型へ移行する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S3-01] `json.py` の内部表現を `object` から closed 型へ移行する。
   - `_parse_value` / `_dump_json_value` など内部で `object` を往来する経路を、`JsonValue` 型（enum または クラス階層）に置き換える。
   - `loads` / `loads_obj` / `loads_arr` の公開 API parity を維持する。
 
@@ -269,3 +269,19 @@
   - 禁止理由、エラーメッセージフォーマット、変数/引数/戻り値/コンテナ/extern 型の移行手順を記載。
   - `from typing import Any` インポートは許容（annotation-only）の旨を明記。
   - `AnyAnnotationProhibitionPass` 有効化コマンド例を記載。
+
+- 2026-03-17 [S3-01 完了]: `json.py` 内部表現 `_JsonVal` closed 型への移行。
+
+  **実装詳細:**
+  - 再帰 union 型エイリアスはトランスパイラ未サポートのため、`_JsonVal` tagged-union クラスを採用（tag 定数 `_JV_NULL=0` 〜 `_JV_OBJ=6`、フィールド `bool_val / int_val / float_val / str_val / arr_val / obj_val`）。
+  - `_JsonParser` 全メソッドの戻り型を `_JsonVal` に変更。`JsonObj.raw: dict[str, _JsonVal]`、`JsonArr.raw: list[_JsonVal]`、`JsonValue.raw: _JsonVal`。
+  - コンストラクタ補助関数 `_jv_null()` 〜 `_jv_obj(v)` を追加。
+  - 公開 API `loads(text: str) -> JsonValue`、`loads_obj`、`loads_arr` は parity 維持（戻り型変更なし）。
+  - `dumps(obj: object, ...)` / `_dump_json_value(v: object, ...)` は `object` 引数を保持（外部から任意型を渡せる互換性のため）。
+  - `json_adapters.py`: `_jv_to_object` / `_object_to_jv` 追加。`export_json_object_dict` / `coerce_json_object_doc` / `export_json_value_raw` を新型で更新。
+  - `code_emitter.py` / `js_emitter.py`: `dict(raw_obj.raw)` → `export_json_object_dict(raw_obj)` に修正（`_JsonVal` リークを防止）。
+  - decode boundary guard 8 ファイル（`py2x.py`、`ir2lang.py`、`east_io.py`、`link_manifest_io.py`、`materializer.py`、`program_loader.py`、`transpile_cli.py`、`runtime_symbol_index.py`）: `load_json_object_doc` → `json.loads_obj(path.read_text(...))` インライン化。
+  - `shared` バージョン `0.116 → 0.117`（`json.py` 変更）。`py2x.py` 変更で全非 cpp バックエンドバージョンも bump。
+  - IR ユニットテスト 3 件: `json.loads()` が `JsonValue` 返しになったため、テストを `object` 型引数直接渡しに変更。
+  - pre-existing 失敗（`check_py2cpp_boundary.py` 等）以外の非退行なし。
+
