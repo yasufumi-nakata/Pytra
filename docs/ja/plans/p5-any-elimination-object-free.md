@@ -1,6 +1,6 @@
 # P5: `Any` アノテーション禁止と `object`/`PyObj` フリーランタイムへの移行
 
-最終更新: 2026-03-18（S5-01 完了）
+最終更新: 2026-03-18（S6-03 完了）
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P5-ANY-ELIM-OBJECT-FREE-01`
@@ -117,15 +117,15 @@
 
 ### S6: `PyObj` / `object` の C++ ランタイムからの除去
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S6-01] `py_runtime.h` から `PyObj` 継承階層を除去する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S6-01] `py_runtime.h` から `PyObj` 継承階層を除去する。
   - `PyIntObj / PyFloatObj / PyBoolObj / PyStrObj / PyListObj / PyDictObj / PySetObj` および各イテレータクラスを除去する。
   - 除去後も必要な GC 機構（`RcObject / rc<T>`）は維持する。
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S6-02] `object` 型 / `make_object` / `rc<PyObj>` を除去する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S6-02] `object` 型 / `make_object` / `rc<PyObj>` を除去する。
   - `using object = rc<PyObj>` 定義を廃止する。
   - `make_object` / `obj_to_rc` / `obj_to_rc_or_raise` / `py_to<T>(const object&)` 等を除去する。
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S6-03] `list` PyObj モデル（P1-LIST-PYOBJ-MIG-01 導入済み）を整理する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S6-03] `list` PyObj モデル（P1-LIST-PYOBJ-MIG-01 導入済み）を整理する。
   - `PyListObj` が除去されるため、`cpp_list_model=pyobj` の `list<object>` 経路を `list<rc<T>>` 経路に置き換える。
   - `--cpp-list-model value` rollback 経路も整理する。
 
@@ -331,4 +331,31 @@
   - `gen_runtime_from_manifest.py` + `src/backends/cpp/cli.py --emit-runtime-cpp` で sys.h を再生成。非 cpp 生成ファイル（rs, cs, nim, lua）も更新。
   - `shared` バージョン `0.118 → 0.119`。
   - pre-existing 失敗以外の非退行なし。
+
+- 2026-03-18 [S6-01/S6-02/S6-03 完了]: `PyObj` 継承階層・`object`/`make_object`・PyObj list モデルを C++ ランタイムから除去。
+
+  **変更内容（S6-01）:**
+  - `gc.h`: `class PyObj` とすべての仮想メソッド（`py_truthy`、`py_try_len`、`py_iter_or_raise`、`py_next_or_stop`、`py_str`、`set_type_id`）を除去。`pytra::gc` 名前空間内の `using object = RcHandle<PyObj>;` と `class PyObj;` 前方宣言も除去。
+  - `gc.cpp`: `RcObject::py_iter_or_raise()`（`"object is not iterable"` throw）と `RcObject::py_next_or_stop()`（`nullopt` 返却）の実装を追加（PyObj で inline だったものを RcObject に移動）。
+  - `py_runtime.h`: 1304行 → 610行（約半減）。`PyIntObj`/`PyFloatObj`/`PyBoolObj`/`PyStrObj`/`PyListObj`/`PyDictObj`/`PySetObj`・各イテレータクラス・`make_object` 全オーバーロード・`object_new<T>`・`obj_to_*` 関数群・`py_to<T>(const object&)` 特殊化・`py_len(const object&)` を除去。`py_any`/`py_all` の typed template オーバーロード（`list<T>` と `rc<list<T>>` 版）を追加。
+
+  **変更内容（S6-02）:**
+  - `py_types.h`: `using object = rc<RcObject>` に再定義（旧 `rc<PyObj>`）。`using PyObj = ...` を除去。boxing 関連前方宣言を除去。
+  - `list.h`: `list(const object& v)` コンストラクタ・`operator object()`・`list& operator=(const object& v)` を除去。`list(const list<U>& other)` の `U=object` 特殊ケースを除去。
+  - `dict.h`/`set.h`: 同様に `object` 関連コンストラクタ・変換演算子を除去。
+  - `src/pytra/std/json.py`: `dumps`/`_dump_json_value`/`_dump_json_list`/`_dump_json_dict` の引数型を `object`/`list[object]`/`dict[str,object]` → `_JsonVal`/`list[_JsonVal]`/`dict[str,_JsonVal]` に変更。`dumps_jv(_JsonVal)` 追加。`dumps(obj: str|int|float|bool|None)` スカラー受け取りに変更（`_JsonVal` 変換後に dispatch）。
+  - `src/runtime/cpp/generated/std/json.h`/`json.cpp`: 再生成。
+  - `src/backends/cpp/emitter/runtime_expr.py`: `py_any`/`py_all` の `make_object(...)` ラップを除去。
+  - `src/runtime/cpp/generated/built_in/predicates.h`/`predicates.cpp`: `object` 版 `py_any`/`py_all` 宣言・実装を除去。
+  - `shared` バージョン `0.119 → 0.120`（json.py 変更）、`cpp` バージョン `0.579 → 0.580`（emitter 変更）。
+
+  **変更内容（S6-03）:**
+  - `test/unit/backends/cpp/test_cpp_runtime_boxing.py`: 削除（boxing API のテストが全て不要になった）。
+  - `test/unit/backends/cpp/test_py2cpp_list_pyobj_model.py`: 削除（`cpp_list_model=pyobj` 経路が除去された）。
+  - `test/unit/backends/cpp/test_cpp_runtime_type_id.py`: `PyObj` → `RcObject` に更新。
+  - `test/unit/backends/cpp/test_cpp_runtime_iterable.py`: boxing 依存のテストケースを除去。
+  - `test/unit/backends/cpp/test_east3_cpp_bridge.py`: `obj_to_rc_or_raise` アサーションを除去。
+
+  **テスト結果:** 319 件実行（削除済み 4 件分減）。13 失敗 + 1 エラーはすべて pre-existing。`test_py2cpp_features.py` は `ModuleNotFoundError: No module named 'test.unit'` により 124+ 件がロード不可（pre-existing）。
+  - cpp バージョン `0.580`、shared バージョン `0.120`。
 
