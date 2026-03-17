@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-17 (P1-CPP-SUBSCRIPT-IDX-OPT-01 completed)
+Last updated: 2026-03-17
 
 ## Context Operation Rules
 
@@ -30,19 +30,6 @@ Last updated: 2026-03-17 (P1-CPP-SUBSCRIPT-IDX-OPT-01 completed)
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-
-### P1
-
-1. [x] [ID: P1-CPP-SUBSCRIPT-IDX-OPT-01] C++ emitter: elide identity `py_to<int64>` in subscript index when resolved_type is already `int64`; emit `std::get<I>(tup)` directly for tuple constant-index access.
-Context: [docs/ja/plans/p1-cpp-subscript-index-cast-tuple-get.md](../../ja/plans/p1-cpp-subscript-index-cast-tuple-get.md)
-- Progress: Done. Added `resolved_type == int64` guard in emitter; verified tuple constant-index `::std::get<I>` emit; added 6 boundary tests; transpile check 145/145 and selfhost passed.
-
-### P2
-
-1. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] Push typed fallback out of `py_runtime.h` and back into EAST3, the C++ emitter, and runtime SoT so the header shrinks without physical splitting.
-Context: [docs/en/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
-- Progress memo: The first `S2-03` bundle is done. Routing `char* -> typed value` through `py_coerce_cstr_typed_value()` retires the list append/set and dict-key reboxing fallback, leaving the header-side `py_to<...>(...object...)` residual at a single unsupported-target guard. Next is shrinking the typed-path fallback that still lives inside generic `make_object` / `py_to`.
-- Note: P5-ANY-ELIM-OBJECT-FREE-01 is the long-term goal of fully removing `object`/`PyObj`. This task is valid preparatory work toward that goal.
 
 ### P5
 

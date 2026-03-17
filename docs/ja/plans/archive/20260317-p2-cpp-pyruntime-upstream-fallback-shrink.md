@@ -13,6 +13,8 @@
 
 目的:
 - `py_runtime.h` を物理分割ではなく upstream 側の責務整理で縮める。
+
+> **長期方針との関係:** `P5-ANY-ELIM-OBJECT-FREE-01` が `Any` 禁止 → `object`/`PyObj` 完全除去を長期目標として定義している。本タスクはその前準備として typed-lane の fallback caller を削減する作業であり、P5 達成時に本タスクの成果が超越される。
 - typed list/dict/indexing/mutation と boxing/unboxing の判断を EAST3 / C++ emitter / runtime SoT 側へ押し戻し、`object` fallback を減らす。
 - `Any/object` 境界だけに必要な汎用 helper を残し、typed lane では direct typed expression か narrower helper を使う構造へ寄せる。
 
@@ -61,8 +63,8 @@
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02] `object-only compat` と `typed lane must not use` の境界を shrink contract として docs / tooling へ固定する。
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01] typed list mutation / indexing / tuple-list boxing の emit を改善し、`py_append(object&)` と `py_at(object, idx)` の caller を削減する。
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02] generated built_in/std runtime と representative sample の object-bridge fallback を減らし、baseline を更新する。
-- [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03] generic `make_object` / `py_to` / dict-key coercion の typed path fallback を縮退し、`Any/object` 境界へ寄せる。
-- [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S3-01] regression / checker / docs / English mirror を同期し、`py_runtime.h` shrink の current contract を閉じる。
+- [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03] generic `make_object` / `py_to` / dict-key coercion の typed path fallback を縮退し、`Any/object` 境界へ寄せる。
+- [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S3-01] regression / checker / docs / English mirror を同期し、`py_runtime.h` shrink の current contract を閉じる。
 
 決定ログ:
 - 2026-03-14: `py_runtime.h` はまだ縮むが、次段は header 分割ではなく typed fallback を EAST3 / emitter / runtime SoT に押し戻す task と判断し、P2 として起票した。
@@ -85,4 +87,5 @@
 - 2026-03-14: `S2-02` の ninth bundle として `tools/check_crossruntime_pyruntime_residual_caller_inventory.py` と対応 unit test を current generated `py_runtime_value_*` thin seam へ同期し、`json.cpp` / `type_id.cpp` の generated C++ residual を `generated_cpp_shared_type_id_residual` 1 bucket に再分類した。stale `generated_cpp_object_bridge_residual` bucket は retire し、crossruntime residual caller checker を現行 generated caller 実態に揃えた。
 - 2026-03-14: `S2-02` の tenth bundle として C++ emitter の ref-first typed list subscript を `py_at(...py_to<int64>)` から `py_list_at_ref(rc_list_ref(...), ...)` へ切り替え、`type_id/json/argparse/random/re/png` の generated runtime と representative sample 6 本を正規導線で再生成した。これで `generated_runtime_generic_index_sites` と `sample_cpp_generic_index_sites` はともに 0 まで縮退して retire し、typed-lane residual は emitter helper 1 bucket のみになった。`S2-02` は完了。
 - 2026-03-14: `S2-03` の first bundle として `py_runtime.h` に `py_coerce_cstr_typed_value()` を追加し、`list` append/set と `dict` key の `const char*` lane を `py_to<T>(make_object(str(...)))` から narrow helper へ寄せた。これで `header_dict_key_charptr_object_coercion` bucket は retire し、header の `py_to<...>(...object...)` residual は unsupported-target guard 1 件だけになった。
-- 2026-03-17: `S2-03` の second bundle として emitter 側 const メソッド修飾（non-mutating method に `const` qualifier）、nested list rvalue の不要な `rc_list_ref` 除去（`py_list_at_ref` の中間結果に不要な rc_list_ref を除去）、collection literal boxing を `make_object(list<object>{})` から `object_new<PyListObj>()` に統一し、test を同期した。また generic `make_object<T>` テンプレートの `str -> bool` 誤変換バグ（`str::operator bool()` で `is_convertible_v<str, bool>` が真になり dict key が PyBoolObj になる問題）を `!is_convertible_v<T, str>` guard で修正した。これで `test_cpp_runtime_iterable.py` の `test_runtime_iterable_protocol_helpers` も通るようになった。
+- 2026-03-17: `S2-03` の second bundle として emitter 側 const メソッド修飾（non-mutating method に `const` qualifier）、nested list rvalue の不要な `rc_list_ref` 除去（`py_list_at_ref` の中間結果に不要な rc_list_ref を除去）、collection literal boxing を `make_object(list<object>{})` から `object_new<PyListObj>()` に統一し、test を同期した。また generic `make_object<T>` テンプレートの `str -> bool` 誤変換バグ（`str::operator bool()` で `is_convertible_v<str, bool>` が真になり dict key が PyBoolObj になる問題）を `!is_convertible_v<T, str>` guard で修正した。これで `test_cpp_runtime_iterable.py` の `test_runtime_iterable_protocol_helpers` も通るようになった。S2-03 完了。
+- 2026-03-17: `S3-01` として regression / checker / docs / English mirror を同期。S2-03 完了後の状態で `check_cpp_pyruntime_upstream_fallback_inventory.py`・`check_cpp_pyruntime_header_surface.py` ともに [OK]、全 unit test（test_cpp_runtime_iterable / test_east3_cpp_bridge / test_py2cpp_codegen_issues / tooling inventory）通過。P1-CPP-SUBSCRIPT-IDX-OPT-01 の identity cast 省略最適化（emitter subscript index guard）は別タスクとして完了済み。P2 タスク全体を閉じ、plan / archive / todo を最終形に同期。

@@ -4,7 +4,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-14
+最終更新: 2026-03-17
 
 ## 運用方針
 
@@ -14,6 +14,9 @@
 - `docs/` 側は `docs/ja/` を正として翻訳を同期します。
 
 ## 完了 plan アーカイブ
+
+- [2026-03-17 / P1-CPP-SUBSCRIPT-IDX-OPT-01](../plans/archive/20260317-p1-cpp-subscript-index-cast-tuple-get.md)
+- [2026-03-17 / P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01](../plans/archive/20260317-p2-cpp-pyruntime-upstream-fallback-shrink.md)
 
 - [2026-03-14 / P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01](../plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md)
 - [2026-03-14 / P1-NES3-NOT-IMPLEMENTED-ERROR-CPP-01](../plans/archive/20260314-p1-nes3-not-implemented-error-cpp-support.md)

@@ -4,7 +4,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-14
+Last updated: 2026-03-17
 
 ## Operation Policy
 
@@ -14,6 +14,9 @@ Last updated: 2026-03-14
 - On the `docs/` side, `docs/ja/` remains the source of truth and translations are synchronized from it.
 
 ## Completed Plan Archive
+
+- [2026-03-17 / P1-CPP-SUBSCRIPT-IDX-OPT-01](../plans/archive/20260317-p1-cpp-subscript-index-cast-tuple-get.md)
+- [2026-03-17 / P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01](../plans/archive/20260317-p2-cpp-pyruntime-upstream-fallback-shrink.md)
 
 - [2026-03-14 / P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01](../plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md)
 - [2026-03-14 / P1-NES3-NOT-IMPLEMENTED-ERROR-CPP-01](../plans/archive/20260314-p1-nes3-not-implemented-error-cpp-support.md)

@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-17（P1-CPP-SUBSCRIPT-IDX-OPT-01 完了）
+最終更新: 2026-03-17
 
 ## 文脈運用ルール
 
@@ -30,19 +30,6 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-
-### P1
-
-1. [x] [ID: P1-CPP-SUBSCRIPT-IDX-OPT-01] C++ emitter の subscript index `py_to<int64>` identity cast 省略と tuple 定数 index `std::get<I>` 直接 emit 最適化。
-文脈: [docs/ja/plans/p1-cpp-subscript-index-cast-tuple-get.md](../plans/p1-cpp-subscript-index-cast-tuple-get.md)
-- 進捗メモ: 完了。`resolved_type == int64` ガードで identity cast を emitter レベルで除去。tuple 定数 index の `::std::get<I>` emit は既存実装で正常動作確認。境界テスト 6 件追加、transpile check・selfhost 通過。
-
-### P2
-
-1. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] `py_runtime.h` の typed fallback を EAST3 / C++ emitter / runtime SoT 側へ押し戻し、header を物理分割なしで縮める。
-文脈: [docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
-- 進捗メモ: `S2-03` second bundle 完了。emitter の const メソッド修飾・nested list rvalue の不要 rc_list_ref 除去・collection literal boxing を object_new に統一し、test を同期。generic `make_object<T>` の `str -> bool` 誤変換バグ（dict key iteration 壊れ）を `is_convertible_v<T, str>` guard で修正。next は `S3-01` regression / checker / docs / English mirror 同期。
-- 備考: P5-ANY-ELIM-OBJECT-FREE-01 が `object`/`PyObj` 完全除去の長期目標。本タスクはその前準備として有効。
 
 ### P5
 
