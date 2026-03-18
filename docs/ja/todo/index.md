@@ -48,6 +48,14 @@
 4. [x] [ID: P0-JSON-REWRITE-S3-01] S3 完了。
 5. [x] [ID: P0-JSON-REWRITE-S4-01] S4 完了。json_adapters.py も更新。
 
+### P1: ランタイム構造変更
+
+#### P1-1: runtime ディレクトリ構造変更（.east 統一 + 手書き分離）
+
+文脈: [docs/ja/plans/p1-runtime-layout-restructure.md](../plans/p1-runtime-layout-restructure.md)
+
+1. [ ] [ID: P1-RUNTIME-LAYOUT-RESTRUCTURE-01] `runtime/generated/` に `.east` を言語非依存で配置し、`runtime/cpp/` は手書きコードのみにする。言語ごとの `generated/` を廃止。P2 の前提。
+
 ### P2: compile / link パイプライン分離
 
 #### P2-1: compile / link 2段パイプライン
