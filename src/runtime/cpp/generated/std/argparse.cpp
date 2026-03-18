@@ -93,7 +93,10 @@ namespace pytra::std::argparse {
             dict<str, ArgValue> values = dict<str, ArgValue>{};
             for (_ArgSpec s : rc_list_ref(this->_specs)) {
                 if (s.action == "store_true") {
-                    values[s.dest] = (s.py_default.tag != PYTRA_TID_NONE ? s.py_default.tag != PYTRA_TID_NONE : false);
+                    if ((s.py_default).tag == PYTRA_TID_BOOL)
+                        values[s.dest] = s.py_default;
+                    else
+                        values[s.dest] = false;
                 } else if (s.py_default.tag != PYTRA_TID_NONE) {
                     values[s.dest] = s.py_default;
                 } else {
