@@ -30,7 +30,15 @@ class CppStatementEmitter:
         tid_node = self.any_to_dict_or_empty(cond.get("expected_type_id"))
         tid_type = self.any_to_str(tid_node.get("check_type"))
         if tid_type == "":
-            tid_type = self.any_to_str(tid_node.get("resolved_type"))
+            # PYTRA_TID_* 名から型を逆引き
+            tid_id = self.any_to_str(tid_node.get("id"))
+            _tid_to_type: dict[str, str] = {
+                "PYTRA_TID_NONE": "None", "PYTRA_TID_BOOL": "bool",
+                "PYTRA_TID_INT": "int64", "PYTRA_TID_FLOAT": "float64",
+                "PYTRA_TID_STR": "str", "PYTRA_TID_LIST": "list",
+                "PYTRA_TID_DICT": "dict", "PYTRA_TID_SET": "set",
+            }
+            tid_type = _tid_to_type.get(tid_id, "")
         tid_type = self.normalize_type_name(tid_type)
         if tid_type == "":
             return ("", "")
