@@ -413,7 +413,7 @@ def _inject_js_named_exports(stage_src_root: Path) -> None:
 def _write_js_selfhost_shims(stage_src_root: Path) -> None:
     files: dict[str, str] = {
         "importlib.js": (
-            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from './runtime/js/native/built_in/py_runtime.js';\n"
+            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from './runtime/js/built_in/py_runtime.js';\n"
             "import { write_js_runtime_shims } from './toolchain/compiler/js_runtime_shims.js';\n"
             "import { lower_east3_to_js_ir } from './backends/js/lower/east3_to_js_ir.js';\n"
             "import { optimize_js_ir } from './backends/js/optimizer/pipeline.js';\n"
@@ -434,7 +434,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
         ),
         "toolchain/compiler/transpile_cli.js": (
             "import fs from 'node:fs';\n"
-            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from '../../runtime/js/native/built_in/py_runtime.js';\n"
+            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from '../../runtime/js/built_in/py_runtime.js';\n"
             "function _tag_map_like(value) {\n"
             "  if (value === null || value === undefined) { return value; }\n"
             "  if (Array.isArray(value)) {\n"

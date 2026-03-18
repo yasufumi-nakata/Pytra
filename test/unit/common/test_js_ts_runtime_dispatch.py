@@ -36,7 +36,7 @@ class JsTsRuntimeDispatchTest(unittest.TestCase):
     def test_js_runtime_type_id_dispatch_and_hooks(self) -> None:
         script = r"""
 const assert = require("assert");
-const rt = require(process.cwd() + "/src/runtime/js/native/built_in/py_runtime.js");
+const rt = require(process.cwd() + "/src/runtime/js/built_in/py_runtime.js");
 
 const custom = {
   [rt.PYTRA_TYPE_ID]: 7001,

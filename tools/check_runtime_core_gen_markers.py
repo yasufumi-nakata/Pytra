@@ -4,7 +4,7 @@
 Policy:
 - For migrated non-C++ backends, canonical generated lanes are
   `src/runtime/<lang>/generated/**` and canonical handwritten lanes are
-  `src/runtime/<lang>/native/**`.
+  `src/runtime/<lang>/**`.
 - Legacy `src/runtime/<lang>/pytra-gen/**` / `pytra-core/**` trees are still scanned for
   backends that have not yet rolled over to the `generated/native` layout.
 - Generated lanes must include both `source:` and `generated-by:` markers.

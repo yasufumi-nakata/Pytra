@@ -157,9 +157,9 @@ def _collect_builtin_lane_issues() -> list[str]:
         issues.append("Rust native built_in residual set drifted")
 
     for rel_path in (
-        "src/runtime/cs/native/built_in/py_runtime.cs",
-        "src/runtime/cs/native/std/time_native.cs",
-        "src/runtime/rs/native/built_in/py_runtime.rs",
+        "src/runtime/cs/built_in/py_runtime.cs",
+        "src/runtime/cs/std/time_native.cs",
+        "src/runtime/rs/built_in/py_runtime.rs",
     ):
         text = _load_text(ROOT / rel_path)
         if "generated-by: tools/gen_runtime_from_manifest.py" in text:
@@ -334,7 +334,7 @@ def _collect_csharp_lane_issues() -> list[str]:
             if native_rel != "":
                 issues.append(f"no_runtime_module must not set native path: {module_name}")
             generated_runtime_rel = f"src/runtime/cs/generated/std/{module_name}.cs"
-            native_runtime_rel = f"src/runtime/cs/native/std/{module_name}.cs"
+            native_runtime_rel = f"src/runtime/cs/std/{module_name}.cs"
             if generated_state == "no_runtime_module":
                 if generated_runtime_rel in build_profile_text or (ROOT / generated_runtime_rel).exists():
                     issues.append(f"{module_name} unexpectedly owns a generated/std runtime module")
@@ -488,7 +488,7 @@ def _collect_rust_lane_issues() -> list[str]:
             generated_runtime_rel = f"src/runtime/rs/generated/std/{module_name}.rs"
             if generated_runtime_rel.replace("src/", "") in backend_registry_text:
                 issues.append(f"{module_name} unexpectedly leaked into the Rust runtime hook")
-            native_runtime_rel = f"src/runtime/rs/native/std/{module_name}.rs"
+            native_runtime_rel = f"src/runtime/rs/std/{module_name}.rs"
             if native_runtime_rel.replace("src/", "") in backend_registry_text or (ROOT / native_runtime_rel).exists():
                 issues.append(f"{module_name} unexpectedly owns a native/std Rust runtime module")
         else:

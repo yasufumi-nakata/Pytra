@@ -19,7 +19,7 @@ from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 _RS_PY_RUNTIME_REEXPORT_STD_MODULES: tuple[str, ...] = tuple(
     entry["module_name"]
     for entry in iter_rs_std_lane_ownership()
-    if entry["native_rel"] == "src/runtime/rs/native/built_in/py_runtime.rs"
+    if entry["native_rel"] == "src/runtime/rs/built_in/py_runtime.rs"
     and entry["canonical_runtime_symbol"] != ""
 )
 

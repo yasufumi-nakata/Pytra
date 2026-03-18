@@ -413,7 +413,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
     files: dict[str, str] = {
         "toolchain/compiler/transpile_cli.js": (
             "import fs from 'node:fs';\n"
-            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from '../../runtime/js/native/built_in/py_runtime.js';\n"
+            "import { PYTRA_TYPE_ID, PY_TYPE_MAP } from '../../runtime/js/built_in/py_runtime.js';\n"
             "function _tag_map_like(value) {\n"
             "  if (value === null || value === undefined) { return value; }\n"
             "  if (Array.isArray(value)) {\n"

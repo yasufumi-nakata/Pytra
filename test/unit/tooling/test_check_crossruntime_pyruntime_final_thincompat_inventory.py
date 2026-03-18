@@ -70,10 +70,10 @@ class CheckCrossRuntimePyRuntimeFinalThinCompatInventoryTest(unittest.TestCase):
         self.assertEqual(
             inventory_mod.EXPECTED_BUCKETS["cs_runtime_generic_alias_surface"],
             {
-                ("py_runtime_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"),
-                ("py_is_subtype", "src/runtime/cs/native/built_in/py_runtime.cs"),
-                ("py_issubclass", "src/runtime/cs/native/built_in/py_runtime.cs"),
-                ("py_isinstance", "src/runtime/cs/native/built_in/py_runtime.cs"),
+                ("py_runtime_type_id", "src/runtime/cs/built_in/py_runtime.cs"),
+                ("py_is_subtype", "src/runtime/cs/built_in/py_runtime.cs"),
+                ("py_issubclass", "src/runtime/cs/built_in/py_runtime.cs"),
+                ("py_isinstance", "src/runtime/cs/built_in/py_runtime.cs"),
             },
         )
 

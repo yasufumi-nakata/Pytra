@@ -437,7 +437,7 @@ class Py2JsSmokeTest(unittest.TestCase):
             "meta": {},
         }
         js = transpile_to_js(east)
-        self.assertIn('import { pyBool, pyLen, pyStr, pyTypeId } from "./runtime/js/native/built_in/py_runtime.js";', js)
+        self.assertIn('import { pyBool, pyLen, pyStr, pyTypeId } from "./runtime/js/built_in/py_runtime.js";', js)
         self.assertIn("pyBool(x);", js)
         self.assertIn("pyLen(x);", js)
         self.assertIn("pyStr(x);", js)
@@ -815,7 +815,7 @@ def f(x: object) -> bool:
             east = load_east(src_py, parser_backend="self_hosted")
             js = transpile_to_js(east)
 
-        self.assertIn('import { PYTRA_TYPE_ID, PY_TYPE_NUMBER, PY_TYPE_OBJECT, pyRegisterClassType, pyIsInstance } from "./runtime/js/native/built_in/py_runtime.js";', js)
+        self.assertIn('import { PYTRA_TYPE_ID, PY_TYPE_NUMBER, PY_TYPE_OBJECT, pyRegisterClassType, pyIsInstance } from "./runtime/js/built_in/py_runtime.js";', js)
         self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);", js)
         self.assertIn("static PYTRA_TYPE_ID = pyRegisterClassType([Base.PYTRA_TYPE_ID]);", js)
         self.assertIn("class Child extends Base {", js)

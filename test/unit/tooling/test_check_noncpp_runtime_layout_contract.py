@@ -128,7 +128,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                 "canonical_lane": "generated/std",
                 "generated_std_state": "canonical_generated",
                 "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
-                "native_rel": "src/runtime/cs/native/std/time_native.cs",
+                "native_rel": "src/runtime/cs/std/time_native.cs",
                 "canonical_runtime_symbol": "Pytra.CsModule.time",
                 "representative_fixture": "test/fixtures/imports/import_time_from.py",
                 "smoke_guard_needles": (
@@ -182,7 +182,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_module["math"]["native_rel"],
-            "src/runtime/cs/native/std/math_native.cs",
+            "src/runtime/cs/std/math_native.cs",
         )
         self.assertEqual(
             by_module["random"]["generated_std_state"],
@@ -232,7 +232,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                 "module_name": "time",
                 "current_canonical_lane": "generated/std",
                 "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
-                "native_rel": "src/runtime/cs/native/std/time_native.cs",
+                "native_rel": "src/runtime/cs/std/time_native.cs",
                 "representative_fixture": "test/fixtures/imports/import_time_from.py",
                 "smoke_guard_needles": (
                     "def test_representative_time_import_fixture_transpiles",
@@ -255,7 +255,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                 "canonical_lane": "generated/std",
                 "generated_std_state": "canonical_generated",
                 "generated_std_rel": "src/runtime/rs/generated/std/time.rs",
-                "native_rel": "src/runtime/rs/native/std/time_native.rs",
+                "native_rel": "src/runtime/rs/std/time_native.rs",
                 "canonical_runtime_symbol": "#[path = \"time.rs\"]",
                 "representative_fixture": "test/fixtures/imports/import_time_from.py",
                 "smoke_guard_needles": (
@@ -267,7 +267,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
         self.assertEqual(by_module["math"]["canonical_lane"], "generated/std")
         self.assertEqual(by_module["math"]["generated_std_state"], "canonical_generated")
         self.assertEqual(by_module["math"]["generated_std_rel"], "src/runtime/rs/generated/std/math.rs")
-        self.assertEqual(by_module["math"]["native_rel"], "src/runtime/rs/native/std/math_native.rs")
+        self.assertEqual(by_module["math"]["native_rel"], "src/runtime/rs/std/math_native.rs")
         self.assertEqual(by_module["math"]["canonical_runtime_symbol"], '#[path = "math.rs"]')
         self.assertEqual(by_module["pathlib"]["canonical_lane"], "no_runtime_module")
         self.assertEqual(by_module["pathlib"]["generated_std_state"], "compare_artifact")

@@ -2,7 +2,7 @@
 """Guard Rust runtime layout state.
 
 Policy:
-- Canonical handwritten runtime for Rust lives under `src/runtime/rs/native/**`.
+- Canonical handwritten runtime for Rust lives under `src/runtime/rs/**`.
 - Checked-in `src/runtime/rs/pytra/**` must be absent.
 - `src/rs_module/` is deprecated and must not contain source files.
 """

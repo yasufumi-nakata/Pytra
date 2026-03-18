@@ -270,8 +270,8 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/go/native/built_in/",
-                "target_prefix": "src/runtime/go/native/built_in/",
+                "current_prefix": "src/runtime/go/built_in/",
+                "target_prefix": "src/runtime/go/built_in/",
                 "ownership": "native",
                 "rationale": "Go handwritten runtime substrate already lives in native/built_in after the Wave A path cutover.",
             },
@@ -303,14 +303,14 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/java/native/built_in/",
-                "target_prefix": "src/runtime/java/native/built_in/",
+                "current_prefix": "src/runtime/java/built_in/",
+                "target_prefix": "src/runtime/java/built_in/",
                 "ownership": "native",
                 "rationale": "Java handwritten runtime helpers already live in native/built_in after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/java/native/std/",
-                "target_prefix": "src/runtime/java/native/std/",
+                "current_prefix": "src/runtime/java/std/",
+                "target_prefix": "src/runtime/java/std/",
                 "ownership": "native",
                 "rationale": "Java extern-backed std seam owners live in native/std once generated wrappers stop carrying host bindings directly.",
             },
@@ -342,8 +342,8 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/kotlin/native/built_in/",
-                "target_prefix": "src/runtime/kotlin/native/built_in/",
+                "current_prefix": "src/runtime/kotlin/built_in/",
+                "target_prefix": "src/runtime/kotlin/built_in/",
                 "ownership": "native",
                 "rationale": "Kotlin handwritten runtime substrate already lives in native/built_in after the Wave A path cutover.",
             },
@@ -375,8 +375,8 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/scala/native/built_in/",
-                "target_prefix": "src/runtime/scala/native/built_in/",
+                "current_prefix": "src/runtime/scala/built_in/",
+                "target_prefix": "src/runtime/scala/built_in/",
                 "ownership": "native",
                 "rationale": "Scala handwritten runtime substrate already lives in native/built_in after the Wave A path cutover.",
             },
@@ -408,8 +408,8 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/swift/native/built_in/",
-                "target_prefix": "src/runtime/swift/native/built_in/",
+                "current_prefix": "src/runtime/swift/built_in/",
+                "target_prefix": "src/runtime/swift/built_in/",
                 "ownership": "native",
                 "rationale": "Swift handwritten runtime substrate already lives in native/built_in after the Wave A path cutover.",
             },
@@ -441,8 +441,8 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/nim/native/built_in/",
-                "target_prefix": "src/runtime/nim/native/built_in/",
+                "current_prefix": "src/runtime/nim/built_in/",
+                "target_prefix": "src/runtime/nim/built_in/",
                 "ownership": "native",
                 "rationale": "Nim handwritten runtime substrate already lives in native/built_in after the Wave A path cutover.",
             },
@@ -474,14 +474,14 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/js/native/built_in/",
-                "target_prefix": "src/runtime/js/native/built_in/",
+                "current_prefix": "src/runtime/js/built_in/",
+                "target_prefix": "src/runtime/js/built_in/",
                 "ownership": "native",
                 "rationale": "JS handwritten built-in runtime already lives in native/built_in after the Wave B path cutover.",
             },
             {
-                "current_prefix": "src/runtime/js/native/std/",
-                "target_prefix": "src/runtime/js/native/std/",
+                "current_prefix": "src/runtime/js/std/",
+                "target_prefix": "src/runtime/js/std/",
                 "ownership": "native",
                 "rationale": "JS extern-backed std owner seams now live in native/std while generated/std wrappers stay declaration-only.",
             },
@@ -513,14 +513,14 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/ts/native/built_in/",
-                "target_prefix": "src/runtime/ts/native/built_in/",
+                "current_prefix": "src/runtime/ts/built_in/",
+                "target_prefix": "src/runtime/ts/built_in/",
                 "ownership": "native",
                 "rationale": "TS handwritten built-in runtime already lives in native/built_in after the Wave B path cutover.",
             },
             {
-                "current_prefix": "src/runtime/ts/native/std/",
-                "target_prefix": "src/runtime/ts/native/std/",
+                "current_prefix": "src/runtime/ts/std/",
+                "target_prefix": "src/runtime/ts/std/",
                 "ownership": "native",
                 "rationale": "TS extern-backed std owner seams now live in native/std while generated/std wrappers stay declaration-only compare artifacts.",
             },
@@ -552,8 +552,8 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/lua/native/built_in/",
-                "target_prefix": "src/runtime/lua/native/built_in/",
+                "current_prefix": "src/runtime/lua/built_in/",
+                "target_prefix": "src/runtime/lua/built_in/",
                 "ownership": "native",
                 "rationale": "Lua handwritten runtime substrate already lives in native/built_in after the Wave B path cutover.",
             },
@@ -573,8 +573,8 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/ruby/native/built_in/",
-                "target_prefix": "src/runtime/ruby/native/built_in/",
+                "current_prefix": "src/runtime/ruby/built_in/",
+                "target_prefix": "src/runtime/ruby/built_in/",
                 "ownership": "native",
                 "rationale": "Ruby handwritten runtime substrate already lives in native/built_in after the Wave B path cutover.",
             },
@@ -594,14 +594,14 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/php/native/built_in/py_runtime.php",
-                "target_prefix": "src/runtime/php/native/built_in/py_runtime.php",
+                "current_prefix": "src/runtime/php/built_in/py_runtime.php",
+                "target_prefix": "src/runtime/php/built_in/py_runtime.php",
                 "ownership": "native",
                 "rationale": "PHP handwritten core runtime already lives in native/built_in after the Wave B path cutover.",
             },
             {
-                "current_prefix": "src/runtime/php/native/std/",
-                "target_prefix": "src/runtime/php/native/std/",
+                "current_prefix": "src/runtime/php/std/",
+                "target_prefix": "src/runtime/php/std/",
                 "ownership": "native",
                 "rationale": "PHP extern-backed std seams now live under native/std once generated wrappers delegate to native owners.",
             },
@@ -1928,7 +1928,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
     {
         "backend": "go",
         "runtime_hook_files": (
-            "runtime/go/native/built_in/py_runtime.go",
+            "runtime/go/built_in/py_runtime.go",
             "runtime/go/generated/utils/png.go",
             "runtime/go/generated/utils/gif.go",
         ),
@@ -1936,9 +1936,9 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
     {
         "backend": "java",
         "runtime_hook_files": (
-            "runtime/java/native/built_in/PyRuntime.java",
-            "runtime/java/native/std/math_native.java",
-            "runtime/java/native/std/time_native.java",
+            "runtime/java/built_in/PyRuntime.java",
+            "runtime/java/std/math_native.java",
+            "runtime/java/std/time_native.java",
             "runtime/java/generated/utils/assertions.java",
             "runtime/java/generated/utils/png.java",
             "runtime/java/generated/utils/gif.java",
@@ -1959,28 +1959,28 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
     {
         "backend": "kotlin",
         "runtime_hook_files": (
-            "runtime/kotlin/native/built_in/py_runtime.kt",
+            "runtime/kotlin/built_in/py_runtime.kt",
             "runtime/kotlin/generated/utils/image_runtime.kt",
         ),
     },
     {
         "backend": "scala",
         "runtime_hook_files": (
-            "runtime/scala/native/built_in/py_runtime.scala",
+            "runtime/scala/built_in/py_runtime.scala",
             "runtime/scala/generated/utils/image_runtime.scala",
         ),
     },
     {
         "backend": "swift",
         "runtime_hook_files": (
-            "runtime/swift/native/built_in/py_runtime.swift",
+            "runtime/swift/built_in/py_runtime.swift",
             "runtime/swift/generated/utils/image_runtime.swift",
         ),
     },
     {
         "backend": "nim",
         "runtime_hook_files": (
-            "runtime/nim/native/built_in/py_runtime.nim",
+            "runtime/nim/built_in/py_runtime.nim",
             "runtime/nim/generated/utils/image_runtime.nim",
         ),
     },

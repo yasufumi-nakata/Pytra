@@ -77,12 +77,12 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(
             row["noncpp_native_owner_paths"],
             (
-                "src/runtime/rs/native/std/math_native.rs",
-                "src/runtime/cs/native/std/math_native.cs",
-                "src/runtime/java/native/std/math_native.java",
-                "src/runtime/js/native/std/math_native.js",
-                "src/runtime/ts/native/std/math_native.ts",
-                "src/runtime/php/native/std/math_native.php",
+                "src/runtime/rs/std/math_native.rs",
+                "src/runtime/cs/std/math_native.cs",
+                "src/runtime/java/std/math_native.java",
+                "src/runtime/js/std/math_native.js",
+                "src/runtime/ts/std/math_native.ts",
+                "src/runtime/php/std/math_native.php",
             ),
         )
         self.assertEqual(row["noncpp_ownership_mode"], "native_owner")
@@ -136,12 +136,12 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(
             by_id["std/time"]["noncpp_native_owner_paths"],
             (
-                "src/runtime/rs/native/std/time_native.rs",
-                "src/runtime/cs/native/std/time_native.cs",
-                "src/runtime/java/native/std/time_native.java",
-                "src/runtime/js/native/std/time_native.js",
-                "src/runtime/ts/native/std/time_native.ts",
-                "src/runtime/php/native/std/time_native.php",
+                "src/runtime/rs/std/time_native.rs",
+                "src/runtime/cs/std/time_native.cs",
+                "src/runtime/java/std/time_native.java",
+                "src/runtime/js/std/time_native.js",
+                "src/runtime/ts/std/time_native.ts",
+                "src/runtime/php/std/time_native.php",
             ),
         )
         self.assertEqual(by_id["std/time"]["noncpp_ownership_mode"], "native_owner")
@@ -176,12 +176,12 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(
             by_id["std/math"]["noncpp_native_owner_paths"],
             (
-                "src/runtime/rs/native/std/math_native.rs",
-                "src/runtime/cs/native/std/math_native.cs",
-                "src/runtime/java/native/std/math_native.java",
-                "src/runtime/js/native/std/math_native.js",
-                "src/runtime/ts/native/std/math_native.ts",
-                "src/runtime/php/native/std/math_native.php",
+                "src/runtime/rs/std/math_native.rs",
+                "src/runtime/cs/std/math_native.cs",
+                "src/runtime/java/std/math_native.java",
+                "src/runtime/js/std/math_native.js",
+                "src/runtime/ts/std/math_native.ts",
+                "src/runtime/php/std/math_native.php",
             ),
         )
         self.assertEqual(by_id["std/math"]["noncpp_ownership_mode"], "native_owner")
@@ -249,8 +249,8 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(
             by_id["std/sys"]["noncpp_native_owner_paths"],
             (
-                "src/runtime/js/native/std/sys_native.js",
-                "src/runtime/ts/native/std/sys_native.ts",
+                "src/runtime/js/std/sys_native.js",
+                "src/runtime/ts/std/sys_native.ts",
             ),
         )
         self.assertEqual(by_id["std/sys"]["noncpp_ownership_mode"], "native_owner")

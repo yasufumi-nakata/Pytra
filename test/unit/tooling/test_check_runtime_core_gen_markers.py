@@ -98,7 +98,7 @@ class CheckRuntimeCoreGenMarkersTest(unittest.TestCase):
             bad = root / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs"
             _write(bad, "// source: src/pytra/utils/gif.py\n")
             allowlist_path = root / "tools" / "runtime_core_gen_markers_allowlist.txt"
-            key = "src/runtime/rs/native/built_in/py_runtime.rs:core_contains_generated_source_marker"
+            key = "src/runtime/rs/built_in/py_runtime.rs:core_contains_generated_source_marker"
             _write_allowlist(allowlist_path, [key])
             with patch.object(marker_mod, "ROOT", root), patch.object(
                 marker_mod, "RUNTIME_ROOT", root / "src" / "runtime"

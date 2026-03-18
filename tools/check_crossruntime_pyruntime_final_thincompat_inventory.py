@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 TRACKED_PATHS = {
     "src/runtime/cpp/core/py_runtime.h",
     "src/runtime/generated/std/json.cpp",
-    "src/runtime/rs/native/built_in/py_runtime.rs",
-    "src/runtime/cs/native/built_in/py_runtime.cs",
+    "src/runtime/rs/built_in/py_runtime.rs",
+    "src/runtime/cs/built_in/py_runtime.cs",
 }
 
 CPP_HEADER_RULES = {
@@ -30,41 +30,41 @@ CPP_GENERATED_RULES = {
 }
 
 RS_ALIAS_RULES = {
-    ("py_runtime_type_id", "src/runtime/rs/native/built_in/py_runtime.rs"): re.compile(
+    ("py_runtime_type_id", "src/runtime/rs/built_in/py_runtime.rs"): re.compile(
         r"(?:pub\s+)?fn py_runtime_type_id<"
     ),
-    ("py_is_subtype", "src/runtime/rs/native/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_is_subtype\("),
-    ("py_issubclass", "src/runtime/rs/native/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_issubclass\("),
-    ("py_isinstance", "src/runtime/rs/native/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_isinstance<"),
+    ("py_is_subtype", "src/runtime/rs/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_is_subtype\("),
+    ("py_issubclass", "src/runtime/rs/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_issubclass\("),
+    ("py_isinstance", "src/runtime/rs/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_isinstance<"),
 }
 
 CS_ALIAS_RULES = {
-    ("py_runtime_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"): re.compile(
+    ("py_runtime_type_id", "src/runtime/cs/built_in/py_runtime.cs"): re.compile(
         r"(?:public|private|internal) static long py_runtime_type_id\("
     ),
-    ("py_is_subtype", "src/runtime/cs/native/built_in/py_runtime.cs"): re.compile(
+    ("py_is_subtype", "src/runtime/cs/built_in/py_runtime.cs"): re.compile(
         r"(?:public|private|internal) static bool py_is_subtype\("
     ),
-    ("py_issubclass", "src/runtime/cs/native/built_in/py_runtime.cs"): re.compile(
+    ("py_issubclass", "src/runtime/cs/built_in/py_runtime.cs"): re.compile(
         r"(?:public|private|internal) static bool py_issubclass\("
     ),
-    ("py_isinstance", "src/runtime/cs/native/built_in/py_runtime.cs"): re.compile(
+    ("py_isinstance", "src/runtime/cs/built_in/py_runtime.cs"): re.compile(
         r"(?:public|private|internal) static bool py_isinstance\("
     ),
 }
 
 RS_PUBLIC_ALIAS_RULES = {
-    ("py_runtime_type_id", "src/runtime/rs/native/built_in/py_runtime.rs"): re.compile(r"pub fn py_runtime_type_id<"),
-    ("py_is_subtype", "src/runtime/rs/native/built_in/py_runtime.rs"): re.compile(r"pub fn py_is_subtype\("),
-    ("py_issubclass", "src/runtime/rs/native/built_in/py_runtime.rs"): re.compile(r"pub fn py_issubclass\("),
-    ("py_isinstance", "src/runtime/rs/native/built_in/py_runtime.rs"): re.compile(r"pub fn py_isinstance<"),
+    ("py_runtime_type_id", "src/runtime/rs/built_in/py_runtime.rs"): re.compile(r"pub fn py_runtime_type_id<"),
+    ("py_is_subtype", "src/runtime/rs/built_in/py_runtime.rs"): re.compile(r"pub fn py_is_subtype\("),
+    ("py_issubclass", "src/runtime/rs/built_in/py_runtime.rs"): re.compile(r"pub fn py_issubclass\("),
+    ("py_isinstance", "src/runtime/rs/built_in/py_runtime.rs"): re.compile(r"pub fn py_isinstance<"),
 }
 
 CS_PUBLIC_ALIAS_RULES = {
-    ("py_runtime_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"): re.compile(r"public static long py_runtime_type_id\("),
-    ("py_is_subtype", "src/runtime/cs/native/built_in/py_runtime.cs"): re.compile(r"public static bool py_is_subtype\("),
-    ("py_issubclass", "src/runtime/cs/native/built_in/py_runtime.cs"): re.compile(r"public static bool py_issubclass\("),
-    ("py_isinstance", "src/runtime/cs/native/built_in/py_runtime.cs"): re.compile(r"public static bool py_isinstance\("),
+    ("py_runtime_type_id", "src/runtime/cs/built_in/py_runtime.cs"): re.compile(r"public static long py_runtime_type_id\("),
+    ("py_is_subtype", "src/runtime/cs/built_in/py_runtime.cs"): re.compile(r"public static bool py_is_subtype\("),
+    ("py_issubclass", "src/runtime/cs/built_in/py_runtime.cs"): re.compile(r"public static bool py_issubclass\("),
+    ("py_isinstance", "src/runtime/cs/built_in/py_runtime.cs"): re.compile(r"public static bool py_isinstance\("),
 }
 
 EXPECTED_BUCKETS = {
@@ -74,16 +74,16 @@ EXPECTED_BUCKETS = {
     },
     "cpp_generated_final_thincompat_blocker": set(),
     "rs_runtime_generic_alias_surface": {
-        ("py_runtime_type_id", "src/runtime/rs/native/built_in/py_runtime.rs"),
-        ("py_is_subtype", "src/runtime/rs/native/built_in/py_runtime.rs"),
-        ("py_issubclass", "src/runtime/rs/native/built_in/py_runtime.rs"),
-        ("py_isinstance", "src/runtime/rs/native/built_in/py_runtime.rs"),
+        ("py_runtime_type_id", "src/runtime/rs/built_in/py_runtime.rs"),
+        ("py_is_subtype", "src/runtime/rs/built_in/py_runtime.rs"),
+        ("py_issubclass", "src/runtime/rs/built_in/py_runtime.rs"),
+        ("py_isinstance", "src/runtime/rs/built_in/py_runtime.rs"),
     },
     "cs_runtime_generic_alias_surface": {
-        ("py_runtime_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"),
-        ("py_is_subtype", "src/runtime/cs/native/built_in/py_runtime.cs"),
-        ("py_issubclass", "src/runtime/cs/native/built_in/py_runtime.cs"),
-        ("py_isinstance", "src/runtime/cs/native/built_in/py_runtime.cs"),
+        ("py_runtime_type_id", "src/runtime/cs/built_in/py_runtime.cs"),
+        ("py_is_subtype", "src/runtime/cs/built_in/py_runtime.cs"),
+        ("py_issubclass", "src/runtime/cs/built_in/py_runtime.cs"),
+        ("py_isinstance", "src/runtime/cs/built_in/py_runtime.cs"),
     },
 }
 

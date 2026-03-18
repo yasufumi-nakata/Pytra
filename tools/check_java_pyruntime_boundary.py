@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGET = ROOT / "src/runtime/java/native/built_in/PyRuntime.java"
+TARGET = ROOT / "src/runtime/java/built_in/PyRuntime.java"
 
 FORBIDDEN: dict[str, re.Pattern[str]] = {
     "core_utils_png.write_rgb_png": re.compile(r"\bstatic\s+[^\n;]*\bwrite_rgb_png\s*\("),

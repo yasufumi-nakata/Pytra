@@ -70,9 +70,9 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "rs": {
         "kind": "copy_files",
         "files": [
-            ("runtime/rs/native/built_in/py_runtime.rs", "py_runtime.rs"),
-            ("runtime/rs/native/std/time_native.rs", "time_native.rs"),
-            ("runtime/rs/native/std/math_native.rs", "math_native.rs"),
+            ("runtime/rs/built_in/py_runtime.rs", "py_runtime.rs"),
+            ("runtime/rs/std/time_native.rs", "time_native.rs"),
+            ("runtime/rs/std/math_native.rs", "math_native.rs"),
             ("runtime/rs/generated/std/time.rs", "time.rs"),
             ("runtime/rs/generated/std/math.rs", "math.rs"),
             ("runtime/rs/generated/utils/image_runtime.rs", "image_runtime.rs"),
@@ -81,7 +81,7 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "go": {
         "kind": "copy_files",
         "files": [
-            ("runtime/go/native/built_in/py_runtime.go", "py_runtime.go"),
+            ("runtime/go/built_in/py_runtime.go", "py_runtime.go"),
             ("runtime/go/generated/utils/png.go", "png.go"),
             ("runtime/go/generated/utils/gif.go", "gif.go"),
         ],
@@ -89,9 +89,9 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "java": {
         "kind": "copy_files",
         "files": [
-            ("runtime/java/native/built_in/PyRuntime.java", "PyRuntime.java"),
-            ("runtime/java/native/std/math_native.java", "math_native.java"),
-            ("runtime/java/native/std/time_native.java", "time_native.java"),
+            ("runtime/java/built_in/PyRuntime.java", "PyRuntime.java"),
+            ("runtime/java/std/math_native.java", "math_native.java"),
+            ("runtime/java/std/time_native.java", "time_native.java"),
             ("runtime/java/generated/utils/assertions.java", "assertions.java"),
             ("runtime/java/generated/utils/png.java", "png.java"),
             ("runtime/java/generated/utils/gif.java", "gif.java"),
@@ -112,35 +112,35 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "kotlin": {
         "kind": "copy_files",
         "files": [
-            ("runtime/kotlin/native/built_in/py_runtime.kt", "py_runtime.kt"),
+            ("runtime/kotlin/built_in/py_runtime.kt", "py_runtime.kt"),
             ("runtime/kotlin/generated/utils/image_runtime.kt", "image_runtime.kt"),
         ],
     },
     "swift": {
         "kind": "copy_files",
         "files": [
-            ("runtime/swift/native/built_in/py_runtime.swift", "py_runtime.swift"),
+            ("runtime/swift/built_in/py_runtime.swift", "py_runtime.swift"),
             ("runtime/swift/generated/utils/image_runtime.swift", "image_runtime.swift"),
         ],
     },
     "ruby": {
         "kind": "copy_files",
         "files": [
-            ("runtime/ruby/native/built_in/py_runtime.rb", "py_runtime.rb"),
+            ("runtime/ruby/built_in/py_runtime.rb", "py_runtime.rb"),
             ("runtime/ruby/generated/utils/image_runtime.rb", "image_runtime.rb"),
         ],
     },
     "lua": {
         "kind": "copy_files",
         "files": [
-            ("runtime/lua/native/built_in/py_runtime.lua", "py_runtime.lua"),
+            ("runtime/lua/built_in/py_runtime.lua", "py_runtime.lua"),
             ("runtime/lua/generated/utils/image_runtime.lua", "image_runtime.lua"),
         ],
     },
     "scala": {
         "kind": "copy_files",
         "files": [
-            ("runtime/scala/native/built_in/py_runtime.scala", "py_runtime.scala"),
+            ("runtime/scala/built_in/py_runtime.scala", "py_runtime.scala"),
             ("runtime/scala/generated/utils/image_runtime.scala", "image_runtime.scala"),
         ],
     },
@@ -161,7 +161,7 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "nim": {
         "kind": "copy_files",
         "files": [
-            ("runtime/nim/native/built_in/py_runtime.nim", "py_runtime.nim"),
+            ("runtime/nim/built_in/py_runtime.nim", "py_runtime.nim"),
             ("runtime/nim/generated/utils/image_runtime.nim", "image_runtime.nim"),
         ],
     },

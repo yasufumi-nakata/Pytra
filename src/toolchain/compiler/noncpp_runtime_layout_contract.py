@@ -109,7 +109,7 @@ CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
         "canonical_lane": "generated/std",
         "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
-        "native_rel": "src/runtime/cs/native/std/time_native.cs",
+        "native_rel": "src/runtime/cs/std/time_native.cs",
         "canonical_runtime_symbol": "Pytra.CsModule.time",
         "representative_fixture": "test/fixtures/imports/import_time_from.py",
         "smoke_guard_needles": (
@@ -151,7 +151,7 @@ CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
         "canonical_lane": "generated/std",
         "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/cs/generated/std/math.cs",
-        "native_rel": "src/runtime/cs/native/std/math_native.cs",
+        "native_rel": "src/runtime/cs/std/math_native.cs",
         "canonical_runtime_symbol": "Pytra.CsModule.math",
         "representative_fixture": "test/fixtures/stdlib/pytra_std_import_math.py",
         "smoke_guard_needles": (
@@ -207,7 +207,7 @@ CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
         "canonical_lane": "generated/std",
         "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/cs/generated/std/os.cs",
-        "native_rel": "src/runtime/cs/native/std/os_native.cs",
+        "native_rel": "src/runtime/cs/std/os_native.cs",
         "canonical_runtime_symbol": "Pytra.CsModule.os",
         "representative_fixture": "test/fixtures/stdlib/os_glob_extended.py",
         "smoke_guard_needles": (
@@ -221,7 +221,7 @@ CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
         "canonical_lane": "generated/std",
         "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/cs/generated/std/os_path.cs",
-        "native_rel": "src/runtime/cs/native/std/os_path_native.cs",
+        "native_rel": "src/runtime/cs/std/os_path_native.cs",
         "canonical_runtime_symbol": "Pytra.CsModule.os_path",
         "representative_fixture": "test/fixtures/stdlib/os_glob_extended.py",
         "smoke_guard_needles": (
@@ -235,7 +235,7 @@ CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
         "canonical_lane": "generated/std",
         "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/cs/generated/std/sys.cs",
-        "native_rel": "src/runtime/cs/native/std/sys_native.cs",
+        "native_rel": "src/runtime/cs/std/sys_native.cs",
         "canonical_runtime_symbol": "Pytra.CsModule.sys",
         "representative_fixture": "test/fixtures/stdlib/sys_extended.py",
         "smoke_guard_needles": (
@@ -279,7 +279,7 @@ CS_STD_FIRST_LIVE_GENERATED_CANDIDATE_V1: Final[CsStdFirstLiveGeneratedCandidate
     "module_name": "time",
     "current_canonical_lane": "generated/std",
     "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
-    "native_rel": "src/runtime/cs/native/std/time_native.cs",
+    "native_rel": "src/runtime/cs/std/time_native.cs",
     "representative_fixture": "test/fixtures/imports/import_time_from.py",
     "smoke_guard_needles": (
         "def test_representative_time_import_fixture_transpiles",
@@ -296,7 +296,7 @@ RS_STD_LANE_OWNERSHIP_V1: Final[tuple[RsStdLaneOwnershipEntry, ...]] = (
         "canonical_lane": "generated/std",
         "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/rs/generated/std/time.rs",
-        "native_rel": "src/runtime/rs/native/std/time_native.rs",
+        "native_rel": "src/runtime/rs/std/time_native.rs",
         "canonical_runtime_symbol": "#[path = \"time.rs\"]",
         "representative_fixture": "test/fixtures/imports/import_time_from.py",
         "smoke_guard_needles": (
@@ -309,7 +309,7 @@ RS_STD_LANE_OWNERSHIP_V1: Final[tuple[RsStdLaneOwnershipEntry, ...]] = (
         "canonical_lane": "generated/std",
         "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/rs/generated/std/math.rs",
-        "native_rel": "src/runtime/rs/native/std/math_native.rs",
+        "native_rel": "src/runtime/rs/std/math_native.rs",
         "canonical_runtime_symbol": "#[path = \"math.rs\"]",
         "representative_fixture": "test/fixtures/stdlib/pytra_std_import_math.py",
         "smoke_guard_needles": (

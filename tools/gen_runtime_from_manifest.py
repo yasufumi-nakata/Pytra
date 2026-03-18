@@ -1610,7 +1610,7 @@ def rewrite_js_ts_built_in_cjs_module(js_src: str) -> str:
         text,
         flags=re.MULTILINE,
     )
-    if "./pytra/py_runtime.js" in text or "./runtime/js/native/built_in/py_runtime.js" in text:
+    if "./pytra/py_runtime.js" in text or "./runtime/js/built_in/py_runtime.js" in text:
         raise RuntimeError("generated JS/TS built_in module still points at staged runtime path")
     return rewrite_js_program_to_cjs_module(text)
 
@@ -1620,11 +1620,11 @@ def rewrite_js_std_module_runtime_imports(js_src: str, *, module_name: str) -> s
     replacements = {
         'import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./pytra/py_runtime.js";':
             'const { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } = require("../../native/built_in/py_runtime.js");',
-        'import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./runtime/js/native/built_in/py_runtime.js";':
+        'import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./runtime/js/built_in/py_runtime.js";':
             'const { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } = require("../../native/built_in/py_runtime.js");',
         'import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./pytra/py_runtime.js";':
             'const { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } = require("../../native/built_in/py_runtime.js");',
-        'import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./runtime/js/native/built_in/py_runtime.js";':
+        'import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./runtime/js/built_in/py_runtime.js";':
             'const { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } = require("../../native/built_in/py_runtime.js");',
         'import * as sys from "./pytra/std/sys.js";':
             'const sys = require("./sys.js");',
@@ -2394,11 +2394,11 @@ def rewrite_ts_std_module_runtime_imports(ts_src: str, *, module_name: str) -> s
     replacements = {
         'import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./pytra/py_runtime.js";':
             'const { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } = require("../../native/built_in/py_runtime.js");',
-        'import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./runtime/js/native/built_in/py_runtime.js";':
+        'import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./runtime/js/built_in/py_runtime.js";':
             'const { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } = require("../../native/built_in/py_runtime.js");',
         'import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./pytra/py_runtime.js";':
             'const { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } = require("../../native/built_in/py_runtime.js");',
-        'import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./runtime/js/native/built_in/py_runtime.js";':
+        'import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./runtime/js/built_in/py_runtime.js";':
             'const { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } = require("../../native/built_in/py_runtime.js");',
         'import * as sys from "./pytra/std/sys.js";':
             'const sys = require("./sys.js");',

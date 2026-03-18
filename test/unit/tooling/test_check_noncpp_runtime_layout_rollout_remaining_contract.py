@@ -174,14 +174,14 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             by_backend,
             {
                 "go": (
-                    "runtime/go/native/built_in/py_runtime.go",
+                    "runtime/go/built_in/py_runtime.go",
                     "runtime/go/generated/utils/png.go",
                     "runtime/go/generated/utils/gif.go",
                 ),
                 "java": (
-                    "runtime/java/native/built_in/PyRuntime.java",
-                    "runtime/java/native/std/math_native.java",
-                    "runtime/java/native/std/time_native.java",
+                    "runtime/java/built_in/PyRuntime.java",
+                    "runtime/java/std/math_native.java",
+                    "runtime/java/std/time_native.java",
                     "runtime/java/generated/utils/assertions.java",
                     "runtime/java/generated/utils/png.java",
                     "runtime/java/generated/utils/gif.java",
@@ -199,19 +199,19 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "runtime/java/generated/std/math.java",
                 ),
                 "kotlin": (
-                    "runtime/kotlin/native/built_in/py_runtime.kt",
+                    "runtime/kotlin/built_in/py_runtime.kt",
                     "runtime/kotlin/generated/utils/image_runtime.kt",
                 ),
                 "scala": (
-                    "runtime/scala/native/built_in/py_runtime.scala",
+                    "runtime/scala/built_in/py_runtime.scala",
                     "runtime/scala/generated/utils/image_runtime.scala",
                 ),
                 "swift": (
-                    "runtime/swift/native/built_in/py_runtime.swift",
+                    "runtime/swift/built_in/py_runtime.swift",
                     "runtime/swift/generated/utils/image_runtime.swift",
                 ),
                 "nim": (
-                    "runtime/nim/native/built_in/py_runtime.nim",
+                    "runtime/nim/built_in/py_runtime.nim",
                     "runtime/nim/generated/utils/image_runtime.nim",
                 ),
             },
@@ -746,8 +746,8 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
-                "current_prefix": "src/runtime/js/native/std/",
-                "target_prefix": "src/runtime/js/native/std/",
+                "current_prefix": "src/runtime/js/std/",
+                "target_prefix": "src/runtime/js/std/",
                 "ownership": "native",
                 "rationale": "JS extern-backed std owner seams now live in native/std while generated/std wrappers stay declaration-only.",
             },
@@ -773,8 +773,8 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
-                "current_prefix": "src/runtime/ts/native/std/",
-                "target_prefix": "src/runtime/ts/native/std/",
+                "current_prefix": "src/runtime/ts/std/",
+                "target_prefix": "src/runtime/ts/std/",
                 "ownership": "native",
                 "rationale": "TS extern-backed std owner seams now live in native/std while generated/std wrappers stay declaration-only compare artifacts.",
             },

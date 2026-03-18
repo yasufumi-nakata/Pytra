@@ -24,13 +24,13 @@ PATH_SYMBOLS = {
         "py_runtime_value_type_id",
         "py_runtime_value_isinstance",
     },
-    "src/runtime/rs/native/built_in/py_runtime.rs": {
+    "src/runtime/rs/built_in/py_runtime.rs": {
         "py_runtime_type_id_is_subtype",
         "py_runtime_type_id_issubclass",
         "py_runtime_value_type_id",
         "py_runtime_value_isinstance",
     },
-    "src/runtime/cs/native/built_in/py_runtime.cs": {
+    "src/runtime/cs/built_in/py_runtime.cs": {
         "py_runtime_type_id_is_subtype",
         "py_runtime_type_id_issubclass",
         "py_runtime_value_type_id",
@@ -54,16 +54,16 @@ EXPECTED_BUCKETS = {
         ("py_runtime_value_isinstance", "src/runtime/generated/built_in/type_id.cpp"),
     },
     "rs_runtime_builtin_shared_type_id_residual": {
-        ("py_runtime_type_id_is_subtype", "src/runtime/rs/native/built_in/py_runtime.rs"),
-        ("py_runtime_type_id_issubclass", "src/runtime/rs/native/built_in/py_runtime.rs"),
-        ("py_runtime_value_type_id", "src/runtime/rs/native/built_in/py_runtime.rs"),
-        ("py_runtime_value_isinstance", "src/runtime/rs/native/built_in/py_runtime.rs"),
+        ("py_runtime_type_id_is_subtype", "src/runtime/rs/built_in/py_runtime.rs"),
+        ("py_runtime_type_id_issubclass", "src/runtime/rs/built_in/py_runtime.rs"),
+        ("py_runtime_value_type_id", "src/runtime/rs/built_in/py_runtime.rs"),
+        ("py_runtime_value_isinstance", "src/runtime/rs/built_in/py_runtime.rs"),
     },
     "cs_runtime_builtin_shared_type_id_residual": {
-        ("py_runtime_type_id_is_subtype", "src/runtime/cs/native/built_in/py_runtime.cs"),
-        ("py_runtime_type_id_issubclass", "src/runtime/cs/native/built_in/py_runtime.cs"),
-        ("py_runtime_value_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"),
-        ("py_runtime_value_isinstance", "src/runtime/cs/native/built_in/py_runtime.cs"),
+        ("py_runtime_type_id_is_subtype", "src/runtime/cs/built_in/py_runtime.cs"),
+        ("py_runtime_type_id_issubclass", "src/runtime/cs/built_in/py_runtime.cs"),
+        ("py_runtime_value_type_id", "src/runtime/cs/built_in/py_runtime.cs"),
+        ("py_runtime_value_isinstance", "src/runtime/cs/built_in/py_runtime.cs"),
     },
 }
 
@@ -99,13 +99,13 @@ SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
         "py_runtime_value_type_id",
         "py_runtime_value_isinstance",
     },
-    "src/runtime/rs/native/built_in/py_runtime.rs": {
+    "src/runtime/rs/built_in/py_runtime.rs": {
         "pub fn py_runtime_value_type_id",
         "pub fn py_runtime_type_id_is_subtype",
         "pub fn py_runtime_type_id_issubclass",
         "pub fn py_runtime_value_isinstance",
     },
-    "src/runtime/cs/native/built_in/py_runtime.cs": {
+    "src/runtime/cs/built_in/py_runtime.cs": {
         "public static long py_runtime_value_type_id",
         "public static bool py_runtime_type_id_is_subtype",
         "public static bool py_runtime_type_id_issubclass",
@@ -129,13 +129,13 @@ SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
         "py_runtime_object_type_id(",
         "py_runtime_object_isinstance(",
     },
-    "src/runtime/rs/native/built_in/py_runtime.rs": {
+    "src/runtime/rs/built_in/py_runtime.rs": {
         "pub fn py_runtime_type_id<",
         "pub fn py_isinstance<",
         "pub fn py_is_subtype(",
         "pub fn py_issubclass(",
     },
-    "src/runtime/cs/native/built_in/py_runtime.cs": {
+    "src/runtime/cs/built_in/py_runtime.cs": {
         "public static long py_runtime_type_id(",
         "public static bool py_isinstance(",
         "public static bool py_is_subtype(",
@@ -200,7 +200,7 @@ REPRESENTATIVE_BUCKET_MANIFEST = {
             "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
         },
                 "source_guard_paths": {
-                        "src/runtime/rs/native/built_in/py_runtime.rs",
+                        "src/runtime/rs/built_in/py_runtime.rs",
                     },
                 },
     "cs_runtime_builtin_shared_type_id_residual": {
@@ -209,25 +209,25 @@ REPRESENTATIVE_BUCKET_MANIFEST = {
             "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
         },
         "source_guard_paths": {
-            "src/runtime/cs/native/built_in/py_runtime.cs",
+            "src/runtime/cs/built_in/py_runtime.cs",
         },
     },
 }
 
 RS_RUNTIME_BUILTIN_MUST_REMAIN = {
-    ("py_runtime_type_id_is_subtype", "src/runtime/rs/native/built_in/py_runtime.rs"),
-    ("py_runtime_type_id_issubclass", "src/runtime/rs/native/built_in/py_runtime.rs"),
-    ("py_runtime_value_type_id", "src/runtime/rs/native/built_in/py_runtime.rs"),
-    ("py_runtime_value_isinstance", "src/runtime/rs/native/built_in/py_runtime.rs"),
+    ("py_runtime_type_id_is_subtype", "src/runtime/rs/built_in/py_runtime.rs"),
+    ("py_runtime_type_id_issubclass", "src/runtime/rs/built_in/py_runtime.rs"),
+    ("py_runtime_value_type_id", "src/runtime/rs/built_in/py_runtime.rs"),
+    ("py_runtime_value_isinstance", "src/runtime/rs/built_in/py_runtime.rs"),
 }
 
 RS_RUNTIME_BUILTIN_REDELEGATABLE = set()
 
 CS_RUNTIME_BUILTIN_MUST_REMAIN = {
-    ("py_runtime_type_id_is_subtype", "src/runtime/cs/native/built_in/py_runtime.cs"),
-    ("py_runtime_type_id_issubclass", "src/runtime/cs/native/built_in/py_runtime.cs"),
-    ("py_runtime_value_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"),
-    ("py_runtime_value_isinstance", "src/runtime/cs/native/built_in/py_runtime.cs"),
+    ("py_runtime_type_id_is_subtype", "src/runtime/cs/built_in/py_runtime.cs"),
+    ("py_runtime_type_id_issubclass", "src/runtime/cs/built_in/py_runtime.cs"),
+    ("py_runtime_value_type_id", "src/runtime/cs/built_in/py_runtime.cs"),
+    ("py_runtime_value_isinstance", "src/runtime/cs/built_in/py_runtime.cs"),
 }
 
 CS_RUNTIME_BUILTIN_REDELEGATABLE = set()
