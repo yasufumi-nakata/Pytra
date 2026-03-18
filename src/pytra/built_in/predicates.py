@@ -1,6 +1,6 @@
 """Pure-Python source-of-truth for predicate helpers."""
 
-from typing import Any
+from pytra.typing import Any
 
 
 def py_any(values: Any) -> bool:

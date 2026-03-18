@@ -37,7 +37,7 @@
 
 文脈: [docs/ja/plans/p0-pytra-import-unify.md](../plans/p0-pytra-import-unify.md)
 
-1. [ ] [ID: P0-PYTRA-IMPORT-UNIFY-01] `pytra.typing` / `pytra.enum` / `pytra.dataclasses` ダミーモジュールを作成し、Python 標準モジュールの import を `pytra.*` 経由に統一する。変換器はこれらの import を無視する。
+1. [x] [ID: P0-PYTRA-IMPORT-UNIFY-01] `pytra.typing` / `pytra.enum` / `pytra.dataclasses` ダミーモジュールを作成し、Python 標準モジュールの import を `pytra.*` 経由に統一する。変換器はこれらの import を無視する。
 
 ### P7: selfhost 完全自立化
 

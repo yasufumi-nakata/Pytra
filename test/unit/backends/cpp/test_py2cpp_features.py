@@ -4297,7 +4297,7 @@ if __name__ == "__main__":
             )
             pad_state_py.write_text(
                 "from collections import deque\n"
-                "from dataclasses import dataclass, field\n"
+                "from pytra.dataclasses import dataclass, field\n"
                 "\n"
                 "@dataclass\n"
                 "class PadState:\n"
@@ -5146,7 +5146,7 @@ if __name__ == "__main__":
         self.assertEqual(lines[-1], "True")
 
     def test_dataclass_field_call_no_longer_leaks_into_cpp_runtime_expr(self) -> None:
-        src = """from dataclasses import dataclass, field
+        src = """from pytra.dataclasses import dataclass, field
 from collections import deque
 
 @dataclass
@@ -5163,7 +5163,7 @@ class PadState:
         self.assertNotIn("field(false, false)", cpp)
 
     def test_dataclass_field_init_false_is_omitted_from_ctor_params(self) -> None:
-        src = """from dataclasses import dataclass, field
+        src = """from pytra.dataclasses import dataclass, field
 from collections import deque
 
 @dataclass
@@ -5181,7 +5181,7 @@ class PadState:
         self.assertIn(": frame(frame)", cpp)
 
     def test_dataclass_deque_init_false_only_uses_zero_arg_ctor(self) -> None:
-        src = """from dataclasses import dataclass, field
+        src = """from pytra.dataclasses import dataclass, field
 from collections import deque
 
 @dataclass
@@ -5198,7 +5198,7 @@ class PadState:
         self.assertNotIn("PadState(::std::deque<float64> timestamps", cpp)
 
     def test_dataclass_deque_default_factory_builds_in_cpp_representative_lane(self) -> None:
-        src = """from dataclasses import dataclass, field
+        src = """from pytra.dataclasses import dataclass, field
 from collections import deque
 
 @dataclass
@@ -5250,7 +5250,7 @@ class PadState:
             self.assertEqual(comp.returncode, 0, msg=comp.stderr)
 
     def test_dataclass_rc_default_factory_lowers_to_rc_new_in_cpp_representative_lane(self) -> None:
-        src = """from dataclasses import dataclass, field
+        src = """from pytra.dataclasses import dataclass, field
 
 @dataclass(slots=True)
 class Child:
@@ -5273,7 +5273,7 @@ class Parent:
         self.assertNotIn("Parent(rc<Child> child = Child())", cpp)
 
     def test_dataclass_rc_default_factory_builds_and_runs_in_cpp_representative_lane(self) -> None:
-        src = """from dataclasses import dataclass, field
+        src = """from pytra.dataclasses import dataclass, field
 
 @dataclass(slots=True)
 class Child:
@@ -5978,7 +5978,7 @@ print(q.index(1))
             self.assertEqual(run.stdout.strip().splitlines(), ["3", "2", "0"])
 
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
-        src = """from dataclasses import dataclass, field
+        src = """from pytra.dataclasses import dataclass, field
 
 @dataclass
 class PadState:
@@ -5994,7 +5994,7 @@ class PadState:
         self.assertIn(": count(count), samples(samples)", cpp)
 
     def test_dataclass_field_repr_compare_metadata_do_not_leak_into_cpp(self) -> None:
-        src = """from dataclasses import dataclass, field
+        src = """from pytra.dataclasses import dataclass, field
 
 @dataclass
 class PadState:

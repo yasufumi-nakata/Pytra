@@ -4,7 +4,7 @@
 
 
 from pytra.utils.assertions import py_assert_stdout
-from dataclasses import dataclass
+from pytra.dataclasses import dataclass
 
 
 @dataclass

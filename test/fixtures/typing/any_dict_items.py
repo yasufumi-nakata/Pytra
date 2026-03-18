@@ -1,6 +1,6 @@
 # This file contains test/implementation code for `test/fixtures/typing/any_dict_items.py`.
 
-from typing import Any
+from pytra.typing import Any
 from pytra.utils.assertions import py_assert_all, py_assert_eq
 
 

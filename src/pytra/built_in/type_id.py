@@ -1,6 +1,6 @@
 """Pure-Python source-of-truth for single-inheritance type_id range semantics."""
 
-from typing import Any
+from pytra.typing import Any
 
 
 _TYPE_IDS: list[int] = []

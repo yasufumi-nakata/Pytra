@@ -515,15 +515,13 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                         hint="Use `import module` or `import module as alias` form.",
                     )
                 mod_name, as_name_txt = parsed_alias
-                if mod_name == "typing":
-                    # `typing` は注釈専用モジュールとして扱い、ImportBinding/EAST へは出さない。
-                    continue
-                if mod_name == "dataclasses":
-                    # `dataclasses` は decorator 解決専用モジュールとして扱う（no-op import）。
-                    bind_name_dc = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
-                    import_module_bindings[bind_name_dc] = mod_name
-                    _sh_register_import_module(_SH_IMPORT_MODULES, bind_name_dc, mod_name)
-                    continue
+                if mod_name in {"typing", "dataclasses", "enum"}:
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"import {mod_name} is not allowed. Use `from pytra.{mod_name} import ...` instead.",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint=f"Replace with: from pytra.{mod_name} import ...",
+                    )
                 bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
                 _sh_register_import_module(_SH_IMPORT_MODULES, bind_name, mod_name)
                 if _sh_is_host_only_alias(bind_name):
@@ -550,69 +548,15 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
         import_from_clause = _sh_parse_import_from_clause(s)
         if import_from_clause is not None:
             mod_name, names_txt, mod_level = import_from_clause
-            if mod_name == "typing":
-                # `typing` の from-import は型別名解決にだけ使い、依存/AST には残さない。
-                raw_parts_typing: list[str] = []
-                if names_txt != "*":
-                    for p in names_txt.split(","):
-                        p2: str = p.strip()
-                        if p2 != "":
-                            raw_parts_typing.append(p2)
-                for part in raw_parts_typing:
-                    parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
-                    if parsed_alias is None:
-                        continue
-                    sym_name, as_name_txt = parsed_alias
-                    alias_name = as_name_txt if as_name_txt != "" else sym_name
-                    target = _sh_typing_alias_to_type_name(sym_name)
-                    if target != "":
-                        type_aliases[alias_name] = target
-                i = logical_end + 1
-                continue
-            if mod_name == "dataclasses":
-                # `from dataclasses import ...` は decorator 解決専用で、依存/AST には残さない。
-                if names_txt == "*":
-                    i = logical_end + 1
-                    continue
-                raw_parts_dc: list[str] = []
-                for p in names_txt.split(","):
-                    p2: str = p.strip()
-                    if p2 != "":
-                        raw_parts_dc.append(p2)
-                if len(raw_parts_dc) == 0:
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message="from-import statement has no symbol names",
-                        source_span=_sh_span(i, 0, len(ln)),
-                        hint="Use `from module import name` form.",
-                    )
-                for part in raw_parts_dc:
-                    parsed_alias = _sh_parse_import_alias(part, allow_dotted_name=False)
-                    if parsed_alias is None:
-                        raise _make_east_build_error(
-                            kind="unsupported_syntax",
-                            message=f"unsupported from-import clause: {part}",
-                            source_span=_sh_span(i, 0, len(ln)),
-                            hint="Use `from module import name` or `... as alias`.",
-                        )
-                    sym_name, as_name_txt = parsed_alias
-                    bind_name_dc = as_name_txt if as_name_txt != "" else sym_name
-                    import_symbol_bindings[bind_name_dc] = _sh_make_import_symbol_binding(
-                        mod_name,
-                        sym_name,
-                    )
-                    _sh_register_import_symbol(
-                        _SH_IMPORT_SYMBOLS,
-                        bind_name_dc,
-                        mod_name,
-                        sym_name,
-                        make_import_symbol_binding=_sh_make_import_symbol_binding,
-                    )
-                i = logical_end + 1
-                continue
-            if mod_name == "pytra.types":
-                # pytra.types はスカラー型エイリアス（Pylance 互換用）。
-                # パーサーが型名を既に認識しているため、import を無視する。
+            if mod_name in {"typing", "dataclasses", "enum"}:
+                raise _make_east_build_error(
+                    kind="unsupported_syntax",
+                    message=f"from {mod_name} import ... is not allowed. Use `from pytra.{mod_name} import ...` instead.",
+                    source_span=_sh_span(i, 0, len(ln)),
+                    hint=f"Replace with: from pytra.{mod_name} import ...",
+                )
+            if mod_name in {"pytra.types", "pytra.typing", "pytra.enum", "pytra.dataclasses"}:
+                # 言語補助モジュール: パーサーが型名・構文を既に認識しているため、import を無視する。
                 i = logical_end + 1
                 continue
             if mod_name == "__future__":

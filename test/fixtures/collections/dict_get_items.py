@@ -1,7 +1,7 @@
 # This file contains test/implementation code for `test/fixtures/dict_get_items.py`.
 
 from pytra.utils.assertions import py_assert_eq
-from typing import Any
+from pytra.typing import Any
 
 
 def run_dict_get_items() -> bool:

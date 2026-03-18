@@ -56,7 +56,7 @@ def _nominal_adt_class(
 
 def _representative_nominal_adt_east3() -> dict[str, object]:
     source = """
-from dataclasses import dataclass
+from pytra.dataclasses import dataclass
 
 @sealed
 class Maybe:

@@ -1,7 +1,7 @@
 # This file contains test/implementation code for `test/fixtures/nested_types.py`.
 
 from pytra.utils.assertions import py_assert_all, py_assert_eq, py_assert_true
-from typing import Any
+from pytra.typing import Any
 
 
 def run_nested_types() -> bool:

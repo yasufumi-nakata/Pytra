@@ -76,7 +76,7 @@ def as_dict(flag: bool) -> dict[str, int]:
         self.assertIn("dict<str, int64>{{\"k\", (flag ? 5 : 7)}}", cpp)
 
     def test_dataclass_field_order_is_preserved_in_class_layout_and_ctor(self) -> None:
-        src = """from dataclasses import dataclass
+        src = """from pytra.dataclasses import dataclass
 
 @dataclass
 class Token:
@@ -1359,7 +1359,7 @@ def f(x: object) -> bool:
         self.assertNotIn("if (Base::py_isinstance_of(expected_type_id)) return true;", cpp)
 
     def test_nominal_adt_class_lane_supports_ctor_projection_and_variant_check(self) -> None:
-        src = """from dataclasses import dataclass
+        src = """from pytra.dataclasses import dataclass
 
 @sealed
 class Maybe:

@@ -1,5 +1,5 @@
 from pytra.utils.assertions import py_assert_all, py_assert_eq
-from enum import Enum, IntEnum, IntFlag
+from pytra.enum import Enum, IntEnum, IntFlag
 
 
 class Color(Enum):

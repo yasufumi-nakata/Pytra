@@ -1,5 +1,5 @@
 from pytra.utils.assertions import py_assert_all, py_assert_eq
-from dataclasses import dataclass
+from pytra.dataclasses import dataclass
 
 
 @dataclass
