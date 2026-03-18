@@ -47,3 +47,4 @@ EAST3 IR には `ListAppend` / `ListPop` / `ListExtend` / `ListClear` / `ListRev
 ## 決定ログ
 
 - 2026-03-18: py_runtime.h 縮小・多言語対応容易化の調査において、IR ノードが存在するにもかかわらず C++ emitter が直接 emit しているパスを確認し起票。`cpp_emitter.py` の 4369/4397/4451/4502/4519/4536 行付近が対象。P5-EAST3-FLOORDIV-MOD-NODE-01 の後に着手予定。
+- 2026-03-18: 実装完了。手順: (1) list 操作 12 関数を py_runtime.h から native/built_in/list_ops.h へ移動し py_runtime.h は include のみに変更。(2) cpp_emitter.py の ListAppend/ListExtend/ListPop/ListClear/ListReverse/ListSort ハンドラで `py_list_*_mut()` 呼び出しを `.append()` / `.extend()` / `.pop()` / `.clear()` / `::std::reverse()` / `::std::sort()` 直接呼び出しに置換。(3) 生成済み C++ ファイル（json.cpp 等 9 件）のコールサイトも一括置換。py_list_set_at_mut は IR ノード未存在のため stmt.py に残存（次タスク P6-EAST3-LEN-SLICE-NODE-01 等で対応）。selfhost mismatches=0、fixture pass。cpp 0.581.2。

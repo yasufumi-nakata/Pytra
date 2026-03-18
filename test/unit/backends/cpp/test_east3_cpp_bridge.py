@@ -978,7 +978,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(
             emitter.render_expr(node),
-            'py_list_append_mut(obj_to_list_ref_or_raise(xs, "append"), make_object(n))',
+            'obj_to_list_ref_or_raise(xs, "append").append(make_object(n))',
         )
 
     def test_collection_ctor_empty_pyobj_list_uses_direct_pylist_object_ctor(self) -> None:
@@ -1008,7 +1008,7 @@ class East3CppBridgeTest(unittest.TestCase):
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("py_list_append_mut(rc_list_ref(xs), n);", cpp)
+        self.assertIn("rc_list_ref(xs).append(n);", cpp)
         self.assertNotIn("obj_to_list_ref_or_raise", cpp)
         self.assertNotIn("py_append(", cpp)
 
@@ -1158,7 +1158,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(
             emitter.render_expr(node),
-            'py_list_extend_mut(obj_to_list_ref_or_raise(xs, "extend"), obj_to_list_ref_or_raise(ys, "extend"))',
+            'obj_to_list_ref_or_raise(xs, "extend").extend(obj_to_list_ref_or_raise(ys, "extend"))',
         )
 
     def test_builtin_runtime_list_extend_uses_ir_node_path(self) -> None:

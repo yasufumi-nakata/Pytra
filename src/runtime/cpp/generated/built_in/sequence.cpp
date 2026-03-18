@@ -18,13 +18,13 @@ list<int64> py_range(int64 start, int64 stop, int64 step) {
     if (step > 0) {
         i = start;
         while (i < stop) {
-            py_list_append_mut(rc_list_ref(out), i);
+            rc_list_ref(out).append(i);
             i += step;
         }
     } else {
         i = start;
         while (i > stop) {
-            py_list_append_mut(rc_list_ref(out), i);
+            rc_list_ref(out).append(i);
             i += step;
         }
     }

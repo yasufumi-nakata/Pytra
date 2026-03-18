@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-18（P5-EAST3-FLOORDIV-MOD-NODE-01 完了）
+最終更新: 2026-03-18（P6-CPP-LIST-MUT-IR-BYPASS-FIX-01 完了）
 
 ## 文脈運用ルール
 
@@ -53,7 +53,8 @@
 
 文脈: [docs/ja/plans/p6-cpp-list-mut-ir-bypass-fix.md](../plans/p6-cpp-list-mut-ir-bypass-fix.md)
 
-1. [ ] [ID: P6-CPP-LIST-MUT-IR-BYPASS-FIX-01] `cpp_emitter.py` が `py_list_*_mut()` を直接 emit しているパスを IR ノード（ListAppend 等）経由に統一し、`py_runtime.h` から 6 関数を除去する。
+1. [x] [ID: P6-CPP-LIST-MUT-IR-BYPASS-FIX-01] `cpp_emitter.py` が `py_list_*_mut()` を直接 emit しているパスを IR ノード（ListAppend 等）経由に統一し、`py_runtime.h` から 6 関数を除去する。
+- 進捗メモ: 完了。6 関数を list_ops.h へ移動、emitter を直接メソッド呼び出し（`.append()` 等）に切り替え。生成 C++ から py_list_*_mut 呼び出し除去。mismatches=0。cpp 0.581.2。
 
 #### P6-2: py_len / py_slice の EAST3 IR ノード化
 

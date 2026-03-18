@@ -20,7 +20,7 @@ list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {
     if (rhs.size() < n)
         n = rhs.size();
     while (i < n) {
-        py_list_append_mut(rc_list_ref(out), ::std::make_tuple(lhs[i], rhs[i]));
+        rc_list_ref(out).append(::std::make_tuple(lhs[i], rhs[i]));
         i++;
     }
     return rc_list_copy_value(out);

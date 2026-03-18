@@ -68,7 +68,7 @@ so it can be transpiled to target runtimes.
             draws = 0;
         rc<list<float64>> weight_vals = rc_list_from_value(list<float64>{});
         for (float64 w : rc_list_ref(weights)) {
-            py_list_append_mut(rc_list_ref(weight_vals), w);
+            rc_list_ref(weight_vals).append(w);
         }
         rc<list<int64>> out = rc_list_from_value(list<int64>{});
         if ((rc_list_ref(weight_vals)).size() == n) {
@@ -91,14 +91,14 @@ so it can be transpiled to target runtimes.
                             break;
                         }
                     }
-                    py_list_append_mut(rc_list_ref(out), py_list_at_ref(rc_list_ref(population), py_to<int64>(picked_i)));
+                    rc_list_ref(out).append(py_list_at_ref(rc_list_ref(population), py_to<int64>(picked_i)));
                 }
                 return out;
             }
         }
         rc_list_ref(out).reserve((draws <= 0) ? 0 : draws);
         for (int64 _ = 0; _ < draws; ++_)
-            py_list_append_mut(rc_list_ref(out), py_list_at_ref(rc_list_ref(population), py_to<int64>(randint(0, n - 1))));
+            rc_list_ref(out).append(py_list_at_ref(rc_list_ref(population), py_to<int64>(randint(0, n - 1))));
         return out;
     }
     

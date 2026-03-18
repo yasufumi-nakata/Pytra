@@ -49,17 +49,17 @@ namespace pytra::std::argparse {
     void ArgumentParser::add_argument(const str& name0, const str& name1, const str& name2, const str& name3, const str& help, const str& action, const rc<list<str>>& choices, const object& py_default) {
             rc<list<str>> names = rc_list_from_value(list<str>{});
             if (name0 != "")
-                py_list_append_mut(rc_list_ref(names), name0);
+                rc_list_ref(names).append(name0);
             if (name1 != "")
-                py_list_append_mut(rc_list_ref(names), name1);
+                rc_list_ref(names).append(name1);
             if (name2 != "")
-                py_list_append_mut(rc_list_ref(names), name2);
+                rc_list_ref(names).append(name2);
             if (name3 != "")
-                py_list_append_mut(rc_list_ref(names), name3);
+                rc_list_ref(names).append(name3);
             if ((rc_list_ref(names)).empty())
                 throw ValueError("add_argument requires at least one name");
             _ArgSpec spec = _ArgSpec(names, action, choices, py_default, help);
-            py_list_append_mut(rc_list_ref(this->_specs), spec);
+            rc_list_ref(this->_specs).append(spec);
     }
 
     void ArgumentParser::_fail(const str& msg) const {
@@ -78,9 +78,9 @@ namespace pytra::std::argparse {
             rc<list<_ArgSpec>> specs_opt = rc_list_from_value(list<_ArgSpec>{});
             for (_ArgSpec s : rc_list_ref(this->_specs)) {
                 if (s.is_optional)
-                    py_list_append_mut(rc_list_ref(specs_opt), s);
+                    rc_list_ref(specs_opt).append(s);
                 else
-                    py_list_append_mut(rc_list_ref(specs_pos), s);
+                    rc_list_ref(specs_pos).append(s);
             }
             dict<str, int64> by_name = {};
             int64 spec_i = 0;

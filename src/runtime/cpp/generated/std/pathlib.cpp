@@ -49,7 +49,7 @@ namespace pytra::std::pathlib {
             while (true) {
                 if (current == "")
                     current = ".";
-                py_list_append_mut(rc_list_ref(out), Path(current));
+                rc_list_ref(out).append(Path(current));
                 str next_current = pytra::std::os_path::dirname(current);
                 if (next_current == "")
                     next_current = ".";
@@ -120,7 +120,7 @@ namespace pytra::std::pathlib {
             rc<list<str>> paths = pytra::std::glob::glob(pytra::std::os_path::join(this->_value, pattern));
             rc<list<Path>> out = rc_list_from_value(list<Path>{});
             for (str p : rc_list_ref(paths)) {
-                py_list_append_mut(rc_list_ref(out), Path(p));
+                rc_list_ref(out).append(Path(p));
             }
             return out;
     }

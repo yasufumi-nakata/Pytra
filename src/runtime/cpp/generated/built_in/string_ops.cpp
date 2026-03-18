@@ -54,7 +54,7 @@ str py_join(const str& sep, const list<str>& parts) {
 list<str> py_split(const str& s, const str& sep, int64 maxsplit) {
     rc<list<str>> out = rc_list_from_value(list<str>{});
     if (sep == "") {
-        py_list_append_mut(rc_list_ref(out), s);
+        rc_list_ref(out).append(s);
         return rc_list_copy_value(out);
     }
     int64 pos = 0;
@@ -68,11 +68,11 @@ list<str> py_split(const str& s, const str& sep, int64 maxsplit) {
         int64 at = py_find_window(s, sep, pos, n);
         if (at < 0)
             break;
-        py_list_append_mut(rc_list_ref(out), py_slice(s, pos, at));
+        rc_list_ref(out).append(py_slice(s, pos, at));
         pos = at + m;
         splits++;
     }
-    py_list_append_mut(rc_list_ref(out), py_slice(s, pos, n));
+    rc_list_ref(out).append(py_slice(s, pos, n));
     return rc_list_copy_value(out);
 }
 
@@ -84,7 +84,7 @@ list<str> py_splitlines(const str& s) {
     while (i < n) {
         str ch = s[i];
         if ((ch == "\n") || (ch == "\r")) {
-            py_list_append_mut(rc_list_ref(out), py_slice(s, start, i));
+            rc_list_ref(out).append(py_slice(s, start, i));
             if ((ch == "\r") && (i + 1 < n) && (s[i + 1] == "\n"))
                 i++;
             i++;
@@ -94,12 +94,12 @@ list<str> py_splitlines(const str& s) {
         i++;
     }
     if (start < n) {
-        py_list_append_mut(rc_list_ref(out), py_slice(s, start, n));
+        rc_list_ref(out).append(py_slice(s, start, n));
     } else if (n > 0) {
         auto __idx_1 = n - 1;
         str last = s[__idx_1];
         if ((last == "\n") || (last == "\r"))
-            py_list_append_mut(rc_list_ref(out), "");
+            rc_list_ref(out).append("");
     }
     return rc_list_copy_value(out);
 }

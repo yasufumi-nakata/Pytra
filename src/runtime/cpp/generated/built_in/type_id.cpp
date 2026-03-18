@@ -66,7 +66,7 @@ rc<list<int64>> _make_int_list_0() {
 
 rc<list<int64>> _make_int_list_1(int64 a0) {
     rc<list<int64>> out = rc_list_from_value(list<int64>{});
-    py_list_append_mut(rc_list_ref(out), a0);
+    rc_list_ref(out).append(a0);
     return out;
 }
 
@@ -84,7 +84,7 @@ rc<list<int64>> _copy_int_list(const rc<list<int64>>& items) {
     rc<list<int64>> out = rc_list_from_value(list<int64>{});
     int64 i = 0;
     while (i < (rc_list_ref(items)).size()) {
-        py_list_append_mut(rc_list_ref(out), py_list_at_ref(rc_list_ref(items), py_to<int64>(i)));
+        rc_list_ref(out).append(py_list_at_ref(rc_list_ref(items), py_to<int64>(i)));
         i++;
     }
     return out;
@@ -120,7 +120,7 @@ void _register_type_node(int64 type_id, int64 base_type_id) {
         _TYPE_CHILDREN[base_type_id] = rc_list_copy_value(_make_int_list_0());
     rc<list<int64>> children = rc_list_from_value(([&]() { auto&& __dict_1 = _TYPE_CHILDREN; auto __dict_key_2 = base_type_id; return __dict_1.at(__dict_key_2); }()));
     if (!(_contains_int(children, type_id))) {
-        py_list_append_mut(rc_list_ref(children), type_id);
+        rc_list_ref(children).append(type_id);
         _TYPE_CHILDREN[base_type_id] = rc_list_copy_value(children);
     }
 }
@@ -141,7 +141,7 @@ rc<list<int64>> _collect_root_type_ids() {
         if (py_contains(_TYPE_BASE, tid))
             base_tid = ([&]() { auto&& __dict_7 = _TYPE_BASE; auto __dict_key_8 = tid; return __dict_7.at(__dict_key_8); }());
         if ((base_tid < 0) || (!py_contains(_TYPE_BASE, base_tid)))
-            py_list_append_mut(rc_list_ref(roots), tid);
+            rc_list_ref(roots).append(tid);
         i++;
     }
     return _sorted_ints(roots);

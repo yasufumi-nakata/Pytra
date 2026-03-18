@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-18 (P5-CPP-PY-IS-TYPE-DEAD-CODE-REMOVE-01 added)
+Last updated: 2026-03-18 (P6-CPP-LIST-MUT-IR-BYPASS-FIX-01 completed)
 
 ## Context Operation Rules
 
@@ -37,13 +37,15 @@ Last updated: 2026-03-18 (P5-CPP-PY-IS-TYPE-DEAD-CODE-REMOVE-01 added)
 
 Context: [docs/ja/plans/p5-cpp-py-is-type-dead-code-remove.md](../../ja/plans/p5-cpp-py-is-type-dead-code-remove.md)
 
-1. [ ] [ID: P5-CPP-PY-IS-TYPE-DEAD-CODE-REMOVE-01] Remove `py_is_dict` / `py_is_list` / `py_is_set` / `py_is_str` / `py_is_bool` / `py_is_int` / `py_is_float` from `py_runtime.h`. The emitter has already migrated to the `PYTRA_TID_*` + `py_runtime_value_isinstance` system; these functions are dead code.
+1. [x] [ID: P5-CPP-PY-IS-TYPE-DEAD-CODE-REMOVE-01] Remove `py_is_dict` / `py_is_list` / `py_is_set` / `py_is_str` / `py_is_bool` / `py_is_int` / `py_is_float` from `py_runtime.h`. The emitter has already migrated to the `PYTRA_TID_*` + `py_runtime_value_isinstance` system; these functions are dead code.
+- Progress: Completed. 7 functions removed, 1 test fixed. fixture/sample pass, selfhost mismatches=0.
 
 #### P5-2: FloorDiv / Mod EAST3 IR Node
 
 Context: [docs/ja/plans/p5-east3-floordiv-mod-node.md](../../ja/plans/p5-east3-floordiv-mod-node.md)
 
-2. [ ] [ID: P5-EAST3-FLOORDIV-MOD-NODE-01] Convert `py_floordiv` / `py_mod` to C++ inline emit via EAST3 IR nodes and remove from `py_runtime.h`. Lays the groundwork for each language backend to generate floor-division and modulo natively.
+2. [x] [ID: P5-EAST3-FLOORDIV-MOD-NODE-01] Convert `py_floordiv` / `py_mod` to C++ inline emit via EAST3 IR nodes and remove from `py_runtime.h`. Lays the groundwork for each language backend to generate floor-division and modulo natively.
+- Progress: Completed. py_div/floordiv/mod moved to scalar_ops.h. py_div inlined for arithmetic types, fallback kept for object boundary. mismatches=0. cpp 0.581.1.
 
 ### P6: py_runtime.h Shrink / Multi-language Support
 
@@ -51,7 +53,8 @@ Context: [docs/ja/plans/p5-east3-floordiv-mod-node.md](../../ja/plans/p5-east3-f
 
 Context: [docs/ja/plans/p6-cpp-list-mut-ir-bypass-fix.md](../../ja/plans/p6-cpp-list-mut-ir-bypass-fix.md)
 
-1. [ ] [ID: P6-CPP-LIST-MUT-IR-BYPASS-FIX-01] Route all `py_list_*_mut()` direct-emit paths in `cpp_emitter.py` through IR nodes (ListAppend, etc.) and remove the 6 functions from `py_runtime.h`.
+1. [x] [ID: P6-CPP-LIST-MUT-IR-BYPASS-FIX-01] Route all `py_list_*_mut()` direct-emit paths in `cpp_emitter.py` through IR nodes (ListAppend, etc.) and remove the 6 functions from `py_runtime.h`.
+- Progress: Completed. 6 functions moved to list_ops.h; emitter updated to direct method calls (.append() etc.); generated C++ files updated. mismatches=0. cpp 0.581.2.
 
 #### P6-2: py_len / py_slice EAST3 IR Nodes
 

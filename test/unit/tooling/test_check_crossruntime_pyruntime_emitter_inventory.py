@@ -91,15 +91,12 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertEqual({symbol for symbol, _ in bucket}, {"py_append", "py_pop"})
 
     def test_cpp_typed_lane_uses_direct_mutation_helpers(self) -> None:
+        # py_list_append/extend/pop/clear/reverse/sort_mut removed from cpp_emitter.py
+        # (P6-CPP-LIST-MUT-IR-BYPASS-FIX-01): replaced with direct .method() calls.
+        # py_list_set_at_mut remains in stmt.py (no IR node yet for SetAt).
         self.assertEqual(
             inventory_mod._collect_cpp_typed_lane_direct_pairs(),
             {
-                ("py_list_append_mut", "src/backends/cpp/emitter/cpp_emitter.py"),
-                ("py_list_extend_mut", "src/backends/cpp/emitter/cpp_emitter.py"),
-                ("py_list_pop_mut", "src/backends/cpp/emitter/cpp_emitter.py"),
-                ("py_list_clear_mut", "src/backends/cpp/emitter/cpp_emitter.py"),
-                ("py_list_reverse_mut", "src/backends/cpp/emitter/cpp_emitter.py"),
-                ("py_list_sort_mut", "src/backends/cpp/emitter/cpp_emitter.py"),
                 ("py_list_set_at_mut", "src/backends/cpp/emitter/stmt.py"),
             },
         )

@@ -469,11 +469,11 @@ namespace pytra::std::re {
             for (str ch : text) {
                 if (ch.isspace()) {
                     if (!(in_ws)) {
-                        py_list_append_mut(rc_list_ref(out), repl);
+                        rc_list_ref(out).append(repl);
                         in_ws = true;
                     }
                 } else {
-                    py_list_append_mut(rc_list_ref(out), ch);
+                    rc_list_ref(out).append(ch);
                     in_ws = false;
                 }
             }
@@ -498,9 +498,9 @@ namespace pytra::std::re {
             rc<list<str>> out = rc_list_from_value(list<str>{});
             for (str ch : text) {
                 if ((ch.isalnum()) || (ch == "_"))
-                    py_list_append_mut(rc_list_ref(out), ch);
+                    rc_list_ref(out).append(ch);
                 else
-                    py_list_append_mut(rc_list_ref(out), repl);
+                    rc_list_ref(out).append(repl);
             }
             return str("").join(out);
         }
