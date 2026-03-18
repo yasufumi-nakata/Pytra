@@ -1,6 +1,5 @@
 """Pure Python Path helper compatible with a subset of pathlib.Path."""
 
-from __future__ import annotations
 
 from pytra.std import glob as py_glob
 from pytra.std import os

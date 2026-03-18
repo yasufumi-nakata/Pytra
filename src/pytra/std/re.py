@@ -1,6 +1,5 @@
 """Minimal pure-Python regex subset used by Pytra selfhost path."""
 
-from __future__ import annotations
 
 # `re.S` (`re.DOTALL`) 互換フラグ。
 # CPython では `.` が改行にもマッチするようになる。

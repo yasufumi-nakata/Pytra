@@ -1,6 +1,5 @@
 """Pure-Python source-of-truth for generic zip helpers."""
 
-from __future__ import annotations
 
 from pytra.std import abi, template
 

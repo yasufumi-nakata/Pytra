@@ -4,7 +4,6 @@ This module is intentionally self-contained and avoids Python stdlib imports,
 so it can be transpiled to target runtimes.
 """
 
-from __future__ import annotations
 
 import pytra.std.math as _math
 

@@ -4,7 +4,6 @@
 RGB 8bit バッファを PNG ファイルとして保存する。
 """
 
-from __future__ import annotations
 
 
 def _png_append_list(dst: list[int], src: list[int]) -> None:

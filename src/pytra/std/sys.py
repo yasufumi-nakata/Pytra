@@ -1,6 +1,5 @@
 """pytra.std.sys: extern-marked sys API with Python runtime fallback."""
 
-from __future__ import annotations
 
 from pytra.std import extern
 

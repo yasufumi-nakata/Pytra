@@ -5,7 +5,6 @@ Backends with native deque (C++ std::deque, Rust VecDeque, etc.)
 can override this with emitter-level optimization.
 """
 
-from __future__ import annotations
 
 
 class Deque:

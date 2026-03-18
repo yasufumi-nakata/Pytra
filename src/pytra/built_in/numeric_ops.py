@@ -1,6 +1,5 @@
 """Pure-Python source-of-truth for numeric helper built-ins."""
 
-from __future__ import annotations
 
 from pytra.std import abi, template
 

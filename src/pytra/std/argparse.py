@@ -1,6 +1,5 @@
 """Minimal pure-Python argparse subset for selfhost usage."""
 
-from __future__ import annotations
 
 from pytra.typing import cast
 

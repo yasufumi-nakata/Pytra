@@ -1,6 +1,5 @@
 """pytra.std.os: extern-marked os subset with Python runtime fallback."""
 
-from __future__ import annotations
 
 from pytra.std import extern
 from pytra.std import os_path as path

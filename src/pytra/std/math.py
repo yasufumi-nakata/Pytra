@@ -1,6 +1,5 @@
 """pytra.std.math: extern-marked math API with Python runtime fallback."""
 
-from __future__ import annotations
 
 from pytra.std import extern
 

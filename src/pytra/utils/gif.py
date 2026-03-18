@@ -1,6 +1,5 @@
 """アニメーションGIFを書き出すための最小ヘルパー。"""
 
-from __future__ import annotations
 
 from pytra.std import abi
 

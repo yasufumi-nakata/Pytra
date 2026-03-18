@@ -1,6 +1,5 @@
 """pytra.std.glob: extern-marked glob subset with Python runtime fallback."""
 
-from __future__ import annotations
 
 from pytra.std import extern
 

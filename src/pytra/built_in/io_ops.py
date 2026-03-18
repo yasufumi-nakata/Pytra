@@ -1,6 +1,5 @@
 """Extern-marked I/O helper built-ins."""
 
-from __future__ import annotations
 
 import builtins as __b
 

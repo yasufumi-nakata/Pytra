@@ -1,6 +1,6 @@
 """Pure Python JSON utilities for selfhost-friendly transpilation."""
+from pytra.types import int64
 
-from __future__ import annotations
 
 from pytra.std import abi
 
