@@ -1,0 +1,27 @@
+{
+  "entry": "src/pytra/std/argparse.py",
+  "include_dir": "src/runtime/cpp/generated/std/include",
+  "src_dir": "src/runtime/cpp/generated/std/src",
+  "modules": [
+    {
+      "module": "src/pytra/std/argparse.py",
+      "kind": "user",
+      "label": "argparse",
+      "header": "src/runtime/cpp/generated/std/include/argparse.h",
+      "source": "src/runtime/cpp/generated/std/src/argparse.cpp",
+      "is_entry": true,
+      "helper_id": "",
+      "owner_module_id": ""
+    },
+    {
+      "module": "__pytra_helper__.cpp.std_argparse.object_iter",
+      "kind": "helper",
+      "label": "std_argparse_cpp_object_iter_helper",
+      "header": "src/runtime/cpp/generated/std/include/std_argparse_cpp_object_iter_helper.h",
+      "source": "src/runtime/cpp/generated/std/src/std_argparse_cpp_object_iter_helper.cpp",
+      "is_entry": false,
+      "helper_id": "cpp.object_iter",
+      "owner_module_id": "std.argparse"
+    }
+  ]
+}

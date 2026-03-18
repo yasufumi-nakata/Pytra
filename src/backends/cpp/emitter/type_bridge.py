@@ -525,7 +525,6 @@ class CppTypeBridgeEmitter:
     def cpp_type(self, east_type: Any) -> str:
         """EAST 型名を C++ 型名へマッピングする。"""
         if self._is_type_expr_payload(east_type):
-            self._reject_unsupported_cpp_general_union_type_expr(east_type, context="cpp_type")
             return self._cpp_type_text(type_expr_to_string(east_type))
         east_type_txt = self.any_to_str(east_type)
         if east_type_txt == "" and east_type is not None:
@@ -538,7 +537,6 @@ class CppTypeBridgeEmitter:
     def cpp_signature_type(self, east_type: Any, *, runtime_abi_mode: str = "default") -> str:
         """関数境界/宣言向けに ref-first list を反映した型文字列を返す。"""
         if self._is_type_expr_payload(east_type):
-            self._reject_unsupported_cpp_general_union_type_expr(east_type, context="cpp_signature_type")
             east_type_txt = type_expr_to_string(east_type)
         else:
             east_type_txt = self.any_to_str(east_type)
@@ -594,7 +592,13 @@ class CppTypeBridgeEmitter:
                     return f"::std::optional<{self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)}>"
                 if (not has_none) and len(non_none) == 1:
                     return self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)
-                raise ValueError("unsupported general union for C++ emit: " + east_type)
+                # 一般ユニオン（2型以上）→ std::variant<T1, T2, ..., std::monostate>
+                variant_args: list[str] = [
+                    self._cpp_type_text(p, pyobj_ref_lists=pyobj_ref_lists) for p in non_none
+                ]
+                if has_none:
+                    variant_args.append("::std::monostate")
+                return "::std::variant<" + ", ".join(variant_args) + ">"
         if east_type == "None":
             return "void"
         if east_type == "PyFile":

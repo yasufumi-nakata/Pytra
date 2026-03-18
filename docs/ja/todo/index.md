@@ -73,7 +73,8 @@
 
 文脈: [docs/ja/plans/p6-east3-general-union-variant.md](../plans/p6-east3-general-union-variant.md)
 
-4. [ ] [ID: P6-EAST3-GENERAL-UNION-VARIANT-01] `str | bool | None` 等の一般ユニオン型を C++ では `std::variant<...>` に変換して emit できるようにする。`argparse.py` / `assertions.py` 再生成のブロッカー解除。
+4. [x] [ID: P6-EAST3-GENERAL-UNION-VARIANT-01] `str | bool | None` 等の一般ユニオン型を C++ では `std::variant<...>` に変換して emit できるようにする。`argparse.py` / `assertions.py` 再生成のブロッカー解除。
+- Progress: 完了。type_bridge.py/_header_cpp_type_from_east で std::variant 生成実装。argparse.cpp/assertions.cpp 再生成済み。tests=145 pass, mismatches=0。cpp 0.582.0。
 
 #### P6-3: py_is_none のインライン emit 化
 

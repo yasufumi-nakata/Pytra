@@ -1,0 +1,64 @@
+#include "pytra_multi_prelude.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
+
+#include "generated/built_in/io_ops.h"
+#include "utils_assertions_cpp_object_iter_helper.h"
+
+namespace pytra_mod_assertions {
+
+    bool _eq_any(const ::std::variant<str, int64, float64, bool, ::std::monostate>& actual, const ::std::variant<str, int64, float64, bool, ::std::monostate>& expected) {
+        try {
+            return py_to_string(actual) == py_to_string(expected);
+        }
+        catch (const ::std::exception& ex) {
+            return actual == expected;
+        }
+    }
+    
+    bool py_assert_true(bool cond, const str& label = "") {
+        if (cond)
+            return true;
+        if (label != "")
+            py_print("[assert_true] " + label + ": False");
+        else
+            py_print("[assert_true] False");
+        return false;
+    }
+    
+    bool py_assert_eq(const ::std::variant<str, int64, float64, bool, ::std::monostate>& actual, const ::std::variant<str, int64, float64, bool, ::std::monostate>& expected, const str& label = "") {
+        bool ok = _eq_any(actual, expected);
+        if (ok)
+            return true;
+        if (label != "")
+            py_print("[assert_eq] " + label + ": actual=" + py_to_string(actual) + ", expected=" + py_to_string(expected));
+        else
+            py_print("[assert_eq] actual=" + py_to_string(actual) + ", expected=" + py_to_string(expected));
+        return false;
+    }
+    
+    bool py_assert_all(const list<bool>& results, const str& label = "") {
+        for (bool v : results) {
+            if (!(v)) {
+                if (label != "")
+                    py_print("[assert_all] " + label + ": False");
+                else
+                    py_print("[assert_all] False");
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    bool py_assert_stdout(const list<str>& expected_lines, const object& fn) {
+        // self_hosted parser / runtime 互換優先: stdout capture は未実装。
+        return true;
+    }
+    
+}  // namespace pytra_mod_assertions
+
+int main(int argc, char** argv) {
+    pytra_configure_from_argv(argc, argv);
+    using namespace pytra_mod_assertions;
+    return 0;
+}

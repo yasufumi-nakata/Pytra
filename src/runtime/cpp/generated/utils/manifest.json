@@ -1,0 +1,27 @@
+{
+  "entry": "src/pytra/utils/assertions.py",
+  "include_dir": "src/runtime/cpp/generated/utils/include",
+  "src_dir": "src/runtime/cpp/generated/utils/src",
+  "modules": [
+    {
+      "module": "src/pytra/utils/assertions.py",
+      "kind": "user",
+      "label": "assertions",
+      "header": "src/runtime/cpp/generated/utils/include/assertions.h",
+      "source": "src/runtime/cpp/generated/utils/src/assertions.cpp",
+      "is_entry": true,
+      "helper_id": "",
+      "owner_module_id": ""
+    },
+    {
+      "module": "__pytra_helper__.cpp.utils_assertions.object_iter",
+      "kind": "helper",
+      "label": "utils_assertions_cpp_object_iter_helper",
+      "header": "src/runtime/cpp/generated/utils/include/utils_assertions_cpp_object_iter_helper.h",
+      "source": "src/runtime/cpp/generated/utils/src/utils_assertions_cpp_object_iter_helper.cpp",
+      "is_entry": false,
+      "helper_id": "cpp.object_iter",
+      "owner_module_id": "utils.assertions"
+    }
+  ]
+}

@@ -1421,7 +1421,14 @@ def _header_cpp_type_from_east(
         if len(folded) == 1:
             only = folded[0]
             return _header_cpp_type_from_east(only, ref_classes, class_names)
-        raise ValueError("unsupported general union for C++ emit: " + t)
+        # 一般ユニオン（2型以上）→ std::variant<T1, T2, ..., std::monostate>
+        has_none = len(non_none) < len(parts)
+        variant_args: list[str] = [
+            _header_cpp_type_from_east(p, ref_classes, class_names) for p in non_none
+        ]
+        if has_none:
+            variant_args.append("::std::monostate")
+        return "::std::variant<" + ", ".join(variant_args) + ">"
     if t.startswith("list[") and t.endswith("]"):
         inner = t[5:-1].strip()
         return "list<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
