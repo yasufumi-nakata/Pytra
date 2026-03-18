@@ -55,3 +55,4 @@ EAST3 IR には現時点でこれら専用のノードが存在せず、emitter 
 ## 決定ログ
 
 - 2026-03-18: py_runtime.h 縮小・多言語対応容易化の調査において `py_len` / `py_slice` が EAST3 IR ノードを持たず文字列 emit されていることを確認し起票。P6-CPP-LIST-MUT-IR-BYPASS-FIX-01 の後に着手予定。
+- 2026-03-18: 実装完了。py_div アプローチを踏襲し object 境界は fallback 維持。py_len は base_ops.h へ移動（py_runtime.h は include 経由で再公開）。py_slice の list 版は emitter が py_list_slice_copy を直接 emit するため py_runtime.h から除去。str 版は py_str_slice にリネームし base_ops.h へ移動。truthy_len_expr を CppEmitter でオーバーライドし `!X.empty()` 生成。str/bytes の py_len → .size() 変換は _render_container_size_expr 経由。生成済み C++ ファイル（string_ops.cpp / json.cpp / re.cpp / gif.cpp / argparse.cpp）を手動更新。selfhost mismatches=0 確認済み。cpp 0.581.3。

@@ -4400,8 +4400,8 @@ if __name__ == "__main__":
             out_cpp = work / "cartridge_like.cpp"
             transpile(src_py, out_cpp)
             cpp = out_cpp.read_text(encoding="utf-8")
-            self.assertIn("py_len(this->chr_rom)", cpp)
-            self.assertNotIn("!(this->chr_rom)", cpp)
+            self.assertIn("!(this->chr_rom).empty()", cpp)
+            self.assertNotIn("py_len(this->chr_rom)", cpp)
             comp = self._run_subprocess_with_timeout(
                 [
                     "g++",

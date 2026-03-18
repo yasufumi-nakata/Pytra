@@ -789,7 +789,7 @@ class East3CppBridgeTest(unittest.TestCase):
     def test_render_cond_for_bytes_routes_to_len_truthiness(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         bytes_name = {"kind": "Name", "id": "payload", "resolved_type": "bytes"}
-        self.assertEqual(emitter.render_cond(bytes_name), "py_len(payload) != 0")
+        self.assertEqual(emitter.render_cond(bytes_name), "!payload.empty()")
 
     def test_render_unbox_honors_ctx_for_refclass_cast(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1643,7 +1643,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(starts_node), 'py_startswith(s, "x")')
         self.assertEqual(
             emitter.render_expr(ends_slice_node),
-            'py_endswith(py_slice(s, py_to<int64>(1), py_to<int64>(3)), "x")',
+            'py_endswith(py_str_slice(s, py_to<int64>(1), py_to<int64>(3)), "x")',
         )
 
     def test_builtin_runtime_py_startswith_endswith_use_ir_node_path(self) -> None:
@@ -1683,7 +1683,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(starts_expr), 'py_startswith(s, "x")')
         self.assertEqual(
             emitter.render_expr(ends_expr),
-            'py_endswith(py_slice(s, py_to<int64>(1), py_to<int64>(3)), "x")',
+            'py_endswith(py_str_slice(s, py_to<int64>(1), py_to<int64>(3)), "x")',
         )
 
     def test_render_expr_supports_str_find_ir_node(self) -> None:

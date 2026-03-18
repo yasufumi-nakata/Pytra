@@ -85,6 +85,9 @@ class CppRuntimeExprEmitter:
             if typed_deque_len != "":
                 return typed_deque_len
             value_expr = self.render_expr(value_node)
+            value_t = self.normalize_type_name(self.get_expr_type(value_node))
+            if value_t in {"str", "bytes"}:
+                return self._render_container_size_expr(value_expr)
             return f"py_len({value_expr})"
         if op == "to_string":
             return self.render_to_string(expr_d.get("value"))

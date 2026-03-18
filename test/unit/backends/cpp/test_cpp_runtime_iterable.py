@@ -99,7 +99,7 @@ int main() {
     rc<list<int64>> typed = rc_list_from_value(list<int64>{3, 1, 2});
     assert(py_len(typed) == 3);
     assert(py_to_bool(typed));
-    list<int64> typed_head = py_slice(typed, 0, 2);
+    list<int64> typed_head = py_list_slice_copy(rc_list_ref(typed), 0, 2);
     assert(typed_head.size() == 2);
     assert(typed_head[0] == 3);
     assert(typed_head[1] == 1);
@@ -139,7 +139,7 @@ int main() {
     assert(typed_repeat[5] == 9);
 
     list<int64> plain = list<int64>{4, 5, 6};
-    list<int64> plain_slice = py_slice(plain, 0, 2);
+    list<int64> plain_slice = py_list_slice_copy(plain, 0, 2);
     assert(plain_slice.size() == 2);
     assert(plain_slice[0] == 4);
     assert(py_at(plain, -1) == 6);
@@ -332,6 +332,7 @@ int main() {
         gc_header = (ROOT / "src/runtime/cpp/native/core/gc.h").read_text(encoding="utf-8")
         runtime_header = (ROOT / "src/runtime/cpp/native/core/py_runtime.h").read_text(encoding="utf-8")
         list_ops_header = (ROOT / "src/runtime/cpp/native/built_in/list_ops.h").read_text(encoding="utf-8")
+        base_ops_header = (ROOT / "src/runtime/cpp/native/built_in/base_ops.h").read_text(encoding="utf-8")
         iter_ops_header = (ROOT / "src/runtime/cpp/native/built_in/iter_ops.h").read_text(encoding="utf-8")
         sequence_header = (ROOT / "src/runtime/cpp/native/built_in/sequence.h").read_text(encoding="utf-8")
         contains_header = (ROOT / "src/runtime/cpp/native/built_in/contains.h").read_text(encoding="utf-8")
@@ -592,7 +593,9 @@ int main() {
         self.assertNotIn("static inline void py_reverse(object& v)", runtime_header)
         self.assertNotIn("static inline void py_sort(rc<list<T>>& v)", runtime_header)
         self.assertNotIn("static inline void py_sort(object& v)", runtime_header)
-        self.assertIn("static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up)", runtime_header)
+        self.assertNotIn("static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up)", runtime_header)
+        self.assertIn("static inline list<T> py_list_slice_copy(const list<T>& values, int64 lo, int64 up)", list_ops_header)
+        self.assertIn("static inline str py_str_slice(const str& v, int64 lo, int64 up)", base_ops_header)
         self.assertNotIn("py_append(", argparse_cpp)
         self.assertNotIn("py_append(", pathlib_cpp)
         self.assertNotIn("py_append(", random_cpp)

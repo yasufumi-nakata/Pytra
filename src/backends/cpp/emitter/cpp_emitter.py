@@ -3808,21 +3808,51 @@ class CppEmitter(
 
     # repr-string fallback helpers removed; keep EAST3 structured-node path only.
 
+    def _render_slice_expr(self, val: str, val_node: Any, lo: str, up: str) -> str:
+        """スライス式を型に応じた C++ 式へ変換する。"""
+        val_ty_norm = self.normalize_type_name(self.get_expr_type(val_node))
+        if val_ty_norm in {"", "unknown"}:
+            val_ty_norm = self.normalize_type_name(self.infer_rendered_arg_type(val, val_ty_norm, self.declared_var_types))
+        if val_ty_norm.startswith("list[") and val_ty_norm.endswith("]"):
+            if self._uses_pyobj_ref_first_list_lvalue_expr(val_node):
+                list_ref = f"rc_list_ref({val})"
+                return f"py_list_slice_copy({list_ref}, {lo}, {up})"
+            return f"py_list_slice_copy({val}, {lo}, {up})"
+        # str / bytes / unknown → py_str_slice（object 境界の list は未対応）
+        return f"py_str_slice({val}, {lo}, {up})"
+
+    def _render_slice_upper_default(self, val: str, val_node: Any) -> str:
+        """スライスの上限デフォルト値（暗黙 len）を C++ 式で返す。"""
+        val_ty_norm = self.normalize_type_name(self.get_expr_type(val_node))
+        if val_ty_norm in {"", "unknown"}:
+            val_ty_norm = self.normalize_type_name(self.infer_rendered_arg_type(val, val_ty_norm, self.declared_var_types))
+        if val_ty_norm.startswith("list[") and val_ty_norm.endswith("]"):
+            if self._uses_pyobj_ref_first_list_lvalue_expr(val_node):
+                return f"static_cast<int64>(rc_list_ref({val}).size())"
+            if self._is_identifier_expr(val):
+                return f"static_cast<int64>({val}.size())"
+            return f"static_cast<int64>(({val}).size())"
+        # str / bytes など
+        if self._is_identifier_expr(val):
+            return f"static_cast<int64>({val}.size())"
+        return f"static_cast<int64>(({val}).size())"
+
     def _render_subscript_expr(self, expr: dict[str, Any]) -> str:
         """Subscript/Slice 式を C++ 式へ変換する。"""
-        val = self.render_expr(expr.get("value"))
-        val_ty0 = self.get_expr_type(expr.get("value"))
+        val_node = expr.get("value")
+        val = self.render_expr(val_node)
+        val_ty0 = self.get_expr_type(val_node)
         val_ty = val_ty0 if isinstance(val_ty0, str) else ""
         if self.any_dict_get_str(expr, "lowered_kind", "") == "SliceExpr":
             lo = self.render_expr(expr.get("lower")) if expr.get("lower") is not None else "0"
-            up = self.render_expr(expr.get("upper")) if expr.get("upper") is not None else f"py_len({val})"
-            return f"py_slice({val}, {lo}, {up})"
+            up = self.render_expr(expr.get("upper")) if expr.get("upper") is not None else self._render_slice_upper_default(val, val_node)
+            return self._render_slice_expr(val, val_node, lo, up)
         sl: object = expr.get("slice")
         sl_node = self.any_to_dict_or_empty(sl)
         if len(sl_node) > 0 and self._node_kind_from_dict(sl_node) == "Slice":
             lo = self.render_expr(sl_node.get("lower")) if sl_node.get("lower") is not None else "0"
-            up = self.render_expr(sl_node.get("upper")) if sl_node.get("upper") is not None else f"py_len({val})"
-            return f"py_slice({val}, {lo}, {up})"
+            up = self.render_expr(sl_node.get("upper")) if sl_node.get("upper") is not None else self._render_slice_upper_default(val, val_node)
+            return self._render_slice_expr(val, val_node, lo, up)
         idx = self.render_expr(sl)
         idx_ty0 = self.get_expr_type(sl)
         idx_ty = idx_ty0 if isinstance(idx_ty0, str) else ""
@@ -4273,6 +4303,9 @@ class CppEmitter(
         if deque_len != "":
             return deque_len
         value_expr = self.render_expr(value_node)
+        value_t = self.normalize_type_name(self.get_expr_type(value_node))
+        if value_t in {"str", "bytes"}:
+            return self._render_container_size_expr(value_expr)
         return f"py_len({value_expr})"
 
     def _render_expr_kind_obj_str(self, expr: Any, expr_d: dict[str, Any]) -> str:
@@ -4317,6 +4350,13 @@ class CppEmitter(
     def _render_expr_kind_lambda(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
         return self._render_lambda_expr(expr_d)
+
+    def truthy_len_expr(self, rendered: str) -> str:
+        """C++ では `.empty()` による真偽判定を使う（py_len 呼び出しを排除）。"""
+        base = self._trim_ws(rendered)
+        if self._is_identifier_expr(base):
+            return f"!{base}.empty()"
+        return f"!({base}).empty()"
 
     def render_cond(self, expr: Any) -> str:
         """条件式文脈向けに Any/object を `py_to_bool` 判定へ寄せる。"""
@@ -4659,11 +4699,11 @@ class CppEmitter(
                 return f"{fn_name}({owner_expr}, {needle_expr})"
             start_expr = self.render_expr(expr_d.get("start"))
             start_cast = f"py_to<int64>({start_expr})"
-            end_expr = f"py_len({owner_expr})"
+            end_expr = self._render_container_size_expr(owner_expr)
             if self.any_dict_has(expr_d, "end"):
                 end_raw = self.render_expr(expr_d.get("end"))
                 end_expr = f"py_to<int64>({end_raw})"
-            sliced = f"py_slice({owner_expr}, {start_cast}, {end_expr})"
+            sliced = f"py_str_slice({owner_expr}, {start_cast}, {end_expr})"
             return f"{fn_name}({sliced}, {needle_expr})"
         if kind == "StrFindOp":
             owner_expr = self.render_expr(expr_d.get("owner"))
@@ -4679,7 +4719,7 @@ class CppEmitter(
             if len(args) == 2:
                 return f"{fn_name}({join_str_list(', ', args)})"
             if len(args) == 3:
-                return f"{window_name}({args[0]}, {args[1]}, {args[2]}, py_len({owner_expr}))"
+                return f"{window_name}({args[0]}, {args[1]}, {args[2]}, {self._render_container_size_expr(owner_expr)})"
             return f"{window_name}({join_str_list(', ', args)})"
         if kind == "StrCharClassOp":
             value_node = expr_d.get("value")

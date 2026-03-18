@@ -53,12 +53,12 @@ namespace pytra::std::json {
     }
     
     int64 _int_from_hex4(const str& hx) {
-        if (py_len(hx) != 4)
+        if (hx.size() != 4)
             throw ValueError("invalid json unicode escape");
-        int64 v0 = _hex_value(py_slice(hx, 0, 1));
-        int64 v1 = _hex_value(py_slice(hx, 1, 2));
-        int64 v2 = _hex_value(py_slice(hx, 2, 3));
-        int64 v3 = _hex_value(py_slice(hx, 3, 4));
+        int64 v0 = _hex_value(py_str_slice(hx, 0, 1));
+        int64 v1 = _hex_value(py_str_slice(hx, 1, 2));
+        int64 v2 = _hex_value(py_str_slice(hx, 2, 3));
+        int64 v3 = _hex_value(py_str_slice(hx, 3, 4));
         return v0 * 4096 + v1 * 256 + v2 * 16 + v3;
     }
     
@@ -71,10 +71,10 @@ namespace pytra::std::json {
         int64 d1 = v % 16;
         v = v / 16;
         int64 d0 = v % 16;
-        str p0 = py_to_string(py_slice(_HEX_DIGITS, d0, d0 + 1));
-        str p1 = py_to_string(py_slice(_HEX_DIGITS, d1, d1 + 1));
-        str p2 = py_to_string(py_slice(_HEX_DIGITS, d2, d2 + 1));
-        str p3 = py_to_string(py_slice(_HEX_DIGITS, d3, d3 + 1));
+        str p0 = py_to_string(py_str_slice(_HEX_DIGITS, d0, d0 + 1));
+        str p1 = py_to_string(py_str_slice(_HEX_DIGITS, d1, d1 + 1));
+        str p2 = py_to_string(py_str_slice(_HEX_DIGITS, d2, d2 + 1));
+        str p3 = py_to_string(py_str_slice(_HEX_DIGITS, d3, d3 + 1));
         return p0 + p1 + p2 + p3;
     }
     
@@ -278,7 +278,7 @@ namespace pytra::std::json {
 
     _JsonParser::_JsonParser(const str& text) {
             this->text = text;
-            this->n = py_len(text);
+            this->n = text.size();
             this->i = 0;
     }
 
@@ -307,15 +307,15 @@ namespace pytra::std::json {
                 return _jv_arr(this->_parse_array());
             if (ch == "\"")
                 return _jv_str(this->_parse_string());
-            if ((ch == "t") && (py_slice(this->text, this->i, this->i + 4) == "true")) {
+            if ((ch == "t") && (py_str_slice(this->text, this->i, this->i + 4) == "true")) {
                 this->i += 4;
                 return _jv_bool(true);
             }
-            if ((ch == "f") && (py_slice(this->text, this->i, this->i + 5) == "false")) {
+            if ((ch == "f") && (py_str_slice(this->text, this->i, this->i + 5) == "false")) {
                 this->i += 5;
                 return _jv_bool(false);
             }
-            if ((ch == "n") && (py_slice(this->text, this->i, this->i + 4) == "null")) {
+            if ((ch == "n") && (py_str_slice(this->text, this->i, this->i + 4) == "null")) {
                 this->i += 4;
                 return _jv_null();
             }
@@ -410,7 +410,7 @@ namespace pytra::std::json {
                     } else if (esc == "u") {
                         if (this->i + 4 > this->n)
                             throw ValueError("invalid json unicode escape");
-                        str hx = py_slice(this->text, this->i, this->i + 4);
+                        str hx = py_str_slice(this->text, this->i, this->i + 4);
                         this->i += 4;
                         rc_list_ref(out_chars).append(py_chr(_int_from_hex4(hx)));
                     } else {
@@ -465,7 +465,7 @@ namespace pytra::std::json {
                     }
                 }
             }
-            str token = py_slice(this->text, start, this->i);
+            str token = py_str_slice(this->text, start, this->i);
             if (is_float) {
                 float64 num_f = py_to_float64(token);
                 return _jv_float(num_f);

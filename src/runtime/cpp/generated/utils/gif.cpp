@@ -25,7 +25,7 @@ list<int64> _gif_u16le(int64 v) {
 }
 
 bytes _lzw_encode(const bytes& data, int64 min_code_size = 8) {
-    if (py_len(data) == 0) {
+    if (static_cast<int64>(data.size()) == 0) {
         list<int64> empty = {};
         return bytes(empty);
     }
@@ -88,7 +88,7 @@ bytes grayscale_palette() {
 }
 
 void save_gif(const str& path, int64 width, int64 height, const list<bytes>& frames, const bytes& palette, int64 delay_cs = 4, int64 loop = 0) {
-    if (py_len(palette) != 256 * 3)
+    if (static_cast<int64>(palette.size()) != 256 * 3)
         throw ValueError("palette must be 256*3 bytes");
     list<list<int64>> frame_lists = {};
     for (bytes fr : frames) {
@@ -131,8 +131,8 @@ void save_gif(const str& path, int64 width, int64 height, const list<bytes>& fra
         out.append(int64(8));
         bytes compressed = _lzw_encode(bytes(fr_list), 8);
         int64 pos = 0;
-        while (pos < py_len(compressed)) {
-            int64 remain = py_len(compressed) - pos;
+        while (pos < static_cast<int64>(compressed.size())) {
+            int64 remain = static_cast<int64>(compressed.size()) - pos;
             int64 chunk_len = (remain > 255 ? 255 : remain);
             out.append(chunk_len);
             int64 i = 0;

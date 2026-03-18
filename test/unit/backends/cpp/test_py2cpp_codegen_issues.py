@@ -1545,7 +1545,7 @@ def check(x: object) -> bool:
             "int64 head = py_list_at_ref(rc_list_ref(xs), 0);",
             cpp,
         )
-        self.assertIn("rc<list<int64>> seg = rc_list_from_value(py_slice(xs, 0, 2));", cpp)
+        self.assertIn("rc<list<int64>> seg = rc_list_from_value(py_list_slice_copy(rc_list_ref(xs), 0, 2));", cpp)
 
     def test_pyobj_list_model_list_comprehension_returns_object(self) -> None:
         src = """def f(xs: list[int]) -> list[int]:

@@ -54,29 +54,10 @@ inline str str::join(const list<str>& parts) const {
     return py_join(*this, parts);
 }
 
-template <class T>
-static inline int64 py_len(const rc<list<T>>& v) {
-    if (!v) return 0;
-    return static_cast<int64>(v->size());
-}
+// py_len / py_str_slice（旧 py_slice の str 版）は native/built_in/base_ops.h へ移動済み。
+#include "runtime/cpp/native/built_in/base_ops.h"
 
-// Python 組み込み相当の基本ユーティリティ（len / 文字列化）。
-template <class T>
-static inline int64 py_len(const T& v) {
-    return static_cast<int64>(v.size());
-}
-
-template <class T>
-static inline int64 py_len(const ::std::optional<T>& v) {
-    if (!v.has_value()) return 0;
-    return py_len(*v);
-}
-
-template <::std::size_t N>
-static inline int64 py_len(const char (&)[N]) {
-    return N > 0 ? static_cast<int64>(N - 1) : 0;
-}
-
+// Python 組み込み相当の基本ユーティリティ（文字列化）。
 template <class T>
 static inline ::std::string py_to_string(const T& v) {
     ::std::ostringstream oss;
@@ -165,28 +146,9 @@ static inline T py_to(const T& v) {
     return v;
 }
 
-// リスト操作（slice / at / append_mut 等）は native/built_in/list_ops.h へ移動済み。
+// リスト操作（at / append_mut 等）は native/built_in/list_ops.h へ移動済み。
+// py_slice（list/rc 版）は emitter が py_list_slice_copy を直接 emit するため除去。
 #include "runtime/cpp/native/built_in/list_ops.h"
-
-template <class T>
-static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up) {
-    return py_list_slice_copy(v, lo, up);
-}
-
-template <class T>
-static inline list<T> py_slice(const rc<list<T>>& v, int64 lo, int64 up) {
-    return py_list_slice_copy(rc_list_ref(v), lo, up);
-}
-
-static inline str py_slice(const str& v, int64 lo, int64 up) {
-    const int64 n = static_cast<int64>(v.size());
-    if (lo < 0) lo += n;
-    if (up < 0) up += n;
-    lo = ::std::max<int64>(0, ::std::min<int64>(lo, n));
-    up = ::std::max<int64>(0, ::std::min<int64>(up, n));
-    if (up < lo) up = lo;
-    return v.substr(static_cast<::std::size_t>(lo), static_cast<::std::size_t>(up - lo));
-}
 
 template <class T>
 static inline typename list<T>::const_reference py_at(const list<T>& v, int64 idx) {

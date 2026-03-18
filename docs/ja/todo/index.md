@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-18（P6-CPP-LIST-MUT-IR-BYPASS-FIX-01 完了）
+最終更新: 2026-03-18（P6-EAST3-LEN-SLICE-NODE-01 完了）
 
 ## 文脈運用ルール
 
@@ -60,4 +60,5 @@
 
 文脈: [docs/ja/plans/p6-east3-len-slice-node.md](../plans/p6-east3-len-slice-node.md)
 
-2. [ ] [ID: P6-EAST3-LEN-SLICE-NODE-01] `py_len` / `py_slice` を EAST3 IR ノード化し、C++ emitter がインライン式を生成するよう変更。`py_runtime.h` から除去する。
+2. [x] [ID: P6-EAST3-LEN-SLICE-NODE-01] `py_len` / `py_slice` を EAST3 IR ノード化し、C++ emitter がインライン式を生成するよう変更。`py_runtime.h` から除去する。
+- 進捗メモ: 完了。py_len を base_ops.h へ移動、py_slice の str 版を py_str_slice にリネーム（同 base_ops.h）、list 版は emitter が py_list_slice_copy を直接 emit するため除去。truthy_len_expr オーバーライドで .empty() 判定を生成。selfhost mismatches=0。cpp 0.581.3。

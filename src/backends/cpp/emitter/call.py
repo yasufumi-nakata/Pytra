@@ -871,7 +871,7 @@ class CppCallEmitter:
             if len(call_args) == 1:
                 return f"{fn_name}({owner_expr}, {call_args[0]})"
             if len(call_args) == 2:
-                return f"{window_name}({owner_expr}, {call_args[0]}, {call_args[1]}, py_len({owner_expr}))"
+                return f"{window_name}({owner_expr}, {call_args[0]}, {call_args[1]}, {self._render_container_size_expr(owner_expr)})"
             if len(call_args) == 3:
                 return f"{window_name}({owner_expr}, {call_args[0]}, {call_args[1]}, {call_args[2]})"
             return None
