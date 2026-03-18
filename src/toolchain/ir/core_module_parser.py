@@ -717,7 +717,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                     continue
                 # `Enum/IntEnum/IntFlag` は class 定義の lowering で吸収されるため、
                 # 依存ヘッダ解決用の ImportBinding には積まない。
-                if not (mod_name == "pytra.std.enum" and sym_name in {"Enum", "IntEnum", "IntFlag"}):
+                if not (mod_name in {"enum", "pytra.std.enum"} and sym_name in {"Enum", "IntEnum", "IntFlag"}):
                     _sh_append_import_binding(
                         import_bindings=import_bindings,
                         import_binding_names=import_binding_names,

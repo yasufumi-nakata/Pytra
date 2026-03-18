@@ -375,7 +375,7 @@ def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
     symbol_table_line = _runtime_module_alias_via_symbol_table(alias_txt, mod)
     if symbol_table_line != "":
         return symbol_table_line
-    if mod == "pytra.std.enum":
+    if mod in {"enum", "pytra.std.enum"}:
         return "local " + alias_txt + " = { Enum = {}, IntEnum = {}, IntFlag = {} }"
     if mod == "pytra.std.argparse":
         return "local " + alias_txt + " = { ArgumentParser = function(...) return {} end }"
@@ -397,7 +397,7 @@ def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_s
     alias_expr = _runtime_symbol_alias_expr(mod, sym)
     if alias_expr != "":
         return "local " + alias_txt + " = " + alias_expr
-    if mod == "pytra.std.enum":
+    if mod in {"enum", "pytra.std.enum"}:
         if sym in {"Enum", "IntEnum", "IntFlag"}:
             return "local " + alias_txt + " = {}"
         return ""
