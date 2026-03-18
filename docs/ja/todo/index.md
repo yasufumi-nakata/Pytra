@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-19（P0-PYTRA-IMPORT-UNIFY-01 追加）
+最終更新: 2026-03-19（5 件追加）
 
 ## 文脈運用ルール
 
@@ -33,15 +33,55 @@
 
 ### P0: 緊急修正
 
-#### P0-1: Python 標準モジュール import を pytra.* 経由に統一
+#### P0-1: inline union を tagged struct に統一
 
-文脈: [docs/ja/plans/p0-pytra-import-unify.md](../plans/p0-pytra-import-unify.md)
+1. [ ] [ID: P0-INLINE-UNION-TAGGED-STRUCT-01] 引数型注釈等の inline union（`str | Path` 等）を `std::variant` ではなく tagged struct として emit する。名前は `_Union_` + メンバ型名で自動生成し、同一 union 型は同一 struct を再利用する。pathlib.py の `str | Path` 対応はこのタスク完了後に実施する。
 
-1. [x] [ID: P0-PYTRA-IMPORT-UNIFY-01]
+### P1: 言語機能追加
 
-#### P0-2: inline union を tagged struct に統一
+#### P1-1: json.py を type JsonVal = ... で書き直し
 
-2. [ ] [ID: P0-INLINE-UNION-TAGGED-STRUCT-01] 引数型注釈等の inline union（`str | Path` 等）を `std::variant` ではなく tagged struct として emit する。名前は `_Union_` + メンバ型名で自動生成し、同一 union 型は同一 struct を再利用する。pathlib.py の `str | Path` 対応はこのタスク完了後に実施する。 `pytra.typing` / `pytra.enum` / `pytra.dataclasses` ダミーモジュールを作成し、Python 標準モジュールの import を `pytra.*` 経由に統一する。変換器はこれらの import を無視する。
+文脈: [docs/ja/plans/p1-json-tagged-union-rewrite.md](../plans/p1-json-tagged-union-rewrite.md)
+
+1. [ ] [ID: P1-JSON-TAGGED-UNION-REWRITE-01] `json.py` を `type JsonVal = None | bool | int | float | str | list[JsonVal] | dict[str, JsonVal]` で書き直し、再帰的 tagged union の実用検証を行う。P0-INLINE-UNION 完了が前提。
+
+### P2: compile / link パイプライン分離
+
+#### P2-1: compile / link 2段パイプライン
+
+文脈: [docs/ja/plans/p2-compile-link-pipeline.md](../plans/p2-compile-link-pipeline.md)
+
+1. [ ] [ID: P2-COMPILE-LINK-PIPELINE-01] 単一ファイルモードを廃止し全パスを compile → link 経由に統一する。type_id を linker で DFS 確定し、`PYTRA_TID_*` 定数・実行時レジストリを廃止する。
+
+### P3: コード品質改善
+
+#### P3-1: from __future__ import annotations の廃止検討
+
+文脈: [docs/ja/plans/p3-future-annotations-removal.md](../plans/p3-future-annotations-removal.md)
+
+1. [ ] [ID: P3-FUTURE-ANNOTATIONS-REMOVAL-01] パーサーがアノテーションを自前でパースするため `from __future__ import annotations` が不要か検証し、不要であれば `src/pytra/` から削除する。
+
+#### P3-2: predicates.py の @template 化（Any 除去）
+
+文脈: [docs/ja/plans/p3-predicates-template.md](../plans/p3-predicates-template.md)
+
+2. [ ] [ID: P3-PREDICATES-TEMPLATE-01] `py_any` / `py_all` を `Any` 引数から `@template("T")` に変更し、テンプレート関数として生成する。`src/pytra/built_in/predicates.py` から `Any` を除去する。
+
+### P4: テスト修正
+
+#### P4-1: pre-existing テスト失敗の修正
+
+文脈: [docs/ja/plans/p4-preexisting-test-failures-fix.md](../plans/p4-preexisting-test-failures-fix.md)
+
+1. [ ] [ID: P4-PREEXISTING-TEST-FAILURES-FIX-01] `test_py2cpp_features.py` の 4 件の pre-existing テスト失敗を修正する。
+
+### P5: バックエンド修正
+
+#### P5-1: Lua バックエンドの emit 失敗修正
+
+文脈: [docs/ja/plans/p5-lua-backend-emit-fix.md](../plans/p5-lua-backend-emit-fix.md)
+
+1. [ ] [ID: P5-LUA-BACKEND-EMIT-FIX-01] Lua バックエンドで `pytra.std.collections` (Deque) の transpile が空出力になる問題を修正する。
 
 ### P6: ランタイム最適化
 
@@ -52,14 +92,6 @@
 #### P6-2: Deque をネイティブ型にマッピング
 
 2. [ ] [ID: P6-DEQUE-NATIVE-MAPPING-01] ネイティブ deque を持つバックエンドで、`Deque` クラスを list ベース実装ではなく言語ネイティブの deque 型に emit するよう emitter を改良する。C++ は `std::deque` で対応済み。Rust(`VecDeque`), Java/Kotlin(`ArrayDeque`), Scala(`ArrayDeque`), Nim(`Deque`), PHP(`SplDoublyLinkedList`) が対象。
-
-### P2: compile / link パイプライン分離
-
-#### P2-1: compile / link 2段パイプライン
-
-文脈: [docs/ja/plans/p2-compile-link-pipeline.md](../plans/p2-compile-link-pipeline.md)
-
-2. [ ] [ID: P2-COMPILE-LINK-PIPELINE-01] `.py` → `.east`（EAST3 JSON）の compile 段と、`.east` 群 → ターゲット言語の link 段を分離する。type_id を linker で DFS 確定し、実行時レジストリを廃止する。
 
 ### P7: selfhost 完全自立化
 
