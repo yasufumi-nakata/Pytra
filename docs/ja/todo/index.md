@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-18（P7-SELFHOST-NATIVE-COMPILER-ELIM-01 追加）
+最終更新: 2026-03-18（P6-EAST3-GENERAL-UNION-VARIANT-01、P6-CPP-EMIT-LIST-DICT-CLEAR-01 追加）
 
 ## 文脈運用ルール
 
@@ -63,29 +63,41 @@
 2. [x] [ID: P6-EAST3-LEN-SLICE-NODE-01] `py_len` / `py_slice` を EAST3 IR ノード化し、C++ emitter がインライン式を生成するよう変更。`py_runtime.h` から除去する。
 - 進捗メモ: 完了。py_len を base_ops.h へ移動、py_slice の str 版を py_str_slice にリネーム（同 base_ops.h）、list 版は emitter が py_list_slice_copy を直接 emit するため除去。truthy_len_expr オーバーライドで .empty() 判定を生成。selfhost mismatches=0。cpp 0.581.3。
 
+#### P6-2a: list/dict .clear() の BuiltinCall lowering
+
+文脈: [docs/ja/plans/p6-cpp-emit-list-dict-clear.md](../plans/p6-cpp-emit-list-dict-clear.md)
+
+3. [ ] [ID: P6-CPP-EMIT-LIST-DICT-CLEAR-01] C++ emitter が `list[T].clear()` / `dict[K,V].clear()` を BuiltinCall として lowering し `v.clear()` を emit できるようにする。`type_id.py` 再生成のブロッカー解除。
+
+#### P6-2b: 一般ユニオン型 → std::variant / 多言語 tagged union
+
+文脈: [docs/ja/plans/p6-east3-general-union-variant.md](../plans/p6-east3-general-union-variant.md)
+
+4. [ ] [ID: P6-EAST3-GENERAL-UNION-VARIANT-01] `str | bool | None` 等の一般ユニオン型を C++ では `std::variant<...>` に変換して emit できるようにする。`argparse.py` / `assertions.py` 再生成のブロッカー解除。
+
 #### P6-3: py_is_none のインライン emit 化
 
 文脈: [docs/ja/plans/p6-east3-is-none-inline.md](../plans/p6-east3-is-none-inline.md)
 
-3. [ ] [ID: P6-EAST3-IS-NONE-INLINE-01] `py_is_none(v)` を型ベースのインライン式（`!v.has_value()` / `!v` / `false`）に置き換え、`py_runtime.h` から除去する。
+5. [ ] [ID: P6-EAST3-IS-NONE-INLINE-01] `py_is_none(v)` を型ベースのインライン式（`!v.has_value()` / `!v` / `false`）に置き換え、`py_runtime.h` から除去する。
 
 #### P6-4: py_to 系のインライン emit 化
 
 文脈: [docs/ja/plans/p6-east3-py-to-inline.md](../plans/p6-east3-py-to-inline.md)
 
-4. [ ] [ID: P6-EAST3-PY-TO-INLINE-01] `py_to<T>` / `py_to_int64` / `py_to_float64` を型確定ケースで `static_cast` / `std::stoll` 等にインライン置き換えし、`py_runtime.h` から除去する。
+6. [ ] [ID: P6-EAST3-PY-TO-INLINE-01] `py_to<T>` / `py_to_int64` / `py_to_float64` を型確定ケースで `static_cast` / `std::stoll` 等にインライン置き換えし、`py_runtime.h` から除去する。
 
 #### P6-5: py_to_string のインライン emit 化
 
 文脈: [docs/ja/plans/p6-east3-py-to-string-inline.md](../plans/p6-east3-py-to-string-inline.md)
 
-5. [ ] [ID: P6-EAST3-PY-TO-STRING-INLINE-01] `py_to_string(v)` を型確定ケースで `std::to_string` / identity 等にインライン置き換えし、`py_runtime.h` から除去する。
+7. [ ] [ID: P6-EAST3-PY-TO-STRING-INLINE-01] `py_to_string(v)` を型確定ケースで `std::to_string` / identity 等にインライン置き換えし、`py_runtime.h` から除去する。
 
 #### P6-6: py_at（list/rc 版）のインライン emit 化
 
 文脈: [docs/ja/plans/p6-east3-py-at-inline.md](../plans/p6-east3-py-at-inline.md)
 
-6. [ ] [ID: P6-EAST3-PY-AT-INLINE-01] `py_at(list_or_rc, idx)` の emit を `py_list_at_ref` 直接 emit に統一し、list/rc 版の `py_at` を `py_runtime.h` から除去する。
+8. [ ] [ID: P6-EAST3-PY-AT-INLINE-01] `py_at(list_or_rc, idx)` の emit を `py_list_at_ref` 直接 emit に統一し、list/rc 版の `py_at` を `py_runtime.h` から除去する。
 
 ### P7: selfhost 完全自立化
 
@@ -93,4 +105,4 @@
 
 文脈: [docs/ja/plans/p7-selfhost-native-compiler-elim.md](../plans/p7-selfhost-native-compiler-elim.md)
 
-1. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] `src/runtime/cpp/native/compiler/` を完全削除し、selfhost バイナリがホスト Python をシェルアウトなしで動作できるようにする。
+9. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] `src/runtime/cpp/native/compiler/` を完全削除し、selfhost バイナリがホスト Python をシェルアウトなしで動作できるようにする。

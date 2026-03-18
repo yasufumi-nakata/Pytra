@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-18 (Added P7-SELFHOST-NATIVE-COMPILER-ELIM-01)
+Last updated: 2026-03-18 (Added P6-EAST3-GENERAL-UNION-VARIANT-01, P6-CPP-EMIT-LIST-DICT-CLEAR-01)
 
 ## Context Operation Rules
 
@@ -63,29 +63,41 @@ Context: [docs/ja/plans/p6-east3-len-slice-node.md](../../ja/plans/p6-east3-len-
 2. [x] [ID: P6-EAST3-LEN-SLICE-NODE-01] Add EAST3 IR nodes for `py_len` / `py_slice`, update the C++ emitter to generate inline expressions, and remove both from `py_runtime.h`.
 - Progress: Completed. py_len moved to base_ops.h; py_slice str variant renamed to py_str_slice (same file); list variants removed (emitter emits py_list_slice_copy directly). truthy_len_expr override generates .empty() check. selfhost mismatches=0. cpp 0.581.3.
 
+#### P6-2a: list/dict .clear() BuiltinCall Lowering
+
+Context: [docs/ja/plans/p6-cpp-emit-list-dict-clear.md](../../ja/plans/p6-cpp-emit-list-dict-clear.md)
+
+3. [ ] [ID: P6-CPP-EMIT-LIST-DICT-CLEAR-01] Add BuiltinCall lowering for `list[T].clear()` / `dict[K,V].clear()` to the C++ emitter so it emits `v.clear()`. Unblocks `type_id.py` regeneration.
+
+#### P6-2b: General Union Type → std::variant / Multi-language Tagged Union
+
+Context: [docs/ja/plans/p6-east3-general-union-variant.md](../../ja/plans/p6-east3-general-union-variant.md)
+
+4. [ ] [ID: P6-EAST3-GENERAL-UNION-VARIANT-01] Convert general union types (`str | bool | None` etc.) to `std::variant<...>` in C++ emission. Unblocks `argparse.py` / `assertions.py` regeneration.
+
 #### P6-3: Inline emit for py_is_none
 
 Context: [docs/ja/plans/p6-east3-is-none-inline.md](../../ja/plans/p6-east3-is-none-inline.md)
 
-3. [ ] [ID: P6-EAST3-IS-NONE-INLINE-01] Replace `py_is_none(v)` with type-based inline expressions (`!v.has_value()` / `!v` / `false`) and remove from `py_runtime.h`.
+5. [ ] [ID: P6-EAST3-IS-NONE-INLINE-01] Replace `py_is_none(v)` with type-based inline expressions (`!v.has_value()` / `!v` / `false`) and remove from `py_runtime.h`.
 
 #### P6-4: Inline emit for py_to family
 
 Context: [docs/ja/plans/p6-east3-py-to-inline.md](../../ja/plans/p6-east3-py-to-inline.md)
 
-4. [ ] [ID: P6-EAST3-PY-TO-INLINE-01] Replace `py_to<T>` / `py_to_int64` / `py_to_float64` with `static_cast` / `std::stoll` etc. for type-certain cases and remove from `py_runtime.h`.
+6. [ ] [ID: P6-EAST3-PY-TO-INLINE-01] Replace `py_to<T>` / `py_to_int64` / `py_to_float64` with `static_cast` / `std::stoll` etc. for type-certain cases and remove from `py_runtime.h`.
 
 #### P6-5: Inline emit for py_to_string
 
 Context: [docs/ja/plans/p6-east3-py-to-string-inline.md](../../ja/plans/p6-east3-py-to-string-inline.md)
 
-5. [ ] [ID: P6-EAST3-PY-TO-STRING-INLINE-01] Replace `py_to_string(v)` with `std::to_string` / identity etc. for type-certain cases and remove from `py_runtime.h`.
+7. [ ] [ID: P6-EAST3-PY-TO-STRING-INLINE-01] Replace `py_to_string(v)` with `std::to_string` / identity etc. for type-certain cases and remove from `py_runtime.h`.
 
 #### P6-6: Inline emit for py_at (list/rc variants)
 
 Context: [docs/ja/plans/p6-east3-py-at-inline.md](../../ja/plans/p6-east3-py-at-inline.md)
 
-6. [ ] [ID: P6-EAST3-PY-AT-INLINE-01] Unify `py_at(list_or_rc, idx)` emit to direct `py_list_at_ref` emit and remove the list/rc variants of `py_at` from `py_runtime.h`.
+8. [ ] [ID: P6-EAST3-PY-AT-INLINE-01] Unify `py_at(list_or_rc, idx)` emit to direct `py_list_at_ref` emit and remove the list/rc variants of `py_at` from `py_runtime.h`.
 
 ### P7: Selfhost Full Independence
 
@@ -93,4 +105,4 @@ Context: [docs/ja/plans/p6-east3-py-at-inline.md](../../ja/plans/p6-east3-py-at-
 
 Context: [docs/ja/plans/p7-selfhost-native-compiler-elim.md](../../ja/plans/p7-selfhost-native-compiler-elim.md)
 
-1. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] Completely delete `src/runtime/cpp/native/compiler/` so that the selfhost binary operates without shelling out to host Python.
+9. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] Completely delete `src/runtime/cpp/native/compiler/` so that the selfhost binary operates without shelling out to host Python.
