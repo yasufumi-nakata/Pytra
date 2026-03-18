@@ -141,7 +141,7 @@
 
 文脈: [docs/ja/plans/p6-east3-py-at-inline.md](../plans/p6-east3-py-at-inline.md)
 
-8. [ ] [ID: P6-EAST3-PY-AT-INLINE-01] `py_at(list_or_rc, idx)` の emit を `py_list_at_ref` 直接 emit に統一し、list/rc 版の `py_at` を `py_runtime.h` から除去する。
+8. [x] [ID: P6-EAST3-PY-AT-INLINE-01] `py_at(list_or_rc, idx)` の emit を `py_list_at_ref` 直接 emit に統一し、list/rc 版の `py_at` を `py_runtime.h` から除去する。
 
 #### P6-7: Any 混入ユニオン・式の object フォールバック排除
 

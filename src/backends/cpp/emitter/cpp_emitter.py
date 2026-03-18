@@ -2825,9 +2825,9 @@ class CppEmitter(
         if self.normalize_type_name(value_type) == "str":
             return f"{value_expr}[{index_expr}]"
         if self.negative_index_mode == "always":
-            return f"py_at({value_expr}, {index_expr})"
+            return f"py_list_at_ref({value_expr}, {index_expr})"
         if self.negative_index_mode == "const_only" and self._is_negative_const_index(index_node):
-            return f"py_at({value_expr}, {index_expr})"
+            return f"py_list_at_ref({value_expr}, {index_expr})"
         if self.bounds_check_mode == "always":
             return f"py_at_bounds({value_expr}, {index_expr})"
         if self.bounds_check_mode == "debug":
@@ -4054,7 +4054,7 @@ class CppEmitter(
             and (not self._is_pyobj_value_model_list_type(val_ty))
             and not self._expr_is_stack_list_local(expr.get("value"))
         ):
-            at_expr = f"py_at({val}, {idx_as_int64})"
+            at_expr = f"py_list_at_ref({val}, {idx_as_int64})"
             expr_t = self.normalize_type_name(self.get_expr_type(expr))
             if expr_t != "" and not self.is_any_like_type(expr_t) and self._can_runtime_cast_target(expr_t):
                 return self._render_unbox_target_cast(at_expr, expr_t, "subscript:list")

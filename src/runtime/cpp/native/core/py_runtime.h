@@ -108,20 +108,8 @@ static inline T py_to(const T& v) {
 // py_slice（list/rc 版）は emitter が py_list_slice_copy を直接 emit するため除去。
 #include "runtime/cpp/native/built_in/list_ops.h"
 
-template <class T>
-static inline typename list<T>::const_reference py_at(const list<T>& v, int64 idx) {
-    return py_list_at_ref(v, idx);
-}
-
-template <class T>
-static inline typename list<T>::reference py_at(rc<list<T>>& v, int64 idx) {
-    return py_list_at_ref(rc_list_ref(v), idx);
-}
-
-template <class T>
-static inline typename list<T>::const_reference py_at(const rc<list<T>>& v, int64 idx) {
-    return py_list_at_ref(rc_list_ref(v), idx);
-}
+// list/rc<list> 版の py_at は除去済み（P6-EAST3-PY-AT-INLINE-01）。
+// emitter は py_list_at_ref を直接 emit する。
 
 template <class K, class V, class Q>
 static inline V& py_at(dict<K, V>& d, const Q& key) {

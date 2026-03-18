@@ -41,3 +41,4 @@
 ## 決定ログ
 
 - 2026-03-18: py_list_at_ref への委譲のみの list/rc 版は除去コストが低い。dict 版はキー型変換ロジックを含むため優先度を下げて別途判断。起票。
+- 2026-03-18: 実装完了。list/rc<list> 版の py_at を py_runtime.h から除去。emitter が py_list_at_ref を直接 emit するよう変更（_render_sequence_index, subscript emit）。dict/tuple/object 境界の py_at は維持。241 test pass。
