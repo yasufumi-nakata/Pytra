@@ -104,7 +104,7 @@ list<int64> _chunk(const list<int64>& chunk_type, const list<int64>& data) {
 void write_rgb_png(const str& path, int64 width, int64 height, const bytes& pixels) {
     list<int64> raw = {};
     for (uint8 b : pixels) {
-        raw.append(int64(int64(b)));
+        raw.append(int64(static_cast<int64>(b)));
     }
     int64 expected = width * height * 3;
     if (raw.size() != expected)

@@ -11,15 +11,15 @@
 bytes render(const rc<list<int64>>& values, int64 w, int64 h) {
     bytearray frame = bytearray(w * h);
     int64 n = (rc_list_ref(values)).size();
-    float64 bar_w = py_to<float64>(w) / py_to<float64>(n);
-    float64 __hoisted_cast_1 = float64(n);
-    float64 __hoisted_cast_2 = float64(h);
+    float64 bar_w = static_cast<float64>(w) / static_cast<float64>(n);
+    float64 __hoisted_cast_1 = static_cast<float64>(n);
+    float64 __hoisted_cast_2 = static_cast<float64>(h);
     for (int64 i = 0; i < n; ++i) {
-        int64 x0 = int64(py_to<float64>(i) * bar_w);
-        int64 x1 = int64((py_to<float64>(i + 1)) * bar_w);
+        int64 x0 = static_cast<int64>(static_cast<float64>(i) * bar_w);
+        int64 x1 = static_cast<int64>((static_cast<float64>(i + 1)) * bar_w);
         if (x1 <= x0)
             x1 = x0 + 1;
-        int64 bh = int64((py_to<float64>(py_list_at_ref(rc_list_ref(values), py_to<int64>(i))) / __hoisted_cast_1) * __hoisted_cast_2);
+        int64 bh = static_cast<int64>((static_cast<float64>(py_list_at_ref(rc_list_ref(values), i)) / __hoisted_cast_1) * __hoisted_cast_2);
         int64 y = h - bh;
         auto __for_start_1 = y;
         for (int64 y = __for_start_1; y < h; ++y) {
@@ -40,7 +40,7 @@ void run_12_sort_visualizer() {
     rc<list<int64>> values = rc_list_from_value(list<int64>{});
     rc_list_ref(values).reserve((n <= 0) ? 0 : n);
     for (int64 i = 0; i < n; ++i)
-        py_list_append_mut(rc_list_ref(values), (i * 37 + 19) % n);
+        rc_list_ref(values).append((i * 37 + 19) % n);
     rc<list<bytes>> frames = rc_list_from_value(list<bytes>{render(values, w, h)});
     int64 frame_stride = 16;
     
@@ -48,12 +48,12 @@ void run_12_sort_visualizer() {
     for (int64 i = 0; i < n; ++i) {
         bool swapped = false;
         for (int64 j = 0; j < n - i - 1; ++j) {
-            if (py_list_at_ref(rc_list_ref(values), py_to<int64>(j)) > py_list_at_ref(rc_list_ref(values), py_to<int64>(j + 1))) {
-                ::std::swap(py_list_at_ref(rc_list_ref(values), py_to<int64>(j)), py_list_at_ref(rc_list_ref(values), py_to<int64>(j + 1)));
+            if (py_list_at_ref(rc_list_ref(values), j) > py_list_at_ref(rc_list_ref(values), j + 1)) {
+                ::std::swap(py_list_at_ref(rc_list_ref(values), j), py_list_at_ref(rc_list_ref(values), j + 1));
                 swapped = true;
             }
             if (op % frame_stride == 0)
-                py_list_append_mut(rc_list_ref(frames), render(values, w, h));
+                rc_list_ref(frames).append(render(values, w, h));
             op++;
         }
         if (!(swapped))

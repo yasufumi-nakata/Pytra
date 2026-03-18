@@ -221,13 +221,13 @@ class CppCallEmitter:
             arg_t = self.get_expr_type(arg_nodes[0])
             numeric_t = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
             if target == "int64" and arg_t == "str":
-                return f"py_to_int64({arg_expr})"
+                return f"static_cast<int64>(::std::stoll({arg_expr}))"
             if target in {"float64", "float32"} and arg_t == "str":
-                return f"py_to_float64({arg_expr})"
+                return f"static_cast<float64>(::std::stod({arg_expr}.std()))"
             if target == "int64" and arg_t in numeric_t:
-                if self.should_skip_same_type_cast(arg_expr, "int64") or arg_expr.startswith("py_to<int64>("):
+                if self.should_skip_same_type_cast(arg_expr, "int64") or arg_expr.startswith("static_cast<int64>("):
                     return arg_expr
-                return f"int64({arg_expr})"
+                return f"static_cast<int64>({arg_expr})"
             if target == "int64" and self.is_any_like_type(arg_t):
                 return f"py_to_int64({arg_expr})"
             if target in {"float64", "float32"} and self.is_any_like_type(arg_t):
@@ -235,9 +235,9 @@ class CppCallEmitter:
             if target == "bool" and self.is_any_like_type(arg_t):
                 return f"py_to_bool({arg_expr})"
             if target == "int64":
-                return f"py_to_int64({arg_expr})"
+                return f"static_cast<int64>({arg_expr})"
             if target in {"float64", "float32"}:
-                return f"{target}({arg_expr})"
+                return f"static_cast<float64>({arg_expr})"
             return f"static_cast<{target}>({arg_expr})"
         return None
 
@@ -573,7 +573,7 @@ class CppCallEmitter:
         elif inferred_owner_t != "" and inferred_owner_t not in normalized_owner_types:
             normalized_owner_types.append(inferred_owner_t)
         if "bytearray" in normalized_owner_types:
-            a0 = f"static_cast<uint8>(py_to<int64>({a0}))"
+            a0 = f"static_cast<uint8>(static_cast<int64>({a0}))"
             return f"{owner_expr}.append({a0})"
         list_owner_t = ""
         for t in normalized_owner_types:
@@ -583,7 +583,7 @@ class CppCallEmitter:
         if list_owner_t != "":
             inner_t: str = list_owner_t[5:-1].strip()
             if inner_t == "uint8":
-                a0 = f"static_cast<uint8>(py_to<int64>({a0}))"
+                a0 = f"static_cast<uint8>(static_cast<int64>({a0}))"
             elif self.is_any_like_type(inner_t):
                 if not self.is_boxed_object_expr(a0):
                     arg0_node_d = self.any_to_dict_or_empty(arg0_node)
@@ -686,7 +686,7 @@ class CppCallEmitter:
         arg0_t = self.normalize_type_name(arg0_t_raw) if isinstance(arg0_t_raw, str) else ""
         inner_t = deque_owner_t[6:-1].strip()
         if inner_t == "uint8":
-            a0 = f"static_cast<uint8>(py_to<int64>({a0}))"
+            a0 = f"static_cast<uint8>(static_cast<int64>({a0}))"
         elif self.is_any_like_type(inner_t):
             if not self.is_boxed_object_expr(a0):
                 arg0_node_d = self.any_to_dict_or_empty(value_node)

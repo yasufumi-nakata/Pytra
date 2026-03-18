@@ -14,21 +14,21 @@ struct _ArgSpec;
 struct ArgumentParser;
 
     struct Namespace {
-        dict<str, object> values;
+        dict<str, ::std::variant<str, bool, ::std::monostate>> values;
         
-        Namespace(const object& values = object{});
+        Namespace(const ::std::optional<dict<str, ::std::variant<str, bool, ::std::monostate>>>& values = ::std::nullopt);
     };
 
     struct _ArgSpec {
         rc<list<str>> names;
         str action;
         rc<list<str>> choices;
-        object py_default;
+        ::std::variant<str, bool, ::std::monostate> py_default;
         str help_text;
         bool is_optional;
         str dest;
         
-        _ArgSpec(const rc<list<str>>& names, const str& action = "", const rc<list<str>>& choices = rc_list_from_value(list<str>{}), const object& py_default = object{}, const str& help_text = "");
+        _ArgSpec(const rc<list<str>>& names, const str& action = "", const rc<list<str>>& choices = rc_list_from_value(list<str>{}), const ::std::variant<str, bool, ::std::monostate>& py_default = ::std::monostate{}, const str& help_text = "");
     };
 
     struct ArgumentParser {
@@ -36,9 +36,9 @@ struct ArgumentParser;
         rc<list<_ArgSpec>> _specs;
         
         ArgumentParser(const str& description = "");
-        void add_argument(const str& name0, const str& name1 = "", const str& name2 = "", const str& name3 = "", const str& help = "", const str& action = "", const rc<list<str>>& choices = rc_list_from_value(list<str>{}), const object& py_default = object{});
+        void add_argument(const str& name0, const str& name1 = "", const str& name2 = "", const str& name3 = "", const str& help = "", const str& action = "", const rc<list<str>>& choices = rc_list_from_value(list<str>{}), const ::std::variant<str, bool, ::std::monostate>& py_default = ::std::monostate{});
         void _fail(const str& msg) const;
-        dict<str, object> parse_args(const object& argv = object{}) const;
+        dict<str, ::std::variant<str, bool, ::std::monostate>> parse_args(const ::std::optional<rc<list<str>>>& argv = ::std::nullopt) const;
     };
 
 

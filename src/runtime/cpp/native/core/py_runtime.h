@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <optional>
 #include <sstream>
+#include <variant>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -101,24 +102,6 @@ static inline ::std::string py_to_string(const object& v) {
 template <class T>
 static inline T py_to(const T& v);
 
-static inline int64 py_to_int64(const str& v) {
-    return static_cast<int64>(::std::stoll(v));
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline int64 py_to_int64(T v) {
-    return py_to<int64>(v);
-}
-
-static inline float64 py_to_float64(const str& v) {
-    return static_cast<float64>(::std::stod(v.std()));
-}
-
-template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
-static inline float64 py_to_float64(T v) {
-    return py_to<float64>(v);
-}
-
 template <class T>
 static inline bool py_to_bool(const rc<list<T>>& v) {
     return v && !v->empty();
@@ -126,6 +109,20 @@ static inline bool py_to_bool(const rc<list<T>>& v) {
 
 static inline bool py_to_bool(bool v) {
     return py_to<bool>(v);
+}
+
+// py_variant_to_bool: std::variant を Python の bool() 相当に変換する。
+// emitter が bool(variant_val) を生成する際に使用する。
+template <class... Ts>
+static inline bool py_variant_to_bool(const ::std::variant<Ts...>& v) {
+    return ::std::visit([](const auto& x) -> bool {
+        using T = ::std::decay_t<decltype(x)>;
+        if constexpr (::std::is_same_v<T, ::std::monostate>) return false;
+        else if constexpr (::std::is_same_v<T, bool>) return x;
+        else if constexpr (::std::is_same_v<T, str>) return !x.empty();
+        else if constexpr (::std::is_arithmetic_v<T>) return x != 0;
+        else return true;
+    }, v);
 }
 
 template <class T>

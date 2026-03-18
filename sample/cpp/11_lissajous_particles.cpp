@@ -16,9 +16,9 @@ bytes color_palette() {
         int64 r = i;
         int64 g = i * 3 % 256;
         int64 b = 255 - i;
-        p.append(static_cast<uint8>(py_to<int64>(r)));
-        p.append(static_cast<uint8>(py_to<int64>(g)));
-        p.append(static_cast<uint8>(py_to<int64>(b)));
+        p.append(static_cast<uint8>(static_cast<int64>(r)));
+        p.append(static_cast<uint8>(static_cast<int64>(g)));
+        p.append(static_cast<uint8>(static_cast<int64>(b)));
     }
     return p;
 }
@@ -35,12 +35,12 @@ void run_11_lissajous_particles() {
     
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
-        float64 __hoisted_cast_1 = float64(t);
+        float64 __hoisted_cast_1 = static_cast<float64>(t);
         
         for (int64 p = 0; p < particles; ++p) {
-            float64 phase = py_to<float64>(p) * 0.261799;
-            int64 x = int64(py_to<float64>(w) * 0.5 + py_to<float64>(w) * 0.38 * pytra::std::math::sin(0.11 * __hoisted_cast_1 + phase * 2.0));
-            int64 y = int64(py_to<float64>(h) * 0.5 + py_to<float64>(h) * 0.38 * pytra::std::math::sin(0.17 * __hoisted_cast_1 + phase * 3.0));
+            float64 phase = static_cast<float64>(p) * 0.261799;
+            int64 x = static_cast<int64>(static_cast<float64>(w) * 0.5 + static_cast<float64>(w) * 0.38 * pytra::std::math::sin(0.11 * __hoisted_cast_1 + phase * 2.0));
+            int64 y = static_cast<int64>(static_cast<float64>(h) * 0.5 + static_cast<float64>(h) * 0.38 * pytra::std::math::sin(0.17 * __hoisted_cast_1 + phase * 3.0));
             int64 color = 30 + p * 9 % 220;
             
             for (int64 dy = -(2); dy < 3; ++dy) {
@@ -54,13 +54,13 @@ void run_11_lissajous_particles() {
                             int64 v = color - d2 * 20;
                             v = ::std::max<int64>(static_cast<int64>(0), static_cast<int64>(v));
                             if (v > frame[idx])
-                                frame[idx] = uint8(py_to<int64>(v));
+                                frame[idx] = uint8(static_cast<int64>(v));
                         }
                     }
                 }
             }
         }
-        py_list_append_mut(rc_list_ref(frames), frame);
+        rc_list_ref(frames).append(frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, rc_list_ref(frames), color_palette(), 3, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

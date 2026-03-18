@@ -14,7 +14,7 @@ bytes capture(const rc<list<list<int64>>>& grid, int64 w, int64 h) {
     for (int64 y = 0; y < h; ++y) {
         int64 row_base = y * w;
         for (int64 x = 0; x < w; ++x)
-            frame[row_base + x] = (py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) ? 255 : 0);
+            frame[row_base + x] = (py_list_at_ref(py_list_at_ref(rc_list_ref(grid), y), x) ? 255 : 0);
     }
     return frame;
 }
@@ -36,12 +36,12 @@ void run_08_langtons_ant() {
     rc<list<bytes>> frames = rc_list_from_value(list<bytes>{});
     
     for (int64 i = 0; i < steps_total; ++i) {
-        if (py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) == 0) {
+        if (py_list_at_ref(py_list_at_ref(rc_list_ref(grid), y), x) == 0) {
             d = (d + 1) % 4;
-            py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) = 1;
+            py_list_at_ref(py_list_at_ref(rc_list_ref(grid), y), x) = 1;
         } else {
             d = (d + 3) % 4;
-            py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) = 0;
+            py_list_at_ref(py_list_at_ref(rc_list_ref(grid), y), x) = 0;
         }
         if (d == 0) {
             y = (y - 1 + h) % h;
@@ -53,7 +53,7 @@ void run_08_langtons_ant() {
             x = (x - 1 + w) % w;
         }
         if (i % capture_every == 0)
-            py_list_append_mut(rc_list_ref(frames), capture(grid, w, h));
+            rc_list_ref(frames).append(capture(grid, w, h));
     }
     pytra::utils::gif::save_gif(out_path, w, h, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 5, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

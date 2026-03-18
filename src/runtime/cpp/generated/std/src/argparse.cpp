@@ -15,11 +15,11 @@ namespace pytra_mod_argparse {
         dict<str, ::std::variant<str, bool, ::std::monostate>> values;
         
         Namespace(const ::std::optional<dict<str, ::std::variant<str, bool, ::std::monostate>>>& values = ::std::nullopt) {
-            if (false) {
-                this->values = dict<str, object>{};
+            if (!values.has_value()) {
+                this->values = dict<str, ::std::variant<str, bool, ::std::monostate>>{};
                 return;
             }
-            this->values = values;
+            this->values = values.value();
         }
     };
     
@@ -32,7 +32,7 @@ namespace pytra_mod_argparse {
         bool is_optional;
         str dest;
         
-        _ArgSpec(const rc<list<str>>& names, const str& action = "", const rc<list<str>>& choices = rc_list_from_value(list<str>{}), const ::std::variant<str, bool, ::std::monostate>& py_default = ::std::nullopt, const str& help_text = "") {
+        _ArgSpec(const rc<list<str>>& names, const str& action = "", const rc<list<str>>& choices = rc_list_from_value(list<str>{}), const ::std::variant<str, bool, ::std::monostate>& py_default = ::std::monostate{}, const str& help_text = "") {
             this->names = names;
             this->action = action;
             this->choices = choices;
@@ -56,7 +56,7 @@ namespace pytra_mod_argparse {
             this->description = description;
             this->_specs = rc_list_from_value(list<_ArgSpec>{});
         }
-        void add_argument(const str& name0, const str& name1 = "", const str& name2 = "", const str& name3 = "", const str& help = "", const str& action = "", const rc<list<str>>& choices = rc_list_from_value(list<str>{}), const ::std::variant<str, bool, ::std::monostate>& py_default = ::std::nullopt) {
+        void add_argument(const str& name0, const str& name1 = "", const str& name2 = "", const str& name3 = "", const str& help = "", const str& action = "", const rc<list<str>>& choices = rc_list_from_value(list<str>{}), const ::std::variant<str, bool, ::std::monostate>& py_default = ::std::monostate{}) {
             rc<list<str>> names = rc_list_from_value(list<str>{});
             if (name0 != "")
                 rc_list_ref(names).append(name0);
@@ -78,10 +78,10 @@ namespace pytra_mod_argparse {
         }
         dict<str, ::std::variant<str, bool, ::std::monostate>> parse_args(const ::std::optional<rc<list<str>>>& argv = ::std::nullopt) const {
             rc<list<str>> args;
-            if (false)
-                args = py_to<rc<list<str>>>(py_str_slice(py_runtime_argv(), 1, static_cast<int64>((py_runtime_argv()).size())));
+            if (!argv.has_value())
+                args = py_to<rc<list<str>>>(py_list_slice_copy(py_runtime_argv(), 1, static_cast<int64>((py_runtime_argv()).size())));
             else
-                args = py_to<rc<list<str>>>(argv);
+                args = py_to<rc<list<str>>>(argv.value());
             rc<list<_ArgSpec>> specs_pos = rc_list_from_value(list<_ArgSpec>{});
             rc<list<_ArgSpec>> specs_opt = rc_list_from_value(list<_ArgSpec>{});
             for (_ArgSpec s : rc_list_ref(this->_specs)) {
@@ -101,11 +101,11 @@ namespace pytra_mod_argparse {
             dict<str, ::std::variant<str, bool, ::std::monostate>> values = dict<str, ::std::variant<str, bool, ::std::monostate>>{};
             for (_ArgSpec s : rc_list_ref(this->_specs)) {
                 if (s.action == "store_true") {
-                    values[s.dest] = py_to<bool>(s.py_default);
-                } else if (true) {
+                    values[s.dest] = (!::std::holds_alternative<::std::monostate>(s.py_default) ? py_variant_to_bool(s.py_default) : false);
+                } else if (!::std::holds_alternative<::std::monostate>(s.py_default)) {
                     values[s.dest] = s.py_default;
                 } else {
-                    values[s.dest] = ::std::nullopt;
+                    values[s.dest] = ::std::monostate{};
                 }
             }
             int64 pos_i = 0;

@@ -16,27 +16,27 @@ namespace pytra::std::argparse {
     /* Minimal pure-Python argparse subset for selfhost usage. */
     
 
-    Namespace::Namespace(const object& values) {
-            if (py_is_none(values)) {
-                this->values = dict<str, object>{};
+    Namespace::Namespace(const ::std::optional<dict<str, ::std::variant<str, bool, ::std::monostate>>>& values) {
+            if (!values.has_value()) {
+                this->values = dict<str, ::std::variant<str, bool, ::std::monostate>>{};
                 return;
             }
-            this->values = values;
+            this->values = values.value();
     }
     
 
-    _ArgSpec::_ArgSpec(const rc<list<str>>& names, const str& action, const rc<list<str>>& choices, const object& py_default, const str& help_text) {
+    _ArgSpec::_ArgSpec(const rc<list<str>>& names, const str& action, const rc<list<str>>& choices, const ::std::variant<str, bool, ::std::monostate>& py_default, const str& help_text) {
             this->names = names;
             this->action = action;
             this->choices = choices;
-            this->py_default = make_object(py_default);
+            this->py_default = py_default;
             this->help_text = help_text;
-            this->is_optional = ((rc_list_ref(names)).size() > 0) && (py_startswith(py_list_at_ref(rc_list_ref(names), py_to<int64>(0)), "-"));
+            this->is_optional = ((rc_list_ref(names)).size() > 0) && (py_startswith(py_list_at_ref(rc_list_ref(names), 0), "-"));
             if (this->is_optional) {
-                auto base = py_replace(py_list_at_ref(rc_list_ref(names), py_to<int64>(-(1))).lstrip("-"), "-", "_");
+                auto base = py_replace(py_list_at_ref(rc_list_ref(names), -(1)).lstrip("-"), "-", "_");
                 this->dest = py_to_string(base);
             } else {
-                this->dest = py_list_at_ref(rc_list_ref(names), py_to<int64>(0));
+                this->dest = py_list_at_ref(rc_list_ref(names), 0);
             }
     }
     
@@ -46,7 +46,7 @@ namespace pytra::std::argparse {
             this->_specs = rc_list_from_value(list<_ArgSpec>{});
     }
 
-    void ArgumentParser::add_argument(const str& name0, const str& name1, const str& name2, const str& name3, const str& help, const str& action, const rc<list<str>>& choices, const object& py_default) {
+    void ArgumentParser::add_argument(const str& name0, const str& name1, const str& name2, const str& name3, const str& help, const str& action, const rc<list<str>>& choices, const ::std::variant<str, bool, ::std::monostate>& py_default) {
             rc<list<str>> names = rc_list_from_value(list<str>{});
             if (name0 != "")
                 rc_list_ref(names).append(name0);
@@ -68,12 +68,12 @@ namespace pytra::std::argparse {
             throw SystemExit(2);
     }
 
-    dict<str, object> ArgumentParser::parse_args(const object& argv) const {
+    dict<str, ::std::variant<str, bool, ::std::monostate>> ArgumentParser::parse_args(const ::std::optional<rc<list<str>>>& argv) const {
             rc<list<str>> args;
-            if (py_is_none(argv))
+            if (!argv.has_value())
                 args = py_to<rc<list<str>>>(py_list_slice_copy(py_runtime_argv(), 1, static_cast<int64>((py_runtime_argv()).size())));
             else
-                args = py_to<rc<list<str>>>(make_object(list<object>(argv)));
+                args = py_to<rc<list<str>>>(argv.value());
             rc<list<_ArgSpec>> specs_pos = rc_list_from_value(list<_ArgSpec>{});
             rc<list<_ArgSpec>> specs_opt = rc_list_from_value(list<_ArgSpec>{});
             for (_ArgSpec s : rc_list_ref(this->_specs)) {
@@ -90,48 +90,48 @@ namespace pytra::std::argparse {
                 }
                 spec_i++;
             }
-            dict<str, object> values = dict<str, object>{};
+            dict<str, ::std::variant<str, bool, ::std::monostate>> values = dict<str, ::std::variant<str, bool, ::std::monostate>>{};
             for (_ArgSpec s : rc_list_ref(this->_specs)) {
                 if (s.action == "store_true") {
-                    values[s.dest] = make_object((!py_is_none(s.py_default) ? py_to<bool>(s.py_default) : false));
-                } else if (!py_is_none(s.py_default)) {
-                    values[s.dest] = make_object(s.py_default);
+                    values[s.dest] = (!::std::holds_alternative<::std::monostate>(s.py_default) ? py_variant_to_bool(s.py_default) : false);
+                } else if (!::std::holds_alternative<::std::monostate>(s.py_default)) {
+                    values[s.dest] = s.py_default;
                 } else {
-                    values[s.dest] = object{};
+                    values[s.dest] = ::std::monostate{};
                 }
             }
             int64 pos_i = 0;
             int64 i = 0;
             while (i < (rc_list_ref(args)).size()) {
-                str tok = py_list_at_ref(rc_list_ref(args), py_to<int64>(i));
+                str tok = py_list_at_ref(rc_list_ref(args), i);
                 if (py_startswith(tok, "-")) {
                     if (!py_contains(by_name, tok))
                         this->_fail("unknown option: " + tok);
                     auto __idx_1 = ([&]() { auto&& __dict_2 = by_name; auto __dict_key_3 = tok; return __dict_2.at(__dict_key_3); }());
-                    _ArgSpec spec = py_list_at_ref(rc_list_ref(specs_opt), py_to<int64>(__idx_1));
+                    _ArgSpec spec = py_list_at_ref(rc_list_ref(specs_opt), __idx_1);
                     if (spec.action == "store_true") {
-                        values[spec.dest] = make_object(true);
+                        values[spec.dest] = true;
                         i++;
                         continue;
                     }
                     if (i + 1 >= (rc_list_ref(args)).size())
                         this->_fail("missing value for option: " + tok);
-                    str val = py_list_at_ref(rc_list_ref(args), py_to<int64>(i + 1));
+                    str val = py_list_at_ref(rc_list_ref(args), i + 1);
                     if (((rc_list_ref(spec.choices)).size() > 0) && (!py_contains(spec.choices, val)))
                         this->_fail("invalid choice for " + tok + ": " + val);
-                    values[spec.dest] = make_object(val);
+                    values[spec.dest] = val;
                     i += 2;
                     continue;
                 }
                 if (pos_i >= (rc_list_ref(specs_pos)).size())
                     this->_fail("unexpected extra argument: " + tok);
-                _ArgSpec spec = py_list_at_ref(rc_list_ref(specs_pos), py_to<int64>(pos_i));
-                values[spec.dest] = make_object(tok);
+                _ArgSpec spec = py_list_at_ref(rc_list_ref(specs_pos), pos_i);
+                values[spec.dest] = tok;
                 pos_i++;
                 i++;
             }
             if (pos_i < (rc_list_ref(specs_pos)).size())
-                this->_fail("missing required argument: " + py_list_at_ref(rc_list_ref(specs_pos), py_to<int64>(pos_i)).dest);
+                this->_fail("missing required argument: " + py_list_at_ref(rc_list_ref(specs_pos), pos_i).dest);
             return values;
     }
     

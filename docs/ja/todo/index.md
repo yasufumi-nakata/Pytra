@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-18（object フォールバック排除 5 件追加）
+最終更新: 2026-03-18（P6-2a P6-2b 完了）
 
 ## 文脈運用ルール
 
@@ -67,7 +67,8 @@
 
 文脈: [docs/ja/plans/p6-cpp-emit-list-dict-clear.md](../plans/p6-cpp-emit-list-dict-clear.md)
 
-3. [ ] [ID: P6-CPP-EMIT-LIST-DICT-CLEAR-01] C++ emitter が `list[T].clear()` / `dict[K,V].clear()` を BuiltinCall として lowering し `v.clear()` を emit できるようにする。`type_id.py` 再生成のブロッカー解除。
+3. [x] [ID: P6-CPP-EMIT-LIST-DICT-CLEAR-01] C++ emitter が `list[T].clear()` / `dict[K,V].clear()` を BuiltinCall として lowering し `v.clear()` を emit できるようにする。`type_id.py` 再生成のブロッカー解除。
+- 進捗メモ: 完了。ListClear/DictClear IR ノードが既実装済み。type_id.py transpile 成功・再生成一致・mismatches=0。
 
 #### P6-2b: 一般ユニオン型 → std::variant / 多言語 tagged union
 
@@ -80,13 +81,15 @@
 
 文脈: [docs/ja/plans/p6-east3-is-none-inline.md](../plans/p6-east3-is-none-inline.md)
 
-5. [ ] [ID: P6-EAST3-IS-NONE-INLINE-01] `py_is_none(v)` を型ベースのインライン式（`!v.has_value()` / `!v` / `false`）に置き換え、`py_runtime.h` から除去する。
+5. [x] [ID: P6-EAST3-IS-NONE-INLINE-01] `py_is_none(v)` を型ベースのインライン式（`!v.has_value()` / `!v` / `false`）に置き換え、`py_runtime.h` から除去する。
+- Progress: 完了。_render_is_none_expr() を cpp_emitter.py に追加済み（前セッション）。py_is_none を py_runtime.h から base_ops.h へ移動済み。新規生成コードに py_is_none 呼び出しなし。mismatches=0。
 
 #### P6-4: py_to 系のインライン emit 化
 
 文脈: [docs/ja/plans/p6-east3-py-to-inline.md](../plans/p6-east3-py-to-inline.md)
 
-6. [ ] [ID: P6-EAST3-PY-TO-INLINE-01] `py_to<T>` / `py_to_int64` / `py_to_float64` を型確定ケースで `static_cast` / `std::stoll` 等にインライン置き換えし、`py_runtime.h` から除去する。
+6. [x] [ID: P6-EAST3-PY-TO-INLINE-01] `py_to<T>` / `py_to_int64` / `py_to_float64` を型確定ケースで `static_cast` / `std::stoll` 等にインライン置き換えし、`py_runtime.h` から除去する。
+- Progress: 完了。emitter 全体で算術型確定ケースを static_cast に切替え。py_to_int64/py_to_float64 を scalar_ops.h へ移動・py_runtime.h から除去。18サンプル failures=0。cpp v0.584.0。
 
 #### P6-5: py_to_string のインライン emit 化
 

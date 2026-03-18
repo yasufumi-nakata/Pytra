@@ -142,7 +142,14 @@ class CppBinaryOperatorEmitter:
                 return f"static_cast<float64>({left}) / static_cast<float64>({right})"
             return f"py_div({left}, {right})"
         if op_name == "Pow":
-            return f"::std::pow(py_to_float64({left}), py_to_float64({right}))"
+            left_pt_raw = self.get_expr_type(expr.get("left"))
+            right_pt_raw = self.get_expr_type(expr.get("right"))
+            left_pt = self.normalize_type_name(left_pt_raw if isinstance(left_pt_raw, str) else "")
+            right_pt = self.normalize_type_name(right_pt_raw if isinstance(right_pt_raw, str) else "")
+            _arith_pt = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            lf = f"static_cast<float64>({left})" if left_pt in _arith_pt else f"py_to_float64({left})"
+            rf = f"static_cast<float64>({right})" if right_pt in _arith_pt else f"py_to_float64({right})"
+            return f"::std::pow({lf}, {rf})"
         if op_name == "FloorDiv":
             if self.floor_div_mode == "python":
                 return f"py_floordiv({left}, {right})"

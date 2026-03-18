@@ -40,7 +40,7 @@ so it can be transpiled to target runtimes.
     
     float64 random() {
         /* Return pseudo-random float in [0.0, 1.0). */
-        return py_to<float64>(_next_u31()) / 2147483648.0;
+        return static_cast<float64>(_next_u31()) / 2147483648.0;
     }
     
     int64 randint(int64 a, int64 b) {
@@ -50,7 +50,7 @@ so it can be transpiled to target runtimes.
         if (hi < lo)
             ::std::swap(lo, hi);
         int64 span = hi - lo + 1;
-        return lo + int64(random() * py_to<float64>(span));
+        return lo + static_cast<int64>(random() * static_cast<float64>(span));
     }
     
     rc<list<int64>> choices(const rc<list<int64>>& population, const rc<list<float64>>& weights, int64 k) {
@@ -83,7 +83,7 @@ so it can be transpiled to target runtimes.
                     float64 acc = 0.0;
                     int64 picked_i = n - 1;
                     for (int64 i = 0; i < n; ++i) {
-                        float64 w = py_list_at_ref(rc_list_ref(weight_vals), py_to<int64>(i));
+                        float64 w = py_list_at_ref(rc_list_ref(weight_vals), i);
                         if (w > 0.0)
                             acc += w;
                         if (r < acc) {
@@ -91,14 +91,14 @@ so it can be transpiled to target runtimes.
                             break;
                         }
                     }
-                    rc_list_ref(out).append(py_list_at_ref(rc_list_ref(population), py_to<int64>(picked_i)));
+                    rc_list_ref(out).append(py_list_at_ref(rc_list_ref(population), picked_i));
                 }
                 return out;
             }
         }
         rc_list_ref(out).reserve((draws <= 0) ? 0 : draws);
         for (int64 _ = 0; _ < draws; ++_)
-            rc_list_ref(out).append(py_list_at_ref(rc_list_ref(population), py_to<int64>(randint(0, n - 1))));
+            rc_list_ref(out).append(py_list_at_ref(rc_list_ref(population), randint(0, n - 1)));
         return out;
     }
     
@@ -127,9 +127,9 @@ so it can be transpiled to target runtimes.
         while (i > 0) {
             int64 j = randint(0, i);
             if (j != i) {
-                int64 tmp = py_list_at_ref(rc_list_ref(xs), py_to<int64>(i));
-                py_list_at_ref(rc_list_ref(xs), py_to<int64>(i)) = py_list_at_ref(rc_list_ref(xs), py_to<int64>(j));
-                py_list_at_ref(rc_list_ref(xs), py_to<int64>(j)) = tmp;
+                int64 tmp = py_list_at_ref(rc_list_ref(xs), i);
+                py_list_at_ref(rc_list_ref(xs), i) = py_list_at_ref(rc_list_ref(xs), j);
+                py_list_at_ref(rc_list_ref(xs), j) = tmp;
             }
             i--;
         }

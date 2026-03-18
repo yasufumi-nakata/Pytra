@@ -10,12 +10,12 @@
 
 bytes render_frame(int64 width, int64 height, float64 center_x, float64 center_y, float64 scale, int64 max_iter) {
     bytearray frame = bytearray(width * height);
-    float64 __hoisted_cast_1 = float64(max_iter);
+    float64 __hoisted_cast_1 = static_cast<float64>(max_iter);
     for (int64 y = 0; y < height; ++y) {
         int64 row_base = y * width;
-        float64 cy = center_y + (py_to<float64>(y) - py_to<float64>(height) * 0.5) * scale;
+        float64 cy = center_y + (static_cast<float64>(y) - static_cast<float64>(height) * 0.5) * scale;
         for (int64 x = 0; x < width; ++x) {
-            float64 cx = center_x + (py_to<float64>(x) - py_to<float64>(width) * 0.5) * scale;
+            float64 cx = center_x + (static_cast<float64>(x) - static_cast<float64>(width) * 0.5) * scale;
             float64 zx = 0.0;
             float64 zy = 0.0;
             int64 i = 0;
@@ -28,7 +28,7 @@ bytes render_frame(int64 width, int64 height, float64 center_x, float64 center_y
                 zx = zx2 - zy2 + cx;
                 i++;
             }
-            frame[row_base + x] = int64(255.0 * py_to<float64>(i) / __hoisted_cast_1);
+            frame[row_base + x] = static_cast<int64>(255.0 * static_cast<float64>(i) / __hoisted_cast_1);
         }
     }
     return frame;
@@ -41,7 +41,7 @@ void run_05_mandelbrot_zoom() {
     int64 max_iter = 110;
     float64 center_x = -(0.743643887037151);
     float64 center_y = 0.13182590420533;
-    float64 base_scale = 3.2 / py_to<float64>(width);
+    float64 base_scale = 3.2 / static_cast<float64>(width);
     float64 zoom_per_frame = 0.93;
     str out_path = "sample/out/05_mandelbrot_zoom.gif";
     
@@ -50,7 +50,7 @@ void run_05_mandelbrot_zoom() {
     float64 scale = base_scale;
     rc_list_ref(frames).reserve((frame_count <= 0) ? 0 : frame_count);
     for (int64 _ = 0; _ < frame_count; ++_) {
-        py_list_append_mut(rc_list_ref(frames), render_frame(width, height, center_x, center_y, scale, max_iter));
+        rc_list_ref(frames).append(render_frame(width, height, center_x, center_y, scale, max_iter));
         scale *= zoom_per_frame;
     }
     pytra::utils::gif::save_gif(out_path, width, height, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 5, 0);

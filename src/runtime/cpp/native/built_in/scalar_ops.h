@@ -45,6 +45,25 @@ static inline auto py_mod(A lhs, B rhs) {
     }
 }
 
+// py_to_int64 / py_to_float64: object 境界フォールバック用。型確定時は emitter が static_cast を直接 emit する。
+static inline int64 py_to_int64(const str& v) {
+    return static_cast<int64>(::std::stoll(v));
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline int64 py_to_int64(T v) {
+    return static_cast<int64>(v);
+}
+
+static inline float64 py_to_float64(const str& v) {
+    return static_cast<float64>(::std::stod(v.std()));
+}
+
+template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
+static inline float64 py_to_float64(T v) {
+    return static_cast<float64>(v);
+}
+
 inline int64 py_to_int64_base(const str& v, int64 base) {
     int b = static_cast<int>(base);
     if (b < 2 || b > 36) b = 10;

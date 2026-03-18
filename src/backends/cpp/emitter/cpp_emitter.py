@@ -1894,6 +1894,10 @@ class CppEmitter(
         if t in {"", "unknown", "Any", "object"}:
             return "object{}"
         if self._allows_none_default(t):
+            # 2型以上 + None → std::variant → std::monostate{}
+            non_none, has_none = self.split_union_non_none(t)
+            if has_none and len(non_none) >= 2:
+                return "::std::monostate{}"
             return "::std::nullopt"
         if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
             return "0"
@@ -2700,7 +2704,7 @@ class CppEmitter(
         idx_t0 = self.get_expr_type(node.get("slice"))
         idx_t = idx_t0 if isinstance(idx_t0, str) else ""
         # resolved_type が int64 と確定している場合は identity cast を省略する
-        idx_lval_as_int64 = idx if idx_t == "int64" else f"py_to<int64>({idx})"
+        idx_lval_as_int64 = idx if idx_t == "int64" else f"static_cast<int64>({idx})"
         if val_ty.startswith("dict["):
             idx = self._coerce_dict_key_expr(node.get("value"), idx, node.get("slice"))
             return f"{val}[{idx}]"
@@ -3063,6 +3067,13 @@ class CppEmitter(
                 at0 = self.get_expr_type(first_arg)
                 at = at0 if isinstance(at0, str) else ""
                 if at.startswith("list["):
+                    if at.endswith("]"):
+                        return args[0]
+                    # list[T]|None → optional list, need .value() to unwrap
+                    _non_none_at, _has_none_at = self.split_union_non_none(at)
+                    if _has_none_at and len(_non_none_at) == 1 and _non_none_at[0].startswith("list["):
+                        src = args[0]
+                        return f"{src}.value()" if self._is_identifier_expr(src) else f"({src}).value()"
                     return args[0]
                 if at in {"Any", "object"}:
                     return f"object_new<PyListObj>(list<object>({args[0]}))"
@@ -3106,6 +3117,13 @@ class CppEmitter(
         at = at0 if isinstance(at0, str) else ""
         head = f"{raw}["
         if at.startswith(head):
+            if at.endswith("]"):
+                return args[0]
+            # list[T]|None (optional list) → arg is ::std::optional, need .value()
+            non_none_at, has_none_at = self.split_union_non_none(at)
+            if has_none_at and len(non_none_at) == 1 and non_none_at[0].startswith(head):
+                src = args[0]
+                return f"{src}.value()" if self._is_identifier_expr(src) else f"({src}).value()"
             return args[0]
         any_obj_t = "set<object>"
         starts = "set<"
@@ -3595,6 +3613,8 @@ class CppEmitter(
     def _render_is_none_expr(self, var_expr: str, var_node: Any, negated: bool) -> str:
         """py_is_none(v) を型ベースのインライン式に変換する。negated=True は `is not None`。
         - optional[T] → .has_value() / !.has_value()
+        - T|None ユニオン（optional の文字列形式）→ .has_value() / !.has_value()
+        - std::variant を含む T|None → std::holds_alternative<std::monostate>
         - 確定型（非 optional, 非 object）→ true / false
         - object → static_cast<bool>(v) / !v
         - 型不明 → fallback: py_is_none(v)
@@ -3604,6 +3624,17 @@ class CppEmitter(
         if val_t.startswith("optional[") and val_t.endswith("]"):
             has_val = f"{base}.has_value()" if self._is_identifier_expr(base) else f"({base}).has_value()"
             return has_val if negated else f"!{has_val}"
+        # T|None 形式のユニオン（optional[T] と同義）
+        if val_t != "" and val_t != "None":
+            non_none, has_none = self.split_union_non_none(val_t)
+            if has_none:
+                if len(non_none) == 1:
+                    # Optional[T] の union 記法 → std::optional → .has_value()
+                    has_val = f"{base}.has_value()" if self._is_identifier_expr(base) else f"({base}).has_value()"
+                    return has_val if negated else f"!{has_val}"
+                # 2型以上 + None → std::variant の std::monostate チェック
+                holds = f"::std::holds_alternative<::std::monostate>({base})"
+                return f"!{holds}" if negated else holds
         if val_t not in {"", "unknown", "object"}:
             return "true" if negated else "false"
         if val_t == "object":
@@ -3837,6 +3868,13 @@ class CppEmitter(
                 list_ref = f"rc_list_ref({val})"
                 return f"py_list_slice_copy({list_ref}, {lo}, {up})"
             return f"py_list_slice_copy({val}, {lo}, {up})"
+        # unknown 型でリストを返すことが既知の runtime 関数は py_list_slice_copy を使う。
+        val_trimmed = self._trim_ws(val)
+        if val_ty_norm in {"", "unknown"} and val_trimmed in {
+            "py_runtime_argv()",
+            "::py_runtime_argv()",
+        }:
+            return f"py_list_slice_copy({val_trimmed}, {lo}, {up})"
         # str / bytes / unknown → py_str_slice（object 境界の list は未対応）
         return f"py_str_slice({val}, {lo}, {up})"
 
@@ -3891,7 +3929,7 @@ class CppEmitter(
             "uint64",
         }
         # resolved_type が int64 と確定している場合は identity cast を省略する
-        idx_as_int64 = idx if idx_ty == "int64" else f"py_to<int64>({idx})"
+        idx_as_int64 = idx if idx_ty == "int64" else f"static_cast<int64>({idx})"
         if val_ty.startswith("dict["):
             idx = self._coerce_dict_key_expr(expr.get("value"), idx, sl)
             owner_tmp = self.next_tmp("__dict")
@@ -4310,6 +4348,18 @@ class CppEmitter(
         if deque_truthy != "":
             return deque_truthy
         value_expr = self.render_expr(value_node)
+        value_t = self.normalize_type_name(self.get_expr_type(value_node))
+        # Multi-type variant (str|bool|None 等) → py_variant_to_bool
+        if value_t != "" and self._contains_text(value_t, "|") and not self.is_any_like_type(value_t):
+            non_none, _ = self.split_union_non_none(value_t)
+            if len(non_none) >= 2:
+                return f"py_variant_to_bool({value_expr})"
+        # 算術型確定ケース → static_cast<bool>
+        _arith_bool = {"bool", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}
+        if value_t in _arith_bool:
+            if value_t == "bool":
+                return value_expr
+            return f"static_cast<bool>({value_expr})"
         return f"py_to<bool>({value_expr})"
 
     def _render_expr_kind_obj_len(self, expr: Any, expr_d: dict[str, Any]) -> str:
@@ -4329,14 +4379,7 @@ class CppEmitter(
 
     def _render_expr_kind_obj_str(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
-        value_node = expr_d.get("value")
-        value_expr = self.render_expr(value_node)
-        value_t = self.normalize_type_name(self.get_expr_type(value_node))
-        if value_t == "str":
-            return value_expr
-        if self._is_path_like_type(value_t):
-            return f"{value_expr}.__str__()"
-        return f"py_to_string({value_expr})"
+        return self.render_to_string(expr_d.get("value"))
 
     def _render_expr_kind_obj_iter_init(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
@@ -4523,7 +4566,7 @@ class CppEmitter(
                         f"return rc_list_ref({list_tmp}).pop(); "
                         f"}}())"
                     )
-                index_expr = f"py_to<int64>({index_expr})"
+                index_expr = f"static_cast<int64>({index_expr})"
                 if self._uses_pyobj_ref_first_list_lvalue_expr(owner_node):
                     return f"{list_ref_expr}.pop({index_expr})"
                 list_tmp = self.next_tmp("__list")
@@ -4541,7 +4584,7 @@ class CppEmitter(
                 index_expr = self.render_expr(index_node)
                 if index_expr in {"", "/* none */"}:
                     return f"{list_ref_expr}.pop()"
-                return f"{list_ref_expr}.pop(py_to<int64>({index_expr}))"
+                return f"{list_ref_expr}.pop(static_cast<int64>({index_expr}))"
             if not has_index:
                 return f"{owner_expr}.pop()"
             index_node = expr_d.get("index")
@@ -4721,11 +4764,11 @@ class CppEmitter(
             if not has_start:
                 return f"{fn_name}({owner_expr}, {needle_expr})"
             start_expr = self.render_expr(expr_d.get("start"))
-            start_cast = f"py_to<int64>({start_expr})"
+            start_cast = f"static_cast<int64>({start_expr})"
             end_expr = self._render_container_size_expr(owner_expr)
             if self.any_dict_has(expr_d, "end"):
                 end_raw = self.render_expr(expr_d.get("end"))
-                end_expr = f"py_to<int64>({end_raw})"
+                end_expr = f"static_cast<int64>({end_raw})"
             sliced = f"py_str_slice({owner_expr}, {start_cast}, {end_expr})"
             return f"{fn_name}({sliced}, {needle_expr})"
         if kind == "StrFindOp":

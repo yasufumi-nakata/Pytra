@@ -28,9 +28,9 @@ bytes fire_palette() {
             g = 255;
             b = (i - 170) * 3;
         }
-        p.append(static_cast<uint8>(py_to<int64>(r)));
-        p.append(static_cast<uint8>(py_to<int64>(g)));
-        p.append(static_cast<uint8>(py_to<int64>(b)));
+        p.append(static_cast<uint8>(static_cast<int64>(r)));
+        p.append(static_cast<uint8>(static_cast<int64>(g)));
+        p.append(static_cast<uint8>(static_cast<int64>(b)));
     }
     return p;
 }
@@ -48,27 +48,27 @@ void run_09_fire_simulation() {
     for (int64 t = 0; t < steps; ++t) {
         for (int64 x = 0; x < w; ++x) {
             int64 val = 170 + (x * 13 + t * 17) % 86;
-            py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(h - 1)), py_to<int64>(x)) = val;
+            py_list_at_ref(py_list_at_ref(rc_list_ref(heat), h - 1), x) = val;
         }
         for (int64 y = 1; y < h; ++y) {
             for (int64 x = 0; x < w; ++x) {
-                int64 a = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(y)), py_to<int64>(x));
-                int64 b = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(y)), py_to<int64>((x - 1 + w) % w));
-                int64 c = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(y)), py_to<int64>((x + 1) % w));
-                int64 d = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>((y + 1) % h)), py_to<int64>(x));
+                int64 a = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), y), x);
+                int64 b = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), y), (x - 1 + w) % w);
+                int64 c = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), y), (x + 1) % w);
+                int64 d = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), (y + 1) % h), x);
                 int64 v = (a + b + c + d) / 4;
                 int64 cool = 1 + (x + y + t) % 3;
                 int64 nv = v - cool;
-                py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(y - 1)), py_to<int64>(x)) = (nv > 0 ? nv : 0);
+                py_list_at_ref(py_list_at_ref(rc_list_ref(heat), y - 1), x) = (nv > 0 ? nv : 0);
             }
         }
         bytearray frame = bytearray(w * h);
         for (int64 yy = 0; yy < h; ++yy) {
             int64 row_base = yy * w;
             for (int64 xx = 0; xx < w; ++xx)
-                frame[row_base + xx] = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(yy)), py_to<int64>(xx));
+                frame[row_base + xx] = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), yy), xx);
         }
-        py_list_append_mut(rc_list_ref(frames), frame);
+        rc_list_ref(frames).append(frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, rc_list_ref(frames), fire_palette(), 4, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

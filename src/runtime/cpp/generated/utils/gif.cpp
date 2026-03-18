@@ -25,7 +25,7 @@ list<int64> _gif_u16le(int64 v) {
 }
 
 bytes _lzw_encode(const bytes& data, int64 min_code_size = 8) {
-    if (static_cast<int64>(data.size()) == 0) {
+    if (data.size() == 0) {
         list<int64> empty = {};
         return bytes(empty);
     }
@@ -88,13 +88,13 @@ bytes grayscale_palette() {
 }
 
 void save_gif(const str& path, int64 width, int64 height, const list<bytes>& frames, const bytes& palette, int64 delay_cs = 4, int64 loop = 0) {
-    if (static_cast<int64>(palette.size()) != 256 * 3)
+    if (palette.size() != 256 * 3)
         throw ValueError("palette must be 256*3 bytes");
     list<list<int64>> frame_lists = {};
     for (bytes fr : frames) {
         list<int64> fr_list = {};
         for (uint8 v : fr) {
-            fr_list.append(int64(int64(v)));
+            fr_list.append(int64(static_cast<int64>(v)));
         }
         if (fr_list.size() != width * height)
             throw ValueError("frame size mismatch");
@@ -102,7 +102,7 @@ void save_gif(const str& path, int64 width, int64 height, const list<bytes>& fra
     }
     list<int64> palette_list = {};
     for (uint8 v : palette) {
-        palette_list.append(int64(int64(v)));
+        palette_list.append(int64(static_cast<int64>(v)));
     }
     list<int64> out = {};
     _gif_append_list(out, list<int64>{71, 73, 70, 56, 57, 97});
@@ -131,8 +131,8 @@ void save_gif(const str& path, int64 width, int64 height, const list<bytes>& fra
         out.append(int64(8));
         bytes compressed = _lzw_encode(bytes(fr_list), 8);
         int64 pos = 0;
-        while (pos < static_cast<int64>(compressed.size())) {
-            int64 remain = static_cast<int64>(compressed.size()) - pos;
+        while (pos < compressed.size()) {
+            int64 remain = compressed.size() - pos;
             int64 chunk_len = (remain > 255 ? 255 : remain);
             out.append(chunk_len);
             int64 i = 0;

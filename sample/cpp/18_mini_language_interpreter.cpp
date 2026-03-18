@@ -57,7 +57,7 @@ rc<list<Token>> tokenize(const rc<list<str>>& lines) {
     rc<list<Token>> tokens = rc_list_from_value(list<Token>{});
     for (const auto& [line_index, source] : py_enumerate(lines)) {
         int64 i = 0;
-        int64 n = py_len(source);
+        int64 n = source.size();
         while (i < n) {
             str ch = source[i];
             
@@ -65,9 +65,9 @@ rc<list<Token>> tokenize(const rc<list<str>>& lines) {
                 i++;
                 continue;
             }
-            int64 single_tag = py_to<int64>(single_char_token_tags.get(ch, 0));
+            int64 single_tag = static_cast<int64>(single_char_token_tags.get(ch, 0));
             if (single_tag > 0) {
-                py_list_append_mut(rc_list_ref(tokens), Token(py_list_at_ref(rc_list_ref(single_char_token_kinds), py_to<int64>(single_tag - 1)), ch, i, 0));
+                rc_list_ref(tokens).append(Token(py_list_at_ref(rc_list_ref(single_char_token_kinds), single_tag - 1), ch, i, 0));
                 i++;
                 continue;
             }
@@ -76,8 +76,8 @@ rc<list<Token>> tokenize(const rc<list<str>>& lines) {
                 while ((i < n) && (source[i].isdigit())) {
                     i++;
                 }
-                str text = py_slice(source, start, i);
-                py_list_append_mut(rc_list_ref(tokens), Token("NUMBER", text, start, py_to_int64(text)));
+                str text = py_str_slice(source, start, i);
+                rc_list_ref(tokens).append(Token("NUMBER", text, start, static_cast<int64>(::std::stoll(text))));
                 continue;
             }
             if ((ch.isalpha()) || (ch == "_")) {
@@ -85,25 +85,25 @@ rc<list<Token>> tokenize(const rc<list<str>>& lines) {
                 while ((i < n) && (((source[i].isalpha()) || (source[i] == "_")) || (source[i].isdigit()))) {
                     i++;
                 }
-                str text = py_slice(source, start, i);
+                str text = py_str_slice(source, start, i);
                 if (text == "let") {
-                    py_list_append_mut(rc_list_ref(tokens), Token("LET", text, start, 0));
+                    rc_list_ref(tokens).append(Token("LET", text, start, 0));
                 } else if (text == "print") {
-                    py_list_append_mut(rc_list_ref(tokens), Token("PRINT", text, start, 0));
+                    rc_list_ref(tokens).append(Token("PRINT", text, start, 0));
                 } else {
-                    py_list_append_mut(rc_list_ref(tokens), Token("IDENT", text, start, 0));
+                    rc_list_ref(tokens).append(Token("IDENT", text, start, 0));
                 }
                 continue;
             }
             throw ::std::runtime_error("tokenize error at line=" + ::std::to_string(line_index) + " pos=" + ::std::to_string(i) + " ch=" + ch);
         }
-        py_list_append_mut(rc_list_ref(tokens), Token("NEWLINE", "", n, 0));
+        rc_list_ref(tokens).append(Token("NEWLINE", "", n, 0));
     }
-    py_list_append_mut(rc_list_ref(tokens), Token("EOF", "", (rc_list_ref(lines)).size(), 0));
+    rc_list_ref(tokens).append(Token("EOF", "", (rc_list_ref(lines)).size(), 0));
     return tokens;
 }
 
-struct Parser : public PyObj {
+struct Parser : public RcObject {
     rc<list<ExprNode>> expr_nodes;
     int64 pos;
     rc<list<Token>> tokens;
@@ -138,11 +138,11 @@ struct Parser : public PyObj {
     }
 
     Token Parser::current_token() const {
-        return py_list_at_ref(rc_list_ref(this->tokens), py_to<int64>(this->pos));
+        return py_list_at_ref(rc_list_ref(this->tokens), this->pos);
     }
 
     Token Parser::previous_token() const {
-        return py_list_at_ref(rc_list_ref(this->tokens), py_to<int64>(this->pos - 1));
+        return py_list_at_ref(rc_list_ref(this->tokens), this->pos - 1);
     }
 
     str Parser::peek_kind() const {
@@ -160,7 +160,7 @@ struct Parser : public PyObj {
     Token Parser::expect(const str& kind) {
         Token token = this->current_token();
         if (token.kind != kind)
-            throw ::std::runtime_error("parse error at pos=" + py_to_string(token.pos) + ", expected=" + kind + ", got=" + token.kind);
+            throw ::std::runtime_error("parse error at pos=" + ::std::to_string(token.pos) + ", expected=" + kind + ", got=" + token.kind);
         this->pos++;
         return token;
     }
@@ -172,7 +172,7 @@ struct Parser : public PyObj {
     }
 
     int64 Parser::add_expr(const ExprNode& node) {
-        py_list_append_mut(rc_list_ref(this->expr_nodes), node);
+        rc_list_ref(this->expr_nodes).append(node);
         return (rc_list_ref(this->expr_nodes)).size() - 1;
     }
 
@@ -181,7 +181,7 @@ struct Parser : public PyObj {
         this->skip_newlines();
         while (this->peek_kind() != "EOF") {
             StmtNode stmt = this->parse_stmt();
-            py_list_append_mut(rc_list_ref(stmts), stmt);
+            rc_list_ref(stmts).append(stmt);
             this->skip_newlines();
         }
         return stmts;
@@ -267,11 +267,11 @@ struct Parser : public PyObj {
             return expr_index;
         }
         Token t = this->current_token();
-        throw ::std::runtime_error("primary parse error at pos=" + py_to_string(t.pos) + " got=" + t.kind);
+        throw ::std::runtime_error("primary parse error at pos=" + ::std::to_string(t.pos) + " got=" + t.kind);
     }
 
 int64 eval_expr(int64 expr_index, const rc<list<ExprNode>>& expr_nodes, const dict<str, int64>& env) {
-    ExprNode node = py_list_at_ref(rc_list_ref(expr_nodes), py_to<int64>(expr_index));
+    ExprNode node = py_list_at_ref(rc_list_ref(expr_nodes), expr_index);
     
     if (node.kind_tag == 1)
         return node.value;
@@ -337,29 +337,29 @@ rc<list<str>> build_benchmark_source(int64 var_count, int64 loops) {
     // Declare initial variables.
     rc_list_ref(lines).reserve((var_count <= 0) ? 0 : var_count);
     for (int64 i = 0; i < var_count; ++i)
-        py_list_append_mut(rc_list_ref(lines), "let v" + ::std::to_string(i) + " = " + ::std::to_string(i + 1));
+        rc_list_ref(lines).append("let v" + ::std::to_string(i) + " = " + ::std::to_string(i + 1));
     // Force evaluation of many arithmetic expressions.
     for (int64 i = 0; i < loops; ++i) {
         int64 x = i % var_count;
         int64 y = (i + 3) % var_count;
         int64 c1 = i % 7 + 1;
         int64 c2 = i % 11 + 2;
-        py_list_append_mut(rc_list_ref(lines), "v" + ::std::to_string(x) + " = (v" + ::std::to_string(x) + " * " + ::std::to_string(c1) + " + v" + ::std::to_string(y) + " + 10000) / " + ::std::to_string(c2));
+        rc_list_ref(lines).append("v" + ::std::to_string(x) + " = (v" + ::std::to_string(x) + " * " + ::std::to_string(c1) + " + v" + ::std::to_string(y) + " + 10000) / " + ::std::to_string(c2));
         if (i % 97 == 0)
-            py_list_append_mut(rc_list_ref(lines), "print v" + ::std::to_string(x));
+            rc_list_ref(lines).append("print v" + ::std::to_string(x));
     }
     // Print final values together.
-    py_list_append_mut(rc_list_ref(lines), "print (v0 + v1 + v2 + v3)");
+    rc_list_ref(lines).append("print (v0 + v1 + v2 + v3)");
     return lines;
 }
 
 void run_demo() {
     rc<list<str>> demo_lines = rc_list_from_value(list<str>{});
-    py_list_append_mut(rc_list_ref(demo_lines), "let a = 10");
-    py_list_append_mut(rc_list_ref(demo_lines), "let b = 3");
-    py_list_append_mut(rc_list_ref(demo_lines), "a = (a + b) * 2");
-    py_list_append_mut(rc_list_ref(demo_lines), "print a");
-    py_list_append_mut(rc_list_ref(demo_lines), "print a / b");
+    rc_list_ref(demo_lines).append("let a = 10");
+    rc_list_ref(demo_lines).append("let b = 3");
+    rc_list_ref(demo_lines).append("a = (a + b) * 2");
+    rc_list_ref(demo_lines).append("print a");
+    rc_list_ref(demo_lines).append("print a / b");
     
     rc<list<Token>> tokens = tokenize(demo_lines);
     rc<Parser> parser = ::rc_new<Parser>(tokens);

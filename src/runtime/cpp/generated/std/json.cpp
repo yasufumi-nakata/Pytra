@@ -36,7 +36,7 @@ namespace pytra::std::json {
     
     int64 _hex_value(const str& ch) {
         if ((ch >= "0") && (ch <= "9"))
-            return py_to_int64(ch);
+            return static_cast<int64>(::std::stoll(ch));
         if ((ch == "a") || (ch == "A"))
             return 10;
         if ((ch == "b") || (ch == "B"))
@@ -79,7 +79,7 @@ namespace pytra::std::json {
     }
     
     int64 _json_indent_value(const ::std::optional<int64>& indent) {
-        if (py_is_none(indent))
+        if (!indent.has_value())
             throw ValueError("json indent is required");
         int64 indent_i = (indent).value();
         return indent_i;
@@ -467,10 +467,10 @@ namespace pytra::std::json {
             }
             str token = py_str_slice(this->text, start, this->i);
             if (is_float) {
-                float64 num_f = py_to_float64(token);
+                float64 num_f = static_cast<float64>(::std::stod(token.std()));
                 return _jv_float(num_f);
             }
-            int64 num_i = py_to_int64(token);
+            int64 num_i = static_cast<int64>(::std::stoll(token));
             return _jv_int(num_i);
     }
     
@@ -507,7 +507,7 @@ namespace pytra::std::json {
     str _escape_str(const str& s, bool ensure_ascii) {
         rc<list<str>> out = rc_list_from_value(list<str>{"\""});
         for (str ch : s) {
-            int64 code = py_to<int64>(py_ord(ch));
+            int64 code = static_cast<int64>(py_ord(ch));
             if (ch == "\"") {
                 rc_list_ref(out).append("\\\"");
             } else if (ch == "\\") {
@@ -535,7 +535,7 @@ namespace pytra::std::json {
     str _dump_json_list(const rc<list<_JsonVal>>& values, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level) {
         if ((rc_list_ref(values)).empty())
             return "[]";
-        if (py_is_none(indent)) {
+        if (!indent.has_value()) {
             rc<list<str>> dumped = rc_list_from_value(list<str>{});
             for (_JsonVal x : rc_list_ref(values)) {
                 str dumped_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
@@ -556,7 +556,7 @@ namespace pytra::std::json {
     str _dump_json_dict(const dict<str, _JsonVal>& values, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level) {
         if (py_len(values) == 0)
             return "{}";
-        if (py_is_none(indent)) {
+        if (!indent.has_value()) {
             rc<list<str>> parts = rc_list_from_value(list<str>{});
             for (::std::tuple<str, _JsonVal> __itobj_2 : values) {
                 str k = py_to_string(py_at(__itobj_2, 0));
@@ -602,8 +602,8 @@ namespace pytra::std::json {
     
     str dumps(const _JsonVal& obj, bool ensure_ascii, const ::std::optional<int64>& indent, const ::std::optional<::std::tuple<str, str>>& separators) {
         str item_sep = ",";
-        str key_sep = (py_is_none(indent) ? ":" : ": ");
-        if (!py_is_none(separators)) {
+        str key_sep = (!indent.has_value() ? ":" : ": ");
+        if (separators.has_value()) {
             auto __tuple_4 = *(separators);
             item_sep = ::std::get<0>(__tuple_4);
             key_sep = ::std::get<1>(__tuple_4);
@@ -613,8 +613,8 @@ namespace pytra::std::json {
     
     str dumps_jv(const _JsonVal& jv, bool ensure_ascii, const ::std::optional<int64>& indent, const ::std::optional<::std::tuple<str, str>>& separators) {
         str item_sep = ",";
-        str key_sep = (py_is_none(indent) ? ":" : ": ");
-        if (!py_is_none(separators)) {
+        str key_sep = (!indent.has_value() ? ":" : ": ");
+        if (separators.has_value()) {
             auto __tuple_5 = *(separators);
             item_sep = ::std::get<0>(__tuple_5);
             key_sep = ::std::get<1>(__tuple_5);

@@ -1,22 +1,25 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/time.h"
-#include "pytra/utils/png.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/std/time.h"
+#include "generated/utils/png.h"
 
 // 03: Sample that outputs a Julia set as a PNG image.
 // Implemented with simple loop-centric logic for transpilation compatibility.
 
 bytearray render_julia(int64 width, int64 height, int64 max_iter, float64 cx, float64 cy) {
     bytearray pixels = bytearray{};
-    float64 __hoisted_cast_1 = float64(height - 1);
-    float64 __hoisted_cast_2 = float64(width - 1);
-    float64 __hoisted_cast_3 = float64(max_iter);
+    float64 __hoisted_cast_1 = static_cast<float64>(height - 1);
+    float64 __hoisted_cast_2 = static_cast<float64>(width - 1);
+    float64 __hoisted_cast_3 = static_cast<float64>(max_iter);
     
     for (int64 y = 0; y < height; ++y) {
-        float64 zy0 = -(1.2) + 2.4 * (py_to<float64>(y) / __hoisted_cast_1);
+        float64 zy0 = -(1.2) + 2.4 * (static_cast<float64>(y) / __hoisted_cast_1);
         
         for (int64 x = 0; x < width; ++x) {
-            float64 zx = -(1.8) + 3.6 * (py_to<float64>(x) / __hoisted_cast_2);
+            float64 zx = -(1.8) + 3.6 * (static_cast<float64>(x) / __hoisted_cast_2);
             float64 zy = zy0;
             
             int64 i = 0;
@@ -37,14 +40,14 @@ bytearray render_julia(int64 width, int64 height, int64 max_iter, float64 cx, fl
                 g = 0;
                 b = 0;
             } else {
-                float64 t = py_to<float64>(i) / __hoisted_cast_3;
-                r = int64(255.0 * (0.2 + 0.8 * t));
-                g = int64(255.0 * (0.1 + 0.9 * t * t));
-                b = int64(255.0 * (1.0 - t));
+                float64 t = static_cast<float64>(i) / __hoisted_cast_3;
+                r = static_cast<int64>(255.0 * (0.2 + 0.8 * t));
+                g = static_cast<int64>(255.0 * (0.1 + 0.9 * t * t));
+                b = static_cast<int64>(255.0 * (1.0 - t));
             }
-            pixels.append(r);
-            pixels.append(g);
-            pixels.append(b);
+            pixels.append(static_cast<uint8>(static_cast<int64>(r)));
+            pixels.append(static_cast<uint8>(static_cast<int64>(g)));
+            pixels.append(static_cast<uint8>(static_cast<int64>(b)));
         }
     }
     return pixels;

@@ -98,7 +98,7 @@ class CppRuntimeExprEmitter:
                 for arg_node in arg_nodes:
                     int_base_args.append(self.render_expr(arg_node))
             if len(int_base_args) >= 2:
-                return f"py_to_int64_base({int_base_args[0]}, py_to<int64>({int_base_args[1]}))"
+                return f"py_to_int64_base({int_base_args[0]}, static_cast<int64>({int_base_args[1]}))"
             return ""
         if op == "static_cast":
             if not self.any_dict_has(expr_d, "value"):

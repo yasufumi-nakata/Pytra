@@ -16,7 +16,7 @@ struct Match;
 
 extern int64 S;
 
-    struct Match : public PyObj {
+    struct Match : public RcObject {
         rc<list<str>> _groups;
         str _text;
         PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);

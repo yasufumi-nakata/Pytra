@@ -25,8 +25,8 @@ void run_10_plasma_effect() {
             for (int64 x = 0; x < w; ++x) {
                 int64 dx = x - 160;
                 int64 dy = y - 120;
-                float64 v = pytra::std::math::sin((py_to<float64>(x) + py_to<float64>(t) * 2.0) * 0.045) + pytra::std::math::sin((py_to<float64>(y) - py_to<float64>(t) * 1.2) * 0.05) + pytra::std::math::sin((py_to<float64>(x + y) + py_to<float64>(t) * 1.7) * 0.03) + pytra::std::math::sin(pytra::std::math::sqrt(dx * dx + dy * dy) * 0.07 - py_to<float64>(t) * 0.18);
-                int64 c = int64((v + 4.0) * (255.0 / 8.0));
+                float64 v = pytra::std::math::sin((static_cast<float64>(x) + static_cast<float64>(t) * 2.0) * 0.045) + pytra::std::math::sin((static_cast<float64>(y) - static_cast<float64>(t) * 1.2) * 0.05) + pytra::std::math::sin((static_cast<float64>(x + y) + static_cast<float64>(t) * 1.7) * 0.03) + pytra::std::math::sin(pytra::std::math::sqrt(dx * dx + dy * dy) * 0.07 - static_cast<float64>(t) * 0.18);
+                int64 c = static_cast<int64>((v + 4.0) * (255.0 / 8.0));
                 if (c < 0)
                     c = 0;
                 if (c > 255)
@@ -34,7 +34,7 @@ void run_10_plasma_effect() {
                 frame[row_base + x] = c;
             }
         }
-        py_list_append_mut(rc_list_ref(frames), frame);
+        rc_list_ref(frames).append(frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 3, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

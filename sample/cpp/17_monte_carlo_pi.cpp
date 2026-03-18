@@ -1,6 +1,9 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/time.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/std/time.h"
 
 // 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
 // It avoids floating-point error effects, making cross-language comparisons easier.

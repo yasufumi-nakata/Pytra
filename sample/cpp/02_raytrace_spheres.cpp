@@ -1,8 +1,11 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/math.h"
-#include "pytra/std/time.h"
-#include "pytra/utils/png.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/std/math.h"
+#include "generated/std/time.h"
+#include "generated/utils/png.h"
 
 // 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
 // Dependencies are kept minimal (time only) for transpilation compatibility.
@@ -51,10 +54,10 @@ bytearray render(int64 width, int64 height, int64 aa) {
     float64 lx = -(0.4);
     float64 ly = 0.8;
     float64 lz = -(0.45);
-    float64 __hoisted_cast_1 = float64(aa);
-    float64 __hoisted_cast_2 = float64(height - 1);
-    float64 __hoisted_cast_3 = float64(width - 1);
-    float64 __hoisted_cast_4 = float64(height);
+    float64 __hoisted_cast_1 = static_cast<float64>(aa);
+    float64 __hoisted_cast_2 = static_cast<float64>(height - 1);
+    float64 __hoisted_cast_3 = static_cast<float64>(width - 1);
+    float64 __hoisted_cast_4 = static_cast<float64>(height);
     
     for (int64 y = 0; y < height; ++y) {
         for (int64 x = 0; x < width; ++x) {
@@ -64,10 +67,10 @@ bytearray render(int64 width, int64 height, int64 aa) {
             
             for (int64 ay = 0; ay < aa; ++ay) {
                 for (int64 ax = 0; ax < aa; ++ax) {
-                    float64 fy = (py_to<float64>(y) + (py_to<float64>(ay) + 0.5) / __hoisted_cast_1) / __hoisted_cast_2;
-                    float64 fx = (py_to<float64>(x) + (py_to<float64>(ax) + 0.5) / __hoisted_cast_1) / __hoisted_cast_3;
+                    float64 fy = (static_cast<float64>(y) + (static_cast<float64>(ay) + 0.5) / __hoisted_cast_1) / __hoisted_cast_2;
+                    float64 fx = (static_cast<float64>(x) + (static_cast<float64>(ax) + 0.5) / __hoisted_cast_1) / __hoisted_cast_3;
                     float64 sy = 1.0 - 2.0 * fy;
-                    float64 sx = (2.0 * fx - 1.0) * (py_to<float64>(width) / __hoisted_cast_4);
+                    float64 sx = (2.0 * fx - 1.0) * (static_cast<float64>(width) / __hoisted_cast_4);
                     
                     float64 dx = sx;
                     float64 dy = sy;
@@ -137,7 +140,7 @@ bytearray render(int64 width, int64 height, int64 aa) {
                             base_g = 0.55;
                             base_b = 0.95;
                         } else {
-                            int64 checker = int64((px + 50.0) * 0.8) + int64((pz + 50.0) * 0.8);
+                            int64 checker = static_cast<int64>((px + 50.0) * 0.8) + static_cast<int64>((pz + 50.0) * 0.8);
                             if (checker % 2 == 0) {
                                 base_r = 0.85;
                                 base_g = 0.85;
@@ -149,14 +152,14 @@ bytearray render(int64 width, int64 height, int64 aa) {
                             }
                         }
                         float64 shade = 0.12 + 0.88 * diff;
-                        r = int64(255.0 * clamp01(base_r * shade));
-                        g = int64(255.0 * clamp01(base_g * shade));
-                        b = int64(255.0 * clamp01(base_b * shade));
+                        r = static_cast<int64>(255.0 * clamp01(base_r * shade));
+                        g = static_cast<int64>(255.0 * clamp01(base_g * shade));
+                        b = static_cast<int64>(255.0 * clamp01(base_b * shade));
                     } else {
                         float64 tsky = 0.5 * (dy + 1.0);
-                        r = int64(255.0 * (0.65 + 0.20 * tsky));
-                        g = int64(255.0 * (0.75 + 0.18 * tsky));
-                        b = int64(255.0 * (0.90 + 0.08 * tsky));
+                        r = static_cast<int64>(255.0 * (0.65 + 0.20 * tsky));
+                        g = static_cast<int64>(255.0 * (0.75 + 0.18 * tsky));
+                        b = static_cast<int64>(255.0 * (0.90 + 0.08 * tsky));
                     }
                     ar += r;
                     ag += g;
@@ -164,9 +167,9 @@ bytearray render(int64 width, int64 height, int64 aa) {
                 }
             }
             int64 samples = aa * aa;
-            pixels.append(ar / samples);
-            pixels.append(ag / samples);
-            pixels.append(ab / samples);
+            pixels.append(static_cast<uint8>(static_cast<int64>(ar / samples)));
+            pixels.append(static_cast<uint8>(static_cast<int64>(ag / samples)));
+            pixels.append(static_cast<uint8>(static_cast<int64>(ab / samples)));
         }
     }
     return pixels;

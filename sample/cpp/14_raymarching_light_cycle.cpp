@@ -13,12 +13,12 @@
 bytes palette() {
     bytearray p = bytearray{};
     for (int64 i = 0; i < 256; ++i) {
-        int64 r = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(int64(py_to<float64>(20) + py_to<float64>(i) * 0.9)));
-        int64 g = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(int64(py_to<float64>(10) + py_to<float64>(i) * 0.7)));
+        int64 r = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(static_cast<int64>(static_cast<float64>(20) + static_cast<float64>(i) * 0.9)));
+        int64 g = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(static_cast<int64>(static_cast<float64>(10) + static_cast<float64>(i) * 0.7)));
         int64 b = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(30 + i));
-        p.append(static_cast<uint8>(py_to<int64>(r)));
-        p.append(static_cast<uint8>(py_to<int64>(g)));
-        p.append(static_cast<uint8>(py_to<int64>(b)));
+        p.append(static_cast<uint8>(static_cast<int64>(r)));
+        p.append(static_cast<uint8>(static_cast<int64>(g)));
+        p.append(static_cast<uint8>(static_cast<int64>(b)));
     }
     return p;
 }
@@ -37,7 +37,7 @@ int64 scene(float64 x, float64 y, float64 light_x, float64 light_y) {
     float64 l = pytra::std::math::sqrt(lx * lx + ly * ly);
     float64 lit = 1.0 / (1.0 + 3.5 * l * l);
     
-    int64 v = int64(255.0 * blob * lit * 5.0);
+    int64 v = static_cast<int64>(255.0 * blob * lit * 5.0);
     return ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(::std::max<int64>(static_cast<int64>(0), static_cast<int64>(v))));
 }
 
@@ -49,25 +49,25 @@ void run_14_raymarching_light_cycle() {
     
     float64 start = pytra::std::time::perf_counter();
     rc<list<bytes>> frames = rc_list_from_value(list<bytes>{});
-    float64 __hoisted_cast_1 = float64(frames_n);
-    float64 __hoisted_cast_2 = float64(h - 1);
-    float64 __hoisted_cast_3 = float64(w - 1);
+    float64 __hoisted_cast_1 = static_cast<float64>(frames_n);
+    float64 __hoisted_cast_2 = static_cast<float64>(h - 1);
+    float64 __hoisted_cast_3 = static_cast<float64>(w - 1);
     
     for (int64 t = 0; t < frames_n; ++t) {
         bytearray frame = bytearray(w * h);
-        auto a = (py_to<float64>(t) / __hoisted_cast_1) * pytra::std::math::pi * 2.0;
+        auto a = (static_cast<float64>(t) / __hoisted_cast_1) * pytra::std::math::pi * 2.0;
         float64 light_x = 0.75 * pytra::std::math::cos(a);
         float64 light_y = 0.55 * pytra::std::math::sin(a * 1.2);
         
         for (int64 y = 0; y < h; ++y) {
             int64 row_base = y * w;
-            float64 py = (py_to<float64>(y) / __hoisted_cast_2) * 2.0 - 1.0;
+            float64 py = (static_cast<float64>(y) / __hoisted_cast_2) * 2.0 - 1.0;
             for (int64 x = 0; x < w; ++x) {
-                float64 px = (py_to<float64>(x) / __hoisted_cast_3) * 2.0 - 1.0;
+                float64 px = (static_cast<float64>(x) / __hoisted_cast_3) * 2.0 - 1.0;
                 frame[row_base + x] = scene(px, py, light_x, light_y);
             }
         }
-        py_list_append_mut(rc_list_ref(frames), frame);
+        rc_list_ref(frames).append(frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, rc_list_ref(frames), palette(), 3, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

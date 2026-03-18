@@ -819,6 +819,26 @@ class CppStatementEmitter:
             rval = self.render_boolop(stmt.get("value"), True)
         rval_t0 = self.get_expr_type(stmt.get("value"))
         rval_t = rval_t0 if isinstance(rval_t0, str) else ""
+        # T|None → T: optional unwrapping when assigning to a non-optional target
+        if (
+            t_target != ""
+            and not self.is_any_like_type(t_target)
+            and rval != ""
+            and rval_t != ""
+            and self._contains_text(rval_t, "|")
+        ):
+            u_parts = self.split_union(rval_t)
+            u_has_none = False
+            u_non_none: list[str] = []
+            for _p in u_parts:
+                _pn = self.normalize_type_name(_p)
+                if _pn == "None":
+                    u_has_none = True
+                elif _pn != "":
+                    u_non_none.append(_pn)
+            t_target_norm = self.normalize_type_name(t_target)
+            if u_has_none and len(u_non_none) == 1 and u_non_none[0] == t_target_norm:
+                rval = f"{rval}.value()" if self._is_identifier_expr(rval) else f"({rval}).value()"
         if self._can_runtime_cast_target(t_target) and self.is_any_like_type(rval_t):
             rval = self._coerce_any_expr_to_target_via_unbox(
                 rval,
@@ -837,6 +857,14 @@ class CppStatementEmitter:
         elif self.is_any_like_type(t_target):
             rval = self._box_any_target_value(rval, stmt.get("value"))
         rval = self._apply_empty_init_shorthand_if_marked(stmt, t_target, value, rval)
+        # Rewrite empty collection literal to correct typed version for union/variant targets
+        if t_target != "" and not self.is_any_like_type(t_target) and value is not None and rval != "":
+            rval = self._rewrite_empty_collection_literal_for_typed_target(rval, value, t_target)
+        # Rewrite ::std::nullopt to ::std::monostate{} when target is multi-type variant with None
+        if rval in {"::std::nullopt", "std::nullopt"} and t_target != "" and not self.is_any_like_type(t_target):
+            rewritten_none = self._none_default_expr_for_type(t_target)
+            if rewritten_none not in {"::std::nullopt", "std::nullopt", "object{}"}:
+                rval = rewritten_none
         self.emit(f"{texpr} = {rval};")
 
     def _emit_try_stmt(self, stmt: dict[str, Any]) -> None:
@@ -1623,7 +1651,7 @@ class CppStatementEmitter:
                 start_expr = self.render_expr(args[1])
                 if start_expr == "":
                     return ""
-                return f"py_enumerate({src_expr}, py_to<int64>({start_expr}))"
+                return f"py_enumerate({src_expr}, static_cast<int64>({start_expr}))"
             return f"py_enumerate({src_expr})"
         if not self._forcore_type_has_list_of(src_t, elem_t):
             return ""
@@ -1634,7 +1662,7 @@ class CppStatementEmitter:
             start_expr = self.render_expr(args[1])
             if start_expr == "":
                 return ""
-            return f"py_enumerate_list_as<{elem_cpp_t}>({src_expr}, py_to<int64>({start_expr}))"
+            return f"py_enumerate_list_as<{elem_cpp_t}>({src_expr}, static_cast<int64>({start_expr}))"
         return f"py_enumerate_list_as<{elem_cpp_t}>({src_expr})"
 
     def _render_forcore_typed_reversed_iter_expr(self, iter_expr: dict[str, Any], iter_item_t: str) -> str:
