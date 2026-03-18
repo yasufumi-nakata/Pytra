@@ -59,7 +59,7 @@
 
 文脈: [docs/ja/plans/p2-compile-link-pipeline.md](../plans/p2-compile-link-pipeline.md)
 
-2. [x] [ID: P2-COMPILE-LINK-PIPELINE-01] `.py` → `.east`（EAST3 JSON）の compile 段と、`.east` 群 → ターゲット言語の link 段を分離する。type_id を linker で DFS 確定し、実行時レジストリを廃止する。
+2. [ ] [ID: P2-COMPILE-LINK-PIPELINE-01] `.py` → `.east`（EAST3 JSON）の compile 段と、`.east` 群 → ターゲット言語の link 段を分離する。type_id を linker で DFS 確定し、実行時レジストリを廃止する。
 
 ### P7: selfhost 完全自立化
 

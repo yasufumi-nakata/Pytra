@@ -92,13 +92,15 @@ linker がクラスツリー全体を見て DFS オーダーで `type_id` を割
 
 ## 受け入れ基準
 
-- `pytra compile foo.py -o foo.east` で .east ファイルが生成される。
-- `pytra link foo.east --target cpp -o out/` でターゲット言語ファイルが生成される。
-- 単一ファイルでも compile → link の 2 段を経由する。
-- type_id が linker で確定され、実行時レジストリに依存しない。
-- sample 18/18 artifact parity pass。
+- [x] `pytra compile foo.py -o foo.east` で .east ファイルが生成される。
+- [x] `pytra link foo.east --target cpp -o out/` でターゲット言語ファイルが生成される。
+- [ ] 単一ファイルモード（`py2x.py input.py --target cpp`）が廃止され、内部で compile → link を経由する。
+- [ ] type_id が linker で DFS 確定され、`PYTRA_TID_*` ハードコード定数が `py_runtime.h` から削除されている。
+- [ ] `py_register_class_type()` / `py_sync_generated_user_type_registry()` の実行時レジストリが削除されている。
+- [ ] sample 18/18 artifact parity pass。
 
 ## 決定ログ
 
 - 2026-03-19: ユーザー提案。gcc の compile/link 分離と同じモデルを採用。.east は EAST3 JSON。type_id は linker で DFS 確定。
-- 2026-03-19: 実装完了。`pytra compile` で .py → .east (EAST3 JSON)、`pytra link` で .east → ターゲット言語。link は既存の linked program + ir2lang 経路を使用。18 sample compile+link 成功。type_id のlinker確定は後続タスク。
+- 2026-03-19: compile/link サブコマンド実装。`pytra compile` で .py → .east、`pytra link` で .east → ターゲット言語。18 sample compile+link 成功。
+- 2026-03-19: P2 再オープン。単一ファイルモード（linker 非経由）が残っており、type_id の linker 確定・PYTRA_TID 定数廃止・実行時レジストリ廃止が未実施。単一ファイルモードを廃止し、全パスを compile → link 経由に統一する残作業がある。
