@@ -37,6 +37,9 @@
 
 ## Latest News
 
+> **2026-03-18 | v0.14.0 Released**<br>
+> Version 0.14.0 was released. Added support for recursive union types.
+
 > **2026-03-11 | v0.13.0 Released**<br>
 > Version 0.13.0 was released. I wrote an NES (Famicom) emulator in Python + SDL3. [Super Mario Bros. 3 is running.](https://x.com/yaneuraou/status/2031612549658202538) It is very slow. I am currently improving Pytra so this can be transpiled to C++ with Pytra.
 
