@@ -192,7 +192,8 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                 continue
             m_pep695_pre = re.match(r"^type\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
             if m_pep695_pre is not None:
-                _sh_register_type_alias(type_aliases, re.strip_group(m_pep695_pre, 1), re.strip_group(m_pep695_pre, 2))
+                # PEP 695 type alias: 名前を type_aliases に入れない（展開抑止）。
+                # パーサーは名前をそのまま NamedType として扱う。
                 continue
             asg_pre = _sh_split_top_level_assign(s)
             if asg_pre is not None:

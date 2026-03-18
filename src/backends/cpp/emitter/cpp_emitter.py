@@ -3731,6 +3731,10 @@ class CppEmitter(
         if val_t.startswith("optional[") and val_t.endswith("]"):
             has_val = f"{base}.has_value()" if self._is_identifier_expr(base) else f"({base}).has_value()"
             return has_val if negated else f"!{has_val}"
+        # named tagged union の直接チェック（val_t が alias 名の場合）
+        if val_t in getattr(self, "_tagged_union_types", {}) and getattr(self, "_tagged_union_has_none", {}).get(val_t, False):
+            tag_check = f"{base}.tag == PYTRA_TID_NONE"
+            return f"{base}.tag != PYTRA_TID_NONE" if negated else tag_check
         # T|None 形式のユニオン（optional[T] と同義）
         if val_t != "" and val_t != "None":
             non_none, has_none = self.split_union_non_none(val_t)

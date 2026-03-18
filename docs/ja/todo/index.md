@@ -37,7 +37,7 @@
 
 文脈: [docs/ja/plans/p0-type-alias-no-expand.md](../plans/p0-type-alias-no-expand.md)
 
-1. [ ] [ID: P0-TYPE-ALIAS-NO-EXPAND-01] EAST1 パーサーが型エイリアスを展開しないようにする。P1 ブロッカー。
+1. [x] [ID: P0-TYPE-ALIAS-NO-EXPAND-01] EAST1 パーサーが型エイリアスを展開しないようにする。P1 ブロッカー。
 
 ### P1: 言語機能追加
 
