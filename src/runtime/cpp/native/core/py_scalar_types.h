@@ -14,4 +14,7 @@ using uint64 = ::std::uint64_t;
 using float32 = float;
 using float64 = double;
 
+// tagged union / isinstance 判定に使用する型 ID。
+using pytra_type_id = uint32;
+
 #endif  // PYTRA_BUILT_IN_PY_SCALAR_TYPES_H

@@ -24,16 +24,16 @@
 
 // type_id は target 非依存で stable な型判定キーとして扱う。
 // 予約領域（0-999）は runtime 組み込み型に割り当てる。
-static constexpr uint32 PYTRA_TID_NONE = 0;
-static constexpr uint32 PYTRA_TID_BOOL = 1;
-static constexpr uint32 PYTRA_TID_INT = 2;
-static constexpr uint32 PYTRA_TID_FLOAT = 3;
-static constexpr uint32 PYTRA_TID_STR = 4;
-static constexpr uint32 PYTRA_TID_LIST = 5;
-static constexpr uint32 PYTRA_TID_DICT = 6;
-static constexpr uint32 PYTRA_TID_SET = 7;
-static constexpr uint32 PYTRA_TID_OBJECT = 8;
-static constexpr uint32 PYTRA_TID_USER_BASE = 1000;
+static constexpr pytra_type_id PYTRA_TID_NONE = 0;
+static constexpr pytra_type_id PYTRA_TID_BOOL = 1;
+static constexpr pytra_type_id PYTRA_TID_INT = 2;
+static constexpr pytra_type_id PYTRA_TID_FLOAT = 3;
+static constexpr pytra_type_id PYTRA_TID_STR = 4;
+static constexpr pytra_type_id PYTRA_TID_LIST = 5;
+static constexpr pytra_type_id PYTRA_TID_DICT = 6;
+static constexpr pytra_type_id PYTRA_TID_SET = 7;
+static constexpr pytra_type_id PYTRA_TID_OBJECT = 8;
+static constexpr pytra_type_id PYTRA_TID_USER_BASE = 1000;
 
 inline list<str> str::split(const str& sep, int64 maxsplit) const {
     return py_split(*this, sep, maxsplit);
@@ -206,18 +206,18 @@ static inline decltype(auto) py_at_bounds_debug(const Seq& v, int64 idx) {
 // type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。
 #include "runtime/cpp/generated/built_in/type_id.h"
 
-static inline dict<uint32, uint32>& py_runtime_user_type_base_registry() {
-    static dict<uint32, uint32> user_type_base{};
+static inline dict<pytra_type_id, pytra_type_id>& py_runtime_user_type_base_registry() {
+    static dict<pytra_type_id, pytra_type_id> user_type_base{};
     return user_type_base;
 }
 
-static inline uint32& py_runtime_next_user_type_id() {
-    static uint32 next_user_type_id = 1000;
+static inline pytra_type_id& py_runtime_next_user_type_id() {
+    static pytra_type_id next_user_type_id = 1000;
     return next_user_type_id;
 }
 
-static inline uint32& py_runtime_synced_user_type_count() {
-    static uint32 synced_user_type_count = 0;
+static inline pytra_type_id& py_runtime_synced_user_type_count() {
+    static pytra_type_id synced_user_type_count = 0;
     return synced_user_type_count;
 }
 
@@ -227,8 +227,8 @@ static inline void py_sync_generated_user_type_registry() {
         return;
     }
     auto& synced_user_type_count = py_runtime_synced_user_type_count();
-    uint32 next_user_type_id = py_runtime_next_user_type_id();
-    uint32 last_registered_tid = next_user_type_id - 1;
+    pytra_type_id next_user_type_id = py_runtime_next_user_type_id();
+    pytra_type_id last_registered_tid = next_user_type_id - 1;
     bool needs_sync = synced_user_type_count != user_type_base.size();
     if (!needs_sync) {
         auto last_it = user_type_base.find(last_registered_tid);
@@ -239,22 +239,22 @@ static inline void py_sync_generated_user_type_registry() {
     if (!needs_sync) {
         return;
     }
-    for (uint32 tid = 1000; tid < next_user_type_id; ++tid) {
+    for (pytra_type_id tid = 1000; tid < next_user_type_id; ++tid) {
         auto it = user_type_base.find(tid);
         if (it == user_type_base.end()) {
             continue;
         }
         py_tid_register_known_class_type(static_cast<int64>(tid), static_cast<int64>(it->second));
     }
-    synced_user_type_count = static_cast<uint32>(user_type_base.size());
+    synced_user_type_count = static_cast<pytra_type_id>(user_type_base.size());
 }
 
-static inline uint32 py_register_class_type(uint32 base_type_id = PYTRA_TID_OBJECT) {
+static inline pytra_type_id py_register_class_type(pytra_type_id base_type_id = PYTRA_TID_OBJECT) {
     // NOTE:
     // Avoid cross-TU static initialization order issues by keeping user type
     // registry in function-local statics (initialized on first use).
     auto& user_type_base = py_runtime_user_type_base_registry();
-    uint32 tid = py_runtime_next_user_type_id();
+    pytra_type_id tid = py_runtime_next_user_type_id();
     while (user_type_base.find(tid) != user_type_base.end()) {
         ++tid;
     }
@@ -266,33 +266,33 @@ static inline uint32 py_register_class_type(uint32 base_type_id = PYTRA_TID_OBJE
 // Generated user classes share this exact type-id boilerplate.
 // Keep it in runtime so backend output stays compact and consistent.
 #define PYTRA_DECLARE_CLASS_TYPE(BASE_TYPE_ID_EXPR)                                                     \
-    inline static uint32 PYTRA_TYPE_ID = py_register_class_type((BASE_TYPE_ID_EXPR));                   \
-    uint32 py_type_id() const noexcept override {                                                        \
+    inline static pytra_type_id PYTRA_TYPE_ID = py_register_class_type((BASE_TYPE_ID_EXPR));            \
+    pytra_type_id py_type_id() const noexcept override {                                                 \
         return PYTRA_TYPE_ID;                                                                            \
 }
 
-static inline bool py_runtime_type_id_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {
+static inline bool py_runtime_type_id_is_subtype(pytra_type_id actual_type_id, pytra_type_id expected_type_id) {
     py_sync_generated_user_type_registry();
     return py_tid_is_subtype(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
 }
 
-static inline bool py_runtime_type_id_issubclass(uint32 actual_type_id, uint32 expected_type_id) {
+static inline bool py_runtime_type_id_issubclass(pytra_type_id actual_type_id, pytra_type_id expected_type_id) {
     py_sync_generated_user_type_registry();
     return py_tid_issubclass(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
 }
 
-static inline uint32 py_runtime_object_type_id(const object& v) {
+static inline pytra_type_id py_runtime_object_type_id(const object& v) {
     if (!v) {
         return PYTRA_TID_NONE;
     }
-    uint32 out = v->py_type_id();
+    pytra_type_id out = v->py_type_id();
     if (out == 0) {
         return PYTRA_TID_OBJECT;
     }
     return out;
 }
 
-static inline bool py_runtime_object_isinstance(const object& value, uint32 expected_type_id) {
+static inline bool py_runtime_object_isinstance(const object& value, pytra_type_id expected_type_id) {
     if (!value) {
         return expected_type_id == PYTRA_TID_NONE;
     }
@@ -301,7 +301,7 @@ static inline bool py_runtime_object_isinstance(const object& value, uint32 expe
 }
 
 template <class T>
-static inline uint32 _py_static_type_id_for() {
+static inline pytra_type_id _py_static_type_id_for() {
     if constexpr (::std::is_same_v<T, bool>) return PYTRA_TID_BOOL;
     else if constexpr (::std::is_integral_v<T>) return PYTRA_TID_INT;
     else if constexpr (::std::is_floating_point_v<T>) return PYTRA_TID_FLOAT;
@@ -310,36 +310,36 @@ static inline uint32 _py_static_type_id_for() {
 }
 
 template <class T>
-static inline uint32 py_runtime_value_type_id(const T& value) {
+static inline pytra_type_id py_runtime_value_type_id(const T& value) {
     (void)value;
     return _py_static_type_id_for<T>();
 }
 
 template <class K, class V>
-static inline uint32 py_runtime_value_type_id(const dict<K, V>&) { return PYTRA_TID_DICT; }
+static inline pytra_type_id py_runtime_value_type_id(const dict<K, V>&) { return PYTRA_TID_DICT; }
 
 template <class T>
-static inline uint32 py_runtime_value_type_id(const list<T>&) { return PYTRA_TID_LIST; }
+static inline pytra_type_id py_runtime_value_type_id(const list<T>&) { return PYTRA_TID_LIST; }
 
 template <class T>
-static inline uint32 py_runtime_value_type_id(const set<T>&) { return PYTRA_TID_SET; }
+static inline pytra_type_id py_runtime_value_type_id(const set<T>&) { return PYTRA_TID_SET; }
 
 template <class T>
-static inline uint32 py_runtime_value_type_id(const rc<T>& value) {
+static inline pytra_type_id py_runtime_value_type_id(const rc<T>& value) {
     if (!value) return PYTRA_TID_NONE;
-    uint32 out = value->py_type_id();
+    pytra_type_id out = value->py_type_id();
     return out == 0 ? PYTRA_TID_OBJECT : out;
 }
 
 template <class T>
-static inline bool py_runtime_value_isinstance(const T& value, uint32 expected_type_id) {
+static inline bool py_runtime_value_isinstance(const T& value, pytra_type_id expected_type_id) {
     return py_runtime_type_id_is_subtype(py_runtime_value_type_id(value), expected_type_id);
 }
 
 // Specialization for user-defined ref classes that inherit RcObject.
 // Uses the virtual py_type_id() on the RcObject base.
 template <class T, ::std::enable_if_t<::std::is_base_of_v<RcObject, T>, int> = 0>
-static inline bool py_runtime_value_isinstance(const rc<T>& value, uint32 expected_type_id) {
+static inline bool py_runtime_value_isinstance(const rc<T>& value, pytra_type_id expected_type_id) {
     if (!value) return expected_type_id == PYTRA_TID_NONE;
     return py_runtime_type_id_is_subtype(value->py_type_id(), expected_type_id);
 }

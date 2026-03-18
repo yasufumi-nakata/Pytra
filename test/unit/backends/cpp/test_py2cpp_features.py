@@ -6116,7 +6116,7 @@ def head(xs: tuple[int, ...]) -> int:
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
         self.assertIn("struct Scalar {", cpp)
-        self.assertIn("uint32 tag;", cpp)
+        self.assertIn("pytra_type_id tag;", cpp)
         self.assertIn("PYTRA_TID_INT", cpp)
         self.assertIn("PYTRA_TID_FLOAT", cpp)
         self.assertIn("const Scalar&", cpp)

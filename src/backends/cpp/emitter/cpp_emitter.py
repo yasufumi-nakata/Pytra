@@ -2330,7 +2330,7 @@ class CppEmitter(
 
         # struct 定義を emit
         self.emit(f"struct {name} {{")
-        self.emit(f"    uint32 tag;")
+        self.emit(f"    pytra_type_id tag;")
         # Fields
         for _, cpp_t, field_name in tag_entries:
             self.emit(f"    {cpp_t} {field_name};")

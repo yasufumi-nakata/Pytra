@@ -14,7 +14,7 @@ struct _ArgSpec;
 struct ArgumentParser;
 
 struct ArgValue {
-    uint32 tag;
+    pytra_type_id tag;
     str str_val;
     bool bool_val;
 

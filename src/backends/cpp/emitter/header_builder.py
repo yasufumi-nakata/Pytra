@@ -1442,7 +1442,7 @@ def _build_tagged_union_struct_lines(
                 cpp_t = "rc<" + cpp_t + ">"
         tag_entries.append((tid_expr, cpp_t, field_name))
     lines.append("struct " + name + " {")
-    lines.append("    uint32 tag;")
+    lines.append("    pytra_type_id tag;")
     for _, cpp_t, field_name in tag_entries:
         lines.append("    " + cpp_t + " " + field_name + ";")
     lines.append("")
