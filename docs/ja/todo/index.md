@@ -45,6 +45,14 @@
 
 1. [ ] [ID: P6-CPP-INCLUDE-OPTIMIZE-01] C++ 生成コード冒頭の `#include` を固定文字列ではなく、emitter が生成コードの内容に応じて必要な include のみを emit するよう変更する。
 
+### P2: compile / link パイプライン分離
+
+#### P2-1: compile / link 2段パイプライン
+
+文脈: [docs/ja/plans/p2-compile-link-pipeline.md](../plans/p2-compile-link-pipeline.md)
+
+2. [ ] [ID: P2-COMPILE-LINK-PIPELINE-01] `.py` → `.east`（EAST3 JSON）の compile 段と、`.east` 群 → ターゲット言語の link 段を分離する。type_id を linker で DFS 確定し、実行時レジストリを廃止する。
+
 ### P7: selfhost 完全自立化
 
 #### P7-1: native/compiler/ 完全削除

@@ -28,6 +28,7 @@
 - EAST1 build 責務境界: [EAST1 build 責務境界](./spec-east.md#east1-build-boundary)
 - EAST 移行フェーズ: [EAST 移行フェーズ](./spec-east.md#east-migration-phases)
 - Linker 仕様（EAST 連結）: [Linker 仕様](./spec-linker.md)
+- compile / link パイプライン計画: [compile / link パイプライン](../plans/p2-compile-link-pipeline.md)
 - 言語別仕様: [言語別仕様](../language/index.md)
 - Codex 向け運用仕様: [Codex 向け運用仕様](./spec-codex.md)
 - 旧仕様アーカイブ: [仕様アーカイブ](./archive/index.md)
