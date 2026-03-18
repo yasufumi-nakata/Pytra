@@ -49,7 +49,7 @@
 
 文脈: [docs/ja/plans/p0-tagged-union-cast-narrowing.md](../plans/p0-tagged-union-cast-narrowing.md)
 
-3. [ ] [ID: P0-TAGGED-UNION-CAST-NARROWING-01] tagged union 変数からの値取り出しを `typing.cast(T, v)` による明示的フィールドアクセスに統一する。isinstance ガードによる暗黙ナローイングを除去し、`cast()` を `v.{T_field}` に変換する emitter パスを実装する。
+3. [x] [ID: P0-TAGGED-UNION-CAST-NARROWING-01] tagged union 変数からの値取り出しを `typing.cast(T, v)` による明示的フィールドアクセスに統一する。isinstance ガードによる暗黙ナローイングを除去し、`cast()` を `v.{T_field}` に変換する emitter パスを実装する。
 
 ### P1: 言語機能追加
 

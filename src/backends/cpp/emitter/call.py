@@ -209,6 +209,37 @@ class CppCallEmitter:
                 return namespaced, raw
         return None, raw
 
+    def _try_render_tagged_union_cast(self, fn_name: str, arg_nodes: list[Any]) -> str:
+        """cast(T, v) を tagged union のフィールドアクセスに変換する。該当なしは空文字。"""
+        if fn_name != "cast" or len(arg_nodes) < 2:
+            return ""
+        value_node = self.any_to_dict_or_empty(arg_nodes[1])
+        value_t = self.normalize_type_name(self.get_expr_type(value_node))
+        tagged_union_types = getattr(self, "_tagged_union_types", {})
+        alias_map = getattr(self, "_type_alias_reverse_map", {})
+        union_name = alias_map.get(value_t, "")
+        if union_name == "" and value_t in tagged_union_types:
+            union_name = value_t
+        if union_name not in tagged_union_types:
+            return ""
+        # 第1引数から対象型を取得
+        type_node = self.any_to_dict_or_empty(arg_nodes[0])
+        type_name = self.any_to_str(type_node.get("id"))
+        if type_name == "":
+            return ""
+        target_t = self.normalize_type_name(type_name)
+        # union メンバから対応するフィールドを見つける
+        field_name_fn = getattr(self, "_tagged_union_field_name", None)
+        if field_name_fn is None:
+            return ""
+        non_none_parts = tagged_union_types[union_name]
+        for part in non_none_parts:
+            part_norm = self.normalize_type_name(part)
+            if part_norm == target_t:
+                value_expr = self.render_expr(value_node)
+                return f"{value_expr}.{field_name_fn(part)}"
+        return ""
+
     def _render_builtin_static_cast_call(
         self,
         expr: dict[str, Any],
@@ -1337,6 +1368,10 @@ class CppCallEmitter:
     ) -> str:
         """`Call` ノードの描画本体（前処理済みコンテキスト版）。"""
         _ = first_arg
+        # cast(T, v) → tagged union フィールドアクセス
+        cast_result = self._try_render_tagged_union_cast(fn_name, arg_nodes)
+        if cast_result != "":
+            return cast_result
         self.validate_call_receiver_or_raise(fn)
         hook_call = self.hook_on_render_call(expr_d, fn, args, kw)
         hook_call_txt = ""

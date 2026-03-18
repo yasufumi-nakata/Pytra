@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from pytra.std import sys
 
 type ArgValue = str | bool | None
@@ -116,7 +118,7 @@ class ArgumentParser:
             if s.action == "store_true":
                 dv: ArgValue = s.default
                 if isinstance(dv, bool):
-                    values[s.dest] = dv
+                    values[s.dest] = cast(bool, dv)
                 else:
                     values[s.dest] = False
             elif s.default is not None:

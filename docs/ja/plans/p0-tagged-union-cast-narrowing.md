@@ -77,3 +77,6 @@ if ((s.py_default).tag == PYTRA_TID_BOOL) {
 
 - 2026-03-18: ユーザー指摘。isinstance ガードだけでは型が確定しない。`cast()` で明示的に型を確定させるべき。
   `typing.cast` は Python 実行時 no-op なので互換性に影響なし。仕様 `spec-tagged-union.md` に記載。
+- 2026-03-18: 実装完了。`_try_render_tagged_union_cast` を call.py に追加。`cast(T, v)` を `v.{T_field}` に変換。
+  暗黙ナローイング（`_narrowed_union_vars`、`_detect_isinstance_narrowing`、`_render_name_expr` の narrowing パス）を除去。
+  argparse.py を `cast(bool, dv)` 方式に修正。242 test pass。

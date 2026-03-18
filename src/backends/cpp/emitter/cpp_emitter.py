@@ -4086,16 +4086,6 @@ class CppEmitter(
     def _render_name_expr(self, expr_d: dict[str, Any]) -> str:
         """Name ノードを C++ 式へ変換する。"""
         name_txt = dict_any_get_str(expr_d, "id")
-        # tagged union 型ナローイング: isinstance ガード内では field access に変換
-        if name_txt != "" and name_txt in self._narrowed_union_vars:
-            field = self._narrowed_union_vars[name_txt]
-            rendered = self.render_name_expr_common(
-                expr_d, self.reserved_words, self.rename_prefix,
-                self.renamed_symbols, "_",
-                rewrite_self=self.current_class_name is not None,
-                self_is_declared=self.is_declared("self"), self_rendered="*this",
-            )
-            return f"{rendered}.{field}"
         if name_txt != "" and not self.is_locally_declared(name_txt):
             imported = self._resolve_imported_symbol(name_txt)
             imported_module = dict_any_get_str(imported, "module")
