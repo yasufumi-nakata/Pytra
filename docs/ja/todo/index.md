@@ -37,15 +37,16 @@
 
 文脈: [docs/ja/plans/p0-type-alias-no-expand.md](../plans/p0-type-alias-no-expand.md)
 
-1. [x] [ID: P0-TYPE-ALIAS-NO-EXPAND-01] EAST1 パーサーが型エイリアスを展開しないようにする。P1 ブロッカー。
+1. [x] [ID: P0-TYPE-ALIAS-NO-EXPAND-01] EAST1 パーサーが型エイリアスを展開しないようにする。
 
-### P1: 言語機能追加
+#### P0-4: json.py 書き直し（4ステップ）
 
-#### P1-1: json.py を type JsonVal = ... で書き直し
+文脈: [docs/ja/plans/p0-json-rewrite-steps.md](../plans/p0-json-rewrite-steps.md)
 
-文脈: [docs/ja/plans/p1-json-tagged-union-rewrite.md](../plans/p1-json-tagged-union-rewrite.md)
-
-1. [ ] [ID: P1-JSON-TAGGED-UNION-REWRITE-01] `json.py` を `type JsonVal = None | bool | int | float | str | list[JsonVal] | dict[str, JsonVal]` で書き直し、再帰的 tagged union の実用検証を行う。P0-TYPE-ALIAS-NO-EXPAND 完了が前提。
+2. [ ] [ID: P0-JSON-REWRITE-S1-01] json.py S1: `_JsonVal` クラス・タグ定数・ファクトリ関数を削除し `type JsonVal = ...` に置き換え。
+3. [ ] [ID: P0-JSON-REWRITE-S2-01] json.py S2: `_JsonParser` の戻り値型を `JsonVal` に変更し、ファクトリ呼び出しを直接値の return に置き換え。
+4. [ ] [ID: P0-JSON-REWRITE-S3-01] json.py S3: ダンパー（`_dump_json_value` 等）のタグ判定を `isinstance` + `cast` に変更。
+5. [ ] [ID: P0-JSON-REWRITE-S4-01] json.py S4: 公開 API（`JsonObj` / `JsonArr` / `JsonValue` / `loads` / `dumps`）の内部型を `JsonVal` に更新。テスト検証。
 
 ### P2: compile / link パイプライン分離
 
