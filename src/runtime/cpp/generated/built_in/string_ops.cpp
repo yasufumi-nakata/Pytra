@@ -16,7 +16,7 @@ bool _is_space(const str& ch) {
 
 bool _contains_char(const str& chars, const str& ch) {
     int64 i = 0;
-    int64 n = static_cast<int64>(chars.size());
+    int64 n = chars.size();
     while (i < n) {
         if (chars[i] == ch)
             return true;
@@ -37,7 +37,7 @@ int64 _normalize_index(int64 idx, int64 n) {
 }
 
 str py_join(const str& sep, const list<str>& parts) {
-    int64 n = static_cast<int64>(parts.size());
+    int64 n = parts.size();
     if (n == 0)
         return "";
     str out = "";
@@ -59,8 +59,8 @@ list<str> py_split(const str& s, const str& sep, int64 maxsplit) {
     }
     int64 pos = 0;
     int64 splits = 0;
-    int64 n = static_cast<int64>(s.size());
-    int64 m = static_cast<int64>(sep.size());
+    int64 n = s.size();
+    int64 m = sep.size();
     bool unlimited = maxsplit < 0;
     while (true) {
         if ((!(unlimited)) && (splits >= maxsplit))
@@ -78,7 +78,7 @@ list<str> py_split(const str& s, const str& sep, int64 maxsplit) {
 
 list<str> py_splitlines(const str& s) {
     rc<list<str>> out = rc_list_from_value(list<str>{});
-    int64 n = static_cast<int64>(s.size());
+    int64 n = s.size();
     int64 start = 0;
     int64 i = 0;
     while (i < n) {
@@ -106,11 +106,11 @@ list<str> py_splitlines(const str& s) {
 
 int64 py_count(const str& s, const str& needle) {
     if (needle == "")
-        return static_cast<int64>(s.size()) + 1;
+        return s.size() + 1;
     int64 out = 0;
     int64 pos = 0;
-    int64 n = static_cast<int64>(s.size());
-    int64 m = static_cast<int64>(needle.size());
+    int64 n = s.size();
+    int64 m = needle.size();
     while (true) {
         int64 at = py_find_window(s, needle, pos, n);
         if (at < 0)
@@ -122,7 +122,7 @@ int64 py_count(const str& s, const str& needle) {
 
 str py_lstrip(const str& s) {
     int64 i = 0;
-    int64 n = static_cast<int64>(s.size());
+    int64 n = s.size();
     while ((i < n) && (_is_space(s[i]))) {
         i++;
     }
@@ -131,7 +131,7 @@ str py_lstrip(const str& s) {
 
 str py_lstrip_chars(const str& s, const str& chars) {
     int64 i = 0;
-    int64 n = static_cast<int64>(s.size());
+    int64 n = s.size();
     while ((i < n) && (_contains_char(chars, s[i]))) {
         i++;
     }
@@ -139,7 +139,7 @@ str py_lstrip_chars(const str& s, const str& chars) {
 }
 
 str py_rstrip(const str& s) {
-    int64 n = static_cast<int64>(s.size());
+    int64 n = s.size();
     int64 i = n - 1;
     while ((i >= 0) && (_is_space(s[i]))) {
         i--;
@@ -148,7 +148,7 @@ str py_rstrip(const str& s) {
 }
 
 str py_rstrip_chars(const str& s, const str& chars) {
-    int64 n = static_cast<int64>(s.size());
+    int64 n = s.size();
     int64 i = n - 1;
     while ((i >= 0) && (_contains_char(chars, s[i]))) {
         i--;
@@ -165,8 +165,8 @@ str py_strip_chars(const str& s, const str& chars) {
 }
 
 bool py_startswith(const str& s, const str& prefix) {
-    int64 n = static_cast<int64>(s.size());
-    int64 m = static_cast<int64>(prefix.size());
+    int64 n = s.size();
+    int64 m = prefix.size();
     if (m > n)
         return false;
     int64 i = 0;
@@ -179,8 +179,8 @@ bool py_startswith(const str& s, const str& prefix) {
 }
 
 bool py_endswith(const str& s, const str& suffix) {
-    int64 n = static_cast<int64>(s.size());
-    int64 m = static_cast<int64>(suffix.size());
+    int64 n = s.size();
+    int64 m = suffix.size();
     if (m > n)
         return false;
     int64 i = 0;
@@ -194,12 +194,12 @@ bool py_endswith(const str& s, const str& suffix) {
 }
 
 int64 py_find(const str& s, const str& needle) {
-    return py_find_window(s, needle, 0, static_cast<int64>(s.size()));
+    return py_find_window(s, needle, 0, s.size());
 }
 
 int64 py_find_window(const str& s, const str& needle, int64 start, int64 end) {
-    int64 n = static_cast<int64>(s.size());
-    int64 m = static_cast<int64>(needle.size());
+    int64 n = s.size();
+    int64 m = needle.size();
     int64 lo = _normalize_index(start, n);
     int64 up = _normalize_index(end, n);
     if (up < lo)
@@ -226,12 +226,12 @@ int64 py_find_window(const str& s, const str& needle, int64 start, int64 end) {
 }
 
 int64 py_rfind(const str& s, const str& needle) {
-    return py_rfind_window(s, needle, 0, static_cast<int64>(s.size()));
+    return py_rfind_window(s, needle, 0, s.size());
 }
 
 int64 py_rfind_window(const str& s, const str& needle, int64 start, int64 end) {
-    int64 n = static_cast<int64>(s.size());
-    int64 m = static_cast<int64>(needle.size());
+    int64 n = s.size();
+    int64 m = needle.size();
     int64 lo = _normalize_index(start, n);
     int64 up = _normalize_index(end, n);
     if (up < lo)
@@ -260,8 +260,8 @@ str py_replace(const str& s, const str& oldv, const str& newv) {
     if (oldv == "")
         return s;
     str out = "";
-    int64 n = static_cast<int64>(s.size());
-    int64 m = static_cast<int64>(oldv.size());
+    int64 n = s.size();
+    int64 m = oldv.size();
     int64 i = 0;
     while (i < n) {
         if ((i + m <= n) && (py_find_window(s, oldv, i, i + m) == i)) {

@@ -73,7 +73,7 @@ namespace pytra::std::argparse {
     dict<str, ArgValue> ArgumentParser::parse_args(const ::std::optional<rc<list<str>>>& argv) const {
             rc<list<str>> args;
             if (!argv.has_value())
-                args = py_to<rc<list<str>>>(py_list_slice_copy(py_runtime_argv(), 1, static_cast<int64>((py_runtime_argv()).size())));
+                args = py_to<rc<list<str>>>(py_list_slice_copy(py_runtime_argv(), 1, int64((py_runtime_argv()).size())));
             else
                 args = py_to<rc<list<str>>>(argv.value());
             rc<list<_ArgSpec>> specs_pos = rc_list_from_value(list<_ArgSpec>{});

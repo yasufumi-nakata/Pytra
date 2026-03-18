@@ -49,7 +49,7 @@ namespace pytra::std::re {
         bool is_head_alpha = ("a" <= h && h <= "z") || ("A" <= h && h <= "Z");
         if (!((is_head_alpha) || (h == "_")))
             return false;
-        for (str ch : py_str_slice(s, 1, static_cast<int64>(s.size()))) {
+        for (str ch : py_str_slice(s, 1, int64(s.size()))) {
             bool is_alpha = ("a" <= ch && ch <= "z") || ("A" <= ch && ch <= "Z");
             bool is_digit = "0" <= ch && ch <= "9";
             if (!((is_alpha) || (is_digit) || (ch == "_")))
@@ -82,7 +82,7 @@ namespace pytra::std::re {
         str t = py_rstrip(s);
         if (t.size() == 0)
             return "";
-        if (py_str_slice(t, -(1), static_cast<int64>(t.size())) != ":")
+        if (py_str_slice(t, -(1), int64(t.size())) != ":")
             return "";
         return py_str_slice(t, 0, -(1));
     }
@@ -151,16 +151,16 @@ namespace pytra::std::re {
             k = _skip_spaces(t, k);
             if ((k >= t.size()) || (py_str_slice(t, k, k + 1) != "("))
                 return ::std::nullopt;
-            int64 r = static_cast<int64>(py_rfind(t, ")"));
+            int64 r = int64(py_rfind(t, ")"));
             if (r <= k)
                 return ::std::nullopt;
             str args = py_str_slice(t, k + 1, r);
-            str tail = py_strip(py_str_slice(t, r + 1, static_cast<int64>(t.size())));
+            str tail = py_strip(py_str_slice(t, r + 1, int64(t.size())));
             if (tail == "")
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, args, ""}));
             if (!(py_startswith(tail, "->")))
                 return ::std::nullopt;
-            str ret = py_strip(py_str_slice(tail, 2, static_cast<int64>(tail.size())));
+            str ret = py_strip(py_str_slice(tail, 2, int64(tail.size())));
             if (ret == "")
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, args, ret}));
@@ -172,7 +172,7 @@ namespace pytra::std::re {
             str name = py_strip(py_str_slice(text, 0, c));
             if (!(_is_ident(name)))
                 return ::std::nullopt;
-            str rhs = py_str_slice(text, c + 1, static_cast<int64>(text.size()));
+            str rhs = py_str_slice(text, c + 1, int64(text.size()));
             auto eq = py_find(rhs, "=");
             if (eq < 0) {
                 str ann = py_strip(rhs);
@@ -181,7 +181,7 @@ namespace pytra::std::re {
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ann, ""}));
             }
             str ann = py_strip(py_str_slice(rhs, 0, eq));
-            str val = py_strip(py_str_slice(rhs, eq + 1, static_cast<int64>(rhs.size())));
+            str val = py_strip(py_str_slice(rhs, eq + 1, int64(rhs.size())));
             if ((ann == "") || (val == ""))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ann, val}));
@@ -208,7 +208,7 @@ namespace pytra::std::re {
             str name = py_str_slice(t, i, j);
             if (!(_is_ident(name)))
                 return ::std::nullopt;
-            str tail = py_strip(py_str_slice(t, j, static_cast<int64>(t.size())));
+            str tail = py_strip(py_str_slice(t, j, int64(t.size())));
             if (tail == "")
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ""}));
             if (!((py_startswith(tail, "(")) && (py_endswith(tail, ")"))))
@@ -231,16 +231,16 @@ namespace pytra::std::re {
             str inner = py_strip(py_str_slice(text, 1, -(1)));
             str m1 = " for ";
             str m2 = " in ";
-            int64 i = static_cast<int64>(py_find(inner, m1));
+            int64 i = int64(py_find(inner, m1));
             if (i < 0)
                 return ::std::nullopt;
             str expr = py_strip(py_str_slice(inner, 0, i));
-            str rest = py_str_slice(inner, i + m1.size(), static_cast<int64>(inner.size()));
-            int64 j = static_cast<int64>(py_find(rest, m2));
+            str rest = py_str_slice(inner, i + m1.size(), int64(inner.size()));
+            int64 j = int64(py_find(rest, m2));
             if (j < 0)
                 return ::std::nullopt;
             str var = py_strip(py_str_slice(rest, 0, j));
-            str it = py_strip(py_str_slice(rest, j + m2.size(), static_cast<int64>(rest.size())));
+            str it = py_strip(py_str_slice(rest, j + m2.size(), int64(rest.size())));
             if ((!(_is_ident(expr))) || (!(_is_ident(var))) || (it == ""))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{expr, var, it}));
@@ -249,12 +249,12 @@ namespace pytra::std::re {
             str t = _strip_suffix_colon(text);
             if ((t == "") || (!(py_startswith(t, "for"))))
                 return ::std::nullopt;
-            str rest = py_strip(py_str_slice(t, 3, static_cast<int64>(t.size())));
-            int64 i = static_cast<int64>(py_find(rest, " in "));
+            str rest = py_strip(py_str_slice(t, 3, int64(t.size())));
+            int64 i = int64(py_find(rest, " in "));
             if (i < 0)
                 return ::std::nullopt;
             str left = py_strip(py_str_slice(rest, 0, i));
-            str right = py_strip(py_str_slice(rest, i + 4, static_cast<int64>(rest.size())));
+            str right = py_strip(py_str_slice(rest, i + 4, int64(rest.size())));
             if ((left == "") || (right == ""))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{left, right}));
@@ -263,12 +263,12 @@ namespace pytra::std::re {
             str t = _strip_suffix_colon(text);
             if ((t == "") || (!(py_startswith(t, "with"))))
                 return ::std::nullopt;
-            str rest = py_strip(py_str_slice(t, 4, static_cast<int64>(t.size())));
-            int64 i = static_cast<int64>(py_rfind(rest, " as "));
+            str rest = py_strip(py_str_slice(t, 4, int64(t.size())));
+            int64 i = int64(py_rfind(rest, " as "));
             if (i < 0)
                 return ::std::nullopt;
             str expr = py_strip(py_str_slice(rest, 0, i));
-            str name = py_strip(py_str_slice(rest, i + 4, static_cast<int64>(rest.size())));
+            str name = py_strip(py_str_slice(rest, i + 4, int64(rest.size())));
             if ((expr == "") || (!(_is_ident(name))))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{expr, name}));
@@ -277,12 +277,12 @@ namespace pytra::std::re {
             str t = _strip_suffix_colon(text);
             if ((t == "") || (!(py_startswith(t, "except"))))
                 return ::std::nullopt;
-            str rest = py_strip(py_str_slice(t, 6, static_cast<int64>(t.size())));
-            int64 i = static_cast<int64>(py_rfind(rest, " as "));
+            str rest = py_strip(py_str_slice(t, 6, int64(t.size())));
+            int64 i = int64(py_rfind(rest, " as "));
             if (i < 0)
                 return ::std::nullopt;
             str exc = py_strip(py_str_slice(rest, 0, i));
-            str name = py_strip(py_str_slice(rest, i + 4, static_cast<int64>(rest.size())));
+            str name = py_strip(py_str_slice(rest, i + 4, int64(rest.size())));
             if ((exc == "") || (!(_is_ident(name))))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{exc, name}));
@@ -291,7 +291,7 @@ namespace pytra::std::re {
             str t = _strip_suffix_colon(text);
             if ((t == "") || (!(py_startswith(t, "except"))))
                 return ::std::nullopt;
-            str rest = py_strip(py_str_slice(t, 6, static_cast<int64>(t.size())));
+            str rest = py_strip(py_str_slice(t, 6, int64(t.size())));
             if (rest == "")
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{rest}));
@@ -301,7 +301,7 @@ namespace pytra::std::re {
             if (c <= 0)
                 return ::std::nullopt;
             str target = py_strip(py_str_slice(text, 0, c));
-            str ann = py_strip(py_str_slice(text, c + 1, static_cast<int64>(text.size())));
+            str ann = py_strip(py_str_slice(text, c + 1, int64(text.size())));
             if ((ann == "") || (!(_is_dotted_ident(target))))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{target, ann}));
@@ -311,12 +311,12 @@ namespace pytra::std::re {
             if (c <= 0)
                 return ::std::nullopt;
             str target = py_strip(py_str_slice(text, 0, c));
-            str rhs = py_str_slice(text, c + 1, static_cast<int64>(text.size()));
-            int64 eq = static_cast<int64>(py_find(rhs, "="));
+            str rhs = py_str_slice(text, c + 1, int64(text.size()));
+            int64 eq = int64(py_find(rhs, "="));
             if (eq < 0)
                 return ::std::nullopt;
             str ann = py_strip(py_str_slice(rhs, 0, eq));
-            str expr = py_strip(py_str_slice(rhs, eq + 1, static_cast<int64>(rhs.size())));
+            str expr = py_strip(py_str_slice(rhs, eq + 1, int64(rhs.size())));
             if ((!(_is_dotted_ident(target))) || (ann == "") || (expr == ""))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{target, ann, expr}));
@@ -328,31 +328,31 @@ namespace pytra::std::re {
             for (str op : rc_list_ref(ops)) {
                 auto p = py_find(text, op);
                 if ((p >= 0) && ((op_pos < 0) || (p < op_pos))) {
-                    op_pos = static_cast<int64>(p);
+                    op_pos = int64(p);
                     op_txt = op;
                 }
             }
             if (op_pos < 0)
                 return ::std::nullopt;
             str left = py_strip(py_str_slice(text, 0, op_pos));
-            str right = py_strip(py_str_slice(text, op_pos + op_txt.size(), static_cast<int64>(text.size())));
+            str right = py_strip(py_str_slice(text, op_pos + op_txt.size(), int64(text.size())));
             if ((right == "") || (!(_is_dotted_ident(left))))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{left, op_txt, right}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*)\\s*,\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.+)$") {
-            int64 eq = static_cast<int64>(py_find(text, "="));
+            int64 eq = int64(py_find(text, "="));
             if (eq < 0)
                 return ::std::nullopt;
             str left = py_str_slice(text, 0, eq);
-            str right = py_strip(py_str_slice(text, eq + 1, static_cast<int64>(text.size())));
+            str right = py_strip(py_str_slice(text, eq + 1, int64(text.size())));
             if (right == "")
                 return ::std::nullopt;
-            int64 c = static_cast<int64>(py_find(left, ","));
+            int64 c = int64(py_find(left, ","));
             if (c < 0)
                 return ::std::nullopt;
             str a = py_strip(py_str_slice(left, 0, c));
-            str b = py_strip(py_str_slice(left, c + 1, static_cast<int64>(left.size())));
+            str b = py_strip(py_str_slice(left, c + 1, int64(left.size())));
             if ((!(_is_ident(a))) || (!(_is_ident(b))))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{a, b, right}));
@@ -364,13 +364,13 @@ namespace pytra::std::re {
             str rest = py_strip(t);
             if (!(py_startswith(rest, "if")))
                 return ::std::nullopt;
-            rest = py_strip(py_str_slice(rest, 2, static_cast<int64>(rest.size())));
+            rest = py_strip(py_str_slice(rest, 2, int64(rest.size())));
             if (!(py_startswith(rest, "__name__")))
                 return ::std::nullopt;
-            rest = py_strip(py_str_slice(rest, ("__name__").size(), static_cast<int64>(rest.size())));
+            rest = py_strip(py_str_slice(rest, ("__name__").size(), int64(rest.size())));
             if (!(py_startswith(rest, "==")))
                 return ::std::nullopt;
-            rest = py_strip(py_str_slice(rest, 2, static_cast<int64>(rest.size())));
+            rest = py_strip(py_str_slice(rest, 2, int64(rest.size())));
             if ((rest == "\"__main__\"") || (rest == "'__main__'"))
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{}));
             return ::std::nullopt;
@@ -382,7 +382,7 @@ namespace pytra::std::re {
                 return ::std::nullopt;
             if (!(_is_space_ch(py_str_slice(text, 6, 7))))
                 return ::std::nullopt;
-            str rest = py_strip(py_str_slice(text, 7, static_cast<int64>(text.size())));
+            str rest = py_strip(py_str_slice(text, 7, int64(text.size())));
             if (rest == "")
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{rest}));
@@ -407,12 +407,12 @@ namespace pytra::std::re {
         if (pattern == "^from\\s+([A-Za-z_][A-Za-z0-9_\\.]*)\\s+import\\s+(.+)$") {
             if (!(py_startswith(text, "from ")))
                 return ::std::nullopt;
-            str rest = py_str_slice(text, 5, static_cast<int64>(text.size()));
-            int64 i = static_cast<int64>(py_find(rest, " import "));
+            str rest = py_str_slice(text, 5, int64(text.size()));
+            int64 i = int64(py_find(rest, " import "));
             if (i < 0)
                 return ::std::nullopt;
             str mod = py_strip(py_str_slice(rest, 0, i));
-            str sym = py_strip(py_str_slice(rest, i + 8, static_cast<int64>(rest.size())));
+            str sym = py_strip(py_str_slice(rest, i + 8, int64(rest.size())));
             if ((!(_is_dotted_ident(mod))) || (sym == ""))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{mod, sym}));
@@ -439,25 +439,38 @@ namespace pytra::std::re {
             if (c <= 0)
                 return ::std::nullopt;
             str name = py_strip(py_str_slice(text, 0, c));
-            str rhs = py_str_slice(text, c + 1, static_cast<int64>(text.size()));
-            int64 eq = static_cast<int64>(py_find(rhs, "="));
+            str rhs = py_str_slice(text, c + 1, int64(text.size()));
+            int64 eq = int64(py_find(rhs, "="));
             if (eq < 0)
                 return ::std::nullopt;
             str ann = py_strip(py_str_slice(rhs, 0, eq));
-            str expr = py_strip(py_str_slice(rhs, eq + 1, static_cast<int64>(rhs.size())));
+            str expr = py_strip(py_str_slice(rhs, eq + 1, int64(rhs.size())));
             if ((!(_is_ident(name))) || (ann == "") || (expr == ""))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ann, expr}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.+)$") {
-            int64 eq = static_cast<int64>(py_find(text, "="));
+            int64 eq = int64(py_find(text, "="));
             if (eq < 0)
                 return ::std::nullopt;
             str name = py_strip(py_str_slice(text, 0, eq));
-            str expr = py_strip(py_str_slice(text, eq + 1, static_cast<int64>(text.size())));
+            str expr = py_strip(py_str_slice(text, eq + 1, int64(text.size())));
             if ((!(_is_ident(name))) || (expr == ""))
                 return ::std::nullopt;
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, expr}));
+        }
+        if (pattern == "^type\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.+)$") {
+            if (!(py_startswith(text, "type ")))
+                return ::std::nullopt;
+            str rest = py_strip(py_str_slice(text, 5, int64(text.size())));
+            int64 eq = int64(py_find(rest, "="));
+            if (eq < 0)
+                return ::std::nullopt;
+            str name = py_strip(py_str_slice(rest, 0, eq));
+            str rhs = py_strip(py_str_slice(rest, eq + 1, int64(rest.size())));
+            if ((!(_is_ident(name))) || (rhs == ""))
+                return ::std::nullopt;
+            return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, rhs}));
         }
         throw ValueError("unsupported regex pattern in pytra.std.re: " + pattern);
     }

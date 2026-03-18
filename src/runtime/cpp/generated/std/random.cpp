@@ -40,7 +40,7 @@ so it can be transpiled to target runtimes.
     
     float64 random() {
         /* Return pseudo-random float in [0.0, 1.0). */
-        return static_cast<float64>(_next_u31()) / 2147483648.0;
+        return float64(_next_u31()) / 2147483648.0;
     }
     
     int64 randint(int64 a, int64 b) {
@@ -50,7 +50,7 @@ so it can be transpiled to target runtimes.
         if (hi < lo)
             ::std::swap(lo, hi);
         int64 span = hi - lo + 1;
-        return lo + static_cast<int64>(random() * static_cast<float64>(span));
+        return lo + int64(random() * float64(span));
     }
     
     rc<list<int64>> choices(const rc<list<int64>>& population, const rc<list<float64>>& weights, int64 k) {
