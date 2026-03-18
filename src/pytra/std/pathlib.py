@@ -10,11 +10,8 @@ from pytra.std import os_path as path
 class Path:
     __pytra_class_storage_hint__ = "value"
 
-    def __init__(self, value: str | "Path") -> None:
-        if isinstance(value, Path):
-            self._value = value._value
-        else:
-            self._value = value
+    def __init__(self, value: str) -> None:
+        self._value = value
 
     def __str__(self) -> str:
         return self._value
@@ -25,9 +22,7 @@ class Path:
     def __fspath__(self) -> str:
         return self._value
 
-    def __truediv__(self, rhs: str | "Path") -> "Path":
-        if isinstance(rhs, Path):
-            return Path(path.join(self._value, rhs._value))
+    def __truediv__(self, rhs: str) -> "Path":
         return Path(path.join(self._value, rhs))
 
     @property
