@@ -37,7 +37,7 @@
 
 文脈: [docs/ja/plans/p0-cpp-redundant-widening-cast.md](../plans/p0-cpp-redundant-widening-cast.md)
 
-1. [ ] [ID: P0-CPP-REDUNDANT-WIDENING-CAST-01] `int64(static_cast<int64>(b))` のような三重冗長キャストを除去する。C++ では `uint8 → int64` 等の widening conversion は暗黙変換で行われるため、算術型同士の widening cast では `static_cast` すら不要。emitter が narrowing/unbox パスと同じコードを widening にも適用している問題を修正する。
+1. [ ] [ID: P0-CPP-REDUNDANT-WIDENING-CAST-01] `int64(static_cast<int64>(b))` のような三重冗長キャストを除去し、narrowing cast を `uint8(x)` 形式に統一する。(1) widening cast（uint8→int64 等）は C++ 暗黙変換で足りるため cast を emit しない。(2) narrowing cast / 同型 cast は `static_cast<T>` より短い関数形式 `T(x)` に統一して可読性を改善する。
 
 ### P5: py_runtime.h 縮小
 
