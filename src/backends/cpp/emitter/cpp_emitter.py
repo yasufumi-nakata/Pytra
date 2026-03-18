@@ -261,6 +261,7 @@ class CppEmitter(
         self._type_alias_reverse_map: dict[str, str] = {}
         self._tagged_union_types: dict[str, list[str]] = {}  # name → [non_none_parts]
         self._tagged_union_has_none: dict[str, bool] = {}  # name → has_none
+        self._narrowed_union_vars: dict[str, str] = {}  # var_name → field_name (type narrowing)
         self.current_function_return_type: str = ""
         self.current_function_return_abi_mode: str = "default"
         self.current_function_is_generator: bool = False
@@ -2281,21 +2282,47 @@ class CppEmitter(
         self.emit(f"using {name} = {cpp_t};")
         self._type_alias_reverse_map[type_expr] = name
 
+    @staticmethod
+    def _pytra_tid_for_east_type(east_type: str) -> str:
+        """EAST 型名から PYTRA_TID 定数名を返す。"""
+        t = east_type.strip()
+        if t == "None":
+            return "PYTRA_TID_NONE"
+        if t == "bool":
+            return "PYTRA_TID_BOOL"
+        if t in {"int", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+            return "PYTRA_TID_INT"
+        if t in {"float", "float32", "float64"}:
+            return "PYTRA_TID_FLOAT"
+        if t == "str":
+            return "PYTRA_TID_STR"
+        if t.startswith("list[") or t == "list":
+            return "PYTRA_TID_LIST"
+        if t.startswith("dict[") or t == "dict":
+            return "PYTRA_TID_DICT"
+        if t.startswith("set[") or t == "set":
+            return "PYTRA_TID_SET"
+        return f"{t}::PYTRA_TYPE_ID"
+
+    @staticmethod
+    def _tagged_union_field_name(east_type: str) -> str:
+        """EAST 型名からフィールド名を生成する。"""
+        return east_type.lower().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "") + "_val"
+
     def _emit_tagged_union_struct(self, name: str, non_none: list[str], has_none: bool) -> None:
         """type X = A | B | ... から C++ tagged struct を生成する。"""
-        # tag 名を生成
-        tag_entries: list[tuple[str, str, str]] = []  # (tag_name, cpp_type, field_name)
+        tag_entries: list[tuple[str, str, str]] = []  # (tid_expr, cpp_type, field_name)
         for p in non_none:
             cpp_t = self._cpp_type_text(p)
-            tag_name = "TAG_" + p.upper().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "")
-            field_name = p.lower().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "") + "_val"
+            tid_expr = self._pytra_tid_for_east_type(p)
+            field_name = self._tagged_union_field_name(p)
             # 再帰参照: 自分自身を含む型は rc<> で包む
             if name in cpp_t or p == name:
                 if cpp_t.startswith("list<"):
                     cpp_t = f"rc<{cpp_t}>"
                 elif cpp_t.startswith("dict<"):
                     cpp_t = f"rc<{cpp_t}>"
-            tag_entries.append((tag_name, cpp_t, field_name))
+            tag_entries.append((tid_expr, cpp_t, field_name))
 
         # 登録
         self._tagged_union_types[name] = non_none
@@ -2303,31 +2330,20 @@ class CppEmitter(
 
         # struct 定義を emit
         self.emit(f"struct {name} {{")
-        # Tag enum
-        tag_names = [e[0] for e in tag_entries]
-        if has_none:
-            tag_names.append("TAG_NONE")
-        self.emit(f"    enum Tag {{ {', '.join(tag_names)} }};")
-        self.emit(f"    Tag tag;")
+        self.emit(f"    uint32 tag;")
         # Fields
         for _, cpp_t, field_name in tag_entries:
             self.emit(f"    {cpp_t} {field_name};")
         self.emit("")
-        # Default constructor (None if has_none, else first type)
-        if has_none:
-            self.emit(f"    {name}() : tag(TAG_NONE) {{}}")
-        else:
-            self.emit(f"    {name}() : tag({tag_entries[0][0]}) {{}}")
+        # Default constructor
+        default_tid = "PYTRA_TID_NONE" if has_none else tag_entries[0][0]
+        self.emit(f"    {name}() : tag({default_tid}) {{}}")
         # Per-type constructors
-        for tag_name, cpp_t, field_name in tag_entries:
-            if cpp_t == "bool":
-                # bool constructor: use tag parameter to avoid ambiguity with int
-                self.emit(f"    {name}(Tag, {cpp_t} v) : tag({tag_name}), {field_name}(v) {{}}")
-            else:
-                self.emit(f"    {name}(const {cpp_t}& v) : tag({tag_name}), {field_name}(v) {{}}")
+        for tid_expr, cpp_t, field_name in tag_entries:
+            self.emit(f"    {name}(const {cpp_t}& v) : tag({tid_expr}), {field_name}(v) {{}}")
         # monostate constructor for compatibility
         if has_none:
-            self.emit(f"    {name}(::std::monostate) : tag(TAG_NONE) {{}}")
+            self.emit(f"    {name}(::std::monostate) : tag(PYTRA_TID_NONE) {{}}")
         self.emit(f"}};")
         self.emit("")
 
@@ -3716,8 +3732,8 @@ class CppEmitter(
                 # 2型以上 + None → tagged struct or std::variant
                 alias = getattr(self, "_type_alias_reverse_map", {}).get(val_t)
                 if alias is not None and alias in getattr(self, "_tagged_union_types", {}):
-                    tag_check = f"{base}.tag == {alias}::TAG_NONE"
-                    return f"{base}.tag != {alias}::TAG_NONE" if negated else tag_check
+                    tag_check = f"{base}.tag == PYTRA_TID_NONE"
+                    return f"{base}.tag != PYTRA_TID_NONE" if negated else tag_check
                 holds = f"::std::holds_alternative<::std::monostate>({base})"
                 return f"!{holds}" if negated else holds
         if val_t not in {"", "unknown", "object"}:
@@ -4070,6 +4086,16 @@ class CppEmitter(
     def _render_name_expr(self, expr_d: dict[str, Any]) -> str:
         """Name ノードを C++ 式へ変換する。"""
         name_txt = dict_any_get_str(expr_d, "id")
+        # tagged union 型ナローイング: isinstance ガード内では field access に変換
+        if name_txt != "" and name_txt in self._narrowed_union_vars:
+            field = self._narrowed_union_vars[name_txt]
+            rendered = self.render_name_expr_common(
+                expr_d, self.reserved_words, self.rename_prefix,
+                self.renamed_symbols, "_",
+                rewrite_self=self.current_class_name is not None,
+                self_is_declared=self.is_declared("self"), self_rendered="*this",
+            )
+            return f"{rendered}.{field}"
         if name_txt != "" and not self.is_locally_declared(name_txt):
             imported = self._resolve_imported_symbol(name_txt)
             imported_module = dict_any_get_str(imported, "module")
@@ -4444,7 +4470,7 @@ class CppEmitter(
                 if alias is not None and alias in getattr(self, "_tagged_union_types", {}):
                     has_none = self._tagged_union_has_none.get(alias, False)
                     if has_none:
-                        return f"{value_expr}.tag != {alias}::TAG_NONE"
+                        return f"{value_expr}.tag != PYTRA_TID_NONE"
                     return "true"
                 return f"py_variant_to_bool({value_expr})"
         # 算術型確定ケース → bool(x)

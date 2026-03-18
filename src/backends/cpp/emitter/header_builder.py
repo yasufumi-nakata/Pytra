@@ -1397,43 +1397,61 @@ def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) 
     return ""
 
 
+def _pytra_tid_for_east_type(east_type: str) -> str:
+    """EAST 型名から PYTRA_TID 定数名を返す。"""
+    t = east_type.strip()
+    if t == "None":
+        return "PYTRA_TID_NONE"
+    if t == "bool":
+        return "PYTRA_TID_BOOL"
+    if t in {"int", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+        return "PYTRA_TID_INT"
+    if t in {"float", "float32", "float64"}:
+        return "PYTRA_TID_FLOAT"
+    if t == "str":
+        return "PYTRA_TID_STR"
+    if t.startswith("list[") or t == "list":
+        return "PYTRA_TID_LIST"
+    if t.startswith("dict[") or t == "dict":
+        return "PYTRA_TID_DICT"
+    if t.startswith("set[") or t == "set":
+        return "PYTRA_TID_SET"
+    return t + "::PYTRA_TYPE_ID"
+
+
+def _tagged_union_field_name(east_type: str) -> str:
+    """EAST 型名からフィールド名を生成する。"""
+    return east_type.lower().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "") + "_val"
+
+
 def _build_tagged_union_struct_lines(
     name: str, non_none: list[str], has_none: bool,
     ref_classes: set[str], class_names: set[str],
 ) -> list[str]:
     """type X = A | B | ... から C++ tagged struct 定義行を生成する。"""
     lines: list[str] = []
-    tag_entries: list[tuple[str, str, str]] = []  # (tag_name, cpp_type, field_name)
+    tag_entries: list[tuple[str, str, str]] = []  # (tid_expr, cpp_type, field_name)
     for p in non_none:
         cpp_t = _header_cpp_type_from_east(p, ref_classes, class_names)
-        tag_name = "TAG_" + p.upper().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "")
-        field_name = p.lower().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "") + "_val"
+        tid_expr = _pytra_tid_for_east_type(p)
+        field_name = _tagged_union_field_name(p)
         if name in cpp_t or p == name:
             if cpp_t.startswith("list<"):
                 cpp_t = "rc<" + cpp_t + ">"
             elif cpp_t.startswith("dict<"):
                 cpp_t = "rc<" + cpp_t + ">"
-        tag_entries.append((tag_name, cpp_t, field_name))
+        tag_entries.append((tid_expr, cpp_t, field_name))
     lines.append("struct " + name + " {")
-    tag_names = [e[0] for e in tag_entries]
-    if has_none:
-        tag_names.append("TAG_NONE")
-    lines.append("    enum Tag { " + ", ".join(tag_names) + " };")
-    lines.append("    Tag tag;")
+    lines.append("    uint32 tag;")
     for _, cpp_t, field_name in tag_entries:
         lines.append("    " + cpp_t + " " + field_name + ";")
     lines.append("")
+    default_tid = "PYTRA_TID_NONE" if has_none else tag_entries[0][0]
+    lines.append("    " + name + "() : tag(" + default_tid + ") {}")
+    for tid_expr, cpp_t, field_name in tag_entries:
+        lines.append("    " + name + "(const " + cpp_t + "& v) : tag(" + tid_expr + "), " + field_name + "(v) {}")
     if has_none:
-        lines.append("    " + name + "() : tag(TAG_NONE) {}")
-    else:
-        lines.append("    " + name + "() : tag(" + tag_entries[0][0] + ") {}")
-    for tag_name, cpp_t, field_name in tag_entries:
-        if cpp_t == "bool":
-            lines.append("    " + name + "(Tag, " + cpp_t + " v) : tag(" + tag_name + "), " + field_name + "(v) {}")
-        else:
-            lines.append("    " + name + "(const " + cpp_t + "& v) : tag(" + tag_name + "), " + field_name + "(v) {}")
-    if has_none:
-        lines.append("    " + name + "(::std::monostate) : tag(TAG_NONE) {}")
+        lines.append("    " + name + "(::std::monostate) : tag(PYTRA_TID_NONE) {}")
     lines.append("};")
     lines.append("")
     return lines

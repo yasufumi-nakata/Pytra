@@ -290,4 +290,13 @@ class CppRuntimeExprEmitter:
         expected_type_id_expr = self._render_type_id_operand_expr(expr_d.get("expected_type_id"))
         if expected_type_id_expr == "":
             return "false"
+        # tagged union 変数の場合は tag 比較に変換
+        value_t = self.normalize_type_name(self.get_expr_type(value_node))
+        tagged_union_types = getattr(self, "_tagged_union_types", {})
+        alias_map = getattr(self, "_type_alias_reverse_map", {})
+        union_name = alias_map.get(value_t, "")
+        if union_name == "" and value_t in tagged_union_types:
+            union_name = value_t
+        if union_name in tagged_union_types:
+            return f"({value_expr}).tag == {expected_type_id_expr}"
         return f"py_runtime_value_isinstance({value_expr}, {expected_type_id_expr})"

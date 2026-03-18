@@ -7,18 +7,62 @@ from backends.cpp.emitter.profile_loader import AUG_BIN, AUG_OPS, load_cpp_profi
 class CppStatementEmitter:
     """Statement-level emit helpers extracted from :class:`CppEmitter`."""
 
+    def _detect_isinstance_narrowing(self, stmt: dict[str, Any]) -> tuple[str, str]:
+        """if isinstance(v, T) パターンから (var_name, field_name) を検出する。該当なしは ("", "")。"""
+        cond = self.any_to_dict_or_empty(stmt.get("test"))
+        if self._node_kind_from_dict(cond) != "IsInstance":
+            return ("", "")
+        value_node = self.any_to_dict_or_empty(cond.get("value"))
+        if self._node_kind_from_dict(value_node) != "Name":
+            return ("", "")
+        var_name = self.any_to_str(value_node.get("id"))
+        if var_name == "":
+            return ("", "")
+        var_t = self.normalize_type_name(self.get_expr_type(value_node))
+        tagged_union_types = getattr(self, "_tagged_union_types", {})
+        alias_map = getattr(self, "_type_alias_reverse_map", {})
+        union_name = alias_map.get(var_t, "")
+        if union_name == "" and var_t in tagged_union_types:
+            union_name = var_t
+        if union_name not in tagged_union_types:
+            return ("", "")
+        # expected_type_id ノードからチェック対象の型を取得
+        tid_node = self.any_to_dict_or_empty(cond.get("expected_type_id"))
+        tid_type = self.any_to_str(tid_node.get("check_type"))
+        if tid_type == "":
+            tid_type = self.any_to_str(tid_node.get("resolved_type"))
+        tid_type = self.normalize_type_name(tid_type)
+        if tid_type == "":
+            return ("", "")
+        # union メンバの中から対応するフィールド名を見つける
+        field_name_fn = getattr(self, "_tagged_union_field_name", None)
+        if field_name_fn is None:
+            return ("", "")
+        non_none_parts = tagged_union_types[union_name]
+        for part in non_none_parts:
+            part_norm = self.normalize_type_name(part)
+            if part_norm == tid_type:
+                return (var_name, field_name_fn(part))
+        return ("", "")
+
     def _emit_if_stmt(self, stmt: dict[str, Any]) -> None:
         """If ノードを出力する。"""
         cond_txt, body_stmts, else_stmts = self.prepare_if_stmt_parts(
             stmt,
             cond_empty_default="false",
         )
+        # tagged union isinstance ナローイング検出
+        narrow_var, narrow_field = self._detect_isinstance_narrowing(stmt)
         self._predeclare_if_join_names(body_stmts, else_stmts)
         omit_default = self._stmt_omit_braces_default("If", stmt, False)
         omit_braces = self.hook_on_stmt_omit_braces("If", stmt, omit_default)
         if omit_braces and len(body_stmts) == 1 and len(else_stmts) <= 1:
             self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": cond_txt}))
+            if narrow_var != "":
+                self._narrowed_union_vars[narrow_var] = narrow_field
             self.emit_scoped_stmt_list([body_stmts[0]], set())
+            if narrow_var != "":
+                self._narrowed_union_vars.pop(narrow_var, None)
             if len(else_stmts) > 0:
                 self.emit(self.syntax_text("else_no_brace", "else"))
                 self.emit_scoped_stmt_list([else_stmts[0]], set())
@@ -26,15 +70,24 @@ class CppStatementEmitter:
 
         # Flatten `else: if ...` chain into `else if (...)` for readability.
         self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": cond_txt}))
+        if narrow_var != "":
+            self._narrowed_union_vars[narrow_var] = narrow_field
         self.emit_scoped_stmt_list(body_stmts, set())
+        if narrow_var != "":
+            self._narrowed_union_vars.pop(narrow_var, None)
         cur_else = else_stmts
         while len(cur_else) == 1:
             nested = self.any_to_dict_or_empty(cur_else[0])
             if self._node_kind_from_dict(nested) != "If":
                 break
             n_cond, n_body, n_else = self.prepare_if_stmt_parts(nested, cond_empty_default="false")
+            n_narrow_var, n_narrow_field = self._detect_isinstance_narrowing(nested)
             self.emit(f"}} else if ({n_cond}) {{")
+            if n_narrow_var != "":
+                self._narrowed_union_vars[n_narrow_var] = n_narrow_field
             self.emit_scoped_stmt_list(n_body, set())
+            if n_narrow_var != "":
+                self._narrowed_union_vars.pop(n_narrow_var, None)
             cur_else = n_else
         if len(cur_else) == 0:
             self.emit(self.syntax_text("block_close", "}"))
