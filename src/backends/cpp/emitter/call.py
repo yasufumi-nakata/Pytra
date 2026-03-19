@@ -210,7 +210,7 @@ class CppCallEmitter:
         return None, raw
 
     def _try_render_tagged_union_cast(self, fn_name: str, arg_nodes: list[Any]) -> str:
-        """cast(T, v) を tagged union の py_unbox に変換する。該当なしは空文字。"""
+        """cast(T, v) を tagged union の unbox に変換する。該当なしは空文字。"""
         if fn_name != "cast" or len(arg_nodes) < 2:
             return ""
         value_node = self.any_to_dict_or_empty(arg_nodes[1])
@@ -235,7 +235,12 @@ class CppCallEmitter:
                 value_expr = self.render_expr(value_node)
                 cpp_t = self._cpp_type_text(part)
                 tid_expr = self._pytra_tid_for_east_type(part)
-                return f"py_unbox<{cpp_t}, {tid_expr}>({value_expr}.value)"
+                _POD = {"str", "int", "int64", "float", "float64", "bool", "uint8", "int8", "int16", "uint16", "int32", "uint32", "uint64", "float32"}
+                if part_norm in _POD:
+                    # POD: py_unbox from boxed object
+                    return f"py_unbox<{cpp_t}, {tid_expr}>({value_expr}.value)"
+                # Class (rc<T>): downcast from object
+                return f"(*static_cast<{cpp_t}*>({value_expr}.value.get()))"
         return ""
 
     def _render_builtin_static_cast_call(
