@@ -297,6 +297,12 @@ class CppRuntimeExprEmitter:
         union_name = alias_map.get(value_t, "")
         if union_name == "" and value_t in tagged_union_types:
             union_name = value_t
+        if union_name == "" and "|" in value_t:
+            inline_structs = getattr(self, "_inline_union_structs", {})
+            for east_key, struct_name in inline_structs.items():
+                if struct_name in tagged_union_types:
+                    union_name = struct_name
+                    break
         if union_name in tagged_union_types:
             return f"({value_expr}).tag == {expected_type_id_expr}"
         return f"py_runtime_value_isinstance({value_expr}, {expected_type_id_expr})"

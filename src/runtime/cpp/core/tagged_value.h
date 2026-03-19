@@ -32,20 +32,20 @@ struct PyTaggedValue {
 
     PyTaggedValue() : tag(PYTRA_TID_NONE), value() {}
 
-    template <class T, pytra_type_id TID>
-    static PyTaggedValue make(const T& v) {
-        PyTaggedValue tv;
-        tv.tag = TID;
-        tv.value = py_box<T, TID>(v);
-        return tv;
-    }
+    // Implicit conversion from POD types (box automatically).
+    PyTaggedValue(const str& v) : tag(PYTRA_TID_STR), value(py_box<str, PYTRA_TID_STR>(v)) {}
+    PyTaggedValue(const char* v) : tag(PYTRA_TID_STR), value(py_box<str, PYTRA_TID_STR>(str(v))) {}
+    PyTaggedValue(int64 v) : tag(PYTRA_TID_INT), value(py_box<int64, PYTRA_TID_INT>(v)) {}
+    PyTaggedValue(int v) : tag(PYTRA_TID_INT), value(py_box<int64, PYTRA_TID_INT>(static_cast<int64>(v))) {}
+    PyTaggedValue(float64 v) : tag(PYTRA_TID_FLOAT), value(py_box<float64, PYTRA_TID_FLOAT>(v)) {}
+    PyTaggedValue(bool v) : tag(PYTRA_TID_BOOL), value(py_box<bool, PYTRA_TID_BOOL>(v)) {}
 
-    // Convenience constructors for common types.
-    static PyTaggedValue from_none() {
-        PyTaggedValue tv;
-        tv.tag = PYTRA_TID_NONE;
-        return tv;
-    }
+    // Implicit conversion from rc<T> (class types — upcast to object).
+    template <class T, ::std::enable_if_t<::std::is_base_of_v<RcObject, T>, int> = 0>
+    PyTaggedValue(const rc<T>& v) : tag(v ? v->py_type_id() : PYTRA_TID_NONE), value(v) {}
+
+    // monostate = None
+    PyTaggedValue(::std::monostate) : tag(PYTRA_TID_NONE), value() {}
 };
 
 #endif  // PYTRA_CORE_TAGGED_VALUE_H

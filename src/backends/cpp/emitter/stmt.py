@@ -282,6 +282,35 @@ class CppStatementEmitter:
                     rendered_val = rendered_val.replace("list<object> __out;", f"{t} __out;", 1)
         val_t0 = self.get_expr_type(stmt.get("value"))
         val_t = val_t0 if isinstance(val_t0, str) else ""
+        # Tagged union → concrete type: insert unbox.
+        if rendered_val != "" and ann_t_str != "" and val_t != "":
+            val_t_norm = self.normalize_type_name(val_t)
+            tagged_union_types = getattr(self, "_tagged_union_types", {})
+            alias_map = getattr(self, "_type_alias_reverse_map", {})
+            union_name = alias_map.get(val_t_norm, "")
+            if union_name == "" and val_t_norm in tagged_union_types:
+                union_name = val_t_norm
+            # For inline unions: val_t contains "|", look up by C++ type text.
+            if union_name == "" and "|" in val_t_norm:
+                inline_structs = getattr(self, "_inline_union_structs", {})
+                for east_key, struct_name in inline_structs.items():
+                    if struct_name in tagged_union_types:
+                        union_name = struct_name
+                        break
+            if union_name in tagged_union_types:
+                ann_norm = self.normalize_type_name(ann_t_str)
+                non_none_parts = tagged_union_types[union_name]
+                for part in non_none_parts:
+                    part_norm = self.normalize_type_name(part)
+                    if part_norm == ann_norm:
+                        cpp_t = self._cpp_type_text(part)
+                        tid_expr = self._pytra_tid_for_east_type(part)
+                        _POD = {"str", "int", "int64", "float", "float64", "bool", "uint8", "int8", "int16", "uint16", "int32", "uint32", "uint64", "float32"}
+                        if part_norm in _POD:
+                            rendered_val = f"py_unbox<{cpp_t}, {tid_expr}>({rendered_val}.value)"
+                        else:
+                            rendered_val = f"(*static_cast<{cpp_t}*>({rendered_val}.value.get()))"
+                        break
         if rendered_val != "" and ann_t_str != "" and self._contains_text(val_t, "|"):
             union_parts = self.split_union(val_t)
             has_none = False
