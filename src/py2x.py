@@ -26,7 +26,6 @@ from toolchain.frontends import add_common_transpile_args
 from toolchain.frontends import build_module_east_map
 from toolchain.frontends import load_east3_document_typed
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
-from toolchain.json_adapters import load_json_object_doc_or_none
 from toolchain.json_adapters import empty_json_object_doc
 from toolchain.link import LINK_INPUT_SCHEMA
 from toolchain.link import build_linked_program_from_module_map
@@ -113,35 +112,6 @@ def _peek_target(argv: list[str]) -> str:
     return ""
 
 
-def _strip_target(argv: list[str]) -> list[str]:
-    out: list[str] = []
-    i = 0
-    while i < len(argv):
-        tok = argv[i]
-        if tok == "--target":
-            if i + 1 >= len(argv):
-                _fatal("missing value for --target")
-            i += 2
-            continue
-        if tok.startswith("--target="):
-            i += 1
-            continue
-        out.append(tok)
-        i += 1
-    return out
-
-
-def _has_flag(argv: list[str], flag: str) -> bool:
-    i = 0
-    while i < len(argv):
-        tok = argv[i]
-        if tok == flag:
-            return True
-        if tok.startswith(flag + "="):
-            return True
-        i += 1
-    return False
-
 
 def _load_json_root(path: Path) -> json.JsonObj:
     try:
@@ -159,18 +129,12 @@ def _write_generated_paths(paths: list[Path]) -> None:
 
 
 def _use_linked_program_route(target_hint: str, argv: list[str]) -> bool:
-    if target_hint != "cpp":
-        return True
-    for flag in ("--dump-east3-dir", "--link-only", "--from-link-output"):
-        if _has_flag(argv, flag):
-            return True
-    return False
+    # All targets now use the linked program route (compile -> link pipeline).
+    _ = target_hint
+    _ = argv
+    return True
 
 
-def _invoke_py2cpp_main(argv: list[str]) -> int:
-    from backends.cpp.cli import main as py2cpp_main
-
-    return py2cpp_main(argv)
 
 
 def _invoke_ir2lang_main(argv: list[str]) -> int:
@@ -179,74 +143,6 @@ def _invoke_ir2lang_main(argv: list[str]) -> int:
     return ir2lang_mod.main(argv)
 
 
-def _apply_cpp_layer_options(
-    cpp_argv: list[str],
-    *,
-    lower_raw: dict[str, str],
-    optimizer_raw: dict[str, str],
-    emitter_raw: dict[str, str],
-) -> list[str]:
-    out = list(cpp_argv)
-    unsupported: list[str] = []
-    if len(lower_raw) > 0:
-        for key in lower_raw.keys():
-            unsupported.append("--lower-option " + key)
-
-    optimizer_map: dict[str, str] = {
-        "cpp_opt_level": "--cpp-opt-level",
-        "cpp_opt_pass": "--cpp-opt-pass",
-        "dump_cpp_ir_before_opt": "--dump-cpp-ir-before-opt",
-        "dump_cpp_ir_after_opt": "--dump-cpp-ir-after-opt",
-        "dump_cpp_opt_trace": "--dump-cpp-opt-trace",
-    }
-    emitter_map: dict[str, str] = {
-        "negative_index_mode": "--negative-index-mode",
-        "bounds_check_mode": "--bounds-check-mode",
-        "floor_div_mode": "--floor-div-mode",
-        "mod_mode": "--mod-mode",
-        "int_width": "--int-width",
-        "str_index_mode": "--str-index-mode",
-        "str_slice_mode": "--str-slice-mode",
-        "cpp_list_model": "--cpp-list-model",
-    }
-
-    def _append_mapped_options(raw: dict[str, str], mapping: dict[str, str], label: str) -> None:
-        for key, value in raw.items():
-            normalized_key = key.replace("-", "_")
-            flag = mapping.get(normalized_key, "")
-            if flag == "":
-                unsupported.append(label + " " + key)
-                continue
-            if _has_flag(out, flag):
-                continue
-            out.append(flag)
-            out.append(value)
-
-    _append_mapped_options(optimizer_raw, optimizer_map, "--optimizer-option")
-    _append_mapped_options(emitter_raw, emitter_map, "--emitter-option")
-
-    if len(unsupported) > 0:
-        _fatal("unsupported cpp layer option(s): " + ", ".join(unsupported))
-
-    return out
-
-
-def _run_cpp_compat(
-    cleaned_argv: list[str],
-    *,
-    layer_option_items: dict[str, list[str]],
-) -> int:
-    cpp_argv = _strip_target(cleaned_argv)
-    lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
-    optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
-    emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
-    forwarded = _apply_cpp_layer_options(
-        cpp_argv,
-        lower_raw=lower_raw,
-        optimizer_raw=optimizer_raw,
-        emitter_raw=emitter_raw,
-    )
-    return _invoke_py2cpp_main(forwarded)
 
 
 def _parse_layer_option_items(items: list[str], label: str) -> dict[str, str]:
@@ -339,6 +235,7 @@ def _build_linked_program_for_input(
             "east3_opt_pass": east3_opt_pass,
         },
     )
+
 
 
 def _entry_module_east_doc(program: LinkedProgram) -> dict[str, object]:
@@ -559,14 +456,45 @@ def main() -> int:
         _write_generated_paths([link_output_path] + linked_paths)
         return 0
 
+    # All targets go through compile -> link -> emit.
+    # The linked program's EAST docs carry linker metadata (type_id_resolved_v1).
+    optimized_program = optimize_linked_program(program).linked_program
+    east = _entry_module_east_doc(optimized_program)
+    validate_ambient_global_target_support(east, target=target)
+
+    if target == "cpp":
+        # C++ uses its own emitter directly (transpile_to_cpp reads linker metadata).
+        from backends.cpp.emitter import transpile_to_cpp
+
+        emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
+        output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
+        cpp_text = transpile_to_cpp(
+            east,
+            negative_index_mode=emitter_raw.get("negative_index_mode", "const_only"),
+            bounds_check_mode=emitter_raw.get("bounds_check_mode", "off"),
+            floor_div_mode=emitter_raw.get("floor_div_mode", "native"),
+            mod_mode=emitter_raw.get("mod_mode", "native"),
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(cpp_text, encoding="utf-8")
+        apply_runtime_hook_typed(get_backend_spec_typed(target), output_path)
+        return 0
+
+    # Non-C++ targets use the generic backend_registry pipeline.
+    # Strip linked_program_v1 metadata for the validator.
+    east_for_emit = dict(east)
+    meta_for_emit = dict(east_for_emit.get("meta", {})) if isinstance(east_for_emit.get("meta"), dict) else {}
+    meta_for_emit.pop("linked_program_v1", None)
+    east_for_emit["meta"] = meta_for_emit
+
     output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
     spec = get_backend_spec_typed(target)
     lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
     optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
     emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
-    lower_options = {}
-    optimizer_options = {}
-    emitter_options = {}
+    lower_options: dict[str, object] = {}
+    optimizer_options: dict[str, object] = {}
+    emitter_options: dict[str, object] = {}
     try:
         lower_options = resolve_layer_options_typed(spec, "lower", lower_raw)
         optimizer_options = resolve_layer_options_typed(spec, "optimizer", optimizer_raw)
@@ -574,13 +502,10 @@ def main() -> int:
     except Exception as ex:
         _fatal(str(ex))
 
-    optimized_program = optimize_linked_program(program).linked_program
-    east = _entry_module_east_doc(optimized_program)
-    validate_ambient_global_target_support(east, target=target)
-    validate_runtime_abi_target_support(east, target=target)
-    ir = lower_ir_typed(spec, east, lower_options)
+    validate_runtime_abi_target_support(east_for_emit, target=target)
+    ir = lower_ir_typed(spec, east_for_emit, lower_options)
     ir = optimize_ir_typed(spec, ir, optimizer_options)
-    module_id = compiler_root_module_id(east, fallback_output_path=output_path)
+    module_id = compiler_root_module_id(east_for_emit, fallback_output_path=output_path)
     module_artifact = emit_module_typed(
         spec,
         ir,

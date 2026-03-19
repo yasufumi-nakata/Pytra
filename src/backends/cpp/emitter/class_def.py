@@ -329,8 +329,13 @@ class CppClassEmitter:
             emitted_fname = self.rename_if_reserved(fname, self.reserved_words, self.rename_prefix, self.renamed_symbols)
             self.emit(f"{self.cpp_signature_type(fty)} {emitted_fname};")
         if gc_managed:
-            base_type_id_expr = f"{base_cpp}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
-            self.emit(f"PYTRA_DECLARE_CLASS_TYPE({base_type_id_expr});")
+            linker_tid = self.resolve_linker_type_id(name)
+            if linker_tid >= 0:
+                self.emit(f"inline static constexpr pytra_type_id PYTRA_TYPE_ID = {linker_tid};")
+                self.emit("pytra_type_id py_type_id() const noexcept override { return PYTRA_TYPE_ID; }")
+            else:
+                base_type_id_expr = f"{base_cpp}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
+                self.emit(f"PYTRA_DECLARE_CLASS_TYPE({base_type_id_expr});")
 
         if len(static_emit_names) > 0 or len(instance_fields_ordered) > 0 or gc_managed:
             self.emit("")

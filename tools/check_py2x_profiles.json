@@ -47,7 +47,7 @@
       "stage2_probe": {
         "enabled": true,
         "source": "sample/py/01_mandelbrot.py",
-        "expected_fragment": "error: --east-stage 2 is removed; py2cpp supports only --east-stage 3."
+        "expected_fragment": "--east-stage 2 is no longer supported; use EAST3 (default)."
       }
     },
     "cs": {

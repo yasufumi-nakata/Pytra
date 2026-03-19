@@ -272,7 +272,13 @@ def _resolve_class_base_fqcn(
     raise RuntimeError("unknown base type: " + module_id + "." + name)
 
 
-def _build_type_id_table(program: LinkedProgram) -> dict[str, int]:
+def _build_type_id_table(program: LinkedProgram) -> tuple[dict[str, int], dict[str, int]]:
+    """Build type_id table and base_type_id map via DFS.
+
+    Returns (type_id_table, type_id_base_map):
+      - type_id_table: FQCN -> linker-assigned type_id
+      - type_id_base_map: FQCN -> base type_id (resolved to int)
+    """
     class_bases: dict[str, str] = {}
     children: dict[str, list[str]] = {}
 
@@ -328,7 +334,17 @@ def _build_type_id_table(program: LinkedProgram) -> dict[str, int]:
     for fqcn in sorted(roots):
         _assign(fqcn)
 
-    return type_id_table
+    # Build base type_id map: for each user class, resolve its base to a numeric type_id.
+    type_id_base_map: dict[str, int] = {}
+    for fqcn, base_fqcn in class_bases.items():
+        if base_fqcn in type_id_table:
+            type_id_base_map[fqcn] = type_id_table[base_fqcn]
+        else:
+            # Base is a built-in or non-user type; resolve to built-in type_id.
+            base_short = base_fqcn.rsplit(".", 1)[-1] if "." in base_fqcn else base_fqcn
+            type_id_base_map[fqcn] = _BUILTIN_TYPE_IDS.get(base_short, _BUILTIN_TYPE_IDS["object"])
+
+    return type_id_table, type_id_base_map
 
 
 def _program_id(program: LinkedProgram) -> str:
@@ -381,7 +397,7 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
     container_hints: dict[str, object] = {}
     if _is_global_pass_enabled(pass_config, "CppListValueLocalHintPass"):
         linked_modules, container_hints = _materialize_container_hints(linked_modules, target=program.target)
-    type_id_table = _build_type_id_table(linked_input_program)
+    type_id_table, type_id_base_map = _build_type_id_table(linked_input_program)
     program_id = _program_id(linked_input_program)
 
     module_entries: list[dict[str, object]] = []
@@ -405,6 +421,7 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
             "module_id": module.module_id,
             "entry_modules": list(program.entry_modules),
             "type_id_resolved_v1": dict(type_id_table),
+            "type_id_base_map_v1": dict(type_id_base_map),
             "non_escape_summary": dict(non_escape_summary),
             "container_ownership_hints_v1": module_hints,
         }
@@ -450,6 +467,7 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
         "modules": module_entries,
         "global": {
             "type_id_table": dict(type_id_table),
+            "type_id_base_map": dict(type_id_base_map),
             "call_graph": {caller: list(callees) for caller, callees in call_graph.graph.items()},
             "sccs": [list(component) for component in call_graph.sccs],
             "non_escape_summary": dict(non_escape_summary),

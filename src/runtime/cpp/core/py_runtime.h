@@ -22,18 +22,7 @@
 // `str` method delegates still live here, so string helper declarations remain a direct dependency.
 #include "runtime/cpp/generated/built_in/string_ops.h"
 
-// type_id は target 非依存で stable な型判定キーとして扱う。
-// 予約領域（0-999）は runtime 組み込み型に割り当てる。
-static constexpr pytra_type_id PYTRA_TID_NONE = 0;
-static constexpr pytra_type_id PYTRA_TID_BOOL = 1;
-static constexpr pytra_type_id PYTRA_TID_INT = 2;
-static constexpr pytra_type_id PYTRA_TID_FLOAT = 3;
-static constexpr pytra_type_id PYTRA_TID_STR = 4;
-static constexpr pytra_type_id PYTRA_TID_LIST = 5;
-static constexpr pytra_type_id PYTRA_TID_DICT = 6;
-static constexpr pytra_type_id PYTRA_TID_SET = 7;
-static constexpr pytra_type_id PYTRA_TID_OBJECT = 8;
-static constexpr pytra_type_id PYTRA_TID_USER_BASE = 1000;
+// PYTRA_TID_* 定数は py_scalar_types.h へ移動済み（P2-COMPILE-LINK-PIPELINE-01）。
 
 inline list<str> str::split(const str& sep, int64 maxsplit) const {
     return py_split(*this, sep, maxsplit);
@@ -194,78 +183,15 @@ static inline decltype(auto) py_at_bounds_debug(const Seq& v, int64 idx) {
 // type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。
 #include "runtime/cpp/generated/built_in/type_id.h"
 
-static inline dict<pytra_type_id, pytra_type_id>& py_runtime_user_type_base_registry() {
-    static dict<pytra_type_id, pytra_type_id> user_type_base{};
-    return user_type_base;
-}
-
-static inline pytra_type_id& py_runtime_next_user_type_id() {
-    static pytra_type_id next_user_type_id = 1000;
-    return next_user_type_id;
-}
-
-static inline pytra_type_id& py_runtime_synced_user_type_count() {
-    static pytra_type_id synced_user_type_count = 0;
-    return synced_user_type_count;
-}
-
-static inline void py_sync_generated_user_type_registry() {
-    auto& user_type_base = py_runtime_user_type_base_registry();
-    if (user_type_base.empty()) {
-        return;
-    }
-    auto& synced_user_type_count = py_runtime_synced_user_type_count();
-    pytra_type_id next_user_type_id = py_runtime_next_user_type_id();
-    pytra_type_id last_registered_tid = next_user_type_id - 1;
-    bool needs_sync = synced_user_type_count != user_type_base.size();
-    if (!needs_sync) {
-        auto last_it = user_type_base.find(last_registered_tid);
-        if (last_it != user_type_base.end()) {
-            needs_sync = _TYPE_BASE.find(static_cast<int64>(last_registered_tid)) == _TYPE_BASE.end();
-        }
-    }
-    if (!needs_sync) {
-        return;
-    }
-    for (pytra_type_id tid = 1000; tid < next_user_type_id; ++tid) {
-        auto it = user_type_base.find(tid);
-        if (it == user_type_base.end()) {
-            continue;
-        }
-        py_tid_register_known_class_type(static_cast<int64>(tid), static_cast<int64>(it->second));
-    }
-    synced_user_type_count = static_cast<pytra_type_id>(user_type_base.size());
-}
-
-static inline pytra_type_id py_register_class_type(pytra_type_id base_type_id = PYTRA_TID_OBJECT) {
-    // NOTE:
-    // Avoid cross-TU static initialization order issues by keeping user type
-    // registry in function-local statics (initialized on first use).
-    auto& user_type_base = py_runtime_user_type_base_registry();
-    pytra_type_id tid = py_runtime_next_user_type_id();
-    while (user_type_base.find(tid) != user_type_base.end()) {
-        ++tid;
-    }
-    py_runtime_next_user_type_id() = tid + 1;
-    user_type_base[tid] = base_type_id;
-    return tid;
-}
-
-// Generated user classes share this exact type-id boilerplate.
-// Keep it in runtime so backend output stays compact and consistent.
-#define PYTRA_DECLARE_CLASS_TYPE(BASE_TYPE_ID_EXPR)                                                     \
-    inline static pytra_type_id PYTRA_TYPE_ID = py_register_class_type((BASE_TYPE_ID_EXPR));            \
-    pytra_type_id py_type_id() const noexcept override {                                                 \
-        return PYTRA_TYPE_ID;                                                                            \
-}
+// Runtime type_id registration machinery removed (P2-COMPILE-LINK-PIPELINE-01).
+// Type IDs are now assigned by the linker at compile time.
+// py_tid_register_known_class_type() is called from generated __pytra_init_type_ids() in main().
 
 static inline bool py_runtime_type_id_is_subtype(pytra_type_id actual_type_id, pytra_type_id expected_type_id) {
-    py_sync_generated_user_type_registry();
     return py_tid_is_subtype(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
 }
 
 static inline bool py_runtime_type_id_issubclass(pytra_type_id actual_type_id, pytra_type_id expected_type_id) {
-    py_sync_generated_user_type_registry();
     return py_tid_issubclass(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
 }
 
@@ -284,7 +210,6 @@ static inline bool py_runtime_object_isinstance(const object& value, pytra_type_
     if (!value) {
         return expected_type_id == PYTRA_TID_NONE;
     }
-    py_sync_generated_user_type_registry();
     return py_tid_isinstance(value, static_cast<int64>(expected_type_id));
 }
 

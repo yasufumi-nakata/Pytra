@@ -291,6 +291,67 @@ class CppEmitter(
         self.function_stack_list_locals_map: dict[str, list[str]] = {}
         self.function_pyobj_runtime_list_alias_map: dict[str, list[str]] = {}
         self.non_escape_callsite_records: list[dict[str, Any]] = []
+        # Linker-resolved type_id table (populated when linked program metadata is present).
+        self._linker_type_id_table: dict[str, int] = {}
+        self._linker_type_id_base_map: dict[str, int] = {}
+        self._linker_module_id: str = ""
+        meta = east_doc.get("meta") if isinstance(east_doc, dict) else None
+        if isinstance(meta, dict):
+            linked_meta = meta.get("linked_program_v1")
+            if isinstance(linked_meta, dict):
+                tid_table = linked_meta.get("type_id_resolved_v1")
+                if isinstance(tid_table, dict):
+                    for k, v in tid_table.items():
+                        if isinstance(k, str) and isinstance(v, int):
+                            self._linker_type_id_table[k] = v
+                tid_base = linked_meta.get("type_id_base_map_v1")
+                if isinstance(tid_base, dict):
+                    for k, v in tid_base.items():
+                        if isinstance(k, str) and isinstance(v, int):
+                            self._linker_type_id_base_map[k] = v
+                mid = linked_meta.get("module_id")
+                if isinstance(mid, str):
+                    self._linker_module_id = mid
+
+    def resolve_linker_type_id(self, class_name: str) -> int:
+        """Resolve linker-assigned type_id for a class. Returns -1 if not found."""
+        if len(self._linker_type_id_table) == 0:
+            return -1
+        fqcn = self._linker_module_id + "." + class_name
+        tid = self._linker_type_id_table.get(fqcn, -1)
+        if tid >= 0:
+            return tid
+        # Try matching by short name across all modules (for imported classes).
+        for key, val in self._linker_type_id_table.items():
+            if key.endswith("." + class_name):
+                return val
+        return -1
+
+    def _emit_linker_type_id_init(self) -> None:
+        """Emit py_tid_register_known_class_type calls for all linker-assigned type_ids."""
+        if len(self._linker_type_id_table) == 0:
+            return
+        entries: list[tuple[int, int]] = []
+        for fqcn, tid in sorted(self._linker_type_id_table.items(), key=lambda kv: kv[1]):
+            base_tid = self._linker_type_id_base_map.get(fqcn, 8)
+            entries.append((tid, base_tid))
+        if len(entries) == 0:
+            return
+        for tid, base_tid in entries:
+            self.emit(f"py_tid_register_known_class_type({tid}, {base_tid});")
+
+    def resolve_linker_base_type_id(self, class_name: str) -> int:
+        """Resolve linker-assigned base type_id for a class. Returns -1 if not found."""
+        if len(self._linker_type_id_base_map) == 0:
+            return -1
+        fqcn = self._linker_module_id + "." + class_name
+        base_tid = self._linker_type_id_base_map.get(fqcn, -1)
+        if base_tid >= 0:
+            return base_tid
+        for key, val in self._linker_type_id_base_map.items():
+            if key.endswith("." + class_name):
+                return val
+        return -1
 
     def current_scope_names(self) -> set[str]:
         """現在スコープの識別子集合を返す（selfhost では CppEmitter 側を正とする）。"""
@@ -1618,6 +1679,7 @@ class CppEmitter(
             self.emit("int main(int argc, char** argv) {")
             self.indent += 1
             self.emit("pytra_configure_from_argv(argc, argv);")
+            self._emit_linker_type_id_init()
             self.scope_stack.append(set())
             if has_module_runtime:
                 if self.top_namespace != "":
