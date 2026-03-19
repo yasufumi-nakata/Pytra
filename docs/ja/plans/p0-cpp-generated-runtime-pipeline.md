@@ -71,3 +71,4 @@ fatal error: runtime/cpp/generated/built_in/string_ops.h: No such file or direct
 ## 決定ログ
 
 - 2026-03-19: selfhost ビルド失敗の調査で発見。`runtime/cpp/generated/` ディレクトリが存在せず、マニフェストにも C++ built_in/std ターゲットが未登録であることを確認。P0 で起票。
+- 2026-03-19: 実装完了。`gen_runtime_from_manifest.py` に `cpp_program_to_header` postprocess を追加。マニフェストに 12 件の C++ ターゲットを登録。`call.py` の source_path 正規化を修正（絶対パス対応）。全 12 ヘッダー生成成功。check_py2x_transpile 148/148 pass。

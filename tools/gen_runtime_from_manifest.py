@@ -3603,6 +3603,43 @@ def rewrite_cpp_program_to_namespace(cpp_src: str, namespace_name: str) -> str:
     return "\n".join(out)
 
 
+def rewrite_cpp_program_to_header(cpp_src: str, guard_name: str) -> str:
+    """Convert transpiled C++ program into a header-only file with include guard.
+
+    Removes #include directives (caller already has them), main(), __pytra_module_init(),
+    and wraps in an include guard.
+    """
+    lines = _strip_trailing_string_literal_expr(cpp_src).splitlines()
+    lines = _remove_block_by_signature(lines, re.compile(r"^static\s+void\s+__pytra_module_init\s*\("))
+    lines = _remove_block_by_signature(lines, re.compile(r"^int\s+main\s*\("))
+
+    body_lines: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("#include "):
+            continue
+        if stripped == "":
+            if len(body_lines) == 0:
+                continue
+        body_lines.append(line)
+
+    # Trim leading/trailing blank lines from body.
+    while len(body_lines) > 0 and body_lines[0].strip() == "":
+        body_lines.pop(0)
+    while len(body_lines) > 0 and body_lines[-1].strip() == "":
+        body_lines.pop()
+
+    out: list[str] = []
+    out.append("#ifndef " + guard_name)
+    out.append("#define " + guard_name)
+    out.append("")
+    out.extend(body_lines)
+    out.append("")
+    out.append("#endif  // " + guard_name)
+    out.append("")
+    return "\n".join(out)
+
+
 def inject_generated_header(text: str, target: str, source_rel: str) -> str:
     prefix = COMMENT_PREFIX.get(target)
     if prefix is None:
@@ -3710,6 +3747,10 @@ def render_item(item: GenerationItem) -> str:
         if item.helper_name == "":
             raise RuntimeError("missing helper_name(namespace) for cpp_program_to_namespace: " + item.item_id)
         generated = rewrite_cpp_program_to_namespace(generated, item.helper_name)
+    elif item.postprocess == "cpp_program_to_header":
+        if item.helper_name == "":
+            raise RuntimeError("missing helper_name(guard) for cpp_program_to_header: " + item.item_id)
+        generated = rewrite_cpp_program_to_header(generated, item.helper_name)
     elif item.postprocess != "":
         raise RuntimeError("unknown postprocess: " + item.postprocess)
     return inject_generated_header(generated, item.target, item.source_rel)

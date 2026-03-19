@@ -947,6 +947,13 @@ class CppCallEmitter:
             # source_path キー自体が存在しない（テスト doc 等）: fallback を許可しない。
             return None
         src = self.any_to_str(src_val)
+        # Normalize absolute paths to relative for prefix matching.
+        _PYTRA_SRC_MARKER = "/src/pytra/"
+        _TOOLCHAIN_SRC_MARKER = "/src/toolchain/"
+        if _PYTRA_SRC_MARKER in src:
+            src = "src/pytra/" + src[src.index(_PYTRA_SRC_MARKER) + len(_PYTRA_SRC_MARKER) :]
+        elif _TOOLCHAIN_SRC_MARKER in src:
+            src = "src/toolchain/" + src[src.index(_TOOLCHAIN_SRC_MARKER) + len(_TOOLCHAIN_SRC_MARKER) :]
         if not (
             src == ""  # リンク済み doc（global optimizer が source_path を "" にセットする）
             or src.startswith("src/pytra/std/")

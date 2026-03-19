@@ -37,7 +37,7 @@
 
 文脈: [docs/ja/plans/p0-cpp-generated-runtime-pipeline.md](../plans/p0-cpp-generated-runtime-pipeline.md)
 
-1. [ ] [ID: P0-CPP-GENERATED-RUNTIME-PIPELINE-01] `src/runtime/cpp/generated/` が存在せず、native ヘッダー 15 箇所の `#include` が壊れている。`runtime_generation_manifest.json` に C++ built_in/std ターゲットを追加し、`.east` → `.h` 生成パイプラインを整備する。
+1. [x] [ID: P0-CPP-GENERATED-RUNTIME-PIPELINE-01] `src/runtime/cpp/generated/` が存在せず、native ヘッダー 15 箇所の `#include` が壊れている。`runtime_generation_manifest.json` に C++ built_in/std ターゲットを追加し、`.east` → `.h` 生成パイプラインを整備する。
 
 ### P7: selfhost 完全自立化
 

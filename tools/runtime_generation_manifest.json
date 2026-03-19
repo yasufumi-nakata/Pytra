@@ -13,7 +13,10 @@
           "postprocess": "cpp_program_to_namespace",
           "helper_name": "pytra::utils::png"
         },
-        { "target": "rs", "output": "src/runtime/rs/generated/utils/png.rs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/utils/png.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/utils/png.cs",
@@ -35,18 +38,39 @@
           "output": "src/runtime/go/generated/utils/png.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/utils/png.java" },
-        { "target": "swift", "output": "src/runtime/swift/generated/utils/png.swift" },
-        { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/png.kt" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/utils/png.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/utils/png.lua" },
-        { "target": "scala", "output": "src/runtime/scala/generated/utils/png.scala" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/utils/png.java"
+        },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/utils/png.swift"
+        },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/utils/png.kt"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/utils/png.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/utils/png.lua"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/utils/png.scala"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/utils/png.php",
           "postprocess": "php_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/utils/png.nim" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/utils/png.nim"
+        }
       ]
     },
     {
@@ -60,7 +84,10 @@
           "postprocess": "cpp_program_to_namespace",
           "helper_name": "pytra::utils::gif"
         },
-        { "target": "rs", "output": "src/runtime/rs/generated/utils/gif.rs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/utils/gif.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/utils/gif.cs",
@@ -82,18 +109,39 @@
           "output": "src/runtime/go/generated/utils/gif.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/utils/gif.java" },
-        { "target": "swift", "output": "src/runtime/swift/generated/utils/gif.swift" },
-        { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/gif.kt" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/utils/gif.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/utils/gif.lua" },
-        { "target": "scala", "output": "src/runtime/scala/generated/utils/gif.scala" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/utils/gif.java"
+        },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/utils/gif.swift"
+        },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/utils/gif.kt"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/utils/gif.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/utils/gif.lua"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/utils/gif.scala"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/utils/gif.php",
           "postprocess": "php_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/utils/gif.nim" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/utils/gif.nim"
+        }
       ]
     },
     {
@@ -101,20 +149,32 @@
       "source": "src/pytra/utils/assertions.py",
       "bucket": "utils",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/utils/assertions.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/utils/assertions.cs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/utils/assertions.rs"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/utils/assertions.cs"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/utils/assertions.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/utils/assertions.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/utils/assertions.java"
+        },
         {
           "target": "swift",
           "output": "src/runtime/swift/generated/utils/assertions.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/utils/assertions.nim" },
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/utils/assertions.nim"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/utils/assertions.kt",
@@ -125,8 +185,14 @@
           "output": "src/runtime/scala/generated/utils/assertions.scala",
           "postprocess": "scala_program_to_library"
         },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/utils/assertions.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/utils/assertions.lua" },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/utils/assertions.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/utils/assertions.lua"
+        },
         {
           "target": "js",
           "output": "src/runtime/js/generated/utils/assertions.js",
@@ -149,7 +215,16 @@
       "source": "src/pytra/built_in/contains.py",
       "bucket": "built_in",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/built_in/contains.rs" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/built_in/contains.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_BUILT_IN_CONTAINS_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/built_in/contains.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/built_in/contains.cs",
@@ -161,7 +236,10 @@
           "output": "src/runtime/go/generated/built_in/contains.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/built_in/contains.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/built_in/contains.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/contains.kt",
@@ -177,12 +255,33 @@
           "output": "src/runtime/swift/generated/built_in/contains.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/built_in/contains.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/built_in/contains.js", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ts", "output": "src/runtime/ts/generated/built_in/contains.ts", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/contains.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/built_in/contains.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/built_in/contains.php", "postprocess": "php_program_to_library" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/built_in/contains.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/built_in/contains.js",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/built_in/contains.ts",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/built_in/contains.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/built_in/contains.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/built_in/contains.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -190,7 +289,16 @@
       "source": "src/pytra/built_in/io_ops.py",
       "bucket": "built_in",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/built_in/io_ops.rs" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/built_in/io_ops.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_BUILT_IN_IO_OPS_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/built_in/io_ops.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/built_in/io_ops.cs",
@@ -202,7 +310,10 @@
           "output": "src/runtime/go/generated/built_in/io_ops.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/built_in/io_ops.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/built_in/io_ops.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/io_ops.kt",
@@ -218,12 +329,33 @@
           "output": "src/runtime/swift/generated/built_in/io_ops.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/built_in/io_ops.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/built_in/io_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ts", "output": "src/runtime/ts/generated/built_in/io_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/io_ops.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/built_in/io_ops.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/built_in/io_ops.php", "postprocess": "php_program_to_library" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/built_in/io_ops.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/built_in/io_ops.js",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/built_in/io_ops.ts",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/built_in/io_ops.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/built_in/io_ops.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/built_in/io_ops.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -231,7 +363,16 @@
       "source": "src/pytra/built_in/iter_ops.py",
       "bucket": "built_in",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/built_in/iter_ops.rs" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/built_in/iter_ops.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_BUILT_IN_ITER_OPS_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/built_in/iter_ops.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/built_in/iter_ops.cs",
@@ -243,7 +384,10 @@
           "output": "src/runtime/go/generated/built_in/iter_ops.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/built_in/iter_ops.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/built_in/iter_ops.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/iter_ops.kt",
@@ -259,12 +403,33 @@
           "output": "src/runtime/swift/generated/built_in/iter_ops.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/built_in/iter_ops.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/built_in/iter_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ts", "output": "src/runtime/ts/generated/built_in/iter_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/iter_ops.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/built_in/iter_ops.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/built_in/iter_ops.php", "postprocess": "php_program_to_library" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/built_in/iter_ops.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/built_in/iter_ops.js",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/built_in/iter_ops.ts",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/built_in/iter_ops.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/built_in/iter_ops.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/built_in/iter_ops.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -272,7 +437,10 @@
       "source": "src/pytra/built_in/numeric_ops.py",
       "bucket": "built_in",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/built_in/numeric_ops.rs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/built_in/numeric_ops.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/built_in/numeric_ops.cs",
@@ -284,7 +452,10 @@
           "output": "src/runtime/go/generated/built_in/numeric_ops.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/built_in/numeric_ops.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/built_in/numeric_ops.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/numeric_ops.kt",
@@ -300,12 +471,33 @@
           "output": "src/runtime/swift/generated/built_in/numeric_ops.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/built_in/numeric_ops.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/built_in/numeric_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ts", "output": "src/runtime/ts/generated/built_in/numeric_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/numeric_ops.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/built_in/numeric_ops.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/built_in/numeric_ops.php", "postprocess": "php_program_to_library" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/built_in/numeric_ops.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/built_in/numeric_ops.js",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/built_in/numeric_ops.ts",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/built_in/numeric_ops.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/built_in/numeric_ops.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/built_in/numeric_ops.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -313,7 +505,10 @@
       "source": "src/pytra/built_in/predicates.py",
       "bucket": "built_in",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/built_in/predicates.rs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/built_in/predicates.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/built_in/predicates.cs",
@@ -325,7 +520,10 @@
           "output": "src/runtime/go/generated/built_in/predicates.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/built_in/predicates.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/built_in/predicates.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/predicates.kt",
@@ -341,12 +539,33 @@
           "output": "src/runtime/swift/generated/built_in/predicates.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/built_in/predicates.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/built_in/predicates.js", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ts", "output": "src/runtime/ts/generated/built_in/predicates.ts", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/predicates.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/built_in/predicates.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/built_in/predicates.php", "postprocess": "php_program_to_library" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/built_in/predicates.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/built_in/predicates.js",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/built_in/predicates.ts",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/built_in/predicates.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/built_in/predicates.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/built_in/predicates.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -354,7 +573,16 @@
       "source": "src/pytra/built_in/scalar_ops.py",
       "bucket": "built_in",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/built_in/scalar_ops.rs" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/built_in/scalar_ops.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_BUILT_IN_SCALAR_OPS_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/built_in/scalar_ops.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/built_in/scalar_ops.cs",
@@ -366,7 +594,10 @@
           "output": "src/runtime/go/generated/built_in/scalar_ops.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/built_in/scalar_ops.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/built_in/scalar_ops.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/scalar_ops.kt",
@@ -382,12 +613,33 @@
           "output": "src/runtime/swift/generated/built_in/scalar_ops.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/built_in/scalar_ops.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/built_in/scalar_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ts", "output": "src/runtime/ts/generated/built_in/scalar_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/scalar_ops.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/built_in/scalar_ops.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/built_in/scalar_ops.php", "postprocess": "php_program_to_library" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/built_in/scalar_ops.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/built_in/scalar_ops.js",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/built_in/scalar_ops.ts",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/built_in/scalar_ops.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/built_in/scalar_ops.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/built_in/scalar_ops.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -395,7 +647,10 @@
       "source": "src/pytra/built_in/sequence.py",
       "bucket": "built_in",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/built_in/sequence.rs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/built_in/sequence.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/built_in/sequence.cs",
@@ -407,7 +662,10 @@
           "output": "src/runtime/go/generated/built_in/sequence.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/built_in/sequence.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/built_in/sequence.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/sequence.kt",
@@ -423,12 +681,33 @@
           "output": "src/runtime/swift/generated/built_in/sequence.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/built_in/sequence.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/built_in/sequence.js", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ts", "output": "src/runtime/ts/generated/built_in/sequence.ts", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/sequence.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/built_in/sequence.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/built_in/sequence.php", "postprocess": "php_program_to_library" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/built_in/sequence.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/built_in/sequence.js",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/built_in/sequence.ts",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/built_in/sequence.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/built_in/sequence.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/built_in/sequence.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -436,7 +715,16 @@
       "source": "src/pytra/built_in/string_ops.py",
       "bucket": "built_in",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/built_in/string_ops.rs" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/built_in/string_ops.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_BUILT_IN_STRING_OPS_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/built_in/string_ops.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/built_in/string_ops.cs",
@@ -448,7 +736,10 @@
           "output": "src/runtime/go/generated/built_in/string_ops.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/built_in/string_ops.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/built_in/string_ops.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/string_ops.kt",
@@ -464,12 +755,33 @@
           "output": "src/runtime/swift/generated/built_in/string_ops.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/built_in/string_ops.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/built_in/string_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ts", "output": "src/runtime/ts/generated/built_in/string_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/string_ops.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/built_in/string_ops.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/built_in/string_ops.php", "postprocess": "php_program_to_library" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/built_in/string_ops.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/built_in/string_ops.js",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/built_in/string_ops.ts",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/built_in/string_ops.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/built_in/string_ops.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/built_in/string_ops.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -477,7 +789,16 @@
       "source": "src/pytra/built_in/type_id.py",
       "bucket": "built_in",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/built_in/type_id.rs" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/built_in/type_id.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_BUILT_IN_TYPE_ID_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/built_in/type_id.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/built_in/type_id.cs",
@@ -489,7 +810,10 @@
           "output": "src/runtime/go/generated/built_in/type_id.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/built_in/type_id.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/built_in/type_id.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/type_id.kt",
@@ -505,12 +829,33 @@
           "output": "src/runtime/swift/generated/built_in/type_id.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/built_in/type_id.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/built_in/type_id.js", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ts", "output": "src/runtime/ts/generated/built_in/type_id.ts", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/type_id.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/built_in/type_id.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/built_in/type_id.php", "postprocess": "php_program_to_library" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/built_in/type_id.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/built_in/type_id.js",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/built_in/type_id.ts",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/built_in/type_id.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/built_in/type_id.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/built_in/type_id.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -518,7 +863,10 @@
       "source": "src/pytra/built_in/zip_ops.py",
       "bucket": "built_in",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/built_in/zip_ops.rs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/built_in/zip_ops.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/built_in/zip_ops.cs",
@@ -530,7 +878,10 @@
           "output": "src/runtime/go/generated/built_in/zip_ops.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/built_in/zip_ops.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/built_in/zip_ops.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/zip_ops.kt",
@@ -546,12 +897,33 @@
           "output": "src/runtime/swift/generated/built_in/zip_ops.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/built_in/zip_ops.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/built_in/zip_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ts", "output": "src/runtime/ts/generated/built_in/zip_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/zip_ops.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/built_in/zip_ops.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/built_in/zip_ops.php", "postprocess": "php_program_to_library" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/built_in/zip_ops.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/built_in/zip_ops.js",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/built_in/zip_ops.ts",
+          "postprocess": "js_ts_built_in_cjs_module"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/built_in/zip_ops.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/built_in/zip_ops.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/built_in/zip_ops.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -559,14 +931,35 @@
       "source": "src/pytra/std/time.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs", "postprocess": "rs_std_native_owner_wrapper", "helper_name": "time" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs", "postprocess": "cs_std_native_owner_wrapper", "helper_name": "time" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/std/time.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_STD_TIME_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/time.rs",
+          "postprocess": "rs_std_native_owner_wrapper",
+          "helper_name": "time"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/time.cs",
+          "postprocess": "cs_std_native_owner_wrapper",
+          "helper_name": "time"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/time.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/time.java", "postprocess": "java_std_native_owner_wrapper", "helper_name": "time" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/time.java",
+          "postprocess": "java_std_native_owner_wrapper",
+          "helper_name": "time"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/time.kt",
@@ -582,12 +975,36 @@
           "output": "src/runtime/swift/generated/std/time.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/time.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/std/time.js", "postprocess": "js_std_native_owner_wrapper", "helper_name": "time" },
-        { "target": "ts", "output": "src/runtime/ts/generated/std/time.ts", "postprocess": "ts_std_native_owner_wrapper", "helper_name": "time" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/time.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/time.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/std/time.php", "postprocess": "php_std_native_owner_wrapper", "helper_name": "time" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/time.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/time.js",
+          "postprocess": "js_std_native_owner_wrapper",
+          "helper_name": "time"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/time.ts",
+          "postprocess": "ts_std_native_owner_wrapper",
+          "helper_name": "time"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/time.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/time.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/time.php",
+          "postprocess": "php_std_native_owner_wrapper",
+          "helper_name": "time"
+        }
       ]
     },
     {
@@ -595,14 +1012,24 @@
       "source": "src/pytra/std/json.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/json.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/json.cs", "postprocess": "cs_std_json_live_wrapper" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/json.rs"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/json.cs",
+          "postprocess": "cs_std_json_live_wrapper"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/json.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/json.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/json.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/json.kt",
@@ -618,12 +1045,33 @@
           "output": "src/runtime/swift/generated/std/json.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/json.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/std/json.js", "postprocess": "js_std_json_live_wrapper" },
-        { "target": "ts", "output": "src/runtime/ts/generated/std/json.ts", "postprocess": "ts_std_json_live_wrapper" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/json.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/json.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/std/json.php", "postprocess": "php_std_json_live_wrapper" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/json.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/json.js",
+          "postprocess": "js_std_json_live_wrapper"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/json.ts",
+          "postprocess": "ts_std_json_live_wrapper"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/json.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/json.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/json.php",
+          "postprocess": "php_std_json_live_wrapper"
+        }
       ]
     },
     {
@@ -631,14 +1079,24 @@
       "source": "src/pytra/std/pathlib.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/pathlib.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/pathlib.cs", "postprocess": "cs_std_pathlib_live_wrapper" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/pathlib.rs"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/pathlib.cs",
+          "postprocess": "cs_std_pathlib_live_wrapper"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/pathlib.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/pathlib.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/pathlib.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/pathlib.kt",
@@ -654,12 +1112,33 @@
           "output": "src/runtime/swift/generated/std/pathlib.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/pathlib.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/std/pathlib.js", "postprocess": "js_std_pathlib_live_wrapper" },
-        { "target": "ts", "output": "src/runtime/ts/generated/std/pathlib.ts", "postprocess": "ts_std_pathlib_live_wrapper" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/pathlib.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/pathlib.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/std/pathlib.php", "postprocess": "php_std_pathlib_live_wrapper" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/pathlib.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/pathlib.js",
+          "postprocess": "js_std_pathlib_live_wrapper"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/pathlib.ts",
+          "postprocess": "ts_std_pathlib_live_wrapper"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/pathlib.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/pathlib.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/pathlib.php",
+          "postprocess": "php_std_pathlib_live_wrapper"
+        }
       ]
     },
     {
@@ -667,14 +1146,35 @@
       "source": "src/pytra/std/math.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/math.rs", "postprocess": "rs_std_native_owner_wrapper", "helper_name": "math" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/math.cs", "postprocess": "cs_std_native_owner_wrapper", "helper_name": "math" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/std/math.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_STD_MATH_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/math.rs",
+          "postprocess": "rs_std_native_owner_wrapper",
+          "helper_name": "math"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/math.cs",
+          "postprocess": "cs_std_native_owner_wrapper",
+          "helper_name": "math"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/math.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/math.java", "postprocess": "java_std_native_owner_wrapper", "helper_name": "math" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/math.java",
+          "postprocess": "java_std_native_owner_wrapper",
+          "helper_name": "math"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/math.kt",
@@ -690,12 +1190,36 @@
           "output": "src/runtime/swift/generated/std/math.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/math.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/std/math.js", "postprocess": "js_std_native_owner_wrapper", "helper_name": "math" },
-        { "target": "ts", "output": "src/runtime/ts/generated/std/math.ts", "postprocess": "ts_std_native_owner_wrapper", "helper_name": "math" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/math.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/math.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/std/math.php", "postprocess": "php_std_native_owner_wrapper", "helper_name": "math" }
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/math.nim"
+        },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/math.js",
+          "postprocess": "js_std_native_owner_wrapper",
+          "helper_name": "math"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/math.ts",
+          "postprocess": "ts_std_native_owner_wrapper",
+          "helper_name": "math"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/math.rb"
+        },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/math.lua"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/math.php",
+          "postprocess": "php_std_native_owner_wrapper",
+          "helper_name": "math"
+        }
       ]
     },
     {
@@ -703,14 +1227,29 @@
       "source": "src/pytra/std/os.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/os.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/os.cs" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/std/os.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_STD_OS_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/os.rs"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/os.cs"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/os.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/os.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/os.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/os.kt",
@@ -726,7 +1265,10 @@
           "output": "src/runtime/swift/generated/std/os.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/os.nim" },
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/os.nim"
+        },
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/os.js",
@@ -737,8 +1279,14 @@
           "output": "src/runtime/ts/generated/std/os.ts",
           "postprocess": "js_program_to_cjs_module"
         },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/os.lua" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/os.rb" },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/os.lua"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/os.rb"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/os.php",
@@ -751,14 +1299,29 @@
       "source": "src/pytra/std/os_path.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/os_path.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/os_path.cs" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/std/os_path.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_STD_OS_PATH_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/os_path.rs"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/os_path.cs"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/os_path.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/os_path.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/os_path.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/os_path.kt",
@@ -774,7 +1337,10 @@
           "output": "src/runtime/swift/generated/std/os_path.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/os_path.nim" },
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/os_path.nim"
+        },
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/os_path.js",
@@ -785,8 +1351,14 @@
           "output": "src/runtime/ts/generated/std/os_path.ts",
           "postprocess": "js_program_to_cjs_module"
         },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/os_path.lua" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/os_path.rb" },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/os_path.lua"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/os_path.rb"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/os_path.php",
@@ -799,7 +1371,16 @@
       "source": "src/pytra/std/glob.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/glob.rs" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/std/glob.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_STD_GLOB_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/glob.rs"
+        },
         {
           "target": "cs",
           "output": "src/runtime/cs/generated/std/glob.cs",
@@ -811,7 +1392,10 @@
           "output": "src/runtime/go/generated/std/glob.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/glob.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/glob.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/glob.kt",
@@ -827,7 +1411,10 @@
           "output": "src/runtime/swift/generated/std/glob.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/glob.nim" },
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/glob.nim"
+        },
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/glob.js",
@@ -838,8 +1425,14 @@
           "output": "src/runtime/ts/generated/std/glob.ts",
           "postprocess": "js_program_to_cjs_module"
         },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/glob.lua" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/glob.rb" },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/glob.lua"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/glob.rb"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/glob.php",
@@ -852,14 +1445,23 @@
       "source": "src/pytra/std/argparse.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/argparse.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/argparse.cs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/argparse.rs"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/argparse.cs"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/argparse.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/argparse.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/argparse.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/argparse.kt",
@@ -875,7 +1477,10 @@
           "output": "src/runtime/swift/generated/std/argparse.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/argparse.nim" },
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/argparse.nim"
+        },
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/argparse.js",
@@ -886,8 +1491,14 @@
           "output": "src/runtime/ts/generated/std/argparse.ts",
           "postprocess": "ts_std_argparse_runtime_imports"
         },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/argparse.lua" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/argparse.rb" },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/argparse.lua"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/argparse.rb"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/argparse.php",
@@ -900,14 +1511,23 @@
       "source": "src/pytra/std/random.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/random.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/random.cs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/random.rs"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/random.cs"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/random.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/random.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/random.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/random.kt",
@@ -923,7 +1543,10 @@
           "output": "src/runtime/swift/generated/std/random.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/random.nim" },
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/random.nim"
+        },
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/random.js",
@@ -934,8 +1557,14 @@
           "output": "src/runtime/ts/generated/std/random.ts",
           "postprocess": "ts_std_random_runtime_imports"
         },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/random.lua" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/random.rb" },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/random.lua"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/random.rb"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/random.php",
@@ -948,14 +1577,23 @@
       "source": "src/pytra/std/re.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/re.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/re.cs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/re.rs"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/re.cs"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/re.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/re.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/re.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/re.kt",
@@ -971,7 +1609,10 @@
           "output": "src/runtime/swift/generated/std/re.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/re.nim" },
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/re.nim"
+        },
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/re.js",
@@ -982,8 +1623,14 @@
           "output": "src/runtime/ts/generated/std/re.ts",
           "postprocess": "ts_std_re_runtime_imports"
         },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/re.lua" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/re.rb" },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/re.lua"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/re.rb"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/re.php",
@@ -996,14 +1643,29 @@
       "source": "src/pytra/std/sys.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/sys.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/sys.cs" },
+        {
+          "target": "cpp",
+          "output": "src/runtime/cpp/generated/std/sys.h",
+          "postprocess": "cpp_program_to_header",
+          "helper_name": "PYTRA_GEN_STD_SYS_H"
+        },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/sys.rs"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/sys.cs"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/sys.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/sys.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/sys.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/sys.kt",
@@ -1019,7 +1681,10 @@
           "output": "src/runtime/swift/generated/std/sys.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/sys.nim" },
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/sys.nim"
+        },
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/sys.js",
@@ -1032,8 +1697,14 @@
           "postprocess": "ts_std_native_owner_wrapper",
           "helper_name": "sys"
         },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/sys.lua" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/sys.rb" },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/sys.lua"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/sys.rb"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/sys.php",
@@ -1046,14 +1717,23 @@
       "source": "src/pytra/std/timeit.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/timeit.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/timeit.cs" },
+        {
+          "target": "rs",
+          "output": "src/runtime/rs/generated/std/timeit.rs"
+        },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/timeit.cs"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/timeit.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/timeit.java" },
+        {
+          "target": "java",
+          "output": "src/runtime/java/generated/std/timeit.java"
+        },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/timeit.kt",
@@ -1069,7 +1749,10 @@
           "output": "src/runtime/swift/generated/std/timeit.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/timeit.nim" },
+        {
+          "target": "nim",
+          "output": "src/runtime/nim/generated/std/timeit.nim"
+        },
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/timeit.js",
@@ -1080,8 +1763,14 @@
           "output": "src/runtime/ts/generated/std/timeit.ts",
           "postprocess": "ts_std_timeit_runtime_imports"
         },
-        { "target": "lua", "output": "src/runtime/lua/generated/std/timeit.lua" },
-        { "target": "ruby", "output": "src/runtime/ruby/generated/std/timeit.rb" },
+        {
+          "target": "lua",
+          "output": "src/runtime/lua/generated/std/timeit.lua"
+        },
+        {
+          "target": "ruby",
+          "output": "src/runtime/ruby/generated/std/timeit.rb"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/timeit.php",
