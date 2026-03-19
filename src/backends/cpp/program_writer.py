@@ -306,6 +306,9 @@ def write_cpp_rendered_program(
     mkdirs_for_cli(str(src_dir))
 
     # Copy native runtime and generate C++ from .east for self-contained build.
+    # Note: runtime modules included in the LinkedProgram are handled by the
+    # multifile writer (link pipeline). _generate_runtime_east_headers covers
+    # the remaining runtime modules not in the link (e.g. string_ops, type_id).
     runtime_files = _copy_native_runtime_to_output(output_root)
     runtime_files.extend(_generate_runtime_east_headers(output_root))
 

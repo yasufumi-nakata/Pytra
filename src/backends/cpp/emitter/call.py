@@ -239,8 +239,9 @@ class CppCallEmitter:
                 if part_norm in _POD:
                     # POD: unbox from object
                     return f"{value_expr}.unbox<{cpp_t}, {tid_expr}>()"
-                # Class (rc<T>): downcast from object
-                return f"(*{value_expr}.as<{cpp_t}>())"
+                # Class (rc<T>): downcast from object. Strip rc<> wrapper.
+                inner_t = cpp_t[3:-1] if cpp_t.startswith("rc<") and cpp_t.endswith(">") else cpp_t
+                return f"(*{value_expr}.as<{inner_t}>())"
         return ""
 
     def _render_builtin_static_cast_call(

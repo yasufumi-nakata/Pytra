@@ -305,7 +305,8 @@ class CppStatementEmitter:
                         if part_norm in _POD:
                             rendered_val = f"{rendered_val}.unbox<{cpp_t}, {tid_expr}>()"
                         else:
-                            rendered_val = f"(*{rendered_val}.as<{cpp_t}>())"
+                            inner_t = cpp_t[3:-1] if cpp_t.startswith("rc<") and cpp_t.endswith(">") else cpp_t
+                            rendered_val = f"(*{rendered_val}.as<{inner_t}>())"
                         break
         if rendered_val != "" and ann_t_str != "" and self._contains_text(val_t, "|"):
             union_parts = self.split_union(val_t)
