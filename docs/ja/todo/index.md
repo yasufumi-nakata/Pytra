@@ -39,7 +39,16 @@
 
 1. [x] [ID: P0-CPP-GENERATED-RUNTIME-PIPELINE-01] `src/runtime/cpp/generated/` が存在せず、native ヘッダー 15 箇所の `#include` が壊れている。`runtime_generation_manifest.json` に C++ built_in/std ターゲットを追加し、`.east` → `.h` 生成パイプラインを整備する。
 
-#### P0-2: object = tagged value 統一（最優先）
+#### P0-2: runtime .east を link パイプラインに統合（最優先）
+
+文脈: [docs/ja/plans/p0-runtime-east-in-link-pipeline.md](../plans/p0-runtime-east-in-link-pipeline.md)
+
+1. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S1] `resolved_dependencies_v1` に含まれる runtime モジュールの .east を LinkedProgram に自動追加する。
+2. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S2] `write_cpp_rendered_program` で runtime モジュールも link emit の出力に含める。
+3. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S3] `_generate_runtime_east_headers`（standalone transpile）を廃止する。
+4. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S4] pathlib repro が `out/cpp/` で g++ ビルドできることを検証する。
+
+#### P0-3: object = tagged value 統一
 
 文脈: [docs/ja/plans/p0-object-is-tagged-value.md](../plans/p0-object-is-tagged-value.md)
 
@@ -49,7 +58,7 @@
 4. [ ] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S4] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。generated ヘッダーの standalone transpile でクラスフィールド宣言（`str _value;`）が欠落する問題あり。
 5. [ ] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S5] 既存コードの `object` 使用箇所を新 API に移行し、互換レイヤを除去する。
 
-#### P0-3: py_runtime.h 分解・廃止
+#### P0-4: py_runtime.h 分解・廃止
 
 文脈: [docs/ja/plans/p0-py-runtime-h-decomposition.md](../plans/p0-py-runtime-h-decomposition.md)
 
@@ -62,7 +71,7 @@
 7. [x] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S7] `py_runtime.h` を include のみのファサードに書き換える。
 8. [ ] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S8] エミッターが `py_runtime.h` ではなく個別ヘッダーを emit するよう変更する。
 
-#### P0-4: out/cpp/ 自己完結ビルドディレクトリ
+#### P0-5: out/cpp/ 自己完結ビルドディレクトリ
 
 文脈: [docs/ja/plans/p0-self-contained-cpp-output.md](../plans/p0-self-contained-cpp-output.md)
 
@@ -73,7 +82,7 @@
 5. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S5] `pytra-cli.py --build` フローを新パイプラインに対応させる。
 6. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S6] 最小 repro（pathlib import）が `out/cpp/` 内で `make` でビルドできることを検証する。→ P0-TAGGED-UNION-OBJECT-BOX-01 が前提。
 
-#### P0-5: tagged union を object + type_id に統一（P0-2 に包含）
+#### P0-6: tagged union を object + type_id に統一（P0-2 に包含）
 
 文脈: [docs/ja/plans/p0-tagged-union-object-box.md](../plans/p0-tagged-union-object-box.md)
 
@@ -84,7 +93,7 @@
 5. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S5] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。
 6. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S6] 他バックエンド（Rust, Go 等）への展開を検討する。
 
-#### P0-6: リンカーによる C++ include パス確定
+#### P0-7: リンカーによる C++ include パス確定
 文脈: [docs/ja/plans/p0-linker-resolved-includes.md](../plans/p0-linker-resolved-includes.md)
 
 1. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S1] `global_optimizer.py` に `_build_resolved_dependencies` を実装。`import_bindings` + 暗黙 runtime 依存を収集し `resolved_dependencies_v1: list[str]` をメタデータに格納。
