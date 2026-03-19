@@ -2029,6 +2029,9 @@ class RustEmitter(CodeEmitter):
         list_inner = self.type_generic_args(t, "list")
         if len(list_inner) == 1:
             return f"Vec<{self._rust_type(list_inner[0])}>"
+        deque_inner = self.type_generic_args(t, "deque")
+        if len(deque_inner) == 1:
+            return f"::std::collections::VecDeque<{self._rust_type(deque_inner[0])}>"
         set_inner = self.type_generic_args(t, "set")
         if len(set_inner) == 1:
             return f"::std::collections::BTreeSet<{self._rust_type(set_inner[0])}>"

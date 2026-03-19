@@ -242,6 +242,8 @@ def _kotlin_type(type_name: Any, *, allow_void: bool) -> str:
         return "String"
     if type_name.startswith("list[") or type_name.startswith("tuple["):
         return "MutableList<Any?>"
+    if type_name.startswith("deque["):
+        return "ArrayDeque<Any?>"
     if type_name.startswith("dict["):
         return "MutableMap<Any, Any?>"
     if type_name in {"bytes", "bytearray"}:

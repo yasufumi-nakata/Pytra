@@ -150,6 +150,11 @@ def _java_ref_type(type_name: Any) -> str:
         if len(elems) == 1:
             return "java.util.ArrayList<" + _java_ref_type(elems[0]) + ">"
         return "java.util.ArrayList<Object>"
+    if type_name.startswith("deque["):
+        elems = _split_type_args(type_name, "deque")
+        if len(elems) == 1:
+            return "java.util.ArrayDeque<" + _java_ref_type(elems[0]) + ">"
+        return "java.util.ArrayDeque<Object>"
     if type_name.startswith("dict["):
         parts = _split_type_args(type_name, "dict")
         if len(parts) == 2:
