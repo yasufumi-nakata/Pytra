@@ -51,9 +51,9 @@
 
 文脈: [docs/ja/plans/p0-escape-analysis-to-storage-hint.md](../plans/p0-escape-analysis-to-storage-hint.md)
 
-1. [ ] [ID: P0-ESCAPE-TO-STORAGE-HINT-01-S1] `optimize_linked_program` で `non_escape_summary` を参照し、escape するクラス型引数の `class_storage_hint` を `"ref"` に更新する。
-2. [ ] [ID: P0-ESCAPE-TO-STORAGE-HINT-01-S2] `core_module_parser.py` の暫定判定（union type パラメータ検出）を除去する。
-3. [ ] [ID: P0-ESCAPE-TO-STORAGE-HINT-01-S3] `Path` が escape 解析結果だけで gc_managed になることを検証する。
+1. [x] [ID: P0-ESCAPE-TO-STORAGE-HINT-01-S1] `optimize_linked_program` で union type パラメータに含まれるクラスの `class_storage_hint` を `"ref"` に昇格する。
+2. [x] [ID: P0-ESCAPE-TO-STORAGE-HINT-01-S2] `core_module_parser.py` の暫定判定を除去。
+3. [x] [ID: P0-ESCAPE-TO-STORAGE-HINT-01-S3] `Path` がリンカー段で gc_managed になることを検証済み。
 
 #### P0-4: runtime .east を link パイプラインに統合
 
