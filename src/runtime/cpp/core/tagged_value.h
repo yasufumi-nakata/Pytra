@@ -31,4 +31,20 @@ inline object::object(int v) : tag(PYTRA_TID_INT), _rc(static_cast<RcObject*>(ne
 inline object::object(float64 v) : tag(PYTRA_TID_FLOAT), _rc(static_cast<RcObject*>(new PyBoxed<float64, PYTRA_TID_FLOAT>(v))) {}
 inline object::object(bool v) : tag(PYTRA_TID_BOOL), _rc(static_cast<RcObject*>(new PyBoxed<bool, PYTRA_TID_BOOL>(v))) {}
 
+// Backward-compat shims for old object API (to be removed).
+template <class T>
+static inline object make_object(const T& v) { return object(v); }
+
+template <class T>
+static inline object make_object(const rc<T>& v) { return object(v); }
+
+template <class T>
+static inline rc<T> obj_to_rc_or_raise(const object& v, const char* ctx) {
+    (void)ctx;
+    T* raw = static_cast<T*>(v.get());
+    if (!raw) throw ::std::runtime_error("obj_to_rc_or_raise: null");
+    raw->rc_retain();
+    return rc<T>::adopt(raw);
+}
+
 #endif  // PYTRA_CORE_TAGGED_VALUE_H
