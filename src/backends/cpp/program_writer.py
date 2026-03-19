@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import shutil
 from typing import Any
 
 from pytra.std import json
@@ -15,6 +17,36 @@ from toolchain.compiler.transpile_cli import (
     write_text_file,
 )
 from toolchain.json_adapters import dumps_object as _json_dumps_object
+
+
+_RUNTIME_CPP_ROOT = Path(__file__).resolve().parents[3] / "src" / "runtime" / "cpp"
+
+
+def _copy_native_runtime_to_output(output_root: Path) -> list[str]:
+    """Copy native C++ runtime headers/sources to output directory.
+
+    Preserves namespace folder structure (core/, built_in/, std/).
+    Returns list of copied file paths.
+    """
+    copied: list[str] = []
+    src_root_str = str(_RUNTIME_CPP_ROOT)
+    if not os.path.isdir(src_root_str):
+        return copied
+    for subdir in ("core", "built_in", "std"):
+        src_dir_str = os.path.join(src_root_str, subdir)
+        if not os.path.isdir(src_dir_str):
+            continue
+        dst_dir = output_root / subdir
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        dst_dir_str = str(dst_dir)
+        for name in sorted(os.listdir(src_dir_str)):
+            if name.endswith(".h") or name.endswith(".cpp"):
+                src_file = os.path.join(src_dir_str, name)
+                if os.path.isfile(src_file):
+                    dst_file = os.path.join(dst_dir_str, name)
+                    shutil.copy2(src_file, dst_file)
+                    copied.append(dst_file)
+    return copied
 
 
 def _dict(value: Any) -> dict[str, Any]:
@@ -102,8 +134,11 @@ def write_cpp_rendered_program(
     mkdirs_for_cli(str(include_dir))
     mkdirs_for_cli(str(src_dir))
 
+    # Copy native runtime to output directory for self-contained build.
+    runtime_files = _copy_native_runtime_to_output(output_root)
+
     generated_lines_total = 0
-    output_files: list[str] = []
+    output_files: list[str] = list(runtime_files)
     prelude_hdr = include_dir / "pytra_multi_prelude.h"
     prelude_txt = _prelude_header_text()
     generated_lines_total += count_text_lines(prelude_txt)
