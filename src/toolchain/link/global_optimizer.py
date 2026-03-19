@@ -419,6 +419,70 @@ def _build_type_id_table(program: LinkedProgram) -> tuple[dict[str, int], dict[s
     return type_id_table, type_id_base_map
 
 
+def _apply_union_param_ref_promotion(modules: tuple[LinkedProgramModule, ...]) -> None:
+    """Promote classes to ref (gc_managed) if they appear in union type parameters.
+
+    A class passed as a union type argument gets boxed into object, which is escape.
+    Such classes must be gc_managed (RcObject-based) to be storable in object.
+    """
+    # Collect all class names that appear in union type parameters.
+    classes_in_unions: set[str] = set()
+    for module in modules:
+        doc = module.east_doc if isinstance(module.east_doc, dict) else {}
+        body = doc.get("body")
+        if not isinstance(body, list):
+            continue
+        for stmt in body:
+            if not isinstance(stmt, dict):
+                continue
+            kind = stmt.get("kind")
+            # Check function-level arg_types
+            if kind == "FunctionDef":
+                _collect_union_class_names(stmt, classes_in_unions)
+            # Check class methods
+            elif kind == "ClassDef":
+                class_body = stmt.get("body")
+                if isinstance(class_body, list):
+                    for method in class_body:
+                        if isinstance(method, dict) and method.get("kind") == "FunctionDef":
+                            _collect_union_class_names(method, classes_in_unions)
+
+    if len(classes_in_unions) == 0:
+        return
+
+    # Update class_storage_hint for matched classes.
+    for module in modules:
+        doc = module.east_doc if isinstance(module.east_doc, dict) else {}
+        body = doc.get("body")
+        if not isinstance(body, list):
+            continue
+        for stmt in body:
+            if not isinstance(stmt, dict) or stmt.get("kind") != "ClassDef":
+                continue
+            class_name = _safe_name(stmt.get("name"))
+            if class_name in classes_in_unions:
+                stmt["class_storage_hint"] = "ref"
+
+
+def _collect_union_class_names(fn_node: dict[str, object], out: set[str]) -> None:
+    """Collect class names that appear in union type parameters of a function."""
+    arg_types = fn_node.get("arg_types")
+    if not isinstance(arg_types, dict):
+        return
+    for param_type in arg_types.values():
+        if not isinstance(param_type, str) or "|" not in param_type:
+            continue
+        parts = param_type.split("|")
+        for part in parts:
+            stripped = part.strip()
+            if stripped == "" or stripped in ("str", "int", "int64", "float", "float64", "bool", "None",
+                                              "uint8", "int8", "int16", "uint16", "int32", "uint32", "uint64", "float32",
+                                              "list", "dict", "set", "object", "any", "unknown"):
+                continue
+            # Likely a class name
+            out.add(stripped)
+
+
 def _program_id(program: LinkedProgram) -> str:
     module_ids = [module.module_id for module in sorted(program.modules, key=lambda item: item.module_id)]
     return program.target + ":" + program.dispatch_mode + ":" + ",".join(module_ids)
@@ -469,6 +533,10 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
     container_hints: dict[str, object] = {}
     if _is_global_pass_enabled(pass_config, "CppListValueLocalHintPass"):
         linked_modules, container_hints = _materialize_container_hints(linked_modules, target=program.target)
+    # Classes that appear in union type parameters must be ref (gc_managed)
+    # because they get boxed into object. Update class_storage_hint accordingly.
+    _apply_union_param_ref_promotion(linked_modules)
+
     type_id_table, type_id_base_map = _build_type_id_table(linked_input_program)
     resolved_deps_by_module = _build_all_resolved_dependencies(linked_input_program)
     program_id = _program_id(linked_input_program)

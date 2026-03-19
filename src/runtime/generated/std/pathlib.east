@@ -8938,7 +8938,7 @@
           }
         }
       ],
-      "class_storage_hint": "ref",
+      "class_storage_hint": "value",
       "leading_comments": [],
       "leading_trivia": []
     }

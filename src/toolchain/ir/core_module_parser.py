@@ -1157,26 +1157,8 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                     instance_field_names.add(field_name)
             # conservative hint:
             # - classes with instance state / __del__ / inheritance should keep reference semantics
-            # - if any method parameter has a union type, the class escapes
-            #   (boxed into object) and cannot be value-optimized.
-            # TODO: this should be done by escape analysis, not the parser.
-            #   The escape analysis result should flow back to storage_hint.
-            _has_union_param = False
-            for _cb_stmt in class_body:
-                if isinstance(_cb_stmt, dict) and _cb_stmt.get("kind") == "FunctionDef":
-                    _cb_arg_types = _cb_stmt.get("arg_types")
-                    if isinstance(_cb_arg_types, dict):
-                        for _at in _cb_arg_types.values():
-                            if isinstance(_at, str) and "|" in _at:
-                                _has_union_param = True
-                                break
-                if _has_union_param:
-                    break
-
             # - stateless, non-inherited classes can be value candidates
-            if _has_union_param:
-                cls_item["class_storage_hint"] = "ref"
-            elif storage_hint_override != "":
+            if storage_hint_override != "":
                 cls_item["class_storage_hint"] = storage_hint_override
             elif _sh_is_value_safe_dataclass_candidate(
                 is_dataclass=pending_dataclass,
