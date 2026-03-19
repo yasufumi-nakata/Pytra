@@ -284,6 +284,27 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
                     arg_sources.append(sorted(refs))
                     a += 1
 
+                # If callee has union type parameters, args passed to those positions escape
+                # (they get boxed into object).
+                if resolved and target in symbols:
+                    callee_node = symbols[target]
+                    callee_arg_types = callee_node.get("arg_types")
+                    if isinstance(callee_arg_types, dict):
+                        callee_arg_order = callee_node.get("arg_order")
+                        callee_arg_order = callee_arg_order if isinstance(callee_arg_order, list) else []
+                        param_idx = 0
+                        while param_idx < len(callee_arg_order):
+                            param_name = _safe_name(callee_arg_order[param_idx])
+                            param_type = _safe_name(callee_arg_types.get(param_name))
+                            if "|" in param_type:
+                                # This parameter is a union type → arg escapes (boxed to object).
+                                call_arg_idx = param_idx
+                                if call_arg_idx < len(arg_sources):
+                                    for ref_idx in arg_sources[call_arg_idx]:
+                                        if ref_idx >= 0 and ref_idx < len(direct_arg_escape):
+                                            direct_arg_escape[ref_idx] = True
+                            param_idx += 1
+
                 if not resolved:
                     unresolved_site_count += 1
                     if bool(context.non_escape_policy.get("unknown_call_escape", True)):

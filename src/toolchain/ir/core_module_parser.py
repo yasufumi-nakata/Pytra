@@ -1157,8 +1157,29 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                     instance_field_names.add(field_name)
             # conservative hint:
             # - classes with instance state / __del__ / inheritance should keep reference semantics
+            # - if any method parameter has a union type containing this class,
+            #   the class must be ref (gc_managed) to be boxable into object.
+            _force_ref_for_union_arg = False
+            for _ft in field_types.values():
+                if isinstance(_ft, str) and "|" in _ft:
+                    _force_ref_for_union_arg = True
+                    break
+            if not _force_ref_for_union_arg:
+                for _cb_stmt in class_body:
+                    if isinstance(_cb_stmt, dict) and _cb_stmt.get("kind") == "FunctionDef":
+                        _cb_arg_types = _cb_stmt.get("arg_types")
+                        if isinstance(_cb_arg_types, dict):
+                            for _at in _cb_arg_types.values():
+                                if isinstance(_at, str) and "|" in _at:
+                                    _force_ref_for_union_arg = True
+                                    break
+                    if _force_ref_for_union_arg:
+                        break
+
             # - stateless, non-inherited classes can be value candidates
-            if storage_hint_override != "":
+            if _force_ref_for_union_arg:
+                cls_item["class_storage_hint"] = "ref"
+            elif storage_hint_override != "":
                 cls_item["class_storage_hint"] = storage_hint_override
             elif _sh_is_value_safe_dataclass_candidate(
                 is_dataclass=pending_dataclass,
