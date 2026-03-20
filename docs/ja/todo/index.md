@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-21（P0-11 PowerShell 実行 parity 追加、P1 完了: パイプライン段分離）
+最終更新: 2026-03-21（P0-1〜P0-10, P1 パイプライン段分離, P4 vararg 脱糖 をアーカイブへ移動）
 
 ## 文脈運用ルール
 
@@ -33,101 +33,6 @@
 
 ### P0: C++ generated runtime ヘッダー生成パイプライン整備
 
-#### P0-1: .east → C++ ヘッダー生成パイプライン
-
-文脈: [docs/ja/plans/p0-cpp-generated-runtime-pipeline.md](../plans/p0-cpp-generated-runtime-pipeline.md)
-
-1. [x] [ID: P0-CPP-GENERATED-RUNTIME-PIPELINE-01] `src/runtime/cpp/generated/` が存在せず、native ヘッダー 15 箇所の `#include` が壊れている。`runtime_generation_manifest.json` に C++ built_in/std ターゲットを追加し、`.east` → `.h` 生成パイプラインを整備する。
-
-#### P0-2: escape 解析で union type 引数への受け渡しを escape 判定する（最優先）
-
-文脈: union type（`str | Path` 等）の引数に値を渡すとき、値は `object` に box される（ヒープ確保 + rc 管理）。これは escape と同義。escape 解析がこれを検出していないため、`Path` が value 最適化されて `RcObject` を継承せず、`object` に格納できない。
-
-1. [x] [ID: P0-UNION-ARG-ESCAPE-01] パーサーで暫定検出: union type 引数を持つクラスを ref (gc_managed) に強制。
-2. [x] [ID: P0-UNION-ARG-ESCAPE-02] `Path` が gc_managed（`RcObject` 継承 + `PYTRA_TYPE_ID`）として emit され、`object` に格納可能。
-3. [x] [ID: P0-UNION-ARG-ESCAPE-03] escape 解析結果を `class_storage_hint` に反映する仕組みを実装。→ P0-ESCAPE-TO-STORAGE-HINT-01 で対応済み。
-
-#### P0-3: escape 解析結果を class_storage_hint に反映する
-
-文脈: [docs/ja/plans/p0-escape-analysis-to-storage-hint.md](../plans/p0-escape-analysis-to-storage-hint.md)
-
-1. [x] [ID: P0-ESCAPE-TO-STORAGE-HINT-01-S1] `optimize_linked_program` で union type パラメータに含まれるクラスの `class_storage_hint` を `"ref"` に昇格する。
-2. [x] [ID: P0-ESCAPE-TO-STORAGE-HINT-01-S2] `core_module_parser.py` の暫定判定を除去。
-3. [x] [ID: P0-ESCAPE-TO-STORAGE-HINT-01-S3] `Path` がリンカー段で gc_managed になることを検証済み。
-
-#### P0-4: 旧 object API + 旧互換モード一掃（最優先 — pathlib ビルドのブロッカー）
-
-1. [x] [ID: P0-LEGACY-API-CLEANUP-01-S1] emitter の `make_object` 生成箇所を `object(...)` に置換。
-2. [x] [ID: P0-LEGACY-API-CLEANUP-01-S2] emitter の `obj_to_rc_or_raise<T>` 生成箇所を `object::as<T>()` に置換。
-3. [x] [ID: P0-LEGACY-API-CLEANUP-01-S3] runtime の `make_object` / `obj_to_rc_or_raise` 互換 shim を削除。
-4. [x] [ID: P0-LEGACY-API-CLEANUP-01-S4] C++ list の value/pyobj モード互換（`cpp_list_model`）を削除する。ref モード統一。
-5. [x] [ID: P0-LEGACY-API-CLEANUP-01-S5] pathlib repro が `out/cpp/` で g++ ビルドできることを検証する。→ P0-5 (link 統合) で解決。
-
-#### P0-5: runtime .east を link パイプラインに統合
-
-文脈: [docs/ja/plans/p0-runtime-east-in-link-pipeline.md](../plans/p0-runtime-east-in-link-pipeline.md)
-
-1. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S1] `resolved_dependencies_v1` に含まれる runtime モジュールの .east を LinkedProgram に自動追加する。
-2. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S2] `write_cpp_rendered_program` で runtime モジュールも link emit の出力に含める。
-3. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S3] `_generate_runtime_east_headers`（standalone transpile）を廃止する。
-4. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S4] emitter が生成する旧 object API（`make_object`, `obj_to_rc_or_raise`, `cpp_string_lit` globals 依存）を掃除し、新 object API（`unbox`/`as`/`is`/`_cpp_str_lit`）に統一する。後方互換不要。→ P0-4 S1-S3 で対応済み。
-5. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S5] pathlib repro が `out/cpp/` で g++ ビルドできることを検証する。
-
-#### P0-6: object = tagged value 統一
-
-文脈: [docs/ja/plans/p0-object-is-tagged-value.md](../plans/p0-object-is-tagged-value.md)
-
-1. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S1] `object` の定義を `{pytra_type_id tag; rc<RcObject> _rc;}` に変更。暗黙変換コンストラクタ、`unbox`/`as`/`is` メソッド追加。既存互換レイヤ用意。
-2. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S2] emitter が union 型に `object` を emit。`_Union_*` typedef 廃止。
-3. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S3] emitter の cast / isinstance / 暗黙代入を `object::unbox` / `object::as` / `object::is` に変更。
-4. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S4] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。→ P0-5 link 統合と runtime rc_retain 修正で解決。
-5. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S5] 既存コードの `object` 使用箇所を新 API に移行し、互換レイヤを除去する。→ emitter は新 API (unbox/as/is) のみ生成。rc<RcObject> 互換コンストラクタは native runtime 用に維持。
-
-#### P0-7: py_runtime.h 分解・廃止
-
-文脈: [docs/ja/plans/p0-py-runtime-h-decomposition.md](../plans/p0-py-runtime-h-decomposition.md)
-
-1. [x] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S1] `core/str_methods.h` を分離する（`str::split` 等の委譲）。
-2. [x] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S2] `core/conversions.h` を分離する（`py_to`, `py_to_bool`, `py_variant_to_bool`）。
-3. [x] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S3] `built_in/dict_ops.h` を分離する（`py_at(dict)`, `py_index`）。
-4. [x] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S4] `built_in/bounds.h` を分離する（`py_at_bounds`, `py_at_bounds_debug`）。
-5. [x] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S5] `core/type_id_support.h` を分離する（`py_runtime_value_isinstance` 等）。循環依存解消。
-6. [x] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S6] `core/rc_ops.h` を分離する（`operator-(rc<T>)`）。
-7. [x] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S7] `py_runtime.h` を include のみのファサードに書き換える。
-8. [x] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S8] エミッターが `py_runtime.h` ではなく個別ヘッダーを emit するよう変更する。→ py_runtime.h は S7 でファサード化済み。multi-file モードは pytra_multi_prelude.h 経由で制御。個別 include 粒度は将来最適化として維持。
-
-
-#### P0-8: out/cpp/ 自己完結ビルドディレクトリ
-
-文脈: [docs/ja/plans/p0-self-contained-cpp-output.md](../plans/p0-self-contained-cpp-output.md)
-
-1. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S1] `py_runtime.h` と native ヘッダーの include パスを namespace 基準の相対パスに変更する。
-2. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S2] `write_cpp_rendered_program` を拡張し、native runtime を `out/cpp/{namespace}/` にコピーし、runtime `.east` を C++ に emit して同じ namespace フォルダに配置する。
-3. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S3] エミッターの `#include` 出力パスを `out/cpp/` 基準に変更する。
-4. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S4] Makefile 生成を `out/cpp/` 自己完結に対応させる。
-5. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S5] `pytra-cli.py --build` フローを新パイプラインに対応させる。→ C++ ターゲットは常に linked pipeline (py2x link → emit) を使用するよう変更。
-6. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S6] 最小 repro（pathlib import）が `out/cpp/` 内で `make` でビルドできることを検証する。→ P0-5 link 統合で解決。g++ -std=c++20 -I. -Iinclude -c で検証済み。
-
-#### P0-9: tagged union を object + type_id に統一（P0-2 に包含）
-
-文脈: [docs/ja/plans/p0-tagged-union-object-box.md](../plans/p0-tagged-union-object-box.md)
-
-1. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S1] tagged union 宣言を `using X = PyTaggedValue;` に変更。runtime に `PyBoxed`/`py_box`/`py_unbox`/`PyTaggedValue` 追加。
-2. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S2] emitter の cast を変更。POD は `py_unbox<T, TID>(v.value)`、クラスは `static_cast` を emit。
-3. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S3] isinstance narrow 後の暗黙代入で unbox を emit。inline union のマッチング修正。
-4. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S4] PyTaggedValue に暗黙変換コンストラクタ追加（str/int/float/bool/rc<T>）。emitter 側変更不要。
-5. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S5] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。→ P0-5 link 統合で解決。
-6. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S6] 他バックエンド（Rust, Go 等）への展開を検討する。→ C++ 実装が安定したため、Rust/Go は `enum`/`interface{}` 相当で同原則適用可能。具体実装は各バックエンド P1+ で対応。
-
-#### P0-10: リンカーによる C++ include パス確定
-文脈: [docs/ja/plans/p0-linker-resolved-includes.md](../plans/p0-linker-resolved-includes.md)
-
-1. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S1] `global_optimizer.py` に `_build_resolved_dependencies` を実装。`import_bindings` + 暗黙 runtime 依存を収集し `resolved_dependencies_v1: list[str]` をメタデータに格納。
-2. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S2] `module.py` の `_collect_import_cpp_includes` を修正。`resolved_dependencies_v1` があれば各モジュール ID を `_module_name_to_cpp_include` で C++ パスに変換するだけにする。
-3. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S3] `runtime_symbol_index.json` の `compiler_headers` を実体パスに修正する（generated のみのモジュール 17 件）。
-4. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S4] `from pytra.std.pathlib import Path` の最小 repro が `g++` でビルドできることを検証する。→ P0-5 link 統合で解決。
-5. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S5] `src/runtime/cpp/generated/` と manifest の C++ ターゲットを撤去する。ビルド生成物はソースツリーに置かない。
-
 #### P0-11: PowerShell native emitter 実行 parity
 
 文脈: [docs/ja/plans/p0-powershell-native-emitter-execution-parity.md](../plans/p0-powershell-native-emitter-execution-parity.md)
@@ -141,29 +46,14 @@
 
 ### P1: パイプライン段分離 — compile / link / emit の独立化
 
-文脈: [docs/ja/plans/p1-pipeline-stage-separation.md](../plans/p1-pipeline-stage-separation.md)
-
-1. [x] [ID: P1-PIPELINE-STAGE-SEPARATION-01-S1] `east2cpp.py` を新設し、linked EAST JSON → C++ multi-file emit を実装する。→ 非 C++ backend は import されない。
-2. [x] [ID: P1-PIPELINE-STAGE-SEPARATION-01-S2] `py2x.py --link-only` 出力と `east2cpp.py` 入力の接続。→ 既存の `--link-only` が link-output.json を出力し、east2cpp.py がそれを読む形で動作確認済み。
-3. [x] [ID: P1-PIPELINE-STAGE-SEPARATION-01-S3] `pytra-cli.py --build` を east2cpp.py サブプロセス呼び出しに変更。
-4. [x] [ID: P1-PIPELINE-STAGE-SEPARATION-01-S4] `build_selfhost.py --multi-module` を 3 段パイプラインに分離。→ link-output 生成成功。link-output に非 C++ backend 74 件が含まれるのは py2x-selfhost.py の import グラフの問題（emit 段階では east2cpp.py が解決済み）。
-
 #### P1-2: backend_registry 依存の除去
 
 文脈: [docs/ja/plans/p1-backend-registry-decoupling.md](../plans/p1-backend-registry-decoupling.md)
 
-1. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S1] `py2x.py` の C++ emit パスを `east2cpp.py` サブプロセスに変更し、`backend_registry` import を除去する。
-2. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S2] `py2x.py` の非 C++ emit パスを `east2x.py` サブプロセスに変更する。
-3. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] `py2x-selfhost.py` から `backend_registry_static` import を除去し、C++ emit のみ `backends.cpp.emitter` を直接 import する形にリファクタする。
-4. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S4] selfhost multi-module の compile+link 段階で非 C++ backend が import グラフに含まれないことを検証する。
-
-### P4: `*args` vararg サポート — EAST3 レベル脱糖
-
-文脈: [docs/ja/plans/p4-vararg-east3-lowering.md](../plans/p4-vararg-east3-lowering.md)
-
-1. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S1] `east2_to_east3_lowering.py` に post-pass を追加: FunctionDef の `vararg_name/type` を `list[T]` 通常引数に変換し、モジュール内 Call サイトをパックする。
-2. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S2] `global_optimizer.py` に `_apply_vararg_callsite_packing_global` を追加: クロスモジュール Call サイトをパックする。
-3. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S3] `pytra/std/pathlib.py` に `joinpath(*parts: str | Path) -> Path` を追加する。
+1. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S1] `py2x.py` の C++ emit パスを `east2cpp.py` サブプロセスに変更し、`backend_registry` import を除去。→ py2x.py の import グラフに backends.* が一切含まれない。
+2. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S2] `py2x.py` の非 C++ emit パスを `east2x.py` サブプロセスに変更。→ S1 と同時に完了。
+3. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] `py2x-selfhost.py` から `backend_registry_static` import を除去。→ C++ emitter のみ直接 import。非 C++ backend は import グラフに含まれない。
+4. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S4] selfhost compile+link で 65 モジュール（以前 151）。非 C++ backend 74 件が完全に消えた（57% 削減）。
 
 ### P7: selfhost 完全自立化
 
