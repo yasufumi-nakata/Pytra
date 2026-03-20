@@ -56,33 +56,36 @@ def _resolve_dispatch_mode(doc: dict[str, object], override: str) -> str:
 
 def _normalize_legacy_source_spans(value: object) -> None:
     if isinstance(value, dict):
-        span_any = value.get("source_span")
+        d: dict[str, Any] = value
+        span_any = d.get("source_span")
         if isinstance(span_any, dict):
-            legacy_keys = ("lineno", "col", "end_lineno", "end_col")
-            canonical_keys = ("lineno", "col_offset", "end_lineno", "end_col_offset")
-            if all(key in span_any for key in legacy_keys) and not all(key in span_any for key in canonical_keys):
-                lineno = span_any.get("lineno")
-                col = span_any.get("col")
-                end_lineno = span_any.get("end_lineno")
-                end_col = span_any.get("end_col")
+            sd: dict[str, Any] = span_any
+            has_legacy = "lineno" in sd and "col" in sd and "end_lineno" in sd and "end_col" in sd
+            has_canonical = "lineno" in sd and "col_offset" in sd and "end_lineno" in sd and "end_col_offset" in sd
+            if has_legacy and not has_canonical:
+                lineno = sd.get("lineno")
+                col = sd.get("col")
+                end_lineno = sd.get("end_lineno")
+                end_col = sd.get("end_col")
                 if (
                     type(lineno) is int
                     and type(col) is int
                     and type(end_lineno) is int
                     and type(end_col) is int
                 ):
-                    value["source_span"] = {
+                    d["source_span"] = {
                         "lineno": lineno,
                         "col_offset": col,
                         "end_lineno": end_lineno,
                         "end_col_offset": end_col,
                     }
                 elif lineno is None and col is None and end_lineno is None and end_col is None:
-                    value.pop("source_span", None)
-        for child in value.values():
+                    d.pop("source_span", None)
+        for child in d.values():
             _normalize_legacy_source_spans(child)
     elif isinstance(value, list):
-        for child in value:
+        vl: list[object] = value
+        for child in vl:
             _normalize_legacy_source_spans(child)
 
 
@@ -120,20 +123,25 @@ def expand_mixin_bases(east_doc: dict[str, object]) -> dict[str, object]:
     # 1. Build class_name -> ClassDef node map.
     class_map: dict[str, dict[str, object]] = {}
     for item in body:
-        if isinstance(item, dict) and item.get("kind") == "ClassDef":
-            name_any = item.get("name")
-            if isinstance(name_any, str):
-                class_map[name_any] = item
+        if isinstance(item, dict):
+            d_item: dict[str, object] = item
+            if d_item.get("kind") == "ClassDef":
+                name_any = d_item.get("name")
+                if isinstance(name_any, str):
+                    class_map[name_any] = d_item
 
     # 2. For each ClassDef with mixin_bases, expand.
     for item in body:
-        if not isinstance(item, dict) or item.get("kind") != "ClassDef":
+        if not isinstance(item, dict):
             continue
-        mixin_bases_any = item.get("mixin_bases")
+        cls_item: dict[str, object] = item
+        if cls_item.get("kind") != "ClassDef":
+            continue
+        mixin_bases_any = cls_item.get("mixin_bases")
         if not isinstance(mixin_bases_any, list) or len(mixin_bases_any) == 0:
             continue
 
-        target_body_any = item.get("body")
+        target_body_any = cls_item.get("body")
         if not isinstance(target_body_any, list):
             continue
         target_body: list[object] = target_body_any
@@ -142,22 +150,26 @@ def expand_mixin_bases(east_doc: dict[str, object]) -> dict[str, object]:
         existing_names: set[str] = set()
         for stmt in target_body:
             if isinstance(stmt, dict):
-                stmt_kind = stmt.get("kind")
+                sd: dict[str, object] = stmt
+                stmt_kind = sd.get("kind")
                 if stmt_kind == "FunctionDef":
-                    fn_name = stmt.get("name")
+                    fn_name = sd.get("name")
                     if isinstance(fn_name, str):
                         existing_names.add(fn_name)
-                elif stmt_kind in ("AnnAssign", "Assign"):
-                    tgt = stmt.get("target")
-                    if isinstance(tgt, dict) and tgt.get("kind") == "Name":
-                        tgt_id = tgt.get("id")
-                        if isinstance(tgt_id, str):
-                            existing_names.add(tgt_id)
+                elif stmt_kind == "AnnAssign" or stmt_kind == "Assign":
+                    tgt = sd.get("target")
+                    if isinstance(tgt, dict):
+                        tgt_d: dict[str, object] = tgt
+                        if tgt_d.get("kind") == "Name":
+                            tgt_id = tgt_d.get("id")
+                            if isinstance(tgt_id, str):
+                                existing_names.add(tgt_id)
 
         # Copy from each mixin (in order).
-        target_field_types_any = item.get("field_types")
+        target_field_types_any = cls_item.get("field_types")
         target_field_types: dict[str, object] = target_field_types_any if isinstance(target_field_types_any, dict) else {}
-        for mixin_name in mixin_bases_any:
+        mixin_list: list[object] = mixin_bases_any
+        for mixin_name in mixin_list:
             if not isinstance(mixin_name, str):
                 continue
             mixin_cls = class_map.get(mixin_name)
@@ -169,35 +181,39 @@ def expand_mixin_bases(east_doc: dict[str, object]) -> dict[str, object]:
             for mixin_stmt in mixin_body_any:
                 if not isinstance(mixin_stmt, dict):
                     continue
-                mixin_kind = mixin_stmt.get("kind")
+                ms: dict[str, object] = mixin_stmt
+                mixin_kind = ms.get("kind")
                 member_name: str | None = None
                 if mixin_kind == "FunctionDef":
-                    fn_name = mixin_stmt.get("name")
+                    fn_name = ms.get("name")
                     if isinstance(fn_name, str):
                         member_name = fn_name
-                elif mixin_kind in ("AnnAssign", "Assign"):
-                    tgt = mixin_stmt.get("target")
-                    if isinstance(tgt, dict) and tgt.get("kind") == "Name":
-                        tgt_id = tgt.get("id")
-                        if isinstance(tgt_id, str):
-                            member_name = tgt_id
+                elif mixin_kind == "AnnAssign" or mixin_kind == "Assign":
+                    tgt = ms.get("target")
+                    if isinstance(tgt, dict):
+                        tgt_d2: dict[str, object] = tgt
+                        if tgt_d2.get("kind") == "Name":
+                            tgt_id = tgt_d2.get("id")
+                            if isinstance(tgt_id, str):
+                                member_name = tgt_id
                 else:
                     continue
                 if member_name is not None and member_name not in existing_names:
                     import copy
-                    target_body.append(copy.deepcopy(mixin_stmt))
+                    target_body.append(copy.deepcopy(ms))
                     existing_names.add(member_name)
             # Also merge field_types from the mixin.
             mixin_field_types_any = mixin_cls.get("field_types")
             if isinstance(mixin_field_types_any, dict):
-                for ft_name, ft_type in mixin_field_types_any.items():
+                mft: dict[str, object] = mixin_field_types_any
+                for ft_name, ft_type in mft.items():
                     if ft_name not in target_field_types:
                         target_field_types[ft_name] = ft_type
         if isinstance(target_field_types_any, dict):
-            item["field_types"] = target_field_types
+            cls_item["field_types"] = target_field_types
 
         # Remove mixin_bases so downstream sees single inheritance only.
-        item.pop("mixin_bases", None)
+        cls_item.pop("mixin_bases", None)
 
     return east_doc
 
