@@ -89,3 +89,4 @@ g++ -std=c++20 -O2 -Isrc -Isrc/runtime/cpp selfhost/cpp/src/*.cpp <runtime_sourc
 - 2026-03-20: optimizer の `_build_type_id_table` で `TypedDict` が未知の基底型としてエラー。`_ROOT_BASE_NAMES` に追加して解決。151 モジュールの optimize が 413 秒で完了。
 - 2026-03-21: S3 着手。`py2x.py` に `--output-dir` 対応の multi-file C++ emit パスを追加。`type_bridge.py` の Any 含有 union 型を `object` に退化させる修正。151 モジュールの emit 段階で `str.startswith` の BuiltinCall lowering 未対応エラーが残存。lowering パスが multi-module selfhost 規模のコードに対して不完全。
 - 2026-03-21: str メソッド BuiltinCall 未 lower 問題を解決。根本原因: linked doc の `source_path=""` で `_render_selfhost_builtin_method_call` の source_path ホワイトリストが通過しなかった。ホワイトリストに `src == ""` を追加。`str.replace` の 3 引数（count）サポートを追加（`py_replace_n`）。次のブロッカー: 一部モジュールで `object receiver attribute/method access` 制約違反。
+- 2026-03-21: PowerShell emitter の object receiver 制約違反を全修正（96 行の型注釈追加）。151 モジュールの EAST3 コンパイル → link → optimize → emit パイプラインが emit 段階まで到達。次のブロッカー: C++ emitter が Slice ノードを単独で処理できない（通常は Subscript 内で処理）。
