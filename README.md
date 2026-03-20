@@ -36,18 +36,6 @@
     Dart, Julia, and Zig are currently in progress.
 </div>
 
-## Latest News
-
-> **2026-03-20 | v0.15.0 Released**<br>
-> Version 0.15.0 was released. Added PowerShell as a supported backend.
-
-> **2026-03-18 | v0.14.0 Released**<br>
-> Version 0.14.0 was released. Added support for [recursive union types](docs/ja/spec/spec-tagged-union.md).
-
-> **2026-03-11 | v0.13.0 Released**<br>
-> Version 0.13.0 was released. I wrote an NES (Famicom) emulator in Python + SDL3. [Super Mario Bros. 3 is running.](https://x.com/yaneuraou/status/2031612549658202538) It is very slow. I am currently improving Pytra so this can be transpiled to C++ with Pytra.
-
-- Past News: [docs/en/news/index.md](docs/en/news/index.md)
 
 ## Features
 
@@ -60,26 +48,6 @@
 - 🛠 Works with existing tools like VS Code
 - 🔧 Core written in Python — easy to extend
 - 🔁 Self-hosting capable
-
-## Python vs Pytra
-
-|Aspect|Python|Pytra|
-|-|-|-|
-|Execution|Runs on Python interpreter|Runs on each target language|
-|Integers|Arbitrary precision|int64, uint64, ..., int8, uint8|
-|Float|64-bit|64/32-bit|
-|Speed|x1|x10~x100 (when converting to C++/Rust)|
-|Backend optimization|Limited|Abundant|
-|Multi-language delivery|❌|✅|
-|Typing|Dynamic typing|Static typing|
-|Boundary checks|Always|Customizable|
-|Platform integration|Python-centric|Fits each language's SDKs/tools|
-|Distribution|Python runtime required|Fits language-specific deployment|
-|mix-in|✅|✅|
-|Multiple inheritance|✅|❌ (single inheritance)|
-|Selfhost|❌|✅|
-
-⚠ This project is still under active development and may be far from production-ready. Review sample code first and use at your own risk.
 
 ## Runtime Performance Comparison
 
@@ -133,12 +101,50 @@ Full data for all languages and samples → [Sample page](sample/readme.md#runti
 </td>
 </tr></table>
 
+## Python vs Pytra
+
+|Aspect|Python|Pytra|
+|-|-|-|
+|Execution|Runs on Python interpreter|Runs on each target language|
+|Integers|Arbitrary precision|int64, uint64, ..., int8, uint8|
+|Float|64-bit|64/32-bit|
+|Speed|x1|x10~x100 (when converting to C++/Rust)|
+|Backend optimization|Limited|Abundant|
+|Multi-language delivery|❌|✅|
+|Typing|Dynamic typing|Static typing|
+|Boundary checks|Always|Customizable|
+|Platform integration|Python-centric|Fits each language's SDKs/tools|
+|Distribution|Python runtime required|Fits language-specific deployment|
+|mix-in|✅|✅|
+|Multiple inheritance|✅|❌ (single inheritance)|
+|Selfhost|❌|✅|
+
+⚠ This project is still under active development and may be far from production-ready. Review sample code first and use at your own risk.
+
+<a id="read-the-docs"></a>
+
 ## Read the Docs
 
 - English tutorial: [docs/en/tutorial/README.md](docs/en/tutorial/README.md)
 - English docs top: [docs/en/index.md](docs/en/index.md)
 - Japanese tutorial: [docs/ja/tutorial/README.md](docs/ja/tutorial/README.md)
 - Japanese docs top: [docs/ja/README.md](docs/ja/README.md)
+
+<details>
+<summary>Latest News</summary>
+
+> **2026-03-20 | v0.15.0 Released**<br>
+> Version 0.15.0 was released. Added PowerShell as a supported backend.
+
+> **2026-03-18 | v0.14.0 Released**<br>
+> Version 0.14.0 was released. Added support for [recursive union types](docs/ja/spec/spec-tagged-union.md).
+
+> **2026-03-11 | v0.13.0 Released**<br>
+> Version 0.13.0 was released. I wrote an NES (Famicom) emulator in Python + SDL3. [Super Mario Bros. 3 is running.](https://x.com/yaneuraou/status/2031612549658202538) It is very slow. I am currently improving Pytra so this can be transpiled to C++ with Pytra.
+
+- Past News: [docs/en/news/index.md](docs/en/news/index.md)
+
+</details>
 
 ## License
 
