@@ -138,11 +138,12 @@ def _run_program_non_escape(program: LinkedProgram) -> tuple[tuple[LinkedProgram
         root_doc_any = deepcopy(closure_docs[module.module_id])
         root_doc = root_doc_any if isinstance(root_doc_any, dict) else {}
         root_meta = _ensure_meta(root_doc)
+        # closure payload は pass 内で read-only のため参照渡し（O(N²) deepcopy 回避）
         closure_payload: dict[str, dict[str, Any]] = {}
         for other_module_id, other_doc in closure_docs.items():
             if other_module_id == module.module_id:
                 continue
-            closure_payload[other_module_id] = deepcopy(other_doc)
+            closure_payload[other_module_id] = other_doc
         root_meta["non_escape_import_closure"] = closure_payload
         root_doc["meta"] = root_meta
         _ = pass_obj.run(root_doc, context)
