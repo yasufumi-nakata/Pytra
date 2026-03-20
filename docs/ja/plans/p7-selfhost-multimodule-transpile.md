@@ -72,6 +72,8 @@ g++ -std=c++20 -O2 -Isrc -Isrc/runtime/cpp selfhost/cpp/src/*.cpp <runtime_sourc
 ## 決定ログ
 
 - 2026-03-19: P7-S2 調査の結果、selfhost transpile が単一ファイル生成であり emitter の依存グラフが含まれないことが判明。multi-module transpile 基盤の構築が前提条件として起票。
+- 2026-03-20: S1 制約違反を修正。stdlib import 3件を pytra.std 経由に移行（pathlib.Path に relative_to/with_suffix を実装、pytra.std.re に compile/Pattern を実装）。動的 dispatch 4件は CppEmitter を多重継承に変更し setattr/__dict__/globals() を除去。EAST3 mixin 展開を新規実装し transpile 対象の多重継承をサポート。
+- 2026-03-20: S2 着手調査。emitter モジュールの EAST3 コンパイルを試みたが `from typing import Any` が `unsupported_syntax` で拒否される。emitter 全ファイル（13+）の `typing` import を `pytra.typing` に移行する前提作業が必要。
 - 2026-03-20: S1 監査完了。結果:
   - **#1 動的 import**: 違反なし
   - **#2 ast モジュール**: 違反なし
