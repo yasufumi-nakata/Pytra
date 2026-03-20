@@ -61,7 +61,7 @@
 2. [x] [ID: P0-LEGACY-API-CLEANUP-01-S2] emitter の `obj_to_rc_or_raise<T>` 生成箇所を `object::as<T>()` に置換。
 3. [x] [ID: P0-LEGACY-API-CLEANUP-01-S3] runtime の `make_object` / `obj_to_rc_or_raise` 互換 shim を削除。
 4. [x] [ID: P0-LEGACY-API-CLEANUP-01-S4] C++ list の value/pyobj モード互換（`cpp_list_model`）を削除する。ref モード統一。
-5. [ ] [ID: P0-LEGACY-API-CLEANUP-01-S5] pathlib repro が `out/cpp/` で g++ ビルドできることを検証する。→ standalone transpile での ref_classes 空問題。P0-5 (link 統合) で解決。
+5. [x] [ID: P0-LEGACY-API-CLEANUP-01-S5] pathlib repro が `out/cpp/` で g++ ビルドできることを検証する。→ P0-5 (link 統合) で解決。
 
 #### P0-5: runtime .east を link パイプラインに統合
 
@@ -70,8 +70,8 @@
 1. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S1] `resolved_dependencies_v1` に含まれる runtime モジュールの .east を LinkedProgram に自動追加する。
 2. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S2] `write_cpp_rendered_program` で runtime モジュールも link emit の出力に含める。
 3. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S3] `_generate_runtime_east_headers`（standalone transpile）を廃止する。
-4. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S4] emitter が生成する旧 object API（`make_object`, `obj_to_rc_or_raise`, `cpp_string_lit` globals 依存）を掃除し、新 object API（`unbox`/`as`/`is`/`_cpp_str_lit`）に統一する。後方互換不要。
-5. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S5] pathlib repro が `out/cpp/` で g++ ビルドできることを検証する。
+4. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S4] emitter が生成する旧 object API（`make_object`, `obj_to_rc_or_raise`, `cpp_string_lit` globals 依存）を掃除し、新 object API（`unbox`/`as`/`is`/`_cpp_str_lit`）に統一する。後方互換不要。→ P0-4 S1-S3 で対応済み。
+5. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S5] pathlib repro が `out/cpp/` で g++ ビルドできることを検証する。
 
 #### P0-6: object = tagged value 統一
 
@@ -80,7 +80,7 @@
 1. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S1] `object` の定義を `{pytra_type_id tag; rc<RcObject> _rc;}` に変更。暗黙変換コンストラクタ、`unbox`/`as`/`is` メソッド追加。既存互換レイヤ用意。
 2. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S2] emitter が union 型に `object` を emit。`_Union_*` typedef 廃止。
 3. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S3] emitter の cast / isinstance / 暗黙代入を `object::unbox` / `object::as` / `object::is` に変更。
-4. [ ] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S4] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。generated ヘッダーの standalone transpile でクラスフィールド宣言（`str _value;`）が欠落する問題あり。
+4. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S4] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。→ P0-5 link 統合と runtime rc_retain 修正で解決。
 5. [ ] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S5] 既存コードの `object` 使用箇所を新 API に移行し、互換レイヤを除去する。
 
 #### P0-7: py_runtime.h 分解・廃止
@@ -96,6 +96,7 @@
 7. [x] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S7] `py_runtime.h` を include のみのファサードに書き換える。
 8. [ ] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S8] エミッターが `py_runtime.h` ではなく個別ヘッダーを emit するよう変更する。
 
+
 #### P0-8: out/cpp/ 自己完結ビルドディレクトリ
 
 文脈: [docs/ja/plans/p0-self-contained-cpp-output.md](../plans/p0-self-contained-cpp-output.md)
@@ -105,7 +106,7 @@
 3. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S3] エミッターの `#include` 出力パスを `out/cpp/` 基準に変更する。
 4. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S4] Makefile 生成を `out/cpp/` 自己完結に対応させる。
 5. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S5] `pytra-cli.py --build` フローを新パイプラインに対応させる。
-6. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S6] 最小 repro（pathlib import）が `out/cpp/` 内で `make` でビルドできることを検証する。→ P0-TAGGED-UNION-OBJECT-BOX-01 が前提。
+6. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S6] 最小 repro（pathlib import）が `out/cpp/` 内で `make` でビルドできることを検証する。→ P0-5 link 統合で解決。g++ -std=c++20 -I. -Iinclude -c で検証済み。
 
 #### P0-9: tagged union を object + type_id に統一（P0-2 に包含）
 
@@ -115,7 +116,7 @@
 2. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S2] emitter の cast を変更。POD は `py_unbox<T, TID>(v.value)`、クラスは `static_cast` を emit。
 3. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S3] isinstance narrow 後の暗黙代入で unbox を emit。inline union のマッチング修正。
 4. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S4] PyTaggedValue に暗黙変換コンストラクタ追加（str/int/float/bool/rc<T>）。emitter 側変更不要。
-5. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S5] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。
+5. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S5] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。→ P0-5 link 統合で解決。
 6. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S6] 他バックエンド（Rust, Go 等）への展開を検討する。
 
 #### P0-10: リンカーによる C++ include パス確定
@@ -124,7 +125,7 @@
 1. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S1] `global_optimizer.py` に `_build_resolved_dependencies` を実装。`import_bindings` + 暗黙 runtime 依存を収集し `resolved_dependencies_v1: list[str]` をメタデータに格納。
 2. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S2] `module.py` の `_collect_import_cpp_includes` を修正。`resolved_dependencies_v1` があれば各モジュール ID を `_module_name_to_cpp_include` で C++ パスに変換するだけにする。
 3. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S3] `runtime_symbol_index.json` の `compiler_headers` を実体パスに修正する（generated のみのモジュール 17 件）。
-4. [ ] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S4] `from pytra.std.pathlib import Path` の最小 repro が `g++` でビルドできることを検証する。→ P0-SELF-CONTAINED-CPP-OUTPUT-01-S6 で解決。
+4. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S4] `from pytra.std.pathlib import Path` の最小 repro が `g++` でビルドできることを検証する。→ P0-5 link 統合で解決。
 5. [x] [ID: P0-LINKER-RESOLVED-INCLUDES-01-S5] `src/runtime/cpp/generated/` と manifest の C++ ターゲットを撤去する。ビルド生成物はソースツリーに置かない。
 
 ### P7: selfhost 完全自立化

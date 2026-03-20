@@ -210,39 +210,47 @@ class CppCallEmitter:
         return None, raw
 
     def _try_render_tagged_union_cast(self, fn_name: str, arg_nodes: list[Any]) -> str:
-        """cast(T, v) を tagged union の unbox に変換する。該当なしは空文字。"""
+        """cast(T, v) を object の unbox/downcast に変換する。該当なしは空文字。"""
         if fn_name != "cast" or len(arg_nodes) < 2:
             return ""
         value_node = self.any_to_dict_or_empty(arg_nodes[1])
         value_t = self.normalize_type_name(self.get_expr_type(value_node))
-        tagged_union_types = getattr(self, "_tagged_union_types", {})
-        alias_map = getattr(self, "_type_alias_reverse_map", {})
-        union_name = alias_map.get(value_t, "")
-        if union_name == "" and value_t in tagged_union_types:
-            union_name = value_t
-        if union_name not in tagged_union_types:
-            return ""
+
         # 第1引数から対象型を取得
         type_node = self.any_to_dict_or_empty(arg_nodes[0])
         type_name = self.any_to_str(type_node.get("id"))
         if type_name == "":
             return ""
         target_t = self.normalize_type_name(type_name)
-        non_none_parts = tagged_union_types[union_name]
-        for part in non_none_parts:
-            part_norm = self.normalize_type_name(part)
-            if part_norm == target_t:
-                value_expr = self.render_expr(value_node)
-                cpp_t = self._cpp_type_text(part)
-                tid_expr = self._pytra_tid_for_east_type(part)
-                _POD = {"str", "int", "int64", "float", "float64", "bool", "uint8", "int8", "int16", "uint16", "int32", "uint32", "uint64", "float32"}
-                if part_norm in _POD:
-                    # POD: unbox from object
-                    return f"{value_expr}.unbox<{cpp_t}, {tid_expr}>()"
-                # Class (rc<T>): downcast from object. Strip rc<> wrapper.
-                inner_t = cpp_t[3:-1] if cpp_t.startswith("rc<") and cpp_t.endswith(">") else cpp_t
-                return f"(*{value_expr}.as<{inner_t}>())"
-        return ""
+
+        # Check if value is a tagged union (object) — either via registry or type contains "|"
+        tagged_union_types = getattr(self, "_tagged_union_types", {})
+        alias_map = getattr(self, "_type_alias_reverse_map", {})
+        is_union = False
+        union_name = alias_map.get(value_t, "")
+        if union_name == "" and value_t in tagged_union_types:
+            union_name = value_t
+            is_union = True
+        elif union_name in tagged_union_types:
+            is_union = True
+        elif "|" in value_t:
+            is_union = True
+        elif value_t == "object":
+            is_union = True
+
+        if not is_union:
+            return ""
+
+        value_expr = self.render_expr(value_node)
+        cpp_t = self._cpp_type_text(target_t)
+        tid_expr = self._pytra_tid_for_east_type(target_t)
+
+        _POD = {"str", "int", "int64", "float", "float64", "bool", "uint8", "int8", "int16", "uint16", "int32", "uint32", "uint64", "float32"}
+        if target_t in _POD:
+            return f"{value_expr}.unbox<{cpp_t}, {tid_expr}>()"
+        # Class: downcast from object → rc<T>.
+        inner_t = cpp_t[3:-1] if cpp_t.startswith("rc<") and cpp_t.endswith(">") else cpp_t
+        return f"{value_expr}.as<{inner_t}>()"
 
     def _render_builtin_static_cast_call(
         self,

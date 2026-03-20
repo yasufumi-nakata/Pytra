@@ -4514,6 +4514,20 @@ class CppEmitter(
                 return value_expr
             if self._is_safe_widening_cast(source_t, target_t):
                 return value_expr
+        # cast(T, v) が内包されている場合、Unbox は冗長（cast が既に対象型を生成済み）。
+        if source_t in {"", "unknown"}:
+            vn_dict = self.any_to_dict_or_empty(value_node)
+            inner_kind = self._node_kind_from_dict(vn_dict)
+            if inner_kind == "Call":
+                inner_fn = self.any_to_dict_or_empty(vn_dict.get("func"))
+                if self.any_to_str(inner_fn.get("id")) == "cast":
+                    inner_args = self.any_to_list(vn_dict.get("args"))
+                    if len(inner_args) >= 1:
+                        cast_target = self.normalize_type_name(
+                            self.any_to_str(self.any_to_dict_or_empty(inner_args[0]).get("id"))
+                        )
+                        if cast_target == target_t:
+                            return value_expr
         ctx = self.any_dict_get_str(expr_d, "ctx", "east3_unbox")
         return self._render_unbox_target_cast(value_expr, target_t, ctx)
 

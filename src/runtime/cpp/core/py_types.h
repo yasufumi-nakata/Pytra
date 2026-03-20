@@ -76,7 +76,14 @@ struct object {
     const T& unbox() const { return static_cast<PyBoxed<T, TID>*>(_rc.get())->value; }
 
     template <class T>
-    T* as() const { return static_cast<T*>(_rc.get()); }
+    T* as_ptr() const { return static_cast<T*>(_rc.get()); }
+
+    template <class T>
+    rc<T> as() const {
+        T* raw = static_cast<T*>(_rc.get());
+        if (raw) pytra::gc::incref(reinterpret_cast<RcObject*>(raw));
+        return rc<T>::adopt(raw);
+    }
 };
 
 template <class T, class... Args>

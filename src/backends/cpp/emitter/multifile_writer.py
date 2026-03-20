@@ -95,11 +95,20 @@ def write_multi_file_cpp(
     for mod_key in files:
         mod_path = Path(mod_key)
         east0 = dict_any_get_dict(module_east_map, mod_key)
-        label = module_rel_label(root, mod_path)
+        is_rt = _is_runtime_module_path(mod_key)
+        if is_rt:
+            rt_bucket, rt_stem = _runtime_module_bucket_and_stem(mod_key)
+            label = rt_bucket + "/" + rt_stem if rt_bucket != "" else module_rel_label(root, mod_path)
+        else:
+            label = module_rel_label(root, mod_path)
         module_label_map[mod_key] = label
         mod_name = module_id_from_east_for_graph(root, mod_path, east0)
         if mod_name != "":
-            module_ns_map[mod_name] = "pytra_mod_" + label
+            if is_rt and rt_bucket != "":
+                ns = "pytra::std::" + rt_stem if rt_bucket == "std" else ("pytra::utils::" + rt_stem if rt_bucket == "utils" else "pytra::" + rt_bucket + "::" + rt_stem)
+                module_ns_map[mod_name] = ns
+            else:
+                module_ns_map[mod_name] = "pytra_mod_" + label
             if mod_name not in module_key_by_name:
                 module_key_by_name[mod_name] = mod_key
             module_doc_by_name[mod_name] = east0
@@ -162,7 +171,7 @@ def write_multi_file_cpp(
             module_doc_by_name[module_name] = optimized_east
 
         if is_runtime and bucket != "" and stem != "":
-            emitter_ns = "pytra_" + bucket + "_" + stem
+            emitter_ns = "pytra::std::" + stem if bucket == "std" else ("pytra::utils::" + stem if bucket == "utils" else "pytra::" + bucket + "::" + stem)
         else:
             emitter_ns = "pytra_mod_" + label
         type_emitter = CppEmitter(
