@@ -44,6 +44,46 @@
 5. [ ] [ID: P0-PS-EXEC-PARITY-01-S5] Call の func がクラス名の場合、コンストラクタ関数呼び出しとして emit する。
 6. [ ] [ID: P0-PS-EXEC-PARITY-01-S6] `test/unit/toolchain/emit/powershell/test_py2ps_smoke.py` に pwsh 実行テストを追加し、主要 fixture の実行成功を検証する。
 
+#### P0-12: py2x.py が C++ 固有オプションを転送しない
+
+文脈: [docs/ja/plans/p0-12-py2x-cpp-options-forwarding.md](../plans/p0-12-py2x-cpp-options-forwarding.md)
+
+1. [ ] [ID: P0-PY2X-CPP-OPTIONS-01] CLI テスト群を `toolchain/emit/cpp/cli.py` 直接呼び出しに変更する
+
+#### P0-13: テストが旧 src/backends/cpp/cli.py パスを参照
+
+文脈: [docs/ja/plans/p0-13-cli-path-migration.md](../plans/p0-13-cli-path-migration.md)
+
+1. [ ] [ID: P0-CLI-PATH-MIGRATION-01] テスト内の旧 cli.py パスを新パスに更新する
+
+#### P0-14: g++ コンパイルテストが built_in/string_ops.h を見つけられない
+
+文脈: [docs/ja/plans/p0-14-gpp-compile-headers.md](../plans/p0-14-gpp-compile-headers.md)
+
+1. [x] [ID: P0-GPP-COMPILE-HEADERS-01] `tools/gen_runtime_cpp_from_east.py` で 26 .east → .h + .cpp を生成。`build_multi_cpp.py` + テストに `-Isrc/runtime/generated` を追加。
+
+#### P0-15: エミッター出力変化によるテストアサーション不一致
+
+文脈: [docs/ja/plans/p0-15-emitter-output-assertions.md](../plans/p0-15-emitter-output-assertions.md)
+
+1. [ ] [ID: P0-EMITTER-OUTPUT-ASSERTIONS-01] テストアサーションを新エミッター出力に追従させる
+
+#### P0-16: runtime include パスのテストアサーション不一致
+
+文脈: [docs/ja/plans/p0-16-runtime-include-paths.md](../plans/p0-16-runtime-include-paths.md)
+
+1. [ ] [ID: P0-RUNTIME-INCLUDE-PATHS-01] テストアサーションを新インクルードパスに追従させる
+
+#### P0-17: emitter 旧 API 出力の一掃
+
+文脈: [docs/ja/plans/p0-emitter-legacy-api-cleanup.md](../plans/p0-emitter-legacy-api-cleanup.md)
+
+1. [ ] [ID: P0-EMITTER-LEGACY-API-CLEANUP-02-S1] emitter の `object_new` / `PyListObj` 生成箇所を `object(...)` / `list<object>` に置換。
+2. [ ] [ID: P0-EMITTER-LEGACY-API-CLEANUP-02-S2] emitter の `obj_to_list_ref_or_raise` / `py_object_try_cast` を `object::as<T>()` に置換。
+3. [ ] [ID: P0-EMITTER-LEGACY-API-CLEANUP-02-S3] emitter の `py_list_at_ref` / `py_at(tuple)` を新 API に置換。
+4. [ ] [ID: P0-EMITTER-LEGACY-API-CLEANUP-02-S4] `pytra::utils` namespace の include パス修正。
+5. [ ] [ID: P0-EMITTER-LEGACY-API-CLEANUP-02-S5] テストアサーション（`test_cpp_runtime_type_id.py`）を新 API に追従。
+
 ### P1: パイプライン段分離 — compile / link / emit の独立化
 
 #### P1-2: backend_registry 依存の除去
