@@ -434,13 +434,14 @@ class CppModuleEmitter:
 
     def _collect_runtime_modules_from_node(self, node: Any, out: set[str]) -> None:
         if isinstance(node, dict):
-            module_id = dict_any_get_str(node, "runtime_module_id")
+            d: dict[str, Any] = node
+            module_id = dict_any_get_str(d, "runtime_module_id")
             if module_id != "":
                 out.add(module_id)
-            attr_module_id = self._module_attr_runtime_module_from_node(node)
+            attr_module_id = self._module_attr_runtime_module_from_node(d)
             if attr_module_id != "":
                 out.add(attr_module_id)
-            for value in node.values():
+            for value in d.values():
                 self._collect_runtime_modules_from_node(value, out)
             return
         if isinstance(node, list):
@@ -449,9 +450,10 @@ class CppModuleEmitter:
 
     def _collect_cpp_helper_includes_from_node(self, node: Any, out: set[str]) -> None:
         if isinstance(node, dict):
-            kind = self._node_kind_from_dict(node)
+            d2: dict[str, Any] = node
+            kind = self._node_kind_from_dict(d2)
             if kind in {"RuntimeSpecialOp", "PathRuntimeOp"}:
-                op = dict_any_get_str(node, "op")
+                op = dict_any_get_str(d2, "op")
                 helper_include = self._module_name_to_cpp_include(
                     _CPP_HELPER_MODULE_BY_SPECIAL_OP.get(op, "")
                 )
@@ -459,11 +461,11 @@ class CppModuleEmitter:
                     out.add(helper_include)
             elif kind == "Call":
                 helper_include = self._module_name_to_cpp_include(
-                    _CPP_HELPER_MODULE_BY_RUNTIME_CALL.get(dict_any_get_str(node, "runtime_call"), "")
+                    _CPP_HELPER_MODULE_BY_RUNTIME_CALL.get(dict_any_get_str(d2, "runtime_call"), "")
                 )
                 if helper_include != "":
                     out.add(helper_include)
-                func_node = self.any_to_dict_or_empty(node.get("func"))
+                func_node = self.any_to_dict_or_empty(d2.get("func"))
                 if self._node_kind_from_dict(func_node) == "Name":
                     helper_include = self._module_name_to_cpp_include(
                         _CPP_HELPER_MODULE_BY_DIRECT_CALL.get(dict_any_get_str(func_node, "id"), "")
@@ -471,20 +473,20 @@ class CppModuleEmitter:
                     if helper_include != "":
                         out.add(helper_include)
             elif kind == "Compare":
-                if dict_any_get_str(node, "lowered_kind") == "Contains":
+                if dict_any_get_str(d2, "lowered_kind") == "Contains":
                     helper_include = self._module_name_to_cpp_include("pytra.built_in.contains")
                     if helper_include != "":
                         out.add(helper_include)
                 else:
-                    for op_name in self.any_to_str_list(node.get("ops")):
+                    for op_name in self.any_to_str_list(d2.get("ops")):
                         if op_name in {"In", "NotIn"}:
                             helper_include = self._module_name_to_cpp_include("pytra.built_in.contains")
                             if helper_include != "":
                                 out.add(helper_include)
                             break
-            elif kind == "BinOp" and dict_any_get_str(node, "op") == "Mult":
-                left_t = self.normalize_type_name(self.get_expr_type(node.get("left")))
-                right_t = self.normalize_type_name(self.get_expr_type(node.get("right")))
+            elif kind == "BinOp" and dict_any_get_str(d2, "op") == "Mult":
+                left_t = self.normalize_type_name(self.get_expr_type(d2.get("left")))
+                right_t = self.normalize_type_name(self.get_expr_type(d2.get("right")))
                 left_is_repeatable = left_t == "str" or self.is_list_type(left_t)
                 right_is_repeatable = right_t == "str" or self.is_list_type(right_t)
                 if (left_is_repeatable and right_t in _CPP_REPEAT_INT_TYPES) or (
@@ -493,7 +495,7 @@ class CppModuleEmitter:
                     helper_include = self._module_name_to_cpp_include("pytra.built_in.sequence")
                     if helper_include != "":
                         out.add(helper_include)
-            for value in node.values():
+            for value in d2.values():
                 self._collect_cpp_helper_includes_from_node(value, out)
             return
         if isinstance(node, list):

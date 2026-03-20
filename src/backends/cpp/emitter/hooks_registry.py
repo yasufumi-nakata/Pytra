@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pytra.typing import Any
 from backends.common.emitter.code_emitter import EmitterHooks
+from toolchain.compiler.transpile_cli import dict_any_get_str
 
 
 def on_stmt_omit_braces(
@@ -24,7 +25,8 @@ def on_render_expr_complex(
     expr_node: dict[str, Any],
 ) -> str | None:
     """複雑式（JoinedStr/Lambda など）向けの出力フック。"""
-    kind = emitter.any_dict_get_str(expr_node, "kind", "")
+    kind_raw = expr_node.get("kind")
+    kind = kind_raw if isinstance(kind_raw, str) else ""
     if kind == "JoinedStr":
         render_joined = getattr(emitter, "_render_joinedstr_expr", None)
         if callable(render_joined):

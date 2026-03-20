@@ -180,14 +180,15 @@ class CppAnalysisEmitter:
                 return
             if not isinstance(node, dict):
                 return
-            kind = self._node_kind_from_dict(node)
+            d: dict[str, Any] = node
+            kind = self._node_kind_from_dict(d)
             if kind in {"Assign", "AnnAssign", "AugAssign"}:
-                _collect_target(node.get("target"))
+                _collect_target(d.get("target"))
             elif kind in {"For", "ForRange"}:
-                _collect_target(node.get("target"))
+                _collect_target(d.get("target"))
             elif kind == "ForCore":
-                _collect_target_plan(node.get("target_plan"))
-            for value in node.values():
+                _collect_target_plan(d.get("target_plan"))
+            for value in d.values():
                 _visit(value)
 
         _visit(stmts)

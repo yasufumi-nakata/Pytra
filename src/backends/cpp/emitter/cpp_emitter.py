@@ -989,11 +989,12 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             return
         if not isinstance(node, dict):
             return
-        if node.get("kind") == "Name":
-            ident = self.any_dict_get_str(node, "id", "")
+        d: dict[str, Any] = node
+        if d.get("kind") == "Name":
+            ident = self.any_dict_get_str(d, "id", "")
             if ident != "":
                 out.add(ident)
-        for value in node.values():
+        for value in d.values():
             self._collect_name_reads(value, out)
 
     def _collect_name_targets(self, target_node: Any, out: set[str]) -> None:
@@ -1059,16 +1060,15 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             if name not in stack_lowered:
                 out.add(name)
 
-        changed = True
-        while changed:
-            changed = False
+        changed_flag: list[bool] = [True]
+        while changed_flag[0]:
+            changed_flag[0] = False
 
             def _mark(name: str) -> None:
-                nonlocal changed
                 if name == "" or name in out:
                     return
                 out.add(name)
-                changed = True
+                changed_flag[0] = True
 
             def _scan(cur: Any) -> None:
                 node = self.any_to_dict_or_empty(cur)
@@ -1168,11 +1168,10 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         return includes
 
     def _body_uses_cpp_object_iter_helper(self, body: list[dict[str, Any]]) -> bool:
-        found = False
+        found_flag: list[bool] = [False]
 
         def _scan(cur: Any) -> None:
-            nonlocal found
-            if found:
+            if found_flag[0]:
                 return
             if isinstance(cur, list):
                 for item in cur:
@@ -1183,29 +1182,29 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
                 return
             kind = self._node_kind_from_dict(node)
             if kind in {"ObjIterInit", "ObjIterNext"}:
-                found = True
+                found_flag[0] = True
                 return
             if kind == "RuntimeSpecialOp":
                 op = self.any_dict_get_str(node, "op", "")
                 if op in {"iter_or_raise", "next_or_stop"}:
-                    found = True
+                    found_flag[0] = True
                     return
             runtime_call = self.any_dict_get_str(node, "runtime_call", "")
             if runtime_call in {"py_iter_or_raise", "py_next_or_stop"}:
-                found = True
+                found_flag[0] = True
                 return
             if self.any_dict_get_str(node, "iter_mode", "") == "runtime_protocol":
-                found = True
+                found_flag[0] = True
                 return
             if self.any_dict_get_str(node, "hint_mode", "") == "runtime_protocol":
-                found = True
+                found_flag[0] = True
                 return
             for value in node.values():
                 if isinstance(value, dict) or isinstance(value, list):
                     _scan(value)
 
         _scan(body)
-        return found
+        return found_flag[0]
 
     def _cpp_object_iter_helper_header_text(self) -> str:
         label = self._cpp_object_iter_helper_label()
@@ -2817,7 +2816,7 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
                 and self._is_pyobj_value_model_list_type(self.normalize_type_name(val_ty))
             ):
                 return f"py_list_at_ref({val}, {idx_lval_as_int64})"
-            return self._render_pyobj_ref_first_list_index(expr.get("value"), val, idx_lval_as_int64)
+            return self._render_pyobj_ref_first_list_index(node.get("value"), val, idx_lval_as_int64)
         if self.is_indexable_sequence_type(val_ty):
             if self.is_any_like_type(idx_t):
                 idx = f"py_to<int64>({idx})"

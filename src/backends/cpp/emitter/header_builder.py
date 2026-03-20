@@ -58,6 +58,17 @@ def _header_node_kind_from_dict(node_dict: dict[str, Any]) -> str:
 def _header_mark_mutated_param_from_target(tgt: Any, params: set[str], out: set[str]) -> None:
     if not isinstance(tgt, dict):
         return
+    _header_mark_mutated_param_from_target_inner(tgt, params, out)
+
+
+def _header_extract_owner_name_id(owner_dict: dict[str, Any], params: set[str], out: set[str]) -> None:
+    if _header_node_kind_from_dict(owner_dict) == "Name":
+        nm = owner_dict.get("id")
+        if isinstance(nm, str) and nm in params:
+            out.add(nm)
+
+
+def _header_mark_mutated_param_from_target_inner(tgt: dict[str, Any], params: set[str], out: set[str]) -> None:
     tkind = _header_node_kind_from_dict(tgt)
     if tkind == "Name":
         nm = tgt.get("id")
@@ -66,17 +77,13 @@ def _header_mark_mutated_param_from_target(tgt: Any, params: set[str], out: set[
         return
     if tkind == "Attribute":
         owner = tgt.get("value")
-        if isinstance(owner, dict) and _header_node_kind_from_dict(owner) == "Name":
-            nm = owner.get("id")
-            if isinstance(nm, str) and nm in params:
-                out.add(nm)
+        if isinstance(owner, dict):
+            _header_extract_owner_name_id(owner, params, out)
         return
     if tkind == "Subscript":
         owner = tgt.get("value")
-        if isinstance(owner, dict) and _header_node_kind_from_dict(owner) == "Name":
-            nm = owner.get("id")
-            if isinstance(nm, str) and nm in params:
-                out.add(nm)
+        if isinstance(owner, dict):
+            _header_extract_owner_name_id(owner, params, out)
         return
     if tkind == "Tuple":
         elems = tgt.get("elements")
