@@ -1,7 +1,8 @@
-"""EAST -> PowerShell transpiler (experimental).
+"""EAST -> PowerShell transpiler.
 
-This backend is intentionally minimal and emits a best-effort PowerShell script
-for first-pass inspection.
+This backend emits native PowerShell code via an intermediate JavaScript
+representation.  The JS output is converted line-by-line into PowerShell
+syntax.
 """
 
 from __future__ import annotations
@@ -12,25 +13,6 @@ from typing import Any
 from backends.common.emitter.code_emitter import reject_backend_general_union_type_exprs
 from backends.common.emitter.code_emitter import reject_backend_typed_vararg_signatures
 from backends.js.emitter.js_emitter import transpile_to_js
-
-
-def _indent_js_block(lines: list[str]) -> str:
-    if len(lines) == 0:
-        return "# <empty>"
-    return "\n".join("  " + line for line in lines)
-
-
-def _normalize_js_block(js_text: str) -> str:
-    normalized = js_text.rstrip()
-    if normalized == "":
-        return "# <empty>"
-    return _indent_js_block(normalized.splitlines())
-
-
-def _indent_ps_block(lines: list[str]) -> str:
-    if len(lines) == 0:
-        return "    # <empty>"
-    return "\n".join("    " + line for line in lines)
 
 
 _MATH_FN_MAP: dict[str, str] = {
@@ -767,19 +749,14 @@ def _convert_js_to_powerline(raw_lines: list[str]) -> list[str]:
 
 
 def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
-    """EAST ドキュメントを PowerShell コードへ変換する（実験版）。"""
+    """EAST ドキュメントを PowerShell コードへ変換する。"""
     reject_backend_general_union_type_exprs(east_doc, backend_name="PowerShell backend")
     reject_backend_typed_vararg_signatures(east_doc, backend_name="PowerShell backend")
     js_code = transpile_to_js(east_doc).rstrip()
     js_lines = js_code.splitlines() if js_code != "" else []
     ps_lines = _convert_js_to_powerline(js_lines) if len(js_lines) > 0 else ["# <empty input>"]
-    payload_lines = _normalize_js_block(js_code)
     out = [
         "#Requires -Version 5.1",
-        "#",
-        "# WARNING: Experimental PowerShell backend",
-        "# This output intentionally emits a best-effort PowerShell preview.",
-        "# Do not treat this as production-ready PowerShell code.",
         "",
         "$pytra_runtime = Join-Path $PSScriptRoot \"py_runtime.ps1\"",
         "if (Test-Path $pytra_runtime) { . $pytra_runtime }",
@@ -787,16 +764,10 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
         "Set-StrictMode -Version Latest",
         "$ErrorActionPreference = \"Stop\"",
         "",
-        "$pytra_program = @'",
-        "# Preview of generated payload.",
-        "# " + payload_lines.replace("\n", "\n# "),
-        "@'",
-        "",
-        "# PowerShell preview generated from JavaScript pseudo conversion.",
-        _indent_ps_block(ps_lines),
-        "",
-        "if (Get-Command -Name main -ErrorAction SilentlyContinue) {",
-        "    main",
-        "}",
     ]
+    out.extend(ps_lines)
+    out.append("")
+    out.append("if (Get-Command -Name main -ErrorAction SilentlyContinue) {")
+    out.append("    main")
+    out.append("}")
     return "\n".join(out).rstrip() + "\n"
