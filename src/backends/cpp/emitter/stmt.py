@@ -204,12 +204,11 @@ class CppStatementEmitter:
         ann_fallback = ann_text_fallback if ann_text_fallback not in {"", "{}", "None"} else ""
         ann_t_str = ann_t_str if ann_t_str != "" else (decl_hint if decl_hint != "" else ann_fallback)
         ann_t_norm = self.normalize_type_name(ann_t_str)
-        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
-        ref_first_list_ann = list_model == "pyobj" and self._is_pyobj_ref_first_list_target_expr(
+        ref_first_list_ann = self._is_pyobj_ref_first_list_target_expr(
             stmt.get("target"),
             ann_t_norm,
         )
-        force_typed_list_ann = list_model == "pyobj" and self._is_pyobj_value_model_list_type(ann_t_norm)
+        force_typed_list_ann = self._is_pyobj_value_model_list_type(ann_t_norm)
         force_typed_list_str = force_typed_list_ann and ann_t_norm == "list[str]"
         if ref_first_list_ann:
             t = self._cpp_pyobj_alias_list_handle_type_text(ann_t_norm)
@@ -293,7 +292,7 @@ class CppStatementEmitter:
             if union_name == "" and "|" in val_t_norm:
                 if val_t_norm in tagged_union_types:
                     union_name = val_t_norm
-            if union_name in tagged_union_types:
+            if union_name in tagged_union_types and ".as<" not in rendered_val and ".unbox<" not in rendered_val:
                 ann_norm = self.normalize_type_name(ann_t_str)
                 non_none_parts = tagged_union_types[union_name]
                 for part in non_none_parts:
@@ -322,7 +321,7 @@ class CppStatementEmitter:
             ann_norm = self.normalize_type_name(ann_t_str)
             if has_none and len(non_none_norm) == 1 and non_none_norm[0] == ann_norm:
                 rendered_val = f"({rendered_val}).value()"
-        if (not ref_first_list_ann) and self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "":
+        if (not ref_first_list_ann) and self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "" and ".as<" not in rendered_val and ".unbox<" not in rendered_val:
             rendered_val = self._coerce_any_expr_to_target_via_unbox(
                 rendered_val,
                 stmt.get("value"),
@@ -606,10 +605,7 @@ class CppStatementEmitter:
         # C++ 側では宣言変数に落とすと未使用・型退化の温床になるため省略する。
         if self._is_reexport_assign(target, value):
             return
-        if (
-            self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj"
-            and self._node_kind_from_dict(target) == "Subscript"
-        ):
+        if self._node_kind_from_dict(target) == "Subscript":
             owner_node = self.any_to_dict_or_empty(target.get("value"))
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 owner_expr = self.render_expr(owner_node)
@@ -1056,12 +1052,11 @@ class CppStatementEmitter:
         if typed_target_t in {"", "unknown"}:
             typed_target_t = self.normalize_type_name(self.get_expr_type(stmt.get("target")))
         typed_iter_override = ""
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
-            typed_iter_override = self._prepare_pyobj_typed_list_iter_expr(iter_expr, typed_target_t)
-            if typed_iter_override == "":
-                typed_iter_override = self._render_forcore_typed_reversed_iter_expr(iter_expr, typed_target_t)
-            if typed_iter_override != "":
-                iter_mode = "static_fastpath"
+        typed_iter_override = self._prepare_pyobj_typed_list_iter_expr(iter_expr, typed_target_t)
+        if typed_iter_override == "":
+            typed_iter_override = self._render_forcore_typed_reversed_iter_expr(iter_expr, typed_target_t)
+        if typed_iter_override != "":
+            iter_mode = "static_fastpath"
         if iter_mode == "runtime_protocol":
             self._emit_for_each_runtime(stmt, target, iter_expr, body_stmts, omit_braces)
             return
@@ -1862,15 +1857,14 @@ class CppStatementEmitter:
             if iter_expr_t in {"", "unknown"}:
                 iter_expr_t = self.normalize_type_name(self.get_expr_type(iter_expr))
             force_runtime_iter = False
-            if self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
-                if self._is_pyobj_runtime_list_type(iter_expr_t):
-                    force_runtime_iter = True
-                elif self._contains_text(iter_expr_t, "|"):
-                    for part in self.split_union(iter_expr_t):
-                        part_norm = self.normalize_type_name(part)
-                        if self._is_pyobj_runtime_list_type(part_norm):
-                            force_runtime_iter = True
-                            break
+            if self._is_pyobj_runtime_list_type(iter_expr_t):
+                force_runtime_iter = True
+            elif self._contains_text(iter_expr_t, "|"):
+                for part in self.split_union(iter_expr_t):
+                    part_norm = self.normalize_type_name(part)
+                    if self._is_pyobj_runtime_list_type(part_norm):
+                        force_runtime_iter = True
+                        break
             iter_expr_name = ""
             if self._node_kind_from_dict(iter_expr) == "Name":
                 iter_expr_name = self.any_dict_get_str(iter_expr, "id", "")
@@ -2041,7 +2035,6 @@ class CppStatementEmitter:
         mode_txt = self.any_to_str(stmt.get("iter_mode"))
         if mode_txt == "runtime_protocol":
             return mode_txt
-        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
         iter_name = ""
         if self._node_kind_from_dict(iter_expr) == "Name":
             iter_name = self.any_dict_get_str(iter_expr, "id", "")
@@ -2049,25 +2042,23 @@ class CppStatementEmitter:
         if iter_t == "":
             iter_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
         if mode_txt == "static_fastpath":
-            if list_model == "pyobj":
-                if self._is_stack_list_local_name(iter_name):
-                    return mode_txt
-                if self._is_pyobj_runtime_list_type(iter_t):
-                    return "runtime_protocol"
-                if self._contains_text(iter_t, "|"):
-                    parts = self.split_union(iter_t)
-                    for p in parts:
-                        p_norm = self.normalize_type_name(p)
-                        if self._is_pyobj_runtime_list_type(p_norm):
-                            return "runtime_protocol"
+            if self._is_stack_list_local_name(iter_name):
+                return mode_txt
+            if self._is_pyobj_runtime_list_type(iter_t):
+                return "runtime_protocol"
+            if self._contains_text(iter_t, "|"):
+                parts = self.split_union(iter_t)
+                for p in parts:
+                    p_norm = self.normalize_type_name(p)
+                    if self._is_pyobj_runtime_list_type(p_norm):
+                        return "runtime_protocol"
             return mode_txt
         if iter_t == "Any" or iter_t == "object":
             return "runtime_protocol"
-        if list_model == "pyobj":
-            if self._is_stack_list_local_name(iter_name):
-                return "static_fastpath"
-            if self._is_pyobj_runtime_list_type(iter_t):
-                return "runtime_protocol"
+        if self._is_stack_list_local_name(iter_name):
+            return "static_fastpath"
+        if self._is_pyobj_runtime_list_type(iter_t):
+            return "runtime_protocol"
         # 明示 `iter_mode` が無い既存 EAST では selfhost 互換を優先し、unknown は static 側に倒す。
         if iter_t == "" or iter_t == "unknown":
             return "static_fastpath"
@@ -2077,7 +2068,7 @@ class CppStatementEmitter:
                 p_norm = self.normalize_type_name(p)
                 if p_norm == "Any" or p_norm == "object":
                     return "runtime_protocol"
-                if list_model == "pyobj" and self._is_pyobj_runtime_list_type(p_norm):
+                if self._is_pyobj_runtime_list_type(p_norm):
                     return "runtime_protocol"
             return "static_fastpath"
         return "static_fastpath"
@@ -2121,7 +2112,6 @@ class CppStatementEmitter:
             runtime_abi_mode=ret_abi_mode,
         )
         ret_t_norm = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
-        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
         if is_generator:
             elem_type_for_cpp = yield_value_type
             if elem_type_for_cpp in {"", "unknown"}:
@@ -2180,7 +2170,6 @@ class CppStatementEmitter:
             if (
                 (not skip_self)
                 and arg_abi_mode not in {"value", "value_mut", "value_readonly"}
-                and list_model == "pyobj"
                 and self._is_pyobj_ref_first_list_type(t_norm)
             ):
                 ref_first_param_names.add(n)

@@ -131,8 +131,6 @@ class CppTypeBridgeEmitter:
 
     def _is_pyobj_value_model_list_type(self, east_type: str) -> bool:
         """`pyobj` でも typed value-model で扱える list 型か判定する。"""
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return False
         t_norm = self.normalize_type_name(east_type)
         if not (t_norm.startswith("list[") and t_norm.endswith("]")):
             return False
@@ -148,8 +146,6 @@ class CppTypeBridgeEmitter:
 
     def _is_pyobj_ref_first_list_type(self, east_type: str) -> bool:
         """`pyobj` で backend 内部の ref-first handle を使う typed list 型か判定する。"""
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return False
         t_norm = self.normalize_type_name(east_type)
         if not (t_norm.startswith("list[") and t_norm.endswith("]")):
             return False
@@ -163,8 +159,6 @@ class CppTypeBridgeEmitter:
 
     def _is_pyobj_runtime_list_type(self, east_type: str) -> bool:
         """`cpp_list_model=pyobj` で object runtime 経路を使う list 型か判定する。"""
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return False
         t_norm = self.normalize_type_name(east_type)
         if not (t_norm.startswith("list[") and t_norm.endswith("]")):
             return False

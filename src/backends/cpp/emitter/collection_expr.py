@@ -9,8 +9,7 @@ class CppCollectionExprEmitter:
 
     def _render_expr_kind_list(self, expr: Any, expr_d: dict[str, Any]) -> str:
         t = self.cpp_type(expr_d.get("resolved_type"))
-        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
-        pyobj_list_mode = list_model == "pyobj"
+        pyobj_list_mode = True
         elem_t = ""
         rt0 = self.get_expr_type(expr)
         rt = rt0 if isinstance(rt0, str) else ""
@@ -180,8 +179,7 @@ class CppCollectionExprEmitter:
         gens = self.any_to_list(expr_d.get("generators"))
         if len(gens) != 1:
             return "{}"
-        list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
-        pyobj_list_mode = list_model == "pyobj"
+        pyobj_list_mode = True
         g_obj = gens[0]
         g = self.any_to_dict_or_empty(g_obj)
         g_target_raw: object = g.get("target")

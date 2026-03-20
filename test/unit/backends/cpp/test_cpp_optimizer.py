@@ -250,7 +250,7 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertEqual(result.change_count, 1)
         self.assertTrue(bool(for_stmt.get("cpp_omit_braces_v1")))
 
-    def test_cpp_for_iter_mode_hint_pass_marks_object_iter_as_runtime(self) -> None:
+    def test_cpp_for_iter_mode_hint_pass_is_noop_in_pyobj_mode(self) -> None:
         doc = _module_doc()
         for_stmt = {
             "kind": "For",
@@ -261,11 +261,11 @@ class CppOptimizerTest(unittest.TestCase):
         }
         doc["body"] = [for_stmt]
         result = CppForIterModeHintPass().run(doc, CppOptContext(opt_level=1))
-        self.assertTrue(result.changed)
-        self.assertEqual(result.change_count, 1)
-        self.assertEqual(for_stmt.get("cpp_iter_mode_v1"), "runtime_protocol")
+        self.assertFalse(result.changed)
+        self.assertEqual(result.change_count, 0)
+        self.assertNotIn("cpp_iter_mode_v1", for_stmt)
 
-    def test_cpp_for_iter_mode_hint_pass_marks_typed_iter_as_static(self) -> None:
+    def test_cpp_for_iter_mode_hint_pass_skips_typed_iter_in_pyobj_mode(self) -> None:
         doc = _module_doc()
         for_stmt = {
             "kind": "For",
@@ -276,24 +276,6 @@ class CppOptimizerTest(unittest.TestCase):
         }
         doc["body"] = [for_stmt]
         result = CppForIterModeHintPass().run(doc, CppOptContext(opt_level=1))
-        self.assertTrue(result.changed)
-        self.assertEqual(result.change_count, 1)
-        self.assertEqual(for_stmt.get("cpp_iter_mode_v1"), "static_fastpath")
-
-    def test_cpp_for_iter_mode_hint_pass_skips_pyobj_list_model(self) -> None:
-        doc = _module_doc()
-        for_stmt = {
-            "kind": "For",
-            "target": {"kind": "Name", "id": "x", "resolved_type": "int64"},
-            "iter": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
-            "body": [{"kind": "Pass"}],
-            "orelse": [],
-        }
-        doc["body"] = [for_stmt]
-        result = CppForIterModeHintPass().run(
-            doc,
-            CppOptContext(opt_level=1, debug_flags={"cpp_list_model": "pyobj"}),
-        )
         self.assertFalse(result.changed)
         self.assertEqual(result.change_count, 0)
         self.assertNotIn("cpp_iter_mode_v1", for_stmt)

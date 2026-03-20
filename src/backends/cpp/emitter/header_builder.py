@@ -227,7 +227,6 @@ def build_cpp_header_from_east(
     output_path: Path,
     top_namespace: str = "",
     cpp_text: str = "",
-    cpp_list_model: str = "",
 ) -> str:
     """EAST から最小宣言のみの C++ ヘッダ文字列を生成する。"""
     body = dict_any_get_dict_list(east_module, "body")
@@ -243,7 +242,7 @@ def build_cpp_header_from_east(
     seen_classes: set[str] = set()
     class_names: set[str] = set()
     ref_classes: set[str] = set()
-    pyobj_ref_lists = cpp_list_model == "pyobj"
+    pyobj_ref_lists = True
     import_include_symbol_map = _header_import_include_symbol_map(east_module)
 
     for st in body:

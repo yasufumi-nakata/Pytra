@@ -77,7 +77,6 @@ def emit_cpp_from_east(
     dump_cpp_ir_before_opt: str = "",
     dump_cpp_ir_after_opt: str = "",
     dump_cpp_opt_trace: str = "",
-    cpp_list_model: str = "",
 ) -> str:
     """Emit C++ text from EAST module via CppEmitter (public bridge)."""
     cpp_ir = east_module
@@ -91,7 +90,6 @@ def emit_cpp_from_east(
             "str_index_mode": str_index_mode,
             "str_slice_mode": str_slice_mode,
             "opt_level": opt_level,
-            "cpp_list_model": cpp_list_model,
         }
         lowered_ir, lower_report = lower_cpp_from_east3(
             east_module,
@@ -136,8 +134,6 @@ def emit_cpp_from_east(
         top_namespace,
         emit_main,
     )
-    if cpp_list_model in {"value", "pyobj"}:
-        emitter.cpp_list_model = cpp_list_model
     return emitter.transpile()
 
 
@@ -207,12 +203,7 @@ class CppEmitter(
         self.str_index_mode = str_index_mode
         self.str_slice_mode = str_slice_mode
         self.opt_level = opt_level
-        self.cpp_list_model = "value"
-        profile_cpp_any = self.profile.get("cpp") if isinstance(self.profile, dict) else {}
-        if isinstance(profile_cpp_any, dict):
-            list_model_any = profile_cpp_any.get("list_model")
-            if isinstance(list_model_any, str) and list_model_any in {"value", "pyobj"}:
-                self.cpp_list_model = list_model_any
+        self.cpp_list_model = "pyobj"
         self.top_namespace = top_namespace
         self.emit_main = emit_main
         # NOTE:
@@ -741,8 +732,6 @@ class CppEmitter(
 
     def _is_known_pyobj_value_list_source_expr(self, expr_node: Any) -> bool:
         """ref-first target へ `rc_list_from_value(...)` で昇格すべき value-list source か判定する。"""
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return False
         node = self._unwrap_pyobj_list_source_expr(expr_node)
         if len(node) == 0:
             return False
@@ -762,8 +751,6 @@ class CppEmitter(
 
     def _call_expr_returns_known_pyobj_list_handle(self, expr_node: Any) -> bool:
         """既知関数/メソッド call が ref-first list handle を返すか判定する。"""
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return False
         node = self._unwrap_pyobj_list_source_expr(expr_node)
         if self._node_kind_from_dict(node) != "Call":
             return False
@@ -800,8 +787,6 @@ class CppEmitter(
 
     def _uses_pyobj_rc_list_expr(self, expr_node: Any) -> bool:
         """list 式が `rc<list<T>>` alias handle 経路を使うべきか判定する。"""
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return False
         node = self.any_to_dict_or_empty(expr_node)
         if len(node) == 0:
             return False
@@ -814,8 +799,6 @@ class CppEmitter(
 
     def _is_pyobj_ref_first_list_target_expr(self, expr_node: Any, east_type: str = "") -> bool:
         """Name/Attribute 左辺が ref-first list handle 正本か判定する。"""
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return False
         node = self.any_to_dict_or_empty(expr_node)
         if len(node) == 0:
             return False
@@ -838,8 +821,6 @@ class CppEmitter(
 
     def _uses_pyobj_ref_first_list_lvalue_expr(self, expr_node: Any) -> bool:
         """`rc_list_ref(...)` を安全に使える ref-first list 式か判定する。"""
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return False
         node = self.any_to_dict_or_empty(expr_node)
         if len(node) == 0 or self._expr_is_stack_list_local(node):
             return False
@@ -883,8 +864,6 @@ class CppEmitter(
 
     def _uses_pyobj_runtime_list_expr(self, expr_node: Any) -> bool:
         """list 式が pyobj runtime list 経路（`py_*` 操作）を使うべきか判定する。"""
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return False
         node = self.any_to_dict_or_empty(expr_node)
         if len(node) == 0:
             return False
@@ -1080,8 +1059,6 @@ class CppEmitter(
     def _collect_stack_list_locals(self, fn_stmt: dict[str, Any]) -> set[str]:
         """optimizer が付けた value-local hint を読み取る。"""
         out: set[str] = set()
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return out
         meta = self.any_to_dict_or_empty(fn_stmt.get("meta"))
         payload = self.any_to_dict_or_empty(meta.get("cpp_value_list_locals_v1"))
         locals_any = payload.get("locals")
@@ -1099,8 +1076,6 @@ class CppEmitter(
     ) -> set[str]:
         """`pyobj` で handle-backed に保つ typed list 名を収集する。"""
         out: set[str] = set()
-        if self.any_to_str(getattr(self, "cpp_list_model", "value")) != "pyobj":
-            return out
         stack_lowered = set(stack_list_locals or set())
         body = self._dict_stmt_list(fn_stmt.get("body"))
         assigned_types = self._collect_assigned_name_types(body)
@@ -3220,7 +3195,7 @@ class CppEmitter(
         resolved_t = self.normalize_type_name(self.any_to_str(expr.get("resolved_type")))
         if resolved_t in {"", "unknown"}:
             resolved_t = self.normalize_type_name(self.get_expr_type(expr))
-        if raw == "list" and self.any_to_str(getattr(self, "cpp_list_model", "value")) == "pyobj":
+        if raw == "list":
             runtime_list_ctor = resolved_t in {"", "unknown", "Any", "object"} or (
                 self._is_pyobj_runtime_list_type(resolved_t)
                 and (not self._is_pyobj_value_model_list_type(resolved_t))

@@ -81,9 +81,6 @@ class CppForIterModeHintPass(CppOptimizerPass):
 
     def run(self, cpp_ir: dict[str, Any], context: CppOptContext) -> CppOptResult:
         flags = context.debug_flags if isinstance(context.debug_flags, dict) else {}
-        list_model_any = flags.get("cpp_list_model")
-        list_model = list_model_any if isinstance(list_model_any, str) else "value"
-        # pyobj mode keeps additional emitter-side decisions for now.
-        allow_hint = list_model != "pyobj"
+        allow_hint = False
         changed = self._visit(cpp_ir, allow_hint=allow_hint)
         return CppOptResult(changed=changed > 0, change_count=changed)

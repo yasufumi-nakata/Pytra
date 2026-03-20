@@ -128,7 +128,7 @@ class CppNonEscapeBridgeTest(unittest.TestCase):
         }
 
         em = CppEmitter(doc, {}, emit_main=False)
-        em.cpp_list_model = "pyobj"
+
         _ = em.transpile()
 
         self.assertEqual(em.function_stack_list_locals_map.get("f"), ["xs"])
@@ -157,7 +157,7 @@ class CppNonEscapeBridgeTest(unittest.TestCase):
         }
 
         em = CppEmitter(doc, {}, emit_main=False)
-        em.cpp_list_model = "pyobj"
+
         _ = em.transpile()
 
         self.assertEqual(em.function_stack_list_locals_map.get("f"), [])
@@ -187,7 +187,7 @@ class CppNonEscapeBridgeTest(unittest.TestCase):
         }
 
         em = CppEmitter(doc, {}, emit_main=False)
-        em.cpp_list_model = "pyobj"
+
         _ = em.transpile()
 
         self.assertEqual(em.function_stack_list_locals_map.get("f"), [])

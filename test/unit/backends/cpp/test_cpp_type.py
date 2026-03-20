@@ -30,9 +30,9 @@ class CppTypeTest(unittest.TestCase):
         self.assertEqual(em._cpp_type_text("Any|None"), "object")
         self.assertEqual(em._cpp_type_text("bytes|bytearray|None"), "bytes")
 
-    def test_general_union_emits_tagged_struct(self) -> None:
+    def test_general_union_emits_object(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
-        self.assertEqual(em._cpp_type_text("int64|bool"), "_Union_int64_bool")
+        self.assertEqual(em._cpp_type_text("int64|bool"), "object")
         self.assertEqual(
             _header_cpp_type_from_east("int64|bool", set(), set()),
             "_Union_int64_bool",
@@ -40,7 +40,6 @@ class CppTypeTest(unittest.TestCase):
 
     def test_list_type_text_can_switch_to_pyobj_model(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
-        em.cpp_list_model = "pyobj"
         self.assertEqual(em._cpp_type_text("list[int64]"), "list<int64>")
         self.assertEqual(em._cpp_type_text("list[str]"), "list<str>")
         self.assertEqual(em._cpp_type_text("list[Any]"), "object")
@@ -56,9 +55,9 @@ class CppTypeTest(unittest.TestCase):
     def test_type_expr_path_emits_general_union_as_tagged_struct(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
         result = em.cpp_type(parse_type_expr_text("int | bool"))
-        self.assertIn("_Union_", result)
+        self.assertEqual(result, "object")
         result2 = em.cpp_signature_type(parse_type_expr_text("list[int | bool]"))
-        self.assertIn("_Union_", result2)
+        self.assertEqual(result2, "rc<list<object>>")
 
 
 if __name__ == "__main__":

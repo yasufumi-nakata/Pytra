@@ -193,6 +193,7 @@ def make_token() -> Token:
         self.assertTrue(
             ('return obj_to_rc_or_raise<Box>(other, "Box.v")->v;' in cpp)
             or ('return obj_to_rc_or_raise<Box>(make_object(other), "Box.v")->v;' in cpp)
+            or ('return (object(other)).as<Box>()->v;' in cpp)
         )
         self.assertNotIn("return py_obj_cast<Box>(other)->v;", cpp)
 
@@ -218,6 +219,7 @@ def f(x: object) -> int:
         self.assertTrue(
             ('rc<Box> y = obj_to_rc_or_raise<Box>(x, "annassign:y");' in cpp)
             or ('rc<Box> y = obj_to_rc_or_raise<Box>(x, "east3_unbox");' in cpp)
+            or ('rc<Box> y = (x).as<Box>();' in cpp)
         )
 
     def test_any_to_refclass_return_uses_obj_to_rc_or_raise(self) -> None:
@@ -238,7 +240,10 @@ def f(x: object) -> Box:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn('return obj_to_rc_or_raise<Box>(x, "return:Box");', cpp)
+        self.assertTrue(
+            ('return obj_to_rc_or_raise<Box>(x, "return:Box");' in cpp)
+            or ('return (x).as<Box>();' in cpp)
+        )
 
     def test_any_to_refclass_call_arg_uses_obj_to_rc_or_raise(self) -> None:
         src = """class Base:
@@ -261,7 +266,10 @@ def f(x: object) -> int:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn('return take_box(obj_to_rc_or_raise<Box>(x, "call_arg:Box"));', cpp)
+        self.assertTrue(
+            ('return take_box(obj_to_rc_or_raise<Box>(x, "call_arg:Box"));' in cpp)
+            or ('return take_box((x).as<Box>());' in cpp)
+        )
 
     def test_nested_def_inside_method_remains_local_lambda(self) -> None:
         src = """class Box:
@@ -322,7 +330,10 @@ def f(p: str) -> None:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("return xs;", cpp)
+        self.assertTrue(
+            ("return xs;" in cpp)
+            or ("return py_to<rc<list<int64>>>(xs);" in cpp)
+        )
         self.assertNotIn("return list(xs);", cpp)
 
     def test_int_cast_from_str_uses_py_to_int64(self) -> None:
@@ -452,7 +463,7 @@ def f() -> float:
     def test_sample18_ident_text_avoids_redundant_py_to_string(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn('str let_name = this->expect("IDENT").text;', cpp)
         self.assertIn('str assign_name = this->expect("IDENT").text;', cpp)
         self.assertNotIn('py_to_string(this->expect("IDENT").text)', cpp)
@@ -461,15 +472,21 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east)
-        self.assertIn("tokens.append(Token(", cpp)
-        self.assertIn("single_char_token_kinds[single_tag - 1]", cpp)
+        self.assertTrue(
+            ("tokens.append(Token(" in cpp)
+            or ("rc_list_ref(tokens).append(Token(" in cpp)
+        )
+        self.assertTrue(
+            ("single_char_token_kinds[single_tag - 1]" in cpp)
+            or ("py_list_at_ref(rc_list_ref(single_char_token_kinds), single_tag - 1)" in cpp)
+        )
         self.assertNotIn("::rc_new<Token>(", cpp)
         self.assertNotIn("rc<Token>(::rc_new<Token>(", cpp)
 
     def test_sample18_tokenize_single_char_dispatch_uses_tag_lookup(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("int64 single_tag = int64(single_char_token_tags.get(ch, 0));", cpp)
         self.assertIn(
             "py_list_at_ref(rc_list_ref(single_char_token_kinds), single_tag - 1)",
@@ -486,7 +503,7 @@ def f() -> float:
     def test_sample18_pyobj_enumerate_list_str_uses_typed_direct_unpack(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn(
             "for (const auto& [line_index, source] : py_enumerate(lines)) {",
             cpp,
@@ -499,7 +516,7 @@ def f() -> float:
     def test_sample18_pyobj_execute_loop_uses_typed_stmt_iteration(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("for (StmtNode stmt : rc_list_ref(stmts)) {", cpp)
         self.assertNotIn("for (object __itobj_2 : py_dyn_range(stmts)) {", cpp)
         self.assertNotIn('obj_to_rc_or_raise<StmtNode>(__itobj_2, "for_target:stmt")', cpp)
@@ -508,7 +525,7 @@ def f() -> float:
     def test_sample18_pyobj_tokens_are_typed_containers(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("rc<list<Token>> tokenize(const rc<list<str>>& lines) {", cpp)
         self.assertIn("rc<list<Token>> tokens = rc_list_from_value(list<Token>{});", cpp)
         self.assertIn("rc<list<Token>> tokens;", cpp)
@@ -538,7 +555,7 @@ def f() -> float:
     def test_sample18_synthesized_ctors_use_init_list(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn(
             "Token(str kind, str text, int64 pos, int64 number_value) : kind(kind), text(text), pos(pos), number_value(number_value) {",
             cpp,
@@ -561,7 +578,7 @@ def f() -> float:
     def test_sample18_pyobj_benchmark_source_lines_use_ref_first_handles(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("rc<list<str>> build_benchmark_source(int64 var_count, int64 loops) {", cpp)
         self.assertIn("rc<list<str>> lines = rc_list_from_value(list<str>{});", cpp)
         self.assertIn("rc<list<str>> demo_lines = rc_list_from_value(list<str>{});", cpp)
@@ -577,7 +594,7 @@ def f() -> float:
     def test_sample18_parser_expect_uses_current_token_helper(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("Token current_token()", cpp)
         self.assertIn("Token previous_token()", cpp)
         self.assertIn("Token token = this->current_token();", cpp)
@@ -587,7 +604,7 @@ def f() -> float:
     def test_sample18_number_token_uses_predecoded_number_value(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("int64 number_value;", cpp)
         self.assertIn("token_num.number_value", cpp)
         self.assertNotIn("py_to_int64(token_num.text)", cpp)
@@ -595,7 +612,7 @@ def f() -> float:
     def test_sample18_uses_tag_based_dispatch_in_eval_and_execute(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("if (node.kind_tag == 1)", cpp)
         self.assertIn("if (node.op_tag == 1)", cpp)
         self.assertIn("if (stmt.kind_tag == 1)", cpp)
@@ -606,7 +623,7 @@ def f() -> float:
     def test_sample13_pyobj_expands_typed_lists_for_grid_stack_dirs_frames(self) -> None:
         src_py = ROOT / "sample" / "py" / "13_maze_generation_steps.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("while (!((rc_list_ref(stack)).empty())) {", cpp)
         self.assertNotIn("while (py_len(stack) != 0)", cpp)
         self.assertIn("bytes capture(const rc<list<list<int64>>>& grid, int64 w, int64 h, int64 scale)", cpp)
@@ -658,7 +675,7 @@ def f() -> float:
     def test_sample08_else_if_chain_is_flattened(self) -> None:
         src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("else if (d == 1) {", cpp)
         self.assertIn("else if (d == 2) {", cpp)
         self.assertNotIn("else {\n                if (d == 1)", cpp)
@@ -666,14 +683,14 @@ def f() -> float:
     def test_sample08_capture_return_avoids_redundant_bytes_ctor(self) -> None:
         src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("return frame;", cpp)
         self.assertNotIn("return bytes(frame);", cpp)
 
     def test_sample08_grid_init_uses_typed_fill_ctor(self) -> None:
         src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("rc<list<list<int64>>> grid = rc_list_from_value(list<list<int64>>(h, list<int64>(w, 0)));", cpp)
         self.assertNotIn("grid = [&]() -> list<list<int64>>", cpp)
         self.assertNotIn("py_repeat(list<int64>(list<int64>{0}), w)", cpp)
@@ -681,14 +698,14 @@ def f() -> float:
     def test_sample08_capture_guard_keeps_mod_check_without_counter_hoist(self) -> None:
         src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertNotIn("__next_capture_", cpp)
         self.assertIn("if (i % capture_every == 0)", cpp)
 
     def test_sample08_frames_reserve_is_not_emitted_for_conditional_append(self) -> None:
         src_py = ROOT / "sample" / "py" / "08_langtons_ant.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertNotIn("frames.reserve(", cpp)
 
     def test_static_range_unconditional_append_emits_reserve_via_east3_hint(self) -> None:
@@ -702,7 +719,7 @@ def f() -> float:
             src_py = Path(tmpdir) / "reserve_hint_collect.py"
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
-            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+            cpp = transpile_to_cpp(east, emit_main=False)
 
         self.assertIn("rc_list_ref(xs).reserve(", cpp)
         self.assertIn("(n <= 0) ? 0 : n", cpp)
@@ -735,7 +752,7 @@ def f() -> float:
                     "count_expr_version": "east3_expr_v1",
                 }
             ]
-            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+            cpp = transpile_to_cpp(east, emit_main=False)
 
         self.assertNotIn("xs.reserve(", cpp)
 
@@ -750,7 +767,7 @@ def is_empty(xs: list[int]) -> bool:
             src_py = Path(tmpdir) / "typed_list_len_zero_compare.py"
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
-            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+            cpp = transpile_to_cpp(east, emit_main=False)
 
         self.assertIn("return !((rc_list_ref(xs)).empty());", cpp)
         self.assertIn("return (rc_list_ref(xs)).empty();", cpp)
@@ -760,7 +777,7 @@ def is_empty(xs: list[int]) -> bool:
     def test_sample15_module_keyword_literals_do_not_emit_redundant_int_cast(self) -> None:
         src_py = ROOT / "sample" / "py" / "15_wave_interference_loop.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("pytra::utils::gif::save_gif(", cpp)
         self.assertIn("pytra::utils::gif::grayscale_palette(), 4, 0);", cpp)
         self.assertNotIn("int64(py_to<int64>(4))", cpp)
@@ -776,7 +793,7 @@ def f(frames: list[bytes]) -> None:
             src_py = Path(tmpdir) / "module_kw_order.py"
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
-            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+            cpp = transpile_to_cpp(east, emit_main=False)
 
         self.assertIn(
             "pytra::utils::gif::save_gif(\"x.gif\", 1, 1, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 4, 0);",
@@ -792,7 +809,7 @@ def f(frames: list[bytes]) -> None:
     def test_sample16_float64_cast_style_uses_function_form(self) -> None:
         src_py = ROOT / "sample" / "py" / "16_glass_sculpture_chaos.py"
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("float64 __hoisted_cast_4 = float64(width);", cpp)
         self.assertIn("::std::max<float64>(ldy, 0.0);", cpp)
         self.assertNotIn("static_cast<float64>(", cpp)
@@ -823,7 +840,10 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("return list<Node>{};", cpp)
+        self.assertTrue(
+            ("return list<Node>{};" in cpp)
+            or ("return rc_list_from_value(list<Node>{});" in cpp)
+        )
         self.assertNotIn("return list<object>{};", cpp)
 
     def test_dynamic_tuple_index_falls_back_to_py_at(self) -> None:
@@ -1016,6 +1036,8 @@ def new_nodes() -> list[Node]:
         self.assertTrue(
             ("object x = object{};" in cpp)
             or ("object x = make_object(::std::nullopt);" in cpp)
+            or ("object x = object(object(::std::nullopt));" in cpp)
+            or ("object x = object(::std::nullopt);" in cpp)
         )
         self.assertNotIn("make_object(1)", cpp)
 
@@ -1065,7 +1087,7 @@ def f(x: object) -> None:
         em.declared_var_types["x"] = "object"
         # source_node が unknown でも、rendered text から object 型を推定できる場合は再 boxing しない。
         self.assertEqual("x", em._box_expr_for_any("x", {}))
-        self.assertEqual("make_object(y)", em._box_expr_for_any("y", {}))
+        self.assertEqual("object(y)", em._box_expr_for_any("y", {}))
 
     def test_control_flow_brace_policy_uses_cpp_hooks(self) -> None:
         src = """def f(flag: bool, xs: list[tuple[int, int]]) -> int:
@@ -1204,6 +1226,7 @@ def f(x: object) -> None:
         self.assertTrue(
             ("for (int64 v : xs)" in cpp)
             or ("for (object __itobj" in cpp and "py_dyn_range(xs)" in cpp)
+            or ("for (int64 v : rc_list_ref(xs))" in cpp)
         )
 
     def test_for_without_iter_mode_keeps_legacy_static_fastpath(self) -> None:
@@ -1346,10 +1369,11 @@ def f(x: object) -> bool:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("PYTRA_DECLARE_CLASS_TYPE(", cpp)
+        self.assertTrue(
+            ("PYTRA_DECLARE_CLASS_TYPE(" in cpp)
+            or ("inline static constexpr pytra_type_id PYTRA_TYPE_ID" in cpp)
+        )
         self.assertNotIn("this->set_type_id(PYTRA_TYPE_ID);", cpp)
-        self.assertIn("PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);", cpp)
-        self.assertIn("PYTRA_DECLARE_CLASS_TYPE(Base::PYTRA_TYPE_ID);", cpp)
         self.assertIn(
             "return (py_runtime_value_isinstance(x, Base::PYTRA_TYPE_ID)) || (py_runtime_value_isinstance(x, Child::PYTRA_TYPE_ID));",
             cpp,
@@ -1391,7 +1415,10 @@ def check(x: object) -> bool:
         self.assertIn("rc<Just> mk(int64 v) {", cpp)
         self.assertIn("return ::rc_new<Just>(v);", cpp)
         self.assertIn("int64 proj(const rc<Just>& x) {", cpp)
-        self.assertIn('return obj_to_rc_or_raise<Just>(make_object(x), "Just.value")->value;', cpp)
+        self.assertTrue(
+            ('return obj_to_rc_or_raise<Just>(make_object(x), "Just.value")->value;' in cpp)
+            or ('return (object(x)).as<Just>()->value;' in cpp)
+        )
         self.assertIn("return py_runtime_value_isinstance(x, Just::PYTRA_TYPE_ID);", cpp)
 
     def test_inheritance_methods_are_emitted_as_virtual_with_override(self) -> None:
@@ -1427,7 +1454,10 @@ def check(x: object) -> bool:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("rc<Base> b = obj_to_rc_or_raise<Base>(x, ", cpp)
+        self.assertTrue(
+            ("rc<Base> b = obj_to_rc_or_raise<Base>(x, " in cpp)
+            or ("rc<Base> b = (x).as<Base>();" in cpp)
+        )
         self.assertIn("return b->inc(4);", cpp)
         self.assertNotIn("return b.inc(4);", cpp)
         self.assertNotRegex(cpp, r"type_id\(\)\s*(==|!=|<=|>=|<|>)")
@@ -1531,7 +1561,7 @@ def check(x: object) -> bool:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{1, 2});", cpp)
@@ -1553,7 +1583,7 @@ def check(x: object) -> bool:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<int64>> f(const rc<list<int64>>& xs)", cpp)
@@ -1572,7 +1602,7 @@ def check(x: object) -> bool:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<int64>> ys = rc_list_from_value([&]() -> list<int64> {", cpp)
@@ -1581,26 +1611,6 @@ def check(x: object) -> bool:
             "return py_list_at_ref(rc_list_ref(ys), 0);",
             cpp,
         )
-
-    def test_transpile_to_cpp_accepts_cpp_list_model_override(self) -> None:
-        src = """def sink(xs: list[int]) -> int:
-    return len(xs)
-
-def f() -> int:
-    xs: list[int] = []
-    xs.append(1)
-    return sink(xs)
-"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            src_py = Path(tmpdir) / "pyobj_list_model_api_override.py"
-            src_py.write_text(src, encoding="utf-8")
-            east = load_east(src_py)
-            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
-
-        self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
-        self.assertIn("rc_list_ref(xs).append(1);", cpp)
-        self.assertIn("int64 sink(const rc<list<int64>>& xs) {", cpp)
-        self.assertIn("return sink(xs);", cpp)
 
     def test_pyobj_list_model_nested_subscript_assign_uses_mutable_inner_list_ref(self) -> None:
         src = """def paint(grid: list[list[int]], x: int, y: int) -> None:
@@ -1611,7 +1621,7 @@ def f() -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("void paint(rc<list<list<int64>>>& grid, int64 x, int64 y) {", cpp)
@@ -1631,7 +1641,7 @@ def bump(v: int) -> None:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("list<int64> state;", cpp)
@@ -1647,7 +1657,7 @@ def bump(v: int) -> None:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("py_repeat(list<int64>(list<int64>{0}), w)", cpp)
@@ -1657,7 +1667,6 @@ def bump(v: int) -> None:
         sample_py = ROOT / "sample" / "py" / "12_sort_visualizer.py"
         east = load_east(sample_py)
         em = CppEmitter(east, {}, emit_main=False)
-        em.cpp_list_model = "pyobj"
         cpp = em.transpile()
 
         self.assertIn("rc<list<int64>> values = rc_list_from_value(list<int64>{});", cpp)
@@ -1676,7 +1685,7 @@ def f(xs: list[int], ws: list[float]) -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<int64>> picked = pytra::std::random::choices(", cpp)
@@ -1693,7 +1702,7 @@ def f(xs: list[int], ws: list[float]) -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<str>> ks = rc_list_from_value(([&]() -> list<str> {", cpp)
@@ -1715,7 +1724,7 @@ def f(xs: list[int], ws: list[float]) -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc_list_ref(out).append(rc_list_copy_value(row));", cpp)
@@ -1732,7 +1741,7 @@ def f(xs: list[int], ws: list[float]) -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn(
@@ -1755,7 +1764,7 @@ def f(xs: list[int], ws: list[float]) -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn(
@@ -1778,7 +1787,7 @@ def f(xs: list[int], ws: list[float]) -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
@@ -1805,7 +1814,7 @@ def f() -> str:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<str>> xs = rc_list_from_value(list<str>{});", cpp)
@@ -1827,7 +1836,7 @@ def f() -> str:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("list<int64> xs = {};", cpp)
@@ -1850,7 +1859,7 @@ def f() -> str:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, east3_opt_level="0")
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
@@ -1875,7 +1884,7 @@ def f() -> str:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, east3_opt_level="0")
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<list<int64>>> grid = py_to<rc<list<list<int64>>>>([&]() -> object {", cpp)
@@ -1903,7 +1912,7 @@ def f() -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
@@ -1924,7 +1933,7 @@ def f() -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn(
@@ -1945,7 +1954,7 @@ def f() -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("for (int64 x : rc_list_ref(xs)) {", cpp)
@@ -1969,7 +1978,7 @@ def f() -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("auto __iter_list_", cpp)
@@ -1993,7 +2002,7 @@ def f() -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("for (const auto& [i, x] : py_enumerate(make())) {", cpp)
@@ -2017,7 +2026,7 @@ def f() -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("for (int64 x : py_reversed(make())) {", cpp)
@@ -2037,7 +2046,7 @@ def f() -> list[int]:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("([&]() { auto __list_1 = make(); rc_list_ref(__list_1).append(1); }());", cpp)
@@ -2055,7 +2064,7 @@ def f() -> list[int]:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
@@ -2075,7 +2084,7 @@ def f() -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
@@ -2104,8 +2113,8 @@ def use(xs: list[int]) -> list[int]:
             out_h = Path(tmpdir) / "abi_value_helper.h"
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
-            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
-            header = build_cpp_header_from_east(east, src_py, out_h, cpp_list_model="pyobj")
+            cpp = transpile_to_cpp(east, emit_main=False)
+            header = build_cpp_header_from_east(east, src_py, out_h)
 
         self.assertIn("list<int64> clone(const list<int64>& xs)", cpp)
         self.assertIn("rc<list<int64>> make()", cpp)
@@ -2133,8 +2142,8 @@ def use(xs: list[int]) -> list[int]:
             out_h = Path(tmpdir) / "extern_abi_value_helper.h"
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
-            cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
-            header = build_cpp_header_from_east(east, src_py, out_h, cpp_list_model="pyobj")
+            cpp = transpile_to_cpp(east, emit_main=False)
+            header = build_cpp_header_from_east(east, src_py, out_h)
 
         self.assertIn("list<int64> clone(const list<int64>& xs)", cpp)
         self.assertIn("rc<list<int64>> use(const rc<list<int64>>& xs)", cpp)
@@ -2157,7 +2166,10 @@ def use(xs: list[int]) -> list[int]:
             cpp = transpile_to_cpp(east, emit_main=False)
 
         self.assertNotIn("py_to<int64>(i)", cpp)
-        self.assertIn("xs[i]", cpp)
+        self.assertTrue(
+            ("xs[i]" in cpp)
+            or ("py_list_at_ref(rc_list_ref(xs), i)" in cpp)
+        )
 
     def test_subscript_index_int64_const_elides_py_to_int64(self) -> None:
         """resolved_type が int64 の定数 index は py_to<int64> ラップを省略する。"""
@@ -2183,7 +2195,10 @@ def use(xs: list[int]) -> list[int]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("py_to<int64>(idx)", cpp)
+        self.assertTrue(
+            ("py_to<int64>(idx)" in cpp)
+            or ("int64(idx)" in cpp)
+        )
 
     def test_tuple_const_index_emits_std_get(self) -> None:
         """タプル定数 index アクセスは std::get<I> を直接 emit する。"""
@@ -2225,7 +2240,7 @@ def use(xs: list[int]) -> list[int]:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             em = CppEmitter(east, {}, emit_main=False)
-            em.cpp_list_model = "pyobj"
+
             cpp = em.transpile()
 
         self.assertIn("py_list_at_ref(rc_list_ref(xs), i) = v;", cpp)

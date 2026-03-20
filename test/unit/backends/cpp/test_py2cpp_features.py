@@ -61,7 +61,7 @@ def find_fixture_case(stem: str) -> Path:
 
 def transpile(input_py: Path, output_cpp: Path) -> None:
     east = load_east(input_py)
-    cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+    cpp = transpile_to_cpp(east)
     output_cpp.write_text(cpp, encoding="utf-8")
 
 
@@ -1524,18 +1524,6 @@ def sin(x: float) -> float:
         self.assertEqual(parsed.get("dump_options"), "1")
         self.assertEqual(parsed.get("east_stage"), "3")
 
-    def test_parse_py2cpp_argv_cpp_list_model(self) -> None:
-        parsed = parse_py2cpp_argv(["input.py", "--cpp-list-model", "pyobj"])
-        err = str(parsed.get("__error", ""))
-        self.assertEqual(err, "")
-        self.assertEqual(parsed.get("cpp_list_model_opt"), "pyobj")
-
-    def test_parse_py2cpp_argv_defaults_cpp_list_model_to_pyobj(self) -> None:
-        parsed = parse_py2cpp_argv(["input.py"])
-        err = str(parsed.get("__error", ""))
-        self.assertEqual(err, "")
-        self.assertEqual(parsed.get("cpp_list_model_opt"), "pyobj")
-
     def test_parse_py2cpp_argv_east3_optimizer_options(self) -> None:
         parsed = parse_py2cpp_argv(
             [
@@ -1718,7 +1706,7 @@ def sin(x: float) -> float:
             py_path.write_text(src, encoding="utf-8")
             east = load_east(py_path)
             cpp = transpile_to_cpp(east)
-        self.assertIn("xs.pop()", cpp)
+        self.assertIn("rc_list_ref(xs).pop()", cpp)
         self.assertNotIn("py_pop(", cpp)
 
     def test_reserved_identifier_is_renamed_by_profile_rule(self) -> None:
@@ -2937,7 +2925,7 @@ def f(x: int | bool) -> int | bool:
                 RuntimeError,
                 r"unsupported_syntax\|C\+\+ backend does not support general union TypeExpr yet",
             ):
-                transpile_to_cpp(east, cpp_list_model="pyobj")
+                transpile_to_cpp(east)
 
     def test_load_east1_document_sets_stage1_while_keeping_root_contract(self) -> None:
         from src.toolchain.compiler.transpile_cli import load_east1_document
@@ -5021,7 +5009,7 @@ if __name__ == "__main__":
     def test_path_stringify_no_longer_falls_back_to_generic_py_to_string(self) -> None:
         fixture = find_fixture_case("path_stringify")
         east = load_east(fixture)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("return path.__str__();", cpp)
         self.assertNotIn("return py_to_string(path);", cpp)
 
@@ -5072,7 +5060,7 @@ if __name__ == "__main__":
     def test_path_stringify_lowers_to_path_specific_lane(self) -> None:
         fixture = find_fixture_case("path_stringify")
         east = load_east(fixture)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("return path.__str__();", cpp)
         self.assertNotIn("return py_to_string(path);", cpp)
 
@@ -5101,7 +5089,7 @@ if __name__ == "__main__":
             os.chdir(tmpdir)
             try:
                 east = load_east(fixture)
-                cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+                cpp = transpile_to_cpp(east)
             finally:
                 os.chdir(prev_cwd)
         self.assertIn(
@@ -5991,7 +5979,7 @@ class PadState:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("PadState(int64 count = 1, list<int64> samples = list<int64>{})", cpp)
+        self.assertIn("PadState(int64 count = 1, rc<list<int64>> samples = rc_list_from_value(list<int64>{}))", cpp)
         self.assertIn(": count(count), samples(samples)", cpp)
 
     def test_dataclass_field_repr_compare_metadata_do_not_leak_into_cpp(self) -> None:
@@ -6115,7 +6103,7 @@ def head(xs: tuple[int, ...]) -> int:
     def test_type_alias_pep695_transpile_generates_tagged_struct(self) -> None:
         src_py = find_fixture_case("type_alias_pep695")
         east = load_east(src_py)
-        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        cpp = transpile_to_cpp(east)
         self.assertIn("struct Scalar {", cpp)
         self.assertIn("pytra_type_id tag;", cpp)
         self.assertIn("PYTRA_TID_INT", cpp)

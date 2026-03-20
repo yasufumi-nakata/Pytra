@@ -45,7 +45,6 @@ def write_multi_file_cpp(
     dump_cpp_ir_after_opt: str = "",
     dump_cpp_opt_trace: str = "",
     max_generated_lines: int = 0,
-    cpp_list_model: str = "",
 ) -> dict[str, Any]:
     """Legacy facade that renders module texts then delegates layout/manifest writing."""
     _ = top_namespace
@@ -137,8 +136,6 @@ def write_multi_file_cpp(
             emit_main if is_entry else False,
         )
         type_emitter.enable_helper_artifact_lane = True
-        if cpp_list_model in {"value", "pyobj"}:
-            type_emitter.cpp_list_model = cpp_list_model
         type_emitter.user_module_east_map = module_doc_by_name
         cpp_txt = type_emitter.transpile()
         helper_artifacts = type_emitter.finalize_helper_artifacts()
@@ -209,7 +206,6 @@ def write_multi_file_cpp(
             output_dir / "include" / f"{label}.h",
             top_namespace="pytra_mod_" + label,
             cpp_text=cpp_txt,
-            cpp_list_model=cpp_list_model,
         )
         rendered_modules.append(
             {

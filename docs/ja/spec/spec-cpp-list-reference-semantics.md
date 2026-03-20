@@ -18,7 +18,7 @@
 - `ref-first`: mutable 値はまず共有参照表現で保持し、証明できた経路だけ値型へ縮退する方針。
 - `ABI adapter`: `@extern` / `Any` / `object` / 互換 API 境界でのみ一時的に `list<T>` value を作る adapter。
 - `optimizer-only value lowering`: non-escape / alias / mutation / call graph / SCC 条件を満たしたときだけ optimizer が許可する値型縮退。
-- `legacy value model`: `--cpp-list-model value` による rollback / 比較用の互換モード。
+- `legacy value model`: 撤去済み。かつて `--cpp-list-model value` で利用可能だった rollback 互換モード。
 - `alias`: `b = a` のように同一 list を共有すること。
 
 ## 4. 正本契約
@@ -86,11 +86,10 @@
 - これらを emitter 内部の既定表現選択に流用してはならない。
 - 内部 callsite / return / local variable のために `rc_list_ref(...)` や `list<T>(...)` を広く挿入する設計は、本仕様では未完了実装として扱う。
 
-## 11. legacy rollback 契約
+## 11. legacy rollback 契約（撤去済み）
 
-- `--cpp-list-model value` は rollback / 比較専用。
-- `legacy value model` では `list<T>` は値型として扱われ、`b = a` はコピーを生成する。
-- このモードは mainline の意味論基準ではなく、退避路である。
+- `--cpp-list-model value` は撤去済み。pyobj（ref-first）が唯一のモード。
+- 旧 `legacy value model`（値型 list、コピー代入）は完全に削除された。
 
 ## 12. 受け入れ判定
 

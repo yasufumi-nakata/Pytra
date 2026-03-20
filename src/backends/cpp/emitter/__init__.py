@@ -36,7 +36,6 @@ def transpile_to_cpp(
     dump_cpp_ir_before_opt: str = "",
     dump_cpp_ir_after_opt: str = "",
     dump_cpp_opt_trace: str = "",
-    cpp_list_model: str = "",
 ) -> str:
     """Public compatibility API: delegate to the C++ CLI module."""
     from backends.cpp import cli as cpp_cli
@@ -58,5 +57,4 @@ def transpile_to_cpp(
         dump_cpp_ir_before_opt=dump_cpp_ir_before_opt,
         dump_cpp_ir_after_opt=dump_cpp_ir_after_opt,
         dump_cpp_opt_trace=dump_cpp_opt_trace,
-        cpp_list_model=cpp_list_model,
     )
