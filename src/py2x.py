@@ -5,27 +5,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from toolchain.compiler.backend_registry import apply_runtime_hook_typed
-from toolchain.compiler.backend_registry import build_program_artifact_typed
-from toolchain.compiler.backend_registry import collect_program_modules_typed
-from toolchain.compiler.backend_registry import default_output_path
-from toolchain.compiler.backend_registry import emit_module_typed
-from toolchain.compiler.backend_registry import get_program_writer_typed
-from toolchain.compiler.backend_registry import get_backend_spec_typed
-from toolchain.compiler.backend_registry import list_backend_targets
-from toolchain.compiler.backend_registry import lower_ir_typed
-from toolchain.compiler.backend_registry import optimize_ir_typed
-from toolchain.compiler.backend_registry import resolve_layer_options_typed
-from toolchain.compiler.typed_boundary import backend_spec_target
-from toolchain.compiler.typed_boundary import compiler_root_module_id
-from toolchain.compiler.typed_boundary import coerce_module_artifact
 from toolchain.compiler.typed_boundary import export_compiler_root_document
-from toolchain.compiler.typed_boundary import export_program_artifact_any
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends import add_common_transpile_args
 from toolchain.frontends import build_module_east_map
 from toolchain.frontends import load_east3_document_typed
-from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.json_adapters import empty_json_object_doc
 from toolchain.link import LINK_INPUT_SCHEMA
 from toolchain.link import build_linked_program_from_module_map
@@ -39,6 +23,21 @@ from pytra.std import argparse
 from pytra.std import json
 from pytra.std.pathlib import Path
 from pytra.std import sys
+
+
+_BACKEND_TARGETS = ["cpp", "rs", "cs", "js", "ts", "go", "java", "kotlin", "swift", "ruby", "lua", "scala", "php", "nim", "powershell"]
+
+_TARGET_EXTENSIONS: dict[str, str] = {
+    "cpp": ".cpp", "rs": ".rs", "cs": ".cs", "js": ".js", "ts": ".ts",
+    "go": ".go", "java": ".java", "kotlin": ".kt", "swift": ".swift",
+    "ruby": ".rb", "lua": ".lua", "scala": ".scala", "php": ".php",
+    "nim": ".nim", "powershell": ".ps1",
+}
+
+
+def _default_output_path(input_path: Path, target: str) -> Path:
+    ext = _TARGET_EXTENSIONS.get(target, "." + target)
+    return Path("out") / (input_path.stem + ext)
 
 
 def _arg_get_str(args: dict[str, Any], key: str, default_value: str = "") -> str:
@@ -377,7 +376,7 @@ def main() -> int:
         parser_backends=["self_hosted"],
         enable_object_dispatch_mode=True,
     )
-    parser.add_argument("--target", choices=list_backend_targets(), help="Target backend language")
+    parser.add_argument("--target", choices=_BACKEND_TARGETS, help="Target backend language")
     parser.add_argument("--east-stage", choices=["2", "3"], help="EAST stage mode (default: 3)")
     parser.add_argument("--dump-east3-dir", help="Write raw EAST3 modules + link-input.json to DIR and exit")
     parser.add_argument("--link-only", action="store_true", help="Write link-output.json + linked modules to --output-dir and exit")
@@ -460,123 +459,50 @@ def main() -> int:
         _write_generated_paths([link_output_path] + linked_paths)
         return 0
 
-    # All targets go through compile -> link -> emit.
-    # The linked program's EAST docs carry linker metadata (type_id_resolved_v1).
-    optimized_program = optimize_linked_program(program).linked_program
-    east = _entry_module_east_doc(optimized_program)
-    validate_ambient_global_target_support(east, target=target)
+    # compile → link → link-only output, then emit via subprocess (east2cpp / east2x).
+    # This keeps py2x.py free of backend_registry dependencies.
+    # compile → link → link-only output, then emit via subprocess (east2cpp / east2x).
+    # This keeps py2x.py free of backend_registry dependencies.
+    import subprocess as _subprocess
+    import tempfile as _tempfile
+    import sys as _stdlib_sys
 
-    if target == "cpp":
-        emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
+    _python = _stdlib_sys.executable or "python3"
+    _src_dir = str(Path(__file__).resolve().parent)
 
-        if output_dir_txt != "":
-            # Multi-file C++ output: emit all linked modules to output directory.
-            from backends.cpp.emitter.multifile_writer import write_multi_file_cpp
+    opt_result = optimize_linked_program(program)
+    with _tempfile.TemporaryDirectory() as tmpdir:
+        link_output_dir = Path(tmpdir) / "linked"
+        link_output_path, _ = write_link_output_bundle(link_output_dir, opt_result)
 
-            output_dir = Path(output_dir_txt)
-            module_east_map: dict[str, dict[str, object]] = {}
-            entry_path_resolved = Path("")
-            for mod in optimized_program.modules:
-                if mod.module_id == "":
-                    continue
-                mod_path = Path(mod.source_path) if mod.source_path != "" else Path(mod.module_id + ".py")
-                module_east_map[str(mod_path)] = mod.east_doc
-                if mod.is_entry:
-                    entry_path_resolved = mod_path
-            if entry_path_resolved == Path(""):
-                _fatal("linked C++ entry module not found")
-            _ = write_multi_file_cpp(
-                entry_path_resolved,
-                module_east_map,
-                output_dir,
-                negative_index_mode=emitter_raw.get("negative_index_mode", "const_only"),
-                bounds_check_mode=emitter_raw.get("bounds_check_mode", "off"),
-                floor_div_mode=emitter_raw.get("floor_div_mode", "native"),
-                mod_mode=emitter_raw.get("mod_mode", "native"),
-                int_width="64",
-                str_index_mode="native",
-                str_slice_mode="byte",
-                opt_level="2",
-                top_namespace="",
-                emit_main=True,
-            )
-            print("generated: " + str(output_dir))
-            return 0
+        output_path_txt = output_text if output_text != "" else str(_default_output_path(input_path, target))
 
-        # C++ single-file: uses its own emitter directly.
-        from backends.cpp.emitter import transpile_to_cpp
+        if target == "cpp":
+            # C++ emit via east2cpp.py (imports only C++ backend)
+            emit_cmd = [_python, _src_dir + "/east2cpp.py", str(link_output_path)]
+            if output_dir_txt != "":
+                emit_cmd.extend(["--output-dir", output_dir_txt])
+            else:
+                emit_cmd.extend(["--output-dir", str(Path(output_path_txt).parent)])
+            for item in layer_option_items["emitter"]:
+                emit_cmd.extend(["--emitter-option", item])
+        else:
+            # All other targets via east2x.py (generic all-backend entry)
+            emit_cmd = [_python, _src_dir + "/east2x.py",
+                        str(link_output_path), "--target", target]
+            if output_path_txt != "":
+                emit_cmd.extend(["-o", output_path_txt])
+            if output_dir_txt != "":
+                emit_cmd.extend(["--output-dir", output_dir_txt])
+            for item in layer_option_items["lower"]:
+                emit_cmd.extend(["--lower-option", item])
+            for item in layer_option_items["optimizer"]:
+                emit_cmd.extend(["--optimizer-option", item])
+            for item in layer_option_items["emitter"]:
+                emit_cmd.extend(["--emitter-option", item])
 
-        output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
-        cpp_text = transpile_to_cpp(
-            east,
-            negative_index_mode=emitter_raw.get("negative_index_mode", "const_only"),
-            bounds_check_mode=emitter_raw.get("bounds_check_mode", "off"),
-            floor_div_mode=emitter_raw.get("floor_div_mode", "native"),
-            mod_mode=emitter_raw.get("mod_mode", "native"),
-        )
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(cpp_text, encoding="utf-8")
-        apply_runtime_hook_typed(get_backend_spec_typed(target), output_path)
-        return 0
-
-    # Non-C++ targets use the generic backend_registry pipeline.
-    # Strip linked_program_v1 metadata for the validator.
-    east_for_emit = dict(east)
-    meta_for_emit = dict(east_for_emit.get("meta", {})) if isinstance(east_for_emit.get("meta"), dict) else {}
-    meta_for_emit.pop("linked_program_v1", None)
-    east_for_emit["meta"] = meta_for_emit
-
-    output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
-    spec = get_backend_spec_typed(target)
-    lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
-    optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
-    emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
-    lower_options: dict[str, object] = {}
-    optimizer_options: dict[str, object] = {}
-    emitter_options: dict[str, object] = {}
-    try:
-        lower_options = resolve_layer_options_typed(spec, "lower", lower_raw)
-        optimizer_options = resolve_layer_options_typed(spec, "optimizer", optimizer_raw)
-        emitter_options = resolve_layer_options_typed(spec, "emitter", emitter_raw)
-    except Exception as ex:
-        _fatal(str(ex))
-
-    validate_runtime_abi_target_support(east_for_emit, target=target)
-    ir = lower_ir_typed(spec, east_for_emit, lower_options)
-    ir = optimize_ir_typed(spec, ir, optimizer_options)
-    module_id = compiler_root_module_id(east_for_emit, fallback_output_path=output_path)
-    module_artifact = emit_module_typed(
-        spec,
-        ir,
-        output_path,
-        emitter_options,
-        module_id=module_id,
-        is_entry=True,
-    )
-    module_carrier = coerce_module_artifact(module_artifact)
-    program_artifact = build_program_artifact_typed(
-        spec,
-        list(collect_program_modules_typed(module_carrier)),
-        program_id=module_id,
-        entry_modules=[module_id],
-        layout_mode="single_file",
-        link_output_schema="",
-    )
-    writer = get_program_writer_typed(spec)
-    spec_target = backend_spec_target(spec)
-    program_artifact_any = export_program_artifact_any(
-        program_artifact,
-        fallback_target=spec_target,
-        fallback_program_id=module_id,
-        fallback_entry_modules=[module_id],
-    )
-    if callable(writer):
-        _ = writer(program_artifact_any, output_path, {})
-    else:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(module_carrier.text, encoding="utf-8")
-    apply_runtime_hook_typed(spec, output_path)
-    return 0
+        proc = _subprocess.run(emit_cmd, text=True)
+        return proc.returncode
 
 
 if __name__ == "__main__":
