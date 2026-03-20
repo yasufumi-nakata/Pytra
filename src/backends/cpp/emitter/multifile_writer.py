@@ -185,6 +185,12 @@ def write_multi_file_cpp(
         helper_artifacts = type_emitter.finalize_helper_artifacts()
 
         # multi-file モードでは共通 prelude を使い、ランタイム include 重複を避ける。
+        # runtime モジュールは "runtime/cpp/..." パスで emit されることがあるので正規化する。
+        cpp_txt = replace_first(
+            cpp_txt,
+            '#include "runtime/cpp/core/py_runtime.h"',
+            '#include "core/py_runtime.h"',
+        )
         cpp_txt = replace_first(
             cpp_txt,
             '#include "core/py_runtime.h"',
@@ -252,6 +258,9 @@ def write_multi_file_cpp(
             cpp_text=cpp_txt,
         )
         if is_runtime:
+            # out/cpp/ 自己完結ビルドでは runtime/cpp/ prefix を除去する。
+            hdr_text = hdr_text.replace('#include "runtime/cpp/', '#include "')
+            cpp_txt = cpp_txt.replace('#include "runtime/cpp/', '#include "')
             rendered_modules.append(
                 {
                     "module": mod_key,
