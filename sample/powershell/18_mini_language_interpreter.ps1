@@ -31,11 +31,11 @@ $expr_index = $null
 $kind_tag = $null
 
 function tokenize {
-    param()
+    param($lines)
     $single_char_token_tags = @{"+" = 1; "-" = 2; "*" = 3; "/" = 4; "(" = 5; ")" = 6; "=" = 7}
     $single_char_token_kinds = @("PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL")
     $tokens = @()
-    for ($_i = $null; $true; ) {
+    for ($_i = $null; $_i -lt $null; $_i += 1) {
         $i = 0
         $n = __pytra_len $source
         while (($i -lt $n)) {
@@ -46,7 +46,7 @@ function tokenize {
             }
             $single_tag = $(if ($single_char_token_tags.ContainsKey($ch)) { $single_char_token_tags[$ch] } else { 0 })
             if (($single_tag -gt 0)) {
-                $tokens += @(Token $single_char_token_kinds[($single_tag - 1)] $ch $i 0)
+                $tokens += @((Token $single_char_token_kinds[($single_tag - 1)] $ch $i 0))
                 $i += 1
                 continue
             }
@@ -56,7 +56,7 @@ function tokenize {
                     $i += 1
                 }
                 $text = $source[$start..($i - 1)]
-                $tokens += @(Token "NUMBER" $text $start __pytra_int $text)
+                $tokens += @((Token "NUMBER" $text $start __pytra_int $text))
                 continue
             }
             if (($ch.isalpha() -or ($ch -eq "_"))) {
@@ -66,19 +66,19 @@ function tokenize {
                 }
                 $text = $source[$start..($i - 1)]
                 if (($text -eq "let")) {
-                    $tokens += @(Token "LET" $text $start 0)
+                    $tokens += @((Token "LET" $text $start 0))
                 } elseif (($text -eq "print")) {
-                    $tokens += @(Token "PRINT" $text $start 0)
+                    $tokens += @((Token "PRINT" $text $start 0))
                 } else {
-                    $tokens += @(Token "IDENT" $text $start 0)
+                    $tokens += @((Token "IDENT" $text $start 0))
                 }
                 continue
             }
-            throw RuntimeError ((((("tokenize error at line=" + __pytra_str $line_index) + " pos=") + __pytra_str $i) + " ch=") + $ch)
+            throw (RuntimeError ((((("tokenize error at line=" + __pytra_str $line_index) + " pos=") + __pytra_str $i) + " ch=") + $ch))
         }
-        $tokens += @(Token "NEWLINE" "" $n 0)
+        $tokens += @((Token "NEWLINE" "" $n 0))
     }
-    $tokens += @(Token "EOF" "" __pytra_len $lines 0)
+    $tokens += @((Token "EOF" "" __pytra_len $lines 0))
     return $tokens
 }
 
@@ -88,7 +88,7 @@ function Parser_new_expr_nodes {
     return @()
 }
 function Parser {
-    param()
+    param($tokens)
     $self.tokens = $tokens
     $self.pos = 0
     $self.expr_nodes = $self.new_expr_nodes()
@@ -106,7 +106,7 @@ function Parser_peek_kind {
     return $self.current_token().kind
 }
 function Parser_match {
-    param()
+    param($kind)
     if (($self.peek_kind() -eq $kind)) {
         $self.pos += 1
         return $true
@@ -114,10 +114,10 @@ function Parser_match {
     return $false
 }
 function Parser_expect {
-    param()
+    param($kind)
     $token = $self.current_token()
     if (($token.kind -ne $kind)) {
-        throw RuntimeError ((((("parse error at pos=" + __pytra_str $token.pos) + ", expected=") + $kind) + ", got=") + $token.kind)
+        throw (RuntimeError ((((("parse error at pos=" + __pytra_str $token.pos) + ", expected=") + $kind) + ", got=") + $token.kind))
     }
     $self.pos += 1
     return $token
@@ -129,7 +129,7 @@ function Parser_skip_newlines {
     }
 }
 function Parser_add_expr {
-    param()
+    param($node)
     $self.expr_nodes += @($node)
     return (__pytra_len $self.expr_nodes - 1)
 }
@@ -150,16 +150,16 @@ function Parser_parse_stmt {
         $let_name = $self.expect("IDENT").text
         $self.expect("EQUAL")
         $let_expr_index = $self.parse_expr()
-        return StmtNode "let" $let_name $let_expr_index 1
+        return (StmtNode "let" $let_name $let_expr_index 1)
     }
     if ($self.match("PRINT")) {
         $print_expr_index = $self.parse_expr()
-        return StmtNode "print" "" $print_expr_index 3
+        return (StmtNode "print" "" $print_expr_index 3)
     }
     $assign_name = $self.expect("IDENT").text
     $self.expect("EQUAL")
     $assign_expr_index = $self.parse_expr()
-    return StmtNode "assign" $assign_name $assign_expr_index 2
+    return (StmtNode "assign" $assign_name $assign_expr_index 2)
 }
 function Parser_parse_expr {
     param()
@@ -171,12 +171,12 @@ function Parser_parse_add {
     while ($true) {
         if ($self.match("PLUS")) {
             $right = $self.parse_mul()
-            $left = $self.add_expr(ExprNode "bin" 0 "" "+" $left $right 3 1)
+            $left = $self.add_expr((ExprNode "bin" 0 "" "+" $left $right 3 1))
             continue
         }
         if ($self.match("MINUS")) {
             $right = $self.parse_mul()
-            $left = $self.add_expr(ExprNode "bin" 0 "" "-" $left $right 3 2)
+            $left = $self.add_expr((ExprNode "bin" 0 "" "-" $left $right 3 2))
             continue
         }
         break
@@ -189,12 +189,12 @@ function Parser_parse_mul {
     while ($true) {
         if ($self.match("STAR")) {
             $right = $self.parse_unary()
-            $left = $self.add_expr(ExprNode "bin" 0 "" "*" $left $right 3 3)
+            $left = $self.add_expr((ExprNode "bin" 0 "" "*" $left $right 3 3))
             continue
         }
         if ($self.match("SLASH")) {
             $right = $self.parse_unary()
-            $left = $self.add_expr(ExprNode "bin" 0 "" "/" $left $right 3 4)
+            $left = $self.add_expr((ExprNode "bin" 0 "" "/" $left $right 3 4))
             continue
         }
         break
@@ -205,7 +205,7 @@ function Parser_parse_unary {
     param()
     if ($self.match("MINUS")) {
         $child = $self.parse_unary()
-        return $self.add_expr(ExprNode "neg" 0 "" "" $child (-1) 4 0)
+        return $self.add_expr((ExprNode "neg" 0 "" "" $child (-1) 4 0))
     }
     return $self.parse_primary()
 }
@@ -213,11 +213,11 @@ function Parser_parse_primary {
     param()
     if ($self.match("NUMBER")) {
         $token_num = $self.previous_token()
-        return $self.add_expr(ExprNode "lit" $token_num.number_value "" "" (-1) (-1) 1 0)
+        return $self.add_expr((ExprNode "lit" $token_num.number_value "" "" (-1) (-1) 1 0))
     }
     if ($self.match("IDENT")) {
         $token_ident = $self.previous_token()
-        return $self.add_expr(ExprNode "var" 0 $token_ident.text "" (-1) (-1) 2 0)
+        return $self.add_expr((ExprNode "var" 0 $token_ident.text "" (-1) (-1) 2 0))
     }
     if ($self.match("LPAREN")) {
         $expr_index = $self.parse_expr()
@@ -225,27 +225,27 @@ function Parser_parse_primary {
         return $expr_index
     }
     $t = $self.current_token()
-    throw RuntimeError ((("primary parse error at pos=" + __pytra_str $t.pos) + " got=") + $t.kind)
+    throw (RuntimeError ((("primary parse error at pos=" + __pytra_str $t.pos) + " got=") + $t.kind))
 }
 
 function eval_expr {
-    param()
+    param($expr_index, $expr_nodes, $env)
     $node = $expr_nodes[$expr_index]
     if (($node.kind_tag -eq 1)) {
         return $node.value
     }
     if (($node.kind_tag -eq 2)) {
         if ((-not ($node.name -eq $env))) {
-            throw RuntimeError ("undefined variable: " + $node.name)
+            throw (RuntimeError ("undefined variable: " + $node.name))
         }
         return $env[$node.name]
     }
     if (($node.kind_tag -eq 4)) {
-        return (-eval_expr $node.left $expr_nodes $env)
+        return (-(eval_expr $node.left $expr_nodes $env))
     }
     if (($node.kind_tag -eq 3)) {
-        $lhs = eval_expr $node.left $expr_nodes $env
-        $rhs = eval_expr $node.right $expr_nodes $env
+        $lhs = (eval_expr $node.left $expr_nodes $env)
+        $rhs = (eval_expr $node.right $expr_nodes $env)
         if (($node.op_tag -eq 1)) {
             return ($lhs + $rhs)
         }
@@ -257,33 +257,33 @@ function eval_expr {
         }
         if (($node.op_tag -eq 4)) {
             if (($rhs -eq 0)) {
-                throw RuntimeError "division by zero"
+                throw (RuntimeError "division by zero")
             }
             return [Math]::Floor($lhs / $rhs)
         }
-        throw RuntimeError ("unknown operator: " + $node.op)
+        throw (RuntimeError ("unknown operator: " + $node.op))
     }
-    throw RuntimeError ("unknown node kind: " + $node.kind)
+    throw (RuntimeError ("unknown node kind: " + $node.kind))
 }
 
 function execute {
-    param()
+    param($stmts, $expr_nodes, $trace)
     $env = @{}
     $checksum = 0
     $printed = 0
-    for ($_i = $null; $true; ) {
+    for ($stmt = $null; $stmt -lt $null; $stmt += 1) {
         if (($stmt.kind_tag -eq 1)) {
-            $env[$stmt.name] = eval_expr $stmt.expr_index $expr_nodes $env
+            $env[$stmt.name] = (eval_expr $stmt.expr_index $expr_nodes $env)
             continue
         }
         if (($stmt.kind_tag -eq 2)) {
             if ((-not ($stmt.name -eq $env))) {
-                throw RuntimeError ("assign to undefined variable: " + $stmt.name)
+                throw (RuntimeError ("assign to undefined variable: " + $stmt.name))
             }
-            $env[$stmt.name] = eval_expr $stmt.expr_index $expr_nodes $env
+            $env[$stmt.name] = (eval_expr $stmt.expr_index $expr_nodes $env)
             continue
         }
-        $value = eval_expr $stmt.expr_index $expr_nodes $env
+        $value = (eval_expr $stmt.expr_index $expr_nodes $env)
         if ($trace) {
             __pytra_print $value
         }
@@ -301,12 +301,12 @@ function execute {
 }
 
 function build_benchmark_source {
-    param()
+    param($var_count, $loops)
     $lines = @()
-    for ($_i = $null; $true; ) {
+    for ($i = 0; ($i -lt $var_count); $i++) {
         $lines += @(((("let v" + __pytra_str $i) + " = ") + __pytra_str ($i + 1)))
     }
-    for ($_i = $null; $true; ) {
+    for ($i = 0; ($i -lt $loops); $i++) {
         $x = ($i % $var_count)
         $y = (($i + 3) % $var_count)
         $c1 = (($i % 7) + 1)
@@ -328,22 +328,22 @@ function run_demo {
     $demo_lines += @("a = (a + b) * 2")
     $demo_lines += @("print a")
     $demo_lines += @("print a / b")
-    $tokens = tokenize $demo_lines
-    $parser = Parser $tokens
+    $tokens = (tokenize $demo_lines)
+    $parser = (Parser $tokens)
     $stmts = $parser.parse_program()
-    $checksum = execute $stmts $parser.expr_nodes $true
+    $checksum = (execute $stmts $parser.expr_nodes $true)
     __pytra_print "demo_checksum:" $checksum
 }
 
 function run_benchmark {
     param()
-    $source_lines = build_benchmark_source 32 120000
-    $start = perf_counter
-    $tokens = tokenize $source_lines
-    $parser = Parser $tokens
+    $source_lines = (build_benchmark_source 32 120000)
+    $start = (perf_counter)
+    $tokens = (tokenize $source_lines)
+    $parser = (Parser $tokens)
     $stmts = $parser.parse_program()
-    $checksum = execute $stmts $parser.expr_nodes $false
-    $elapsed = (perf_counter - $start)
+    $checksum = (execute $stmts $parser.expr_nodes $false)
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "token_count:" __pytra_len $tokens
     __pytra_print "expr_count:" __pytra_len $parser.expr_nodes
     __pytra_print "stmt_count:" __pytra_len $stmts
@@ -353,10 +353,8 @@ function run_benchmark {
 
 function __pytra_main {
     param()
-    run_demo
-    run_benchmark
+    (run_demo)
+    (run_benchmark)
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(__pytra_main)

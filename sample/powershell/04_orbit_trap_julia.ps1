@@ -11,14 +11,14 @@ $ErrorActionPreference = "Stop"
 # import: pytra.utils
 
 function render_orbit_trap_julia {
-    param()
-    $pixels = bytearray
+    param($width, $height, $max_iter, $cx, $cy)
+    $pixels = (bytearray)
     $__hoisted_cast_1 = __pytra_float ($height - 1)
     $__hoisted_cast_2 = __pytra_float ($width - 1)
     $__hoisted_cast_3 = __pytra_float $max_iter
-    for ($_i = $null; $true; ) {
+    for ($y = 0; ($y -lt $height); $y++) {
         $zy0 = ((-1.3) + (2.6 * ($y / $__hoisted_cast_1)))
-        for ($_i = $null; $true; ) {
+        for ($x = 0; ($x -lt $width); $x++) {
             $zx = ((-1.9) + (3.8 * ($x / $__hoisted_cast_2)))
             $zy = $zy0
             $trap_ = 1000000000.0
@@ -98,16 +98,14 @@ function run_04_orbit_trap_julia {
     $height = 1080
     $max_iter = 1400
     $out_path = "sample/out/04_orbit_trap_julia.png"
-    $start = perf_counter
-    $pixels = render_orbit_trap_julia $width $height $max_iter (-0.7269) 0.1889
+    $start = (perf_counter)
+    $pixels = (render_orbit_trap_julia $width $height $max_iter (-0.7269) 0.1889)
     $png.write_rgb_png($out_path, $width, $height, $pixels)
-    $elapsed = (perf_counter - $start)
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "size:" $width "x" $height
     __pytra_print "max_iter:" $max_iter
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_04_orbit_trap_julia)

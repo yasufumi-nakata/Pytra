@@ -11,13 +11,13 @@ $ErrorActionPreference = "Stop"
 # import: pytra.utils.gif
 
 function render {
-    param()
-    $frame = bytearray ($w * $h)
+    param($values, $w, $h)
+    $frame = (bytearray ($w * $h))
     $n = __pytra_len $values
     $bar_w = ($w / $n)
     $__hoisted_cast_1 = __pytra_float $n
     $__hoisted_cast_2 = __pytra_float $h
-    for ($_i = $null; $true; ) {
+    for ($i = 0; ($i -lt $n); $i++) {
         $x0 = __pytra_int ($i * $bar_w)
         $x1 = __pytra_int (($i + 1) * $bar_w)
         if (($x1 -le $x0)) {
@@ -25,13 +25,13 @@ function render {
         }
         $bh = __pytra_int (($values[$i] / $__hoisted_cast_1) * $__hoisted_cast_2)
         $y = ($h - $bh)
-        for ($_i = $null; $true; ) {
-            for ($_i = $null; $true; ) {
+        for ($y = 0; ($y -lt $h); $y++) {
+            for ($x = 0; ($x -lt $x1); $x++) {
                 $frame[(($y * $w) + $x)] = 255
             }
         }
     }
-    return bytes $frame
+    return (bytes $frame)
 }
 
 function run_12_sort_visualizer {
@@ -40,23 +40,23 @@ function run_12_sort_visualizer {
     $h = 180
     $n = 124
     $out_path = "sample/out/12_sort_visualizer.gif"
-    $start = perf_counter
+    $start = (perf_counter)
     $values = @()
-    for ($_i = $null; $true; ) {
+    for ($i = 0; ($i -lt $n); $i++) {
         $values += @(((($i * 37) + 19) % $n))
     }
-    $frames = @(render $values $w $h)
+    $frames = @((render $values $w $h))
     $frame_stride = 16
     $op = 0
-    for ($_i = $null; $true; ) {
+    for ($i = 0; ($i -lt $n); $i++) {
         $swapped = $false
-        for ($_i = $null; $true; ) {
+        for ($j = 0; ($j -lt (($n - $i) - 1)); $j++) {
             if (($values[$j] -gt $values[($j + 1)])) {
                 @($values[$j], $values[($j + 1)]) = @($values[($j + 1)], $values[$j])
                 $swapped = $true
             }
             if ((($op % $frame_stride) -eq 0)) {
-                $frames += @(render $values $w $h)
+                $frames += @((render $values $w $h))
             }
             $op += 1
         }
@@ -64,13 +64,11 @@ function run_12_sort_visualizer {
             break
         }
     }
-    save_gif $out_path $w $h $frames grayscale_palette
-    $elapsed = (perf_counter - $start)
+    (save_gif $out_path $w $h $frames (grayscale_palette))
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "frames:" __pytra_len $frames
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_12_sort_visualizer)

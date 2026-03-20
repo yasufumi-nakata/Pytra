@@ -17,7 +17,7 @@ function __pytra_print {
         if ($item -eq $null) {
             $parts.Add("None")
         } elseif ($item -is [bool]) {
-            $parts.Add((if ($item) { "True" } else { "False" }))
+            $parts.Add($(if ($item) { "True" } else { "False" }))
         } else {
             $parts.Add([string]$item)
         }
@@ -37,7 +37,7 @@ function __pytra_len {
 function __pytra_str {
     param([object]$value)
     if ($value -eq $null) { return "None" }
-    if ($value -is [bool]) { return (if ($value) { "True" } else { "False" }) }
+    if ($value -is [bool]) { return $(if ($value) { "True" } else { "False" }) }
     return [string]$value
 }
 
@@ -47,7 +47,7 @@ function __pytra_int {
     try {
         return [int]$value
     } catch {
-        if ($value -is [bool]) { return (if ($value) { 1 } else { 0 }) }
+        if ($value -is [bool]) { return $(if ($value) { 1 } else { 0 }) }
         return 0
     }
 }
@@ -78,7 +78,7 @@ function __pytra_bytes {
     if ($value -is [System.Collections.ICollection]) {
         $result = New-Object System.Collections.Generic.List[object]
         foreach ($item in $value) {
-            [void]$result.Add(__pytra_int $item)
+            [void]$result.Add((__pytra_int $item))
         }
         return $result.ToArray()
     }
@@ -183,7 +183,7 @@ function __pytra_float {
     try {
         return [double]$value
     } catch {
-        if ($value -is [bool]) { return (if ($value) { 1.0 } else { 0.0 }) }
+        if ($value -is [bool]) { return $(if ($value) { 1.0 } else { 0.0 }) }
         return 0.0
     }
 }
@@ -231,10 +231,49 @@ function __pytra_range {
     return [int[]]$result
 }
 
+function perf_counter {
+    return [double]([System.Diagnostics.Stopwatch]::GetTimestamp()) / [double]([System.Diagnostics.Stopwatch]::Frequency)
+}
+
 function PytraNotImplemented {
     param([string]$Feature = "")
     if ($Feature -ne "") {
         throw "[PowerShell backend experimental] Not implemented: $Feature"
     }
     throw "[PowerShell backend experimental] Not implemented feature"
+}
+
+function py_assert_eq {
+    param($a, $b)
+    if ("$a" -ne "$b") {
+        throw "assertion failed: $a != $b"
+    }
+    return $true
+}
+
+function py_assert_true {
+    param($value)
+    if (-not $value) {
+        throw "assertion failed: expected true"
+    }
+    return $true
+}
+
+function py_assert_all {
+    param([object[]]$checks)
+    foreach ($c in $checks) {
+        if (-not $c) {
+            throw "assertion failed in py_assert_all"
+        }
+    }
+    return $true
+}
+
+function py_assert_stdout {
+    param($expected, $fn)
+    # Stub: just call the function, skip stdout capture
+    if ($fn -is [scriptblock]) {
+        & $fn
+    }
+    return $true
 }

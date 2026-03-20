@@ -21,6 +21,8 @@ _PS_KEYWORDS = {
     "switch", "throw", "trap", "try", "until", "using", "while",
 }
 
+_RENAMED_SYMBOLS: list[dict[str, str]] = [{}]
+
 _PS_AUTOMATIC_VARS = {
     "true", "false", "null", "args", "input", "PSScriptRoot", "PSCommandPath",
     "Error", "Host", "HOME", "PID", "PROFILE",
@@ -133,7 +135,8 @@ def _render_expr(expr_any: Any) -> str:
             return "$false"
         if raw == "None" or raw == "null" or raw == "undefined":
             return "$null"
-        return "$" + _safe_ident(raw, "_v")
+        renamed = _RENAMED_SYMBOLS[0].get(raw, raw)
+        return "$" + _safe_ident(renamed, "_v")
 
     if kind == "Constant":
         value = expr.get("value")
@@ -335,7 +338,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         fk = _get_str(func_d, "kind")
 
         if fk == "Name":
-            fn_name = _get_str(func_d, "id")
+            fn_name = _RENAMED_SYMBOLS[0].get(_get_str(func_d, "id"), _get_str(func_d, "id"))
             if fn_name == "print":
                 return "__pytra_print " + " ".join(rendered_args) if len(rendered_args) > 0 else "__pytra_print"
             if fn_name == "len":
@@ -364,8 +367,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 return "$true"
             safe = _safe_ident(fn_name, "_fn")
             if len(rendered_args) == 0:
-                return safe
-            return safe + " " + " ".join(rendered_args)
+                return "(" + safe + ")"
+            return "(" + safe + " " + " ".join(rendered_args) + ")"
 
         if fk == "Attribute":
             owner = _render_expr(func_d.get("value"))
@@ -543,27 +546,47 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         return lines
 
     if kind == "ForCore":
-        init = stmt.get("init")
-        test = stmt.get("test")
-        update = stmt.get("update")
         body = _get_list(stmt, "body")
-        if isinstance(init, dict):
-            init_d: dict[str, object] = init
-            init_str = _render_expr(init_d.get("value")) if init_d.get("value") is not None else "$null"
-            init_target = _render_expr(init_d.get("target"))
-        else:
-            init_str = "$null"
-            init_target = "$_i"
-        test_str = _render_expr(test) if test is not None else "$true"
-        update_str = ""
-        if isinstance(update, dict):
-            update_d: dict[str, object] = update
-            uk = _get_str(update_d, "kind")
-            if uk == "AugAssign":
-                update_str = _render_expr(update_d.get("target")) + " += " + _render_expr(update_d.get("value"))
+        target_plan = stmt.get("target_plan")
+        iter_plan = stmt.get("iter_plan")
+        normalized = _get_dict(stmt, "normalized_exprs")
+
+        # Extract loop variable from target_plan
+        loop_var = "$_i"
+        if isinstance(target_plan, dict):
+            tp_d: dict[str, object] = target_plan
+            loop_var = "$" + _safe_ident(_get_str(tp_d, "id"), "_i")
+
+        # Try normalized_exprs (for_init_expr, for_cond_expr, for_update_expr)
+        init_expr = normalized.get("for_init_expr")
+        cond_expr = normalized.get("for_cond_expr")
+        update_expr = normalized.get("for_update_expr")
+
+        if init_expr is not None or cond_expr is not None:
+            init_str = loop_var + " = " + _render_expr(init_expr) if init_expr is not None else loop_var + " = 0"
+            cond_str = _render_expr(cond_expr) if cond_expr is not None else "$true"
+            if isinstance(update_expr, dict) and _get_str(update_expr, "kind") == "AugAssign":
+                ue_d: dict[str, object] = update_expr
+                update_str = _render_expr(ue_d.get("target")) + " += " + _render_expr(ue_d.get("value"))
+            elif update_expr is not None:
+                update_str = _render_expr(update_expr)
             else:
-                update_str = _render_expr(update_d)
-        lines = [indent + "for (" + init_target + " = " + init_str + "; " + test_str + "; " + update_str + ") {"]
+                update_str = loop_var + "++"
+            lines = [indent + "for (" + init_str + "; " + cond_str + "; " + update_str + ") {"]
+        elif isinstance(iter_plan, dict):
+            # Fallback: use iter_plan (StaticRangeForPlan)
+            ip_d: dict[str, object] = iter_plan
+            start = _render_expr(ip_d.get("start"))
+            stop = _render_expr(ip_d.get("stop"))
+            step = ip_d.get("step")
+            step_val = 1
+            if isinstance(step, dict) and step.get("value") is not None:
+                sv = step.get("value")
+                step_val = sv if isinstance(sv, int) else 1
+            lines = [indent + "for (" + loop_var + " = " + start + "; " + loop_var + " -lt " + stop + "; " + loop_var + " += " + str(step_val) + ") {"]
+        else:
+            lines = [indent + "for (" + loop_var + " = 0; $true; " + loop_var + "++) {"]
+
         lines.extend(_emit_body(body, indent=indent + "    ", ctx=ctx))
         lines.append(indent + "}")
         return lines
@@ -648,29 +671,45 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
 
 def _emit_function_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     name = _safe_ident(_get_str(stmt, "name"), "_fn")
-    params = _get_list(stmt, "params")
-    if len(params) == 0:
-        params = _get_list(stmt, "args")
     body = _get_list(stmt, "body")
 
+    # EAST3 uses arg_order (list[str]) + arg_defaults (dict[str, Any])
+    arg_order = _get_list(stmt, "arg_order")
+    arg_defaults = _get_dict(stmt, "arg_defaults")
+
     ps_params: list[str] = []
-    for p in params:
-        if isinstance(p, dict):
-            p_d: dict[str, object] = p
-            arg_name = _get_str(p_d, "arg")
-            if arg_name == "" :
-                arg_name = _get_str(p_d, "name")
-            if arg_name == "self":
+    if len(arg_order) > 0:
+        for arg_name in arg_order:
+            if not isinstance(arg_name, str) or arg_name == "self":
                 continue
-            default = p_d.get("default")
+            safe = "$" + _safe_ident(arg_name, "_p")
+            default = arg_defaults.get(arg_name)
             if default is not None:
-                ps_params.append("$" + _safe_ident(arg_name, "_p") + " = " + _render_expr(default))
+                ps_params.append(safe + " = " + _render_expr(default))
             else:
-                ps_params.append("$" + _safe_ident(arg_name, "_p"))
-        elif isinstance(p, str):
-            if p == "self":
-                continue
-            ps_params.append("$" + _safe_ident(p, "_p"))
+                ps_params.append(safe)
+    else:
+        # Fallback: try params/args (older EAST formats)
+        params = _get_list(stmt, "params")
+        if len(params) == 0:
+            params = _get_list(stmt, "args")
+        for p in params:
+            if isinstance(p, dict):
+                p_d: dict[str, object] = p
+                arg_name_s = _get_str(p_d, "arg")
+                if arg_name_s == "":
+                    arg_name_s = _get_str(p_d, "name")
+                if arg_name_s == "self":
+                    continue
+                default = p_d.get("default")
+                if default is not None:
+                    ps_params.append("$" + _safe_ident(arg_name_s, "_p") + " = " + _render_expr(default))
+                else:
+                    ps_params.append("$" + _safe_ident(arg_name_s, "_p"))
+            elif isinstance(p, str):
+                if p == "self":
+                    continue
+                ps_params.append("$" + _safe_ident(p, "_p"))
 
     decorators = _get_list(stmt, "decorator_list")
     lines: list[str] = []
@@ -726,6 +765,50 @@ def _emit_class_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -
     return lines
 
 
+def _simplify_main_guard_stmt(stmt: dict[str, Any]) -> dict[str, Any]:
+    """Unwrap py_assert_stdout/py_assert_all wrappers into direct function calls.
+
+    main_guard_body often contains ``print(py_assert_stdout(['...'], _case_main))``
+    which passes ``_case_main`` as a function object.  PowerShell cannot do this,
+    so we extract the inner function name and emit a direct call instead.
+    """
+    if _get_str(stmt, "kind") != "Expr":
+        return stmt
+    value = stmt.get("value")
+    if not isinstance(value, dict):
+        return stmt
+    # Unwrap print(py_assert_stdout(..., fn_name))
+    if _get_str(value, "kind") == "Call":
+        inner = _unwrap_assert_call(value)
+        if inner is not None:
+            return {"kind": "Expr", "value": {"kind": "Call", "func": inner, "args": []}}
+    return stmt
+
+
+def _unwrap_assert_call(call: dict[str, Any]) -> Any:
+    """If call is print(py_assert_*(…, fn_ref)), return fn_ref as a Call target."""
+    func = call.get("func")
+    if not isinstance(func, dict):
+        return None
+    fn_name = _get_str(func, "id") if _get_str(func, "kind") == "Name" else ""
+    args = _get_list(call, "args")
+    # print(py_assert_stdout([...], fn)) -> unwrap inner
+    if fn_name == "print" and len(args) == 1:
+        inner = args[0]
+        if isinstance(inner, dict) and _get_str(inner, "kind") == "Call":
+            return _unwrap_assert_call(inner)
+    # py_assert_stdout([...], fn) -> return fn
+    if fn_name in ("py_assert_stdout", "py_assert_all", "py_assert_true", "py_assert_eq"):
+        if len(args) >= 2:
+            fn_ref = args[-1]
+            if isinstance(fn_ref, dict) and _get_str(fn_ref, "kind") == "Name":
+                return fn_ref
+        # py_assert_all with single arg that is a list of calls
+        if len(args) == 1:
+            return None
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Module-level entry point
 # ---------------------------------------------------------------------------
@@ -741,6 +824,9 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
 
     reject_backend_general_union_type_exprs(east_doc, backend_name="PowerShell backend")
     reject_backend_typed_vararg_signatures(east_doc, backend_name="PowerShell backend")
+
+    renamed = _get_dict(east_doc, "renamed_symbols")
+    _RENAMED_SYMBOLS[0] = {k: v for k, v in renamed.items() if isinstance(k, str) and isinstance(v, str)}
 
     ctx: dict[str, Any] = {}
     lines: list[str] = [
@@ -769,7 +855,14 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
             lines.extend(_emit_stmt(stmt_d, indent="", ctx=ctx))
             lines.append("")
 
-    lines.append("if (Get-Command -Name main -ErrorAction SilentlyContinue) {")
-    lines.append("    main")
-    lines.append("}")
+    # Emit main guard body (if __name__ == "__main__")
+    main_guard = _get_list(east_doc, "main_guard_body")
+    if len(main_guard) > 0:
+        for stmt in main_guard:
+            if isinstance(stmt, dict):
+                stmt_d2: dict[str, object] = stmt
+                simplified = _simplify_main_guard_stmt(stmt_d2)
+                lines.extend(_emit_stmt(simplified, indent="", ctx=ctx))
+        lines.append("")
+
     return "\n".join(lines).rstrip() + "\n"

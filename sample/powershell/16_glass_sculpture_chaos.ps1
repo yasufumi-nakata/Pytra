@@ -13,7 +13,7 @@ $ErrorActionPreference = "Stop"
 # import: pytra.utils.gif
 
 function clamp01 {
-    param()
+    param($v)
     if (($v -lt 0.0)) {
         return 0.0
     }
@@ -24,18 +24,18 @@ function clamp01 {
 }
 
 function dot {
-    param()
+    param($ax, $ay, $az, $bx, $by, $bz)
     return ((($ax * $bx) + ($ay * $by)) + ($az * $bz))
 }
 
 function length {
-    param()
+    param($x, $y, $z)
     return $math.sqrt(((($x * $x) + ($y * $y)) + ($z * $z)))
 }
 
 function normalize {
-    param()
-    $l = length $x $y $z
+    param($x, $y, $z)
+    $l = (length $x $y $z)
     if (($l -lt 1e-09)) {
         return @(0.0, 0.0, 0.0)
     }
@@ -43,17 +43,17 @@ function normalize {
 }
 
 function reflect {
-    param()
-    $d = (dot $ix $iy $iz $nx $ny $nz * 2.0)
+    param($ix, $iy, $iz, $nx, $ny, $nz)
+    $d = ((dot $ix $iy $iz $nx $ny $nz) * 2.0)
     return @(($ix - ($d * $nx)), ($iy - ($d * $ny)), ($iz - ($d * $nz)))
 }
 
 function refract {
-    param()
-    $cosi = (-dot $ix $iy $iz $nx $ny $nz)
+    param($ix, $iy, $iz, $nx, $ny, $nz, $eta)
+    $cosi = (-(dot $ix $iy $iz $nx $ny $nz))
     $sint2 = (($eta * $eta) * (1.0 - ($cosi * $cosi)))
     if (($sint2 -gt 1.0)) {
-        return reflect $ix $iy $iz $nx $ny $nz
+        return (reflect $ix $iy $iz $nx $ny $nz)
     }
     $cost = $math.sqrt((1.0 - $sint2))
     $k = (($eta * $cosi) - $cost)
@@ -61,13 +61,13 @@ function refract {
 }
 
 function schlick {
-    param()
+    param($cos_theta, $f0)
     $m = (1.0 - $cos_theta)
     return ($f0 + ((1.0 - $f0) * (((($m * $m) * $m) * $m) * $m)))
 }
 
 function sky_color {
-    param()
+    param($dx, $dy, $dz, $tphase)
     $t = (0.5 * ($dy + 1.0))
     $r = (0.06 + (0.2 * $t))
     $g = (0.1 + (0.25 * $t))
@@ -76,11 +76,11 @@ function sky_color {
     $r += (0.08 * $band)
     $g += (0.05 * $band)
     $b += (0.12 * $band)
-    return @(clamp01 $r, clamp01 $g, clamp01 $b)
+    return @((clamp01 $r), (clamp01 $g), (clamp01 $b))
 }
 
 function sphere_intersect {
-    param()
+    param($ox, $oy, $oz, $dx, $dy, $dz, $cx, $cy, $cz, $radius)
     $lx = ($ox - $cx)
     $ly = ($oy - $cy)
     $lz = ($oz - $cz)
@@ -104,10 +104,10 @@ function sphere_intersect {
 
 function palette_332 {
     param()
-    $p = bytearray (256 * 3)
+    $p = (bytearray (256 * 3))
     $__hoisted_cast_1 = __pytra_float 7
     $__hoisted_cast_2 = __pytra_float 3
-    for ($_i = $null; $true; ) {
+    for ($i = 0; ($i -lt 256); $i++) {
         $r = (($i -shr 5) -band 7)
         $g = (($i -shr 2) -band 7)
         $b = ($i -band 3)
@@ -115,19 +115,19 @@ function palette_332 {
         $p[(($i * 3) + 1)] = __pytra_int ((255 * $g) / $__hoisted_cast_1)
         $p[(($i * 3) + 2)] = __pytra_int ((255 * $b) / $__hoisted_cast_2)
     }
-    return bytes $p
+    return (bytes $p)
 }
 
 function quantize_332 {
-    param()
-    $rr = __pytra_int (clamp01 $r * 255.0)
-    $gg = __pytra_int (clamp01 $g * 255.0)
-    $bb = __pytra_int (clamp01 $b * 255.0)
+    param($r, $g, $b)
+    $rr = __pytra_int ((clamp01 $r) * 255.0)
+    $gg = __pytra_int ((clamp01 $g) * 255.0)
+    $bb = __pytra_int ((clamp01 $b) * 255.0)
     return (((($rr -shr 5) -shl 5) + (($gg -shr 5) -shl 2)) + ($bb -shr 6))
 }
 
 function render_frame {
-    param()
+    param($width, $height, $frame_id, $frames_n)
     $t = ($frame_id / $frames_n)
     $tphase = ((2.0 * $math.pi) * $t)
     $cam_r = 3.0
@@ -137,9 +137,9 @@ function render_frame {
     $look_x = 0.0
     $look_y = 0.35
     $look_z = 0.0
-    @($fwd_x, $fwd_y, $fwd_z) = normalize ($look_x - $cam_x) ($look_y - $cam_y) ($look_z - $cam_z)
-    @($right_x, $right_y, $right_z) = normalize $fwd_z 0.0 (-$fwd_x)
-    @($up_x, $up_y, $up_z) = normalize (($right_y * $fwd_z) - ($right_z * $fwd_y)) (($right_z * $fwd_x) - ($right_x * $fwd_z)) (($right_x * $fwd_y) - ($right_y * $fwd_x))
+    @($fwd_x, $fwd_y, $fwd_z) = (normalize ($look_x - $cam_x) ($look_y - $cam_y) ($look_z - $cam_z))
+    @($right_x, $right_y, $right_z) = (normalize $fwd_z 0.0 (-$fwd_x))
+    @($up_x, $up_y, $up_z) = (normalize (($right_y * $fwd_z) - ($right_z * $fwd_y)) (($right_z * $fwd_x) - ($right_x * $fwd_z)) (($right_x * $fwd_y) - ($right_y * $fwd_x)))
     $s0x = (0.9 * $math.cos((1.3 * $tphase)))
     $s0y = (0.15 + (0.35 * $math.sin((1.7 * $tphase))))
     $s0z = (0.9 * $math.sin((1.3 * $tphase)))
@@ -153,20 +153,20 @@ function render_frame {
     $lx = (2.4 * $math.cos(($tphase * 1.8)))
     $ly = (1.8 + (0.8 * $math.sin(($tphase * 1.2))))
     $lz = (2.4 * $math.sin(($tphase * 1.8)))
-    $frame = bytearray ($width * $height)
+    $frame = (bytearray ($width * $height))
     $aspect = ($width / $height)
     $fov = 1.25
     $__hoisted_cast_3 = __pytra_float $height
     $__hoisted_cast_4 = __pytra_float $width
-    for ($_i = $null; $true; ) {
+    for ($py = 0; ($py -lt $height); $py++) {
         $row_base = ($py * $width)
         $sy = (1.0 - ((2.0 * ($py + 0.5)) / $__hoisted_cast_3))
-        for ($_i = $null; $true; ) {
+        for ($px = 0; ($px -lt $width); $px++) {
             $sx = ((((2.0 * ($px + 0.5)) / $__hoisted_cast_4) - 1.0) * $aspect)
             $rx = ($fwd_x + ($fov * (($sx * $right_x) + ($sy * $up_x))))
             $ry = ($fwd_y + ($fov * (($sx * $right_y) + ($sy * $up_y))))
             $rz = ($fwd_z + ($fov * (($sx * $right_z) + ($sy * $up_z))))
-            @($dx, $dy, $dz) = normalize $rx $ry $rz
+            @($dx, $dy, $dz) = (normalize $rx $ry $rz)
             $best_t = 1000000000.0
             $hit_kind = 0
             $r = 0.0
@@ -179,23 +179,23 @@ function render_frame {
                     $hit_kind = 1
                 }
             }
-            $t0 = sphere_intersect $cam_x $cam_y $cam_z $dx $dy $dz $s0x $s0y $s0z 0.65
+            $t0 = (sphere_intersect $cam_x $cam_y $cam_z $dx $dy $dz $s0x $s0y $s0z 0.65)
             if ((($t0 -gt 0.0) -and ($t0 -lt $best_t))) {
                 $best_t = $t0
                 $hit_kind = 2
             }
-            $t1 = sphere_intersect $cam_x $cam_y $cam_z $dx $dy $dz $s1x $s1y $s1z 0.72
+            $t1 = (sphere_intersect $cam_x $cam_y $cam_z $dx $dy $dz $s1x $s1y $s1z 0.72)
             if ((($t1 -gt 0.0) -and ($t1 -lt $best_t))) {
                 $best_t = $t1
                 $hit_kind = 3
             }
-            $t2 = sphere_intersect $cam_x $cam_y $cam_z $dx $dy $dz $s2x $s2y $s2z 0.58
+            $t2 = (sphere_intersect $cam_x $cam_y $cam_z $dx $dy $dz $s2x $s2y $s2z 0.58)
             if ((($t2 -gt 0.0) -and ($t2 -lt $best_t))) {
                 $best_t = $t2
                 $hit_kind = 4
             }
             if (($hit_kind -eq 0)) {
-                @($r, $g, $b) = sky_color $dx $dy $dz $tphase
+                @($r, $g, $b) = (sky_color $dx $dy $dz $tphase)
             } elseif (($hit_kind -eq 1)) {
                 $hx = ($cam_x + ($best_t * $dx))
                 $hz = ($cam_z + ($best_t * $dz))
@@ -208,7 +208,7 @@ function render_frame {
                 $lxv = ($lx - $hx)
                 $lyv = ($ly - (-1.2))
                 $lzv = ($lz - $hz)
-                @($ldx, $ldy, $ldz) = normalize $lxv $lyv $lzv
+                @($ldx, $ldy, $ldz) = (normalize $lxv $lyv $lzv)
                 $ndotl = [Math]::Max($ldy, 0.0)
                 $ldist2 = ((($lxv * $lxv) + ($lyv * $lyv)) + ($lzv * $lzv))
                 $glow = (8.0 / (1.0 + $ldist2))
@@ -239,22 +239,22 @@ function render_frame {
                 $hx = ($cam_x + ($best_t * $dx))
                 $hy = ($cam_y + ($best_t * $dy))
                 $hz = ($cam_z + ($best_t * $dz))
-                @($nx, $ny, $nz) = normalize (($hx - $cx) / $rad) (($hy - $cy) / $rad) (($hz - $cz) / $rad)
-                @($rdx, $rdy, $rdz) = reflect $dx $dy $dz $nx $ny $nz
-                @($tdx, $tdy, $tdz) = refract $dx $dy $dz $nx $ny $nz (1.0 / 1.45)
-                @($sr, $sg, $sb) = sky_color $rdx $rdy $rdz $tphase
-                @($tr, $tg, $tb) = sky_color $tdx $tdy $tdz ($tphase + 0.8)
+                @($nx, $ny, $nz) = (normalize (($hx - $cx) / $rad) (($hy - $cy) / $rad) (($hz - $cz) / $rad))
+                @($rdx, $rdy, $rdz) = (reflect $dx $dy $dz $nx $ny $nz)
+                @($tdx, $tdy, $tdz) = (refract $dx $dy $dz $nx $ny $nz (1.0 / 1.45))
+                @($sr, $sg, $sb) = (sky_color $rdx $rdy $rdz $tphase)
+                @($tr, $tg, $tb) = (sky_color $tdx $tdy $tdz ($tphase + 0.8))
                 $cosi = [Math]::Max((-((($dx * $nx) + ($dy * $ny)) + ($dz * $nz))), 0.0)
-                $fr = schlick $cosi 0.04
+                $fr = (schlick $cosi 0.04)
                 $r = (($tr * (1.0 - $fr)) + ($sr * $fr))
                 $g = (($tg * (1.0 - $fr)) + ($sg * $fr))
                 $b = (($tb * (1.0 - $fr)) + ($sb * $fr))
                 $lxv = ($lx - $hx)
                 $lyv = ($ly - $hy)
                 $lzv = ($lz - $hz)
-                @($ldx, $ldy, $ldz) = normalize $lxv $lyv $lzv
+                @($ldx, $ldy, $ldz) = (normalize $lxv $lyv $lzv)
                 $ndotl = [Math]::Max(((($nx * $ldx) + ($ny * $ldy)) + ($nz * $ldz)), 0.0)
-                @($hvx, $hvy, $hvz) = normalize ($ldx - $dx) ($ldy - $dy) ($ldz - $dz)
+                @($hvx, $hvy, $hvz) = (normalize ($ldx - $dx) ($ldy - $dy) ($ldz - $dz))
                 $ndoth = [Math]::Max(((($nx * $hvx) + ($ny * $hvy)) + ($nz * $hvz)), 0.0)
                 $spec = ($ndoth * $ndoth)
                 $spec = ($spec * $spec)
@@ -278,13 +278,13 @@ function render_frame {
                     $b *= 0.95
                 }
             }
-            $r = $math.sqrt(clamp01 $r)
-            $g = $math.sqrt(clamp01 $g)
-            $b = $math.sqrt(clamp01 $b)
-            $frame[($row_base + $px)] = quantize_332 $r $g $b
+            $r = $math.sqrt((clamp01 $r))
+            $g = $math.sqrt((clamp01 $g))
+            $b = $math.sqrt((clamp01 $b))
+            $frame[($row_base + $px)] = (quantize_332 $r $g $b)
         }
     }
-    return bytes $frame
+    return (bytes $frame)
 }
 
 function run_16_glass_sculpture_chaos {
@@ -293,18 +293,16 @@ function run_16_glass_sculpture_chaos {
     $height = 240
     $frames_n = 72
     $out_path = "sample/out/16_glass_sculpture_chaos.gif"
-    $start = perf_counter
+    $start = (perf_counter)
     $frames = @()
-    for ($_i = $null; $true; ) {
-        $frames += @(render_frame $width $height $i $frames_n)
+    for ($i = 0; ($i -lt $frames_n); $i++) {
+        $frames += @((render_frame $width $height $i $frames_n))
     }
-    save_gif $out_path $width $height $frames palette_332
-    $elapsed = (perf_counter - $start)
+    (save_gif $out_path $width $height $frames (palette_332))
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "frames:" $frames_n
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_16_glass_sculpture_chaos)

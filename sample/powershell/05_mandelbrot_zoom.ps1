@@ -11,13 +11,13 @@ $ErrorActionPreference = "Stop"
 # import: pytra.utils.gif
 
 function render_frame {
-    param()
-    $frame = bytearray ($width * $height)
+    param($width, $height, $center_x, $center_y, $scale, $max_iter)
+    $frame = (bytearray ($width * $height))
     $__hoisted_cast_1 = __pytra_float $max_iter
-    for ($_i = $null; $true; ) {
+    for ($y = 0; ($y -lt $height); $y++) {
         $row_base = ($y * $width)
         $cy = ($center_y + (($y - ($height * 0.5)) * $scale))
-        for ($_i = $null; $true; ) {
+        for ($x = 0; ($x -lt $width); $x++) {
             $cx = ($center_x + (($x - ($width * 0.5)) * $scale))
             $zx = 0.0
             $zy = 0.0
@@ -35,7 +35,7 @@ function render_frame {
             $frame[($row_base + $x)] = __pytra_int ((255.0 * $i) / $__hoisted_cast_1)
         }
     }
-    return bytes $frame
+    return (bytes $frame)
 }
 
 function run_05_mandelbrot_zoom {
@@ -49,20 +49,18 @@ function run_05_mandelbrot_zoom {
     $base_scale = (3.2 / $width)
     $zoom_per_frame = 0.93
     $out_path = "sample/out/05_mandelbrot_zoom.gif"
-    $start = perf_counter
+    $start = (perf_counter)
     $frames = @()
     $scale = $base_scale
-    for ($_i = $null; $true; ) {
-        $frames += @(render_frame $width $height $center_x $center_y $scale $max_iter)
+    for ($_ = 0; ($_ -lt $frame_count); $_++) {
+        $frames += @((render_frame $width $height $center_x $center_y $scale $max_iter))
         $scale *= $zoom_per_frame
     }
-    save_gif $out_path $width $height $frames grayscale_palette
-    $elapsed = (perf_counter - $start)
+    (save_gif $out_path $width $height $frames (grayscale_palette))
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "frames:" $frame_count
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_05_mandelbrot_zoom)

@@ -12,8 +12,8 @@ $ErrorActionPreference = "Stop"
 
 function fire_palette {
     param()
-    $p = bytearray
-    for ($_i = $null; $true; ) {
+    $p = (bytearray)
+    for ($i = 0; ($i -lt 256); $i++) {
         $r = 0
         $g = 0
         $b = 0
@@ -34,7 +34,7 @@ function fire_palette {
         $p += @($g)
         $p += @($b)
     }
-    return bytes $p
+    return (bytes $p)
 }
 
 function run_09_fire_simulation {
@@ -43,16 +43,16 @@ function run_09_fire_simulation {
     $h = 260
     $steps = 420
     $out_path = "sample/out/09_fire_simulation.gif"
-    $start = perf_counter
+    $start = (perf_counter)
     $heat = $null
     $frames = @()
-    for ($_i = $null; $true; ) {
-        for ($_i = $null; $true; ) {
+    for ($t = 0; ($t -lt $steps); $t++) {
+        for ($x = 0; ($x -lt $w); $x++) {
             $val = (170 + ((($x * 13) + ($t * 17)) % 86))
             $heat[($h - 1)][$x] = $val
         }
-        for ($_i = $null; $true; ) {
-            for ($_i = $null; $true; ) {
+        for ($y = 0; ($y -lt $h); $y++) {
+            for ($x = 0; ($x -lt $w); $x++) {
                 $a = $heat[$y][$x]
                 $b = $heat[$y][((($x - 1) + $w) % $w)]
                 $c = $heat[$y][(($x + 1) % $w)]
@@ -63,22 +63,20 @@ function run_09_fire_simulation {
                 $heat[($y - 1)][$x] = $(if (($nv -gt 0)) { $nv } else { 0 })
             }
         }
-        $frame = bytearray ($w * $h)
-        for ($_i = $null; $true; ) {
+        $frame = (bytearray ($w * $h))
+        for ($yy = 0; ($yy -lt $h); $yy++) {
             $row_base = ($yy * $w)
-            for ($_i = $null; $true; ) {
+            for ($xx = 0; ($xx -lt $w); $xx++) {
                 $frame[($row_base + $xx)] = $heat[$yy][$xx]
             }
         }
-        $frames += @(bytes $frame)
+        $frames += @((bytes $frame))
     }
-    save_gif $out_path $w $h $frames fire_palette
-    $elapsed = (perf_counter - $start)
+    (save_gif $out_path $w $h $frames (fire_palette))
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "frames:" $steps
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_09_fire_simulation)

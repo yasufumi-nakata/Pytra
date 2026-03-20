@@ -11,22 +11,22 @@ $ErrorActionPreference = "Stop"
 # import: pytra.utils.gif
 
 function capture {
-    param()
+    param($grid, $w, $h, $scale)
     $width = ($w * $scale)
     $height = ($h * $scale)
-    $frame = bytearray ($width * $height)
-    for ($_i = $null; $true; ) {
-        for ($_i = $null; $true; ) {
+    $frame = (bytearray ($width * $height))
+    for ($y = 0; ($y -lt $h); $y++) {
+        for ($x = 0; ($x -lt $w); $x++) {
             $v = $(if (($grid[$y][$x] -eq 0)) { 255 } else { 40 })
-            for ($_i = $null; $true; ) {
+            for ($yy = 0; ($yy -lt $scale); $yy++) {
                 $base = (((($y * $scale) + $yy) * $width) + ($x * $scale))
-                for ($_i = $null; $true; ) {
+                for ($xx = 0; ($xx -lt $scale); $xx++) {
                     $frame[($base + $xx)] = $v
                 }
             }
         }
     }
-    return bytes $frame
+    return (bytes $frame)
 }
 
 function run_13_maze_generation_steps {
@@ -36,7 +36,7 @@ function run_13_maze_generation_steps {
     $scale = 5
     $capture_every = 20
     $out_path = "sample/out/13_maze_generation_steps.gif"
-    $start = perf_counter
+    $start = (perf_counter)
     $grid = $null
     $stack = @(@(1, 1))
     $grid[1][1] = 0
@@ -46,7 +46,7 @@ function run_13_maze_generation_steps {
     while ($stack) {
         @($x, $y) = $stack[(-1)]
         $candidates = @()
-        for ($_i = $null; $true; ) {
+        for ($k = 0; ($k -lt 4); $k++) {
             @($dx, $dy) = $dirs[$k]
             $nx = ($x + $dx)
             $ny = ($y + $dy)
@@ -72,18 +72,16 @@ function run_13_maze_generation_steps {
             $stack += @(@($nx, $ny))
         }
         if ((($step % $capture_every) -eq 0)) {
-            $frames += @(capture $grid $cell_w $cell_h $scale)
+            $frames += @((capture $grid $cell_w $cell_h $scale))
         }
         $step += 1
     }
-    $frames += @(capture $grid $cell_w $cell_h $scale)
-    save_gif $out_path ($cell_w * $scale) ($cell_h * $scale) $frames grayscale_palette
-    $elapsed = (perf_counter - $start)
+    $frames += @((capture $grid $cell_w $cell_h $scale))
+    (save_gif $out_path ($cell_w * $scale) ($cell_h * $scale) $frames (grayscale_palette))
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "frames:" __pytra_len $frames
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_13_maze_generation_steps)

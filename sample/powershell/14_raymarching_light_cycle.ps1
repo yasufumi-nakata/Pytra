@@ -14,8 +14,8 @@ $ErrorActionPreference = "Stop"
 
 function palette {
     param()
-    $p = bytearray
-    for ($_i = $null; $true; ) {
+    $p = (bytearray)
+    for ($i = 0; ($i -lt 256); $i++) {
         $r = [Math]::Min(255, __pytra_int (20 + ($i * 0.9)))
         $g = [Math]::Min(255, __pytra_int (10 + ($i * 0.7)))
         $b = [Math]::Min(255, (30 + $i))
@@ -23,11 +23,11 @@ function palette {
         $p += @($g)
         $p += @($b)
     }
-    return bytes $p
+    return (bytes $p)
 }
 
 function scene {
-    param()
+    param($x, $y, $light_x, $light_y)
     $x1 = ($x + 0.45)
     $y1 = ($y + 0.2)
     $x2 = ($x - 0.35)
@@ -49,33 +49,31 @@ function run_14_raymarching_light_cycle {
     $h = 240
     $frames_n = 84
     $out_path = "sample/out/14_raymarching_light_cycle.gif"
-    $start = perf_counter
+    $start = (perf_counter)
     $frames = @()
     $__hoisted_cast_1 = __pytra_float $frames_n
     $__hoisted_cast_2 = __pytra_float ($h - 1)
     $__hoisted_cast_3 = __pytra_float ($w - 1)
-    for ($_i = $null; $true; ) {
-        $frame = bytearray ($w * $h)
+    for ($t = 0; ($t -lt $frames_n); $t++) {
+        $frame = (bytearray ($w * $h))
         $a = ((($t / $__hoisted_cast_1) * $math.pi) * 2.0)
         $light_x = (0.75 * $math.cos($a))
         $light_y = (0.55 * $math.sin(($a * 1.2)))
-        for ($_i = $null; $true; ) {
+        for ($y = 0; ($y -lt $h); $y++) {
             $row_base = ($y * $w)
             $py = ((($y / $__hoisted_cast_2) * 2.0) - 1.0)
-            for ($_i = $null; $true; ) {
+            for ($x = 0; ($x -lt $w); $x++) {
                 $px = ((($x / $__hoisted_cast_3) * 2.0) - 1.0)
-                $frame[($row_base + $x)] = scene $px $py $light_x $light_y
+                $frame[($row_base + $x)] = (scene $px $py $light_x $light_y)
             }
         }
-        $frames += @(bytes $frame)
+        $frames += @((bytes $frame))
     }
-    save_gif $out_path $w $h $frames palette
-    $elapsed = (perf_counter - $start)
+    (save_gif $out_path $w $h $frames (palette))
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "frames:" $frames_n
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_14_raymarching_light_cycle)

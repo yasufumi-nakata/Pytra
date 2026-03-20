@@ -14,8 +14,8 @@ $ErrorActionPreference = "Stop"
 
 function color_palette {
     param()
-    $p = bytearray
-    for ($_i = $null; $true; ) {
+    $p = (bytearray)
+    for ($i = 0; ($i -lt 256); $i++) {
         $r = $i
         $g = (($i * 3) % 256)
         $b = (255 - $i)
@@ -23,7 +23,7 @@ function color_palette {
         $p += @($g)
         $p += @($b)
     }
-    return bytes $p
+    return (bytes $p)
 }
 
 function run_11_lissajous_particles {
@@ -33,18 +33,18 @@ function run_11_lissajous_particles {
     $frames_n = 360
     $particles = 48
     $out_path = "sample/out/11_lissajous_particles.gif"
-    $start = perf_counter
+    $start = (perf_counter)
     $frames = @()
-    for ($_i = $null; $true; ) {
-        $frame = bytearray ($w * $h)
+    for ($t = 0; ($t -lt $frames_n); $t++) {
+        $frame = (bytearray ($w * $h))
         $__hoisted_cast_1 = __pytra_float $t
-        for ($_i = $null; $true; ) {
+        for ($p = 0; ($p -lt $particles); $p++) {
             $phase = ($p * 0.261799)
             $x = __pytra_int (($w * 0.5) + (($w * 0.38) * $math.sin(((0.11 * $__hoisted_cast_1) + ($phase * 2.0)))))
             $y = __pytra_int (($h * 0.5) + (($h * 0.38) * $math.sin(((0.17 * $__hoisted_cast_1) + ($phase * 3.0)))))
             $color = (30 + (($p * 9) % 220))
-            for ($_i = $null; $true; ) {
-                for ($_i = $null; $true; ) {
+            for ($dy = 0; ($dy -lt 3); $dy++) {
+                for ($dx = 0; ($dx -lt 3); $dx++) {
                     $xx = ($x + $dx)
                     $yy = ($y + $dy)
                     if ((($xx -ge 0) -and ($xx -lt $w) -and ($yy -ge 0) -and ($yy -lt $h))) {
@@ -61,15 +61,13 @@ function run_11_lissajous_particles {
                 }
             }
         }
-        $frames += @(bytes $frame)
+        $frames += @((bytes $frame))
     }
-    save_gif $out_path $w $h $frames color_palette
-    $elapsed = (perf_counter - $start)
+    (save_gif $out_path $w $h $frames (color_palette))
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "frames:" $frames_n
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_11_lissajous_particles)

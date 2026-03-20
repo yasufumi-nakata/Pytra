@@ -11,14 +11,14 @@ $ErrorActionPreference = "Stop"
 # import: pytra.utils
 
 function render_julia {
-    param()
-    $pixels = bytearray
+    param($width, $height, $max_iter, $cx, $cy)
+    $pixels = (bytearray)
     $__hoisted_cast_1 = __pytra_float ($height - 1)
     $__hoisted_cast_2 = __pytra_float ($width - 1)
     $__hoisted_cast_3 = __pytra_float $max_iter
-    for ($_i = $null; $true; ) {
+    for ($y = 0; ($y -lt $height); $y++) {
         $zy0 = ((-1.2) + (2.4 * ($y / $__hoisted_cast_1)))
-        for ($_i = $null; $true; ) {
+        for ($x = 0; ($x -lt $width); $x++) {
             $zx = ((-1.8) + (3.6 * ($x / $__hoisted_cast_2)))
             $zy = $zy0
             $i = 0
@@ -59,16 +59,14 @@ function run_julia {
     $height = 2160
     $max_iter = 20000
     $out_path = "sample/out/03_julia_set.png"
-    $start = perf_counter
-    $pixels = render_julia $width $height $max_iter (-0.8) 0.156
+    $start = (perf_counter)
+    $pixels = (render_julia $width $height $max_iter (-0.8) 0.156)
     $png.write_rgb_png($out_path, $width, $height, $pixels)
-    $elapsed = (perf_counter - $start)
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "size:" $width "x" $height
     __pytra_print "max_iter:" $max_iter
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_julia)

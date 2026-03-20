@@ -14,11 +14,11 @@ $ErrorActionPreference = "Stop"
 
 function julia_palette {
     param()
-    $palette = bytearray (256 * 3)
+    $palette = (bytearray (256 * 3))
     $palette[0] = 0
     $palette[1] = 0
     $palette[2] = 0
-    for ($_i = $null; $true; ) {
+    for ($i = 0; ($i -lt 256); $i++) {
         $t = (($i - 1) / 254.0)
         $r = __pytra_int (255.0 * ((((9.0 * (1.0 - $t)) * $t) * $t) * $t))
         $g = __pytra_int (255.0 * ((((15.0 * (1.0 - $t)) * (1.0 - $t)) * $t) * $t))
@@ -27,18 +27,18 @@ function julia_palette {
         $palette[(($i * 3) + 1)] = $g
         $palette[(($i * 3) + 2)] = $b
     }
-    return bytes $palette
+    return (bytes $palette)
 }
 
 function render_frame {
-    param()
-    $frame = bytearray ($width * $height)
+    param($width, $height, $cr, $ci, $max_iter, $phase)
+    $frame = (bytearray ($width * $height))
     $__hoisted_cast_1 = __pytra_float ($height - 1)
     $__hoisted_cast_2 = __pytra_float ($width - 1)
-    for ($_i = $null; $true; ) {
+    for ($y = 0; ($y -lt $height); $y++) {
         $row_base = ($y * $width)
         $zy0 = ((-1.2) + (2.4 * ($y / $__hoisted_cast_1)))
-        for ($_i = $null; $true; ) {
+        for ($x = 0; ($x -lt $width); $x++) {
             $zx = ((-1.8) + (3.6 * ($x / $__hoisted_cast_2)))
             $zy = $zy0
             $i = 0
@@ -60,7 +60,7 @@ function render_frame {
             }
         }
     }
-    return bytes $frame
+    return (bytes $frame)
 }
 
 function run_06_julia_parameter_sweep {
@@ -70,7 +70,7 @@ function run_06_julia_parameter_sweep {
     $frames_n = 72
     $max_iter = 180
     $out_path = "sample/out/06_julia_parameter_sweep.gif"
-    $start = perf_counter
+    $start = (perf_counter)
     $frames = @()
     $center_cr = (-0.745)
     $center_ci = 0.186
@@ -79,21 +79,19 @@ function run_06_julia_parameter_sweep {
     $start_offset = 20
     $phase_offset = 180
     $__hoisted_cast_3 = __pytra_float $frames_n
-    for ($_i = $null; $true; ) {
+    for ($i = 0; ($i -lt $frames_n); $i++) {
         $t = ((($i + $start_offset) % $frames_n) / $__hoisted_cast_3)
         $angle = ((2.0 * $math.pi) * $t)
         $cr = ($center_cr + ($radius_cr * $math.cos($angle)))
         $ci = ($center_ci + ($radius_ci * $math.sin($angle)))
         $phase = (($phase_offset + ($i * 5)) % 255)
-        $frames += @(render_frame $width $height $cr $ci $max_iter $phase)
+        $frames += @((render_frame $width $height $cr $ci $max_iter $phase))
     }
-    save_gif $out_path $width $height $frames julia_palette
-    $elapsed = (perf_counter - $start)
+    (save_gif $out_path $width $height $frames (julia_palette))
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "frames:" $frames_n
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_06_julia_parameter_sweep)

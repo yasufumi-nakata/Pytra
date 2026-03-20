@@ -18,14 +18,14 @@ function run_15_wave_interference_loop {
     $h = 240
     $frames_n = 96
     $out_path = "sample/out/15_wave_interference_loop.gif"
-    $start = perf_counter
+    $start = (perf_counter)
     $frames = @()
-    for ($_i = $null; $true; ) {
-        $frame = bytearray ($w * $h)
+    for ($t = 0; ($t -lt $frames_n); $t++) {
+        $frame = (bytearray ($w * $h))
         $phase = ($t * 0.12)
-        for ($_i = $null; $true; ) {
+        for ($y = 0; ($y -lt $h); $y++) {
             $row_base = ($y * $w)
-            for ($_i = $null; $true; ) {
+            for ($x = 0; ($x -lt $w); $x++) {
                 $dx = ($x - 160)
                 $dy = ($y - 120)
                 $v = ((($math.sin((($x + ($t * 1.5)) * 0.045)) + $math.sin((($y - ($t * 1.2)) * 0.04))) + $math.sin(((($x + $y) * 0.02) + $phase))) + $math.sin((($math.sqrt((($dx * $dx) + ($dy * $dy))) * 0.08) - ($phase * 1.3))))
@@ -39,15 +39,13 @@ function run_15_wave_interference_loop {
                 $frame[($row_base + $x)] = $c
             }
         }
-        $frames += @(bytes $frame)
+        $frames += @((bytes $frame))
     }
-    save_gif $out_path $w $h $frames grayscale_palette
-    $elapsed = (perf_counter - $start)
+    (save_gif $out_path $w $h $frames (grayscale_palette))
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "frames:" $frames_n
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_15_wave_interference_loop)

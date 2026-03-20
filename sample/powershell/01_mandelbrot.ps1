@@ -11,10 +11,10 @@ $ErrorActionPreference = "Stop"
 # import: pytra.utils
 
 function escape_count {
-    param()
+    param($cx, $cy, $max_iter)
     $x = 0.0
     $y = 0.0
-    for ($_i = $null; $true; ) {
+    for ($i = 0; ($i -lt $max_iter); $i++) {
         $x2 = ($x * $x)
         $y2 = ($y * $y)
         if ((($x2 + $y2) -gt 4.0)) {
@@ -27,7 +27,7 @@ function escape_count {
 }
 
 function color_map {
-    param()
+    param($iter_count, $max_iter)
     if (($iter_count -ge $max_iter)) {
         return @(0, 0, 0)
     }
@@ -39,16 +39,16 @@ function color_map {
 }
 
 function render_mandelbrot {
-    param()
-    $pixels = bytearray
+    param($width, $height, $max_iter, $x_min, $x_max, $y_min, $y_max)
+    $pixels = (bytearray)
     $__hoisted_cast_1 = __pytra_float ($height - 1)
     $__hoisted_cast_2 = __pytra_float ($width - 1)
     $__hoisted_cast_3 = __pytra_float $max_iter
-    for ($_i = $null; $true; ) {
+    for ($y = 0; ($y -lt $height); $y++) {
         $py = ($y_min + (($y_max - $y_min) * ($y / $__hoisted_cast_1)))
-        for ($_i = $null; $true; ) {
+        for ($x = 0; ($x -lt $width); $x++) {
             $px = ($x_min + (($x_max - $x_min) * ($x / $__hoisted_cast_2)))
-            $it = escape_count $px $py $max_iter
+            $it = (escape_count $px $py $max_iter)
             $r = $null
             $g = $null
             $b = $null
@@ -76,16 +76,14 @@ function run_mandelbrot {
     $height = 1200
     $max_iter = 1000
     $out_path = "sample/out/01_mandelbrot.png"
-    $start = perf_counter
-    $pixels = render_mandelbrot $width $height $max_iter (-2.2) 1.0 (-1.2) 1.2
+    $start = (perf_counter)
+    $pixels = (render_mandelbrot $width $height $max_iter (-2.2) 1.0 (-1.2) 1.2)
     $png.write_rgb_png($out_path, $width, $height, $pixels)
-    $elapsed = (perf_counter - $start)
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "size:" $width "x" $height
     __pytra_print "max_iter:" $max_iter
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_mandelbrot)

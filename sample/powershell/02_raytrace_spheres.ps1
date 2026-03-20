@@ -13,7 +13,7 @@ $ErrorActionPreference = "Stop"
 # import: pytra.std.time
 
 function clamp01 {
-    param()
+    param($v)
     if (($v -lt 0.0)) {
         return 0.0
     }
@@ -24,7 +24,7 @@ function clamp01 {
 }
 
 function hit_sphere {
-    param()
+    param($ox, $oy, $oz, $dx, $dy, $dz, $cx, $cy, $cz, $r)
     $lx = ($ox - $cx)
     $ly = ($oy - $cy)
     $lz = ($oz - $cz)
@@ -48,8 +48,8 @@ function hit_sphere {
 }
 
 function render {
-    param()
-    $pixels = bytearray
+    param($width, $height, $aa)
+    $pixels = (bytearray)
     $ox = 0.0
     $oy = 0.0
     $oz = (-3.0)
@@ -60,13 +60,13 @@ function render {
     $__hoisted_cast_2 = __pytra_float ($height - 1)
     $__hoisted_cast_3 = __pytra_float ($width - 1)
     $__hoisted_cast_4 = __pytra_float $height
-    for ($_i = $null; $true; ) {
-        for ($_i = $null; $true; ) {
+    for ($y = 0; ($y -lt $height); $y++) {
+        for ($x = 0; ($x -lt $width); $x++) {
             $ar = 0
             $ag = 0
             $ab = 0
-            for ($_i = $null; $true; ) {
-                for ($_i = $null; $true; ) {
+            for ($ay = 0; ($ay -lt $aa); $ay++) {
+                for ($ax = 0; ($ax -lt $aa); $ax++) {
                     $fy = (($y + (($ay + 0.5) / $__hoisted_cast_1)) / $__hoisted_cast_2)
                     $fx = (($x + (($ax + 0.5) / $__hoisted_cast_1)) / $__hoisted_cast_3)
                     $sy = (1.0 - (2.0 * $fy))
@@ -80,17 +80,17 @@ function render {
                     $dz *= $inv_len
                     $t_min = 1e+30
                     $hit_id = (-1)
-                    $t = hit_sphere $ox $oy $oz $dx $dy $dz (-0.8) (-0.2) 2.2 0.8
+                    $t = (hit_sphere $ox $oy $oz $dx $dy $dz (-0.8) (-0.2) 2.2 0.8)
                     if ((($t -gt 0.0) -and ($t -lt $t_min))) {
                         $t_min = $t
                         $hit_id = 0
                     }
-                    $t = hit_sphere $ox $oy $oz $dx $dy $dz 0.9 0.1 2.9 0.95
+                    $t = (hit_sphere $ox $oy $oz $dx $dy $dz 0.9 0.1 2.9 0.95)
                     if ((($t -gt 0.0) -and ($t -lt $t_min))) {
                         $t_min = $t
                         $hit_id = 1
                     }
-                    $t = hit_sphere $ox $oy $oz $dx $dy $dz 0.0 (-1001.0) 3.0 1000.0
+                    $t = (hit_sphere $ox $oy $oz $dx $dy $dz 0.0 (-1001.0) 3.0 1000.0)
                     if ((($t -gt 0.0) -and ($t -lt $t_min))) {
                         $t_min = $t
                         $hit_id = 2
@@ -119,7 +119,7 @@ function render {
                             $nz = 0.0
                         }
                         $diff = ((($nx * (-$lx)) + ($ny * (-$ly))) + ($nz * (-$lz)))
-                        $diff = clamp01 $diff
+                        $diff = (clamp01 $diff)
                         $base_r = 0.0
                         $base_g = 0.0
                         $base_b = 0.0
@@ -144,9 +144,9 @@ function render {
                             }
                         }
                         $shade = (0.12 + (0.88 * $diff))
-                        $r = __pytra_int (255.0 * clamp01 ($base_r * $shade))
-                        $g = __pytra_int (255.0 * clamp01 ($base_g * $shade))
-                        $b = __pytra_int (255.0 * clamp01 ($base_b * $shade))
+                        $r = __pytra_int (255.0 * (clamp01 ($base_r * $shade)))
+                        $g = __pytra_int (255.0 * (clamp01 ($base_g * $shade)))
+                        $b = __pytra_int (255.0 * (clamp01 ($base_b * $shade)))
                     } else {
                         $tsky = (0.5 * ($dy + 1.0))
                         $r = __pytra_int (255.0 * (0.65 + (0.2 * $tsky)))
@@ -173,15 +173,13 @@ function run_raytrace {
     $height = 900
     $aa = 2
     $out_path = "sample/out/02_raytrace_spheres.png"
-    $start = perf_counter
-    $pixels = render $width $height $aa
+    $start = (perf_counter)
+    $pixels = (render $width $height $aa)
     $png.write_rgb_png($out_path, $width, $height, $pixels)
-    $elapsed = (perf_counter - $start)
+    $elapsed = ((perf_counter) - $start)
     __pytra_print "output:" $out_path
     __pytra_print "size:" $width "x" $height
     __pytra_print "elapsed_sec:" $elapsed
 }
 
-if (Get-Command -Name main -ErrorAction SilentlyContinue) {
-    main
-}
+(run_raytrace)
