@@ -13,6 +13,7 @@ from typing import Any
 from toolchain.frontends.east1_build import East1BuildHelpers
 from toolchain.link import build_linked_program_from_module_map as _build_linked_program_from_module_map
 from toolchain.link import optimize_linked_program
+from toolchain.link.program_loader import add_runtime_east_to_module_map
 from toolchain.compiler.transpile_cli import (
     check_analyze_stage_guards,
     check_guard_limit,
@@ -369,6 +370,15 @@ def _rewrite_module_east_map_from_linked_program(
     for path_txt, east_doc in original_module_east_map.items():
         resolved = str(Path(path_txt).resolve())
         out[path_txt] = resolved_docs.get(resolved, east_doc)
+    # Also include runtime modules added by linker but not in original map
+    for resolved_path, east_doc in resolved_docs.items():
+        already_present = False
+        for path_txt in original_module_east_map:
+            if str(Path(path_txt).resolve()) == resolved_path:
+                already_present = True
+                break
+        if not already_present:
+            out[resolved_path] = east_doc
     return out
 
 
@@ -382,9 +392,11 @@ def _optimize_cpp_module_east_map(
 ) -> dict[str, dict[str, Any]]:
     if len(module_east_map) == 0:
         return {}
+    # Add runtime .east files for imported runtime modules (transitive closure).
+    augmented_map = add_runtime_east_to_module_map(module_east_map)
     program = _build_linked_program_from_module_map(
         entry_path,
-        module_east_map,
+        augmented_map,
         target="cpp",
         dispatch_mode=_normalize_link_dispatch_mode(object_dispatch_mode),
         options={
@@ -393,7 +405,7 @@ def _optimize_cpp_module_east_map(
         },
     )
     optimized_program = optimize_linked_program(program).linked_program
-    return _rewrite_module_east_map_from_linked_program(optimized_program, module_east_map)
+    return _rewrite_module_east_map_from_linked_program(optimized_program, augmented_map)
 
 
 def load_east(

@@ -11,6 +11,7 @@ from toolchain.link.global_optimizer import LinkedProgramOptimizationResult
 from toolchain.link.global_optimizer import optimize_linked_program
 from toolchain.link.program_call_graph import build_linked_program_call_graph
 from toolchain.link.program_call_graph import LinkedProgramCallGraph
+from toolchain.link.program_loader import add_runtime_east_to_module_map
 from toolchain.link.program_loader import build_linked_program_from_module_map
 from toolchain.link.program_loader import load_linked_program
 from toolchain.link.program_model import LINK_INPUT_SCHEMA
@@ -29,6 +30,7 @@ __all__ = [
     "LinkedProgramOptimizationResult",
     "optimize_linked_program",
     "build_linked_program_call_graph",
+    "add_runtime_east_to_module_map",
     "build_linked_program_from_module_map",
     "LinkedProgramCallGraph",
     "LinkedProgram",

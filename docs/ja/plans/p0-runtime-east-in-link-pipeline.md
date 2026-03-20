@@ -128,3 +128,4 @@ out/cpp/
 ## 決定ログ
 
 - 2026-03-20: pathlib g++ ビルドで `str _value;` フィールド宣言欠落が発覚。原因は `_generate_runtime_east_headers` の standalone transpile。ユーザーから「linker 経由で C++ にすると言っているのに standalone transpile があるのがおかしい」と指摘。runtime .east を link パイプラインに統合し standalone transpile を廃止する設計で P0 最優先として起票。
+- 2026-03-20: S1-S3 実装完了。`_optimize_cpp_module_east_map` で `add_runtime_east_to_module_map` を呼び出し、runtime .east をリンカー経由で処理するよう変更。multifile_writer で runtime モジュールを `kind="runtime"` として検出し、namespace 正規パス（`std/pathlib.h` 等）に出力。program_writer でリンク済み runtime モジュールを先に書き出し、`_generate_runtime_east_headers` は残存モジュールのフォールバックとして維持。pathlib.h に `str _value;` フィールドと `RcObject` 継承が正しく生成されることを確認。unit test 276 件通過。

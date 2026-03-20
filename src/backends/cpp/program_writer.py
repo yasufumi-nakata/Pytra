@@ -259,8 +259,11 @@ def _normalize_rendered_modules(rendered_modules: Any) -> list[dict[str, Any]]:
         label = _text(item.get("label"))
         header_text = _text(item.get("header_text"))
         source_text = _text(item.get("source_text"))
-        if label == "" or header_text == "" or source_text == "":
-            raise RuntimeError("CppProgramWriter requires label/header_text/source_text for each rendered module")
+        kind = _text(item.get("kind")) if _text(item.get("kind")) != "" else "user"
+        if label == "" or header_text == "":
+            raise RuntimeError("CppProgramWriter requires label/header_text for each rendered module")
+        if source_text == "" and kind != "runtime":
+            raise RuntimeError("CppProgramWriter requires source_text for non-runtime rendered module")
         out.append(
             {
                 "module": _text(item.get("module")),
@@ -305,12 +308,8 @@ def write_cpp_rendered_program(
     mkdirs_for_cli(str(include_dir))
     mkdirs_for_cli(str(src_dir))
 
-    # Copy native runtime and generate C++ from .east for self-contained build.
-    # Note: runtime modules included in the LinkedProgram are handled by the
-    # multifile writer (link pipeline). _generate_runtime_east_headers covers
-    # the remaining runtime modules not in the link (e.g. string_ops, type_id).
+    # Copy native runtime first.
     runtime_files = _copy_native_runtime_to_output(output_root)
-    runtime_files.extend(_generate_runtime_east_headers(output_root))
 
     generated_lines_total = 0
     output_files: list[str] = list(runtime_files)
@@ -321,6 +320,8 @@ def write_cpp_rendered_program(
     write_text_file(prelude_hdr, prelude_txt)
     output_files.append(str(prelude_hdr))
 
+    # Write linked runtime modules BEFORE _generate_runtime_east_headers so
+    # that the standalone generator skips modules already handled by the linker.
     manifest_modules: list[dict[str, Any]] = []
     for item in modules:
         label = _text(item.get("label"))
@@ -328,26 +329,63 @@ def write_cpp_rendered_program(
         header_text = _text(item.get("header_text"))
         source_text = _text(item.get("source_text"))
         is_entry = _bool(item.get("is_entry"))
-        hdr_path = include_dir / (label + ".h")
-        cpp_path = src_dir / (label + ".cpp")
-        generated_lines_total += count_text_lines(header_text) + count_text_lines(source_text)
-        _check_generated_limit(generated_lines_total, max_generated_lines, module_key if module_key != "" else label)
-        write_text_file(hdr_path, header_text)
-        write_text_file(cpp_path, source_text)
-        output_files.append(str(hdr_path))
-        output_files.append(str(cpp_path))
-        manifest_modules.append(
-            {
-                "module": module_key,
-                "kind": _text(item.get("kind")) if _text(item.get("kind")) != "" else "user",
-                "label": label,
-                "header": str(hdr_path),
-                "source": str(cpp_path),
-                "is_entry": is_entry,
-                "helper_id": _text(item.get("helper_id")),
-                "owner_module_id": _text(item.get("owner_module_id")),
-            }
-        )
+        kind = _text(item.get("kind")) if _text(item.get("kind")) != "" else "user"
+        if kind == "runtime":
+            # Runtime modules: write header to output_root/<label>.h
+            hdr_path = output_root / (label + ".h")
+            mkdirs_for_cli(str(hdr_path.parent))
+            generated_lines_total += count_text_lines(header_text)
+            _check_generated_limit(generated_lines_total, max_generated_lines, module_key if module_key != "" else label)
+            write_text_file(hdr_path, header_text)
+            output_files.append(str(hdr_path))
+            # Write .cpp only if there is meaningful source (not @extern placeholder)
+            if source_text != "" and not source_text.startswith("// @extern:"):
+                cpp_path = output_root / (label + ".cpp")
+                mkdirs_for_cli(str(cpp_path.parent))
+                generated_lines_total += count_text_lines(source_text)
+                _check_generated_limit(generated_lines_total, max_generated_lines, module_key if module_key != "" else label)
+                write_text_file(cpp_path, source_text)
+                output_files.append(str(cpp_path))
+            else:
+                cpp_path = output_root / (label + ".cpp")
+            manifest_modules.append(
+                {
+                    "module": module_key,
+                    "kind": kind,
+                    "label": label,
+                    "header": str(hdr_path),
+                    "source": str(cpp_path),
+                    "is_entry": is_entry,
+                    "helper_id": _text(item.get("helper_id")),
+                    "owner_module_id": _text(item.get("owner_module_id")),
+                }
+            )
+        else:
+            hdr_path = include_dir / (label + ".h")
+            cpp_path = src_dir / (label + ".cpp")
+            generated_lines_total += count_text_lines(header_text) + count_text_lines(source_text)
+            _check_generated_limit(generated_lines_total, max_generated_lines, module_key if module_key != "" else label)
+            write_text_file(hdr_path, header_text)
+            write_text_file(cpp_path, source_text)
+            output_files.append(str(hdr_path))
+            output_files.append(str(cpp_path))
+            manifest_modules.append(
+                {
+                    "module": module_key,
+                    "kind": kind,
+                    "label": label,
+                    "header": str(hdr_path),
+                    "source": str(cpp_path),
+                    "is_entry": is_entry,
+                    "helper_id": _text(item.get("helper_id")),
+                    "owner_module_id": _text(item.get("owner_module_id")),
+                }
+            )
+
+    # Generate standalone runtime .east headers for modules NOT already written
+    # by the link pipeline above (the generator skips files that already exist).
+    extra_runtime_files = _generate_runtime_east_headers(output_root)
+    output_files.extend(extra_runtime_files)
 
     manifest_for_dump: dict[str, Any] = {
         "entry": entry,

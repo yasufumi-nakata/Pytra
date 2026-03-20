@@ -45,7 +45,7 @@
 
 1. [x] [ID: P0-UNION-ARG-ESCAPE-01] パーサーで暫定検出: union type 引数を持つクラスを ref (gc_managed) に強制。
 2. [x] [ID: P0-UNION-ARG-ESCAPE-02] `Path` が gc_managed（`RcObject` 継承 + `PYTRA_TYPE_ID`）として emit され、`object` に格納可能。
-3. [ ] [ID: P0-UNION-ARG-ESCAPE-03] escape 解析結果を `class_storage_hint` に反映する仕組みを実装。→ P0-ESCAPE-TO-STORAGE-HINT-01 で対応。
+3. [x] [ID: P0-UNION-ARG-ESCAPE-03] escape 解析結果を `class_storage_hint` に反映する仕組みを実装。→ P0-ESCAPE-TO-STORAGE-HINT-01 で対応済み。
 
 #### P0-3: escape 解析結果を class_storage_hint に反映する
 
@@ -67,9 +67,9 @@
 
 文脈: [docs/ja/plans/p0-runtime-east-in-link-pipeline.md](../plans/p0-runtime-east-in-link-pipeline.md)
 
-1. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S1] `resolved_dependencies_v1` に含まれる runtime モジュールの .east を LinkedProgram に自動追加する。
-2. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S2] `write_cpp_rendered_program` で runtime モジュールも link emit の出力に含める。
-3. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S3] `_generate_runtime_east_headers`（standalone transpile）を廃止する。
+1. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S1] `resolved_dependencies_v1` に含まれる runtime モジュールの .east を LinkedProgram に自動追加する。
+2. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S2] `write_cpp_rendered_program` で runtime モジュールも link emit の出力に含める。
+3. [x] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S3] `_generate_runtime_east_headers`（standalone transpile）を廃止する。
 4. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S4] emitter が生成する旧 object API（`make_object`, `obj_to_rc_or_raise`, `cpp_string_lit` globals 依存）を掃除し、新 object API（`unbox`/`as`/`is`/`_cpp_str_lit`）に統一する。後方互換不要。
 5. [ ] [ID: P0-RUNTIME-EAST-IN-LINK-PIPELINE-01-S5] pathlib repro が `out/cpp/` で g++ ビルドできることを検証する。
 

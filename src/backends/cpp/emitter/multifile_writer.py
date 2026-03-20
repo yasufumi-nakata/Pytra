@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os as _os
 from pytra.std import json
 from pytra.std.pathlib import Path
 from typing import Any
@@ -23,6 +24,38 @@ from toolchain.json_adapters import dumps_object as _json_dumps_object
 from backends.cpp.emitter.header_builder import build_cpp_header_from_east
 from backends.cpp.optimizer import optimize_cpp_ir
 from backends.cpp.optimizer import render_cpp_opt_trace
+
+_RUNTIME_EAST_ROOT_STR = str(Path(__file__).resolve().parents[3] / "runtime" / "generated")
+_RUNTIME_CPP_ROOT_STR = str(Path(__file__).resolve().parents[3] / "runtime" / "cpp")
+
+
+def _is_runtime_module_path(path_str: str) -> bool:
+    """Check if a module path is under the runtime/generated directory."""
+    try:
+        resolved = str(Path(path_str).resolve())
+        return resolved.startswith(_RUNTIME_EAST_ROOT_STR)
+    except Exception:
+        return False
+
+
+def _runtime_module_bucket_and_stem(path_str: str) -> tuple[str, str]:
+    """Extract bucket (built_in/std/utils) and stem from runtime .east path."""
+    resolved = str(Path(path_str).resolve())
+    rel = resolved[len(_RUNTIME_EAST_ROOT_STR):].lstrip("/").lstrip("\\")
+    parts = rel.replace("\\", "/").split("/")
+    if len(parts) == 2:
+        bucket = parts[0]
+        stem = parts[1]
+        if stem.endswith(".east"):
+            stem = stem[:-5]
+        return bucket, stem
+    return "", ""
+
+
+def _runtime_module_has_native_cpp(bucket: str, stem: str) -> bool:
+    """Check if a runtime module has a native .cpp implementation."""
+    native_cpp = _os.path.join(_RUNTIME_CPP_ROOT_STR, bucket, stem + ".cpp")
+    return _os.path.isfile(native_cpp)
 
 
 def write_multi_file_cpp(
@@ -88,6 +121,13 @@ def write_multi_file_cpp(
         mod_path = Path(mod_key)
         label = module_label_map[mod_key] if mod_key in module_label_map else ""
         is_entry = mod_key == entry_key
+        is_runtime = _is_runtime_module_path(mod_key)
+        if is_runtime:
+            bucket, stem = _runtime_module_bucket_and_stem(mod_key)
+            label = bucket + "/" + stem if bucket != "" else label
+            is_extern = _runtime_module_has_native_cpp(bucket, stem)
+        else:
+            is_extern = False
         optimized_east: dict[str, Any] = east
         if isinstance(east, dict):
             if is_entry and dump_cpp_ir_before_opt != "":
@@ -121,6 +161,10 @@ def write_multi_file_cpp(
         if module_name != "":
             module_doc_by_name[module_name] = optimized_east
 
+        if is_runtime and bucket != "" and stem != "":
+            emitter_ns = "pytra_" + bucket + "_" + stem
+        else:
+            emitter_ns = "pytra_mod_" + label
         type_emitter = CppEmitter(
             optimized_east,
             module_ns_map,
@@ -132,7 +176,7 @@ def write_multi_file_cpp(
             str_index_mode,
             str_slice_mode,
             opt_level,
-            "pytra_mod_" + label,
+            emitter_ns,
             emit_main if is_entry else False,
         )
         type_emitter.enable_helper_artifact_lane = True
@@ -204,18 +248,30 @@ def write_multi_file_cpp(
             optimized_east,
             mod_path,
             output_dir / "include" / f"{label}.h",
-            top_namespace="pytra_mod_" + label,
+            top_namespace=emitter_ns,
             cpp_text=cpp_txt,
         )
-        rendered_modules.append(
-            {
-                "module": mod_key,
-                "label": label,
-                "header_text": hdr_text,
-                "source_text": cpp_txt,
-                "is_entry": is_entry,
-            }
-        )
+        if is_runtime:
+            rendered_modules.append(
+                {
+                    "module": mod_key,
+                    "kind": "runtime",
+                    "label": label,
+                    "header_text": hdr_text,
+                    "source_text": cpp_txt if not is_extern else "// @extern: " + label,
+                    "is_entry": False,
+                }
+            )
+        else:
+            rendered_modules.append(
+                {
+                    "module": mod_key,
+                    "label": label,
+                    "header_text": hdr_text,
+                    "source_text": cpp_txt,
+                    "is_entry": is_entry,
+                }
+            )
         for helper in helper_artifacts:
             if not isinstance(helper, dict):
                 continue
