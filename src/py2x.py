@@ -63,7 +63,7 @@ def _print_help() -> None:
         "  py2x.py INPUT.py --target TARGET [-o OUTPUT]                 Legacy single-step mode\n"
         "\n"
         "options:\n"
-        "  --target {cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala,php,nim}\n"
+        "  --target {cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala,php,nim,powershell}\n"
         "  --east3-opt-level {0,1,2}  --east3-opt-pass SPEC\n"
         "  --dump-east3-dir DIR  --link-only  --from-link-output  --output-dir DIR\n"
         "  --lower-option key=value  --optimizer-option key=value  --emitter-option key=value\n"
