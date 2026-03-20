@@ -23,6 +23,7 @@ from toolchain.compiler.pytra_cli_profiles import (
 # /src/pytra-cli.py -> project root is parents[1]
 ROOT = Path(__file__).resolve().parents[1]
 PY2X = ROOT / "src" / "py2x.py"
+EAST2CPP = ROOT / "src" / "east2cpp.py"
 GEN_MAKEFILE = ROOT / "tools" / "gen_makefile_from_manifest.py"
 PYTHON = sys.executable or "python3"
 
@@ -212,14 +213,11 @@ def _run_py2cpp(input_path: Path, output_dir: Path, argv: list[str]) -> tuple[in
         print(f"error: link-output not found after link stage under: {linked_dir}", file=sys.stderr)
         return 1, None
 
-    # Stage 2: link-output → multi-file C++ via ir2lang
+    # Stage 2: link-output → multi-file C++ via east2cpp
     emit_cmd = [
         PYTHON,
-        str(PY2X),
+        str(EAST2CPP),
         str(link_output_path),
-        "--target",
-        "cpp",
-        "--from-link-output",
         "--output-dir",
         str(output_dir),
     ]
@@ -271,15 +269,15 @@ def _run_py2cpp_linked_max(input_path: Path, output_dir: Path, argv: list[str]) 
 
     emit_cmd = [
         PYTHON,
-        str(PY2X),
+        str(EAST2CPP),
         str(link_output_path),
-        "--target",
-        "cpp",
-        "--from-link-output",
         "--output-dir",
         str(output_dir),
     ]
-    emit_cmd.extend(emit_stage_argv)
+    # Forward emitter options from emit_stage_argv
+    for tok in emit_stage_argv:
+        if tok.startswith("--emitter-option"):
+            emit_cmd.append(tok)
     emit_proc = _run_proc(emit_cmd, cwd=Path.cwd(), stdout_to_stderr=True)
     manifest_path = None
     if emit_proc.returncode == 0:
