@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from toolchain.compiler.relative_import_backend_coverage import (
+from toolchain.misc.relative_import_backend_coverage import (
     RELATIVE_IMPORT_BACKEND_COVERAGE_V1,
     RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1,
     RELATIVE_IMPORT_NONCPP_ROLLOUT_V1,

@@ -22,7 +22,7 @@ In scope:
 - Directory moves:
   - `src/pytra/frontends/** -> src/toolchain/frontends/**`
   - `src/pytra/ir/** -> src/toolchain/ir/**`
-  - `src/pytra/compiler/** -> src/toolchain/compiler/**`
+  - `src/pytra/compiler/** -> src/toolchain/misc/**`
 - Import updates:
   - Update old `pytra.frontends` / `pytra.ir` / `pytra.compiler` references in `src/`, `tools/`, and `test/` to new paths
 - Documentation updates:

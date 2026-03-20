@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from toolchain.compiler.relative_import_secondwave_smoke_contract import (
+from toolchain.misc.relative_import_secondwave_smoke_contract import (
     RELATIVE_IMPORT_SECOND_WAVE_SCENARIOS_V1,
 )
 

@@ -10,8 +10,8 @@ TEST_DIR = Path(__file__).resolve().parent
 if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
-from src.toolchain.compiler.east import EastBuildError
-from src.toolchain.compiler.east import convert_source_to_east_with_backend
+from src.toolchain.misc.east import EastBuildError
+from src.toolchain.misc.east import convert_source_to_east_with_backend
 
 
 class EastCoreParserBehaviorDiagnosticsTest(unittest.TestCase):

@@ -74,7 +74,7 @@
 - generated 側の画像runtime生成物には、生成元と生成導線が追跡できる印（例: `source: src/pytra/utils/png.py`, `source: src/pytra/utils/gif.py`, `generated-by: ...`）を必須とします。
 - `json` に限らず、Python 標準ライブラリ相当機能を `runtime/cpp` 側へ追加実装してはいけません。
 - Python 標準ライブラリ相当機能の正本は常に `src/pytra/std/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
-- selfhost 対象コード（特に `src/toolchain/compiler/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
+- selfhost 対象コード（特に `src/toolchain/misc/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。
 - import は静的に解決できる形で記述し、自己変換時に未対応構文を増やさないことを優先します。
 - selfhost 対象コード（`src/` 配下のトランスパイラ本体・backend・IR 実装）では、Python 標準 `ast` モジュール（`import ast` / `from ast ...`）への依存を禁止します。
 - `ast` ベース解析が必要な場合は、EAST ノード走査または既存の selfhost 対応 parser/IR 情報で代替します。
@@ -95,7 +95,7 @@
 - `src/toolchain/emit/common/emitter/code_emitter.py` を変更した場合は `test/unit/common/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
 - `CodeEmitter` / `py2cpp` 系の変更では、最低限 `python3 tools/check_py2cpp_transpile.py` と `python3 tools/build_selfhost.py` の両方を通過させてからコミットします。
 - 上記 2 コマンドのいずれかが失敗した状態でのコミットは禁止します。
-- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**`, `src/toolchain/emit/**/profiles/**`）を変更する場合は、`src/toolchain/compiler/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
+- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**`, `src/toolchain/emit/**/profiles/**`）を変更する場合は、`src/toolchain/misc/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check_transpiler_version_gate.py` を通過させます。
 - sample 再生成は `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` を使用し、バージョン更新で差分が出た C++ ケースを compile/run 検証します。
 - アドホックな C++ コンパイル実験（デバッグ・調査目的）を行う場合は、ソースと成果物をリポジトリ直下ではなく `/tmp/` または `work/tmp/` 以下に置いて実行します（`tempfile.TemporaryDirectory()` パターンを参照）。
 - GCC ダンプフラグ（`-fdump-tree-all` 等）はカレントディレクトリに出力するため、リポジトリ直下では使用しません。使う場合は `-dumpdir /tmp/` を明示します。
@@ -119,4 +119,4 @@
 - 現在の対外リリース版は `0.7.0` です。
 - `PATCH` の更新は Codex が実施してよいものとします。
 - `MAJOR` / `MINOR` の更新は、ユーザーの明示指示がある場合のみ実施します。
-- `src/toolchain/compiler/transpiler_versions.json` は再生成トリガー用の内部バージョンであり、対外リリース版（`docs/VERSION`）とは別管理です。
+- `src/toolchain/misc/transpiler_versions.json` は再生成トリガー用の内部バージョンであり、対外リリース版（`docs/VERSION`）とは別管理です。

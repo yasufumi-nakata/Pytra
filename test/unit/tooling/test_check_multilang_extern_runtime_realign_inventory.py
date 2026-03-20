@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from src.toolchain.compiler import multilang_extern_runtime_realign_inventory as inventory_mod
+from src.toolchain.misc import multilang_extern_runtime_realign_inventory as inventory_mod
 from tools import check_multilang_extern_runtime_realign_inventory as check_mod
 
 

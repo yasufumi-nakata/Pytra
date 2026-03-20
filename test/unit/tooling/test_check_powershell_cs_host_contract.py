@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from src.toolchain.compiler import powershell_cs_host_contract as contract_mod
+from src.toolchain.misc import powershell_cs_host_contract as contract_mod
 from tools import check_powershell_cs_host_contract as check_mod
 
 

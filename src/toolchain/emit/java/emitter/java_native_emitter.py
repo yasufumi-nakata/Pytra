@@ -8,7 +8,7 @@ from toolchain.emit.common.emitter.code_emitter import (
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
     reject_backend_typed_vararg_signatures,
 )
-from toolchain.compiler.stdlib.signature_registry import list_noncpp_assertion_runtime_calls
+from toolchain.misc.stdlib.signature_registry import list_noncpp_assertion_runtime_calls
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 

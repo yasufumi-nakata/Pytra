@@ -238,7 +238,7 @@ Exit non-zero in the following cases:
   - Role: argument normalization, input validation, profile resolution, and calling a shared runner
   - Allowed: passing the target name into the `toolchain` profile layer
   - Forbidden: hard-coding target-specific compiler/runtime/execution commands
-- Backend profiles (`src/toolchain/compiler/*`)
+- Backend profiles (`src/toolchain/misc/*`)
   - Role: declare target-specific transpile/build/run contracts such as required tools, output naming, and auxiliary runtime files
   - Allowed: defining target-specific commands, file names, and extensions
   - Forbidden: reimplementing entry-point responsibilities such as CLI argument parsing or stdio control

@@ -5,9 +5,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.toolchain.compiler.backend_registry_diagnostics import classify_parity_note_detail
-from src.toolchain.compiler.backend_registry_diagnostics import KNOWN_BLOCK_DETAIL_CATEGORIES
-from src.toolchain.compiler.backend_registry_diagnostics import normalize_top_level_category
+from src.toolchain.misc.backend_registry_diagnostics import classify_parity_note_detail
+from src.toolchain.misc.backend_registry_diagnostics import KNOWN_BLOCK_DETAIL_CATEGORIES
+from src.toolchain.misc.backend_registry_diagnostics import normalize_top_level_category
 
 
 @dataclass(frozen=True)

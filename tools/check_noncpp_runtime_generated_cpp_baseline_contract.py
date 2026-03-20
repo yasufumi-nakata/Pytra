@@ -12,7 +12,7 @@ SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from src.toolchain.compiler import (  # noqa: E402
+from src.toolchain.misc import (  # noqa: E402
     noncpp_runtime_generated_cpp_baseline_contract as contract_mod,
     noncpp_runtime_layout_contract as layout_contract_mod,
     pytra_cli_profiles as cli_profiles_mod,

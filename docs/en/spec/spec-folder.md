@@ -89,14 +89,14 @@ src/toolchain/
     ...        ← all 15 languages
     cpp.py     ← C++ emit entry point (import-isolated)
     all.py     ← all-backend generic entry point
-  compiler/    ← compatibility shim / facade (backend registry, etc.)
+  misc/        ← compatibility shim / facade (backend registry, etc.; scheduled for removal)
 ```
 
 - `src/toolchain/frontends/`: input-language frontend (e.g., `transpile_cli.py`, `python_frontend.py`, `east1_build.py`, `signature_registry.py`)
 - `src/toolchain/ir/`: EAST1/2/3 definitions, lowering, optimizer, pipeline (e.g., `core.py`, `east1.py`, `east2.py`, `east3.py`, `east3_optimizer.py`)
 - `src/toolchain/link/`: linker and linked program optimizer (e.g., `program_loader.py`, `global_optimizer.py`)
 - `src/toolchain/emit/`: per-target-language emit implementations. Each `<lang>/` has `emitter/`, `optimizer/`, `lower/`, `profiles/`.
-- `src/toolchain/compiler/`: compatibility shim / facade (e.g., legacy import route receivers, backend registry)
+- `src/toolchain/misc/`: compatibility shim / facade (e.g., legacy import route receivers, backend registry)
 - Not allowed:
   - re-adding to `compiler` any logic that has already been moved to `frontends` / `ir`
 - Dependency direction:

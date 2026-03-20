@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.toolchain.compiler.backend_parity_handoff_contract import (
+from src.toolchain.misc.backend_parity_handoff_contract import (
     build_backend_parity_handoff_manifest,
 )
 

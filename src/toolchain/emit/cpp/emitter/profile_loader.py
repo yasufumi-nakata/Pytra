@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std.pathlib import Path
 from pytra.typing import Any
 from toolchain.emit.common.emitter.code_emitter import CodeEmitter
-from toolchain.compiler.transpile_cli import dict_any_get_dict, dict_any_get_str, dict_any_get_list
+from toolchain.misc.transpile_cli import dict_any_get_dict, dict_any_get_str, dict_any_get_list
 from toolchain.emit.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl
 
 REPO_ROOT = Path(__file__).resolve().parents[4]

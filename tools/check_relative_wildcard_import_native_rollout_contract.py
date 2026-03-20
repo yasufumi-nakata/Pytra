@@ -11,7 +11,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from toolchain.compiler.relative_wildcard_import_native_rollout_contract import (
+from toolchain.misc.relative_wildcard_import_native_rollout_contract import (
     RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1,
     RELATIVE_WILDCARD_IMPORT_NATIVE_CPP_BASELINE_V1,
     RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1,

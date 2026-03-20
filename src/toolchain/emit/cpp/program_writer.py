@@ -10,7 +10,7 @@ from pytra.std import json
 from pytra.std.pathlib import Path
 
 from toolchain.emit.common.program_writer import write_single_file_program
-from toolchain.compiler.transpile_cli import (
+from toolchain.misc.transpile_cli import (
     check_guard_limit,
     count_text_lines,
     mkdirs_for_cli,

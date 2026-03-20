@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from toolchain.compiler.backend_registry import (
+from toolchain.misc.backend_registry import (
     apply_runtime_hook_typed as apply_runtime_hook,
     build_program_artifact_typed as build_program_artifact,
     collect_program_modules_typed as collect_program_modules,
@@ -25,10 +25,10 @@ from toolchain.compiler.backend_registry import (
     optimize_ir_typed as optimize_ir,
     resolve_layer_options_typed as resolve_layer_options,
 )
-from toolchain.compiler.typed_boundary import compiler_root_module_id
-from toolchain.compiler.typed_boundary import coerce_module_artifact
-from toolchain.compiler.typed_boundary import module_artifact_text
-from toolchain.compiler.typed_boundary import export_program_artifact_any
+from toolchain.misc.typed_boundary import compiler_root_module_id
+from toolchain.misc.typed_boundary import coerce_module_artifact
+from toolchain.misc.typed_boundary import module_artifact_text
+from toolchain.misc.typed_boundary import export_program_artifact_any
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support

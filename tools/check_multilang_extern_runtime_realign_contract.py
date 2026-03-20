@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from toolchain.compiler import multilang_extern_runtime_realign_contract as contract_mod
+from toolchain.misc import multilang_extern_runtime_realign_contract as contract_mod
 from toolchain.frontends import extern_var
 from toolchain.frontends import runtime_symbol_index
 

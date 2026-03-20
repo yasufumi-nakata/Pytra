@@ -1,6 +1,6 @@
 import unittest
 
-from toolchain.compiler.relative_import_lua_support_contract import (
+from toolchain.misc.relative_import_lua_support_contract import (
     RELATIVE_IMPORT_LUA_SUPPORT_BACKEND_V1,
     RELATIVE_IMPORT_LUA_SUPPORT_HANDOFF_V1,
     RELATIVE_IMPORT_LUA_SUPPORT_SCENARIOS_V1,

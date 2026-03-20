@@ -6,7 +6,7 @@ from pytra.typing import Any
 from pytra.std.pathlib import Path
 
 from toolchain.emit.common.emitter.code_emitter import CodeEmitter
-from toolchain.compiler.transpile_cli import (
+from toolchain.misc.transpile_cli import (
     dict_any_get_dict,
     dict_any_get_str,
     join_str_list,

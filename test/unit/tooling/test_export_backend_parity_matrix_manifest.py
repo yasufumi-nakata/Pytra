@@ -5,7 +5,7 @@ import json
 import unittest
 from contextlib import redirect_stdout
 
-from src.toolchain.compiler.backend_parity_matrix_contract import (
+from src.toolchain.misc.backend_parity_matrix_contract import (
     build_backend_parity_matrix_manifest,
 )
 from tools import export_backend_parity_matrix_manifest as export_mod

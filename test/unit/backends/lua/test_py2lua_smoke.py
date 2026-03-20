@@ -24,7 +24,7 @@ if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from toolchain.emit.lua.emitter import load_lua_profile, transpile_to_lua, transpile_to_lua_native
-from toolchain.compiler.transpile_cli import load_east3_document
+from toolchain.misc.transpile_cli import load_east3_document
 from src.toolchain.compile.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments
 from relative_import_longtail_smoke_support import (

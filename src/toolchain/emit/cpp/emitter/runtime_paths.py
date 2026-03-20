@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from pytra.std.pathlib import Path
 
-from toolchain.compiler.transpile_cli import join_str_list
+from toolchain.misc.transpile_cli import join_str_list
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 from toolchain.frontends.runtime_symbol_index import lookup_target_module_primary_compiler_header
 from toolchain.frontends.runtime_symbol_index import runtime_module_exists
 
 
 RUNTIME_CPP_ROOT: Path = Path("src/runtime/cpp")
-TOOLCHAIN_COMPILER_PREFIX = "toolchain.compiler."
+TOOLCHAIN_COMPILER_PREFIX = "toolchain.misc."
 TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
 

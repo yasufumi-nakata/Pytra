@@ -14,10 +14,10 @@
 
 ## Source Of Truth
 
-- inventory: [backend_contract_coverage_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_contract_coverage_inventory.py)
-- lane seed contract: [backend_contract_coverage_matrix_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_contract_coverage_matrix_contract.py)
-- suite attachment contract: [backend_contract_coverage_suite_attachment_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_contract_coverage_suite_attachment_contract.py)
-- unpublished fixture contract: [backend_contract_coverage_unpublished_fixture_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_contract_coverage_unpublished_fixture_contract.py)
+- inventory: [backend_contract_coverage_inventory.py](/workspace/Pytra/src/toolchain/misc/backend_contract_coverage_inventory.py)
+- lane seed contract: [backend_contract_coverage_matrix_contract.py](/workspace/Pytra/src/toolchain/misc/backend_contract_coverage_matrix_contract.py)
+- suite attachment contract: [backend_contract_coverage_suite_attachment_contract.py](/workspace/Pytra/src/toolchain/misc/backend_contract_coverage_suite_attachment_contract.py)
+- unpublished fixture contract: [backend_contract_coverage_unpublished_fixture_contract.py](/workspace/Pytra/src/toolchain/misc/backend_contract_coverage_unpublished_fixture_contract.py)
 - exporter: [export_backend_contract_coverage_docs.py](/workspace/Pytra/tools/export_backend_contract_coverage_docs.py)
 
 ## Coverage Bundle Taxonomy

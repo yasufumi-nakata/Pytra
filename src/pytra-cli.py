@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from toolchain.compiler.pytra_cli_profiles import (
+from toolchain.misc.pytra_cli_profiles import (
     SUPPORTED_TARGETS,
     TargetProfile,
     get_target_profile,

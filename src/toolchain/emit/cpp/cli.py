@@ -14,7 +14,7 @@ from toolchain.frontends.east1_build import East1BuildHelpers
 from toolchain.link import build_linked_program_from_module_map as _build_linked_program_from_module_map
 from toolchain.link import optimize_linked_program
 from toolchain.link.program_loader import add_runtime_east_to_module_map
-from toolchain.compiler.transpile_cli import (
+from toolchain.misc.transpile_cli import (
     check_analyze_stage_guards,
     check_guard_limit,
     check_parse_stage_guards,

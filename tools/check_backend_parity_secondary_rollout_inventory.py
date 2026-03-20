@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from toolchain.compiler import backend_parity_secondary_rollout_inventory as inventory_mod
+from toolchain.misc import backend_parity_secondary_rollout_inventory as inventory_mod
 
 
 def _collect_inventory_issues() -> list[str]:

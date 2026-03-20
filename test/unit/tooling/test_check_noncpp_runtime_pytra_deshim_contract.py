@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from src.toolchain.compiler import noncpp_runtime_pytra_deshim_contract as contract_mod
+from src.toolchain.misc import noncpp_runtime_pytra_deshim_contract as contract_mod
 from tools import check_noncpp_runtime_pytra_deshim_contract as check_mod
 
 

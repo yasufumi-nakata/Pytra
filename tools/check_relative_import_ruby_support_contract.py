@@ -11,7 +11,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from toolchain.compiler.relative_import_ruby_support_contract import (
+from toolchain.misc.relative_import_ruby_support_contract import (
     RELATIVE_IMPORT_RUBY_SUPPORT_BACKEND_V1,
     RELATIVE_IMPORT_RUBY_SUPPORT_HANDOFF_V1,
     RELATIVE_IMPORT_RUBY_SUPPORT_SCENARIOS_V1,

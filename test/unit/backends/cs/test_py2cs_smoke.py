@@ -20,10 +20,10 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from toolchain.emit.cs.emitter.cs_emitter import load_cs_profile, transpile_to_csharp
-from toolchain.compiler.relative_import_firstwave_smoke_contract import (
+from toolchain.misc.relative_import_firstwave_smoke_contract import (
     RELATIVE_IMPORT_FIRST_WAVE_SCENARIOS_V1,
 )
-from toolchain.compiler.transpile_cli import load_east3_document
+from toolchain.misc.transpile_cli import load_east3_document
 from src.toolchain.compile.core_entrypoints import convert_path
 from src.toolchain.frontends.type_expr import parse_type_expr_text
 from toolchain.emit.cs.emitter.cs_emitter import CSharpEmitter

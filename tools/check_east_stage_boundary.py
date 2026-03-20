@@ -127,12 +127,12 @@ def _check_east2_boundary(errors: list[str]) -> None:
         ROOT / "src" / "toolchain" / "ir" / "east2.py",
     )
     forbidden_import_prefixes = (
-        "toolchain.compiler.east_parts.east3",
-        "toolchain.compiler.east_parts.east2_to_east3_lowering",
+        "toolchain.misc.east_parts.east3",
+        "toolchain.misc.east_parts.east2_to_east3_lowering",
         "toolchain.compile.east3",
         "toolchain.compile.east2_to_east3_lowering",
-        "src.toolchain.compiler.east_parts.east3",
-        "src.toolchain.compiler.east_parts.east2_to_east3_lowering",
+        "src.toolchain.misc.east_parts.east3",
+        "src.toolchain.misc.east_parts.east2_to_east3_lowering",
         "src.toolchain.compile.east3",
         "src.toolchain.compile.east2_to_east3_lowering",
     )
@@ -167,24 +167,24 @@ def _check_code_emitter_boundary(errors: list[str]) -> None:
         (
             impl_path,
             (
-                "toolchain.compiler.transpile_cli",
-                "toolchain.compiler.transpile_cli.make_user_error",
+                "toolchain.misc.transpile_cli",
+                "toolchain.misc.transpile_cli.make_user_error",
             ),
         ),
     )
     forbidden_import_prefixes = (
-        "toolchain.compiler.east",
-        "toolchain.compiler.transpile_cli",
-        "toolchain.compiler.east_parts.east1",
-        "toolchain.compiler.east_parts.east2",
-        "toolchain.compiler.east_parts.east3",
-        "toolchain.compiler.east_parts.east2_to_east3_lowering",
-        "src.toolchain.compiler.east",
-        "src.toolchain.compiler.transpile_cli",
-        "src.toolchain.compiler.east_parts.east1",
-        "src.toolchain.compiler.east_parts.east2",
-        "src.toolchain.compiler.east_parts.east3",
-        "src.toolchain.compiler.east_parts.east2_to_east3_lowering",
+        "toolchain.misc.east",
+        "toolchain.misc.transpile_cli",
+        "toolchain.misc.east_parts.east1",
+        "toolchain.misc.east_parts.east2",
+        "toolchain.misc.east_parts.east3",
+        "toolchain.misc.east_parts.east2_to_east3_lowering",
+        "src.toolchain.misc.east",
+        "src.toolchain.misc.transpile_cli",
+        "src.toolchain.misc.east_parts.east1",
+        "src.toolchain.misc.east_parts.east2",
+        "src.toolchain.misc.east_parts.east3",
+        "src.toolchain.misc.east_parts.east2_to_east3_lowering",
     )
     forbidden_calls = (
         "convert_source_to_east_with_backend",

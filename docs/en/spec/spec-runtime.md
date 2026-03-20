@@ -379,7 +379,7 @@ The same responsibility split should be rolled out to every runtime language.
 - the canonical target layout is `src/runtime/<lang>/generated/**` plus `src/runtime/<lang>/native/**`
 - the non-C++ runtime baseline end state is `generated = baseline`, using `cpp/generated/{built_in,std,utils}` as the canonical module set
 - baseline modules may not use `blocked`, `compare_artifact`, `no_runtime_module`, `helper_artifact`, or `native canonical` as a close condition
-- the blocked/native/helper descriptions kept in `src/toolchain/compiler/noncpp_runtime_layout_contract.py` and `src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py` are legacy inventory, not the active end-state policy
+- the blocked/native/helper descriptions kept in `src/toolchain/misc/noncpp_runtime_layout_contract.py` and `src/toolchain/misc/noncpp_runtime_layout_rollout_remaining_contract.py` are legacy inventory, not the active end-state policy
 - `pytra-gen/pytra-core` and checked-in `pytra/**` remain compatibility-debt inventory, not the final layout
 
 ### 0.72 Runtime `@extern` Ownership Metadata

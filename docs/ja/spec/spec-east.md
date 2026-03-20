@@ -5,7 +5,7 @@
 </a>
 
 
-この文書は `src/toolchain/compiler/east.py` / `src/toolchain/compiler/east_parts/` の現実装に合わせた EAST 仕様の統合正本である。
+この文書は `src/toolchain/misc/east.py` / `src/toolchain/misc/east_parts/` の現実装に合わせた EAST 仕様の統合正本である。
 
 統合方針:
 - 現行実装準拠の EAST2 仕様と、EAST1/EAST2/EAST3 三段構成の責務仕様をこの文書へ統合する。
@@ -57,7 +57,7 @@
 
 ### 2.3 CLI
 
-- `python src/toolchain/compiler/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
+- `python src/toolchain/misc/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
 - `--pretty`: 整形 JSON を出力。
 - `--human-output`: C++風の人間可読ビューを出力。
 - `python3 src/py2x.py <input.py|east.json> --target cpp [-o output.cpp]`: EASTベースの C++ 生成器。
@@ -572,8 +572,8 @@ EAST3 -> backend の解決済み呼び出し契約（固定）:
 
 ## 15. 検証状態
 
-- `test/fixtures` 32/32 を `src/toolchain/compiler/east.py` で変換可能（`ok: true`）
-- `sample/py` 16/16 を `src/toolchain/compiler/east.py` で変換可能（`ok: true`）
+- `test/fixtures` 32/32 を `src/toolchain/misc/east.py` で変換可能（`ok: true`）
+- `sample/py` 16/16 を `src/toolchain/misc/east.py` で変換可能（`ok: true`）
 - `sample/py` 16/16 を `src/py2x.py` で「変換→コンパイル→実行」可能（`ok`）
 
 <a id="east-stages"></a>
@@ -661,13 +661,13 @@ linked-program optimizer が生成した synthetic helper module は、上記に
 
 | 段 | 責務 | 現行実装（着手時点） | 移行後の正本 |
 | --- | --- | --- | --- |
-| EAST1 | parser 直後 IR 生成 | `src/toolchain/compiler/east_parts/core.py`（互換 shim） | `src/toolchain/compile/core.py` |
-| EAST1 | EAST1 入口 API | `src/toolchain/compiler/east_parts/east1.py`（互換ラッパ経由） | `src/toolchain/compile/east1.py` |
-| EAST2 | EAST1 -> EAST2 正規化 API | `src/toolchain/compiler/east_parts/east2.py`（互換ラッパ + selfhost fallback） | `src/toolchain/compile/east2.py` |
-| EAST3 | EAST2 -> EAST3 lower 本体 | `src/toolchain/compiler/east_parts/east2_to_east3_lowering.py`（互換 shim） | `src/toolchain/compile/east2_to_east3_lowering.py` |
-| EAST3 | EAST3 入口 API | `src/toolchain/compiler/east_parts/east3.py`（互換ラッパ経由） | `src/toolchain/compile/east3.py` |
+| EAST1 | parser 直後 IR 生成 | `src/toolchain/misc/east_parts/core.py`（互換 shim） | `src/toolchain/compile/core.py` |
+| EAST1 | EAST1 入口 API | `src/toolchain/misc/east_parts/east1.py`（互換ラッパ経由） | `src/toolchain/compile/east1.py` |
+| EAST2 | EAST1 -> EAST2 正規化 API | `src/toolchain/misc/east_parts/east2.py`（互換ラッパ + selfhost fallback） | `src/toolchain/compile/east2.py` |
+| EAST3 | EAST2 -> EAST3 lower 本体 | `src/toolchain/misc/east_parts/east2_to_east3_lowering.py`（互換 shim） | `src/toolchain/compile/east2_to_east3_lowering.py` |
+| EAST3 | EAST3 入口 API | `src/toolchain/misc/east_parts/east3.py`（互換ラッパ経由） | `src/toolchain/compile/east3.py` |
 | Bridge | backend 入口（C++） | `src/py2x.py`（`--east-stage 3` 専用） | `src/py2x.py`（`EAST3` 専用） |
-| CLI 互換 | 旧 API 公開 | `src/toolchain/compiler/transpile_cli.py`（互換 shim） | `src/toolchain/frontends/transpile_cli.py`（実体） |
+| CLI 互換 | 旧 API 公開 | `src/toolchain/misc/transpile_cli.py`（互換 shim） | `src/toolchain/frontends/transpile_cli.py`（実体） |
 
 <a id="east1-build-boundary"></a>
 ## 19. `EAST1` build 入口の責務境界
@@ -680,7 +680,7 @@ linked-program optimizer が生成した synthetic helper module は、上記に
 - `east1_build.py`: build 入口（追加対象）
 - `east1.py`: stage 契約 helper（薄い API）
 - `py2x.py --target cpp`: `_analyze_import_graph` / `build_module_east_map` は `East1BuildHelpers` への委譲のみを担当
-- `transpile_cli.py`: 実体は `src/toolchain/frontends/transpile_cli.py`。`src/toolchain/compiler/transpile_cli.py` は互換公開 thin wrapper。
+- `transpile_cli.py`: 実体は `src/toolchain/frontends/transpile_cli.py`。`src/toolchain/misc/transpile_cli.py` は互換公開 thin wrapper。
 
 受け入れ条件:
 1. `EAST1` build は `east_stage=1` 付与までに限定し、`EAST1 -> EAST2` を行わない。  

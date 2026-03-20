@@ -10,8 +10,8 @@ from toolchain.emit.common.emitter.code_emitter import (
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
     reject_backend_typed_vararg_signatures,
 )
-from toolchain.compiler.noncpp_runtime_layout_contract import iter_rs_std_lane_ownership
-from toolchain.compiler.transpile_cli import make_user_error
+from toolchain.misc.noncpp_runtime_layout_contract import iter_rs_std_lane_ownership
+from toolchain.misc.transpile_cli import make_user_error
 from toolchain.frontends.type_expr import type_expr_to_string
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 

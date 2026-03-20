@@ -11,14 +11,14 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.toolchain.compiler.backend_registry import get_backend_spec_typed as host_get_backend_spec_typed
-from src.toolchain.compiler.backend_registry import list_backend_targets as host_list_backend_targets
-from src.toolchain.compiler.backend_registry_metadata import backend_target_order
-from src.toolchain.compiler.backend_registry_metadata import get_backend_metadata
-from src.toolchain.compiler.backend_registry_metadata import get_program_writer_ref
-from src.toolchain.compiler.backend_registry_metadata import get_runtime_hook_descriptor
-from src.toolchain.compiler.backend_registry_static import get_backend_spec_typed as static_get_backend_spec_typed
-from src.toolchain.compiler.backend_registry_static import list_backend_targets as static_list_backend_targets
+from src.toolchain.misc.backend_registry import get_backend_spec_typed as host_get_backend_spec_typed
+from src.toolchain.misc.backend_registry import list_backend_targets as host_list_backend_targets
+from src.toolchain.misc.backend_registry_metadata import backend_target_order
+from src.toolchain.misc.backend_registry_metadata import get_backend_metadata
+from src.toolchain.misc.backend_registry_metadata import get_program_writer_ref
+from src.toolchain.misc.backend_registry_metadata import get_runtime_hook_descriptor
+from src.toolchain.misc.backend_registry_static import get_backend_spec_typed as static_get_backend_spec_typed
+from src.toolchain.misc.backend_registry_static import list_backend_targets as static_list_backend_targets
 
 
 class BackendRegistryMetadataTest(unittest.TestCase):

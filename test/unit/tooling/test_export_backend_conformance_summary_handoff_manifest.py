@@ -5,7 +5,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from src.toolchain.compiler import backend_conformance_summary_handoff_contract as contract_mod
+from src.toolchain.misc import backend_conformance_summary_handoff_contract as contract_mod
 from tools import export_backend_conformance_summary_handoff_manifest as export_mod
 
 

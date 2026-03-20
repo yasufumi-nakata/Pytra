@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from toolchain.compiler.relative_import_secondwave_rollout_contract import (  # noqa: E402
+from toolchain.misc.relative_import_secondwave_rollout_contract import (  # noqa: E402
     RELATIVE_IMPORT_SECONDWAVE_BACKEND_BUNDLES_V1,
     RELATIVE_IMPORT_LONGTAIL_BACKENDS_V1,
     RELATIVE_IMPORT_SECONDWAVE_BACKENDS_V1,

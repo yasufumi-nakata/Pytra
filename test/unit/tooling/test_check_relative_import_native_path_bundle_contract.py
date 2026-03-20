@@ -1,6 +1,6 @@
 import unittest
 
-from toolchain.compiler.relative_import_native_path_bundle_contract import (
+from toolchain.misc.relative_import_native_path_bundle_contract import (
     RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_BACKENDS_V1,
     RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_HANDOFF_V1,
     RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_SCENARIOS_V1,

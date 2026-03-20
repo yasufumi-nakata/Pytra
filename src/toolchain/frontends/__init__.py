@@ -1,7 +1,7 @@
 """Frontend bootstrap namespace (`src/toolchain/frontends`).
 
 Keep package import side effects minimal to avoid cycles with
-``toolchain.compiler.transpile_cli`` during staged migration.
+``toolchain.misc.transpile_cli`` during staged migration.
 """
 
 from __future__ import annotations

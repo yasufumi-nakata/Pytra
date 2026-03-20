@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from src.toolchain.compiler import backend_conformance_summary_handoff as handoff_mod
+from src.toolchain.misc import backend_conformance_summary_handoff as handoff_mod
 from tools import check_backend_conformance_summary_handoff as check_mod
 
 

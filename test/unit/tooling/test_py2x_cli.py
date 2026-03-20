@@ -15,7 +15,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 import src.py2x as py2x_mod
-import src.toolchain.compiler.typed_boundary as typed_boundary
+import src.toolchain.misc.typed_boundary as typed_boundary
 from src.toolchain.link import LinkedProgramModule
 
 

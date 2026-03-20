@@ -200,11 +200,11 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")
         removed = mod._remove_import_line(py2cpp_text)
         self.assertNotIn(
-            "from toolchain.compiler.east_parts.code_emitter import CodeEmitter\n",
+            "from toolchain.misc.east_parts.code_emitter import CodeEmitter\n",
             removed,
         )
         self.assertNotIn(
-            "from toolchain.compiler.transpile_cli import ",
+            "from toolchain.misc.transpile_cli import ",
             removed,
         )
         self.assertNotIn(
@@ -215,8 +215,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
     def test_remove_import_line_raises_when_required_import_missing(self) -> None:
         mod = _load_prepare_module()
         broken = (
-            "from toolchain.compiler.east_parts.code_emitter import CodeEmitter\n"
-            "from toolchain.compiler.transpile_cli import any_symbol\n"
+            "from toolchain.misc.east_parts.code_emitter import CodeEmitter\n"
+            "from toolchain.misc.transpile_cli import any_symbol\n"
         )
         with self.assertRaisesRegex(RuntimeError, "build_cpp_hooks import"):
             mod._remove_import_line(broken)

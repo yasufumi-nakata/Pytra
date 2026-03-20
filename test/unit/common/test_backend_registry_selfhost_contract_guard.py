@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.toolchain.compiler import backend_registry_diagnostics as registry_diagnostics
+from src.toolchain.misc import backend_registry_diagnostics as registry_diagnostics
 from tools.selfhost_parity_summary import build_direct_e2e_summary_row
 from tools.selfhost_parity_summary import build_stage2_diff_summary_row
 from tools.selfhost_parity_summary import build_summary_row

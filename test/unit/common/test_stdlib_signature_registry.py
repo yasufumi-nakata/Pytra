@@ -12,20 +12,20 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_function_return_type
-from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_attribute_type
-from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_function_runtime_binding
-from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_imported_symbol_runtime_binding
-from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_binding
-from src.toolchain.compiler.stdlib.signature_registry import lookup_noncpp_imported_symbol_runtime_call
-from src.toolchain.compiler.stdlib.signature_registry import lookup_noncpp_module_attr_runtime_call
-from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_method_runtime_call
-from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_method_return_type
-from src.toolchain.compiler.stdlib.signature_registry import lookup_stdlib_function_runtime_call
-from src.toolchain.compiler.stdlib.frontend_semantics import lookup_builtin_semantic_tag
-from src.toolchain.compiler.stdlib.frontend_semantics import lookup_stdlib_function_semantic_tag
-from src.toolchain.compiler.stdlib.frontend_semantics import lookup_stdlib_method_semantic_tag
-from src.toolchain.compiler.stdlib.frontend_semantics import lookup_stdlib_symbol_semantic_tag
+from src.toolchain.misc.stdlib.signature_registry import lookup_stdlib_function_return_type
+from src.toolchain.misc.stdlib.signature_registry import lookup_stdlib_attribute_type
+from src.toolchain.misc.stdlib.signature_registry import lookup_stdlib_function_runtime_binding
+from src.toolchain.misc.stdlib.signature_registry import lookup_stdlib_imported_symbol_runtime_binding
+from src.toolchain.misc.stdlib.signature_registry import lookup_stdlib_method_runtime_binding
+from src.toolchain.misc.stdlib.signature_registry import lookup_noncpp_imported_symbol_runtime_call
+from src.toolchain.misc.stdlib.signature_registry import lookup_noncpp_module_attr_runtime_call
+from src.toolchain.misc.stdlib.signature_registry import lookup_stdlib_method_runtime_call
+from src.toolchain.misc.stdlib.signature_registry import lookup_stdlib_method_return_type
+from src.toolchain.misc.stdlib.signature_registry import lookup_stdlib_function_runtime_call
+from src.toolchain.misc.stdlib.frontend_semantics import lookup_builtin_semantic_tag
+from src.toolchain.misc.stdlib.frontend_semantics import lookup_stdlib_function_semantic_tag
+from src.toolchain.misc.stdlib.frontend_semantics import lookup_stdlib_method_semantic_tag
+from src.toolchain.misc.stdlib.frontend_semantics import lookup_stdlib_symbol_semantic_tag
 
 
 class StdlibSignatureRegistryTest(unittest.TestCase):

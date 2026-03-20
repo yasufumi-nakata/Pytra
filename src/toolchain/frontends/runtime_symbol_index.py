@@ -12,11 +12,11 @@ INDEX_PATH = ROOT / "tools" / "runtime_symbol_index.json"
 _CACHE_HOLDER: list[dict[str, Any]] = [{}]
 _CACHE_LOADED_HOLDER: list[bool] = [False]
 _FRONTEND_FACADE_RUNTIME_MODULE_BY_SYMBOL: dict[str, str] = {
-    "add_common_transpile_args": "toolchain.compiler.transpile_cli",
-    "build_module_east_map": "toolchain.compiler.transpile_cli",
-    "load_east3_document": "toolchain.compiler.transpile_cli",
-    "load_east3_document_typed": "toolchain.compiler.transpile_cli",
-    "normalize_common_transpile_args": "toolchain.compiler.transpile_cli",
+    "add_common_transpile_args": "toolchain.misc.transpile_cli",
+    "build_module_east_map": "toolchain.misc.transpile_cli",
+    "load_east3_document": "toolchain.misc.transpile_cli",
+    "load_east3_document_typed": "toolchain.misc.transpile_cli",
+    "normalize_common_transpile_args": "toolchain.misc.transpile_cli",
 }
 
 
@@ -214,8 +214,8 @@ def lookup_cpp_namespace_for_runtime_module(module_id: str) -> str:
         if tail != "":
             return "pytra::" + tail.replace(".", "::")
         return "pytra"
-    if mod.startswith("toolchain.compiler."):
-        tail = mod[len("toolchain.compiler.") :]
+    if mod.startswith("toolchain.misc."):
+        tail = mod[len("toolchain.misc.") :]
         if tail != "":
             return "pytra::compiler::" + tail.replace(".", "::")
         return "pytra::compiler"

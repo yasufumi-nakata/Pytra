@@ -424,7 +424,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
             "  return out;\n"
             "}\n"
             "function import_module(name) {\n"
-            "  if (name === 'toolchain.compiler.js_runtime_shims') { return _module_dict({ write_js_runtime_shims }); }\n"
+            "  if (name === 'toolchain.misc.js_runtime_shims') { return _module_dict({ write_js_runtime_shims }); }\n"
             "  if (name === 'toolchain.emit.js.lower') { return _module_dict({ lower_east3_to_js_ir }); }\n"
             "  if (name === 'toolchain.emit.js.optimizer') { return _module_dict({ optimize_js_ir }); }\n"
             "  if (name === 'toolchain.emit.js.emitter.js_emitter') { return _module_dict({ transpile_to_js }); }\n"

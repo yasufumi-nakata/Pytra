@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from src.toolchain.compiler import backend_conformance_inventory as inventory_mod
-from src.toolchain.compiler import backend_feature_contract_inventory as feature_contract_mod
+from src.toolchain.misc import backend_conformance_inventory as inventory_mod
+from src.toolchain.misc import backend_feature_contract_inventory as feature_contract_mod
 from tools import check_backend_conformance_inventory as check_mod
 
 
@@ -85,7 +85,7 @@ class CheckBackendConformanceInventoryTest(unittest.TestCase):
                 {
                     "lane": "emit",
                     "harness_kind": "backend_emit_compare",
-                    "producer_entrypoint": "toolchain.compiler.backend_registry.emit_source_typed",
+                    "producer_entrypoint": "toolchain.misc.backend_registry.emit_source_typed",
                     "compare_unit": "normalized_source_or_fail_closed_diagnostic",
                 },
                 {

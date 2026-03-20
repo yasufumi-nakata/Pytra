@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-import src.toolchain.compiler.backend_registry_diagnostics as registry_diagnostics
+import src.toolchain.misc.backend_registry_diagnostics as registry_diagnostics
 
 
 class BackendRegistryDiagnosticsTest(unittest.TestCase):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from toolchain.compiler import backend_contract_coverage_inventory as inventory_mod
+from toolchain.misc import backend_contract_coverage_inventory as inventory_mod
 from tools import check_backend_contract_coverage_inventory as check_mod
 
 

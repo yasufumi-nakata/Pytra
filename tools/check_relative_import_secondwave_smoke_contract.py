@@ -11,7 +11,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from toolchain.compiler.relative_import_secondwave_smoke_contract import (
+from toolchain.misc.relative_import_secondwave_smoke_contract import (
     RELATIVE_IMPORT_SECOND_WAVE_BACKENDS_V1,
     RELATIVE_IMPORT_SECOND_WAVE_HANDOFF_V1,
     RELATIVE_IMPORT_SECOND_WAVE_SCENARIOS_V1,

@@ -22,7 +22,7 @@ if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from toolchain.emit.go.emitter import load_go_profile, transpile_to_go, transpile_to_go_native
-from toolchain.compiler.transpile_cli import load_east3_document
+from toolchain.misc.transpile_cli import load_east3_document
 from src.toolchain.compile.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 from relative_import_native_path_smoke_support import (

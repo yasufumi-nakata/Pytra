@@ -234,7 +234,7 @@ linked-program 期の位置づけ:
   - 役割: 引数正規化、入力検証、プロファイル解決、共通 runner 呼び出し。
   - 許可: `toolchain` 側 profile へ target 名を渡すこと。
   - 禁止: target 固有のコンパイラ/ランタイム/実行コマンドを直書きすること。
-- backend プロファイル（`src/toolchain/compiler/*`）
+- backend プロファイル（`src/toolchain/misc/*`）
   - 役割: target 固有の transpile/build/run 契約を宣言（必要ツール、出力命名、補助 runtime ファイル）。
   - 許可: target 固有のコマンド/ファイル名/拡張子定義。
   - 禁止: CLI 引数パースや標準入出力制御など入口責務の再実装。

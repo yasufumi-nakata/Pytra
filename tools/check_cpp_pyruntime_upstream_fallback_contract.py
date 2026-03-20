@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.toolchain.compiler import cpp_pyruntime_upstream_fallback_contract as contract_mod
-from src.toolchain.compiler import cpp_pyruntime_upstream_fallback_inventory as inventory_mod
+from src.toolchain.misc import cpp_pyruntime_upstream_fallback_contract as contract_mod
+from src.toolchain.misc import cpp_pyruntime_upstream_fallback_inventory as inventory_mod
 from tools import check_cpp_pyruntime_contract_inventory as contract_inventory_mod
 from tools import check_cpp_pyruntime_header_surface as header_surface_mod
 

@@ -8,8 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.toolchain.compiler import backend_feature_contract_inventory as inventory_mod
-from src.toolchain.compiler import backend_registry_diagnostics as diag_mod
+from src.toolchain.misc import backend_feature_contract_inventory as inventory_mod
+from src.toolchain.misc import backend_registry_diagnostics as diag_mod
 
 
 def _collect_inventory_issues() -> list[str]:

@@ -77,7 +77,7 @@ Detail categories:
 - `self_retranspile_fail`
 
 Shared sources:
-- [backend_registry_diagnostics.py](/workspace/Pytra/src/toolchain/compiler/backend_registry_diagnostics.py)
+- [backend_registry_diagnostics.py](/workspace/Pytra/src/toolchain/misc/backend_registry_diagnostics.py)
 - [selfhost_parity_summary.py](/workspace/Pytra/tools/selfhost_parity_summary.py)
 
 ## Current Readiness Reading

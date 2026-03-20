@@ -20,7 +20,7 @@
 - `src/runtime/java/pytra-gen/std/*.java`（新設）
 - `src/runtime/java/pytra-gen/utils/*.java`
 - `src/toolchain/emit/java/emitter/java_native_emitter.py`
-- `src/toolchain/compiler/backend_registry.py` / `_static.py`
+- `src/toolchain/misc/backend_registry.py` / `_static.py`
 - `tools/` の SoT ガード・監査
 
 非対象:

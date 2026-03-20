@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.toolchain.compiler import backend_parity_rollout_tier_contract as contract_mod
+from src.toolchain.misc import backend_parity_rollout_tier_contract as contract_mod
 
 
 def main() -> int:

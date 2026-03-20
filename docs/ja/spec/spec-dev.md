@@ -500,16 +500,16 @@ migration note:
 ### py2cpp 共通化ガードルール
 
 - `src/toolchain/emit/cpp/cli.py` へ新規ロジックを追加する場合は、先に「C++ 固有」か「言語非依存」かを分類します。
-- 言語非依存と判定した処理は `src/toolchain/compiler/`（`east_parts/` や `CodeEmitter` 含む）へ実装し、`py2x.py --target cpp` へは直接追加しません。
+- 言語非依存と判定した処理は `src/toolchain/misc/`（`east_parts/` や `CodeEmitter` 含む）へ実装し、`py2x.py --target cpp` へは直接追加しません。
 - `py2x.py --target cpp` に残す処理は C++ 固有責務（型写像、runtime 名解決、header/include 生成、C++ 構文最適化）に限定します。
 - 例外として、後方互換の公開 API ラッパ（`load_east`, `_analyze_import_graph`, `build_module_east_map`, `dump_deps_graph_text`）のみ `py2x.py --target cpp` に残置できます。これらは共通層 API への委譲に限定します。
 - 既存の `py2x.py --target cpp` 汎用 helper を修正する場合も、同時に共通層移管可否を検討し、`docs/ja/plans/p1-py2cpp-reduction.md` の決定ログへ記録します。
 - 緊急 hotfix で例外的に `py2x.py --target cpp` へ汎用 helper を暫定追加する場合は、実装箇所に `TEMP-CXX-HOTFIX` コメントと対応 `ID` を残します。
-- 暫定追加した helper は「追加日から 7 日以内」または「次回 PATCH リリースまで」の早い方で、`src/toolchain/compiler/` 側へ後追い抽出します。
+- 暫定追加した helper は「追加日から 7 日以内」または「次回 PATCH リリースまで」の早い方で、`src/toolchain/misc/` 側へ後追い抽出します。
 - 後追い抽出完了まで、`docs/ja/todo/index.md` に抽出タスクを未完了で保持し、`tools/check_py2cpp_helper_guard.py` の allowlist 更新理由を `docs/ja/plans/p1-py2cpp-reduction.md` に記録します。
 - 上記の責務境界は `tools/check_py2cpp_boundary.py` で検証し、`tools/run_local_ci.py` で常時実行します。
-- `src/toolchain/compiler/transpile_cli.py` の汎用 helper は機能グループごとの `class + @staticmethod`（`*Helpers`）を正本とし、`py2x.py --target cpp` 側は class 単位 import + 起動時束縛で参照します。トップレベル関数は当面、既存 CLI / selfhost 互換のために併存させます。
-- `ImportGraphHelpers` のうち `analyze_import_graph` / `build_module_east_map` は、実装本体を `src/toolchain/compiler/east_parts/east1_build.py` へ委譲する thin wrapper として運用します（互換公開 API のみ保持）。
+- `src/toolchain/misc/transpile_cli.py` の汎用 helper は機能グループごとの `class + @staticmethod`（`*Helpers`）を正本とし、`py2x.py --target cpp` 側は class 単位 import + 起動時束縛で参照します。トップレベル関数は当面、既存 CLI / selfhost 互換のために併存させます。
+- `ImportGraphHelpers` のうち `analyze_import_graph` / `build_module_east_map` は、実装本体を `src/toolchain/misc/east_parts/east1_build.py` へ委譲する thin wrapper として運用します（互換公開 API のみ保持）。
 - `py2x.py --target cpp` の import graph/build 入口（`_analyze_import_graph`, `build_module_east_map`）は `East1BuildHelpers` への委譲に限定し、`transpile_cli` へ実装詳細を持ち込みません。
 - 回帰は `test/unit/ir/test_east1_build.py`・`test/unit/toolchain/emit/cpp/test_py2cpp_east1_build_bridge.py`・`tools/check_py2cpp_transpile.py` を正本導線とし、依存解析責務の逆流を検出します。
 - `P0-PY2CPP-SPLIT-01` の回帰として `python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_smoke.py'` を併用し、`py2x.py --target cpp` の責務境界（`tools/check_py2cpp_boundary.py`）が維持されていることを確認します。
@@ -675,8 +675,8 @@ migration note:
 
 ## 5. EASTベース C++ 経路
 
-- `src/toolchain/compiler/east.py`: Python -> EAST JSON（正本）
-- `src/toolchain/compiler/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
+- `src/toolchain/misc/east.py`: Python -> EAST JSON（正本）
+- `src/toolchain/misc/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
 - `src/toolchain/emit/common/emitter/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
 - `src/toolchain/emit/cpp/cli.py`: EAST JSON -> C++
 - `src/runtime/cpp/native/core/py_runtime.h`: C++ ランタイム集約
@@ -730,12 +730,12 @@ migration note:
   - `meta.dispatch_mode` は入力値を読むだけにし、mode 再決定や意味論差し替えを行わない。
   - `CodeEmitter` は `EAST3` 以降の「構文写像専任」とし、意味論 lower（`EAST2 -> EAST3` 相当）は担当しない。
   - 禁止事項: dispatch mode の意味適用、`type_id`/boxing/built-in の意味論決定、backend/hook 側での再解釈。
-- EAST parser（`src/toolchain/compiler/east.py`）の責務:
+- EAST parser（`src/toolchain/misc/east.py`）の責務:
   - 単一入力（`.py`）を字句解析/構文解析し、単一モジュール EAST を生成する。
   - `range` などの言語非依存正規化と、単一ファイル内で完結する型/symbol 補助情報の付与に専念する。
   - 複数モジュール横断の import グラフ解析や module index 構築は持たない。
   - ルート契約（`east_stage`, `schema_version`, `meta.dispatch_mode`）を満たす EAST 文書を生成/保持する。
-- compiler 共通層（`src/toolchain/compiler/` 配下で段階抽出）の責務:
+- compiler 共通層（`src/toolchain/misc/` 配下で段階抽出）の責務:
   - FS 依存の import 解決、module EAST map 構築、symbol index / type schema 構築、deps dump を担当する。
   - 各 `py2*.py` CLI はこの共通層で解析を完了し、その結果を `CodeEmitter` に渡す構成とする。
   - `--object-dispatch-mode` はコンパイル開始時に 1 回だけ確定し、段間で `meta.dispatch_mode` として保持する。
@@ -789,7 +789,7 @@ migration note:
 - `py2x.py --target cpp` と `py2rs.py` で共通化できる処理は、各エミッタへ直接足さずに `CodeEmitter` 側へ先に寄せます。
 - 言語固有分岐は `hooks` / `profiles` 側へ分離し、`py2*.py` は薄いオーケストレータを維持します。
 - runtime module / helper ABI / source-side stdlib 名の解決は `profiles` / `runtime symbol index` / lowerer 側で完結させ、emitter 本体に `math` / `png` / `gif` / `save_gif` / `write_rgb_png` などの分岐を増やしません。
-- CLI の共通引数（`input`/`output`/`--negative-index-mode`/`--parser-backend` など）は `src/toolchain/compiler/transpile_cli.py` へ集約し、各 `py2*.py` の `main()` から再利用します。
+- CLI の共通引数（`input`/`output`/`--negative-index-mode`/`--parser-backend` など）は `src/toolchain/misc/transpile_cli.py` へ集約し、各 `py2*.py` の `main()` から再利用します。
 - selfhost 対象コードでは、動的 import（`try/except ImportError` による分岐 import や `importlib`）を避け、静的 import のみを使用します。
 - selfhost 対象コード（`src/` 配下のトランスパイラ本体・backend・IR 実装）では、Python 標準 `ast` モジュール（`import ast` / `from ast ...`）への依存を禁止します。
 - 構文解析/依存抽出が必要な場合は EAST ノードと既存 IR 情報を使って実装し、`ast` へのフォールバックを追加しません。

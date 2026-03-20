@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.toolchain.compiler import multilang_extern_runtime_realign_inventory as inventory_mod
+from src.toolchain.misc import multilang_extern_runtime_realign_inventory as inventory_mod
 
 
 _GENERATED_RUNTIME_TARGET_RE = re.compile(r"src/runtime/([^/]+)/generated/")

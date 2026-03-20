@@ -22,7 +22,7 @@ if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from toolchain.emit.nim.emitter import load_nim_profile, transpile_to_nim, transpile_to_nim_native
-from toolchain.compiler.transpile_cli import load_east3_document
+from toolchain.misc.transpile_cli import load_east3_document
 from relative_import_native_path_smoke_support import (
     relative_import_native_path_expected_rewrite,
     relative_import_native_path_scenarios,

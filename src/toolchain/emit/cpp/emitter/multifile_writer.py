@@ -6,7 +6,7 @@ from pytra.std import os as _os
 from pytra.std import json
 from pytra.std.pathlib import Path
 from pytra.typing import Any
-from toolchain.compiler.transpile_cli import (
+from toolchain.misc.transpile_cli import (
     dict_any_get_dict,
     dict_any_get_str,
     inject_after_includes_block,

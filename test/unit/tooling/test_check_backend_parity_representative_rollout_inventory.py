@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from toolchain.compiler import backend_parity_representative_rollout_inventory as inventory_mod
+from toolchain.misc import backend_parity_representative_rollout_inventory as inventory_mod
 from tools import check_backend_parity_representative_rollout_inventory as check_mod
 
 

@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import unittest
 
-from src.toolchain.compiler.east_parts.east3_opt_passes.any_annotation_prohibition_pass import (
+from src.toolchain.misc.east_parts.east3_opt_passes.any_annotation_prohibition_pass import (
     AnyAnnotationProhibitionPass,
 )
-from src.toolchain.compiler.east_parts.east3_optimizer import PassContext
-from src.toolchain.compiler.east_parts.east3_optimizer import PassResult
+from src.toolchain.misc.east_parts.east3_optimizer import PassContext
+from src.toolchain.misc.east_parts.east3_optimizer import PassResult
 
 
 def _module(body: list[object]) -> dict[str, object]:

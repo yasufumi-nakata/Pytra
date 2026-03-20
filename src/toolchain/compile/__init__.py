@@ -1,7 +1,7 @@
 """IR bootstrap namespace (`src/pytra/ir`).
 
 This package centralizes EAST/IR operations while migration from
-``toolchain.compiler.east_parts`` is in progress.
+``toolchain.misc.east_parts`` is in progress.
 """
 
 from .east1 import load_east1_document

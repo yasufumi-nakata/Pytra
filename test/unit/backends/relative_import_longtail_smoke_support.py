@@ -6,10 +6,10 @@ from pathlib import Path
 from toolchain.emit.lua.emitter import transpile_to_lua_native
 from toolchain.emit.php.emitter import transpile_to_php_native
 from toolchain.emit.ruby.emitter import transpile_to_ruby_native
-from toolchain.compiler.relative_import_longtail_support_contract import (
+from toolchain.misc.relative_import_longtail_support_contract import (
     RELATIVE_IMPORT_LONGTAIL_SUPPORT_SCENARIOS_V1,
 )
-from toolchain.compiler.transpile_cli import build_module_east_map, load_east3_document
+from toolchain.misc.transpile_cli import build_module_east_map, load_east3_document
 
 
 def relative_import_longtail_scenarios() -> dict[str, dict[str, object]]:

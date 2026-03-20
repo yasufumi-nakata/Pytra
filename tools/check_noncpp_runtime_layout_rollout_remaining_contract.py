@@ -13,8 +13,8 @@ SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from src.toolchain.compiler import backend_registry_metadata
-from src.toolchain.compiler import noncpp_runtime_layout_rollout_remaining_contract as contract_mod
+from src.toolchain.misc import backend_registry_metadata
+from src.toolchain.misc import noncpp_runtime_layout_rollout_remaining_contract as contract_mod
 
 
 _VALID_OWNERSHIP = ("native", "generated", "delete_target")

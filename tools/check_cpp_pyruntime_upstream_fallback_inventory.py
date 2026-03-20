@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.toolchain.compiler import cpp_pyruntime_upstream_fallback_inventory as inventory_mod
+from src.toolchain.misc import cpp_pyruntime_upstream_fallback_inventory as inventory_mod
 
 
 TEXT_SUFFIXES = {".py", ".cpp", ".h", ".md"}

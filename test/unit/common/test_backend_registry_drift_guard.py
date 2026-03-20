@@ -16,8 +16,8 @@ if str(ROOT / "src") not in sys.path:
 HOST_REGISTRY = ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py"
 STATIC_REGISTRY = ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py"
 
-_SHARED_MODULE = "toolchain.compiler.backend_registry_shared"
-_TYPED_BOUNDARY_MODULE = "toolchain.compiler.typed_boundary"
+_SHARED_MODULE = "toolchain.misc.backend_registry_shared"
+_TYPED_BOUNDARY_MODULE = "toolchain.misc.typed_boundary"
 
 _HOST_ONLY_PRIVATE_FUNCS = {
     "_module_symbol",

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from pytra.std import json
 from pytra.std.pathlib import Path
-from toolchain.compiler.transpile_cli import make_user_error
+from toolchain.misc.transpile_cli import make_user_error
 from toolchain.frontends.type_expr import type_expr_to_string
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 from toolchain.json_adapters import export_json_object_dict

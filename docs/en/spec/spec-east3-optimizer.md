@@ -206,9 +206,9 @@ Fail-closed rules:
 
 Recommended file layout:
 
-- `src/toolchain/compiler/east_parts/east3_optimizer.py`
-- `src/toolchain/compiler/east_parts/east3_optimizer_cpp.py`
-- `src/toolchain/compiler/east_parts/east3_opt_passes/*.py`
+- `src/toolchain/misc/east_parts/east3_optimizer.py`
+- `src/toolchain/misc/east_parts/east3_optimizer_cpp.py`
+- `src/toolchain/misc/east_parts/east3_opt_passes/*.py`
 
 ## 10. CLI / Debug Contract
 

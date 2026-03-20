@@ -81,8 +81,8 @@ def _remove_import_line(text: str) -> str:
 
     targets: list[tuple[str, str, bool]] = [
         # `CodeEmitter` import は py2cpp 側から hooks 側へ移ったため、存在しない版も許容する。
-        ("from toolchain.compiler.east_parts.code_emitter import CodeEmitter", "CodeEmitter import", False),
-        ("from toolchain.compiler.transpile_cli import ", "transpile_cli import", True),
+        ("from toolchain.misc.east_parts.code_emitter import CodeEmitter", "CodeEmitter import", False),
+        ("from toolchain.misc.transpile_cli import ", "transpile_cli import", True),
         ("from toolchain.emit.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl", "build_cpp_hooks import", True),
     ]
     out = text

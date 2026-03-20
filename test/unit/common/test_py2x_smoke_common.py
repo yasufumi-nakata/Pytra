@@ -20,8 +20,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from toolchain.compiler.backend_registry import get_backend_spec
-from toolchain.compiler.transpile_cli import load_east3_document
+from toolchain.misc.backend_registry import get_backend_spec
+from toolchain.misc.transpile_cli import load_east3_document
 
 TARGET_EXT: dict[str, str] = {
     "cpp": ".cpp",

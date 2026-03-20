@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from src.toolchain.compiler import (
+from src.toolchain.misc import (
     backend_contract_coverage_handoff_contract as contract_mod,
 )
 from tools import check_backend_contract_coverage_handoff_contract as checker

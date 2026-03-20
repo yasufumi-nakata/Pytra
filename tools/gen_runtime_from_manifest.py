@@ -22,7 +22,7 @@ SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from toolchain.compiler.backend_registry_static import (
+from toolchain.misc.backend_registry_static import (
     emit_source,
     get_backend_spec,
     lower_ir,

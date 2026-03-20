@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from toolchain.compiler.typed_boundary import export_compiler_root_document
+from toolchain.misc.typed_boundary import export_compiler_root_document
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends import add_common_transpile_args
 from toolchain.frontends import build_module_east_map

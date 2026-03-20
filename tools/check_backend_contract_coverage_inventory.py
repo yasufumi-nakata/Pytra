@@ -13,8 +13,8 @@ if str(ROOT) not in sys.path:
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from toolchain.compiler import backend_contract_coverage_inventory as inventory_mod
-from toolchain.compiler import backend_feature_contract_inventory as feature_inventory_mod
+from toolchain.misc import backend_contract_coverage_inventory as inventory_mod
+from toolchain.misc import backend_feature_contract_inventory as feature_inventory_mod
 
 
 def _collect_seed_issues() -> list[str]:

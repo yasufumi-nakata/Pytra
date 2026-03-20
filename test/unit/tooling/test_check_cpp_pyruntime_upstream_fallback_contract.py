@@ -9,7 +9,7 @@ ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.toolchain.compiler import cpp_pyruntime_upstream_fallback_contract as contract_mod
+from src.toolchain.misc import cpp_pyruntime_upstream_fallback_contract as contract_mod
 from tools import check_cpp_pyruntime_upstream_fallback_contract as check_mod
 
 

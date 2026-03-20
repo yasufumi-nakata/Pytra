@@ -1,6 +1,6 @@
 import unittest
 
-from toolchain.compiler.relative_import_firstwave_smoke_contract import (
+from toolchain.misc.relative_import_firstwave_smoke_contract import (
     RELATIVE_IMPORT_FIRST_WAVE_BACKENDS_V1,
     RELATIVE_IMPORT_FIRST_WAVE_SCENARIOS_V1,
 )

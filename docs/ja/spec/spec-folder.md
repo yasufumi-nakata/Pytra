@@ -97,27 +97,27 @@ src/toolchain/
     ...        ← 全15言語
     cpp.py     ← C++ emit エントリポイント（import 分離済み）
     all.py     ← 全 backend 汎用エントリポイント
-  compiler/    ← 互換 shim / facade（backend registry 等）
+  misc/        ← 互換 shim / facade（backend registry 等、段階撤去対象）
 ```
 
 - `src/toolchain/frontends/`: 入力言語 frontend（例: `transpile_cli.py`, `python_frontend.py`, `east1_build.py`, `signature_registry.py`）
 - `src/toolchain/compile/`: EAST1/2/3 定義・lower・optimizer・pipeline（例: `core.py`, `east1.py`, `east2.py`, `east3.py`, `east3_optimizer.py`）
 - `src/toolchain/link/`: リンカー・linked program optimizer（例: `program_loader.py`, `global_optimizer.py`）
 - `src/toolchain/emit/`: ターゲット言語ごとの emit 実装。各 `<lang>/` 配下に `emitter/`, `optimizer/`, `lower/`, `profiles/` を持つ。
-- `src/toolchain/compiler/`: 互換 shim / facade（例: 旧 import 経路の受け皿、backend registry）
+- `src/toolchain/misc/`: 互換 shim / facade（例: 旧 import 経路の受け皿、backend registry）
 - 置かないもの:
   - `frontends` / `ir` 側へ移設済みロジックを `compiler` へ戻す新規実装
 - 依存方向:
   - 正規方向は `toolchain.frontends → toolchain.compile → toolchain.link → toolchain.emit`。
   - `toolchain.emit → toolchain.frontends` は禁止。
-  - `toolchain.compiler → toolchain.frontends|toolchain.compile` は互換層として許可。
+  - `toolchain.misc → toolchain.frontends|toolchain.compile` は互換層として許可。
   - `py2x.py` は `toolchain.emit` を import しない（emit はサブプロセスで `toolchain.emit.cpp` / `toolchain.emit.all` を呼ぶ）。
   - 暫定例外として、`toolchain.compile.core` から `toolchain.frontends.signature_registry|frontend_semantics` 参照を許容する（循環解消タスクで撤去予定）。
 
 #### 3.1.1 旧 import 経路の禁止ルール（移行規約）
 
 - 旧経路 `pytra.frontends` / `pytra.ir` / `pytra.compiler` への新規 import 追加は禁止する。
-- 正規経路は `toolchain.frontends` / `toolchain.compile` / `toolchain.compiler` とする。
+- 正規経路は `toolchain.frontends` / `toolchain.compile` / `toolchain.misc` とする。
 - 旧経路を延命する re-export / alias shim は追加しない（後方互換レイヤは作らない）。
 - 既存参照の棚卸し・削除は段階移行で実施し、未移行参照は `rg` 検査で可視化する。
   - 推奨検査: `rg -n "pytra\\.(frontends|ir|compiler)" src tools test`

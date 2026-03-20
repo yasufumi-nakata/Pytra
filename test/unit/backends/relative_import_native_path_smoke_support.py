@@ -7,7 +7,7 @@ from pathlib import Path
 from toolchain.emit.go.emitter import transpile_to_go_native
 from toolchain.emit.nim.emitter import transpile_to_nim_native
 from toolchain.emit.swift.emitter import transpile_to_swift_native
-from toolchain.compiler.relative_import_native_path_bundle_contract import (
+from toolchain.misc.relative_import_native_path_bundle_contract import (
     RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_SCENARIOS_V1,
 )
 from toolchain.frontends.transpile_cli import build_module_east_map, load_east3_document

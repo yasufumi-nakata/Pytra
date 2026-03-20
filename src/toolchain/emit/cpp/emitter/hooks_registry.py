@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pytra.typing import Any
 from toolchain.emit.common.emitter.code_emitter import EmitterHooks
-from toolchain.compiler.transpile_cli import dict_any_get_str
+from toolchain.misc.transpile_cli import dict_any_get_str
 
 
 def on_stmt_omit_braces(

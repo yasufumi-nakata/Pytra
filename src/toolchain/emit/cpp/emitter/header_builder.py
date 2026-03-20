@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pytra.typing import Any
-from toolchain.compiler.transpile_cli import (
+from toolchain.misc.transpile_cli import (
     dict_any_get_dict,
     dict_any_get_dict_list,
     dict_any_get_list,

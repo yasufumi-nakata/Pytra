@@ -6,10 +6,10 @@ from pathlib import Path
 from toolchain.emit.java.emitter.java_native_emitter import transpile_to_java_native
 from toolchain.emit.kotlin.emitter import transpile_to_kotlin_native
 from toolchain.emit.scala.emitter import transpile_to_scala_native
-from toolchain.compiler.relative_import_jvm_package_bundle_contract import (
+from toolchain.misc.relative_import_jvm_package_bundle_contract import (
     RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_SCENARIOS_V1,
 )
-from toolchain.compiler.transpile_cli import build_module_east_map, load_east3_document
+from toolchain.misc.transpile_cli import build_module_east_map, load_east3_document
 
 
 def relative_import_jvm_package_scenarios() -> dict[str, dict[str, object]]:

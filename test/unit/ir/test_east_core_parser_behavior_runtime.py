@@ -11,7 +11,7 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import _walk
-from src.toolchain.compiler.east import convert_source_to_east_with_backend
+from src.toolchain.misc.east import convert_source_to_east_with_backend
 
 
 class EastCoreParserBehaviorRuntimeTest(unittest.TestCase):

@@ -6,7 +6,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from src.toolchain.compiler.backend_registry_diagnostics import classify_parity_note_detail
+from src.toolchain.misc.backend_registry_diagnostics import classify_parity_note_detail
 from tools.selfhost_parity_summary import build_summary_row
 from tools.selfhost_parity_summary import print_summary_block
 

@@ -5,7 +5,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from src.toolchain.compiler import backend_feature_contract_inventory as inventory_mod
+from src.toolchain.misc import backend_feature_contract_inventory as inventory_mod
 from tools import export_backend_feature_contract_manifest as export_mod
 
 

@@ -22,7 +22,7 @@ if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from toolchain.emit.ts.emitter.ts_emitter import load_ts_profile, transpile_to_typescript
-from toolchain.compiler.transpile_cli import load_east3_document
+from toolchain.misc.transpile_cli import load_east3_document
 from src.toolchain.compile.core_entrypoints import convert_path
 from toolchain.emit.ts.emitter import ts_emitter as ts_emitter_mod
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments

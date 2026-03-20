@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from toolchain.compiler.relative_import_secondwave_rollout_contract import (
+from toolchain.misc.relative_import_secondwave_rollout_contract import (
     RELATIVE_IMPORT_SECONDWAVE_BACKEND_BUNDLES_V1,
     RELATIVE_IMPORT_LONGTAIL_BACKENDS_V1,
     RELATIVE_IMPORT_SECONDWAVE_BACKENDS_V1,

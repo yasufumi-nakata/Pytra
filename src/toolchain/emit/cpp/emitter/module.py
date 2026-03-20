@@ -9,7 +9,7 @@ from toolchain.emit.cpp.emitter.runtime_paths import (
 from toolchain.frontends.runtime_symbol_index import lookup_cpp_namespace_for_runtime_module
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_module_group
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_runtime_module
-from toolchain.compiler.transpile_cli import (
+from toolchain.misc.transpile_cli import (
     append_unique_non_empty,
     dict_any_get_dict,
     dict_any_get_dict_list,
@@ -46,7 +46,7 @@ _CPP_HELPER_MODULE_BY_RUNTIME_CALL = {
 }
 _CPP_REPEAT_INT_TYPES = {"int", "uint", "int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}
 RUNTIME_CPP_GENERATED_ROOT = REPO_ROOT / "src/runtime/cpp/generated"
-TOOLCHAIN_COMPILER_PREFIX = "toolchain.compiler."
+TOOLCHAIN_COMPILER_PREFIX = "toolchain.misc."
 TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
 

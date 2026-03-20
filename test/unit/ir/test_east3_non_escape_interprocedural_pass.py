@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.toolchain.compiler.east_parts.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
-from src.toolchain.compiler.east_parts.east3_optimizer import PassContext
+from src.toolchain.misc.east_parts.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
+from src.toolchain.misc.east_parts.east3_optimizer import PassContext
 
 
 def _name(id_text: str) -> dict[str, object]:
