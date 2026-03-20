@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys as _sys
+
 from pytra.std import os as _os
 from pytra.std import json
 from pytra.std.pathlib import Path
@@ -81,6 +83,11 @@ def write_multi_file_cpp(
 ) -> dict[str, Any]:
     """Legacy facade that renders module texts then delegates layout/manifest writing."""
     _ = top_namespace
+
+    # 大規模 multi-module emit では深い AST 走査で再帰深度超過する場合がある。
+    _prev_limit = _sys.getrecursionlimit()
+    if _prev_limit < 10000:
+        _sys.setrecursionlimit(10000)
 
     root = Path(path_parent_text(entry_path))
     entry_key = str(entry_path)

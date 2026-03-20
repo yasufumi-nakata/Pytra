@@ -785,7 +785,9 @@ class CppModuleEmitter:
         cached = self._module_class_signature_cache.get(module_name_norm)
         if isinstance(cached, dict):
             return cached
+        # sentinel: 再帰呼び出しで無限ループしないよう、空 dict を先行キャッシュする。
         out: dict[str, dict[str, Any]] = {}
+        self._module_class_signature_cache[module_name_norm] = out
         user_module_docs = getattr(self, "user_module_east_map", {})
         if isinstance(user_module_docs, dict):
             east_doc = user_module_docs.get(module_name_norm)

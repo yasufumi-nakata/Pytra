@@ -1656,7 +1656,11 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             self.emit("")
         # inline union struct 定義を挿入
         if len(self._inline_union_struct_lines) > 0 and self._inline_union_insert_pos >= 0:
-            self.lines[self._inline_union_insert_pos:self._inline_union_insert_pos] = self._inline_union_struct_lines
+            # スライス代入の代わりにループで挿入（selfhost C++ 互換）
+            pos = self._inline_union_insert_pos
+            for insert_line in self._inline_union_struct_lines:
+                self.lines.insert(pos, insert_line)
+                pos += 1
         return "\n".join(self.lines)
 
     def _infer_name_assign_type(self, stmt: dict[str, Any], target_node: dict[str, Any]) -> str:
