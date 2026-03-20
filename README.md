@@ -58,7 +58,7 @@ Execution times for sample programs written in Python and their transpiled versi
 |06 |Julia parameter sweep (GIF)|9.627|0.507|0.546|0.407|0.329|0.626|
 |16 |Chaos rotation of glass sculpture (GIF)|6.847|0.606|0.277|0.246|1.220|0.650|
 
-Full data for all languages and samples → [Sample page](sample/readme.md#runtime-performance-comparison)
+Full data for all languages and samples → [Sample page](sample/README.md#runtime-performance-comparison)
 
 <table><tr>
 <td valign="top" width="50%">

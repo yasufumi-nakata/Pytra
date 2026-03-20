@@ -147,5 +147,5 @@ python -m unittest discover -s test/unit/common -p "test_fixtures_truth.py" -v
 
 - How to use: [Usage Guide](../how-to-use.md)
 - py2cpp feature support matrix (with test evidence): [C++ Support Matrix](../language/cpp/spec-support.md)
-- Sample code: [Sample Code](../../sample/readme.md)
+- Sample code: [Sample Code](../../sample/README.md)
 - Detailed implementation status: [Pytra WIP Plan](../plans/archive/pytra-wip.md)

@@ -12,6 +12,6 @@
 - feature × backend の support state と rollout handoff を確認する: [Backend Parity Matrix](language/backend-parity-matrix.md)
 - backend-owned test suite の実測 green 状態を確認する: [Backend Test Matrix](language/backend-test-matrix.md)
 - `py2cpp` の機能対応（テスト根拠）を確認する: [py2cpp サポートマトリクス](language/cpp/spec-support.md)
-- サンプル一覧と概要を確認する: [サンプルコード案内](../../sample/readme-ja.md)
+- サンプル一覧と概要を確認する: [サンプルコード案内](../../sample/README-ja.md)
 - 仕様・制約・構成・運用ルールを確認する: [仕様書トップ](spec/index.md)
 - 開発の動機と設計理念: [開発思想](spec/spec-philosophy.md)

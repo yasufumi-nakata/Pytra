@@ -44,7 +44,7 @@ Decision log:
 - 2026-02-28: [ID: `P0-LUA-BACKEND-01-S2-01`] Added to Lua emitter: `Assign(target/targets)`, `While`, `Dict/Subscript/IfExp/JoinedStr/Attribute/Box/Unbox`, and Attribute Call lowering. Expanded `test_py2lua_smoke.py` to 12 tests and passed. In cross-fixture runs, improved `ok 22 -> 57`; remaining issues converged to S2-02 areas such as `ClassDef/ListComp/Lambda`.
 - 2026-02-28: [ID: `P0-LUA-BACKEND-01-S2-02`] Added `ClassDef`/constructor/method dispatch/`IsInstance`/import lowering (`math` and `pytra.utils png/gif` stubs). Expanded `test_py2lua_smoke.py` to 15 tests and passed. In cross-fixture runs, improved `ok 57 -> 81`; remaining issues converged to non-class areas such as `ListComp/Lambda/ObjStr`.
 - 2026-02-28: [ID: `P0-LUA-BACKEND-01-S3-01`] Added `tools/check_py2lua_transpile.py` and confirmed `checked=86 ok=86 fail=0 skipped=53`. Added `runtime_parity_check --targets lua` pipeline and confirmed PASS (exit 0) on `17_monte_carlo_pi` with `toolchain_missing`.
-- 2026-02-28: [ID: `P0-LUA-BACKEND-01-S3-02`] Added `lua` config to `tools/regenerate_samples.py` and regenerated `sample/lua` for `02/03/04/17` (`summary: total=4 skip=0 regen=4 fail=0`). Synced Lua pipeline and current coverage in `docs/ja/how-to-use.md` / `docs/ja/spec/spec-user.md` / `docs/ja/spec/spec-import.md` / `sample/readme-ja.md`.
+- 2026-02-28: [ID: `P0-LUA-BACKEND-01-S3-02`] Added `lua` config to `tools/regenerate_samples.py` and regenerated `sample/lua` for `02/03/04/17` (`summary: total=4 skip=0 regen=4 fail=0`). Synced Lua pipeline and current coverage in `docs/ja/how-to-use.md` / `docs/ja/spec/spec-user.md` / `docs/ja/spec/spec-import.md` / `sample/README-ja.md`.
 
 ## Breakdown
 

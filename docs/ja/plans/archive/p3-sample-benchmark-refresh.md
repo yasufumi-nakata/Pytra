@@ -17,7 +17,7 @@
 対象:
 - `sample/py` の現行サンプル（01〜18）を基準に、Python / C++ / Rust / C# / JS / TS / Go / Java / Swift / Kotlin の実行時間を再計測する。
 - `readme.md` と `docs/ja/README.md` の実行時間表を同一データで更新する。
-- サンプル番号・名称・表の行順が `sample/readme.md` / `sample/readme-ja.md` と整合することを確認する。
+- サンプル番号・名称・表の行順が `sample/README.md` / `sample/README-ja.md` と整合することを確認する。
 
 非対象:
 - ベンチマークの最適化作業（コード改善やコンパイルフラグ変更）。

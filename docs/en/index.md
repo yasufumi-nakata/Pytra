@@ -13,6 +13,6 @@ The related documents are listed below in the order they are most frequently ref
 - Check feature × backend support-state publication and rollout handoff: [Backend Parity Matrix](language/backend-parity-matrix.md)
 - Check measured green state of backend-owned test suites: [Backend Test Matrix](language/backend-test-matrix.md)
 - Check `py2cpp` feature coverage (with test evidence): [py2cpp Support Matrix](language/cpp/spec-support.md)
-- Browse sample list and overview: [Sample Code Guide](../../sample/readme.md)
+- Browse sample list and overview: [Sample Code Guide](../../sample/README.md)
 - Review specs, constraints, architecture, and operational rules: [Specification Index](spec/index.md)
 - Motivation and design philosophy: [Development Philosophy](spec/spec-philosophy.md)
