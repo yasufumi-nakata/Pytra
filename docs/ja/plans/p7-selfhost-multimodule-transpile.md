@@ -82,3 +82,5 @@ g++ -std=c++20 -O2 -Isrc -Isrc/runtime/cpp selfhost/cpp/src/*.cpp <runtime_sourc
   - **#5 continue**: ~170件 — 自動変換可能だが広範囲
   - **#6 literal set membership**: ~330件 — 自動変換可能だが広範囲
   - **ブロッカー**: #4 の動的 dispatch 4件。`_attach_cpp_emitter_helper_methods` は mixin パターンで CppEmitter にヘルパーメソッドを動的注入しており、C++ では静的多重継承またはテンプレート CRTP に置換が必要。
+- 2026-03-20: S2 実装完了。パーサー修正 3 件（typing/dataclasses no-op import 許容、dict 文字列キー内 `:` 対応、複数型引数 subscript 対応）。コンパイラバグ修正 4 件（TypeExpr sync、EAST3 validator 2 件、optimizer fold）。全 150 モジュールの個別 EAST3 コンパイルに成功。依存チェーン全体（40+ ファイル）の object レシーバを dict[str, Any] 型ローカルに修正。global 文を mutable list holder に置換。typing import を pytra.typing に移行（emitter/optimizer 34 ファイル）。EAST3 mixin 展開を新規実装。
+- 2026-03-20: リンク段階で `from toolchain.compiler.transpile_cli import make_user_error` 等のシンボル解決に失敗。全モジュール個別コンパイルは成功しているが、リンカーの export/import マッチングが未解決。S4 として起票。
