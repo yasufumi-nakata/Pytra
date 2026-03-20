@@ -78,6 +78,25 @@ Pytra's features
   - The transpiler core is implemented in Python, making extension and customization easy.
   - The transpiler's own source code can be transpiled into other languages by this transpiler, enabling self-hosting.
 
+Python vs Pytra
+
+|Aspect|Python|Pytra|
+|-|-|-|
+|Execution|Runs on Python interpreter|Transpiles first, then runs on each target language|
+|Typing|Dynamic typing|Static-leaning typing|
+|Integers|Arbitrary precision|int64, uint64, ..., int8, uint8|
+|Float|64-bit only|64/32-bit|
+|Speed|x1|x10~x100 (when converting to C++/Rust)|
+|Backend optimization|Limited|Abundant|
+|Multi-language delivery|Single track|Deploy in multiple languages|
+|Type fixity|Loose|Stronger|
+|Boundary checks|Loose|Easier to control explicitly|
+|Platform integration|Python-runtime centric|Easy to integrate with language-specific SDKs/tools|
+|Distribution|Python runtime required|Fits language-specific deployment|
+|mix-in|Yes|Yes|
+|Multiple inheritance|Yes|No|
+|Selfhost|No|Yes|
+
 We also prioritize practical operational benefits.
 
 WARNING: This project is still under active development and may be far from production-ready. Review sample code first and use at your own risk.
