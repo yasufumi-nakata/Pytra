@@ -1762,6 +1762,134 @@ class East2ToEast3LoweringTest(East23LoweringNominalAdtFixtureMixin, unittest.Te
         self.assertEqual(cp.returncode, 0, msg=f"{cp.stdout}\n{cp.stderr}")
         self.assertIn("static contract checks passed", cp.stdout)
 
+    def test_vararg_funcdef_desugared_to_list_param(self) -> None:
+        """FunctionDef with *args: T gets vararg_name removed and list[T] added to arg_order/arg_types."""
+        east2 = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "greet",
+                    "arg_order": ["prefix"],
+                    "arg_types": {"prefix": "str"},
+                    "arg_type_exprs": {"prefix": {"kind": "NamedType", "name": "str"}},
+                    "return_type": "None",
+                    "vararg_name": "names",
+                    "vararg_type": "str",
+                    "vararg_type_expr": {"kind": "NamedType", "name": "str"},
+                    "body": [],
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        fn = out["body"][0]
+        # vararg fields removed
+        self.assertIsNone(fn.get("vararg_name"))
+        self.assertIsNone(fn.get("vararg_type"))
+        self.assertIsNone(fn.get("vararg_type_expr"))
+        # list[str] param added
+        self.assertIn("names", fn["arg_order"])
+        self.assertEqual(fn["arg_types"]["names"], "list[str]")
+        # marker present
+        info = fn.get("vararg_desugared_v1")
+        self.assertIsInstance(info, dict)
+        self.assertEqual(info["n_fixed"], 1)
+        self.assertEqual(info["elem_type"], "str")
+        self.assertEqual(info["vararg_name"], "names")
+
+    def test_vararg_callsite_packed_into_list_node(self) -> None:
+        """Call with trailing varargs becomes Call(fixed_args + [List(vararg_args)])."""
+        east2 = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "greet",
+                    "arg_order": ["prefix"],
+                    "arg_types": {"prefix": "str"},
+                    "arg_type_exprs": {"prefix": {"kind": "NamedType", "name": "str"}},
+                    "return_type": "None",
+                    "vararg_name": "names",
+                    "vararg_type": "str",
+                    "vararg_type_expr": {"kind": "NamedType", "name": "str"},
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "resolved_type": "None",
+                                "func": {"kind": "Name", "id": "greet", "resolved_type": "unknown"},
+                                "args": [
+                                    {"kind": "Name", "id": "p", "resolved_type": "str", "borrow_kind": "value", "casts": []},
+                                    {"kind": "Name", "id": "a", "resolved_type": "str", "borrow_kind": "value", "casts": []},
+                                    {"kind": "Name", "id": "b", "resolved_type": "str", "borrow_kind": "value", "casts": []},
+                                ],
+                                "keywords": [],
+                                "borrow_kind": "value",
+                                "casts": [],
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        fn = out["body"][0]
+        call = fn["body"][0]["value"]
+        args = call["args"]
+        self.assertEqual(len(args), 2, "should have fixed arg + packed list")
+        self.assertEqual(args[0]["id"], "p")
+        packed = args[1]
+        self.assertEqual(packed["kind"], "List")
+        self.assertEqual(packed["resolved_type"], "list[str]")
+        elements = packed["elements"]
+        self.assertEqual(len(elements), 2)
+        self.assertEqual(elements[0]["id"], "a")
+        self.assertEqual(elements[1]["id"], "b")
+
+    def test_vararg_empty_call_passes_empty_list(self) -> None:
+        """Call with no varargs (only fixed args) appends an empty List."""
+        east2 = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "greet",
+                    "arg_order": ["prefix"],
+                    "arg_types": {"prefix": "str"},
+                    "arg_type_exprs": {"prefix": {"kind": "NamedType", "name": "str"}},
+                    "return_type": "None",
+                    "vararg_name": "names",
+                    "vararg_type": "str",
+                    "vararg_type_expr": {"kind": "NamedType", "name": "str"},
+                    "body": [
+                        {
+                            "kind": "Expr",
+                            "value": {
+                                "kind": "Call",
+                                "resolved_type": "None",
+                                "func": {"kind": "Name", "id": "greet", "resolved_type": "unknown"},
+                                "args": [
+                                    {"kind": "Name", "id": "p", "resolved_type": "str", "borrow_kind": "value", "casts": []},
+                                ],
+                                "keywords": [],
+                                "borrow_kind": "value",
+                                "casts": [],
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        fn = out["body"][0]
+        call = fn["body"][0]["value"]
+        args = call["args"]
+        self.assertEqual(len(args), 2)
+        packed = args[1]
+        self.assertEqual(packed["kind"], "List")
+        self.assertEqual(packed["elements"], [])
+
     def test_jsonvalue_typeexpr_contract_script_passes(self) -> None:
         cp = subprocess.run(
             ["python3", "tools/check_jsonvalue_typeexpr_contract.py"],
