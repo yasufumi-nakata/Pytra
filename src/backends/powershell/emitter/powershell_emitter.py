@@ -110,18 +110,19 @@ _UNARYOP_MAP: dict[str, str] = {
 }
 
 
-def _render_expr(expr: Any) -> str:
-    if not isinstance(expr, dict):
-        if isinstance(expr, bool):
-            return "$true" if expr else "$false"
-        if isinstance(expr, int):
-            return str(expr)
-        if isinstance(expr, float):
-            return str(expr)
-        if isinstance(expr, str):
-            return _ps_string_literal(expr)
+def _render_expr(expr_any: Any) -> str:
+    if not isinstance(expr_any, dict):
+        if isinstance(expr_any, bool):
+            return "$true" if expr_any else "$false"
+        if isinstance(expr_any, int):
+            return str(expr_any)
+        if isinstance(expr_any, float):
+            return str(expr_any)
+        if isinstance(expr_any, str):
+            return _ps_string_literal(expr_any)
         return "$null"
 
+    expr: dict[str, object] = expr_any
     kind = _get_str(expr, "kind")
 
     if kind == "Name":
@@ -174,9 +175,14 @@ def _render_expr(expr: Any) -> str:
         comparators = _get_list(expr, "comparators")
         if len(ops) == 0 or len(comparators) == 0:
             return "$true"
-        ps_op = _COMPARE_MAP.get(_get_str(ops[0] if isinstance(ops[0], dict) else {}, "kind") if isinstance(ops[0], dict) else str(ops[0]) if isinstance(ops[0], str) else "", "-eq")
-        if isinstance(ops[0], str):
-            ps_op = _COMPARE_MAP.get(ops[0], "-eq")
+        op0 = ops[0]
+        if isinstance(op0, dict):
+            op0_d: dict[str, object] = op0
+            ps_op = _COMPARE_MAP.get(_get_str(op0_d, "kind"), "-eq")
+        elif isinstance(op0, str):
+            ps_op = _COMPARE_MAP.get(op0, "-eq")
+        else:
+            ps_op = "-eq"
         right = _render_expr(comparators[0])
         if len(ops) == 1:
             return "(" + left + " " + ps_op + " " + right + ")"
@@ -222,8 +228,9 @@ def _render_expr(expr: Any) -> str:
             entries = _get_list(expr, "entries")
             for entry in entries:
                 if isinstance(entry, dict):
-                    k = entry.get("key")
-                    v = entry.get("value")
+                    entry_d: dict[str, object] = entry
+                    k = entry_d.get("key")
+                    v = entry_d.get("value")
                     if k is not None:
                         keys.append(k)
                     if v is not None:
@@ -241,8 +248,9 @@ def _render_expr(expr: Any) -> str:
         value = _render_expr(expr.get("value"))
         slice_any = expr.get("slice")
         if isinstance(slice_any, dict) and _get_str(slice_any, "kind") == "Slice":
-            lower = _render_expr(slice_any.get("lower")) if slice_any.get("lower") is not None else "0"
-            upper = _render_expr(slice_any.get("upper")) if slice_any.get("upper") is not None else (value + ".Length")
+            slice_d: dict[str, object] = slice_any
+            lower = _render_expr(slice_d.get("lower")) if slice_d.get("lower") is not None else "0"
+            upper = _render_expr(slice_d.get("upper")) if slice_d.get("upper") is not None else (value + ".Length")
             return value + "[" + lower + "..(" + upper + " - 1)]"
         index = _render_expr(slice_any)
         return value + "[" + index + "]"
@@ -261,17 +269,18 @@ def _render_expr(expr: Any) -> str:
         for part in parts_list:
             if not isinstance(part, dict):
                 continue
-            pk = _get_str(part, "kind")
+            part_d: dict[str, object] = part
+            pk = _get_str(part_d, "kind")
             if pk == "Constant":
-                v = part.get("value")
+                v = part_d.get("value")
                 if isinstance(v, str):
                     escaped = v.replace("`", "``").replace('"', '`"').replace("$", "`$")
                     segments.append(escaped)
             elif pk == "FormattedValue":
-                inner = _render_expr(part.get("value"))
+                inner = _render_expr(part_d.get("value"))
                 segments.append("$(" + inner + ")")
             else:
-                segments.append("$(" + _render_expr(part) + ")")
+                segments.append("$(" + _render_expr(part_d) + ")")
         return '"' + "".join(segments) + '"'
 
     if kind == "IsInstance":
@@ -303,7 +312,14 @@ def _render_expr(expr: Any) -> str:
     if kind == "Lambda":
         params = _get_list(expr, "params")
         body = expr.get("body")
-        ps_params = ", ".join("$" + _safe_ident(_get_str(p, "arg") if isinstance(p, dict) else str(p), "_p") for p in params)
+        lambda_param_names: list[str] = []
+        for p in params:
+            if isinstance(p, dict):
+                lp_d: dict[str, object] = p
+                lambda_param_names.append("$" + _safe_ident(_get_str(lp_d, "arg"), "_p"))
+            else:
+                lambda_param_names.append("$" + _safe_ident(str(p), "_p"))
+        ps_params = ", ".join(lambda_param_names)
         return "{ param(" + ps_params + ") " + _render_expr(body) + " }"
 
     return "$null"
@@ -315,10 +331,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     rendered_args = [_render_expr(a) for a in args]
 
     if isinstance(func, dict):
-        fk = _get_str(func, "kind")
+        func_d: dict[str, object] = func
+        fk = _get_str(func_d, "kind")
 
         if fk == "Name":
-            fn_name = _get_str(func, "id")
+            fn_name = _get_str(func_d, "id")
             if fn_name == "print":
                 return "__pytra_print " + " ".join(rendered_args) if len(rendered_args) > 0 else "__pytra_print"
             if fn_name == "len":
@@ -351,8 +368,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return safe + " " + " ".join(rendered_args)
 
         if fk == "Attribute":
-            owner = _render_expr(func.get("value"))
-            attr = _safe_ident(_get_str(func, "attr"), "method")
+            owner = _render_expr(func_d.get("value"))
+            attr = _safe_ident(_get_str(func_d, "attr"), "method")
             if attr == "append":
                 if len(rendered_args) > 0:
                     return owner + " += @(" + rendered_args[0] + ")"
@@ -415,7 +432,8 @@ def _emit_body(body: list[Any], *, indent: str, ctx: dict[str, Any]) -> list[str
     lines: list[str] = []
     for stmt in body:
         if isinstance(stmt, dict):
-            lines.extend(_emit_stmt(stmt, indent=indent, ctx=ctx))
+            stmt_d: dict[str, object] = stmt
+            lines.extend(_emit_stmt(stmt_d, indent=indent, ctx=ctx))
     if len(lines) == 0:
         lines.append(indent + "# pass")
     return lines
@@ -427,9 +445,10 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
     if kind == "Expr":
         value = stmt.get("value")
         if isinstance(value, dict):
-            vk = _get_str(value, "kind")
+            value_d: dict[str, object] = value
+            vk = _get_str(value_d, "kind")
             if vk == "Name":
-                raw = _get_str(value, "id")
+                raw = _get_str(value_d, "id")
                 if raw == "break":
                     return [indent + "break"]
                 if raw == "continue":
@@ -454,12 +473,14 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         if len(targets) == 0:
             return [indent + value]
         target = targets[0]
-        if isinstance(target, dict) and _get_str(target, "kind") == "Attribute":
-            return [indent + _render_expr(target) + " = " + value]
-        if isinstance(target, dict) and _get_str(target, "kind") == "Subscript":
-            owner = _render_expr(target.get("value"))
-            index = _render_expr(target.get("slice"))
-            return [indent + owner + "[" + index + "] = " + value]
+        if isinstance(target, dict):
+            target_d: dict[str, object] = target
+            if _get_str(target_d, "kind") == "Attribute":
+                return [indent + _render_expr(target_d) + " = " + value]
+            if _get_str(target_d, "kind") == "Subscript":
+                owner = _render_expr(target_d.get("value"))
+                index = _render_expr(target_d.get("slice"))
+                return [indent + owner + "[" + index + "] = " + value]
         lhs = _render_expr(target)
         return [indent + lhs + " = " + value]
 
@@ -494,15 +515,16 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         lines.extend(_emit_body(body, indent=indent + "    ", ctx=ctx))
         if len(orelse) > 0:
             if len(orelse) == 1 and isinstance(orelse[0], dict) and _get_str(orelse[0], "kind") == "If":
-                inner = orelse[0]
-                lines.append(indent + "} elseif (" + _render_expr(inner.get("test")) + ") {")
-                lines.extend(_emit_body(_get_list(inner, "body"), indent=indent + "    ", ctx=ctx))
-                inner_else = _get_list(inner, "orelse")
+                inner_d: dict[str, object] = orelse[0]
+                lines.append(indent + "} elseif (" + _render_expr(inner_d.get("test")) + ") {")
+                lines.extend(_emit_body(_get_list(inner_d, "body"), indent=indent + "    ", ctx=ctx))
+                inner_else = _get_list(inner_d, "orelse")
                 while len(inner_else) == 1 and isinstance(inner_else[0], dict) and _get_str(inner_else[0], "kind") == "If":
-                    inner = inner_else[0]
-                    lines.append(indent + "} elseif (" + _render_expr(inner.get("test")) + ") {")
-                    lines.extend(_emit_body(_get_list(inner, "body"), indent=indent + "    ", ctx=ctx))
-                    inner_else = _get_list(inner, "orelse")
+                    next_if: dict[str, object] = inner_else[0]
+                    inner_d = next_if
+                    lines.append(indent + "} elseif (" + _render_expr(inner_d.get("test")) + ") {")
+                    lines.extend(_emit_body(_get_list(inner_d, "body"), indent=indent + "    ", ctx=ctx))
+                    inner_else = _get_list(inner_d, "orelse")
                 if len(inner_else) > 0:
                     lines.append(indent + "} else {")
                     lines.extend(_emit_body(inner_else, indent=indent + "    ", ctx=ctx))
@@ -525,16 +547,22 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         test = stmt.get("test")
         update = stmt.get("update")
         body = _get_list(stmt, "body")
-        init_str = _render_expr(init.get("value")) if isinstance(init, dict) and init.get("value") is not None else "$null"
-        init_target = _render_expr(init.get("target")) if isinstance(init, dict) else "$_i"
+        if isinstance(init, dict):
+            init_d: dict[str, object] = init
+            init_str = _render_expr(init_d.get("value")) if init_d.get("value") is not None else "$null"
+            init_target = _render_expr(init_d.get("target"))
+        else:
+            init_str = "$null"
+            init_target = "$_i"
         test_str = _render_expr(test) if test is not None else "$true"
         update_str = ""
         if isinstance(update, dict):
-            uk = _get_str(update, "kind")
+            update_d: dict[str, object] = update
+            uk = _get_str(update_d, "kind")
             if uk == "AugAssign":
-                update_str = _render_expr(update.get("target")) + " += " + _render_expr(update.get("value"))
+                update_str = _render_expr(update_d.get("target")) + " += " + _render_expr(update_d.get("value"))
             else:
-                update_str = _render_expr(update)
+                update_str = _render_expr(update_d)
         lines = [indent + "for (" + init_target + " = " + init_str + "; " + test_str + "; " + update_str + ") {"]
         lines.extend(_emit_body(body, indent=indent + "    ", ctx=ctx))
         lines.append(indent + "}")
@@ -560,13 +588,14 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         for handler in handlers:
             if not isinstance(handler, dict):
                 continue
-            handler_name = _get_str(handler, "name")
+            handler_d: dict[str, object] = handler
+            handler_name = _get_str(handler_d, "name")
             if handler_name != "":
                 lines.append(indent + "} catch {")
                 lines.append(indent + "    $" + _safe_ident(handler_name, "e") + " = $_")
             else:
                 lines.append(indent + "} catch {")
-            handler_body = _get_list(handler, "body")
+            handler_body = _get_list(handler_d, "body")
             lines.extend(_emit_body(handler_body, indent=indent + "    ", ctx=ctx))
         if len(handlers) == 0:
             lines.append(indent + "} catch {")
@@ -627,12 +656,13 @@ def _emit_function_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]
     ps_params: list[str] = []
     for p in params:
         if isinstance(p, dict):
-            arg_name = _get_str(p, "arg")
+            p_d: dict[str, object] = p
+            arg_name = _get_str(p_d, "arg")
             if arg_name == "" :
-                arg_name = _get_str(p, "name")
+                arg_name = _get_str(p_d, "name")
             if arg_name == "self":
                 continue
-            default = p.get("default")
+            default = p_d.get("default")
             if default is not None:
                 ps_params.append("$" + _safe_ident(arg_name, "_p") + " = " + _render_expr(default))
             else:
@@ -645,8 +675,11 @@ def _emit_function_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]
     decorators = _get_list(stmt, "decorator_list")
     lines: list[str] = []
     for dec in decorators:
-        if isinstance(dec, dict) and _get_str(dec, "kind") == "Name":
-            dec_name = _get_str(dec, "id")
+        if isinstance(dec, dict):
+            dec_d: dict[str, object] = dec
+            if _get_str(dec_d, "kind") != "Name":
+                continue
+            dec_name = _get_str(dec_d, "id")
             if dec_name != "":
                 lines.append(indent + "# @" + dec_name)
 
@@ -669,23 +702,24 @@ def _emit_class_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -
     for member in body:
         if not isinstance(member, dict):
             continue
-        mk = _get_str(member, "kind")
+        member_d: dict[str, object] = member
+        mk = _get_str(member_d, "kind")
         if mk == "FunctionDef":
-            method_name = _get_str(member, "name")
+            method_name = _get_str(member_d, "name")
             if method_name == "__init__":
-                fn_lines = _emit_function_def(member, indent=indent, ctx=ctx)
+                fn_lines = _emit_function_def(member_d, indent=indent, ctx=ctx)
                 if len(fn_lines) > 0:
                     fn_lines[0] = fn_lines[0].replace("function __init__", "function " + name, 1)
                 lines.extend(fn_lines)
             else:
-                fn_lines = _emit_function_def(member, indent=indent, ctx=ctx)
+                fn_lines = _emit_function_def(member_d, indent=indent, ctx=ctx)
                 if len(fn_lines) > 0:
                     original_fn_name = "function " + _safe_ident(method_name, "_m")
                     new_fn_name = "function " + name + "_" + _safe_ident(method_name, "_m")
                     fn_lines[0] = fn_lines[0].replace(original_fn_name, new_fn_name, 1)
                 lines.extend(fn_lines)
         elif mk == "AnnAssign" or mk == "Assign":
-            lines.extend(_emit_stmt(member, indent=indent, ctx=ctx))
+            lines.extend(_emit_stmt(member_d, indent=indent, ctx=ctx))
         elif mk == "Pass":
             pass
 
@@ -731,7 +765,8 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
     # Emit body
     for stmt in body:
         if isinstance(stmt, dict):
-            lines.extend(_emit_stmt(stmt, indent="", ctx=ctx))
+            stmt_d: dict[str, object] = stmt
+            lines.extend(_emit_stmt(stmt_d, indent="", ctx=ctx))
             lines.append("")
 
     lines.append("if (Get-Command -Name main -ErrorAction SilentlyContinue) {")
