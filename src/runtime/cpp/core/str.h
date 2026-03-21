@@ -3,8 +3,6 @@
 
 template <class T>
 class list;
-template <class T>
-::std::string py_to_string(const T& v);
 
 class str {
 public:

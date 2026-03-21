@@ -109,9 +109,17 @@ class Py2CppFeatureTest(unittest.TestCase):
         cwd: Path,
         timeout_sec: float,
         label: str,
+        env: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess[str]:
         try:
-            return subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=timeout_sec)
+            run_env = env
+            if run_env is None:
+                run_env = dict(os.environ)
+                src_dir = str(ROOT / "src")
+                existing = run_env.get("PYTHONPATH", "")
+                if src_dir not in existing:
+                    run_env["PYTHONPATH"] = src_dir + (":" + existing if existing else "")
+            return subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=timeout_sec, env=run_env)
         except subprocess.TimeoutExpired as ex:
             out_obj = ex.stdout
             err_obj = ex.stderr
