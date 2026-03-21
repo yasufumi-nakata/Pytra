@@ -1586,12 +1586,38 @@ class DartNativeEmitter:
                     value_node = sub.get("value")
                     if isinstance(value_node, dict):
                         field_defaults[field_name] = self._render_expr(value_node)
+        # Scan __init__ for self.xxx = ... assignments to declare fields
         has_init = False
         for sub in body:
             if sub.get("kind") != "FunctionDef":
                 continue
             if sub.get("name") == "__init__":
                 has_init = True
+                init_body = sub.get("body")
+                if isinstance(init_body, list):
+                    for init_stmt in init_body:
+                        if not isinstance(init_stmt, dict):
+                            continue
+                        sk = init_stmt.get("kind")
+                        if sk != "Assign" and sk != "AnnAssign":
+                            continue
+                        t_any = init_stmt.get("target")
+                        if not isinstance(t_any, dict):
+                            t_list = init_stmt.get("targets")
+                            if isinstance(t_list, list) and len(t_list) > 0:
+                                t_any = t_list[0]
+                        if not isinstance(t_any, dict) or t_any.get("kind") != "Attribute":
+                            continue
+                        owner = t_any.get("value")
+                        if not isinstance(owner, dict) or _safe_ident(owner.get("id"), "") not in {"self", "self_"}:
+                            continue
+                        attr_name = _safe_ident(t_any.get("attr"), "field")
+                        if attr_name not in fields:
+                            fields.append(attr_name)
+                            self._emit_line("dynamic " + attr_name + ";")
+        for sub in body:
+            if sub.get("kind") != "FunctionDef":
+                continue
             self._emit_class_method(cls_name, base_name, sub)
         if not has_init and len(fields) > 0:
             required_params: list[str] = []
