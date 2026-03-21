@@ -62,10 +62,9 @@ def main(argv: list[str]) -> int:
         # NOTE: string_ops.cpp は string_ops_fwd.h の forward declare と衝突するため除外。
         # type_id.cpp は enum/class の type_id 登録に必要。
         # assertions.cpp は py_assert_eq 等のテストヘルパーに必要。
-        # NOTE: type_id.cpp は py_tid_is_subtype の循環参照問題があるため除外。
-        # enum/class の type_id 登録は Object<T> の TypeInfo テーブルで解決する。
         needed = [
             gen_path / "utils" / "assertions.cpp",
+            gen_path / "built_in" / "type_id.cpp",
         ]
         return [str(f) for f in needed if f.exists()]
 
