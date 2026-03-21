@@ -93,6 +93,9 @@ def _module_to_ps_path(module: str) -> str:
     """
     if module == "" or module in _IGNORED_IMPORT_MODULES:
         return ""
+    # pytra.std / pytra 自体は個別モジュールではない（サブモジュールが個別に解決される）
+    if module in ("pytra.std", "pytra", "pytra.utils"):
+        return ""
     # pytra.std.X → X/east.ps1 (linker strips prefix, adds .east suffix)
     for prefix in ("pytra.std.", "pytra.utils."):
         if module.startswith(prefix):
@@ -104,6 +107,9 @@ def _module_to_ps_path(module: str) -> str:
         return "enum/east.ps1"
     # browser / external modules → skip
     if module.startswith("browser"):
+        return ""
+    # random (stdlib) → skip (not linked as separate module)
+    if module in ("random", "timeit", "traceback"):
         return ""
     # user module: direct relative
     return module.replace(".", "/") + ".ps1"
@@ -580,9 +586,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             # __init__ is emitted as function ClassName { param($self, ...) ... }
             if fn_name in _CLASS_NAMES[0]:
                 # Create a hashtable as $self, then call constructor
+                # 括弧で囲む: -f 演算子の右辺等で & { } が裸だと ParserError になる
                 if len(rendered_args) == 0:
-                    return "& { $__obj = @{}; (" + safe + " $__obj); $__obj }"
-                return "& { $__obj = @{}; (" + safe + " $__obj " + " ".join(rendered_args) + "); $__obj }"
+                    return "(& { $__obj = @{}; (" + safe + " $__obj); $__obj })"
+                return "(& { $__obj = @{}; (" + safe + " $__obj " + " ".join(rendered_args) + "); $__obj })"
             if len(rendered_args) == 0:
                 return "(" + safe + ")"
             return "(" + safe + " " + " ".join(rendered_args) + ")"
@@ -814,6 +821,13 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         if isinstance(value, dict):
             value_d: dict[str, object] = value
             vk = _get_str(value_d, "kind")
+            # Module-level docstring: 文字列リテラルをコメントに変換
+            if vk == "Constant":
+                cv = value_d.get("value")
+                if isinstance(cv, str):
+                    # docstring → コメント化（stdout に漏れるのを防ぐ）
+                    first_line = cv.split("\n")[0][:80]
+                    return [indent + "# " + first_line]
             if vk == "Name":
                 raw = _get_str(value_d, "id")
                 if raw == "break":
