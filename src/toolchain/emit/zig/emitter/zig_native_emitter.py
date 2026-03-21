@@ -1783,6 +1783,10 @@ class ZigNativeEmitter:
                         return "pytra.print3(" + arg_strs[0] + ", " + arg_strs[1] + ", " + arg_strs[2] + ")"
                     return "pytra.print(" + arg_strs[0] + ")"
                 if fname == "len":
+                    if len(args) > 0:
+                        arg_t = self._get_expr_type(args[0])
+                        if arg_t.startswith("list[") or arg_t in {"bytearray", "bytes"}:
+                            return arg_strs[0] + ".items.len"
                     if len(arg_strs) > 0:
                         return arg_strs[0] + ".len"
                     return "0"
