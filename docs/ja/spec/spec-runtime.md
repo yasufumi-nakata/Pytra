@@ -82,6 +82,30 @@ SoT（Python ソース）から生成される中間表現は `src/runtime/east/
 - 手書きランタイムに SoT と同等の本体ロジックを重複実装してはならない。host API への最小接続コードに限定する。
 - `rc<list<T>>` のような backend 内部 typed handle helper は `core/` に配置する。
 
+### 0.6c emit_context — multi-module emit 時のモジュール情報
+
+`emit_all_modules`（`src/toolchain/emit/loader.py`）は、各モジュールの emit 前に EAST3 doc の `meta.emit_context` に以下の情報を設定する:
+
+```json
+{
+  "module_id": "os",
+  "root_rel_prefix": "../",
+  "is_entry": false
+}
+```
+
+| フィールド | 型 | 意味 |
+|---|---|---|
+| `module_id` | str | モジュール ID（例: `"os"`, `"pytra.std.time"`） |
+| `root_rel_prefix` | str | 出力ルートまでの相対パス（例: depth=0 → `"./"`, depth=1 → `"../"`, depth=2 → `"../../"`） |
+| `is_entry` | bool | エントリモジュール（main を含む）かどうか |
+
+必須ルール:
+
+- emitter はサブモジュール間の import パスを `root_rel_prefix + target_module_path` で解決する。
+- emitter がモジュール配置を独自に計算してはならない。`emit_context` を正本とする。
+- `root_rel_prefix` は `emit_all_modules` が `module_id` のドット区切り深さから自動計算する。
+
 ### 0.6b C++ runtime の現行 layout
 
 `src/runtime/cpp/` は以下の構造を正本とする。

@@ -137,6 +137,11 @@ def emit_cpp_from_east(
     return emitter.transpile()
 
 
+# NOTE: Multi-module emit provides meta.emit_context with module_id,
+# root_rel_prefix, and is_entry (see spec-runtime.md §0.6c).
+# C++ emitter uses its own multi-module pipeline (cpp/cli.py) and does not
+# go through emit_all_modules, but other emitters should use emit_context
+# for sub-module import path resolution.
 class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeBridgeEmitter, CppBuiltinRuntimeEmitter, CppCollectionExprEmitter, CppRuntimeExprEmitter, CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, CppBinaryOperatorEmitter, CppTriviaEmitter, CppTemporaryEmitter, CodeEmitter):
     def __init__(
         self,

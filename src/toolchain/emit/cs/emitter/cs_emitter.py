@@ -41,6 +41,9 @@ def load_cs_hooks(profile: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
+# NOTE: Multi-module emit provides meta.emit_context with module_id,
+# root_rel_prefix, and is_entry (see spec-runtime.md §0.6c).
+# Use emit_context.root_rel_prefix for sub-module import path resolution.
 class CSharpEmitter(CodeEmitter):
     """EAST を C# ソースへ変換するエミッタ。"""
 

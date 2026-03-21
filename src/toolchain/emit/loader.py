@@ -80,8 +80,13 @@ def emit_all_modules(
 ) -> int:
     """Load linked modules and emit all of them to output_dir.
 
+    Before calling *transpile_fn*, each module's ``meta.emit_context`` is set
+    with ``module_id``, ``root_rel_prefix``, and ``is_entry`` so that emitters
+    can resolve sub-module import paths relative to the output root.
+    See spec-runtime.md §0.6c for details.
+
     Args:
-        input_path: Path to link-output.json or raw EAST3 JSON.
+        input_path: Path to link-output.json.
         output_dir: Directory to write output files.
         ext: File extension (e.g. ".rs", ".lua").
         transpile_fn: Function that takes an EAST3 dict and returns source code string.
