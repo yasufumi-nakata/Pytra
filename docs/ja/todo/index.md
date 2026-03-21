@@ -33,6 +33,16 @@
 
 ### P0: C++ generated runtime ヘッダー生成パイプライン整備
 
+#### P0-19: ブロックスコープ変数の hoist（最優先）
+
+文脈: [docs/ja/plans/p0-block-scope-variable-hoist.md](../plans/p0-block-scope-variable-hoist.md)
+
+1. [ ] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S1] if/else ブロック内の変数宣言 hoist を EAST3 lowering に実装する。
+2. [ ] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S2] for/while ブロック内の変数宣言 hoist を EAST3 lowering に実装する。
+3. [ ] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S3] C++ emitter の既存 hoist ロジックを EAST3 lowering に移行し、emitter から除去する。
+4. [ ] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S4] ユニットテストを追加する（if/else, for, while, nested blocks）。
+5. [ ] [ID: P0-BLOCK-SCOPE-VAR-HOIST-01-S5] Dart/Zig/Julia emitter が hoist 済み EAST3 で正しく動作することを検証する。
+
 #### P0-11: PowerShell native emitter 実行 parity
 
 文脈: [docs/ja/plans/p0-powershell-native-emitter-execution-parity.md](../plans/p0-powershell-native-emitter-execution-parity.md)
