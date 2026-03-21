@@ -69,15 +69,15 @@ fn foo(data: pytra.Obj) void { ... } // Obj は値渡し（内部はポインタ
 
 ### S1: ランタイム API 追加
 
-- [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S1] `py_runtime.zig` に `make_list` / `list_append` / `list_get` / `list_set` / `list_len` / `make_bytearray` を追加する。
+- [x] [ID: P6-ZIG-OBJ-CONTAINERS-01-S1] `py_runtime.zig` に `make_list` / `list_append` / `list_get` / `list_set` / `list_len` / `make_bytearray` を追加する。
 
 ### S2: emitter の型変換
 
-- [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S2] `_zig_type` で `list[T]` / `bytearray` / `bytes` → `pytra.Obj` に変更する。emitter の List リテラル / Subscript / `.append` / `len()` をランタイム API 呼び出しに変換する。
+- [x] [ID: P6-ZIG-OBJ-CONTAINERS-01-S2] `_zig_type` で `list[T]` / `bytearray` / `bytes` → `pytra.Obj` に変更する。emitter の List リテラル / Subscript / `.append` / `len()` をランタイム API 呼び出しに変換する。
 
 ### S3: test/fixtures 回帰確認
 
-- [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S3] test/fixtures の 28/30 テストが通ることを確認する。
+- [x] [ID: P6-ZIG-OBJ-CONTAINERS-01-S3] test/fixtures の 28/30 テストが通ることを確認する。
 
 ### S4: sample 01 PNG 出力確認
 
@@ -86,3 +86,4 @@ fn foo(data: pytra.Obj) void { ... } // Obj は値渡し（内部はポインタ
 ## 決定ログ
 
 - 2026-03-22: list を std.ArrayList 値型で扱う方式では関数引数のコピー問題が解決不可能と判明。spec-object.md の Obj（rc）管理に統一する方針を決定。
+- 2026-03-22: S1〜S3 完了。test/fixtures 28/30 OK（try/except 2 件は仕様通り）。sample 01 PNG 生成成功（5.7MB、Python と同サイズ）。MD5 不一致は CRC32 の i64 vs u32 演算差異（S4 残）。
