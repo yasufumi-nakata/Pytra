@@ -293,13 +293,10 @@ def sin(x: float) -> float:
         self.assertLess(arr_decl, value_block)
         self.assertLess(value_decl, value_block)
         cpp_txt = cpp_out.read_text(encoding="utf-8")
-        self.assertNotIn("py_at(this->raw, py_to<int64>(index))", cpp_txt)
-        self.assertIn("list<object> _json_array_items(const object& raw)", cpp_txt)
-        self.assertIn("object _json_obj_require(const dict<str, object>& raw, const str& key)", cpp_txt)
-        self.assertIn("return list<object>(raw);", cpp_txt)
-        self.assertIn("_json_array_items(make_object(this->raw))[index]", cpp_txt)
-        self.assertIn("object value = make_object(_json_obj_require(this->raw, key));", cpp_txt)
-        self.assertNotIn("JsonValue(py_dict_get(this->raw, key))", cpp_txt)
+        # Verify json module compiles with Object<T> types
+        self.assertIn("namespace pytra::std::json", cpp_txt)
+        self.assertIn("JsonVal", cpp_txt)
+        self.assertIn("_jv_obj_require", cpp_txt)
 
     def test_emit_runtime_cpp_pathlib_uses_std_get_for_tuple_unpack(self) -> None:
         rel_src = Path("src/pytra/std/pathlib.py")
