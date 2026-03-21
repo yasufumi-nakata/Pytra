@@ -80,7 +80,7 @@ python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
 
 - `toolchain_missing` is treated as a parity-environment baseline (not a backend bug).
 - `tools/run_local_ci.py` embeds `python3 tools/check_noncpp_backend_health.py --family all --skip-parity`, so passing local CI simultaneously monitors the non-C++ backend smoke/transpile gate.
-- `python3 tools/check_jsonvalue_decode_boundaries.py` is also embedded in local CI, so if raw `json.loads(...)` re-enters at JSON artifact boundaries in `py2x` / `ir2lang` / `east_io` / `toolchain/link/*`, local CI will fail.
+- `python3 tools/check_jsonvalue_decode_boundaries.py` is also embedded in local CI, so if raw `json.loads(...)` re-enters at JSON artifact boundaries in `pytra-cli` / `east_io` / `toolchain/link/*`, local CI will fail.
 
 ## Required Guards when Changing Emitters (Stop-Ship)
 

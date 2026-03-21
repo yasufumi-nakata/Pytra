@@ -278,7 +278,7 @@ Fail with an explicit error when:
 - linked modules remain `east_stage=3`
 - global summaries live in `link-output.v1` and `meta.linked_program_v1`
 - backends can emit from linked modules without rebuilding whole-program state
-- restart/debug flow works through `py2x -> eastlink -> east2x`
+- restart/debug flow works through `pytra compile -> pytra link -> pytra emit`
 
 ## 12. Related
 
