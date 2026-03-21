@@ -293,3 +293,18 @@ pub fn slice(lower: anytype, upper: anytype) void {
     _ = upper;
     return;
 }
+
+/// bytearray(size) — allocate zero-initialized byte buffer.
+pub fn bytearray(size: anytype) []u8 {
+    const alloc = std.heap.page_allocator;
+    const n: usize = if (@TypeOf(size) == usize) size else @intCast(size);
+    const buf = alloc.alloc(u8, n) catch return &[_]u8{};
+    @memset(buf, 0);
+    return buf;
+}
+
+/// time.perf_counter() — seconds since arbitrary epoch.
+pub fn perf_counter() f64 {
+    const ns = std.time.nanoTimestamp();
+    return @as(f64, @floatFromInt(ns)) / 1_000_000_000.0;
+}

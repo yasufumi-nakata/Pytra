@@ -1507,7 +1507,7 @@ class ZigNativeEmitter:
             body_expr = self._render_expr(ed.get("body"))
             return "struct { fn call(" + ", ".join(a + ": PyObject" for a in arg_names) + ") PyObject { return " + body_expr + "; } }.call"
         if kind == "ListComp" or kind == "SetComp" or kind == "DictComp" or kind == "GeneratorExp":
-            return "pytra.empty_list()  /* comprehension */";
+            return "pytra.empty_list() // comprehension"
         if kind == "Starred":
             return self._render_expr(ed.get("value"))
         if kind == "Slice":
@@ -1633,6 +1633,12 @@ class ZigNativeEmitter:
                     if len(arg_strs) > 0:
                         return "std.math.absInt(" + arg_strs[0] + ")"
                     return "0"
+                if fname == "bytearray":
+                    if len(arg_strs) > 0:
+                        return "pytra.bytearray(" + arg_strs[0] + ")"
+                    return "pytra.bytearray(0)"
+                if fname == "perf_counter":
+                    return "pytra.perf_counter()"
                 if fname == "min":
                     if len(arg_strs) >= 2:
                         return "@min(" + arg_strs[0] + ", " + arg_strs[1] + ")"
