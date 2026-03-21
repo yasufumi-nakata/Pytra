@@ -69,7 +69,6 @@ SoT（Python ソース）から生成される中間表現は `src/runtime/east/
 
 - `src/runtime/east/{built_in,std,utils}/` — SoT から生成した `.east` ファイル。手編集禁止。
 - `src/runtime/<lang>/{built_in,std,core,...}/` — 各言語固有の手書きランタイム。
-- `src/runtime/cpp/generated/{built_in,std}/` — C++ のみ残存する `.east` → `.h/.cpp` 生成物（移行中）。
 
 `@extern` 関数の取り扱い:
 
@@ -90,8 +89,6 @@ SoT（Python ソース）から生成される中間表現は `src/runtime/east/
 - `src/runtime/cpp/core/` — handwritten low-level runtime（object.h, list.h, py_types.h 等）
 - `src/runtime/cpp/built_in/` — handwritten built-in 関数実装（io_ops.h, scalar_ops.h 等）
 - `src/runtime/cpp/std/` — handwritten stdlib 実装（time.h, glob.cpp 等）
-- `src/runtime/cpp/generated/{built_in,std}/` — `.east` → C++ 自動生成物（移行中）
-
 必須ルール:
 
 - handwritten core は `core/` にのみ置く。
