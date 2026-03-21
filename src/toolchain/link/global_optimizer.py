@@ -400,12 +400,17 @@ def _build_type_id_table(program: LinkedProgram) -> tuple[dict[str, int], dict[s
 
     next_type_id_holder: list[int] = [_USER_TYPE_ID_BASE]
     type_id_table: dict[str, int] = {}
+    # TypeInfo interval table: fqcn -> {id, entry, exit}
+    type_info_table: dict[str, dict[str, int]] = {}
 
     def _assign(fqcn: str) -> None:
-        type_id_table[fqcn] = next_type_id_holder[0]
+        entry = next_type_id_holder[0]
+        type_id_table[fqcn] = entry
         next_type_id_holder[0] = next_type_id_holder[0] + 1
         for child_fqcn in children.get(fqcn, []):
             _assign(child_fqcn)
+        exit_val = next_type_id_holder[0]
+        type_info_table[fqcn] = {"id": entry, "entry": entry, "exit": exit_val}
 
     for fqcn in sorted(roots):
         _assign(fqcn)
@@ -420,7 +425,7 @@ def _build_type_id_table(program: LinkedProgram) -> tuple[dict[str, int], dict[s
             base_short = base_fqcn.rsplit(".", 1)[-1] if "." in base_fqcn else base_fqcn
             type_id_base_map[fqcn] = _BUILTIN_TYPE_IDS.get(base_short, _BUILTIN_TYPE_IDS["object"])
 
-    return type_id_table, type_id_base_map
+    return type_id_table, type_id_base_map, type_info_table
 
 
 def _apply_union_param_ref_promotion(modules: tuple[LinkedProgramModule, ...]) -> None:
@@ -718,7 +723,7 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
     # because they get boxed into object. Update class_storage_hint accordingly.
     _apply_union_param_ref_promotion(linked_modules)
 
-    type_id_table, type_id_base_map = _build_type_id_table(linked_input_program)
+    type_id_table, type_id_base_map, type_info_table = _build_type_id_table(linked_input_program)
     resolved_deps_by_module = _build_all_resolved_dependencies(linked_input_program)
     program_id = _program_id(linked_input_program)
 
@@ -744,6 +749,7 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
             "entry_modules": list(program.entry_modules),
             "type_id_resolved_v1": dict(type_id_table),
             "type_id_base_map_v1": dict(type_id_base_map),
+            "type_info_table_v1": dict(type_info_table),
             "resolved_dependencies_v1": resolved_deps_by_module.get(module.module_id, []),
             "non_escape_summary": dict(non_escape_summary),
             "container_ownership_hints_v1": module_hints,
