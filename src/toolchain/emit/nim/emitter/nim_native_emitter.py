@@ -1204,13 +1204,13 @@ class NimNativeEmitter:
         if name in self.declared_vars:
             self.function_level_vars.add(name)
             return
+        # For auto/object types, skip VarDecl and let the first assignment use 'var'
+        if nim_t == "auto":
+            return
         self.declared_vars.add(name)
         self.function_level_vars.add(name)
         default_val = self._default_value_for_type(nim_t)
-        if nim_t != "auto":
-            self._emit_line(f"var {name}: {nim_t} = {default_val}")
-        else:
-            self._emit_line(f"var {name} = {default_val}")
+        self._emit_line(f"var {name}: {nim_t} = {default_val}")
 
     def _emit_swap(self, stmt: dict[str, Any]) -> None:
         left = self._render_expr(stmt.get("left"))
@@ -1797,6 +1797,12 @@ class NimNativeEmitter:
                 owner_name = func_value.get("id")
                 if isinstance(owner_name, str) and owner_name in self.imported_modules:
                     if isinstance(func_attr, str):
+                        # Nim std/math functions require float arguments
+                        if func_attr in {"sqrt", "sin", "cos", "tan", "exp", "log", "log10", "fabs", "floor", "ceil"}:
+                            float_args = [f"float({a})" for a in args]
+                            return f"{func_attr}({', '.join(float_args)})"
+                        if func_attr == "pow" and len(args) == 2:
+                            return f"pow(float({args[0]}), float({args[1]}))"
                         return f"{func_attr}({', '.join(args)})"
         if isinstance(func, dict) and func.get("kind") == "Name":
             name = func.get("id")
@@ -1807,6 +1813,12 @@ class NimNativeEmitter:
                     return f"echo py_str({args[0]})"
                 joined = " & \" \" & ".join([f"py_str({a})" for a in args])
                 return f"echo {joined}"
+            # Nim std/math functions require float arguments
+            if name in {"sqrt", "sin", "cos", "tan", "exp", "log", "log10", "fabs", "floor", "ceil"}:
+                float_args = [f"float({a})" for a in args]
+                return f"{name}({', '.join(float_args)})"
+            if name == "pow" and len(args) == 2:
+                return f"pow(float({args[0]}), float({args[1]}))"
             if name == "open":
                 # Convert Python file mode string to Nim FileMode
                 if len(args) >= 2:
