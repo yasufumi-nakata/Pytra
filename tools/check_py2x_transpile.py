@@ -102,17 +102,26 @@ def _run_one(*, src: Path, out: Path, target: str) -> RunResult:
             raw = (cp.stderr or "").strip() or (cp.stdout or "").strip()
             return RunResult(False, _extract_failure_headline(raw), raw, _extract_user_error_category(raw))
 
-        # Copy emit output to expected `out` location for quality hooks
+        # NOTE: emit は multi-file 出力（全 linked モジュール）を emit_dir に書く。
+        # このチェッカーは **entry module の single-file だけ** を `out` にコピーして
+        # quality hook で検査する。全ファイルをコピーすると entry 以外が `out` に
+        # 混入し、quality hook が誤ったファイルを読む。
+        # entry module は src.stem でファイル名マッチして特定する。
         out.parent.mkdir(parents=True, exist_ok=True)
         import shutil
-        first_copied = False
-        for f in sorted(emit_dir.rglob("*")):
-            if f.is_file():
-                if not first_copied:
+        entry_stem = src.stem
+        entry_copied = False
+        for f in emit_dir.rglob("*"):
+            if f.is_file() and f.stem == entry_stem:
+                shutil.copy2(f, out)
+                entry_copied = True
+                break
+        if not entry_copied:
+            # Fallback: entry stem が一致しない場合は最初のファイルを使う
+            for f in sorted(emit_dir.rglob("*")):
+                if f.is_file():
                     shutil.copy2(f, out)
-                    first_copied = True
-                else:
-                    shutil.copy2(f, out.parent / f.name)
+                    break
 
         return RunResult(True, "", "", "")
 
