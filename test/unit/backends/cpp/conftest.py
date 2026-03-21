@@ -29,6 +29,7 @@ def _generate_runtime_cpp() -> Path:
 
     from toolchain.emit.cpp.emitter import transpile_to_cpp
     from toolchain.emit.cpp.emitter.header_builder import build_cpp_header_from_east
+    from toolchain.emit.cpp.cli import _build_cpp_emit_module_without_extern_decls, _is_runtime_module_extern_only
     import re
 
     east_dir = ROOT / "src" / "runtime" / "east"
@@ -52,7 +53,12 @@ def _generate_runtime_cpp() -> Path:
         east = json.loads(east_path.read_text(encoding="utf-8"))
         out_base = gen_dir / rel
 
-        cpp = transpile_to_cpp(east, top_namespace=ns)
+        # Strip @extern declarations — their C++ implementations are hand-written
+        # in the native runtime, not generated from the EAST body.
+        emit_east = _build_cpp_emit_module_without_extern_decls(east)
+        is_extern_only = _is_runtime_module_extern_only(east)
+
+        cpp = transpile_to_cpp(emit_east, top_namespace=ns)
         cpp = re.sub(r'\nint main\(int argc, char\*\* argv\) \{.*', '', cpp, flags=re.DOTALL)
         header = build_cpp_header_from_east(east, east_path, out_base.with_suffix(".h"), cpp_text=cpp, top_namespace=ns)
 
@@ -65,7 +71,9 @@ def _generate_runtime_cpp() -> Path:
         header = "\n".join(lines) + "\n"
 
         out_base.with_suffix(".cpp").parent.mkdir(parents=True, exist_ok=True)
-        out_base.with_suffix(".cpp").write_text(cpp, encoding="utf-8")
+        # Skip .cpp for extern-only modules (implementation is in native runtime)
+        if not is_extern_only:
+            out_base.with_suffix(".cpp").write_text(cpp, encoding="utf-8")
         out_base.with_suffix(".h").write_text(header, encoding="utf-8")
 
     _GENERATED_DIR = gen_dir
