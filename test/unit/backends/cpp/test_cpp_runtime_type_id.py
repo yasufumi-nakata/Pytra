@@ -12,10 +12,11 @@ ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
 PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOUT_SEC", "120"))
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 
+_GEN_DIR = os.environ.get("PYTRA_GENERATED_CPP_DIR", "out/_test_generated_cpp")
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/core/gc.cpp",
     "src/runtime/cpp/core/io.cpp",
-    "src/runtime/east/built_in/type_id.cpp",
+    os.path.join(_GEN_DIR, "built_in", "type_id.cpp"),
 ]
 
 
@@ -107,6 +108,8 @@ int main() {
                     "src/runtime/cpp",
                     "-I",
                     "src/runtime/east",
+                    "-I",
+                    _GEN_DIR,
                     str(src),
                     *CPP_RUNTIME_SRCS,
                     "-o",
@@ -178,6 +181,8 @@ int main() {
                     "src/runtime/cpp",
                     "-I",
                     "src/runtime/east",
+                    "-I",
+                    _GEN_DIR,
                     str(src),
                     *CPP_RUNTIME_SRCS,
                     "-o",
