@@ -354,12 +354,7 @@ def _render_expr(expr_any: Any) -> str:
             resolved_attr_mod = _MODULE_ALIAS_MAP[0].get(vname, "")
             if resolved_attr_mod != "":
                 leaf = resolved_attr_mod.split(".")[-1]
-                if leaf == "math":
-                    _MATH_PROPS2: dict[str, str] = {"pi": "PI", "e": "E", "inf": "PositiveInfinity"}
-                    ps_p = _MATH_PROPS2.get(attr, "")
-                    if ps_p != "":
-                        return "([Math]::" + ps_p + ")"
-                if leaf in ("os_path", "os", "sys", "time", "random", "re",
+                if leaf in ("math", "os_path", "os", "sys", "time", "random", "re",
                             "glob", "collections", "subprocess", "json", "pathlib",
                             "png", "gif", "argparse"):
                     return "$" + _safe_ident(attr, "_f")
@@ -375,15 +370,6 @@ def _render_expr(expr_any: Any) -> str:
                 if vtype not in _CLASS_PROPERTIES[0]:
                     return "(__pytra_getattr " + value + ' "' + attr + '")'
                 return value + '["' + attr + '"]'
-            # math module property: math.pi → [Math]::PI
-            if vname == "math":
-                _MATH_PROPS: dict[str, str] = {
-                    "pi": "PI", "e": "E", "inf": "PositiveInfinity",
-                    "nan": "NaN", "tau": "Tau",
-                }
-                ps_prop = _MATH_PROPS.get(attr, "")
-                if ps_prop != "":
-                    return "([Math]::" + ps_prop + ")"
             # sys module property: sys.argv, sys.maxsize etc
             if vname == "sys":
                 if attr == "argv":
@@ -399,7 +385,7 @@ def _render_expr(expr_any: Any) -> str:
             # stdlib module attribute: time.X, os.X, os.path.X → direct call or variable
             # These are Python stdlib references inside transpiled stdlib modules.
             # In PS, the functions are defined at module scope, so use bare name.
-            if vname in ("time", "os", "random", "re", "collections", "glob",
+            if vname in ("math", "time", "os", "random", "re", "collections", "glob",
                         "subprocess", "sys", "png", "gif"):
                 return "$" + _safe_ident(attr, "_f")
         # Hashtable-based object field access: prefer ["attr"] over .attr
@@ -769,20 +755,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             if resolved_mod != "":
                 leaf = resolved_mod.split(".")[-1]
                 raw_attr = _get_str(func_d, "attr")
-                # math module → [Math]:: static methods
-                if leaf == "math":
-                    _MATH_PS2: dict[str, str] = {
-                        "sqrt": "Sqrt", "floor": "Floor", "ceil": "Ceiling",
-                        "sin": "Sin", "cos": "Cos", "tan": "Tan",
-                        "asin": "Asin", "acos": "Acos", "atan": "Atan", "atan2": "Atan2",
-                        "log": "Log", "log10": "Log10", "exp": "Exp", "pow": "Pow",
-                        "abs": "Abs", "round": "Round", "trunc": "Truncate", "fabs": "Abs",
-                    }
-                    ps_n = _MATH_PS2.get(raw_attr, "")
-                    if ps_n != "":
-                        return "([Math]::" + ps_n + "(" + ", ".join(rendered_args) + "))"
-                # Other stdlib module call
-                if leaf in ("os_path", "os", "sys", "time", "random", "re",
+                # stdlib module call via alias
+                if leaf in ("math", "os_path", "os", "sys", "time", "random", "re",
                             "glob", "collections", "subprocess", "json", "pathlib",
                             "png", "gif", "argparse"):
                     safe_fn = _safe_ident(raw_attr, "_f")
@@ -817,24 +791,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                             if len(rendered_args) == 0:
                                 return "(" + method_fn + " $self)"
                             return "(" + method_fn + " $self " + " ".join(rendered_args) + ")"
-            if owner_name == "math":
-                _MATH_PS: dict[str, str] = {
-                    "sqrt": "Sqrt", "floor": "Floor", "ceil": "Ceiling",
-                    "sin": "Sin", "cos": "Cos", "tan": "Tan",
-                    "asin": "Asin", "acos": "Acos", "atan": "Atan", "atan2": "Atan2",
-                    "log": "Log", "log10": "Log10", "log2": "Log",
-                    "exp": "Exp", "pow": "Pow", "abs": "Abs",
-                    "round": "Round", "trunc": "Truncate",
-                    "fabs": "Abs", "copysign": "CopySign",
-                    "pi": "PI", "e": "E", "inf": "PositiveInfinity",
-                }
-                ps_name = _MATH_PS.get(attr, "")
-                if ps_name != "":
-                    if attr in ("pi", "e", "inf"):
-                        return "([Math]::" + ps_name + ")"
-                    return "([Math]::" + ps_name + "(" + ", ".join(rendered_args) + "))"
             # stdlib / imported module method call: mod.func() → (func args)
-            if owner_name in ("time", "os", "random", "re", "collections", "glob",
+            if owner_name in ("math", "time", "os", "random", "re", "collections", "glob",
                               "subprocess", "sys", "png", "gif", "json_mod", "pathlib_mod"):
                 safe_fn = _safe_ident(attr, "_f")
                 if len(rendered_args) == 0:
