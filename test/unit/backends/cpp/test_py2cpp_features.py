@@ -6095,7 +6095,7 @@ def main() -> None:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("for (::std::tuple<object, object> __itobj_", cpp)
+        self.assertIn("for (const ::std::tuple<object, object>& __itobj_", cpp)
         self.assertIn("auto child = py_at(__itobj_", cpp)
         self.assertNotIn("object receiver method call", cpp)
 

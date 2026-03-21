@@ -209,7 +209,7 @@ class _ShExprResolutionSemanticsMixin:
         if _SH_ALLOW_OBJECT_RECEIVER[0]:
             return False
         s = t.strip()
-        if s in {"object", "Any", "any", "unknown"}:
+        if s in {"object", "Any", "any"}:
             return True
         if "|" in s:
             parts = self._split_union_types(s)
