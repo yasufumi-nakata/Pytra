@@ -24,16 +24,13 @@ def _copy_runtime(output_dir: str) -> None:
     for f in _RUNTIME_DIR.iterdir():
         if f.is_file():
             shutil.copy2(f, out / f.name)
-    # std native runtime をサブモジュールディレクトリにコピー
+    # std native runtime を全サブモジュールディレクトリにコピー
     if _STD_RUNTIME_DIR.exists():
         for f in _STD_RUNTIME_DIR.iterdir():
             if f.is_file():
-                # math_native.zig → math/ にコピー
-                stem = f.stem  # e.g. "math_native"
-                mod_name = stem.replace("_native", "")  # e.g. "math"
-                mod_dir = out / mod_name
-                if mod_dir.exists():
-                    shutil.copy2(f, mod_dir / f.name)
+                for sub_dir in out.iterdir():
+                    if sub_dir.is_dir():
+                        shutil.copy2(f, sub_dir / f.name)
 
 
 def main() -> int:
