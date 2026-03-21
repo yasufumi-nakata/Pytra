@@ -244,9 +244,12 @@ function PytraNotImplemented {
 }
 
 function py_assert_eq {
-    param($a, $b)
-    if ("$a" -ne "$b") {
-        throw "assertion failed: $a != $b"
+    param($a, $b, $msg)
+    $sa = __pytra_str $a
+    $sb = __pytra_str $b
+    if ($sa -ne $sb) {
+        $label = if ($msg) { " ($msg)" } else { "" }
+        throw "assertion failed: $sa != $sb$label"
     }
     return $true
 }

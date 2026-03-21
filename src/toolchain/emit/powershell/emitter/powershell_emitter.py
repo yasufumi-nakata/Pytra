@@ -19,6 +19,7 @@ _PS_KEYWORDS = {
 
 _RENAMED_SYMBOLS: list[dict[str, str]] = [{}]
 _CLASS_NAMES: list[set[str]] = [set()]
+_CLASS_BASES: list[dict[str, str]] = [{}]
 _LAMBDA_VARS: list[set[str]] = [set()]
 _FUNCTION_NAMES: list[set[str]] = [set()]
 # Maps imported name -> PowerShell expression (for from X import Y)
@@ -245,8 +246,11 @@ def _render_expr(expr_any: Any) -> str:
         # Instance attribute on self/hashtable -> hashtable key access
         if isinstance(value_node, dict) and _get_str(value_node, "kind") == "Name":
             vname = _get_str(value_node, "id")
-            if vname == "self" or vname in _CLASS_NAMES[0]:
-                return value + '["' + attr + '"]'
+            if vname == "self":
+                return '$self["' + attr + '"]'
+            if vname in _CLASS_NAMES[0]:
+                # In method body, ClassName.attr means self.attr
+                return '$self["' + attr + '"]'
         return value + "." + safe_attr
 
     if kind == "Call":
@@ -457,6 +461,30 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             owner_name = ""
             if isinstance(owner_node, dict) and _get_str(owner_node, "kind") == "Name":
                 owner_name = _get_str(owner_node, "id")
+            # In method body, ClassName.method() means self.method()
+            if owner_name in _CLASS_NAMES[0]:
+                owner = "$self"
+            # super().__init__() -> ParentClass $self args
+            if isinstance(owner_node, dict) and _get_str(owner_node, "kind") == "Call":
+                super_func = owner_node.get("func")
+                if isinstance(super_func, dict) and _get_str(super_func, "id") == "super":
+                    raw_attr = _get_str(func_d, "attr")
+                    if raw_attr == "__init__":
+                        # Find parent class from _CURRENT_CLASS context
+                        for cls_name, base_name in _CLASS_BASES[0].items():
+                            if base_name != "":
+                                parent_fn = _safe_ident(base_name, "_Base")
+                                if len(rendered_args) == 0:
+                                    return "(" + parent_fn + " $self)"
+                                return "(" + parent_fn + " $self " + " ".join(rendered_args) + ")"
+                    else:
+                        # super().method() -> ParentClass_method $self args
+                        for cls_name, base_name in _CLASS_BASES[0].items():
+                            if base_name != "":
+                                method_fn = _safe_ident(base_name, "_Base") + "_" + _safe_ident(raw_attr, "_m")
+                                if len(rendered_args) == 0:
+                                    return "(" + method_fn + " $self)"
+                                return "(" + method_fn + " $self " + " ".join(rendered_args) + ")"
             if owner_name == "math":
                 _MATH_PS: dict[str, str] = {
                     "sqrt": "Sqrt", "floor": "Floor", "ceil": "Ceiling",
@@ -1025,6 +1053,14 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
             if cn != "":
                 class_names.add(cn)
     _CLASS_NAMES[0] = class_names
+    class_bases: dict[str, str] = {}
+    for node in body:
+        if isinstance(node, dict) and _get_str(node, "kind") == "ClassDef":
+            cn = _get_str(node, "name")
+            base = _get_str(node, "base")
+            if cn != "" and base != "":
+                class_bases[cn] = base
+    _CLASS_BASES[0] = class_bases
 
     # Collect function names
     func_names: set[str] = set()
