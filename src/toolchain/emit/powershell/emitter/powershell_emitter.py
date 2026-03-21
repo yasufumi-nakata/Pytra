@@ -77,6 +77,38 @@ def _get_dict(d: dict[str, Any], key: str) -> dict[str, Any]:
     return v if isinstance(v, dict) else {}
 
 
+_IGNORED_IMPORT_MODULES: set[str] = {
+    "typing", "pytra.typing", "dataclasses", "__future__",
+    "pytra.utils.assertions",
+}
+
+
+def _module_to_ps_path(module: str) -> str:
+    """Python モジュール名をリンク済み PS1 の相対パスに変換する。
+
+    emit_all_modules が module_id.replace(".", "/") + ".ps1" で配置するため、
+    ここでは EAST のモジュール名から対応するパスを推測する。
+    linker が生成するモジュール ID は pytra.std.X → "X.east" のようになるため、
+    出力先は "X/east.ps1" となる。
+    """
+    if module == "" or module in _IGNORED_IMPORT_MODULES:
+        return ""
+    # pytra.std.X → X/east.ps1 (linker strips prefix, adds .east suffix)
+    for prefix in ("pytra.std.", "pytra.utils."):
+        if module.startswith(prefix):
+            tail = module[len(prefix):]
+            if tail != "":
+                return tail.replace(".", "/") + "/east.ps1"
+    # pytra.enum → enum module (special)
+    if module == "pytra.enum":
+        return "enum/east.ps1"
+    # browser / external modules → skip
+    if module.startswith("browser"):
+        return ""
+    # user module: direct relative
+    return module.replace(".", "/") + ".ps1"
+
+
 # ---------------------------------------------------------------------------
 # Expression rendering
 # ---------------------------------------------------------------------------
@@ -1094,10 +1126,35 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         return _emit_class_def(stmt, indent=indent, ctx=ctx)
 
     if kind == "ImportFrom":
-        return [indent + "# import: " + _get_str(stmt, "module")]
+        module = _get_str(stmt, "module")
+        # typing / dataclasses は no-op
+        if module in ("typing", "pytra.typing", "dataclasses", "__future__"):
+            return [indent + "# import: " + module]
+        # math の from-import は _IMPORT_ALIASES で処理済み
+        if module in ("math", "pytra.std.math"):
+            if module in _IMPORT_ALIASES[0] or any(
+                _get_str(e, "name") in _IMPORT_ALIASES[0]
+                for e in _get_list(stmt, "names") if isinstance(e, dict)
+            ):
+                return [indent + "# import: " + module + " (aliased)"]
+        ps_path = _module_to_ps_path(module)
+        if ps_path != "":
+            return [indent + '. (Join-Path $PSScriptRoot "' + ps_path + '")']
+        return [indent + "# import: " + module]
 
     if kind == "Import":
-        return [indent + "# import"]
+        names = _get_list(stmt, "names")
+        lines: list[str] = []
+        for entry in names:
+            if not isinstance(entry, dict):
+                continue
+            mod_name = _get_str(entry, "name")
+            ps_path = _module_to_ps_path(mod_name)
+            if ps_path != "":
+                lines.append(indent + '. (Join-Path $PSScriptRoot "' + ps_path + '")')
+            else:
+                lines.append(indent + "# import: " + mod_name)
+        return lines if len(lines) > 0 else [indent + "# import"]
 
     return [indent + "# unsupported: " + kind]
 
