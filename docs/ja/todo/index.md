@@ -84,6 +84,48 @@
 4. [ ] [ID: P0-EMITTER-LEGACY-API-CLEANUP-02-S4] `pytra::utils` namespace の include パス修正。
 5. [ ] [ID: P0-EMITTER-LEGACY-API-CLEANUP-02-S5] テストアサーション（`test_cpp_runtime_type_id.py`）を新 API に追従。
 
+> P0-17 の残存問題（include 順序による SFINAE 失敗、object(rc\<dict\>) 変換不可）は P0-18 (Object\<T\> 移行) で根本解決する。
+
+#### P0-18: Object\<T\> 移行 — ControlBlock + テンプレート view 方式
+
+文脈: [docs/ja/plans/p0-object-t-migration.md](../plans/p0-object-t-migration.md)
+仕様: [docs/ja/spec/spec-object.md](../spec/spec-object.md)
+
+**フェーズ 1: ControlBlock + Object\<T\> の導入（runtime 並行運用）**
+
+1. [ ] [ID: P0-OBJECT-T-MIGRATION-01-S1] `core/object.h` に `ControlBlock`, `Object<T>`, `make_object<T>`, `upcast<To>` を実装する。
+2. [ ] [ID: P0-OBJECT-T-MIGRATION-01-S2] `core/object.h` に `is_subtype` 区間判定を実装する（既存の `type_id_support.h` と並行）。
+3. [ ] [ID: P0-OBJECT-T-MIGRATION-01-S3] `TypeInfo` 型テーブルと `g_type_table` を実装する（リンカーの type_id 割り当てと統合）。
+
+**フェーズ 2: emitter の移行（Object\<T\> 形式の C++ を生成）**
+
+4. [ ] [ID: P0-OBJECT-T-MIGRATION-02-S1] emitter のクラス定義 emit を `Object<T>` 対応に変更する。
+5. [ ] [ID: P0-OBJECT-T-MIGRATION-02-S2] emitter の変数宣言・代入・upcast emit を `Object<T>` の view 変換に変更する。
+6. [ ] [ID: P0-OBJECT-T-MIGRATION-02-S3] emitter の isinstance/downcast emit を `is_subtype` + `static_cast` に変更する。
+7. [ ] [ID: P0-OBJECT-T-MIGRATION-02-S4] emitter の関数引数・戻り値の型 emit を `Object<T>` 対応に変更する。
+8. [ ] [ID: P0-OBJECT-T-MIGRATION-02-S5] emitter の Any/object 型 emit を型消去版 `Object<>` に変更する。
+
+**フェーズ 3: list\<T\> / dict\<K,V\> の Object 統合**
+
+9. [ ] [ID: P0-OBJECT-T-MIGRATION-03-S1] `list<T>` から `RcObject` 継承を除去し、`Object<list<T>>` で管理する形に移行する。
+10. [ ] [ID: P0-OBJECT-T-MIGRATION-03-S2] `dict<K,V>` から `RcObject` 継承を除去し、`Object<dict<K,V>>` で管理する形に移行する。
+11. [ ] [ID: P0-OBJECT-T-MIGRATION-03-S3] emitter の list/dict boxing を `Object<list<T>>` / `Object<dict<K,V>>` に変更する。
+
+**フェーズ 4: 旧型の撤去**
+
+12. [ ] [ID: P0-OBJECT-T-MIGRATION-04-S1] `RcObject` クラスを削除する。
+13. [ ] [ID: P0-OBJECT-T-MIGRATION-04-S2] `rc<T>` テンプレートを削除する。
+14. [ ] [ID: P0-OBJECT-T-MIGRATION-04-S3] 旧 `object` 型を削除し、`Object<void>` または新 `object` typedef に統一する。
+15. [ ] [ID: P0-OBJECT-T-MIGRATION-04-S4] `tagged_value.h` を削除する（ControlBlock に統合済み）。
+16. [ ] [ID: P0-OBJECT-T-MIGRATION-04-S5] `gc.h` を `ControlBlock` ベースの rc 管理に書き換える。
+
+**フェーズ 5: テスト・検証**
+
+17. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S1] `test_py2cpp_features.py` の全コンパイル + 実行テストが通る。
+18. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S2] `test_cpp_runtime_type_id.py` の type_id テストが通る。
+19. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S3] selfhost multi-module transpile が動作する。
+20. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S4] sample/py の全 18 ケースが C++ で compile + run できる。
+
 ### P1: パイプライン段分離 — compile / link / emit の独立化
 
 #### P1-2: backend_registry 依存の除去
