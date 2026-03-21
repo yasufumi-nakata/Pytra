@@ -4455,9 +4455,10 @@ if __name__ == "__main__":
             out_cpp = work / "list_default_factory.cpp"
             transpile(src_py, out_cpp)
             cpp = out_cpp.read_text(encoding="utf-8")
-            self.assertIn("rc_list_from_value(py_repeat(", cpp)
+            # Object<list<T>> mode: py_repeat returns list<T>, wrapped in Object via ctor
+            self.assertIn("py_repeat(", cpp)
             self.assertNotIn("= [&]() {", cpp)
-            self.assertNotIn("return py_repeat(list<int64>(list<int64>{0}), 8); }()", cpp)
+            gen_dir = os.environ.get("PYTRA_GENERATED_CPP_DIR", "out/_test_generated_cpp")
             comp = self._run_subprocess_with_timeout(
                 [
                     "g++",
@@ -4469,6 +4470,8 @@ if __name__ == "__main__":
                     "src/runtime/cpp",
                     "-I",
                     "src/runtime/east",
+                    "-I",
+                    gen_dir,
                     "-fsyntax-only",
                     str(out_cpp),
                 ],
@@ -5552,7 +5555,7 @@ print(back)
         self.assertIn("q.push_front(int64(1));", cpp)
         self.assertIn("q.back()", cpp)
         self.assertIn("q.pop_back()", cpp)
-        self.assertIn("back = make_object((", cpp)
+        self.assertIn("back = object(", cpp)
         self.assertNotIn("q.pop()", cpp)
 
     def test_deque_endops_builds_and_runs_in_cpp_representative_lane(self) -> None:
@@ -5956,7 +5959,7 @@ print(q.index(1))
         self.assertNotIn("q.index(1)", cpp)
         self.assertRegex(
             cpp,
-            r"return static_cast<int64>\(__deque_it_\d+ - __deque_src_\d+\.begin\(\)\);",
+            r"return int64\(__deque_it_\d+ - __deque_src_\d+\.begin\(\)\);",
         )
 
     def test_deque_copyindex_builds_and_runs_in_cpp_representative_lane(self) -> None:
