@@ -310,7 +310,11 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
                 entry = ti.get("entry", tid)
                 exit_val = ti.get("exit", tid + 1)
                 class_name = fqcn.rsplit(".", 1)[-1] if "." in fqcn else fqcn
-                self.emit(f"g_type_table[{tid}] = new TypeInfo{{{tid}, {entry}, {exit_val}, &deleter_impl<{class_name}>}};")
+                # Only emit TypeInfo with deleter for user-defined classes
+                if class_name in self.ref_classes:
+                    self.emit(f"g_type_table[{tid}] = new TypeInfo{{{tid}, {entry}, {exit_val}, &deleter_impl<{class_name}>}};")
+                else:
+                    self.emit(f"g_type_table[{tid}] = new TypeInfo{{{tid}, {entry}, {exit_val}, nullptr}};")
         else:
             for fqcn, tid, base_tid in entries:
                 self.emit(f"py_tid_register_known_class_type({tid}, {base_tid});")
