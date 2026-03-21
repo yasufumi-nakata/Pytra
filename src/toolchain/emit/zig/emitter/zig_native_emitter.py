@@ -1588,9 +1588,17 @@ class ZigNativeEmitter:
             left = self._render_expr(ed.get("left"))
             right = self._render_expr(ed.get("right"))
             op = str(ed.get("op"))
+            left_type = self._lookup_expr_type(ed.get("left"))
+            right_type = self._lookup_expr_type(ed.get("right"))
+            # int/float 混合演算: int 側を @floatFromInt でラップ
+            _INT_TYPES = {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}
+            _FLOAT_TYPES = {"float64", "float32", "float"}
+            if op not in {"LShift", "RShift", "BitOr", "BitXor", "BitAnd", "FloorDiv"}:
+                if left_type in _INT_TYPES and right_type in _FLOAT_TYPES:
+                    left = "@as(f64, @floatFromInt(" + left + "))"
+                elif left_type in _FLOAT_TYPES and right_type in _INT_TYPES:
+                    right = "@as(f64, @floatFromInt(" + right + "))"
             if op == "Add":
-                left_type = self._lookup_expr_type(ed.get("left"))
-                right_type = self._lookup_expr_type(ed.get("right"))
                 if left_type == "str" or right_type == "str":
                     return "pytra.str_concat(" + left + ", " + right + ")"
             if op == "Pow":
