@@ -25,6 +25,7 @@ _LAMBDA_VARS: list[set[str]] = [set()]
 _FUNCTION_NAMES: list[set[str]] = [set()]
 _IMPORT_ALIASES: list[dict[str, str]] = [{}]
 _CURRENT_CLASS_NAME: list[str] = [""]
+_CLASS_PROPERTIES: list[dict[str, set[str]]] = [{}]  # ClassName -> {property_name, ...}
 
 _PS_AUTOMATIC_VARS = {
     "true", "false", "null", "args", "input", "PSScriptRoot", "PSCommandPath",
@@ -315,11 +316,19 @@ def _render_expr(expr_any: Any) -> str:
             vname = _get_str(value_node, "id") if _get_str(value_node, "kind") == "Name" else ""
             vtype = _get_str(value_node, "resolved_type")
             if vname == "self":
+                # Check if attr is a @property → call getter
+                cur_cls = _CURRENT_CLASS_NAME[0]
+                if cur_cls != "" and attr in _CLASS_PROPERTIES[0].get(cur_cls, set()):
+                    return "(" + cur_cls + "_" + _safe_ident(attr, "_p") + " $self)"
                 return '$self["' + attr + '"]'
             if vname in _CLASS_NAMES[0]:
                 # ClassName.attr → クラス変数 $attr（モジュールスコープ）
                 return "$" + _safe_ident(attr, "_cv")
             if vtype in _CLASS_NAMES[0]:
+                # Check if attr is a @property on the resolved type
+                props = _CLASS_PROPERTIES[0].get(vtype, set())
+                if attr in props:
+                    return "(& (Get-Command (\"" + "{0}_{1}" + '" -f ' + value + '["__type__"], "' + attr + '")) ' + value + ")"
                 return value + '["' + attr + '"]'
             # math module property: math.pi → [Math]::PI
             if vname == "math":
@@ -1613,6 +1622,23 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
                         methods.add(mn)
             class_method_names[cn] = methods
     _CLASS_METHOD_NAMES[0] = class_method_names
+
+    # Collect property names from decorators=['property']
+    class_properties: dict[str, set[str]] = {}
+    for node in body:
+        if isinstance(node, dict) and _get_str(node, "kind") == "ClassDef":
+            cn = _get_str(node, "name")
+            props: set[str] = set()
+            for member in _get_list(node, "body"):
+                if isinstance(member, dict) and _get_str(member, "kind") == "FunctionDef":
+                    decs = _get_list(member, "decorators")
+                    if "property" in decs:
+                        mn = _get_str(member, "name")
+                        if mn != "":
+                            props.add(mn)
+            if len(props) > 0:
+                class_properties[cn] = props
+    _CLASS_PROPERTIES[0] = class_properties
 
     # Collect function names
     func_names: set[str] = set()
