@@ -1296,7 +1296,7 @@ class ZigNativeEmitter:
             idx = self._render_expr(ed.get("slice"))
             obj_type = self._get_expr_type(value_node)
             if obj_type.startswith("dict["):
-                return "pytra.dict_get(" + obj + ", " + idx + ")"
+                return "(" + obj + ".get(" + idx + ") orelse 0)"
             return obj + "[" + idx + "]"
         if kind == "List":
             elts_any = ed.get("elts")
@@ -1478,10 +1478,33 @@ class ZigNativeEmitter:
         return fn_expr + "(" + ", ".join(arg_strs) + ")"
 
     def _render_dict(self, node: dict[str, Any]) -> str:
-        # Dict は現在スタブ実装（i64 プレースホルダ）
-        # entries 内の式は副作用のために評価が必要な場合があるが、
-        # 現時点では全て pytra.new_dict() に委譲する
-        return "pytra.new_dict()"
+        entries_any = node.get("entries")
+        entries: list[dict[str, Any]] = []
+        if isinstance(entries_any, list):
+            for e in entries_any:
+                if isinstance(e, dict):
+                    entries.append(e)
+        if len(entries) == 0:
+            # 空 dict
+            resolved = self._get_expr_type(node)
+            if resolved.startswith("dict["):
+                parts = self._split_generic(resolved[5:-1] if resolved.endswith("]") else "")
+                if len(parts) == 2:
+                    val_t = self._zig_type(parts[1].strip())
+                    return "pytra.make_str_dict(" + val_t + ")"
+            return "pytra.make_str_dict(i64)"
+        val_parts: list[str] = []
+        key_parts: list[str] = []
+        for entry in entries:
+            key_parts.append(self._render_expr(entry.get("key")))
+            val_parts.append(self._render_expr(entry.get("value")))
+        resolved = self._get_expr_type(node)
+        val_zig = "i64"
+        if resolved.startswith("dict[") and resolved.endswith("]"):
+            dparts = self._split_generic(resolved[5:-1])
+            if len(dparts) == 2:
+                val_zig = self._zig_type(dparts[1].strip())
+        return "pytra.make_str_dict_from(" + val_zig + ", " + "&[_][]const u8{ " + ", ".join(key_parts) + " }, " + "&[_]" + val_zig + "{ " + ", ".join(val_parts) + " })"
 
     def _render_joined_str(self, node: dict[str, Any]) -> str:
         values_any = node.get("values")
@@ -1619,7 +1642,13 @@ class ZigNativeEmitter:
         if t.startswith("set[") and t.endswith("]"):
             return "PyObject"
         if t.startswith("dict[") and t.endswith("]"):
-            return "i64"  # stub: dict は i64 プレースホルダ（pytra.new_dict() が i64 を返す）
+            parts = self._split_generic(t[5:-1])
+            if len(parts) == 2:
+                val_t = self._zig_type(parts[1].strip())
+                key_t = self._normalize_type(parts[0].strip())
+                if key_t == "str":
+                    return "std.StringHashMap(" + val_t + ")"
+            return "std.StringHashMap(PyObject)"
         if t.startswith("tuple[") and t.endswith("]"):
             parts = self._split_generic(t[6:-1])
             if len(parts) == 2 and parts[1].strip() == "...":

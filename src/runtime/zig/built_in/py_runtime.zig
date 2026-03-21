@@ -160,16 +160,19 @@ pub fn str_join_sep(sep: []const u8, parts: []const []const u8) []const u8 {
     return buf;
 }
 
-/// Create a new empty dict (stub — returns 0 as placeholder).
-pub fn new_dict() i64 {
-    return 0;
+/// Create a new empty StringHashMap.
+pub fn make_str_dict(comptime V: type) std.StringHashMap(V) {
+    return std.StringHashMap(V).init(std.heap.page_allocator);
 }
 
-/// Dict subscript access (stub — returns 0).
-pub fn dict_get(d: anytype, key: anytype) i64 {
-    _ = d;
-    _ = key;
-    return 0;
+/// Create a StringHashMap from key/value arrays.
+pub fn make_str_dict_from(comptime V: type, keys: []const []const u8, values: []const V) std.StringHashMap(V) {
+    var m = std.StringHashMap(V).init(std.heap.page_allocator);
+    var i: usize = 0;
+    while (i < keys.len and i < values.len) : (i += 1) {
+        m.put(keys[i], values[i]) catch {};
+    }
+    return m;
 }
 
 /// isinstance check (stub).
