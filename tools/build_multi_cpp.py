@@ -58,10 +58,11 @@ def main(argv: list[str]) -> int:
         gen_path = Path(gen_dir)
         if not gen_path.exists():
             return []
-        # Include generated sources needed for test compilation.
-        # NOTE: string_ops.cpp は string_ops_fwd.h の forward declare と衝突するため除外。
-        # type_id.cpp は enum/class の type_id 登録に必要。
-        # assertions.cpp は py_assert_eq 等のテストヘルパーに必要。
+        # Include generated .cpp files needed for test compilation.
+        # Only include files verified to compile correctly.
+        # NOTE: Most generated std/*.cpp files have Object<T> migration
+        # incompatibilities (py_repeat on str, expected primary-expression, etc.)
+        # Only include files verified to compile correctly.
         needed = [
             gen_path / "utils" / "assertions.cpp",
             gen_path / "built_in" / "type_id.cpp",
