@@ -330,6 +330,17 @@ def _runtime_module_alias_line(alias: str, runtime_module_id: str) -> str:
         return ""
     if mod in {"enum", "pytra.std.enum"}:
         return "# import " + alias + " (enum stub)"
+    if mod in {"pytra.std.math", "math"}:
+        return (
+            alias + " = ("
+            "sqrt=sqrt, sin=sin, cos=cos, tan=tan, "
+            "asin=asin, acos=acos, atan=atan, atan2=atan, "
+            "floor=x->Int(floor(x)), ceil=x->Int(ceil(x)), "
+            "fabs=abs, abs=abs, log=log, log2=log2, log10=log10, exp=exp, "
+            "pow=(b, e)->b^e, "
+            "pi=Base.MathConstants.pi, e=Base.MathConstants.e, inf=Inf, nan=NaN"
+            ")"
+        )
     if mod == "pytra.std.argparse":
         return "# import " + alias + " (argparse stub)"
     if mod == "pytra.std.re":
@@ -1510,6 +1521,8 @@ class JuliaNativeEmitter:
                 if idx_const >= 0:
                     return owner + "[" + str(idx_const + 1) + "]"
                 return owner + "[end + " + str(idx_const + 1) + "]"
+            if owner_type == "str":
+                return "string(" + owner + "[__pytra_idx(" + index + ", length(" + owner + "))])"
             return owner + "[__pytra_idx(" + index + ", length(" + owner + "))]"
         if kind == "Attribute":
             owner = self._render_expr(ed.get("value"))
