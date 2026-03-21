@@ -332,7 +332,7 @@ def _render_expr(expr_any: Any) -> str:
             # sys module property: sys.argv, sys.maxsize etc
             if vname == "sys":
                 if attr == "argv":
-                    return "@($MyInvocation.MyCommand.Path) + $args"
+                    return '@(if ($MyInvocation.MyCommand.Path) { $MyInvocation.MyCommand.Path } else { "" }) + @($args)'
                 if attr == "maxsize":
                     return "[int64]::MaxValue"
                 if attr == "platform":

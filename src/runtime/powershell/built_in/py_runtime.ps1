@@ -300,6 +300,32 @@ function listdir {
     return @(Get-ChildItem -Path $p -Name)
 }
 
+function mkdir {
+    param($p)
+    New-Item -ItemType Directory -Path $p -Force | Out-Null
+}
+
+function glob {
+    param($pattern)
+    $items = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue
+    if ($items -eq $null) { return @() }
+    return @($items | ForEach-Object { $_.FullName })
+}
+
+function open {
+    param($path, $mode = "r", $encoding = "utf-8")
+    # Stub: return a hashtable with read/write/close
+    $result = @{
+        "__type__" = "__file__"
+        "_path" = $path
+        "_mode" = $mode
+    }
+    if ($mode -eq "r" -or $mode -eq "rt") {
+        $result["_content"] = [System.IO.File]::ReadAllText($path)
+    }
+    return $result
+}
+
 function __pytra_in {
     param($item, $collection)
     if ($collection -is [hashtable] -or $collection -is [System.Collections.IDictionary]) {
