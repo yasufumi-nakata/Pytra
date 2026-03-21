@@ -123,6 +123,20 @@ def _render_lvalue(expr_any: Any) -> str:
     return _render_expr(expr_any)
 
 
+def _is_extern_value(value: Any) -> bool:
+    """Check if value is extern(...) call or Unbox(extern(...))."""
+    if not isinstance(value, dict):
+        return False
+    kind = _get_str(value, "kind")
+    if kind == "Unbox":
+        return _is_extern_value(value.get("value"))
+    if kind == "Call":
+        func = value.get("func")
+        if isinstance(func, dict) and _get_str(func, "id") == "extern":
+            return True
+    return False
+
+
 _IGNORED_IMPORT_MODULES: set[str] = {
     "typing", "pytra.typing", "dataclasses", "__future__",
     "pytra.utils.assertions", "pytra.std.extern",
@@ -1030,8 +1044,14 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
             t = stmt.get("target")
             if isinstance(t, dict):
                 targets = [t]
-        # Track lambda assignments
+        # Skip extern(...) variable assignments (native seam provides these)
         val_node = stmt.get("value")
+        if _is_extern_value(val_node):
+            tname = ""
+            if len(targets) == 1 and isinstance(targets[0], dict):
+                tname = _get_str(targets[0], "id")
+            return [indent + "# extern var: " + tname + " (provided by native seam)"]
+        # Track lambda assignments
         if isinstance(val_node, dict) and _get_str(val_node, "kind") == "Lambda":
             if len(targets) == 1 and isinstance(targets[0], dict) and _get_str(targets[0], "kind") == "Name":
                 _LAMBDA_VARS[0].add(_get_str(targets[0], "id"))
@@ -1069,6 +1089,10 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         if value is None:
             lhs = _render_expr(target)
             return [indent + lhs + " = $null"]
+        # Skip extern(...) variable assignments (native seam provides these)
+        if _is_extern_value(value):
+            tname = _get_str(target, "id") if isinstance(target, dict) else ""
+            return [indent + "# extern var: " + tname + " (provided by native seam)"]
         # Track lambda assignments
         if isinstance(value, dict) and _get_str(value, "kind") == "Lambda":
             if isinstance(target, dict) and _get_str(target, "kind") == "Name":
