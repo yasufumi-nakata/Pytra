@@ -1068,8 +1068,10 @@ def _resolved_runtime_symbol(expr: dict[str, Any], runtime_call: str, runtime_so
             return "__pytra_path_read_text"
         if normalized == "path":
             return "__pytra_path_new"
-        if normalized in {"path_parent", "path_name", "path_stem", "write_rgb_png", "save_gif", "grayscale_palette", "perf_counter"}:
+        if normalized in {"path_parent", "path_name", "path_stem", "perf_counter"}:
             return "__pytra_" + normalized
+        if normalized in {"write_rgb_png", "save_gif", "grayscale_palette", "fire_palette"}:
+            return normalized
         if normalized.startswith("py_"):
             return "__pytra_" + normalized[3:]
         return ""
