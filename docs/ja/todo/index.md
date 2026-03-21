@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-21（完了タスクをアーカイブへ移動）
+最終更新: 2026-03-21（P5-GO/JAVA/KOTLIN/SWIFT-PARITY を起票）
 
 ## 文脈運用ルール
 
@@ -124,4 +124,28 @@
 3. [x] [ID: P5-CS-MULTIMODULE-03] `cs.py` の runtime 生成を S1/S2 の修正に合わせて整合させる。
 4. [x] [ID: P5-CS-MULTIMODULE-04] `pytra-cli.py` の C# build/run を `mcs` + `mono` 方式に修正する。
 5. [x] [ID: P5-CS-MULTIMODULE-05] `runtime_parity_check.py --targets cs` で sample/py の全 18 ケースが PASS することを確認する。
+
+### P5: Go sample parity
+
+文脈: [docs/ja/plans/p5-go-sample-parity.md](../plans/p5-go-sample-parity.md)
+
+1. [ ] [ID: P5-GO-PARITY-01] `runtime_parity_check.py --targets go` で sample/py の全 18 ケースが PASS する。
+
+### P5: Java sample parity
+
+文脈: [docs/ja/plans/p5-java-sample-parity.md](../plans/p5-java-sample-parity.md)
+
+1. [ ] [ID: P5-JAVA-PARITY-01] `runtime_parity_check.py --targets java` で sample/py の全 18 ケースが PASS する。
+
+### P5: Kotlin sample parity
+
+文脈: [docs/ja/plans/p5-kotlin-sample-parity.md](../plans/p5-kotlin-sample-parity.md)
+
+1. [ ] [ID: P5-KOTLIN-PARITY-01] `runtime_parity_check.py --targets kotlin` で sample/py の全 18 ケースが PASS する。
+
+### P5: Swift sample parity
+
+文脈: [docs/ja/plans/p5-swift-sample-parity.md](../plans/p5-swift-sample-parity.md)
+
+1. [ ] [ID: P5-SWIFT-PARITY-01] `runtime_parity_check.py --targets swift` で sample/py の全 18 ケースが PASS する。
 

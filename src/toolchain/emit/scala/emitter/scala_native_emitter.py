@@ -2810,7 +2810,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     return lines
 
 
-def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
+def transpile_to_scala_native(east_doc: dict[str, Any], *, emit_main: bool = True) -> str:
     """Emit Scala 3 native source from EAST3 Module."""
     if not isinstance(east_doc, dict):
         raise RuntimeError("scala native emitter: east_doc must be dict")
@@ -2918,47 +2918,48 @@ def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
         lines.extend(_emit_function(functions[i], indent="", in_class=False))
         i += 1
 
-    lines.append("")
-    lines.append("def main(args: Array[String]): Unit = {")
-    ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}}
-    if len(main_guard) > 0:
-        has_pytra_main = False
-        i = 0
-        while i < len(functions):
-            if _safe_ident(functions[i].get("name"), "") == "__pytra_main":
-                has_pytra_main = True
-                break
-            i += 1
-        i = 0
-        while i < len(main_guard):
-            st = main_guard[i]
-            if has_pytra_main and isinstance(st, dict) and st.get("kind") == "Expr":
-                value_any = st.get("value")
-                if isinstance(value_any, dict) and value_any.get("kind") == "Call":
-                    fn_any = value_any.get("func")
-                    if isinstance(fn_any, dict) and fn_any.get("kind") == "Name":
-                        if _safe_ident(fn_any.get("id"), "") == "main":
-                            args_any = value_any.get("args")
-                            args_main = args_any if isinstance(args_any, list) else []
-                            rendered_args: list[str] = []
-                            j = 0
-                            while j < len(args_main):
-                                rendered_args.append(_render_expr(args_main[j]))
-                                j += 1
-                            lines.append("    __pytra_main(" + ", ".join(rendered_args) + ")")
-                            i += 1
-                            continue
-            lines.extend(_emit_stmt(st, indent="    ", ctx=ctx))
-            i += 1
-    else:
-        has_case_main = False
-        i = 0
-        while i < len(functions):
-            if _safe_ident(functions[i].get("name"), "") == "_case_main":
-                has_case_main = True
-                break
-            i += 1
-        if has_case_main:
-            lines.append("    _case_main()")
-    lines.append("}")
+    if emit_main:
+        lines.append("")
+        lines.append("def main(args: Array[String]): Unit = {")
+        ctx: dict[str, Any] = {"tmp": 0, "declared": set(), "types": {}}
+        if len(main_guard) > 0:
+            has_pytra_main = False
+            i = 0
+            while i < len(functions):
+                if _safe_ident(functions[i].get("name"), "") == "__pytra_main":
+                    has_pytra_main = True
+                    break
+                i += 1
+            i = 0
+            while i < len(main_guard):
+                st = main_guard[i]
+                if has_pytra_main and isinstance(st, dict) and st.get("kind") == "Expr":
+                    value_any = st.get("value")
+                    if isinstance(value_any, dict) and value_any.get("kind") == "Call":
+                        fn_any = value_any.get("func")
+                        if isinstance(fn_any, dict) and fn_any.get("kind") == "Name":
+                            if _safe_ident(fn_any.get("id"), "") == "main":
+                                args_any = value_any.get("args")
+                                args_main = args_any if isinstance(args_any, list) else []
+                                rendered_args: list[str] = []
+                                j = 0
+                                while j < len(args_main):
+                                    rendered_args.append(_render_expr(args_main[j]))
+                                    j += 1
+                                lines.append("    __pytra_main(" + ", ".join(rendered_args) + ")")
+                                i += 1
+                                continue
+                lines.extend(_emit_stmt(st, indent="    ", ctx=ctx))
+                i += 1
+        else:
+            has_case_main = False
+            i = 0
+            while i < len(functions):
+                if _safe_ident(functions[i].get("name"), "") == "_case_main":
+                    has_case_main = True
+                    break
+                i += 1
+            if has_case_main:
+                lines.append("    _case_main()")
+        lines.append("}")
     return "\n".join(lines)

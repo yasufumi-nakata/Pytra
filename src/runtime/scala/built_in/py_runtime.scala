@@ -638,3 +638,10 @@ def pyJsonLoads(v: Any): Any = {
 def pyJsonDumps(v: Any): String = {
     __pytra_json_stringify(v)
 }
+
+// Python stdlib shim objects so that EAST-generated code like
+// `time.perf_counter()` or `math.sqrt(x)` resolves at runtime.
+object time {
+    def perf_counter(): Double = System.nanoTime().toDouble / 1_000_000_000.0
+}
+// Note: `math` functions are provided by `import scala.math.*` in each module.

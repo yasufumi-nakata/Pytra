@@ -339,4 +339,30 @@ class Path
   end
 end
 
-require_relative "image_runtime"
+# Python stdlib shim objects so that EAST-generated code like
+# `time.perf_counter()` or `math.sqrt(x)` resolves at runtime.
+module PytraTimeShim
+  def self.perf_counter
+    Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  end
+end
+
+module PytraMathShim
+  def self.sqrt(v) = Math.sqrt(__pytra_float(v))
+  def self.sin(v) = Math.sin(__pytra_float(v))
+  def self.cos(v) = Math.cos(__pytra_float(v))
+  def self.tan(v) = Math.tan(__pytra_float(v))
+  def self.exp(v) = Math.exp(__pytra_float(v))
+  def self.log(v) = Math.log(__pytra_float(v))
+  def self.fabs(v) = __pytra_float(v).abs
+  def self.floor(v) = __pytra_float(v).floor
+  def self.ceil(v) = __pytra_float(v).ceil
+  def self.pow(a, b) = __pytra_float(a) ** __pytra_float(b)
+  def self.pi = Math::PI
+  def self.e = Math::E
+end
+
+time = PytraTimeShim
+math = PytraMathShim
+
+# image_runtime is now provided via linker (png/gif modules)

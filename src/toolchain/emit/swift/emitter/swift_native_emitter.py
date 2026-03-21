@@ -716,7 +716,7 @@ def _resolved_runtime_symbol(runtime_call: str) -> str:
         symbol_name = name[dot + 1 :].strip()
         if module_name == "" or symbol_name == "":
             return ""
-        return "py" + _snake_to_pascal(module_name) + _snake_to_pascal(symbol_name)
+        return "__pytra_" + module_name + "_" + symbol_name
     return "__pytra_" + name
 
 
@@ -813,9 +813,14 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
             runtime_symbol = _resolved_runtime_symbol(resolved_runtime)
             if runtime_symbol != "":
                 if _is_math_constant(expr):
-                    return runtime_symbol + "()"
+                    return runtime_symbol
                 return runtime_symbol
             return resolved_runtime
+    # Rewrite module attribute access: math.pi → __pytra_math_pi
+    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
+        owner_id = value_any.get("id", "")
+        if owner_id in {"math", "time"} and attr != "":
+            return "__pytra_" + owner_id + "_" + attr
     value = _render_expr(value_any)
     return value + "." + attr
 
@@ -1065,6 +1070,18 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
         owner_any = func_any.get("value")
+        # Rewrite pytra.utils module calls: png.write_rgb_png → __pytra_write_rgb_png
+        if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+            owner_id = owner_any.get("id", "")
+            if owner_id in {"png", "gif", "math", "time"} and attr_name != "":
+                rendered_utils_args: list[str] = []
+                ui = 0
+                while ui < len(args):
+                    rendered_utils_args.append(_render_expr(args[ui]))
+                    ui += 1
+                if owner_id in {"math", "time"}:
+                    return "__pytra_" + owner_id + "_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
+                return "__pytra_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Call" and _call_name(owner_any) == "super":
             rendered_super_args: list[str] = []
             i = 0
@@ -2197,6 +2214,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             lines.extend(_emit_stmt(final[i], indent=indent, ctx=ctx))
             i += 1
         return lines
+
+    if kind == "VarDecl":
+        name = _safe_ident(sd2.get("name"), "v")
+        var_type = _swift_type(sd2.get("type"), allow_void=False)
+        type_map = _type_map(ctx)
+        type_map[name] = var_type
+        return [indent + "var " + name + ": " + var_type + " = " + _default_return_expr(var_type)]
 
     raise RuntimeError("swift native emitter: unsupported stmt kind: " + str(kind))
 

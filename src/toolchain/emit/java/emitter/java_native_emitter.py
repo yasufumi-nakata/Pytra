@@ -131,7 +131,7 @@ def _split_type_args(type_name: str, prefix: str) -> list[str]:
 def _java_ref_type(type_name: Any) -> str:
     if not isinstance(type_name, str):
         return "Object"
-    tn: str = tn
+    tn: str = type_name
     if tn in {"int", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
         return "Long"
     if tn in {"float", "float64"}:
@@ -173,7 +173,7 @@ def _java_ref_type(type_name: Any) -> str:
 def _java_type(type_name: Any, *, allow_void: bool) -> str:
     if not isinstance(type_name, str):
         return "Object"
-    tn: str = tn
+    tn: str = type_name
     if tn == "None":
         return "void" if allow_void else "Object"
     if tn in {"unknown", "object", "any"}:
@@ -2465,6 +2465,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             lines.extend(_emit_stmt(final[i], indent=indent, ctx=ctx))
             i += 1
         return lines
+    if kind == "VarDecl":
+        name = _safe_ident(sd2.get("name"), "v")
+        var_type = _java_type(sd2.get("type"), allow_void=False)
+        type_map = _type_map(ctx)
+        type_map[name] = var_type
+        return [indent + var_type + " " + name + " = " + _default_return_expr(var_type) + ";"]
+
     raise RuntimeError("java native emitter: unsupported stmt kind: " + str(kind))
 
 

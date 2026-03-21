@@ -299,13 +299,40 @@ def _sh_annotate_scalar_ctor_call_expr(
     )
 
 
+def _sh_infer_minmax_return_type(payload: dict[str, Any]) -> str:
+    """min/max の引数型から戻り型を推論する。
+
+    全引数が int64 なら int64、float64 が含まれれば float64 を返す。
+    unknown 型の引数は無視し、具体型が1つでもあればそれを採用する。
+    """
+    args = payload.get("args")
+    if not isinstance(args, list) or len(args) == 0:
+        return "unknown"
+    has_float = False
+    has_int = False
+    for arg in args:
+        if not isinstance(arg, dict):
+            continue
+        t = str(arg.get("resolved_type", "unknown")).strip()
+        if t in ("float64", "float"):
+            has_float = True
+        elif t in ("int64", "int"):
+            has_int = True
+    if has_float:
+        return "float64"
+    if has_int:
+        return "int64"
+    return "unknown"
+
+
 def _sh_annotate_minmax_call_expr(
     payload: dict[str, Any],
     *,
     fn_name: str,
     semantic_tag: str | None = None,
 ) -> dict[str, Any]:
-    return _sh_annotate_runtime_call_expr(
+    ret_type = _sh_infer_minmax_return_type(payload)
+    result = _sh_annotate_runtime_call_expr(
         payload,
         lowered_kind="BuiltinCall",
         builtin_name=fn_name,
@@ -314,6 +341,9 @@ def _sh_annotate_minmax_call_expr(
         runtime_symbol=fn_name,
         semantic_tag=semantic_tag,
     )
+    if ret_type != "unknown":
+        result["resolved_type"] = ret_type
+    return result
 
 
 def _sh_annotate_collection_ctor_call_expr(

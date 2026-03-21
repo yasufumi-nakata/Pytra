@@ -52,6 +52,29 @@ def _wrap_in_namespace(cs_text: str) -> str:
     return "\n".join(result_lines)
 
 
+_EXTERN_CONSTANTS: dict[str, list[str]] = {
+    "math": [
+        "        public static double pi { get { return math_native.pi; } }",
+        "        public static double e { get { return math_native.e; } }",
+    ],
+}
+
+
+def _inject_extern_constants(cs_text: str, stem: str) -> str:
+    """Insert extern constant properties into generated runtime classes."""
+    lines = _EXTERN_CONSTANTS.get(stem)
+    if not lines:
+        return cs_text
+    # Insert before the closing brace of the class
+    # Find the last "    }" which closes the class body
+    marker = "\n    }\n"
+    pos = cs_text.rfind(marker)
+    if pos < 0:
+        return cs_text
+    inject = "\n".join(lines) + "\n"
+    return cs_text[:pos] + "\n" + inject + cs_text[pos:]
+
+
 def _module_id_to_class_name(module_id: str) -> str:
     """モジュール ID からユニークなクラス名を生成する。
 
@@ -150,6 +173,9 @@ def _generate_cs_runtime(output_dir: str) -> None:
                 # Wrap in Pytra.CsModule namespace so user code can
                 # reference as Pytra.CsModule.time.perf_counter() etc.
                 cs_text = _wrap_in_namespace(cs_text)
+                # Inject missing extern constants that the emitter
+                # does not generate from @extern Assign nodes.
+                cs_text = _inject_extern_constants(cs_text, stem)
                 dst_cs.write_text(cs_text, encoding="utf-8")
             except Exception:
                 pass

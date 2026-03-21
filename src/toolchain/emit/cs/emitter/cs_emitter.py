@@ -2852,6 +2852,10 @@ class CSharpEmitter(CodeEmitter):
                 return owner_expr + ".AddRange(" + rendered_args[0] + ")"
             if attr_raw == "clear" and len(rendered_args) == 0:
                 return owner_expr + ".Clear()"
+            if attr_raw == "pop" and len(rendered_args) == 0:
+                return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ")"
+            if attr_raw == "pop" and len(rendered_args) == 1:
+                return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ", " + rendered_args[0] + ")"
 
         if owner_type.startswith("set["):
             if attr_raw == "add" and len(rendered_args) == 1:

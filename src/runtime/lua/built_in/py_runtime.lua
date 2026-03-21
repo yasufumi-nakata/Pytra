@@ -6,7 +6,7 @@ local __pytra_runtime_dir = ""
 if type(__pytra_runtime_source) == "string" and string.sub(__pytra_runtime_source, 1, 1) == "@" then
     __pytra_runtime_dir = string.match(string.sub(__pytra_runtime_source, 2), "^(.*[/\\])") or ""
 end
-dofile(__pytra_runtime_dir .. "image_runtime.lua")
+-- image_runtime is now provided via linker (png/gif modules)
 
 function __pytra_print(...)
     local argc = select("#", ...)
@@ -654,3 +654,12 @@ function __pytra_isinstance(obj, class_tbl)
     end
     return false
 end
+
+-- Python stdlib shim tables so that EAST-generated code like
+-- `time.perf_counter()` or `math.sqrt(x)` resolves at runtime.
+time = {
+    perf_counter = function() return os.clock() end,
+}
+math = math or {}
+math.pi = math.pi
+math.e = 2.718281828459045

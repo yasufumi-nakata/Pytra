@@ -191,6 +191,19 @@ def cmd_build(argv: list[str]) -> int:
         if generated.exists() and str(generated.resolve()) != str(so_path.resolve()):
             so_path.write_text(generated.read_text(encoding="utf-8"), encoding="utf-8")
 
+    # Stage 2.5: copy native runtime helpers to output_dir if needed
+    _runtime_copy_map: dict[str, str] = {
+        "ruby": "py_runtime.rb",
+        "lua": "py_runtime.lua",
+        "scala": "py_runtime.scala",
+    }
+    if target in _runtime_copy_map:
+        rt_name = _runtime_copy_map[target]
+        rt_src = Path(src_dir) / "runtime" / target / "built_in" / rt_name
+        rt_dst = Path(output_dir) / rt_name
+        if rt_src.exists() and not rt_dst.exists():
+            rt_dst.write_text(rt_src.read_text(encoding="utf-8"), encoding="utf-8")
+
     # Stage 3: build + run
     entry_stem = Path(input_file).stem
     ext_map: dict[str, str] = {
@@ -357,6 +370,17 @@ def cmd_build(argv: list[str]) -> int:
                 result = _run(compile_run_map[target])
                 return result.returncode
             return 0
+
+        # Scala: collect all .scala files recursively for scala run
+        if target == "scala":
+            scala_files: list[str] = []
+            for root_dir, dirs, files in _os.walk(output_dir):
+                for f in sorted(files):
+                    if f.endswith(".scala"):
+                        scala_files.append(_os.path.join(root_dir, f))
+            run_cmd = ["scala", "run"] + scala_files
+            result = _run(run_cmd)
+            return result.returncode
 
         if target in runner_map:
             run_cmd = runner_map[target] + [entry_output]

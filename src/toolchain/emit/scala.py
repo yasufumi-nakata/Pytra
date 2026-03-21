@@ -7,10 +7,12 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import sys
+from pathlib import Path
 
 from toolchain.emit.scala.emitter import transpile_to_scala_native
-from toolchain.emit.loader import emit_all_modules
+from toolchain.emit.loader import load_linked_modules
 
 
 def main() -> int:
@@ -36,7 +38,23 @@ def main() -> int:
         print("error: input link-output.json is required", file=sys.stderr)
         return 1
 
-    return emit_all_modules(input_path, output_dir, ".scala", transpile_to_scala_native)
+    modules, entry_modules = load_linked_modules(input_path)
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    for mod in modules:
+        module_id = mod["module_id"]
+        east_doc = mod["east_doc"]
+        is_entry = mod.get("is_entry", False)
+        rel_path = module_id.replace(".", "/") + ".scala"
+        out_path = out / rel_path
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+
+        source = transpile_to_scala_native(east_doc, emit_main=is_entry)
+        out_path.write_text(source, encoding="utf-8")
+        print("generated: " + str(out_path))
+
+    return 0
 
 
 if __name__ == "__main__":
