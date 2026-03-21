@@ -32,11 +32,11 @@ class BuildSelfhostToolTest(unittest.TestCase):
     def test_build_selfhost_transpile_cmd_targets_selfhost_entry(self) -> None:
         mod = _load_module()
         self.assertEqual(
-            mod.build_selfhost_transpile_cmd(Path("/tmp/py2x-selfhost.py"), Path("/tmp/py2cpp.cpp")),
+            mod.build_selfhost_transpile_cmd(Path("/tmp/pytra-cli.py"), Path("/tmp/py2cpp.cpp")),
             [
                 "python3",
-                "/tmp/py2x-selfhost.py",
-                "/tmp/py2x-selfhost.py",
+                "/tmp/pytra-cli.py",
+                "/tmp/pytra-cli.py",
                 "--target",
                 "cpp",
                 "-o",

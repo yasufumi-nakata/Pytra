@@ -2,7 +2,7 @@
 """Build selfhost transpiler C++ binary end-to-end.
 
 Steps:
-1) transpile src/py2x-selfhost.py -> selfhost/py2cpp.cpp
+1) transpile src/pytra-cli.py -> selfhost/py2cpp.cpp
 2) compile with src/runtime/cpp sources
 """
 
@@ -23,7 +23,7 @@ from tools.cpp_runtime_deps import collect_runtime_cpp_sources
 SELFHOST = ROOT / "selfhost"
 CPP_OUT = SELFHOST / "py2cpp.cpp"
 BIN_OUT = SELFHOST / "py2cpp.out"
-SELFHOST_ENTRY = ROOT / "src" / "py2x-selfhost.py"
+SELFHOST_ENTRY = ROOT / "src" / "pytra-cli.py"
 STAGE_BOUNDARY_GUARD = ROOT / "tools" / "check_east_stage_boundary.py"
 
 

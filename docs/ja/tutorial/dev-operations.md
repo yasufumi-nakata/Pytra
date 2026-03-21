@@ -136,7 +136,7 @@ mkdir -p test/transpile/cpp2
 ./selfhost/py2cpp.out sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp2/01_mandelbrot.cpp
 
 # 3) Python 版 C++ backend でも同じ入力を変換
-python3 src/py2x-selfhost.py sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp/01_mandelbrot.cpp
+python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp/01_mandelbrot.cpp
 
 # 4) direct route が sample 全件で -fsyntax-only まで通るか確認
 python3 tools/check_selfhost_direct_compile.py

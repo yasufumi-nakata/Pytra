@@ -251,18 +251,18 @@ python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
 - Runtime/stdlib call resolution must use EAST3 canonical fields only (`runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`). Do not add per-symbol branches or dispatch tables in emitters.
 - `java` backend is strict: direct dispatch symbol literals are not allowlisted and must remain zero.
 
-## `pytra-cli.py` / `py2x-selfhost.py` Entry Split
+## `pytra-cli.py` / `pytra-cli.py` Entry Split
 
 - Use `src/pytra-cli.py` for normal host execution. Target backends are loaded lazily per selected language.
-- Use `src/py2x-selfhost.py` for selfhost execution. Backends are fixed to static eager imports only.
-- Existing `py2{lang}.py` wrappers are compatibility-only paths; normal execution is unified on `pytra-cli.py` / `py2x-selfhost.py`.
+- Use `src/pytra-cli.py` for selfhost execution. Backends are fixed to static eager imports only.
+- Existing `py2{lang}.py` wrappers are compatibility-only paths; normal execution is unified on `pytra-cli.py` / `pytra-cli.py`.
 
 ```bash
 # Normal execution (host-lazy)
 python3 src/pytra-cli.py test/fixtures/core/add.py --target rs -o out/add.rs
 
 # Selfhost execution (static eager import)
-python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
+python3 src/pytra-cli.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
 ```
 
 ### Migration Note (`py2*.py` compatibility wrappers)

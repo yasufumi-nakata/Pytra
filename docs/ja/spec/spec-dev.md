@@ -589,7 +589,7 @@ migration note:
   - `json.loads()` の戻り値を `dict[str, object]` / `list[object]` と直接みなして手探り decode してはならない。
   - `pytra.std.json` の `loads_obj` / `loads_arr` / `JsonValue.as_*` / `JsonObj.get_*` / `JsonArr.get_*` を正本とする。
   - selfhost v1 は `match` や general-purpose `cast` を前提にしない。JSON module 専用 helper だけで decode する。
-  - `py2x-selfhost.py` が raw `json.loads()` を直接呼ばなくても、周辺 loader/validator が `JsonValue` lane を外れていれば selfhost 契約違反とみなす。
+  - `pytra-cli.py` が raw `json.loads()` を直接呼ばなくても、周辺 loader/validator が `JsonValue` lane を外れていれば selfhost 契約違反とみなす。
 
 ### 3.2 関数引数の受け渡し方針
 

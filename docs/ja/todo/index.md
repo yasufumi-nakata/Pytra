@@ -134,7 +134,7 @@
 
 1. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S1] `pytra-cli.py` の C++ emit パスを `east2cpp.py` サブプロセスに変更し、`backend_registry` import を除去。→ pytra-cli.py の import グラフに toolchain.emit.* が一切含まれない。
 2. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S2] `pytra-cli.py` の非 C++ emit パスを `east2x.py` サブプロセスに変更。→ S1 と同時に完了。
-3. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] `py2x-selfhost.py` から `backend_registry_static` import を除去。→ C++ emitter のみ直接 import。非 C++ backend は import グラフに含まれない。
+3. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] `pytra-cli.py` から `backend_registry_static` import を除去。→ C++ emitter のみ直接 import。非 C++ backend は import グラフに含まれない。
 4. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S4] selfhost compile+link で 65 モジュール（以前 151）。非 C++ backend 74 件が完全に消えた（57% 削減）。
 
 #### P1-5: 各言語 emit ラッパーの個別 emitter 直接呼び出し化

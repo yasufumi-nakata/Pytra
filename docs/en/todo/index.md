@@ -52,7 +52,7 @@ Context: [docs/ja/plans/p1-backend-registry-decoupling.md](../../ja/plans/p1-bac
 
 1. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S1] Change the C++ emit path in `pytra-cli.py` to invoke `east2cpp.py` as a subprocess and remove the `backend_registry` import.
 2. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S2] Change the non-C++ emit path in `pytra-cli.py` to invoke `east2x.py` as a subprocess.
-3. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] Refactor `py2x-selfhost.py` to remove the `backend_registry_static` import; directly import `toolchain.emit.cpp.emitter` for C++ emit only.
+3. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] Refactor `pytra-cli.py` to remove the `backend_registry_static` import; directly import `toolchain.emit.cpp.emitter` for C++ emit only.
 4. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S4] Verify that non-C++ backends are not included in the import graph during the compile+link stage of selfhost multi-module.
 
 ### P5: py_runtime.h Shrink
@@ -173,5 +173,5 @@ Context: [docs/ja/plans/p7-selfhost-multimodule-transpile.md](../../ja/plans/p7-
 1c. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-03] Migrate `multifile_writer.py`'s `import os` to `pytra.std`.
 1d. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-04] Replace CppEmitter's dynamic mixin injection (`_attach_cpp_emitter_helper_methods` setattr/__dict__) with EAST3 mixin expansion via multiple inheritance. Remove `install_py2cpp_runtime_symbols` globals() injection.
 2. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] Extend `tools/build_selfhost.py` to a multi-module transpile pipeline (compile → link). → `--multi-module` flag runs compile→link→emit via pytra-cli.py. All 150 modules compiled to EAST3 successfully. Parser fixes (typing no-op, dict string-key `:`, multi-arg subscript). Object receiver fixes across the dependency chain (40+ files).
-3. [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] Call `emit_cpp_from_east` directly from `py2x-selfhost.py` and remove the `emit_source_typed` shell-out from `backend_registry_static.cpp`.
+3. [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] Call `emit_cpp_from_east` directly from `pytra-cli.py` and remove the `emit_source_typed` shell-out from `backend_registry_static.cpp`.
 4. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S4] Investigate and fix missing symbol resolution for `from toolchain.compiler.transpile_cli import make_user_error` etc. in the linker. → Implemented wildcard re-export propagation in `module_export_table`. `from X import *` re-exports now reflected in export table. Link of 151 modules succeeds.

@@ -10,7 +10,7 @@
 
 selfhost バイナリの `backend_registry_static.cpp::emit_source_typed` は `python3 src/east2x.py` にシェルアウトして C++ コードを生成している。これを除去するには C++ emitter（`CppEmitter` + 全依存モジュール）を C++ に transpile して selfhost バイナリに組み込む必要がある。
 
-現在の selfhost transpile は単一ファイル生成（`py2x-selfhost.py` → `selfhost/py2cpp.cpp`）であり、import 先モジュールの C++ コードは含まれない。P2 で実装した compile → link パイプラインを selfhost ビルド自体に適用し、emitter モジュール群を multi-module transpile → link する仕組みが必要。
+現在の selfhost transpile は単一ファイル生成（`pytra-cli.py` → `selfhost/py2cpp.cpp`）であり、import 先モジュールの C++ コードは含まれない。P2 で実装した compile → link パイプラインを selfhost ビルド自体に適用し、emitter モジュール群を multi-module transpile → link する仕組みが必要。
 
 ## 設計
 
@@ -18,7 +18,7 @@ selfhost バイナリの `backend_registry_static.cpp::emit_source_typed` は `p
 
 ```
 # Step 1: 各モジュールを個別に compile
-pytra compile src/py2x-selfhost.py -o work/selfhost/py2x_selfhost.east
+pytra compile src/pytra-cli.py -o work/selfhost/py2x_selfhost.east
 pytra compile src/toolchain/emit/cpp/emitter/cpp_emitter.py -o work/selfhost/cpp_emitter.east
 pytra compile src/toolchain/emit/cpp/emitter/class_def.py -o work/selfhost/class_def.east
 ...（emitter の全依存モジュール）
@@ -48,7 +48,7 @@ g++ -std=c++20 -O2 -Isrc -Isrc/runtime/cpp selfhost/cpp/src/*.cpp <runtime_sourc
 ## 対象
 
 - `tools/build_selfhost.py` — multi-module transpile パイプラインへの拡張
-- `src/py2x-selfhost.py` — `emit_source_typed` シェルアウトを直接 emitter 呼び出しに置換
+- `src/pytra-cli.py` — `emit_source_typed` シェルアウトを直接 emitter 呼び出しに置換
 - `src/runtime/cpp/compiler/backend_registry_static.cpp` — `emit_source_typed` シェルアウト除去
 - emitter モジュール群（`src/toolchain/emit/cpp/emitter/*.py`）— selfhost 制約準拠の確認・修正
 
@@ -67,7 +67,7 @@ g++ -std=c++20 -O2 -Isrc -Isrc/runtime/cpp selfhost/cpp/src/*.cpp <runtime_sourc
 
 - [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S1] emitter モジュール群の selfhost 制約準拠を監査し、違反箇所を列挙する。
 - [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] `tools/build_selfhost.py` を multi-module transpile パイプライン（compile → link）に拡張する。
-- [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] `py2x-selfhost.py` から `emit_cpp_from_east` を直接呼び出し、`backend_registry_static.cpp` の `emit_source_typed` シェルアウトを除去する。
+- [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] `pytra-cli.py` から `emit_cpp_from_east` を直接呼び出し、`backend_registry_static.cpp` の `emit_source_typed` シェルアウトを除去する。
 - [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S4] リンカーの import 解決で wildcard re-export が export テーブルに反映されない問題を修正する。
 
 ## 決定ログ

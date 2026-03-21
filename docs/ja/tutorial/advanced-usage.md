@@ -45,18 +45,18 @@ def py_join(sep: str, parts: list[str]) -> str:
     ...
 ```
 
-## `pytra-cli.py` / `py2x-selfhost.py` の使い分け
+## `pytra-cli.py` / `pytra-cli.py` の使い分け
 
 - 通常実行は `src/pytra-cli.py` を使います。target backend は必要言語のみ lazy import されます。
-- selfhost 実行は `src/py2x-selfhost.py` を使います。backend は static eager import 固定です。
-- 既存 `py2{lang}.py` ラッパは移行互換用途のみで、通常運用の入口は `pytra-cli.py` / `py2x-selfhost.py` に統一します。
+- selfhost 実行は `src/pytra-cli.py` を使います。backend は static eager import 固定です。
+- 既存 `py2{lang}.py` ラッパは移行互換用途のみで、通常運用の入口は `pytra-cli.py` / `pytra-cli.py` に統一します。
 
 ```bash
 # 通常実行（host-lazy）
 python3 src/pytra-cli.py test/fixtures/core/add.py --target rs -o out/add.rs
 
 # selfhost 実行（static eager import）
-python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
+python3 src/pytra-cli.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
 ```
 
 ### 移行メモ（`py2*.py` 互換ラッパ）

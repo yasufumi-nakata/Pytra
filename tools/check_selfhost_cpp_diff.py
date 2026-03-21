@@ -15,7 +15,7 @@ from tools.selfhost_parity_summary import print_summary_block
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2X_SELFHOST = ROOT / "src" / "py2x-selfhost.py"
+PY2X_SELFHOST = ROOT / "src" / "pytra-cli.py"
 DEFAULT_EXPECTED_DIFF_FILE = ROOT / "tools" / "selfhost_cpp_diff_expected.txt"
 DEFAULT_CASES = [
     "test/fixtures/core/add.py",

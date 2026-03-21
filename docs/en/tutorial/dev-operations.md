@@ -136,7 +136,7 @@ mkdir -p test/transpile/cpp2
 ./selfhost/py2cpp.out sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp2/01_mandelbrot.cpp
 
 # 3) Convert the same input with the Python C++ backend
-python3 src/py2x-selfhost.py sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp/01_mandelbrot.cpp
+python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp/01_mandelbrot.cpp
 
 # 4) Verify the direct route passes -fsyntax-only for all samples
 python3 tools/check_selfhost_direct_compile.py

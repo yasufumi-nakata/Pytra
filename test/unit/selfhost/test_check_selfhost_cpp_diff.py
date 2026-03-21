@@ -74,7 +74,7 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
             self.assertEqual(mod._resolve_selfhost_target(selfhost_bin, "auto"), "")
         self.assertEqual(mod._resolve_selfhost_target(selfhost_bin, "bridge"), "bridge")
 
-    def test_build_host_transpile_cmd_uses_py2x_selfhost_cpp_target(self) -> None:
+    def test_build_host_transpile_cmd_uses_pytra_cli_cpp_target(self) -> None:
         mod = _load_module()
         src = ROOT / "test" / "fixtures" / "core" / "add.py"
         out_cpp = Path("/tmp/out.cpp")
@@ -82,7 +82,7 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
             mod.build_host_transpile_cmd(src, out_cpp),
             [
                 "python3",
-                str(ROOT / "src" / "py2x-selfhost.py"),
+                str(ROOT / "src" / "pytra-cli.py"),
                 str(src),
                 "--target",
                 "cpp",

@@ -11,7 +11,7 @@ Background:
 - In this state, even if we claim to have unified to `pytra-cli.py`, actual operations still maintain wrappers.
 
 Goal:
-- Finalize `pytra-cli.py` (regular) / `py2x-selfhost.py` (self-host) as the only CLI entrypoints.
+- Finalize `pytra-cli.py` (regular) / `pytra-cli.py` (self-host) as the only CLI entrypoints.
 - Remove the `src/py2*.py` wrapper set and `toolchain/compiler/py2x_wrapper.py`.
 - Replace wrapper-dependent checks/regressions with `py2x`-based checks and prevent reintroduction.
 
@@ -26,7 +26,7 @@ Out of scope:
 - EAST spec changes
 
 Acceptance criteria:
-- Under `src/`, only `pytra-cli.py` and `py2x-selfhost.py` remain as `py2*.py` files.
+- Under `src/`, only `pytra-cli.py` and `pytra-cli.py` remain as `py2*.py` files.
 - No references remain in `tools/` / `test/` / `docs/` to `src/py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}.py`.
 - Major transpile checks and smoke tests pass after wrapper removal.
 - Wrapper reintroduction is detected fail-fast in CI/local checks.
@@ -63,7 +63,7 @@ Verification commands (planned):
   - history-oriented `docs/*/plans` / `docs/*/todo/archive` are kept as factual records; `S2-03` prioritizes replacement in operational docs
 
 Replacement order (fixed):
-1. In `S2-01`, update direct wrapper references in `tools` to `pytra-cli.py` / `py2x-selfhost.py` and backend module references.
+1. In `S2-01`, update direct wrapper references in `tools` to `pytra-cli.py` / `pytra-cli.py` and backend module references.
 2. In `S2-02`, update import/string dependencies in `test/unit` to `py2x`-based references.
 3. In `S2-03`, update operational/spec docs in `docs/ja|en` to the canonical `py2x` entrypoints.
 4. In `S3-01`, delete wrapper set `src/py2*.py` and `toolchain/compiler/py2x_wrapper.py`.
@@ -75,7 +75,7 @@ Replacement order (fixed):
 - [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-01] Replace direct wrapper references in `tools/` with `py2x` / backend module references.
 - [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-02] Replace wrapper-file-dependent tests in `test/unit` with `py2x`-based or backend-module-based tests.
 - [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S2-03] Update wrapper-name references in `docs/ja` / `docs/en` to canonical `py2x` entrypoints.
-- [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-01] Delete wrapper set `src/py2*.py` and `toolchain/compiler/py2x_wrapper.py` (`pytra-cli.py` / `py2x-selfhost.py` excluded).
+- [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-01] Delete wrapper set `src/py2*.py` and `toolchain/compiler/py2x_wrapper.py` (`pytra-cli.py` / `pytra-cli.py` excluded).
 - [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-02] Update static guards to detect wrapper reintroduction and lock the post-removal layout.
 - [x] [ID: P1-PY2X-WRAPPER-REMOVE-REOPEN-01-S3-03] Run transpile/smoke regressions and verify non-regression after wrapper removal.
 
@@ -87,5 +87,5 @@ Decision log:
 - 2026-03-04: Completed `S2-02`. Replaced wrapper import / wrapper concrete-file string dependencies in `test/unit/test_py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}_smoke.py` with backend-module + `load_east3_document(..., target_lang=<lang>)` basis, and aligned Lua smoke with runtime externalization (`dofile("py_runtime.lua")`) expectations. Confirmed `OK` on `PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py' -v` (298 tests).
 - 2026-03-04: Completed `S2-03`. Unified execution examples in operational docs around `pytra-cli.py --target <lang>`, and updated `how-to-use` wrapper notes to deprecation/phased-removal policy. Replaced `src/py2cpp.py` assumptions in `spec-runtime/spec-options/spec-east/spec-east3-optimizer/spec-dev/spec-tools` (ja/en) with `src/pytra-cli.py --target cpp` or `src/toolchain/emit/cpp/cli.py`, and standardized self-host sync procedure to `python3 tools/prepare_selfhost_source.py`. Confirmed `rg -n "python3?\\s+src/py2(rs|cs|js|ts|go|java|kotlin|swift|rb|lua|scala|php|nim|cpp)\\.py" docs/ja docs/en --glob '!**/plans/**' --glob '!**/todo/**' --glob '!**/archive/**' --glob '!**/language/**'` returns 0.
 - 2026-03-04: Completed `S3-01`. Deleted `src/py2{rs,cs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}.py` and `src/toolchain/compiler/py2x_wrapper.py`, then resolved remaining dependencies by migrating `test/unit/test_error_classification_cross_lang.py` to `load_east3_document(..., target_lang=...)` and updating the anchor in `src/toolchain/emit/cs/emitter/cs_emitter.py` to `src/pytra-cli.py`. Regression checks passed: `python3 tools/check_legacy_cli_references.py`, `python3 -m unittest discover -s test/unit -p 'test_error_classification_cross_lang.py' -v`, and `PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py' -v` (298 tests).
-- 2026-03-04: Completed `S3-02`. Updated `tools/check_legacy_cli_references.py` to fail-fast on reintroduction of any `src/py2*.py` concrete file other than `src/pytra-cli.py` / `src/py2x-selfhost.py`, and on regeneration of `toolchain/compiler/py2x_wrapper.py`. Also emptied path/import allowlists to lock the post-removal layout, and confirmed `OK` from `python3 tools/check_legacy_cli_references.py`.
+- 2026-03-04: Completed `S3-02`. Updated `tools/check_legacy_cli_references.py` to fail-fast on reintroduction of any `src/py2*.py` concrete file other than `src/pytra-cli.py` / `src/pytra-cli.py`, and on regeneration of `toolchain/compiler/py2x_wrapper.py`. Also emptied path/import allowlists to lock the post-removal layout, and confirmed `OK` from `python3 tools/check_legacy_cli_references.py`.
 - 2026-03-04: Completed `S3-03`. Ran all `check_py2{cpp,rs,cs,js,ts,go,java,swift,kotlin,rb,lua,scala,php,nim}_transpile.py` and confirmed fail=0, then re-ran `PYTHONPATH=src:. python3 -m unittest discover -s test/unit -p 'test_py2*_smoke.py' -v` (298 tests) with `OK`. Locked transpile/smoke non-regression after wrapper removal.

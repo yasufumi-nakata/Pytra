@@ -7,7 +7,7 @@
 
 背景:
 - `src/pytra/` は runtime/stdlib の SoT を配置する領域であり、CLI 実装を置く責務ではない。
-- 直近で CLI を `src/pytra_cli.py` へ退避したが、命名規約（`py2x-selfhost.py` などハイフン系）と不一致で誤読しやすい。
+- 直近で CLI を `src/pytra_cli.py` へ退避したが、命名規約（`pytra-cli.py` などハイフン系）と不一致で誤読しやすい。
 - 現行 `pytra-cli` は target 言語ごとの build/run 分岐（`if target == ...`）を内部に多数保持しており、backend の責務を侵食している。
 - ユーザー要件として、CLI は言語分岐を持たず、共通入口として backend プロファイルを解決して実行する構成へ寄せる必要がある。
 

@@ -14,10 +14,10 @@ from tools import check_transpiler_version_gate as gate_mod
 
 class CheckTranspilerVersionGateTest(unittest.TestCase):
     def test_collect_required_components_marks_cpp_for_selfhost_entry(self) -> None:
-        touched_shared, touched_langs, touched_paths = gate_mod._collect_required_components(["src/py2x-selfhost.py"])
+        touched_shared, touched_langs, touched_paths = gate_mod._collect_required_components(["src/pytra-cli.py"])
         self.assertFalse(touched_shared)
         self.assertEqual(touched_langs, {"cpp"})
-        self.assertEqual(touched_paths, ["src/py2x-selfhost.py"])
+        self.assertEqual(touched_paths, ["src/pytra-cli.py"])
 
     def test_collect_required_components_marks_cpp_for_selfhost_core(self) -> None:
         touched_shared, touched_langs, touched_paths = gate_mod._collect_required_components(

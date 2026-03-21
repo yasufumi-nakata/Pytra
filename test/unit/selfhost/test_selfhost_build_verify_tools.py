@@ -30,14 +30,14 @@ class BuildSelfhostStage2ToolTest(unittest.TestCase):
         mod = _load_module(BUILD_STAGE2_PATH, "build_selfhost_stage2_mod")
         cmd = mod.build_stage1_transpile_cmd(
             Path("/tmp/py2cpp.out"),
-            Path("/tmp/py2x-selfhost.py"),
+            Path("/tmp/pytra-cli.py"),
             Path("/tmp/py2cpp_stage2.cpp"),
         )
         self.assertEqual(
             cmd,
             [
                 "/tmp/py2cpp.out",
-                "/tmp/py2x-selfhost.py",
+                "/tmp/pytra-cli.py",
                 "--target",
                 "cpp",
                 "-o",
@@ -69,7 +69,7 @@ class BuildSelfhostStage2ToolTest(unittest.TestCase):
             root = Path(td)
             mod.BUILD_STAGE1 = root / "build_selfhost.py"
             mod.STAGE1_BIN = root / "py2cpp.out"
-            mod.STAGE1_SRC = root / "py2x-selfhost.py"
+            mod.STAGE1_SRC = root / "pytra-cli.py"
             mod.STAGE2_CPP = root / "py2cpp_stage2.cpp"
             mod.STAGE2_BIN = root / "py2cpp_stage2.out"
             mod.STAGE1_CPP = root / "py2cpp.cpp"

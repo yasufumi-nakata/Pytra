@@ -26,7 +26,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.misc.backend_registry import", host_entry)
         self.assertNotIn("backend_registry_static", host_entry)
 
-        selfhost_entry = (ROOT / "src" / "py2x-selfhost.py").read_text(encoding="utf-8")
+        selfhost_entry = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         self.assertIn("from toolchain.misc.backend_registry_static import", selfhost_entry)
 
     def test_backend_registry_host_is_lazy_import_style(self) -> None:
@@ -224,7 +224,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
     def test_selfhost_cpp_entry_uses_direct_typed_compiler_path(self) -> None:
         selfhost_cpp = (ROOT / "selfhost" / "py2cpp.cpp").read_text(encoding="utf-8")
         selfhost_stage2 = (ROOT / "selfhost" / "py2cpp_stage2.cpp").read_text(encoding="utf-8")
-        selfhost_src = (ROOT / "src" / "py2x-selfhost.py").read_text(encoding="utf-8")
+        selfhost_src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         native_transpile = (ROOT / "src" / "runtime" / "cpp" / "native" / "compiler" / "transpile_cli.h").read_text(encoding="utf-8")
         native_registry = (ROOT / "src" / "runtime" / "cpp" / "native" / "compiler" / "backend_registry_static.h").read_text(encoding="utf-8")
 
@@ -718,7 +718,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             ROOT / "src" / "toolchain" / "frontends" / "extern_var.py"
         ).read_text(encoding="utf-8")
         py2x_src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
-        selfhost_entry_src = (ROOT / "src" / "py2x-selfhost.py").read_text(encoding="utf-8")
+        selfhost_entry_src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         sys_std_src = (ROOT / "src" / "pytra" / "std" / "sys.py").read_text(encoding="utf-8")
         prepare_src = (ROOT / "tools" / "prepare_selfhost_source.py").read_text(encoding="utf-8")
         native_transpile = (
@@ -853,7 +853,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         python_frontend_src = (
             ROOT / "src" / "toolchain" / "frontends" / "python_frontend.py"
         ).read_text(encoding="utf-8")
-        selfhost_entry_src = (ROOT / "src" / "py2x-selfhost.py").read_text(encoding="utf-8")
+        selfhost_entry_src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         runtime_index_src = (
             ROOT / "src" / "toolchain" / "frontends" / "runtime_symbol_index.py"
         ).read_text(encoding="utf-8")

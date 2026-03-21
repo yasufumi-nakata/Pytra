@@ -66,4 +66,4 @@ backend_registry_static.cpp:
 
 - 2026-03-18: `native/compiler/` は selfhost 未完成を示す bootstrap shim であり、移動でなく削除が正しいゴールであることを確認し起票。`.json` 入力パスは既にネイティブ動作しているため S1（フロントエンド側）は比較的コストが低い。S2（emitter の C++ transpile）が主要ブロッカー。
 - 2026-03-19: S1 完了。`transpile_cli.cpp` から `.py` シェルアウトパスを除去し、`.json`/`.east` 入力専用に統一。`_run_host_python_command` / `_temp_path` / `_shell_quote` 等のシェルアウト補助関数を削除。
-- 2026-03-19: S2 調査。`py2x-selfhost.py` に `emit_cpp_from_east` を直接 import する方式を検証したが、selfhost transpile は単一ファイル生成であり、import 先モジュール（CppEmitter 等）の C++ コードは含まれない。S2 を完了するには、emitter の全依存グラフを compile → link パイプライン（P2 で実装）で multi-module transpile し、selfhost ビルドにリンクする仕組みが必要。`backend_registry_static.cpp` の `emit_source_typed` シェルアウトは S2 完了まで残存。
+- 2026-03-19: S2 調査。`pytra-cli.py` に `emit_cpp_from_east` を直接 import する方式を検証したが、selfhost transpile は単一ファイル生成であり、import 先モジュール（CppEmitter 等）の C++ コードは含まれない。S2 を完了するには、emitter の全依存グラフを compile → link パイプライン（P2 で実装）で multi-module transpile し、selfhost ビルドにリンクする仕組みが必要。`backend_registry_static.cpp` の `emit_source_typed` シェルアウトは S2 完了まで残存。

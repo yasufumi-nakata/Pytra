@@ -904,7 +904,7 @@ class CppCallEmitter:
             src == ""  # リンク済み doc（global optimizer が source_path を "" にセットする）
             or src.endswith("/selfhost/py2cpp.py")
             or src.endswith("/src/toolchain/emit/cpp/cli.py")
-            or src.endswith("/src/py2x-selfhost.py")
+            or src.endswith("/src/pytra-cli.py")
         ):
             return None
         owner_norm = self.normalize_type_name(owner_t)

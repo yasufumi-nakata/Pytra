@@ -24,7 +24,7 @@ SHARED_DEPENDENCY_PATHS = [
 
 LANG_DIRECT_DEPENDENCY_PATHS: dict[str, list[str]] = {
     "cpp": [
-        "src/py2x-selfhost.py",
+        "src/pytra-cli.py",
         "src/toolchain/ir/core.py",
         "src/toolchain/emit/cpp/cli.py",
         "src/toolchain/emit/cpp",
