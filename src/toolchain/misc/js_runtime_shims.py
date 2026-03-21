@@ -9,7 +9,7 @@ from pytra.std.pathlib import Path
 
 
 _ROOT = NativePath(__file__).resolve().parents[3]
-_JS_RUNTIME_SRC_ROOT = _ROOT / "src" / "runtime" / "js"
+_JS_RUNTIME_SRC_ROOT = _ROOT / "sample" / "js" / "runtime" / "js"
 _JS_RUNTIME_STAGE_ROOTS = ("generated", "native")
 
 

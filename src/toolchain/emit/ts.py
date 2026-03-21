@@ -11,6 +11,7 @@ import sys
 
 from toolchain.emit.ts.emitter.ts_emitter import transpile_to_typescript
 from toolchain.emit.loader import emit_all_modules
+from toolchain.misc.js_runtime_shims import write_js_runtime_shims
 
 
 def main() -> int:
@@ -36,7 +37,12 @@ def main() -> int:
         print("error: input link-output.json is required", file=sys.stderr)
         return 1
 
-    return emit_all_modules(input_path, output_dir, ".ts", transpile_to_typescript)
+    rc = emit_all_modules(input_path, output_dir, ".ts", transpile_to_typescript)
+    if rc != 0:
+        return rc
+    from pytra.std.pathlib import Path as PytraPath
+    write_js_runtime_shims(PytraPath(output_dir))
+    return 0
 
 
 if __name__ == "__main__":

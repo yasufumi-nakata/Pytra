@@ -119,6 +119,8 @@ def _normalize_output_for_compare(stdout_text: str, target_name: str = "") -> st
         low = line.strip().lower()
         if low.startswith("elapsed_sec:") or low.startswith("elapsed:") or low.startswith("time_sec:"):
             continue
+        if low.startswith("generated:"):
+            continue
         if target_name == "nim" and "warning:" in low:
             continue
         lines.append(line)

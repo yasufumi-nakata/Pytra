@@ -272,23 +272,28 @@ def _render_expr(expr_any: Any) -> str:
         generators = _get_list(expr, "generators")
         if len(generators) == 0:
             return "@()"
-        gen = generators[0]
-        if not isinstance(gen, dict):
-            return "@()"
-        target = gen.get("target")
-        iter_expr = gen.get("iter")
-        ifs = _get_list(gen, "ifs")
-        target_name = "$" + _safe_ident(_get_str(target, "id") if isinstance(target, dict) else "_lc", "_lc")
-        iter_rendered = _render_expr(iter_expr)
-        elt_rendered = _render_expr(elt)
-        # Nested array: protect inner array from flattening with ,@(...)
-        elt_is_array = isinstance(elt, dict) and _get_str(elt, "kind") in ("ListComp", "List", "Tuple")
-        if elt_is_array:
-            elt_rendered = "," + elt_rendered
-        if len(ifs) == 0:
-            return "@(" + iter_rendered + " | ForEach-Object { " + target_name + " = $_; " + elt_rendered + " })"
-        cond = " -and ".join(["(" + _render_expr(c) + ")" for c in ifs])
-        return "@(" + iter_rendered + " | ForEach-Object { " + target_name + " = $_; if (" + cond + ") { " + elt_rendered + " } })"
+
+        def _build_listcomp_pipe(gens: list[Any], elt_node: Any, depth: int) -> str:
+            if depth >= len(gens):
+                rendered_elt = _render_expr(elt_node)
+                if isinstance(elt_node, dict) and _get_str(elt_node, "kind") in ("ListComp", "List", "Tuple"):
+                    rendered_elt = "," + rendered_elt
+                return rendered_elt
+            gen_item = gens[depth]
+            if not isinstance(gen_item, dict):
+                return _render_expr(elt_node)
+            gen_target = gen_item.get("target")
+            gen_iter = gen_item.get("iter")
+            gen_ifs = _get_list(gen_item, "ifs")
+            tname = "$" + _safe_ident(_get_str(gen_target, "id") if isinstance(gen_target, dict) else "_lc" + str(depth), "_lc")
+            irendered = _render_expr(gen_iter)
+            inner = _build_listcomp_pipe(gens, elt_node, depth + 1)
+            if len(gen_ifs) > 0:
+                cond_parts = " -and ".join(["(" + _render_expr(c) + ")" for c in gen_ifs])
+                return "@(" + irendered + " | ForEach-Object { " + tname + " = $_; if (" + cond_parts + ") { " + inner + " } })"
+            return "@(" + irendered + " | ForEach-Object { " + tname + " = $_; " + inner + " })"
+
+        return _build_listcomp_pipe(generators, elt, 0)
 
     if kind == "DictComp":
         return "@{}"
