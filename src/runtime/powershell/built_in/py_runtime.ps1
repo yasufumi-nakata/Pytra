@@ -281,6 +281,7 @@ function open {
 
 function __pytra_file_write {
     param([object]$stream, [object]$data)
+    if ($stream -eq $null) { return 0 }
     if ($data -is [array] -or $data -is [System.Collections.IList]) {
         $bytes = [byte[]]@($data | ForEach-Object { [byte]$_ })
         $stream.Write($bytes, 0, $bytes.Length)
@@ -289,9 +290,12 @@ function __pytra_file_write {
     if ($data -is [string]) {
         if ($stream -is [System.IO.StreamWriter]) {
             $stream.Write($data)
-        } else {
+        } elseif ($stream -is [System.IO.Stream]) {
             $bytes = [System.Text.Encoding]::UTF8.GetBytes($data)
             $stream.Write($bytes, 0, $bytes.Length)
+        } else {
+            # Non-stream object: try .Write() method directly
+            $stream.Write($data)
         }
         return $data.Length
     }

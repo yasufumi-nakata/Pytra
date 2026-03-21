@@ -1441,6 +1441,10 @@ def _is_stdlib_passthrough_function(stmt: dict[str, Any]) -> bool:
 
 def _emit_function_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     name = _safe_ident(_get_str(stmt, "name"), "_fn")
+    # Skip @extern decorated functions (native seam provides them)
+    decs = _get_list(stmt, "decorators")
+    if "extern" in decs:
+        return [indent + "# extern: " + name + " (provided by native seam)"]
     # Skip stdlib passthrough functions (runtime already provides them)
     if _is_stdlib_passthrough_function(stmt):
         return [indent + "# extern: " + name + " (provided by py_runtime.ps1)"]
