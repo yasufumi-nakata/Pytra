@@ -1,5 +1,10 @@
 # This file contains test/implementation code for `test/fixtures/gc_reassign.py`.
 # Verify that reassignment `a = b` destroys the object whose reference was dropped.
+#
+# NOTE: This test relies on deterministic destruction (__del__ called immediately
+# when the last reference is dropped).  This is only valid for reference-counted
+# languages (C++).  GC-based languages (PowerShell, Java, C#, Go, Julia, Dart,
+# Kotlin, Swift) do NOT guarantee __del__ timing and should skip this test.
 
 
 from pytra.utils.assertions import py_assert_stdout
