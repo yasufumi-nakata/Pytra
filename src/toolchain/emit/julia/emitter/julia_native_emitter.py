@@ -328,6 +328,20 @@ def _runtime_module_alias_line(alias: str, runtime_module_id: str) -> str:
     mod = canonical_runtime_module_id(runtime_module_id.strip())
     if mod == "":
         return ""
+    if mod in {"enum", "pytra.std.enum"}:
+        return "# import " + alias + " (enum stub)"
+    if mod == "pytra.std.argparse":
+        return "# import " + alias + " (argparse stub)"
+    if mod == "pytra.std.re":
+        return "# import " + alias + " (re stub)"
+    if mod == "pytra.std.json":
+        return "# import " + alias + " (json stub)"
+    if mod == "pytra.std.pathlib":
+        return "# import " + alias + " (pathlib stub)"
+    if mod == "pytra.std.collections":
+        return "# import " + alias + " (collections stub)"
+    if mod in {"pytra.utils.png", "pytra.utils.gif"}:
+        return "# import " + alias + " (image stub)"
     symbol_names = lookup_runtime_module_symbols(mod)
     if len(symbol_names) == 0:
         return ""
@@ -335,10 +349,32 @@ def _runtime_module_alias_line(alias: str, runtime_module_id: str) -> str:
 
 
 def _runtime_symbol_alias_line(alias: str, runtime_module_id: str, runtime_symbol: str) -> str:
+    mod = canonical_runtime_module_id(runtime_module_id.strip())
+    sym = runtime_symbol.strip()
     expr = _runtime_symbol_alias_expr(runtime_module_id, runtime_symbol)
-    if expr == "":
+    if expr != "":
+        return alias + " = " + expr
+    if mod in {"enum", "pytra.std.enum"}:
+        if sym in {"Enum", "IntEnum", "IntFlag"}:
+            return "# " + alias + " (enum stub)"
         return ""
-    return alias + " = " + expr
+    if mod == "pytra.std.argparse" and sym == "ArgumentParser":
+        return "# " + alias + " (argparse stub)"
+    if mod == "pytra.std.re" and sym == "sub":
+        return alias + " = (_pattern, _repl, text) -> text"
+    if mod == "pytra.std.json":
+        if sym == "loads":
+            return "# " + alias + " (json.loads stub)"
+        if sym == "dumps":
+            return "# " + alias + " (json.dumps stub)"
+        return ""
+    if mod == "pytra.std.pathlib" and sym == "Path":
+        return "# " + alias + " (pathlib stub)"
+    if mod == "pytra.std.collections" and sym == "deque":
+        return "# " + alias + " (deque stub)"
+    if mod.startswith("pytra.utils.") and sym != "":
+        return "# " + alias + " (utils stub)"
+    return ""
 
 
 class JuliaNativeEmitter:
@@ -674,6 +710,9 @@ class JuliaNativeEmitter:
                                 continue
                     if mod == "pytra.typing" or mod == "typing":
                         continue
+                    if mod.startswith("pytra.utils.") or mod.startswith("pytra.std."):
+                        import_lines.append("# import " + mod + " as " + alias_txt + " (stub)")
+                        continue
                     if mod.startswith("pytra."):
                         raise RuntimeError("lang=julia unresolved import module: " + mod)
                     import_lines.append("# import " + mod + " as " + alias_txt + " (not yet mapped)")
@@ -731,6 +770,9 @@ class JuliaNativeEmitter:
                                 if line != "":
                                     import_lines.append(line)
                                     continue
+                    if mod.startswith("pytra.utils.") or mod.startswith("pytra.std."):
+                        import_lines.append("# " + alias_txt + " = " + mod + "." + sym + " (stub)")
+                        continue
                     if mod.startswith("pytra."):
                         raise RuntimeError("lang=julia unresolved import symbol: " + mod + "." + sym)
                     import_lines.append(
