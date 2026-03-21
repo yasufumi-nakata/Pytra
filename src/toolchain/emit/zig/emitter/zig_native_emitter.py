@@ -1621,6 +1621,11 @@ class ZigNativeEmitter:
                         if sf_name == attr:
                             return "Module_" + owner + "_" + attr
             obj = self._render_expr(val_node)
+            # ArrayList の .len → .items.len
+            if attr == "len":
+                val_type = self._get_expr_type(val_node) if isinstance(val_node, dict) else ""
+                if val_type.startswith("list[") or val_type in {"bytearray", "bytes"}:
+                    return obj + ".items.len"
             return obj + "." + attr
         if kind == "Subscript":
             value_node = ed.get("value")
@@ -1783,7 +1788,10 @@ class ZigNativeEmitter:
                     return "0"
                 if fname == "int":
                     if len(arg_strs) > 0:
-                        return "@as(i64, @intFromFloat(@as(f64, " + arg_strs[0] + ")))"
+                        arg_t = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
+                        if arg_t in {"float64", "float32", "float"}:
+                            return "@as(i64, @intFromFloat(" + arg_strs[0] + "))"
+                        return "@as(i64, @intCast(" + arg_strs[0] + "))"
                     return "0"
                 if fname == "float":
                     if len(arg_strs) > 0:
@@ -1878,7 +1886,7 @@ class ZigNativeEmitter:
                         return obj + "." + zig_attr + "(" + ", ".join(arg_strs) + ")"
                 if attr == "append":
                     if len(arg_strs) > 0:
-                        return obj + ".append(" + arg_strs[0] + ") catch {}"
+                        return obj + ".append(@intCast(" + arg_strs[0] + ")) catch {}"
                 if attr == "join":
                     if len(arg_strs) > 0:
                         return "pytra.str_join_sep(" + obj + ", " + arg_strs[0] + ")"
