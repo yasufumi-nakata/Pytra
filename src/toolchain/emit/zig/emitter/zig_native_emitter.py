@@ -498,7 +498,34 @@ class ZigNativeEmitter:
             self.indent -= 1
             self.lines.append("}")
             self._pop_function_context()
+        self._fixup_unused_obj_vars()
         return "\n".join(self.lines).rstrip() + "\n"
+
+    def _fixup_unused_obj_vars(self) -> None:
+        """pytra.Obj 型の未使用変数に _ = var; を挿入する後処理。"""
+        import re
+        obj_decl_re = re.compile(r"^(\s*)(const|var)\s+(\w+)\s*:\s*pytra\.Obj\s*=")
+        insertions: list[tuple[int, str]] = []
+        i = 0
+        while i < len(self.lines):
+            m = obj_decl_re.match(self.lines[i])
+            if m is not None:
+                indent = m.group(1)
+                var_name = m.group(3)
+                # 後続行で var_name が使用されているか
+                used = False
+                j = i + 1
+                while j < len(self.lines):
+                    line = self.lines[j]
+                    if var_name in line and "_ = " + var_name not in line:
+                        used = True
+                        break
+                    j += 1
+                if not used:
+                    insertions.append((i + 1, indent + "_ = " + var_name + ";"))
+            i += 1
+        for idx, line in reversed(insertions):
+            self.lines.insert(idx, line)
 
     def _dict_list(self, value: Any) -> list[dict[str, Any]]:
         if not isinstance(value, list):
@@ -665,7 +692,7 @@ class ZigNativeEmitter:
         """vtable struct, wrapper 関数, vtable インスタンスを emit する。"""
         emitted_roots: set[str] = set()
         for root, methods in self._vtable_methods.items():
-            if root in emitted_roots or len(methods) == 0:
+            if root in emitted_roots:
                 continue
             emitted_roots.add(root)
             # VTable struct
