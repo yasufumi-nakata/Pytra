@@ -515,7 +515,7 @@ class NimNativeEmitter:
         return (self.scope_stack[-1], name)
 
     def _fresh_tmp(self, prefix: str) -> str:
-        name = "__" + prefix + "_" + str(self.tmp_counter)
+        name = "pytra_" + prefix + "_" + str(self.tmp_counter)
         self.tmp_counter += 1
         return name
 
@@ -1200,6 +1200,10 @@ class NimNativeEmitter:
         nim_t = self._map_type(var_type) if var_type != "" else "auto"
         if var_type != "":
             self.var_types[name] = nim_t
+        # Skip if already declared by _collect_declared_locals in _emit_function_def
+        if name in self.declared_vars:
+            self.function_level_vars.add(name)
+            return
         self.declared_vars.add(name)
         self.function_level_vars.add(name)
         default_val = self._default_value_for_type(nim_t)
@@ -1443,9 +1447,22 @@ class NimNativeEmitter:
             else:
                 self._emit_line(f"for {target_name} in py_range({start}, {stop}, {step_expr}):")
         else:
-            expr = self._render_expr(iter_plan.get("iter_expr") if isinstance(iter_plan, dict) else None)
-            self._emit_line(f"for {target_name} in {expr}:")
-        
+            iter_expr_node = iter_plan.get("iter_expr") if isinstance(iter_plan, dict) else None
+            expr = self._render_expr(iter_expr_node)
+            # bytes/bytearray iteration: cast uint8 elements to int to avoid
+            # type mismatches in mixed int/uint8 arithmetic inside the loop.
+            iter_resolved = ""
+            if isinstance(iter_expr_node, dict):
+                iter_resolved = iter_expr_node.get("resolved_type", "")
+            if isinstance(iter_resolved, str) and iter_resolved in {"bytes", "bytearray"}:
+                tmp_iter = self._fresh_tmp("byteIter")
+                self._emit_line(f"for {tmp_iter} in {expr}:")
+                self.indent += 1
+                self._emit_line(f"var {target_name} = int({tmp_iter})")
+                self.indent -= 1
+            else:
+                self._emit_line(f"for {target_name} in {expr}:")
+
         self.indent += 1
         self._enter_scope()
         for s in stmt.get("body", []):
@@ -1847,12 +1864,23 @@ class NimNativeEmitter:
                  resolved = value_node.get("resolved_type")
                  if resolved == "bytearray":
                       return f"{value}.add(uint8({', '.join(args)}))"
+                 # If adding a bytes element (uint8) to a seq[int], cast to int
+                 if len(args_nodes) == 1 and isinstance(args_nodes[0], dict):
+                      arg_val_node = args_nodes[0]
+                      if arg_val_node.get("kind") == "Subscript":
+                          sub_owner = arg_val_node.get("value")
+                          if isinstance(sub_owner, dict) and sub_owner.get("resolved_type") in {"bytes", "bytearray"}:
+                              return f"{value}.add(int({args[0]}))"
                  return f"{value}.add({', '.join(args)})"
             if attr == "get":
                  if len(args) >= 2:
                       return f"getOrDefault({value}, {args[0]}, {args[1]})"
                  if len(args) == 1:
                       return f"getOrDefault({value}, {args[0]})"
+            if attr == "write" and len(args) == 1:
+                 return f"py_write_bytes({value}, {args[0]})"
+            if attr == "close" and len(args) == 0:
+                 return f"{value}.close()"
             if attr == "isdigit":
                  return f"py_isdigit({value})"
             if attr == "isalpha":

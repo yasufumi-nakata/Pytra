@@ -842,11 +842,6 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
                     return "float64(" + runtime_symbol + "())"
                 return runtime_symbol
             return resolved_runtime
-    # Rewrite module attribute access: math.pi → __pytra_math_pi, time.x → __pytra_time_x
-    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-        owner_id = value_any.get("id", "")
-        if owner_id in {"math", "time"} and attr != "":
-            return owner_id + "_native_" + attr + "()"
     value = _render_expr(value_any)
     return value + "." + attr
 
@@ -1098,14 +1093,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         # Rewrite pytra.utils module calls: png.write_rgb_png → __pytra_write_rgb_png
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner_id = owner_any.get("id", "")
-            if owner_id in {"png", "gif", "math", "time"} and attr_name != "":
+            if owner_id in {"png", "gif"} and attr_name != "":
                 rendered_utils_args: list[str] = []
                 ui = 0
                 while ui < len(args_with_keywords):
                     rendered_utils_args.append(_render_expr(args_with_keywords[ui]))
                     ui += 1
-                if owner_id in {"math", "time"}:
-                    return owner_id + "_native_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
                 return "__pytra_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
             if _call_name(owner_any) == "super":

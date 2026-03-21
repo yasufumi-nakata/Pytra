@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from toolchain.emit.common.emitter.code_emitter import build_import_alias_map
+
 
 
 _PS_KEYWORDS = {
@@ -26,6 +28,7 @@ _FUNCTION_NAMES: list[set[str]] = [set()]
 _IMPORT_ALIASES: list[dict[str, str]] = [{}]
 _CURRENT_CLASS_NAME: list[str] = [""]
 _CLASS_PROPERTIES: list[dict[str, set[str]]] = [{}]  # ClassName -> {property_name, ...}
+_MODULE_ALIAS_MAP: list[dict[str, str]] = [{}]  # local_name -> resolved_module_id
 
 _PS_AUTOMATIC_VARS = {
     "true", "false", "null", "args", "input", "PSScriptRoot", "PSCommandPath",
@@ -347,6 +350,19 @@ def _render_expr(expr_any: Any) -> str:
                 if cur_cls != "" and attr in _CLASS_PROPERTIES[0].get(cur_cls, set()):
                     return "(" + cur_cls + "_" + _safe_ident(attr, "_p") + " $self)"
                 return '$self["' + attr + '"]'
+            # Resolve import alias for module attribute access
+            resolved_attr_mod = _MODULE_ALIAS_MAP[0].get(vname, "")
+            if resolved_attr_mod != "":
+                leaf = resolved_attr_mod.split(".")[-1]
+                if leaf == "math":
+                    _MATH_PROPS2: dict[str, str] = {"pi": "PI", "e": "E", "inf": "PositiveInfinity"}
+                    ps_p = _MATH_PROPS2.get(attr, "")
+                    if ps_p != "":
+                        return "([Math]::" + ps_p + ")"
+                if leaf in ("os_path", "os", "sys", "time", "random", "re",
+                            "glob", "collections", "subprocess", "json", "pathlib",
+                            "png", "gif", "argparse"):
+                    return "$" + _safe_ident(attr, "_f")
             if vname in _CLASS_NAMES[0]:
                 # ClassName.attr → クラス変数 $script:attr（モジュールスコープ）
                 return "$script:" + _safe_ident(attr, "_cv")
@@ -748,6 +764,31 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 if _get_str(owner_node, "kind") == "Name":
                     owner_name = _get_str(owner_node, "id")
                 owner_type = _get_str(owner_node, "resolved_type")
+            # Resolve import alias: path → pytra.std.os_path
+            resolved_mod = _MODULE_ALIAS_MAP[0].get(owner_name, "")
+            if resolved_mod != "":
+                leaf = resolved_mod.split(".")[-1]
+                raw_attr = _get_str(func_d, "attr")
+                # math module → [Math]:: static methods
+                if leaf == "math":
+                    _MATH_PS2: dict[str, str] = {
+                        "sqrt": "Sqrt", "floor": "Floor", "ceil": "Ceiling",
+                        "sin": "Sin", "cos": "Cos", "tan": "Tan",
+                        "asin": "Asin", "acos": "Acos", "atan": "Atan", "atan2": "Atan2",
+                        "log": "Log", "log10": "Log10", "exp": "Exp", "pow": "Pow",
+                        "abs": "Abs", "round": "Round", "trunc": "Truncate", "fabs": "Abs",
+                    }
+                    ps_n = _MATH_PS2.get(raw_attr, "")
+                    if ps_n != "":
+                        return "([Math]::" + ps_n + "(" + ", ".join(rendered_args) + "))"
+                # Other stdlib module call
+                if leaf in ("os_path", "os", "sys", "time", "random", "re",
+                            "glob", "collections", "subprocess", "json", "pathlib",
+                            "png", "gif", "argparse"):
+                    safe_fn = _safe_ident(raw_attr, "_f")
+                    if len(rendered_args) == 0:
+                        return "(" + safe_fn + ")"
+                    return "(" + safe_fn + " " + " ".join(rendered_args) + ")"
             # In method body, ClassName.method() means self.method()
             if owner_name in _CLASS_NAMES[0]:
                 owner = "$self"
@@ -1661,6 +1702,7 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
     _CURRENT_MODULE_ID[0] = _get_str(meta, "module_id")
     emit_ctx = _get_dict(meta, "emit_context")
     _ROOT_REL_PREFIX[0] = _get_str(emit_ctx, "root_rel_prefix")
+    _MODULE_ALIAS_MAP[0] = build_import_alias_map(meta)
 
     # Note: union type and typed vararg rejections are disabled for PowerShell
     # to allow transpilation of all linked modules (including assertions).

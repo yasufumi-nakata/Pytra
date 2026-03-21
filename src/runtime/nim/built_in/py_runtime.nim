@@ -71,4 +71,18 @@ iterator py_range*(start: int, stop: int, step: int): int =
         yield i
         i += step
 
+# Binary file I/O helpers
+proc py_write_bytes*(f: File, data: seq[uint8]) =
+  ## Write raw bytes to a file (binary mode).
+  if data.len > 0:
+    discard f.writeBuffer(unsafeAddr data[0], data.len)
+
+proc py_write_bytes*(f: File, data: seq[int]) =
+  ## Write seq[int] as raw bytes to a file (binary mode).
+  if data.len > 0:
+    var buf = newSeq[uint8](data.len)
+    for i in 0 ..< data.len:
+      buf[i] = uint8(data[i] and 0xFF)
+    discard f.writeBuffer(unsafeAddr buf[0], buf.len)
+
 include "image_runtime.nim"

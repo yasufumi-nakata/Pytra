@@ -66,6 +66,8 @@ def _safe_ident(name: Any, fallback: str = "value") -> str:
         out = fallback
     if out[0].isdigit():
         out = "_" + out
+    if out == "_":
+        out = "_unused"
     if out in _ZIG_KEYWORDS:
         out = "@\"" + out + "\""
     while out in _ZIG_RESERVED_BUILTINS:
@@ -932,6 +934,12 @@ class ZigNativeEmitter:
                 if decl_type != "":
                     self._current_type_map()[target_name] = decl_type
                 zig_ty = self._zig_type(decl_type)
+                # VarDecl で既に宣言済みなら再代入
+                already_declared = len(self._local_var_stack) > 0 and target_name in self._current_local_vars()
+                if already_declared:
+                    if value_node is not None:
+                        self._emit_line(target + " = " + value + ";")
+                    return
                 if len(self._local_var_stack) > 0:
                     self._current_local_vars().add(target_name)
                 decl_kw = "var" if (self._is_var_mutated(target_name) or self._needs_var_for_type(decl_type)) else "const"

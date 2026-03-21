@@ -7,6 +7,8 @@ Usage:
 
 from __future__ import annotations
 
+import json
+import os
 import shutil
 import sys
 from pathlib import Path as NativePath
@@ -18,6 +20,70 @@ _ROOT = NativePath(__file__).resolve().parents[3]
 _SWIFT_RUNTIME_DIR = _ROOT / "sample" / "swift"
 _SWIFT_RUNTIME_FILES = ("py_runtime.swift",)
 _SWIFT_NATIVE_STD_DIR = _ROOT / "src" / "runtime" / "swift" / "std"
+_RUNTIME_EAST_ROOT = _ROOT / "src" / "runtime" / "east"
+
+
+def _rewrite_extern_delegates(code: str, module_stem: str) -> str:
+    """Rewrite @extern delegate calls in generated Swift runtime modules."""
+    import re
+    code = re.sub(
+        r'\b' + re.escape(module_stem) + r'\.(\w+)\(',
+        module_stem + r'_native_\1(',
+        code,
+    )
+    code = re.sub(
+        r'__pytra_float\((' + re.escape(module_stem) + r'_native_\w+\([^)]*\))\)',
+        r'\1',
+        code,
+    )
+    return code
+
+
+def _generate_swift_runtime(output_dir: str) -> None:
+    """Generate Swift runtime files from .east sources and copy native .swift files."""
+    out = NativePath(output_dir)
+
+    # 1. Copy py_runtime.swift
+    for name in _SWIFT_RUNTIME_FILES:
+        src = _SWIFT_RUNTIME_DIR / name
+        dst = out / name
+        if src.exists() and not dst.exists():
+            shutil.copy2(str(src), str(dst))
+
+    # 2. Copy native std files (math_native.swift, time_native.swift)
+    if _SWIFT_NATIVE_STD_DIR.is_dir():
+        for f in sorted(_SWIFT_NATIVE_STD_DIR.iterdir()):
+            if f.suffix == ".swift":
+                d = out / f.name
+                if not d.exists():
+                    shutil.copy2(str(f), str(d))
+
+    # 3. Transpile .east runtime modules to .swift (std/)
+    _GENERATE_MODULES: dict[str, tuple[str, ...]] = {
+        "std": ("time", "math"),
+    }
+    east_root = str(_RUNTIME_EAST_ROOT)
+    if not os.path.isdir(east_root):
+        return
+    for bucket, allowed in _GENERATE_MODULES.items():
+        bucket_dir = os.path.join(east_root, bucket)
+        if not os.path.isdir(bucket_dir):
+            continue
+        for stem in allowed:
+            east_file = os.path.join(bucket_dir, stem + ".east")
+            if not os.path.isfile(east_file):
+                continue
+            dst_swift = out / (stem + ".swift")
+            if dst_swift.exists():
+                continue
+            try:
+                east_text = open(east_file, "r", encoding="utf-8").read()
+                east_doc = json.loads(east_text)
+                swift_text = transpile_to_swift(east_doc)
+                swift_text = _rewrite_extern_delegates(swift_text, stem)
+                dst_swift.write_text(swift_text, encoding="utf-8")
+            except Exception:
+                pass
 
 
 def main() -> int:
@@ -46,19 +112,7 @@ def main() -> int:
     rc = emit_all_modules(input_path, output_dir, ".swift", transpile_to_swift)
     if rc != 0:
         return rc
-    out = NativePath(output_dir)
-    for name in _SWIFT_RUNTIME_FILES:
-        src = _SWIFT_RUNTIME_DIR / name
-        dst = out / name
-        if src.exists() and not dst.exists():
-            shutil.copy2(str(src), str(dst))
-    # Copy native std files (math_native.swift, time_native.swift)
-    if _SWIFT_NATIVE_STD_DIR.is_dir():
-        for f in sorted(_SWIFT_NATIVE_STD_DIR.iterdir()):
-            if f.suffix == ".swift":
-                d = out / f.name
-                if not d.exists():
-                    shutil.copy2(str(f), str(d))
+    _generate_swift_runtime(output_dir)
     return 0
 
 

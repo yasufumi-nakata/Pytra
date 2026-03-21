@@ -844,11 +844,6 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
                     + ")"
                 )
             return resolved_runtime
-    # Rewrite module attribute access: math.pi → __pytra_math_pi
-    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-        owner_id = value_any.get("id", "")
-        if owner_id in {"math", "time"} and attr != "":
-            return owner_id + "_native_" + attr
     value = _render_expr(value_any)
     return value + "." + attr
 
@@ -1111,14 +1106,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         # Rewrite pytra.utils module calls: png.write_rgb_png → __pytra_write_rgb_png
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner_id = owner_any.get("id", "")
-            if owner_id in {"png", "gif", "math", "time"} and attr_name != "":
+            if owner_id in {"png", "gif"} and attr_name != "":
                 rendered_utils_args: list[str] = []
                 ui = 0
                 while ui < len(args):
                     rendered_utils_args.append(_render_expr(args[ui]))
                     ui += 1
-                if owner_id in {"math", "time"}:
-                    return owner_id + "_native_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
                 return "__pytra_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
             if _call_name(owner_any) in {"super", "super_"}:
@@ -1528,6 +1521,7 @@ def _infer_kotlin_type(expr: Any, type_map: dict[str, str] | None = None) -> str
             attr_name = _safe_ident(func_any.get("attr"), "")
             if attr_name in {"isdigit", "isalpha"}:
                 return "Boolean"
+            owner_any = func_any.get("value")
     if kind == "BinOp":
         op = ed.get("op")
         if op == "Div":
