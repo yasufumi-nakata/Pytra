@@ -168,6 +168,7 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         self.cpp_list_model = "pyobj"
         self.top_namespace = top_namespace
         self.emit_main = emit_main
+        self.use_object_t = False  # True: emit Object<T> instead of rc<T>
         # NOTE:
         # self-host compile path currently treats EAST payload values as dynamic,
         # so dict[str, Any] -> dict iteration for renaming is disabled for now.

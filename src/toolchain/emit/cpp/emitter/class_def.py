@@ -71,6 +71,10 @@ class CppClassEmitter:
             factory_name = self.any_dict_get_str(factory_expr, "id", "")
             if self.cpp_signature_type(field_type).startswith("rc<") and factory_name in self.ref_classes:
                 return f"::rc_new<{factory_name}>()"
+            if getattr(self, "use_object_t", False) and self.cpp_signature_type(field_type).startswith("Object<") and factory_name in self.ref_classes:
+                linker_tid = self.resolve_linker_type_id(factory_name)
+                tid_expr = f"{factory_name}::TYPE_ID" if linker_tid >= 0 else "0"
+                return f"::make_object<{factory_name}>({tid_expr})"
             if factory_name in {"list", "dict", "set", "tuple", "str", "bytes", "bytearray", "deque"}:
                 if self._is_pyobj_ref_first_list_type(field_type) and factory_name == "list":
                     value_expr = self._cpp_list_value_model_type_text(field_type) + "{}"
@@ -190,7 +194,7 @@ class CppClassEmitter:
         if base != "" and not is_enum_base:
             bases.append(f"public {base_cpp}")
         base_is_gc = self._type_is_ref_class(base)
-        if gc_managed and not base_is_gc:
+        if gc_managed and not base_is_gc and not getattr(self, "use_object_t", False):
             bases.append("public RcObject")
         base_txt: str = ""
         if len(bases) > 0:
@@ -330,7 +334,11 @@ class CppClassEmitter:
             self.emit(f"{self.cpp_signature_type(fty)} {emitted_fname};")
         if gc_managed:
             linker_tid = self.resolve_linker_type_id(name)
-            if linker_tid >= 0:
+            if getattr(self, "use_object_t", False):
+                # Object<T> mode: emit static type_id constant (no virtual override)
+                if linker_tid >= 0:
+                    self.emit(f"inline static constexpr uint32_t TYPE_ID = {linker_tid};")
+            elif linker_tid >= 0:
                 self.emit(f"inline static constexpr pytra_type_id PYTRA_TYPE_ID = {linker_tid};")
                 self.emit("pytra_type_id py_type_id() const noexcept override { return PYTRA_TYPE_ID; }")
             else:

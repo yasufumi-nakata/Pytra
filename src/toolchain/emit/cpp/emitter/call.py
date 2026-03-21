@@ -143,6 +143,10 @@ class CppCallEmitter:
             if len(ctor_arg_types) > 0:
                 ctor_args = self._coerce_args_by_signature(ctor_args, ctor_arg_nodes, ctor_arg_types)
             ctor_cpp_name = self._strip_rc_wrapper(imported_class_cpp_type)
+            if getattr(self, "use_object_t", False) and imported_class_cpp_type.startswith("Object<"):
+                linker_tid = self.resolve_linker_type_id(ctor_cpp_name)
+                tid_expr = f"{ctor_cpp_name}::TYPE_ID" if linker_tid >= 0 else "0"
+                return f"::make_object<{ctor_cpp_name}>({tid_expr}, {join_str_list(', ', ctor_args)})" if len(ctor_args) > 0 else f"::make_object<{ctor_cpp_name}>({tid_expr})", raw
             if imported_class_cpp_type.startswith("rc<"):
                 return f"::rc_new<{ctor_cpp_name}>({join_str_list(', ', ctor_args)})", raw
             return f"{ctor_cpp_name}({join_str_list(', ', ctor_args)})", raw
@@ -445,6 +449,10 @@ class CppCallEmitter:
                     # class ctor でも __init__ シグネチャに合わせて boxing/unboxing を適用する。
                     ctor_args = self._coerce_args_for_class_method(raw, "__init__", ctor_args, arg_nodes)
                 if raw in self.ref_classes:
+                    if getattr(self, "use_object_t", False):
+                        linker_tid = self.resolve_linker_type_id(raw)
+                        tid_expr = f"{raw}::TYPE_ID" if linker_tid >= 0 else "0"
+                        return f"::make_object<{raw}>({tid_expr}, {join_str_list(', ', ctor_args)})" if len(ctor_args) > 0 else f"::make_object<{raw}>({tid_expr})"
                     return f"::rc_new<{raw}>({join_str_list(', ', ctor_args)})"
                 return f"{raw}({join_str_list(', ', ctor_args)})"
             if self._requires_builtin_call_lowering(raw):

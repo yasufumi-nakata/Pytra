@@ -594,6 +594,8 @@ class CppTypeBridgeEmitter:
         if east_type == "":
             return "auto"
         if east_type in self.ref_classes:
+            if getattr(self, "use_object_t", False):
+                return f"Object<{east_type}>"
             return f"rc<{east_type}>"
         if east_type in self.class_names:
             return east_type
