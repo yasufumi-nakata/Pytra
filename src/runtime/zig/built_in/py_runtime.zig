@@ -319,3 +319,30 @@ pub fn perf_counter() f64 {
     const ns = std.time.nanoTimestamp();
     return @as(f64, @floatFromInt(ns)) / 1_000_000_000.0;
 }
+
+/// File handle (wraps std.fs.File as integer handle).
+pub fn file_open(path: []const u8) PyObject {
+    const alloc = std.heap.page_allocator;
+    const p = alloc.create(std.fs.File) catch @panic("alloc failed");
+    p.* = std.fs.cwd().createFile(path, .{}) catch @panic("file open failed");
+    return @intFromPtr(p);
+}
+
+pub fn file_write(handle: PyObject, data: anytype) void {
+    const p: *std.fs.File = @ptrFromInt(@as(usize, @intCast(handle)));
+    const T = @TypeOf(data);
+    const info = @typeInfo(T);
+    if (info == .Struct) {
+        // ArrayList(u8) — write .items slice
+        if (@hasField(T, "items")) {
+            p.writeAll(data.items) catch {};
+        }
+    } else if (info == .Pointer) {
+        p.writeAll(data) catch {};
+    }
+}
+
+pub fn file_close(handle: PyObject) void {
+    const p: *std.fs.File = @ptrFromInt(@as(usize, @intCast(handle)));
+    p.close();
+}

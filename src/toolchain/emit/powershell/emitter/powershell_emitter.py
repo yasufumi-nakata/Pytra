@@ -1388,16 +1388,17 @@ def _is_stdlib_passthrough_function(stmt: dict[str, Any]) -> bool:
     if not isinstance(func, dict) or _get_str(func, "kind") != "Attribute":
         return False
     owner = func.get("value")
-    if not isinstance(owner, dict) or _get_str(owner, "kind") != "Name":
+    if not isinstance(owner, dict):
         return False
-    owner_name = _get_str(owner, "id")
     func_attr = _get_str(func, "attr")
     fn_name = _get_str(stmt, "name")
-    # time.perf_counter, math.sqrt, os.getcwd etc.
-    if owner_name in ("time", "math", "os", "random", "re", "glob", "subprocess", "sys"):
-        if func_attr == fn_name:
-            return True
-    # os.path.join etc. — 2-level Attribute chain
+    # 1-level: time.perf_counter, math.sqrt, os.getcwd etc.
+    if _get_str(owner, "kind") == "Name":
+        owner_name = _get_str(owner, "id")
+        if owner_name in ("time", "math", "os", "random", "re", "glob", "subprocess", "sys"):
+            if func_attr == fn_name:
+                return True
+    # 2-level: os.path.join etc. — Attribute chain
     if _get_str(owner, "kind") == "Attribute":
         inner_owner = owner.get("value")
         if isinstance(inner_owner, dict) and _get_str(inner_owner, "kind") == "Name":

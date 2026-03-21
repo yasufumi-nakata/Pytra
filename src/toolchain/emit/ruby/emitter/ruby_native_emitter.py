@@ -834,7 +834,7 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
     mapped = _RELATIVE_IMPORT_SYMBOL_ALIASES[0].get(ident)
     if isinstance(mapped, str) and mapped != "":
         return mapped
-    if ident == "main" and "__pytra_main" in _FUNCTION_NAMES and "main" not in _FUNCTION_NAMES[0]:
+    if ident == "main" and "__pytra_main" in _FUNCTION_NAMES[0] and "main" not in _FUNCTION_NAMES[0]:
         return "__pytra_main"
     if ident == "self":
         return "self"

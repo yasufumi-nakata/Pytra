@@ -2002,10 +2002,8 @@ class ZigNativeEmitter:
             return "f64"
         if t == "str":
             return "[]const u8"
-        if t == "bytes":
-            return "[]const u8"
-        if t == "bytearray":
-            return "[]u8"
+        if t == "bytes" or t == "bytearray":
+            return "std.ArrayList(u8)"
         if t == "None":
             return "void"
         # --- Union / Optional ---
