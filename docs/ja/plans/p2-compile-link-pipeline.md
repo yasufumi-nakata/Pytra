@@ -80,7 +80,7 @@ linker がクラスツリー全体を見て DFS オーダーで `type_id` を割
 
 ## 対象
 
-- `src/py2x.py` — compile / link サブコマンド追加
+- `src/pytra-cli.py` — compile / link サブコマンド追加
 - `src/toolchain/link/` — linker 実装（type_id 確定、import 解決）
 - `src/toolchain/emit/*/` — linked program からの emit に統一
 - `src/runtime/cpp/native/core/py_runtime.h` — 実行時レジストリ削除（linker 移行後）
@@ -94,7 +94,7 @@ linker がクラスツリー全体を見て DFS オーダーで `type_id` を割
 
 - [x] `pytra compile foo.py -o foo.east` で .east ファイルが生成される。
 - [x] `pytra link foo.east --target cpp -o out/` でターゲット言語ファイルが生成される。
-- [x] 単一ファイルモード（`py2x.py input.py --target cpp`）が廃止され、内部で compile → link を経由する。
+- [x] 単一ファイルモード（`pytra-cli.py input.py --target cpp`）が廃止され、内部で compile → link を経由する。
 - [x] type_id が linker で DFS 確定され、`PYTRA_TID_*` ハードコード定数が `py_runtime.h` から削除されている。
 - [x] `py_register_class_type()` / `py_sync_generated_user_type_registry()` の実行時レジストリが削除されている。
 - [ ] sample 18/18 artifact parity pass。
@@ -104,4 +104,4 @@ linker がクラスツリー全体を見て DFS オーダーで `type_id` を割
 - 2026-03-19: ユーザー提案。gcc の compile/link 分離と同じモデルを採用。.east は EAST3 JSON。type_id は linker で DFS 確定。
 - 2026-03-19: compile/link サブコマンド実装。`pytra compile` で .py → .east、`pytra link` で .east → ターゲット言語。18 sample compile+link 成功。
 - 2026-03-19: P2 再オープン。単一ファイルモード（linker 非経由）が残っており、type_id の linker 確定・PYTRA_TID 定数廃止・実行時レジストリ廃止が未実施。単一ファイルモードを廃止し、全パスを compile → link 経由に統一する残作業がある。
-- 2026-03-19: P2 実装完了。py2x.py の全パスが compile → link 経由に統一。type_id はリンカー DFS で確定し constexpr 定数として emit。PYTRA_TID_* 定数は py_scalar_types.h へ移動。py_register_class_type / py_sync_generated_user_type_registry / PYTRA_DECLARE_CLASS_TYPE マクロを py_runtime.h から削除。check_py2x_transpile 148/148 pass。selfhost build は環境要因（generated headers 未生成）で既存 fail。
+- 2026-03-19: P2 実装完了。pytra-cli.py の全パスが compile → link 経由に統一。type_id はリンカー DFS で確定し constexpr 定数として emit。PYTRA_TID_* 定数は py_scalar_types.h へ移動。py_register_class_type / py_sync_generated_user_type_registry / PYTRA_DECLARE_CLASS_TYPE マクロを py_runtime.h から削除。check_py2x_transpile 148/148 pass。selfhost build は環境要因（generated headers 未生成）で既存 fail。

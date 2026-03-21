@@ -111,7 +111,7 @@ For details on the retired C# host profile plan, see the [archive](../plans/arch
 - For the language specification entry point, see the [Specification Index](../spec/index.md).
 - For type inference details, see [Type Inference Rules](../spec/spec-east.md#7-type-inference-rules).
 - For `@extern` / `extern(...)` usage, see [extern.md](./extern.md).
-- To use `py2x.py` / `east2cpp.py` directly, see [transpiler-cli.md](./transpiler-cli.md).
+- To use `pytra-cli.py` / `east2cpp.py` directly, see [transpiler-cli.md](./transpiler-cli.md).
 - For error categories and common blockers, see [troubleshooting.md](./troubleshooting.md).
 - For advanced transpilation routes and `@abi`, see [Advanced Usage](./advanced-usage.md).
 - For parity / local CI / backend health runbooks, see [Development Operations Guide](./dev-operations.md).

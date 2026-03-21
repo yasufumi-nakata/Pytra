@@ -15,7 +15,7 @@ Goal:
 - Prove that the current contract still builds and runs when imported function origin, constant origin, class/type origin, and alias local names all coexist.
 
 In scope:
-- the sibling relative-import function lane in `py2x.py --target cpp --multi-file`
+- the sibling relative-import function lane in `pytra-cli.py --target cpp --multi-file`
 - a representative smoke containing a function, a constant, and a class/type
 - the current alias-local-name contract
 - syncing docs / TODO / regressions

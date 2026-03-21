@@ -16,7 +16,7 @@ Goal:
 - Raise the imported class/type lane to the same representative build/run contract level as the function/global lane.
 
 In scope:
-- the imported class/type lane in `py2x.py --target cpp --multi-file`
+- the imported class/type lane in `pytra-cli.py --target cpp --multi-file`
 - class-storage information in the module type schema
 - imported class declaration / include contract in the multi-file writer
 - imported class/type rendering in C++ type position

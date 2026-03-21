@@ -10,7 +10,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET_FILES = [
-    "src/py2x.py",
+    "src/pytra-cli.py",
     "src/east2x.py",
     "src/toolchain/ir/east_io.py",
     "src/toolchain/link/link_manifest_io.py",

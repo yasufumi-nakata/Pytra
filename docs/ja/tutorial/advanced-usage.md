@@ -45,15 +45,15 @@ def py_join(sep: str, parts: list[str]) -> str:
     ...
 ```
 
-## `py2x.py` / `py2x-selfhost.py` の使い分け
+## `pytra-cli.py` / `py2x-selfhost.py` の使い分け
 
-- 通常実行は `src/py2x.py` を使います。target backend は必要言語のみ lazy import されます。
+- 通常実行は `src/pytra-cli.py` を使います。target backend は必要言語のみ lazy import されます。
 - selfhost 実行は `src/py2x-selfhost.py` を使います。backend は static eager import 固定です。
-- 既存 `py2{lang}.py` ラッパは移行互換用途のみで、通常運用の入口は `py2x.py` / `py2x-selfhost.py` に統一します。
+- 既存 `py2{lang}.py` ラッパは移行互換用途のみで、通常運用の入口は `pytra-cli.py` / `py2x-selfhost.py` に統一します。
 
 ```bash
 # 通常実行（host-lazy）
-python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add.rs
+python3 src/pytra-cli.py test/fixtures/core/add.py --target rs -o out/add.rs
 
 # selfhost 実行（static eager import）
 python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
@@ -62,12 +62,12 @@ python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_se
 ### 移行メモ（`py2*.py` 互換ラッパ）
 
 - 既存の `py2rs.py`, `py2js.py`, `py2rb.py` などは非推奨の互換ラッパです。
-- 正規運用は `py2x.py --target <lang>` を唯一の入口とし、互換ラッパは段階撤去対象として扱います。
-- 層別 option（`--lower-option`, `--optimizer-option`, `--emitter-option`）は `py2x.py` 側仕様で統一しています。
+- 正規運用は `pytra-cli.py --target <lang>` を唯一の入口とし、互換ラッパは段階撤去対象として扱います。
+- 層別 option（`--lower-option`, `--optimizer-option`, `--emitter-option`）は `pytra-cli.py` 側仕様で統一しています。
 
 ```bash
 # 正規入口（推奨）
-python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
+python3 src/pytra-cli.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
 ```
 
 ## `toolchain/emit/cpp.py` / `toolchain/emit/all.py`（EAST3 JSON -> target backend）
@@ -79,7 +79,7 @@ python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
 
 ```bash
 # 1) .py から EAST3(JSON) fixture を作成
-python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp \
+python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp \
   -o out/seed_01.cpp --dump-east3-after-opt sample/ir/01_mandelbrot.east3.json
 
 # 2) EAST3(JSON) から直接ターゲット言語へ変換
@@ -96,19 +96,19 @@ python3 tools/check_east2x_smoke.py
 
 ## linked-program の dump / link-only / emit
 
-- linked-program の正規パイプラインは `py2x.py --link-only` → `toolchain/emit/cpp.py`（C++ の場合）です。
-- `py2x.py --dump-east3-dir DIR` は raw `EAST3` 群と `link-input.json` を `DIR` に書き出して終了します。
-- `py2x.py --link-only --output-dir DIR` は backend 生成を行わず、`link-output.json` と linked module 群だけを `DIR` に書き出します。
+- linked-program の正規パイプラインは `pytra-cli.py --link-only` → `toolchain/emit/cpp.py`（C++ の場合）です。
+- `pytra-cli.py --dump-east3-dir DIR` は raw `EAST3` 群と `link-input.json` を `DIR` に書き出して終了します。
+- `pytra-cli.py --link-only --output-dir DIR` は backend 生成を行わず、`link-output.json` と linked module 群だけを `DIR` に書き出します。
 - `toolchain/emit/cpp.py` は `link-output.json` を読み込んで C++ multi-file 出力を生成します。
 - `toolchain/emit/all.py` は全 backend 対応の汎用経路として引き続き利用できます。
 
 ```bash
 # 1) .py から raw EAST3 群と link-input.json を出力
-python3 src/py2x.py sample/py/18_mini_language_interpreter.py --target cpp \
+python3 src/pytra-cli.py sample/py/18_mini_language_interpreter.py --target cpp \
   --dump-east3-dir out/linked_debug/raw
 
 # 2) compile + link + optimize して linked output を作る
-PYTHONPATH=src python3 src/py2x.py sample/py/18_mini_language_interpreter.py \
+PYTHONPATH=src python3 src/pytra-cli.py sample/py/18_mini_language_interpreter.py \
   --target cpp --link-only --output-dir out/linked_debug/linked
 
 # 3) linked output から C++ emit（toolchain/emit/cpp.py — C++ backend のみ import）

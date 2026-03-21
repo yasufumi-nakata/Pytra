@@ -59,7 +59,7 @@ class Py2xCliTest(unittest.TestCase):
 
     def test_missing_target_fails_fast(self) -> None:
         fixture = ROOT / "test" / "fixtures" / "core" / "add.py"
-        with patch.object(py2x_mod.sys, "argv", ["py2x.py", str(fixture)]):
+        with patch.object(py2x_mod.sys, "argv", ["pytra-cli.py", str(fixture)]):
             with self.assertRaises(SystemExit) as cm:
                 _ = py2x_mod.main()
         self.assertEqual(cm.exception.code, 2)
@@ -76,7 +76,7 @@ class Py2xCliTest(unittest.TestCase):
             helper_py.write_text("def f() -> int:\n    return 7\n", encoding="utf-8")
 
             proc = subprocess.run(
-                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -111,7 +111,7 @@ class Py2xCliTest(unittest.TestCase):
             )
 
             proc = subprocess.run(
-                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -138,7 +138,7 @@ class Py2xCliTest(unittest.TestCase):
             util_py.write_text("def two() -> int:\n    return 2\n", encoding="utf-8")
 
             proc = subprocess.run(
-                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -164,7 +164,7 @@ class Py2xCliTest(unittest.TestCase):
             helper_py.write_text("def f() -> int:\n    return 11\n", encoding="utf-8")
 
             proc = subprocess.run(
-                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -190,7 +190,7 @@ class Py2xCliTest(unittest.TestCase):
             helper_py.write_text("def f() -> int:\n    return 13\n", encoding="utf-8")
 
             proc = subprocess.run(
-                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -216,7 +216,7 @@ class Py2xCliTest(unittest.TestCase):
             helper_py.write_text("def f() -> int:\n    return 13\n", encoding="utf-8")
 
             proc = subprocess.run(
-                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -260,7 +260,7 @@ class Py2xCliTest(unittest.TestCase):
             )
 
             proc = subprocess.run(
-                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -284,7 +284,7 @@ class Py2xCliTest(unittest.TestCase):
             helper_py.write_text("def f() -> int:\n    return 9\n", encoding="utf-8")
 
             proc = subprocess.run(
-                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -307,7 +307,7 @@ class Py2xCliTest(unittest.TestCase):
             helper_py.write_text("def f() -> int:\n    return 7\n", encoding="utf-8")
 
             proc = subprocess.run(
-                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -328,7 +328,7 @@ class Py2xCliTest(unittest.TestCase):
             with patch.object(
                 py2x_mod.sys,
                 "argv",
-                ["py2x.py", str(fixture), "--target", "rs", "--east-stage", "2"],
+                ["pytra-cli.py", str(fixture), "--target", "rs", "--east-stage", "2"],
             ):
                 with self.assertRaises(SystemExit) as cm:
                     _ = py2x_mod.main()
@@ -378,7 +378,7 @@ class Py2xCliTest(unittest.TestCase):
                 with patch.object(
                     py2x_mod.sys,
                     "argv",
-                    ["py2x.py", str(fixture), "--target", "rs"],
+                    ["pytra-cli.py", str(fixture), "--target", "rs"],
                 ):
                     with self.assertRaises(RuntimeError) as cm:
                         _ = py2x_mod.main()
@@ -532,7 +532,7 @@ class Py2xCliTest(unittest.TestCase):
                 runtime_calls.append(output_path)
 
             argv = [
-                "py2x.py",
+                "pytra-cli.py",
                 str(src_py),
                 "--target",
                 "rs",
@@ -593,7 +593,7 @@ class Py2xCliTest(unittest.TestCase):
 
     def test_cpp_target_uses_py2cpp_compat_path(self) -> None:
         fixture = ROOT / "test" / "fixtures" / "core" / "add.py"
-        with patch.object(py2x_mod.sys, "argv", ["py2x.py", str(fixture), "--target", "cpp", "--multi-file"]):
+        with patch.object(py2x_mod.sys, "argv", ["pytra-cli.py", str(fixture), "--target", "cpp", "--multi-file"]):
             with patch.object(py2x_mod, "_invoke_py2cpp_main", return_value=0) as invoke:
                 rc = py2x_mod.main()
         self.assertEqual(rc, 0)
@@ -623,7 +623,7 @@ class Py2xCliTest(unittest.TestCase):
                 output_root.write_text("// main\n", encoding="utf-8")
                 return {"primary_output": str(output_root)}
 
-            with patch.object(py2x_mod.sys, "argv", ["py2x.py", str(src_py), "--target", "rs", "-o", str(out_rs)]):
+            with patch.object(py2x_mod.sys, "argv", ["pytra-cli.py", str(src_py), "--target", "rs", "-o", str(out_rs)]):
                 with patch.object(py2x_mod, "get_backend_spec_typed", return_value=fake_spec):
                     with patch.object(py2x_mod, "resolve_layer_options_typed", side_effect=lambda *_args, **_kw: {}):
                         with patch.object(
@@ -694,7 +694,7 @@ class Py2xCliTest(unittest.TestCase):
     def test_cpp_target_maps_layer_options_to_cpp_flags(self) -> None:
         fixture = ROOT / "test" / "fixtures" / "core" / "add.py"
         argv = [
-            "py2x.py",
+            "pytra-cli.py",
             str(fixture),
             "--target",
             "cpp",
@@ -733,7 +733,7 @@ class Py2xCliTest(unittest.TestCase):
                 "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
             }
 
-            argv = ["py2x.py", str(src_json), "--target", "rs", "-o", str(out_rs)]
+            argv = ["pytra-cli.py", str(src_json), "--target", "rs", "-o", str(out_rs)]
             east_doc = {
                 "kind": "Module",
                 "east_stage": 3,
@@ -802,7 +802,7 @@ class Py2xCliTest(unittest.TestCase):
             }
 
             argv = [
-                "py2x.py",
+                "pytra-cli.py",
                 str(main_py),
                 "--target",
                 "cpp",
@@ -853,7 +853,7 @@ class Py2xCliTest(unittest.TestCase):
             }
 
             argv = [
-                "py2x.py",
+                "pytra-cli.py",
                 str(main_py),
                 "--target",
                 "cpp",
@@ -886,7 +886,7 @@ class Py2xCliTest(unittest.TestCase):
             out_dir = root / "out"
             link_output.write_text("{}", encoding="utf-8")
             argv = [
-                "py2x.py",
+                "pytra-cli.py",
                 str(link_output),
                 "--target",
                 "cpp",

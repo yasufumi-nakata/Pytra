@@ -15,7 +15,7 @@
 - imported constant lane と imported class/type lane の組み合わせが current contract のまま build/run success することを証明する。
 
 対象:
-- `py2x.py --target cpp --multi-file` における sibling relative import の mixed symbol lane
+- `pytra-cli.py --target cpp --multi-file` における sibling relative import の mixed symbol lane
 - 1 つの `ImportFrom` statement から constant と class/type を同時に import する representative smoke
 - docs / TODO / regression の同期
 

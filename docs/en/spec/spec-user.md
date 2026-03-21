@@ -9,20 +9,20 @@ This file is the normative specification; executable command workflows are maint
 
 ## 1. Purpose
 
-Pytra transpiles type-annotated Python code into multiple languages. The canonical CLI entrypoint is `src/py2x.py`.
+Pytra transpiles type-annotated Python code into multiple languages. The canonical CLI entrypoint is `src/pytra-cli.py`.
 
-- Python -> C# (`python src/py2x.py --target cs ...`)
-- Python -> C++ (`python src/py2x.py --target cpp ...`)
-- Python -> Rust (`python src/py2x.py --target rs ...`)
-- Python -> JavaScript (`python src/py2x.py --target js ...`)
-- Python -> TypeScript (`python src/py2x.py --target ts ...`)
-- Python -> Go (`python src/py2x.py --target go ...`)
-- Python -> Java (`python src/py2x.py --target java ...`)
-- Python -> Swift (`python src/py2x.py --target swift ...`)
-- Python -> Kotlin (`python src/py2x.py --target kotlin ...`)
-- Python -> Ruby (`python src/py2x.py --target ruby ...`)
-- Python -> Lua (`python src/py2x.py --target lua ...`)
-- Python -> PHP (`python src/py2x.py --target php ...`)
+- Python -> C# (`python src/pytra-cli.py --target cs ...`)
+- Python -> C++ (`python src/pytra-cli.py --target cpp ...`)
+- Python -> Rust (`python src/pytra-cli.py --target rs ...`)
+- Python -> JavaScript (`python src/pytra-cli.py --target js ...`)
+- Python -> TypeScript (`python src/pytra-cli.py --target ts ...`)
+- Python -> Go (`python src/pytra-cli.py --target go ...`)
+- Python -> Java (`python src/pytra-cli.py --target java ...`)
+- Python -> Swift (`python src/pytra-cli.py --target swift ...`)
+- Python -> Kotlin (`python src/pytra-cli.py --target kotlin ...`)
+- Python -> Ruby (`python src/pytra-cli.py --target ruby ...`)
+- Python -> Lua (`python src/pytra-cli.py --target lua ...`)
+- Python -> PHP (`python src/pytra-cli.py --target php ...`)
 
 ## 2. Python Input Specification
 

@@ -7,7 +7,7 @@ Related TODO:
 
 Background:
 - In backend regressions for `test/` and `sample/`, running `py -> EAST3` every time is costly.
-- We want backend-only regressions, but current paths still depend on frontend routes (`py2x.py`), so responsibility separation is weak.
+- We want backend-only regressions, but current paths still depend on frontend routes (`pytra-cli.py`), so responsibility separation is weak.
 - User requirement: a script that directly converts from EAST3 in `test/ir` / `sample/ir` to target languages.
 - Selfhost path is not needed for this work and is out of scope.
 
@@ -90,7 +90,7 @@ Verification commands (planned):
 Decision log:
 - 2026-03-03: Per user instruction, opened P1 ticket for `ir2lang.py` (direct EAST3 JSON input + lazy target import) with selfhost support explicitly out of scope.
 - 2026-03-03: Finalized policy that `ir2lang.py` input is EAST3 JSON only, requiring `east_stage==3`.
-- 2026-03-03: Finalized policy to adopt `py2x.py`-compatible layer-option syntax, and support backend-only verification via `--no-runtime-hook`.
+- 2026-03-03: Finalized policy to adopt `pytra-cli.py`-compatible layer-option syntax, and support backend-only verification via `--no-runtime-hook`.
 - 2026-03-03: Added `src/ir2lang.py`, implementing `backend_registry` lazy dispatch, layer-option pass-through, and fail-fast EAST3 contract checks.
 - 2026-03-03: Added fixtures `sample/ir/01_mandelbrot.east3.json` and `test/ir/core_add.east3.json`, and fixed backend-only regression path with `tools/check_ir2lang_smoke.py` (`cpp/rs/js`).
 - 2026-03-03: Added `ir2lang.py` procedures (fixture creation/direct conversion/smoke execution) to `docs/ja/how-to-use.md` / `docs/en/how-to-use.md`.

@@ -170,7 +170,7 @@ def _save_cache(path: Path, cache: dict[str, Any]) -> None:
 
 
 def _run_transpile(target: str, src: Path, out: Path) -> tuple[bool, str]:
-    cmd = ["python3", "src/py2x.py", str(src), "--target", target, "-o", str(out)]
+    cmd = ["python3", "src/pytra-cli.py", str(src), "--target", target, "-o", str(out)]
     cp = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
     if cp.returncode == 0:
         return True, ""

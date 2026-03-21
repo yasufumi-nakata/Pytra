@@ -155,7 +155,7 @@ Mandatory rules:
 - only low-level helpers that stay pure may live under `generated/core/`
 - do not reintroduce checked-in `runtime/cpp/core/*.h` or `runtime/cpp/pytra/core/*.h`
 - compiler output, generated runtime, native companions, and backend code include `runtime/cpp/native/core/...` directly
-- `generated/core` / `generated/built_in` artifacts may be produced only through `src/py2x.py --emit-runtime-cpp`; do not add module-specific generators or ad-hoc templates
+- `generated/core` / `generated/built_in` artifacts may be produced only through `src/pytra-cli.py --emit-runtime-cpp`; do not add module-specific generators or ad-hoc templates
 - checked-in `generated/core` / `generated/built_in` artifacts require plain naming plus `source:` / `generated-by:` markers
 - if an export-time SDK surface is needed, generate it from the runtime symbol index / manifest rather than keeping compatibility shims in the repo
 
@@ -277,7 +277,7 @@ Backend lowering policy:
 
 ## 0.63 No Special Runtime Generators
 
-- Do not add module-specific runtime generators outside `src/py2x.py` / the unified CLI.
+- Do not add module-specific runtime generators outside `src/pytra-cli.py` / the unified CLI.
 - Modules such as `png.py`, `gif.py`, `json.py`, and `math.py` must generate their target runtime artifacts only through the canonical route.
 
 ## 0.64 `__all__` Is Forbidden in `src/pytra`
@@ -353,9 +353,9 @@ Canonical checked-in C++ runtime directories:
 Regeneration:
 
 - Generate SoT-derived modules for `built_in/std/utils/core` under `generated/` using `--emit-runtime-cpp`:
-  - `python3 src/py2x.py src/pytra/built_in/type_id.py --target cpp --emit-runtime-cpp`
-  - `python3 src/py2x.py src/pytra/std/math.py --target cpp --emit-runtime-cpp`
-  - `python3 src/py2x.py src/pytra/utils/png.py --target cpp --emit-runtime-cpp`
+  - `python3 src/pytra-cli.py src/pytra/built_in/type_id.py --target cpp --emit-runtime-cpp`
+  - `python3 src/pytra-cli.py src/pytra/std/math.py --target cpp --emit-runtime-cpp`
+  - `python3 src/pytra-cli.py src/pytra/utils/png.py --target cpp --emit-runtime-cpp`
 
 Canonical C++ runtime validation:
 

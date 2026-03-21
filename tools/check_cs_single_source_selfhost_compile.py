@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PREPARE = ROOT / "tools" / "prepare_selfhost_source_cs.py"
-PY2X = ROOT / "src" / "py2x.py"
+PY2X = ROOT / "src" / "pytra-cli.py"
 SELFHOST_PY2X_CS = ROOT / "selfhost" / "py2x_cs.py"
 RUNTIME_FILES = [
     ROOT / "src" / "runtime" / "cs" / "native" / "built_in" / "py_runtime.cs",

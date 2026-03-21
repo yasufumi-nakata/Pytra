@@ -103,7 +103,7 @@ src/toolchain/
   - canonical direction is `toolchain.frontends → toolchain.compile → toolchain.link → toolchain.emit`
   - `toolchain.emit → toolchain.frontends` is forbidden
   - `toolchain.compiler → toolchain.frontends|toolchain.compile` is allowed as a compatibility layer
-  - `py2x.py` does NOT import `toolchain.emit` (emit is called as a subprocess via `toolchain.emit.cpp` / `toolchain.emit.all`)
+  - `pytra-cli.py` does NOT import `toolchain.emit` (emit is called as a subprocess via `toolchain.emit.cpp` / `toolchain.emit.all`)
   - as a temporary exception, `toolchain.compile.core` may reference `toolchain.frontends.signature_registry|frontend_semantics` (scheduled for removal in the cycle-elimination task)
 
 #### 3.1.1 Forbidden Old Import Paths (Migration Contract)

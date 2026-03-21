@@ -107,7 +107,7 @@ stderr = extern(__s.stderr)  # C++ side infers type via auto
 明示的に有効化するには:
 
 ```
-python3 src/py2x.py --target cpp input.py --east3-opt-pass +AnyAnnotationProhibitionPass
+python3 src/pytra-cli.py --target cpp input.py --east3-opt-pass +AnyAnnotationProhibitionPass
 ```
 
 stdlib（`pytra.std.*`）の `Any` 移行（P5-ANY-ELIM-OBJECT-FREE-01-S2-02）完了後に、

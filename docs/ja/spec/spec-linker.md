@@ -53,7 +53,7 @@
 
 - 必要時のみ raw `EAST3` 群と `link-input.v1` / `link-output.v1` を保存する。
 - 推奨導線は次のとおり。
-  1. `py2x.py` で raw `EAST3` 群と `link-input.json` を出力する。
+  1. `pytra-cli.py` で raw `EAST3` 群と `link-input.json` を出力する。
   2. `eastlink.py` で `link-input.json` を読み、`link-output.json` と linked module 群を出力する。
   3. `east2cpp.py`（C++ の場合）または `east2x.py`（汎用）で `link-output.json` を読んで backend emit する。
 
@@ -292,7 +292,7 @@ synthetic helper module の規則:
 
 正規導線は次を前提とする。
 
-- `py2x.py`
+- `pytra-cli.py`
   - raw `EAST3` 群と `link-input.json` を出力できる。
 - `eastlink.py`
   - `link-input.json` を読み、`link-output.json` と linked module 群を出力する。

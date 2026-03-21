@@ -379,7 +379,7 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertIn("a.add(1L)", kotlin)
 
     def test_py2kotlin_does_not_import_src_common(self) -> None:
-        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 

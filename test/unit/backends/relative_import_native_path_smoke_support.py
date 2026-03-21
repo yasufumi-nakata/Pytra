@@ -62,7 +62,7 @@ def transpile_relative_import_native_path_project(
         proc = subprocess.run(
             [
                 "python3",
-                str(root / "src" / "py2x.py"),
+                str(root / "src" / "pytra-cli.py"),
                 str(entry_path),
                 "--target",
                 target,

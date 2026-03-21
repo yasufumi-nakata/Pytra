@@ -1,4 +1,4 @@
-# P2: Unified Frontend Rollout with `py2x.py` (Layered Option Pass-through)
+# P2: Unified Frontend Rollout with `pytra-cli.py` (Layered Option Pass-through)
 
 Last updated: 2026-03-02
 
@@ -11,11 +11,11 @@ Background:
 - User requirement: adopt a common interface that passes options from frontend by layer (`--lower-option`, `--optimizer-option`, `--emitter-option`).
 
 Goal:
-- Introduce `py2x.py` as the shared frontend and consolidate language differences into a backend registry and layered option schemas.
+- Introduce `pytra-cli.py` as the shared frontend and consolidate language differences into a backend registry and layered option schemas.
 - Gradually degrade existing `py2*.py` into compatibility wrappers and remove duplicated CLI/EAST3 preprocessing implementations.
 
 Scope:
-- New: `src/py2x.py`
+- New: `src/pytra-cli.py`
 - New: backend registry (e.g., `src/pytra/compiler/backend_registry.py`)
 - Update: existing `py2*.py` (thin-wrapper conversion)
 - Update: docs (`how-to-use`, `spec-dev`, `spec-folder`, CLI examples)
@@ -27,7 +27,7 @@ Out of scope:
 - Immediate deletion of existing `py2*.py` (compatibility period remains)
 
 Acceptance criteria:
-- `py2x.py --target <lang>` can dispatch existing supported languages (at least `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php`).
+- `pytra-cli.py --target <lang>` can dispatch existing supported languages (at least `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php`).
 - `--lower-option`, `--optimizer-option`, and `--emitter-option` can transparently pass `key=value` pairs to backend layers.
 - Layered options are validated by backend-side schemas; unknown keys/type errors fail-fast.
 - Existing `py2*.py` preserve equivalent behavior while degrading to `py2x` invocations.
@@ -35,8 +35,8 @@ Acceptance criteria:
 
 Verification commands (planned):
 - `python3 tools/check_todo_priority.py`
-- `python3 src/py2x.py --help`
-- `python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out/tmp_01.cpp`
+- `python3 src/pytra-cli.py --help`
+- `python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out/tmp_01.cpp`
 - `python3 tools/check_py2cpp_transpile.py`
 - `python3 tools/check_py2rs_transpile.py`
 - `python3 tools/check_py2cs_transpile.py`
@@ -56,7 +56,7 @@ Verification commands (planned):
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] Inventory CLI/runtime-placement differences in current `py2*.py` and finalize differences to keep in shared frontend conversion.
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] Define shared CLI spec for `py2x` (`--target`, layered options, compatibility options, fail-fast rules).
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] Define backend registry contract (entrypoint, default options, option schema, runtime packaging hook).
-- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] Implement `py2x.py` and introduce shared input handling (`.py/.json -> EAST3`) with target dispatch.
+- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] Implement `pytra-cli.py` and introduce shared input handling (`.py/.json -> EAST3`) with target dispatch.
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] Implement layered option parser (`--lower-option`, `--optimizer-option`, `--emitter-option`) and schema validation.
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] Convert existing `py2*.py` into thin wrappers delegating compatible CLI to `py2x`.
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] Move runtime/packaging differences to backend extension hooks and reduce frontend branching.
@@ -97,7 +97,7 @@ Verification commands (planned):
 ### Basic form
 
 ```bash
-python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
+python3 src/pytra-cli.py INPUT.py --target <lang> -o OUTPUT
 ```
 
 - `--target` is required (initial support: `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim`).
@@ -177,7 +177,7 @@ Each target must define the following in `BackendSpec` (tentative name).
 ## S2-01 Implementation (2026-03-03)
 
 - Added:
-  - `src/py2x.py`
+  - `src/pytra-cli.py`
   - `src/pytra/compiler/backend_registry.py`
 - Implemented:
   - `py2x` receives `INPUT + --target` and builds EAST3 via `load_east3_document`.
@@ -188,15 +188,15 @@ Each target must define the following in `BackendSpec` (tentative name).
   - Layered option parser / schema validation not yet implemented (handled in `S2-02`).
   - Existing `py2*.py` not yet delegated (thin-wrapper conversion in `S2-03`).
 - Execution checks:
-  - `python3 src/py2x.py --help`
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp -o /tmp/py2x_cpp.cpp`
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target rs -o /tmp/py2x_rs.rs`
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target php -o /tmp/py2x_php.php`
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target scala -o /tmp/py2x_scala.scala`
+  - `python3 src/pytra-cli.py --help`
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target cpp -o /tmp/py2x_cpp.cpp`
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target rs -o /tmp/py2x_rs.rs`
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target php -o /tmp/py2x_php.php`
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target scala -o /tmp/py2x_scala.scala`
 
 ## S2-02 Implementation (2026-03-03)
 
-- Added manual extraction of layered options in `py2x.py`:
+- Added manual extraction of layered options in `pytra-cli.py`:
   - `--lower-option key=value`
   - `--optimizer-option key=value`
   - `--emitter-option key=value`
@@ -208,8 +208,8 @@ Each target must define the following in `BackendSpec` (tentative name).
   - `cpp.emitter`: `negative_index_mode`, `bounds_check_mode`, `floor_div_mode`, `mod_mode`
   - other backend/layer schemas are empty (specifying any key triggers unknown-key error)
 - Execution checks:
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option negative_index_mode=always --emitter-option bounds_check_mode=debug -o /tmp/py2x_cpp_opt.cpp`
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option unknown_key=1 -o /tmp/py2x_cpp_bad.cpp` (`exit=2` confirmed)
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option negative_index_mode=always --emitter-option bounds_check_mode=debug -o /tmp/py2x_cpp_opt.cpp`
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option unknown_key=1 -o /tmp/py2x_cpp_bad.cpp` (`exit=2` confirmed)
 
 ## S2-03 Implementation (2026-03-03)
 
@@ -275,12 +275,12 @@ Each target must define the following in `BackendSpec` (tentative name).
   - Clarified the compatibility-wrapper period (compatibility guarantee/recommended path) and representative old->new command migration examples.
 
 Decision log:
-- 2026-03-02: Based on user direction, filed `py2x.py` unification plan as P2 to remove duplication in language-specific frontends.
+- 2026-03-02: Based on user direction, filed `pytra-cli.py` unification plan as P2 to remove duplication in language-specific frontends.
 - 2026-03-02: Adopted layered pass-through (`--lower-option`, `--optimizer-option`, `--emitter-option`) as the canonical option model, with fail-fast backend schema validation.
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] Inventoried CLI/runtime placement differences in `py2*.py` and finalized retained differences under unification as `runtime hook`, `backend post-process`, and `C++ compatibility-wrapper retention`.
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] Finalized shared `py2x` CLI spec (basic form, common options, layered pass-through, compatibility policy, fail-fast rules).
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] Defined backend registry contract (entrypoint/default options/schema/runtime hook/compat wrapper) and fixed acceptance interface for S2 implementation.
-- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] Implemented initial versions of `py2x.py` and `backend_registry.py`, introducing shared EAST3 input handling + target dispatch + runtime-hook execution.
+- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] Implemented initial versions of `pytra-cli.py` and `backend_registry.py`, introducing shared EAST3 input handling + target dispatch + runtime-hook execution.
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] Implemented layered option parser and schema validation in `py2x/backend_registry`, enabling fail-fast detection for unknown keys/invalid values.
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] Completed staged delegation of non-C++ `py2*.py` to `run_py2x_for_target`, achieving thin wrappers while preserving compatibility CLI. Updated static contract checks to support both wrapper/legacy implementations, and restored transpile regression by filling a runtime-copy omission (`pytra/std/time.php`) in `py2php`.
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] Fixed runtime/packaging responsibilities in `backend_registry.runtime_hook`, and blocked flow-back to frontend via wrapper static guards in `check_noncpp_east3_contract`.

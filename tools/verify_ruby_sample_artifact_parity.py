@@ -86,7 +86,7 @@ def _run_one(stem: str, east3_opt_level: str) -> CaseResult:
         tr = _run(
             [
                 "python3",
-                "src/py2x.py",
+                "src/pytra-cli.py",
                 f"sample/py/{stem}.py",
                 "--target",
                 "ruby",

@@ -109,7 +109,7 @@ However, using `Any` as an actual type annotation will cause an error.
 To enable explicitly:
 
 ```
-python3 src/py2x.py --target cpp input.py --east3-opt-pass +AnyAnnotationProhibitionPass
+python3 src/pytra-cli.py --target cpp input.py --east3-opt-pass +AnyAnnotationProhibitionPass
 ```
 
 After stdlib (`pytra.std.*`) `Any` migration (P5-ANY-ELIM-OBJECT-FREE-01-S2-02) is complete,

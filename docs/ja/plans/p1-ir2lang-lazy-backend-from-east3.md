@@ -7,7 +7,7 @@
 
 背景:
 - `test/` / `sample/` の backend 回帰で、毎回 `py -> EAST3` を通すと時間コストが高い。
-- backend 単体の回帰を回したいが、現在は frontend 経路（`py2x.py`）への依存が残り、責務分離が弱い。
+- backend 単体の回帰を回したいが、現在は frontend 経路（`pytra-cli.py`）への依存が残り、責務分離が弱い。
 - ユーザー要件として、`test/ir` / `sample/ir` の EAST3 から target 言語へ直接変換するスクリプトが必要。
 - selfhost 用導線は今回不要であり、対象外とする。
 
@@ -90,7 +90,7 @@
 決定ログ:
 - 2026-03-03: ユーザー指示により、selfhost 非対応を前提として `ir2lang.py`（EAST3 JSON 直入力 + lazy target import）を P1 で起票。
 - 2026-03-03: `ir2lang.py` の入力は `EAST3 JSON` 専用とし、`east_stage==3` を必須化する方針を確定。
-- 2026-03-03: CLI は `py2x.py` と同様の layer option 文法を採用し、`--no-runtime-hook` で backend 単体検証を可能にする方針を確定。
+- 2026-03-03: CLI は `pytra-cli.py` と同様の layer option 文法を採用し、`--no-runtime-hook` で backend 単体検証を可能にする方針を確定。
 - 2026-03-03: `src/ir2lang.py` を追加し、`backend_registry` の lazy dispatch・層別 option pass-through・`EAST3` 契約 fail-fast を実装。
 - 2026-03-03: `sample/ir/01_mandelbrot.east3.json` と `test/ir/core_add.east3.json` を fixture 化し、`tools/check_ir2lang_smoke.py`（`cpp/rs/js`）で backend-only 回帰導線を固定。
 - 2026-03-03: `docs/ja/how-to-use.md` / `docs/en/how-to-use.md` に `ir2lang.py` 手順（fixture作成・直接変換・smoke実行）を追記。

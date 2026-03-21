@@ -44,7 +44,7 @@
 5. [ ] [ID: P0-PS-EXEC-PARITY-01-S5] Call の func がクラス名の場合、コンストラクタ関数呼び出しとして emit する。
 6. [ ] [ID: P0-PS-EXEC-PARITY-01-S6] `test/unit/toolchain/emit/powershell/test_py2ps_smoke.py` に pwsh 実行テストを追加し、主要 fixture の実行成功を検証する。
 
-#### P0-12: py2x.py が C++ 固有オプションを転送しない
+#### P0-12: pytra-cli.py が C++ 固有オプションを転送しない
 
 文脈: [docs/ja/plans/p0-12-py2x-cpp-options-forwarding.md](../plans/p0-12-py2x-cpp-options-forwarding.md)
 
@@ -132,8 +132,8 @@
 
 文脈: [docs/ja/plans/p1-backend-registry-decoupling.md](../plans/p1-backend-registry-decoupling.md)
 
-1. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S1] `py2x.py` の C++ emit パスを `east2cpp.py` サブプロセスに変更し、`backend_registry` import を除去。→ py2x.py の import グラフに toolchain.emit.* が一切含まれない。
-2. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S2] `py2x.py` の非 C++ emit パスを `east2x.py` サブプロセスに変更。→ S1 と同時に完了。
+1. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S1] `pytra-cli.py` の C++ emit パスを `east2cpp.py` サブプロセスに変更し、`backend_registry` import を除去。→ pytra-cli.py の import グラフに toolchain.emit.* が一切含まれない。
+2. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S2] `pytra-cli.py` の非 C++ emit パスを `east2x.py` サブプロセスに変更。→ S1 と同時に完了。
 3. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] `py2x-selfhost.py` から `backend_registry_static` import を除去。→ C++ emitter のみ直接 import。非 C++ backend は import グラフに含まれない。
 4. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S4] selfhost compile+link で 65 モジュール（以前 151）。非 C++ backend 74 件が完全に消えた（57% 削減）。
 
@@ -168,6 +168,6 @@
 1b. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-02] `pytra.std.re` に `compile` / `Pattern` を実装し、optimizer の `import re` を移行。
 1c. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-03] `multifile_writer.py` の `import os` を `pytra.std` 経由に移行。
 1d. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-04] CppEmitter の動的 mixin 注入（`_attach_cpp_emitter_helper_methods` の `setattr`/`__dict__`）を EAST3 mixin 展開による多重継承に置換する。`install_py2cpp_runtime_symbols` の `globals()` 注入を除去する。
-2. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] `tools/build_selfhost.py` を multi-module transpile パイプライン（compile → link）に拡張する。→ `--multi-module` フラグで py2x.py 経由の compile→link→emit パイプラインを実行。全 150 モジュール EAST3 コンパイル成功。パーサー修正（typing no-op、dict 文字列キー内 `:`、複数型引数 subscript）。依存チェーン全体の object レシーバ修正（40+ ファイル）。
-3. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] selfhost 66 モジュールの C++ emit 完了。→ compile+link (py2x.py --link-only) → emit (toolchain/emit/cpp.py) の 3 段パイプラインで 233 C++ ファイル (4.1MB) を生成。backend_registry 依存除去により 151→66 モジュールに削減。
+2. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] `tools/build_selfhost.py` を multi-module transpile パイプライン（compile → link）に拡張する。→ `--multi-module` フラグで pytra-cli.py 経由の compile→link→emit パイプラインを実行。全 150 モジュール EAST3 コンパイル成功。パーサー修正（typing no-op、dict 文字列キー内 `:`、複数型引数 subscript）。依存チェーン全体の object レシーバ修正（40+ ファイル）。
+3. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] selfhost 66 モジュールの C++ emit 完了。→ compile+link (pytra-cli.py --link-only) → emit (toolchain/emit/cpp.py) の 3 段パイプラインで 233 C++ ファイル (4.1MB) を生成。backend_registry 依存除去により 151→66 モジュールに削減。
 4. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S4] リンカーの import 解決で `from toolchain.misc.transpile_cli import make_user_error` 等のシンボルが見つからない問題を調査・修正する。→ `module_export_table` に wildcard re-export 伝播を実装。`from X import *` による再エクスポートが export テーブルに反映されるようになり、151 モジュールの link に成功。wildcard バインディングの重複許容も追加。

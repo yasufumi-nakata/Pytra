@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2X = ROOT / "src" / "py2x.py"
+PY2X = ROOT / "src" / "pytra-cli.py"
 DEFAULT_SOURCE = ROOT / "materials" / "refs" / "microgpt" / "microgpt-20260222.py"
 
 KNOWN_STAGES = ("A", "B", "C", "D", "E", "F")

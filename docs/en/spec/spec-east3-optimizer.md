@@ -231,7 +231,7 @@ Recommended trace contents:
 1. First, dump EAST3 and the trace at default `O1`.
 
 ```bash
-python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
+python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
   --dump-east3-before-opt work/logs/east3_before.json \
   --dump-east3-after-opt work/logs/east3_after.json \
   --dump-east3-opt-trace work/logs/east3_trace.txt
@@ -240,7 +240,7 @@ python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
 2. If a problem appears, disable passes individually through `--east3-opt-pass` and isolate the responsible pass, for example `-RangeForCanonicalizationPass`.
 
 ```bash
-python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
+python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
   --east3-opt-level 2 \
   --east3-opt-pass -RangeForCanonicalizationPass,-UnusedLoopVarElisionPass
 ```

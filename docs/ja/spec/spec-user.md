@@ -10,20 +10,20 @@
 
 ## 1. 目的
 
-Pytra は、型注釈付き Python コードを複数言語へ変換するトランスパイラです。正規 CLI は `src/py2x.py` です。
+Pytra は、型注釈付き Python コードを複数言語へ変換するトランスパイラです。正規 CLI は `src/pytra-cli.py` です。
 
-- Python -> C#（`python src/py2x.py --target cs ...`）
-- Python -> C++（`python src/py2x.py --target cpp ...`）
-- Python -> Rust（`python src/py2x.py --target rs ...`）
-- Python -> JavaScript（`python src/py2x.py --target js ...`）
-- Python -> TypeScript（`python src/py2x.py --target ts ...`）
-- Python -> Go（`python src/py2x.py --target go ...`）
-- Python -> Java（`python src/py2x.py --target java ...`）
-- Python -> Swift（`python src/py2x.py --target swift ...`）
-- Python -> Kotlin（`python src/py2x.py --target kotlin ...`）
-- Python -> Ruby（`python src/py2x.py --target ruby ...`）
-- Python -> Lua（`python src/py2x.py --target lua ...`）
-- Python -> PHP（`python src/py2x.py --target php ...`）
+- Python -> C#（`python src/pytra-cli.py --target cs ...`）
+- Python -> C++（`python src/pytra-cli.py --target cpp ...`）
+- Python -> Rust（`python src/pytra-cli.py --target rs ...`）
+- Python -> JavaScript（`python src/pytra-cli.py --target js ...`）
+- Python -> TypeScript（`python src/pytra-cli.py --target ts ...`）
+- Python -> Go（`python src/pytra-cli.py --target go ...`）
+- Python -> Java（`python src/pytra-cli.py --target java ...`）
+- Python -> Swift（`python src/pytra-cli.py --target swift ...`）
+- Python -> Kotlin（`python src/pytra-cli.py --target kotlin ...`）
+- Python -> Ruby（`python src/pytra-cli.py --target ruby ...`）
+- Python -> Lua（`python src/pytra-cli.py --target lua ...`）
+- Python -> PHP（`python src/pytra-cli.py --target php ...`）
 
 ## 2. Python 入力仕様
 

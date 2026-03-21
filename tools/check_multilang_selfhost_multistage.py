@@ -15,8 +15,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2X_CLI = ROOT / "src" / "py2x.py"
-PY2X_SRC = ROOT / "src" / "py2x.py"
+PY2X_CLI = ROOT / "src" / "pytra-cli.py"
+PY2X_SRC = ROOT / "src" / "pytra-cli.py"
 
 
 @dataclass

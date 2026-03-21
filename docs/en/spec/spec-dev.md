@@ -11,7 +11,7 @@ This document defines the transpiler's implementation policy, structure, and con
 ## 1. Repository Layout
 
 - `src/`
-  - `py2cs.py`, `py2x.py --target cpp`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`, `py2rb.py`, `py2lua.py`, `py2php.py`, `py2scala.py`, `py2nim.py`
+  - `py2cs.py`, `pytra-cli.py --target cpp`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`, `py2rb.py`, `py2lua.py`, `py2php.py`, `py2scala.py`, `py2nim.py`
   - Place only transpiler entry scripts (`py2*.py`) directly under `src/`.
   - `toolchain/emit/common/`: shared base implementations and common utilities reused across multiple languages
   - The standard backend stage layout is `src/toolchain/emit/<lang>/{lower,optimizer,emitter}/` (source of truth: `spec-folder.md`).
@@ -420,10 +420,10 @@ Names starting with `_` are treated as internal implementation details. The foll
 - `import` and `from ... import ...` are converted into `using` lines based on canonical EAST `meta.import_bindings`.
 - Major types are mapped through `src/toolchain/emit/cs/profiles/types.json` (for example `int64 -> long`, `float64 -> double`, `str -> string`).
 
-## 3. C++ Conversion Specification (`py2x.py --target cpp`)
+## 3. C++ Conversion Specification (`pytra-cli.py --target cpp`)
 
 - It parses Python AST and generates a single `.cpp` with required includes.
-- The `CppEmitter` implementation is separated into `src/toolchain/emit/cpp/emitter/cpp_emitter.py`, and `py2x.py --target cpp` is treated as the CLI/orchestration layer.
+- The `CppEmitter` implementation is separated into `src/toolchain/emit/cpp/emitter/cpp_emitter.py`, and `pytra-cli.py --target cpp` is treated as the CLI/orchestration layer.
 - Detailed feature support such as `enumerate(start)`, `lambda`, and comprehensions is managed canonically in the [py2cpp support matrix](../language/cpp/spec-support.md).
 - Generated code uses runtime helpers under `src/runtime/cpp/`.
 - Helper functions are not inlined into generated `.cpp`; use `runtime/cpp/native/core/py_runtime.h` instead.
@@ -473,7 +473,7 @@ Names starting with `_` are treated as internal implementation details. The foll
 
 ### 3.0 Multi-File Output and `manifest.json` / Build (Implemented)
 
-- The default output mode of `py2x.py --target cpp` is `--multi-file` (switch to a single `.cpp` only with explicit `--single-file`).
+- The default output mode of `pytra-cli.py --target cpp` is `--multi-file` (switch to a single `.cpp` only with explicit `--single-file`).
 - As a compatibility behavior, if the output path ends with `.cpp`, single-file output is selected even without an explicit mode.
 - In `--multi-file` mode, the following are generated under `--output-dir` (default `out`):
   - `include/` (one `*.h` per module)
@@ -494,23 +494,23 @@ Names starting with `_` are treated as internal implementation details. The foll
 ### Guard Rules for py2cpp Commonization
 
 - Before adding new logic to `src/toolchain/emit/cpp/cli.py`, classify it as either C++-specific or language-agnostic.
-- If it is language-agnostic, implement it under `src/toolchain/compiler/` (including `east_parts/` and `CodeEmitter`) and do not add it directly to `py2x.py --target cpp`.
-- Keep logic in `py2x.py --target cpp` limited to C++-specific responsibilities such as type mapping, runtime-name resolution, header/include generation, and C++ syntax optimization.
+- If it is language-agnostic, implement it under `src/toolchain/compiler/` (including `east_parts/` and `CodeEmitter`) and do not add it directly to `pytra-cli.py --target cpp`.
+- Keep logic in `pytra-cli.py --target cpp` limited to C++-specific responsibilities such as type mapping, runtime-name resolution, header/include generation, and C++ syntax optimization.
 - The only allowed exception is a backward-compatible public API wrapper (`load_east`, `_analyze_import_graph`, `build_module_east_map`, `dump_deps_graph_text`). Even those must do nothing except delegate to the common-layer API.
-- When modifying an existing generic helper inside `py2x.py --target cpp`, also evaluate whether it can be moved into the common layer, and record the decision in `docs/ja/plans/p1-py2cpp-reduction.md`.
-- If an emergency hotfix temporarily adds a generic helper to `py2x.py --target cpp`, the implementation site must include a `TEMP-CXX-HOTFIX` comment and the matching task ID.
+- When modifying an existing generic helper inside `pytra-cli.py --target cpp`, also evaluate whether it can be moved into the common layer, and record the decision in `docs/ja/plans/p1-py2cpp-reduction.md`.
+- If an emergency hotfix temporarily adds a generic helper to `pytra-cli.py --target cpp`, the implementation site must include a `TEMP-CXX-HOTFIX` comment and the matching task ID.
 - A temporary helper must be extracted into `src/toolchain/compiler/` within either 7 days of addition or the next patch release, whichever comes first.
 - Until the extraction is done, keep an extraction task open in `docs/ja/todo/index.md`, and record the reason for the `tools/check_py2cpp_helper_guard.py` allowlist update in `docs/ja/plans/p1-py2cpp-reduction.md`.
 - These responsibility boundaries are validated by `tools/check_py2cpp_boundary.py` and run continuously through `tools/run_local_ci.py`.
-- Generic helpers in `src/toolchain/compiler/transpile_cli.py` use per-feature `class + @staticmethod` (`*Helpers`) as the canonical layout. `py2x.py --target cpp` uses class-level imports and startup binding only. Top-level functions remain temporarily for compatibility with existing CLI/selfhost callers.
+- Generic helpers in `src/toolchain/compiler/transpile_cli.py` use per-feature `class + @staticmethod` (`*Helpers`) as the canonical layout. `pytra-cli.py --target cpp` uses class-level imports and startup binding only. Top-level functions remain temporarily for compatibility with existing CLI/selfhost callers.
 - Inside `ImportGraphHelpers`, `analyze_import_graph` and `build_module_east_map` are operated as thin wrappers delegating their implementation body to `src/toolchain/compiler/east_parts/east1_build.py` (only the compatibility public API is retained).
-- The import-graph/build entrypoints in `py2x.py --target cpp` (`_analyze_import_graph`, `build_module_east_map`) are restricted to delegation into `East1BuildHelpers`; implementation details must not be brought back into `transpile_cli`.
+- The import-graph/build entrypoints in `pytra-cli.py --target cpp` (`_analyze_import_graph`, `build_module_east_map`) are restricted to delegation into `East1BuildHelpers`; implementation details must not be brought back into `transpile_cli`.
 - Regressions are guarded through `test/unit/ir/test_east1_build.py`, `test/unit/toolchain/emit/cpp/test_py2cpp_east1_build_bridge.py`, and `tools/check_py2cpp_transpile.py`, which detect responsibility backflow in dependency analysis.
-- As part of `P0-PY2CPP-SPLIT-01`, also run `python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_smoke.py'` to confirm that the `py2x.py --target cpp` responsibility boundary (`tools/check_py2cpp_boundary.py`) remains intact.
+- As part of `P0-PY2CPP-SPLIT-01`, also run `python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_smoke.py'` to confirm that the `pytra-cli.py --target cpp` responsibility boundary (`tools/check_py2cpp_boundary.py`) remains intact.
 
 ### 3.1 Imports and `runtime/cpp`
 
-`py2x.py --target cpp` generates includes according to imports.
+`pytra-cli.py --target cpp` generates includes according to imports.
 
 - `import pytra.std.math` -> `#include "generated/std/math.h"`
 - `import pytra.std.pathlib` -> `#include "generated/std/pathlib.h"`
@@ -614,8 +614,8 @@ Constraints:
 - Targets: `src/runtime/cpp/generated/utils/png.cpp` and `src/runtime/cpp/generated/utils/gif.cpp` (generated)
 - Preconditions: `src/pytra/utils/png.py` and `src/pytra/utils/gif.py` are the source of truth; do not introduce semantic differences.
 - Generation steps:
-  - `python3 src/py2x.py src/pytra/utils/png.py --target cpp -o /tmp/png.cpp`
-  - `python3 src/py2x.py src/pytra/utils/gif.py --target cpp -o /tmp/gif.cpp`
+  - `python3 src/pytra-cli.py src/pytra/utils/png.py --target cpp -o /tmp/png.cpp`
+  - `python3 src/pytra-cli.py src/pytra/utils/gif.py --target cpp -o /tmp/gif.cpp`
   - The generated output is written directly to `src/runtime/cpp/generated/utils/png.cpp` and `src/runtime/cpp/generated/utils/gif.cpp`.
   - Do not add handwritten body logic into those two files.
   - Derive the C++ namespace automatically from the source Python path instead of hard-coding it.
@@ -769,7 +769,7 @@ Constraints:
 - Put only language-agnostic reusable logic under `src/toolchain/emit/common/`.
 - Do not place language-specific rules such as type mappings, reserved words, or runtime names under `src/toolchain/emit/common/`.
 - Place runtime bodies under the canonical lanes (`src/runtime/<lang>/{generated,native}/` on migrated backends), and do not add new runtime bodies under `src/*_module/`.
-- Logic that can be shared by `py2x.py --target cpp` and `py2rs.py` must first move into `CodeEmitter`, not directly into individual emitters.
+- Logic that can be shared by `pytra-cli.py --target cpp` and `py2rs.py` must first move into `CodeEmitter`, not directly into individual emitters.
 - Separate language-specific branches into `hooks` or `profiles`, and keep each `py2*.py` as a thin orchestrator.
 - Resolve runtime modules, helper ABI, and source-side stdlib names entirely through profiles, the runtime symbol index, and lowerers. Do not add new branches for `math`, `png`, `gif`, `save_gif`, `write_rgb_png`, and similar names to emitter bodies.
 - Collect shared CLI arguments such as `input`, `output`, `--negative-index-mode`, and `--parser-backend` into `src/toolchain/compiler/transpile_cli.py` and reuse them from each `py2*.py` `main()`.
@@ -791,7 +791,7 @@ Constraints:
 
 ### 8.1 `--east-stage` Operation (Implementation-Aligned)
 
-- `py2x.py --target cpp` and the eight non-C++ converters (`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`) all default to `--east-stage 3`.
-- `py2x.py --target cpp` accepts only `--east-stage 3`; `--east-stage 2` is a hard error.
+- `pytra-cli.py --target cpp` and the eight non-C++ converters (`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`) all default to `--east-stage 3`.
+- `pytra-cli.py --target cpp` accepts only `--east-stage 3`; `--east-stage 2` is a hard error.
 - Only the eight non-C++ converters accept `--east-stage 2` as a migration-compatibility mode and must print `warning: --east-stage 2 is compatibility mode; default is 3.`
 - The canonical regression routes are `tools/check_py2cpp_transpile.py` and `tools/check_noncpp_east3_contract.py`.

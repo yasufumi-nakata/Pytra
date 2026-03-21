@@ -49,7 +49,7 @@ Rust に変換したいなら target を変えるだけです。
 3. 言語仕様の入口を確認する: [仕様書トップ](../spec/index.md)
 4. 型推論の詳細を確認する: [EAST仕様の型推論ルール](../spec/spec-east.md#7-型推論ルール)
 5. `@extern` / `extern(...)` を確認する: [extern.md](./extern.md)
-6. `py2x.py` / `east2x.py` を直接使う: [transpiler-cli.md](./transpiler-cli.md)
+6. `pytra-cli.py` / `east2x.py` を直接使う: [transpiler-cli.md](./transpiler-cli.md)
 7. エラーの見方と詰まりどころを確認する: [troubleshooting.md](./troubleshooting.md)
 8. 高度な変換ルートを確認する: [発展的な使い方](./advanced-usage.md)
 9. parity / selfhost / local CI を確認する: [開発運用ガイド](./dev-operations.md)
@@ -64,7 +64,7 @@ Rust に変換したいなら target を変えるだけです。
   - [EAST仕様の型推論ルール](../spec/spec-east.md#7-型推論ルール)
 - 仕様の正本を確認したい
   - [仕様書トップ](../spec/index.md)
-- `py2x.py` / `east2x.py` を直接使いたい
+- `pytra-cli.py` / `east2x.py` を直接使いたい
   - [transpiler-cli.md](./transpiler-cli.md)
 - エラーカテゴリや詰まりどころを確認したい
   - [troubleshooting.md](./troubleshooting.md)

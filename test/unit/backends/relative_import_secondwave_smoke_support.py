@@ -52,7 +52,7 @@ def transpile_relative_import_project(
         )
         out = td_path / f"main.{target}"
         proc = subprocess.run(
-            ["python3", str(root / "src" / "py2x.py"), str(entry_path), "--target", target, "-o", str(out)],
+            ["python3", str(root / "src" / "pytra-cli.py"), str(entry_path), "--target", target, "-o", str(out)],
             cwd=root,
             capture_output=True,
             text=True,
@@ -77,7 +77,7 @@ def transpile_relative_import_project_expect_failure(
         )
         out = td_path / f"main.{target}"
         proc = subprocess.run(
-            ["python3", str(root / "src" / "py2x.py"), str(entry_path), "--target", target, "-o", str(out)],
+            ["python3", str(root / "src" / "pytra-cli.py"), str(entry_path), "--target", target, "-o", str(out)],
             cwd=root,
             capture_output=True,
             text=True,

@@ -12,13 +12,13 @@ Its purpose is to let users explicitly choose trade-offs between "Python compati
 - Defaults should be `native`-oriented (performance-first).
 - When compatibility is prioritized, explicitly opt in via `balanced` / `python` presets or individual options.
 - Introduce options in phases:
-  - Phase 1: `py2x.py --target cpp` first
+  - Phase 1: `pytra-cli.py --target cpp` first
   - Phase 2: consolidate into common CLI (`src/toolchain/frontends/transpile_cli.py`; `compiler/transpile_cli.py` becomes a compatibility shim)
   - Phase 3: make language-specific defaults switchable via LanguageProfile
 
 ## 2. Implemented Options (Current)
 
-Enabled in `py2x.py --target cpp`:
+Enabled in `pytra-cli.py --target cpp`:
 
 - `--negative-index-mode {always,const_only,off}`
   - `always`: always process negative indices with Python-compatible behavior
@@ -162,5 +162,5 @@ When adding/changing options, update all of the following at the same time:
 
 After updates, verify:
 
-1. output of `python3 src/py2x.py INPUT.py --target cpp --dump-options` matches specification
+1. output of `python3 src/pytra-cli.py INPUT.py --target cpp --dump-options` matches specification
 2. relevant option regressions in `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` pass

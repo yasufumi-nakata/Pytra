@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fail-fast guard for legacy `py2*.py` wrapper reintroduction.
 
-The canonical CLI entrypoints are `src/py2x.py` and `src/py2x-selfhost.py`.
+The canonical CLI entrypoints are `src/pytra-cli.py` and `src/py2x-selfhost.py`.
 Any reintroduced `src/py2*.py` wrapper file, path literal, or `import py2*`
 reference (except `py2x`) should fail fast.
 """
@@ -17,12 +17,12 @@ ROOT = Path(__file__).resolve().parents[1]
 SCAN_DIRS = [ROOT / "src", ROOT / "tools", ROOT / "test"]
 SRC_ROOT = ROOT / "src"
 
-CANONICAL_PY2_ENTRYPOINTS = {"py2x.py", "py2x-selfhost.py"}
+CANONICAL_PY2_ENTRYPOINTS = {"pytra-cli.py", "py2x-selfhost.py"}
 REMOVED_WRAPPER_MODULES = {
     ROOT / "src" / "toolchain" / "compiler" / "py2x_wrapper.py",
 }
 
-# `src/py2x.py` / `src/py2x-selfhost.py` are canonical entrypoints and excluded.
+# `src/pytra-cli.py` / `src/py2x-selfhost.py` are canonical entrypoints and excluded.
 LEGACY_CLI_PATH_RE = re.compile(r"src/py2(?!x(?:-selfhost)?\.py)[A-Za-z0-9_]*\.py")
 # `import py2x` / `from py2x ...` are canonical and excluded.
 LEGACY_CLI_IMPORT_RE = re.compile(r"(?m)^\s*(?:from|import)\s+(py2(?!x(?:\b|_))\w+)")
@@ -76,7 +76,7 @@ def main() -> int:
         print("[FAIL] legacy py2 wrapper reintroduction detected:")
         for line in unexpected:
             print(" -", line)
-        print("Use src/py2x.py or src/py2x-selfhost.py as canonical entrypoints.")
+        print("Use src/pytra-cli.py or src/py2x-selfhost.py as canonical entrypoints.")
         return 1
 
     print("[OK] legacy CLI reference guard passed")

@@ -30,14 +30,14 @@ LANG_DIRECT_DEPENDENCY_PATHS: dict[str, list[str]] = {
         "src/toolchain/emit/cpp",
         "src/toolchain/emit/cpp/profiles",
     ],
-    "rs": ["src/py2x.py", "src/toolchain/emit/rs", "src/toolchain/emit/rs/profiles"],
-    "cs": ["src/py2x.py", "src/toolchain/emit/cs", "src/toolchain/emit/cs/profiles"],
-    "js": ["src/py2x.py", "src/toolchain/emit/js", "src/toolchain/emit/js/profiles"],
-    "ts": ["src/py2x.py", "src/toolchain/emit/ts"],
-    "go": ["src/py2x.py", "src/toolchain/emit/go"],
-    "java": ["src/py2x.py", "src/toolchain/emit/java"],
-    "swift": ["src/py2x.py", "src/toolchain/emit/swift"],
-    "kotlin": ["src/py2x.py", "src/toolchain/emit/kotlin"],
+    "rs": ["src/pytra-cli.py", "src/toolchain/emit/rs", "src/toolchain/emit/rs/profiles"],
+    "cs": ["src/pytra-cli.py", "src/toolchain/emit/cs", "src/toolchain/emit/cs/profiles"],
+    "js": ["src/pytra-cli.py", "src/toolchain/emit/js", "src/toolchain/emit/js/profiles"],
+    "ts": ["src/pytra-cli.py", "src/toolchain/emit/ts"],
+    "go": ["src/pytra-cli.py", "src/toolchain/emit/go"],
+    "java": ["src/pytra-cli.py", "src/toolchain/emit/java"],
+    "swift": ["src/pytra-cli.py", "src/toolchain/emit/swift"],
+    "kotlin": ["src/pytra-cli.py", "src/toolchain/emit/kotlin"],
 }
 
 

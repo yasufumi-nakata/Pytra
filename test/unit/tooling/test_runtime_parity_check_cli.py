@@ -185,7 +185,7 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
                     stderr="",
                 )
             elif idx == 1:
-                cp = subprocess.CompletedProcess(args="python src/py2x.py --target ruby ...", returncode=0, stdout="", stderr="")
+                cp = subprocess.CompletedProcess(args="python src/pytra-cli.py --target ruby ...", returncode=0, stdout="", stderr="")
             else:
                 out_path.write_bytes(b"b" * 101)
                 cp = subprocess.CompletedProcess(
@@ -234,7 +234,7 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
                     stderr="",
                 )
             elif idx == 1:
-                cp = subprocess.CompletedProcess(args="python src/py2x.py --target php ...", returncode=0, stdout="", stderr="")
+                cp = subprocess.CompletedProcess(args="python src/pytra-cli.py --target php ...", returncode=0, stdout="", stderr="")
             else:
                 out_path.write_bytes(b"B" * 100)
                 cp = subprocess.CompletedProcess(
@@ -283,7 +283,7 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
                     stderr="",
                 )
             elif idx == 1:
-                cp = subprocess.CompletedProcess(args="python src/py2x.py --target scala ...", returncode=0, stdout="", stderr="")
+                cp = subprocess.CompletedProcess(args="python src/pytra-cli.py --target scala ...", returncode=0, stdout="", stderr="")
             else:
                 cp = subprocess.CompletedProcess(
                     args="scala run out.scala",

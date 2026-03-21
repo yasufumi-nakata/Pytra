@@ -198,7 +198,7 @@ class Py2RbSmokeTest(unittest.TestCase):
         assert_sample01_module_comments(self, ruby, prefix="#")
 
     def test_py2rb_does_not_import_src_common(self) -> None:
-        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 
@@ -256,7 +256,7 @@ class Py2RbSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "ruby", str(fixture), "-o", str(out_rb)],
+                [sys.executable, "src/pytra-cli.py", "--target", "ruby", str(fixture), "-o", str(out_rb)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -292,7 +292,7 @@ class Py2RbSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "ruby", str(fixture), "-o", str(out_rb)],
+                [sys.executable, "src/pytra-cli.py", "--target", "ruby", str(fixture), "-o", str(out_rb)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,

@@ -93,7 +93,7 @@ def transpile_relative_import_project_to_csharp(scenario_id: str) -> str:
         )
         out = td_path / "Program.cs"
         proc = subprocess.run(
-            ["python3", str(ROOT / "src" / "py2x.py"), str(entry_path), "--target", "cs", "-o", str(out)],
+            ["python3", str(ROOT / "src" / "pytra-cli.py"), str(entry_path), "--target", "cs", "-o", str(out)],
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -1322,7 +1322,7 @@ def f(s: str):
         self.assertEqual(rendered, "specific_name_hook()")
 
     def test_py2cs_does_not_import_src_common(self) -> None:
-        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 

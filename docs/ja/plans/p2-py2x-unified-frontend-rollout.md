@@ -1,4 +1,4 @@
-# P2: `py2x.py` 一本化 frontend 導入（層別 option pass-through）
+# P2: `pytra-cli.py` 一本化 frontend 導入（層別 option pass-through）
 
 最終更新: 2026-03-02
 
@@ -11,11 +11,11 @@
 - ユーザー要件として、層ごとに frontend から option を渡せる共通インタフェース（`--lower-option`, `--optimizer-option`, `--emitter-option`）を採用する。
 
 目的:
-- `py2x.py` を共通 frontend として導入し、言語差分を backend registry と層別 option schema に集約する。
+- `pytra-cli.py` を共通 frontend として導入し、言語差分を backend registry と層別 option schema に集約する。
 - 既存 `py2*.py` は互換ラッパへ段階縮退し、重複した CLI/EAST3 前処理実装を削減する。
 
 対象:
-- 新規: `src/py2x.py`
+- 新規: `src/pytra-cli.py`
 - 新規: backend registry（例: `src/pytra/compiler/backend_registry.py`）
 - 更新: 既存 `py2*.py`（thin wrapper 化）
 - 更新: docs（`how-to-use`, `spec-dev`, `spec-folder`, CLI 使用例）
@@ -27,7 +27,7 @@
 - 既存 `py2*.py` の即時削除（互換期間は維持）
 
 受け入れ基準:
-- `py2x.py --target <lang>` で既存対応言語（少なくとも `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php`）を呼び分けできる。
+- `pytra-cli.py --target <lang>` で既存対応言語（少なくとも `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php`）を呼び分けできる。
 - `--lower-option`, `--optimizer-option`, `--emitter-option` で `key=value` を backend 層へ透過伝達できる。
 - 層別 option は backend 側 schema で検証され、未知キー/型不正は fail-fast する。
 - 既存 `py2*.py` は同等挙動を維持しつつ `py2x` 呼び出しへ縮退する。
@@ -35,8 +35,8 @@
 
 確認コマンド（予定）:
 - `python3 tools/check_todo_priority.py`
-- `python3 src/py2x.py --help`
-- `python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp -o out/tmp_01.cpp`
+- `python3 src/pytra-cli.py --help`
+- `python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out/tmp_01.cpp`
 - `python3 tools/check_py2cpp_transpile.py`
 - `python3 tools/check_py2rs_transpile.py`
 - `python3 tools/check_py2cs_transpile.py`
@@ -56,7 +56,7 @@
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] 現行 `py2*.py` の CLI 差分と runtime 配置差分を棚卸しし、共通 frontend 化で残す差分を確定する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様を策定する（`--target`, 層別 option, 互換オプション, fail-fast 規約）。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint, default options, option schema, runtime packaging hook）を定義する。
-- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
+- [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `pytra-cli.py` を実装し、共通入力処理（`.py/.json -> EAST3`）と target dispatch を導入する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser（`--lower-option`, `--optimizer-option`, `--emitter-option`）と schema 検証を実装する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 既存 `py2*.py` を thin wrapper 化し、互換 CLI を `py2x` 呼び出しへ委譲する。
 - [x] [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 差分を backend extensions hook へ移し、frontend 側分岐を削減する。
@@ -97,7 +97,7 @@
 ### 基本形
 
 ```bash
-python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
+python3 src/pytra-cli.py INPUT.py --target <lang> -o OUTPUT
 ```
 
 - `--target` は必須（初期対応: `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim`）。
@@ -177,7 +177,7 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
 ## S2-01 実装（2026-03-03）
 
 - 追加:
-  - `src/py2x.py`
+  - `src/pytra-cli.py`
   - `src/pytra/compiler/backend_registry.py`
 - 実装内容:
   - `py2x` が `INPUT + --target` を受け、`load_east3_document` で共通に EAST3 を構築。
@@ -188,15 +188,15 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
   - 層別 option parser / schema 検証は未実装（`S2-02` で対応）。
   - 既存 `py2*.py` は未委譲（`S2-03` で thin wrapper 化）。
 - 実行確認:
-  - `python3 src/py2x.py --help`
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp -o /tmp/py2x_cpp.cpp`
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target rs -o /tmp/py2x_rs.rs`
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target php -o /tmp/py2x_php.php`
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target scala -o /tmp/py2x_scala.scala`
+  - `python3 src/pytra-cli.py --help`
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target cpp -o /tmp/py2x_cpp.cpp`
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target rs -o /tmp/py2x_rs.rs`
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target php -o /tmp/py2x_php.php`
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target scala -o /tmp/py2x_scala.scala`
 
 ## S2-02 実装（2026-03-03）
 
-- `py2x.py` に層別 option の手動抽出を追加:
+- `pytra-cli.py` に層別 option の手動抽出を追加:
   - `--lower-option key=value`
   - `--optimizer-option key=value`
   - `--emitter-option key=value`
@@ -208,8 +208,8 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
   - `cpp.emitter` の `negative_index_mode`, `bounds_check_mode`, `floor_div_mode`, `mod_mode`
   - その他 backend/layer は空 schema（指定時は未知 key エラー）
 - 実行確認:
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option negative_index_mode=always --emitter-option bounds_check_mode=debug -o /tmp/py2x_cpp_opt.cpp`
-  - `python3 src/py2x.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option unknown_key=1 -o /tmp/py2x_cpp_bad.cpp`（`exit=2` を確認）
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option negative_index_mode=always --emitter-option bounds_check_mode=debug -o /tmp/py2x_cpp_opt.cpp`
+  - `python3 src/pytra-cli.py sample/py/02_raytrace_spheres.py --target cpp --emitter-option unknown_key=1 -o /tmp/py2x_cpp_bad.cpp`（`exit=2` を確認）
 
 ## S2-03 実装（2026-03-03）
 
@@ -275,12 +275,12 @@ python3 src/py2x.py INPUT.py --target <lang> -o OUTPUT
   - 互換ラッパ期間の位置づけ（互換維持/推奨導線）と代表的な旧→新コマンド移行例を明文化。
 
 決定ログ:
-- 2026-03-02: ユーザー指示により、言語別 frontend の重複を解消するため `py2x.py` 一本化計画を P2 として起票。
+- 2026-03-02: ユーザー指示により、言語別 frontend の重複を解消するため `pytra-cli.py` 一本化計画を P2 として起票。
 - 2026-03-02: option 指定は層別 pass-through（`--lower-option`, `--optimizer-option`, `--emitter-option`）を正とし、backend schema 検証の fail-fast を採用。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-01] `py2*.py` の CLI/runtime 配置差分を棚卸しし、共通化で残す差分を「runtime hook」「backend post-process」「C++互換ラッパ維持」に分類して確定した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-02] `py2x` 共通 CLI 仕様（基本形、共通オプション、層別 pass-through、互換方針、fail-fast 規約）を確定した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S1-03] backend registry 契約（entrypoint/default options/schema/runtime hook/compat wrapper）を定義し、S2 実装の受け入れインタフェースを固定した。
-- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `py2x.py` と `backend_registry.py` の初版を実装し、共通 EAST3 入力処理 + target dispatch + runtime hook 実行を導入した。
+- 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-01] `pytra-cli.py` と `backend_registry.py` の初版を実装し、共通 EAST3 入力処理 + target dispatch + runtime hook 実行を導入した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-02] 層別 option parser と schema 検証を `py2x/backend_registry` に実装し、unknown key/invalid value を fail-fast で検出するようにした。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-03] 非C++ `py2*.py` を `run_py2x_for_target` へ段階委譲し、互換 CLI を維持したまま thin wrapper 化を完了。静的契約検査は wrapper/旧実装の両対応へ更新し、`py2php` の runtime コピー漏れ（`pytra/std/time.php`）を補完して transpile 回帰を復旧した。
 - 2026-03-03: [ID: P2-PY2X-UNIFIED-FRONTEND-01-S2-04] runtime/packaging 責務を `backend_registry.runtime_hook` へ固定し、frontend 側への逆流を `check_noncpp_east3_contract` の wrapper 静的ガードで防止した。

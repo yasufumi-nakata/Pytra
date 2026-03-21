@@ -184,7 +184,7 @@ def _verify_cpp_against_baseline(
 
     t1 = time.time()
     vlog(f"[{stem}] transpile start")
-    rc, transpile_out = run_cmd(["python3", "src/py2x.py", str(py), "--target", "cpp", "-o", str(cpp)])
+    rc, transpile_out = run_cmd(["python3", "src/pytra-cli.py", str(py), "--target", "cpp", "-o", str(cpp)])
     vlog(f"[{stem}] transpile done ({time.time() - t1:.2f}s)")
     if rc != 0:
         first = transpile_out.strip().splitlines()

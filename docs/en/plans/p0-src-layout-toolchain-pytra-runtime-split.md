@@ -71,7 +71,7 @@ Verification commands (planned):
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-03] Create `src/toolchain/compiler` and move `src/pytra/compiler` in bulk.
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S2-04] Remove empty directories/unnecessary leftovers under `src/pytra` and organize around `std/utils/built_in`.
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] Bulk-update imports in `src/`, `tools/`, `test/` to new paths (no shim additions).
-- [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] Align import paths in CLI entries (`py2x.py`, `py2x-selfhost.py`, `py2*.py`) with new structure.
+- [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] Align import paths in CLI entries (`pytra-cli.py`, `py2x-selfhost.py`, `py2*.py`) with new structure.
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] Add a check script to fail-fast detect old `pytra.frontends|ir|compiler` references.
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] Run major unit/transpile regressions and confirm no regression.
 - [x] [ID: P0-SRC-LAYOUT-SPLIT-01-S4-02] Reflect new directory responsibilities and paths in `docs/ja/spec` (and `docs/en/spec` if needed).
@@ -115,7 +115,7 @@ Decision log:
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-03] Created `src/toolchain/compiler`, moved `src/pytra/compiler`, switched imports in `py2x/py2*.py`, `toolchain/emit/cpp`, `tools`, `test`, and `selfhost` to `toolchain.compiler.*`, and updated fixed-path dependencies (`prepare_selfhost_source`/`signature_registry`/`east_stage_boundary`) to new placement.
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-04] Confirmed `frontends`/`ir`/`compiler` directories are gone from `src/pytra`; converged `pytra` to `std`/`utils`/`built_in` plus minimal entry points (`__init__.py`, `cli.py`).
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] Bulk-updated imports in `src/tools/test/selfhost`; via `rg`, confirmed old `pytra.frontends|pytra.ir|pytra.compiler` imports are zero (including `src.pytra.*`).
-- 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] Unified imports in `py2x.py` / `py2x-selfhost.py` / `py2*.py` / `ir2lang.py` to `toolchain.compiler.*`, removing old `pytra.compiler` dependency from CLI entry points.
+- 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] Unified imports in `pytra-cli.py` / `py2x-selfhost.py` / `py2*.py` / `ir2lang.py` to `toolchain.compiler.*`, removing old `pytra.compiler` dependency from CLI entry points.
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-03] Extended `tools/check_pytra_layer_boundaries.py` with legacy-import scan (`src/tools/test/selfhost` target), fail-fast detecting `pytra.frontends|pytra.ir|pytra.compiler` (including `src.pytra.*`) as `legacy import path is forbidden` (syntax-error fixtures are skipped).
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S4-01] Ran major regressions and confirmed all pass (fail=0): `check_east_stage_boundary`/`check_pytra_layer_boundaries` and `check_py2{cpp,rs,js,ts,go,java,kotlin,swift,rb,lua,scala,php,nim}_transpile.py`.
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S4-02] Scanned `docs/ja/spec` and `docs/en/spec` (excluding `archive`) and updated old `src/pytra/{frontends,ir,compiler}` references to `src/toolchain/{frontends,ir,compiler}` to align doc paths with current implementation.

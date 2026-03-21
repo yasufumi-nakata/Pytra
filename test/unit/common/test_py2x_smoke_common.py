@@ -57,7 +57,7 @@ def run_py2x(target: str, fixture: Path, output_path: Path, *extra_args: str) ->
     py_path = str(ROOT / "src")
     old = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
-    cmd = [sys.executable, "src/py2x.py", "--target", target, str(fixture), "-o", str(output_path), *extra_args]
+    cmd = [sys.executable, "src/pytra-cli.py", "--target", target, str(fixture), "-o", str(output_path), *extra_args]
     return subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True)
 
 

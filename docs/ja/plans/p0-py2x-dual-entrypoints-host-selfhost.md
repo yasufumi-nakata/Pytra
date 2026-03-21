@@ -1,4 +1,4 @@
-# P0: `py2x` エントリ分離（通常 `py2x.py` / selfhost `py2x-selfhost.py`）
+# P0: `py2x` エントリ分離（通常 `pytra-cli.py` / selfhost `py2x-selfhost.py`）
 
 最終更新: 2026-03-03
 
@@ -11,12 +11,12 @@
 - 役割分離として、通常実行用と selfhost 用のエントリを分ける構成が必要。
 
 目的:
-- `py2x.py` を「通常実行専用（host, lazy import）」へ明確化する。
+- `pytra-cli.py` を「通常実行専用（host, lazy import）」へ明確化する。
 - `py2x-selfhost.py` を「selfhost専用（static eager import）」として分離し、selfhost互換を固定する。
-- 既存 `py2*.py` ラッパは通常系 (`py2x.py`) を継続利用し、挙動差分を最小化する。
+- 既存 `py2*.py` ラッパは通常系 (`pytra-cli.py`) を継続利用し、挙動差分を最小化する。
 
 対象:
-- `src/py2x.py`（通常系）
+- `src/pytra-cli.py`（通常系）
 - `src/py2x-selfhost.py`（新規）
 - backend registry の lazy/eager 構成
 - selfhost 関連の実行導線（必要最小限）
@@ -28,7 +28,7 @@
 - selfhost 失敗ケースの全面改修
 
 受け入れ基準:
-- 通常利用は `py2x.py` で target 単位 lazy import が有効。
+- 通常利用は `pytra-cli.py` で target 単位 lazy import が有効。
 - selfhost 利用は `py2x-selfhost.py` で static import のみで動作し、動的 import を含まない。
 - 既存 `py2*.py` ラッパの通常利用導線は非退行。
 - docs に「通常/ selfhost のエントリ使い分け」が明記されている。
@@ -45,8 +45,8 @@
 ## 分解
 
 - [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-01] 現行 `py2x` 導線（通常実行/selfhost実行）の import 制約と責務境界を棚卸しする。
-- [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-02] `py2x.py`（host）と `py2x-selfhost.py`（selfhost）の契約（許可/禁止事項）を定義する。
-- [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S2-01] `py2x.py` を host-lazy 専用実装へ整理する（selfhost 条件分岐を排除）。
+- [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S1-02] `pytra-cli.py`（host）と `py2x-selfhost.py`（selfhost）の契約（許可/禁止事項）を定義する。
+- [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S2-01] `pytra-cli.py` を host-lazy 専用実装へ整理する（selfhost 条件分岐を排除）。
 - [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S2-02] `py2x-selfhost.py` を新設し、static eager import のみで同等CLIを提供する。
 - [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S2-03] backend registry 依存を host/selfhost で分離し、境界違反を検知できる形にする。
 - [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S3-01] unit/transpile 回帰を実行し、通常導線の非退行を確認する。
@@ -54,12 +54,12 @@
 - [x] [ID: P0-PY2X-DUAL-ENTRYPOINT-01-S3-03] docs に使い分けと移行手順を追記する。
 
 決定ログ:
-- 2026-03-03: 「通常は `py2x.py`（lazy）、selfhost は `py2x-selfhost.py`（static）」の二系統分離方針を採用。
-- 2026-03-03: 現行棚卸しとして、`src/py2x.py` が `pytra.compiler.backend_registry`（全backend eager import）へ依存し、`py2*.py` ラッパが `pytra.compiler.py2x_wrapper.run_py2x_for_target` 経由で通常導線を共有していることを確認した。
-- 2026-03-03: 契約を次で固定した。host (`py2x.py`) は dynamic import 許可・target限定 lazy import 必須。selfhost (`py2x-selfhost.py`) は dynamic import 禁止・static eager import のみ許可。両者とも CLI 契約（`--target`, layer options, EAST3固定）は同一に保つ。
+- 2026-03-03: 「通常は `pytra-cli.py`（lazy）、selfhost は `py2x-selfhost.py`（static）」の二系統分離方針を採用。
+- 2026-03-03: 現行棚卸しとして、`src/pytra-cli.py` が `pytra.compiler.backend_registry`（全backend eager import）へ依存し、`py2*.py` ラッパが `pytra.compiler.py2x_wrapper.run_py2x_for_target` 経由で通常導線を共有していることを確認した。
+- 2026-03-03: 契約を次で固定した。host (`pytra-cli.py`) は dynamic import 許可・target限定 lazy import 必須。selfhost (`py2x-selfhost.py`) は dynamic import 禁止・static eager import のみ許可。両者とも CLI 契約（`--target`, layer options, EAST3固定）は同一に保つ。
 - 2026-03-03: `src/pytra/compiler/backend_registry.py` を host-lazy registry に差し替え、`importlib.import_module` + target別 loader + `_SPEC_CACHE` で必要 backend のみ遅延ロードする構成へ変更した。従来の eager registry は `src/pytra/compiler/backend_registry_static.py` として分離した。
-- 2026-03-03: `src/py2x-selfhost.py` を追加し、`backend_registry_static` を参照する selfhost 専用エントリを新設した。`src/py2x.py` は `backend_registry`（host-lazy）固定の通常導線とした。
+- 2026-03-03: `src/py2x-selfhost.py` を追加し、`backend_registry_static` を参照する selfhost 専用エントリを新設した。`src/pytra-cli.py` は `backend_registry`（host-lazy）固定の通常導線とした。
 - 2026-03-03: import cycle 回避のため、`src/pytra/compiler/east_parts/__init__.py` から `east1_build` の package-level re-export を外し、明示 import のみを許可する形へ変更した。
 - 2026-03-03: 境界違反検知として `test/unit/test_py2x_entrypoints_contract.py` を追加し、`py2x`/`py2x-selfhost` の registry バインディング、host registry の lazy import 方式、target限定 import、spec cache 利用を unit 固定した。
 - 2026-03-03: 回帰確認として次を実行し、すべて通過した。`test_py2x_cli.py`, `test_py2x_entrypoints_contract.py`, `check_py2{rs,js,php,scala,nim}_transpile.py`, `check_noncpp_east3_contract.py --skip-transpile`, `check_transpiler_version_gate.py --base-ref HEAD`。
-- 2026-03-03: `docs/ja/how-to-use.md` と `docs/en/how-to-use.md` に `py2x.py` / `py2x-selfhost.py` の使い分け（通常=host-lazy, selfhost=static eager）を追記した。
+- 2026-03-03: `docs/ja/how-to-use.md` と `docs/en/how-to-use.md` に `pytra-cli.py` / `py2x-selfhost.py` の使い分け（通常=host-lazy, selfhost=static eager）を追記した。

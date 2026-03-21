@@ -222,7 +222,7 @@ def _run_shared_starred_smoke(backend: BackendSpec, timeout_sec: int) -> SuiteRe
         output_path = Path(td) / f"starred_call_tuple_basic_{backend.key}{backend.output_ext}"
         cmd = (
             "python3",
-            "src/py2x.py",
+            "src/pytra-cli.py",
             "--target",
             backend.cli_target,
             str(fixture),

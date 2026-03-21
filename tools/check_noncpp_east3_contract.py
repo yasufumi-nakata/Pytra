@@ -229,11 +229,11 @@ def main() -> int:
     args = ap.parse_args()
 
     failures: list[str] = []
-    py2x_path = ROOT / "src" / "py2x.py"
+    py2x_path = ROOT / "src" / "pytra-cli.py"
     py2x_text = py2x_path.read_text(encoding="utf-8") if py2x_path.exists() else ""
     missing_py2x = _missing_patterns(py2x_path, PY2X_REQUIRED_PATTERNS)
     if missing_py2x:
-        failures.append(f"py2x: src/py2x.py missing {missing_py2x}")
+        failures.append(f"py2x: src/pytra-cli.py missing {missing_py2x}")
 
     common_smoke_path = ROOT / COMMON_SMOKE_PATH
     missing_common_smoke = _missing_patterns(common_smoke_path, COMMON_SMOKE_REQUIRED_PATTERNS)

@@ -124,7 +124,7 @@ class Py2PowerShellSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             cmd = [
-                sys.executable, str(ROOT / "src" / "py2x.py"),
+                sys.executable, str(ROOT / "src" / "pytra-cli.py"),
                 "--target", "powershell",
                 str(fixture),
                 "-o", str(out),

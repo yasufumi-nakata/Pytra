@@ -15,7 +15,7 @@
 - imported function origin、constant、class/type、alias local name の組み合わせが current contract のまま build/run success することを証明する。
 
 対象:
-- `py2x.py --target cpp --multi-file` における sibling relative import function lane
+- `pytra-cli.py --target cpp --multi-file` における sibling relative import function lane
 - function + constant + class/type を含む representative smoke
 - alias local name を含む current contract
 - docs / TODO / regression の同期

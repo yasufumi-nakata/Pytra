@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2X = ROOT / "src" / "py2x.py"
+PY2X = ROOT / "src" / "pytra-cli.py"
 
 
 def _run_one(src: Path, out: Path) -> tuple[bool, str]:

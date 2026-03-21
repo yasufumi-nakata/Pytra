@@ -58,7 +58,7 @@ def build_selfhost_multimod_link_cmd(selfhost_entry: Path, linked_dir: Path) -> 
     """Stage 1+2: compile + link → linked EAST."""
     return [
         "python3",
-        str(ROOT / "src" / "py2x.py"),
+        str(ROOT / "src" / "pytra-cli.py"),
         str(selfhost_entry),
         "--target",
         "cpp",

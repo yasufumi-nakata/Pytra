@@ -22,7 +22,7 @@ import toolchain.misc.backend_registry_shared as runtime_registry_shared
 
 class Py2xEntrypointsContractTest(unittest.TestCase):
     def test_py2x_entrypoint_registry_binding(self) -> None:
-        host_entry = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        host_entry = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         self.assertIn("from toolchain.misc.backend_registry import", host_entry)
         self.assertNotIn("backend_registry_static", host_entry)
 
@@ -717,7 +717,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         extern_var_src = (
             ROOT / "src" / "toolchain" / "frontends" / "extern_var.py"
         ).read_text(encoding="utf-8")
-        py2x_src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        py2x_src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         selfhost_entry_src = (ROOT / "src" / "py2x-selfhost.py").read_text(encoding="utf-8")
         ir2lang_src = (ROOT / "src" / "ir2lang.py").read_text(encoding="utf-8")
         sys_std_src = (ROOT / "src" / "pytra" / "std" / "sys.py").read_text(encoding="utf-8")
@@ -846,7 +846,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn('#include "runtime/cpp/pytra/compiler/transpile_cli.h"', generated_cpp_src)
 
     def test_typed_backend_specs_preserve_legacy_metadata(self) -> None:
-        py2x_src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        py2x_src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         ir2lang_src = (ROOT / "src" / "ir2lang.py").read_text(encoding="utf-8")
         host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")

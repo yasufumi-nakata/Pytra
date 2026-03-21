@@ -15,7 +15,7 @@
 - imported symbol の origin は namespace-qualified に解決されつつ、consumer 側では alias local name が使える current contract を build/run success で証明する。
 
 対象:
-- `py2x.py --target cpp --multi-file` における sibling relative import alias lane
+- `pytra-cli.py --target cpp --multi-file` における sibling relative import alias lane
 - constant と class/type を含む alias import representative smoke
 - docs / TODO / regression の同期
 

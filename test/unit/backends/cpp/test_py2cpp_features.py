@@ -172,7 +172,7 @@ def sin(x: float) -> float:
             cp = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/py2x.py", "--target", "cpp",
+                    "src/pytra-cli.py", "--target", "cpp",
                     str(rel_src),
                     "--emit-runtime-cpp",
                 ],
@@ -200,7 +200,7 @@ def sin(x: float) -> float:
         cp = self._run_subprocess_with_timeout(
             [
                 "python3",
-                "src/py2x.py",
+                "src/pytra-cli.py",
                 "--target",
                 "cpp",
                 str(rel_src),
@@ -227,7 +227,7 @@ def sin(x: float) -> float:
         cp = self._run_subprocess_with_timeout(
             [
                 "python3",
-                "src/py2x.py",
+                "src/pytra-cli.py",
                 "--target",
                 "cpp",
                 str(rel_src),
@@ -253,7 +253,7 @@ def sin(x: float) -> float:
         cp = self._run_subprocess_with_timeout(
             [
                 "python3",
-                "src/py2x.py",
+                "src/pytra-cli.py",
                 "--target",
                 "cpp",
                 str(rel_src),
@@ -299,7 +299,7 @@ def sin(x: float) -> float:
         cp = self._run_subprocess_with_timeout(
             [
                 "python3",
-                "src/py2x.py",
+                "src/pytra-cli.py",
                 "--target",
                 "cpp",
                 str(rel_src),
@@ -1630,7 +1630,7 @@ def sin(x: float) -> float:
             cp = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/py2x.py", "--target", "cpp",
+                    "src/pytra-cli.py", "--target", "cpp",
                     str(src_py),
                     "-o",
                     str(out_cpp),
@@ -1657,7 +1657,7 @@ def sin(x: float) -> float:
             cp = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/py2x.py", "--target", "cpp",
+                    "src/pytra-cli.py", "--target", "cpp",
                     str(src_py),
                     "-o",
                     str(out_cpp),
@@ -1681,7 +1681,7 @@ def sin(x: float) -> float:
             cp = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/py2x.py", "--target", "cpp",
+                    "src/pytra-cli.py", "--target", "cpp",
                     str(src_py),
                     "-o",
                     str(out_cpp),
@@ -2128,7 +2128,7 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--dump-deps"],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--dump-deps"],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -2174,7 +2174,7 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -2196,7 +2196,7 @@ def main() -> None:
             out_cpp = root / "out.cpp"
             main_py.write_text(src_main, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -2226,7 +2226,7 @@ def f() -> int:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -2255,7 +2255,7 @@ def main() -> None:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/py2x.py",
+                    "src/pytra-cli.py",
                     "--target",
                     "cpp",
                     str(main_py),
@@ -2296,7 +2296,7 @@ def main() -> None:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/py2x.py",
+                    "src/pytra-cli.py",
                     "--target",
                     "cpp",
                     str(main_py),
@@ -2325,7 +2325,7 @@ def main() -> None:
             out_cpp = root / "out.cpp"
             main_py.write_text(src_main, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -2347,7 +2347,7 @@ def main() -> None:
             out_cpp = root / "out.cpp"
             main_py.write_text(src_main, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -2377,7 +2377,7 @@ def main() -> None:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/py2x.py", "--target", "cpp",
+                    "src/pytra-cli.py", "--target", "cpp",
                     str(main_py),
                     "--multi-file",
                     "--output-dir",
@@ -2413,7 +2413,7 @@ def main() -> None:
             a_py.write_text(src_a, encoding="utf-8")
             b_py.write_text(src_b, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -2441,7 +2441,7 @@ def main() -> None:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/py2x.py", "--target", "cpp",
+                    "src/pytra-cli.py", "--target", "cpp",
                     str(main_py),
                     "--multi-file",
                     "--output-dir",
@@ -2479,7 +2479,7 @@ def main() -> None:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/py2x.py", "--target", "cpp",
+                    "src/pytra-cli.py", "--target", "cpp",
                     str(main_py),
                     "--multi-file",
                     "--output-dir",
@@ -2517,7 +2517,7 @@ def f() -> int:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/py2x.py", "--target", "cpp",
+                    "src/pytra-cli.py", "--target", "cpp",
                     str(main_py),
                     "--multi-file",
                     "--output-dir",
@@ -2552,7 +2552,7 @@ def main() -> None:
             a_py.write_text(src_a, encoding="utf-8")
             b_py.write_text(src_b, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -2582,7 +2582,7 @@ def main() -> None:
             a_py.write_text(src_a, encoding="utf-8")
             b_py.write_text(src_b, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -2608,7 +2608,7 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -2635,7 +2635,7 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -3563,7 +3563,7 @@ if __name__ == "__main__":
             bad_py.write_text("def main(:\n    pass\n", encoding="utf-8")
             out_cpp = Path(tmpdir) / "bad.cpp"
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(bad_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(bad_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -3577,7 +3577,7 @@ if __name__ == "__main__":
             bad_py.write_text("*value\n", encoding="utf-8")
             out_cpp = Path(tmpdir) / "bad.cpp"
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(bad_py), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(bad_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -3593,7 +3593,7 @@ if __name__ == "__main__":
             src_py.write_text("print(1)\n", encoding="utf-8")
             out_cpp = Path(tmpdir) / "ok.cpp"
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(src_py), "--east-stage", "2", "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(src_py), "--east-stage", "2", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -3618,7 +3618,7 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -3652,7 +3652,7 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -3675,7 +3675,7 @@ def main() -> None:
             main_py = root / "main.py"
             main_py.write_text(src_main, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -3704,7 +3704,7 @@ if __name__ == "__main__":
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile multi-file sample",
@@ -3770,7 +3770,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile nested relative multi-file sample",
@@ -3823,7 +3823,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile bare parent relative multi-file sample",
@@ -3876,7 +3876,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile bare parent relative module alias multi-file sample",
@@ -3929,7 +3929,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile parent relative symbol alias multi-file sample",
@@ -3983,7 +3983,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile sibling relative import constants multi-file sample",
@@ -4041,7 +4041,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile sibling relative import class type multi-file sample",
@@ -4105,7 +4105,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile sibling relative import mixed symbol multi-file sample",
@@ -4168,7 +4168,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile sibling relative import alias symbol multi-file sample",
@@ -4237,7 +4237,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile sibling relative import function symbol multi-file sample",
@@ -4319,7 +4319,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile pytra nes representative multi-file sample",
@@ -4452,7 +4452,7 @@ if __name__ == "__main__":
             tr = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/py2x.py",
+                    "src/pytra-cli.py",
                     "--target",
                     "cpp",
                     str(src_py),
@@ -4502,7 +4502,7 @@ if __name__ == "__main__":
             tr = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/py2x.py",
+                    "src/pytra-cli.py",
                     "--target",
                     "cpp",
                     str(src_py),
@@ -4553,7 +4553,7 @@ if __name__ == "__main__":
             tr = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/py2x.py",
+                    "src/pytra-cli.py",
                     "--target",
                     "cpp",
                     str(src_py),
@@ -4639,7 +4639,7 @@ if __name__ == "__main__":
             exe = out_dir / "app.out"
             main_py.write_text(src_main, encoding="utf-8")
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile multi-file helper artifact sample",
@@ -4684,7 +4684,7 @@ if __name__ == "__main__":
             bad_json.write_text("[1,2,3]", encoding="utf-8")
             out_cpp = Path(tmpdir) / "bad.cpp"
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(bad_json), "-o", str(out_cpp)],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(bad_json), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -4697,7 +4697,7 @@ if __name__ == "__main__":
             src_py = Path(tmpdir) / "ok.py"
             src_py.write_text("print(1)\n", encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(src_py), "--preset", "python", "--dump-options"],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(src_py), "--preset", "python", "--dump-options"],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
@@ -4713,7 +4713,7 @@ if __name__ == "__main__":
             src_py = Path(tmpdir) / "ok.py"
             src_py.write_text("print(1)\n", encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/py2x.py", "--target", "cpp", str(src_py), "--str-index-mode", "codepoint"],
+                ["python3", "src/pytra-cli.py", "--target", "cpp", str(src_py), "--str-index-mode", "codepoint"],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,

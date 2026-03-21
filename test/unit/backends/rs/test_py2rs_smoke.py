@@ -94,7 +94,7 @@ def transpile_relative_import_project_to_rust(scenario_id: str) -> str:
         )
         out = td_path / "main.rs"
         proc = subprocess.run(
-            ["python3", str(ROOT / "src" / "py2x.py"), str(entry_path), "--target", "rs", "-o", str(out)],
+            ["python3", str(ROOT / "src" / "pytra-cli.py"), str(entry_path), "--target", "rs", "-o", str(out)],
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -786,7 +786,7 @@ def f(xs: list[int], ys: list[Any]) -> int:
         self.assertNotIn("let b: Vec<PyAny> = ys;", rust)
 
     def test_py2rs_does_not_import_src_common(self) -> None:
-        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 

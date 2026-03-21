@@ -328,7 +328,7 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
         self.assertIn("unresolved stdlib runtime call", str(cm.exception))
 
     def test_py2swift_does_not_import_src_common(self) -> None:
-        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 

@@ -28,12 +28,12 @@ class CheckTranspilerVersionGateTest(unittest.TestCase):
         self.assertEqual(touched_paths, ["src/toolchain/ir/core.py"])
 
     def test_collect_required_components_keeps_host_entry_out_of_cpp_lane(self) -> None:
-        touched_shared, touched_langs, touched_paths = gate_mod._collect_required_components(["src/py2x.py"])
+        touched_shared, touched_langs, touched_paths = gate_mod._collect_required_components(["src/pytra-cli.py"])
         self.assertFalse(touched_shared)
         self.assertNotIn("cpp", touched_langs)
         self.assertIn("rs", touched_langs)
         self.assertIn("cs", touched_langs)
-        self.assertEqual(touched_paths, ["src/py2x.py"])
+        self.assertEqual(touched_paths, ["src/pytra-cli.py"])
 
 
 if __name__ == "__main__":

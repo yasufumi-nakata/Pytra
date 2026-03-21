@@ -1,4 +1,4 @@
-# P1: Single Entrypoint with `py2x.py` (Retire `py2*.py`, Ultimately Remove `py2cpp.py`)
+# P1: Single Entrypoint with `pytra-cli.py` (Retire `py2*.py`, Ultimately Remove `py2cpp.py`)
 
 Last updated: 2026-03-03
 
@@ -6,18 +6,18 @@ Related TODO:
 - `ID: P1-PY2X-SINGLE-ENTRY-01` in `docs/ja/todo/index.md`
 
 Background:
-- `py2x.py` has already been introduced, but `tools/` / `test/` / `docs/` / selfhost paths still depend on direct `py2*.py` invocation.
+- `pytra-cli.py` has already been introduced, but `tools/` / `test/` / `docs/` / selfhost paths still depend on direct `py2*.py` invocation.
 - In particular, `py2cpp.py` is also the entry for C++-specific features such as `--emit-runtime-cpp` / `--header-output` / `--multi-file`, so it cannot be removed trivially.
-- User requirement: if the project is unified on `py2x.py`, make legacy CLIs unnecessary and ultimately remove `py2cpp.py`.
+- User requirement: if the project is unified on `pytra-cli.py`, make legacy CLIs unnecessary and ultimately remove `py2cpp.py`.
 
 Goal:
-- Standardize canonical CLI entrypoints to `src/py2x.py` (normal) and `src/py2x-selfhost.py` (selfhost).
+- Standardize canonical CLI entrypoints to `src/pytra-cli.py` (normal) and `src/py2x-selfhost.py` (selfhost).
 - Gradually remove direct `py2*.py` dependencies from `tools/` / `test/` / `docs/`.
 - Remove legacy CLIs including `src/py2cpp.py` in the final phase.
 
 In scope:
-- Extend `src/py2x.py` / `src/py2x-selfhost.py` (absorb C++-specific capabilities)
-- Migrate call targets in `tools/` / `test/` / `src/pytra/cli.py` to `py2x.py --target ...`
+- Extend `src/pytra-cli.py` / `src/py2x-selfhost.py` (absorb C++-specific capabilities)
+- Migrate call targets in `tools/` / `test/` / `src/pytra/cli.py` to `pytra-cli.py --target ...`
 - Replace entrypoints in selfhost-related scripts
 - Update usage docs in `docs/ja` / `docs/en`
 - Remove legacy CLIs (`src/py2*.py`)
@@ -60,7 +60,7 @@ Verification commands (planned):
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] Finalize `py2x` receiver spec for `py2cpp.py`-specific features (`--emit-runtime-cpp`, `--header-output`, `--multi-file`, etc.).
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] Inventory selfhost path dependencies on entrypoint contracts (prepare/build/check) and finalize replacement policy.
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] Implement `py2cpp`-specific features in `py2x --target cpp` so existing options remain equivalent.
-- [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] Bulk-replace CLI calls in `tools/` with `py2x.py --target ...`.
+- [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] Bulk-replace CLI calls in `tools/` with `pytra-cli.py --target ...`.
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] Migrate CLI calls and contract tests in `test/` to `py2x`-based paths.
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] Update examples/spec wording in `docs/ja` / `docs/en` to canonical `py2x` entrypoint.
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] Migrate selfhost scripts away from `py2cpp.py` dependency and rewire around `py2x-selfhost.py`.
@@ -69,13 +69,13 @@ Verification commands (planned):
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-03] Run full transpile/selfhost regressions and confirm no regression after `py2cpp.py` deletion.
 
 Decision log:
-- 2026-03-03: Per user instruction, opened P1 for single-entrypoint `py2x.py`, with `src/py2cpp.py` deletion included as a final deliverable.
+- 2026-03-03: Per user instruction, opened P1 for single-entrypoint `pytra-cli.py`, with `src/py2cpp.py` deletion included as a final deliverable.
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] Completed dependency inventory. `src/pytra/cli.py` directly referenced `PY2CPP/PY2RS/PY2SCALA`; `tools/` depended on `src/py2*.py` mainly via `runtime_parity_check` / `regenerate_samples` / selfhost paths; in `test/`, `test_py2*` assumed direct wrapper execution; and execution examples were concentrated in `docs/how-to-use`. Final migration order: `(1) src/pytra/cli.py + common paths in tools -> (2) test contract updates -> (3) docs -> (4) final selfhost replacement`.
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] Extracted actively used `py2cpp.py` options (`--multi-file`, `--output-dir`, `--header-output`, `--emit-runtime-cpp`, `--dump-deps`, `--dump-options`, `--preset`, `--int-width`, `--mod-mode`, `--top-namespace`, `--str-index-mode`). Final receiver spec: map portable options into `--lower/optimizer/emitter-option`; accept output-mode-changing flags (`multi-file/header/runtime-cpp/dump-*`) directly as `py2x --target cpp` compatibility flags.
-- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] Inventoried selfhost dependency contracts. `tools/prepare_selfhost_source.py` / `build_selfhost.py` / `build_selfhost_stage2.py` / `check_selfhost_cpp_diff.py` / `verify_selfhost_end_to_end.py` were chained around `src/py2cpp.py`. Replacement policy: use `src/py2x.py --target cpp` for normal path, `src/py2x-selfhost.py --target cpp` for selfhost path; keep `selfhost/py2cpp.py` only as an intermediate artifact (hide wrapper name from callers).
-- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] Added C++ compatibility path to `src/py2x.py`; when `--target cpp`, accept and delegate `py2cpp` compatibility flags. Mapped C++ keys in `--optimizer-option/--emitter-option` (for example `cpp_opt_level`, `mod_mode`, `negative_index_mode`) to dedicated flags. Confirmed no regression with `test_py2x_cli.py` (5 tests) and runtime checks (single-file / multi-file / header-output).
-- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] Unified CLI calls in `tools/` (excluding selfhost paths) to `src/py2x.py --target ...`, updating `regenerate_samples` / `runtime_parity_check` / `verify_*` / `benchmark_*` / `check_py2*_transpile`. Confirmed no regression by running all `check_py2*_transpile.py`.
-- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] Unified subprocess execution in `test/unit` to `src/py2x.py --target ...` (`test_py2{cs,go,java,js,kotlin,lua,nim,php,rb,rs,scala,swift,ts}_smoke.py`, `test_runtime_parity_check_cli.py`, `test_cpp_optimizer_cli.py`, `test_east3_optimizer_cli.py`, `test_py2cpp_features.py`). Representative 15 unittest files passed (`test_py2lua_smoke.py` kept 7 known failures).
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] Inventoried selfhost dependency contracts. `tools/prepare_selfhost_source.py` / `build_selfhost.py` / `build_selfhost_stage2.py` / `check_selfhost_cpp_diff.py` / `verify_selfhost_end_to_end.py` were chained around `src/py2cpp.py`. Replacement policy: use `src/pytra-cli.py --target cpp` for normal path, `src/py2x-selfhost.py --target cpp` for selfhost path; keep `selfhost/py2cpp.py` only as an intermediate artifact (hide wrapper name from callers).
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] Added C++ compatibility path to `src/pytra-cli.py`; when `--target cpp`, accept and delegate `py2cpp` compatibility flags. Mapped C++ keys in `--optimizer-option/--emitter-option` (for example `cpp_opt_level`, `mod_mode`, `negative_index_mode`) to dedicated flags. Confirmed no regression with `test_py2x_cli.py` (5 tests) and runtime checks (single-file / multi-file / header-output).
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] Unified CLI calls in `tools/` (excluding selfhost paths) to `src/pytra-cli.py --target ...`, updating `regenerate_samples` / `runtime_parity_check` / `verify_*` / `benchmark_*` / `check_py2*_transpile`. Confirmed no regression by running all `check_py2*_transpile.py`.
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] Unified subprocess execution in `test/unit` to `src/pytra-cli.py --target ...` (`test_py2{cs,go,java,js,kotlin,lua,nim,php,rb,rs,scala,swift,ts}_smoke.py`, `test_runtime_parity_check_cli.py`, `test_cpp_optimizer_cli.py`, `test_east3_optimizer_cli.py`, `test_py2cpp_features.py`). Representative 15 unittest files passed (`test_py2lua_smoke.py` kept 7 known failures).
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] Updated execution examples in `docs/ja/how-to-use.md` and `docs/en/how-to-use.md` to `py2x --target` baseline and standardized output-path notation to `-o`. Also updated language-list wording in `docs/ja/spec/spec-user.md` / `docs/en/spec/spec-user.md` to canonical `py2x` entrypoint.
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] Removed direct `src/py2cpp.py` references from selfhost scripts (`build_selfhost*` / `check_selfhost_cpp_diff` / `selfhost_transpile` / `check_selfhost_direct_compile` / `verify_selfhost_end_to_end`), introduced `src/py2x-selfhost.py`-based calls and `--selfhost-target auto` (legacy binary compatibility). Confirmed `check_selfhost_cpp_diff --skip-east3-contract-tests --cases test/fixtures/core/add.py` is runnable with `mismatches=0`.
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] After switching `tools/build_selfhost.py` to `py2x-selfhost`, generated `selfhost/py2cpp.cpp` still failed C++ compile (unresolved `pytra::compiler::ler::*` refs, help-string concatenation, missing local bindings), so selfhost path remained incomplete and `S2-05` stayed open.

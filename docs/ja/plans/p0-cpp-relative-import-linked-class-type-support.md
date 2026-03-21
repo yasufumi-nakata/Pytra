@@ -16,7 +16,7 @@
 - imported class/type lane の build/run contract を representative smoke で固定し、function/global lane と同じ水準まで引き上げる。
 
 対象:
-- `py2x.py --target cpp --multi-file` の imported class/type symbol lane
+- `pytra-cli.py --target cpp --multi-file` の imported class/type symbol lane
 - module type schema における class storage contract
 - multi-file writer の imported class declaration / include contract
 - C++ emitter の imported class/type position render

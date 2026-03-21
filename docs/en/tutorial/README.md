@@ -53,7 +53,7 @@ Once this smallest example works, the pages below become much easier to read.
 3. Check the spec entry point: [Specification Index](../spec/index.md)
 4. Check type inference details: [Type Inference Rules](../spec/spec-east.md#7-type-inference-rules)
 5. Check `@extern` / `extern(...)`: [extern.md](./extern.md)
-6. Use `py2x.py` / `toolchain/emit/all.py` directly: [transpiler-cli.md](./transpiler-cli.md)
+6. Use `pytra-cli.py` / `toolchain/emit/all.py` directly: [transpiler-cli.md](./transpiler-cli.md)
 7. Check error categories and common blockers: [troubleshooting.md](./troubleshooting.md)
 8. Check advanced transpilation routes: [Advanced Usage](./advanced-usage.md)
 9. Check parity / selfhost / local CI: [Development Operations Guide](./dev-operations.md)
@@ -68,7 +68,7 @@ Once this smallest example works, the pages below become much easier to read.
   - [Type Inference Rules](../spec/spec-east.md#7-type-inference-rules)
 - If you want the source-of-truth specs
   - [Specification Index](../spec/index.md)
-- If you want to use `py2x.py` / `toolchain/emit/all.py` directly
+- If you want to use `pytra-cli.py` / `toolchain/emit/all.py` directly
   - [transpiler-cli.md](./transpiler-cli.md)
 - If you want error categories and common blockers
   - [troubleshooting.md](./troubleshooting.md)

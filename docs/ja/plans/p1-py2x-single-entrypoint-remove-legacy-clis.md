@@ -1,4 +1,4 @@
-# P1: `py2x.py` 単一エントリ化（`py2*.py` 廃止、最終的に `py2cpp.py` 削除）
+# P1: `pytra-cli.py` 単一エントリ化（`py2*.py` 廃止、最終的に `py2cpp.py` 削除）
 
 最終更新: 2026-03-03
 
@@ -6,18 +6,18 @@
 - `docs/ja/todo/index.md` の `ID: P1-PY2X-SINGLE-ENTRY-01`
 
 背景:
-- 現在は `py2x.py` を導入済みだが、`tools/` / `test/` / `docs/` / selfhost 導線が依然として `py2*.py` 直呼び出しに依存している。
+- 現在は `pytra-cli.py` を導入済みだが、`tools/` / `test/` / `docs/` / selfhost 導線が依然として `py2*.py` 直呼び出しに依存している。
 - 特に `py2cpp.py` は `--emit-runtime-cpp` / `--header-output` / `--multi-file` など C++ 固有機能の入口を兼ねており、単純削除できない。
-- ユーザー要件は「`py2x.py` に統一したなら legacy CLI を不要化し、最終的に `py2cpp.py` を無くす」ことである。
+- ユーザー要件は「`pytra-cli.py` に統一したなら legacy CLI を不要化し、最終的に `py2cpp.py` を無くす」ことである。
 
 目的:
-- CLI の正規入口を `src/py2x.py`（通常）と `src/py2x-selfhost.py`（selfhost）に統一する。
+- CLI の正規入口を `src/pytra-cli.py`（通常）と `src/py2x-selfhost.py`（selfhost）に統一する。
 - `py2*.py` 直依存を `tools/` / `test/` / `docs/` から段階的に除去する。
 - 最終段階で `src/py2cpp.py` を含む legacy CLI を削除する。
 
 対象:
-- `src/py2x.py` / `src/py2x-selfhost.py` の機能拡張（C++ 専用機能吸収）
-- `tools/` / `test/` / `src/pytra/cli.py` の呼び出し先を `py2x.py --target ...` へ移行
+- `src/pytra-cli.py` / `src/py2x-selfhost.py` の機能拡張（C++ 専用機能吸収）
+- `tools/` / `test/` / `src/pytra/cli.py` の呼び出し先を `pytra-cli.py --target ...` へ移行
 - selfhost 関連スクリプトの entrypoint 置換
 - `docs/ja` / `docs/en` の利用手順更新
 - legacy CLI（`src/py2*.py`）削除
@@ -60,7 +60,7 @@
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] `py2cpp.py` 固有機能（`--emit-runtime-cpp`, `--header-output`, `--multi-file` 等）の `py2x` 受け皿仕様を確定する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost 導線（prepare/build/check）がどの entrypoint 契約に依存しているかを棚卸しし、置換方針を確定する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `py2x --target cpp` に `py2cpp` 固有機能を実装し、既存オプションと等価運用できるようにする。
-- [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] `tools/` の CLI 呼び出しを `py2x.py --target ...` へ一括置換する。
+- [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] `tools/` の CLI 呼び出しを `pytra-cli.py --target ...` へ一括置換する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/` の CLI 呼び出しと契約テストを `py2x` ベースへ移行する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja` / `docs/en` の使用例と仕様表記を `py2x` 正規入口へ更新する。
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost スクリプトを `py2cpp.py` 非依存へ移行し、`py2x-selfhost.py` 基準で再配線する。
@@ -69,13 +69,13 @@
 - [x] [ID: P1-PY2X-SINGLE-ENTRY-01-S3-03] 全 transpile/selfhost 回帰を実行し、`py2cpp.py` 削除後の非退行を確認する。
 
 決定ログ:
-- 2026-03-03: ユーザー指示により、`py2x.py` 単一エントリ化を P1 として起票し、最終成果に `src/py2cpp.py` 削除を含める方針を確定。
+- 2026-03-03: ユーザー指示により、`pytra-cli.py` 単一エントリ化を P1 として起票し、最終成果に `src/py2cpp.py` 削除を含める方針を確定。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-01] 依存棚卸しを実施。`src/pytra/cli.py` は `PY2CPP/PY2RS/PY2SCALA` を直参照、`tools/` は `runtime_parity_check` / `regenerate_samples` / selfhost系を中心に `src/py2*.py` 依存、`test/` は `test_py2*` 系が wrapper 直接実行を前提、`docs` は `how-to-use` に実行例が集中していることを確認。移行順は `(1) src/pytra/cli.py + tools 共通導線 -> (2) test 契約更新 -> (3) docs -> (4) selfhost 最終置換` とする。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-02] `py2cpp.py` 実利用オプションを抽出（`--multi-file`, `--output-dir`, `--header-output`, `--emit-runtime-cpp`, `--dump-deps`, `--dump-options`, `--preset`, `--int-width`, `--mod-mode`, `--top-namespace`, `--str-index-mode`）。受け皿仕様は「共通レイヤ可搬オプションは `--lower/optimizer/emitter-option` へマップ」「出力モード変更系（`multi-file/header/runtime-cpp/dump-*`）は `py2x --target cpp` 専用の互換フラグとして直受け」に確定。
-- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost 導線の依存契約を棚卸し。`tools/prepare_selfhost_source.py` / `build_selfhost.py` / `build_selfhost_stage2.py` / `check_selfhost_cpp_diff.py` / `verify_selfhost_end_to_end.py` が `src/py2cpp.py` を前提に連鎖している。置換方針は「通常系は `src/py2x.py --target cpp`、selfhost系は `src/py2x-selfhost.py --target cpp` を正規入口」に統一し、`selfhost/py2cpp.py` は中間生成物としてのみ維持（呼び出し元からは wrapper 名を隠蔽）とする。
-- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `src/py2x.py` に C++ 互換経路を追加し、`--target cpp` 時は `py2cpp` 互換フラグを受理して委譲する実装へ更新。`--optimizer-option/--emitter-option` の C++ 対応キー（例: `cpp_opt_level`, `mod_mode`, `negative_index_mode`）を専用フラグへマップし、`test_py2x_cli.py`（5 tests）と実行確認（single-file / multi-file / header-output）で非退行を確認。
-- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] selfhost 系を除く `tools/` の CLI 呼び出しを `src/py2x.py --target ...` へ統一し、`regenerate_samples` / `runtime_parity_check` / `verify_*` / `benchmark_*` / `check_py2*_transpile` を更新。`check_py2*_transpile.py` 一括実行で非退行（all pass）を確認。
-- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/unit` の subprocess 実行を `src/py2x.py --target ...` へ統一（`test_py2{cs,go,java,js,kotlin,lua,nim,php,rb,rs,scala,swift,ts}_smoke.py`、`test_runtime_parity_check_cli.py`、`test_cpp_optimizer_cli.py`、`test_east3_optimizer_cli.py`、`test_py2cpp_features.py`）。代表 15 ファイルの unittest が pass（`test_py2lua_smoke.py` は既知失敗7件のまま）。
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S1-03] selfhost 導線の依存契約を棚卸し。`tools/prepare_selfhost_source.py` / `build_selfhost.py` / `build_selfhost_stage2.py` / `check_selfhost_cpp_diff.py` / `verify_selfhost_end_to_end.py` が `src/py2cpp.py` を前提に連鎖している。置換方針は「通常系は `src/pytra-cli.py --target cpp`、selfhost系は `src/py2x-selfhost.py --target cpp` を正規入口」に統一し、`selfhost/py2cpp.py` は中間生成物としてのみ維持（呼び出し元からは wrapper 名を隠蔽）とする。
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-01] `src/pytra-cli.py` に C++ 互換経路を追加し、`--target cpp` 時は `py2cpp` 互換フラグを受理して委譲する実装へ更新。`--optimizer-option/--emitter-option` の C++ 対応キー（例: `cpp_opt_level`, `mod_mode`, `negative_index_mode`）を専用フラグへマップし、`test_py2x_cli.py`（5 tests）と実行確認（single-file / multi-file / header-output）で非退行を確認。
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-02] selfhost 系を除く `tools/` の CLI 呼び出しを `src/pytra-cli.py --target ...` へ統一し、`regenerate_samples` / `runtime_parity_check` / `verify_*` / `benchmark_*` / `check_py2*_transpile` を更新。`check_py2*_transpile.py` 一括実行で非退行（all pass）を確認。
+- 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-03] `test/unit` の subprocess 実行を `src/pytra-cli.py --target ...` へ統一（`test_py2{cs,go,java,js,kotlin,lua,nim,php,rb,rs,scala,swift,ts}_smoke.py`、`test_runtime_parity_check_cli.py`、`test_cpp_optimizer_cli.py`、`test_east3_optimizer_cli.py`、`test_py2cpp_features.py`）。代表 15 ファイルの unittest が pass（`test_py2lua_smoke.py` は既知失敗7件のまま）。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-04] `docs/ja/how-to-use.md` と `docs/en/how-to-use.md` の実行例を `py2x --target` 基準へ更新し、出力パス指定を `-o` で統一。併せて `docs/ja/spec/spec-user.md` / `docs/en/spec/spec-user.md` の言語一覧を `py2x` 正規入口表記へ更新。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] selfhost 関連スクリプト（`build_selfhost*` / `check_selfhost_cpp_diff` / `selfhost_transpile` / `check_selfhost_direct_compile` / `verify_selfhost_end_to_end`）から `src/py2cpp.py` 直参照を除去し、`src/py2x-selfhost.py` 基準の呼び出しと `--selfhost-target auto`（旧 binary 互換）を導入。`check_selfhost_cpp_diff --skip-east3-contract-tests --cases test/fixtures/core/add.py` は実行可能で `mismatches=0` を確認。
 - 2026-03-04: [ID: P1-PY2X-SINGLE-ENTRY-01-S2-05] `tools/build_selfhost.py` を `py2x-selfhost` 起点へ切替え後、生成 `selfhost/py2cpp.cpp` は C++ コンパイルで未解決（`pytra::compiler::ler::*` 参照・help 文字列連結・ローカル変数束縛欠落）となるため、selfhost 導線は未成立のまま。`S2-05` は完了化せず継続する。

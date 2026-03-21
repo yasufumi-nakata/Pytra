@@ -9,7 +9,7 @@ For the source-of-truth language rules, see the [User Specification](../spec/spe
 
 ## Error Categories
 
-Failure messages from `src/py2x.py --target cpp` are shown in the following categories.
+Failure messages from `src/pytra-cli.py --target cpp` are shown in the following categories.
 
 - `[user_syntax_error]`
   - A syntax error in user code
@@ -43,7 +43,7 @@ Failure messages from `src/py2x.py --target cpp` are shown in the following cate
 
 - Want to check parity, selfhost, or local CI
   - [Usage Guide](../how-to-use.md)
-- Want to call `py2x.py` / `east2x.py` directly
+- Want to call `pytra-cli.py` / `east2x.py` directly
   - [Usage Guide](../how-to-use.md)
 - Want to use `@extern` / `extern(...)`
   - [extern.md](./extern.md)

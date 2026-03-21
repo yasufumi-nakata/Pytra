@@ -251,15 +251,15 @@ python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
 - Runtime/stdlib call resolution must use EAST3 canonical fields only (`runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`). Do not add per-symbol branches or dispatch tables in emitters.
 - `java` backend is strict: direct dispatch symbol literals are not allowlisted and must remain zero.
 
-## `py2x.py` / `py2x-selfhost.py` Entry Split
+## `pytra-cli.py` / `py2x-selfhost.py` Entry Split
 
-- Use `src/py2x.py` for normal host execution. Target backends are loaded lazily per selected language.
+- Use `src/pytra-cli.py` for normal host execution. Target backends are loaded lazily per selected language.
 - Use `src/py2x-selfhost.py` for selfhost execution. Backends are fixed to static eager imports only.
-- Existing `py2{lang}.py` wrappers are compatibility-only paths; normal execution is unified on `py2x.py` / `py2x-selfhost.py`.
+- Existing `py2{lang}.py` wrappers are compatibility-only paths; normal execution is unified on `pytra-cli.py` / `py2x-selfhost.py`.
 
 ```bash
 # Normal execution (host-lazy)
-python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add.rs
+python3 src/pytra-cli.py test/fixtures/core/add.py --target rs -o out/add.rs
 
 # Selfhost execution (static eager import)
 python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
@@ -268,12 +268,12 @@ python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_se
 ### Migration Note (`py2*.py` compatibility wrappers)
 
 - Existing wrappers such as `py2rs.py`, `py2js.py`, and `py2rb.py` are deprecated compatibility paths.
-- For normal usage, treat `py2x.py --target <lang>` as the only primary entrypoint, and wrappers as phased-removal compatibility paths.
-- Layer options (`--lower-option`, `--optimizer-option`, `--emitter-option`) are standardized on the `py2x.py` interface.
+- For normal usage, treat `pytra-cli.py --target <lang>` as the only primary entrypoint, and wrappers as phased-removal compatibility paths.
+- Layer options (`--lower-option`, `--optimizer-option`, `--emitter-option`) are standardized on the `pytra-cli.py` interface.
 
 ```bash
 # Canonical entrypoint (recommended)
-python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
+python3 src/pytra-cli.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
 ```
 
 
@@ -286,7 +286,7 @@ python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
 
 ```bash
 # 1) Build an EAST3(JSON) fixture from .py
-python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp \
+python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp \
   -o out/seed_01.cpp --dump-east3-after-opt sample/ir/01_mandelbrot.east3.json
 
 # 2) Transpile directly from EAST3(JSON)
@@ -303,19 +303,19 @@ Notes:
 
 ## linked-program dump / link-only / emit
 
-- The canonical linked-program pipeline is `py2x.py --link-only` → `toolchain/emit/cpp.py` (for C++).
-- `py2x.py --dump-east3-dir DIR` writes raw `EAST3` documents plus `link-input.json` to `DIR` and stops.
-- `py2x.py --link-only --output-dir DIR` skips backend generation and writes only `link-output.json` plus linked modules to `DIR`.
+- The canonical linked-program pipeline is `pytra-cli.py --link-only` → `toolchain/emit/cpp.py` (for C++).
+- `pytra-cli.py --dump-east3-dir DIR` writes raw `EAST3` documents plus `link-input.json` to `DIR` and stops.
+- `pytra-cli.py --link-only --output-dir DIR` skips backend generation and writes only `link-output.json` plus linked modules to `DIR`.
 - `toolchain/emit/cpp.py` reads `link-output.json` and emits C++ multi-file output.
 - `toolchain/emit/all.py` remains available as the generic all-backend path.
 
 ```bash
 # 1) Emit raw EAST3 documents and link-input.json from .py
-python3 src/py2x.py sample/py/18_mini_language_interpreter.py --target cpp \
+python3 src/pytra-cli.py sample/py/18_mini_language_interpreter.py --target cpp \
   --dump-east3-dir out/linked_debug/raw
 
 # 2) Compile + link + optimize to linked output
-PYTHONPATH=src python3 src/py2x.py sample/py/18_mini_language_interpreter.py \
+PYTHONPATH=src python3 src/pytra-cli.py sample/py/18_mini_language_interpreter.py \
   --target cpp --link-only --output-dir out/linked_debug/linked
 
 # 3) Emit C++ from linked output (toolchain/emit/cpp.py — C++ backend only)
@@ -339,7 +339,7 @@ Use only the target language section you need.
 <summary>C++</summary>
 
 ```bash
-python src/py2x.py --target cpp test/fixtures/collections/iterable.py -o test/transpile/cpp/iterable.cpp
+python src/pytra-cli.py --target cpp test/fixtures/collections/iterable.py -o test/transpile/cpp/iterable.cpp
 g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cpp/iterable.cpp \
   src/runtime/cpp/generated/utils/png.cpp src/runtime/cpp/generated/utils/gif.cpp \
   src/runtime/cpp/native/std/math.cpp src/runtime/cpp/native/std/time.cpp src/runtime/cpp/generated/std/pathlib.cpp \
@@ -356,15 +356,15 @@ Notes:
 - GC uses `base/gc`.
 - `src/runtime/cpp/` is split by responsibility into `core/`, `generated/`, `native/`, and `pytra/`.
 - Generated artifacts live under `src/runtime/cpp/generated/`, and both C++-specific companions and the low-level core source of truth live under `src/runtime/cpp/native/`. There is no checked-in `pytra/core` shim tree anymore.
-- `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py -o ... --header-output ...` generates `*.cpp` and `*.h` together.
-- `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py --emit-runtime-cpp` writes generated artifacts to `src/runtime/cpp/generated/<tree>/...` (`<tree>` = `built_in` / `std` / `utils`).
+- `python src/pytra-cli.py --target cpp src/pytra/<tree>/<mod>.py -o ... --header-output ...` generates `*.cpp` and `*.h` together.
+- `python src/pytra-cli.py --target cpp src/pytra/<tree>/<mod>.py --emit-runtime-cpp` writes generated artifacts to `src/runtime/cpp/generated/<tree>/...` (`<tree>` = `built_in` / `std` / `utils`).
 - Example: `src/pytra/built_in/type_id.py` -> `src/runtime/cpp/generated/built_in/type_id.cpp` and `src/runtime/cpp/generated/built_in/type_id.h`.
 - Example: `src/pytra/std/math.py` is header-only, so it emits `src/runtime/cpp/generated/std/math.h`, while the native implementation stays in `src/runtime/cpp/native/std/math.cpp`.
 - `src/pytra/utils/png.py` and `src/pytra/utils/gif.py` are generated with the bridge style, with type-conversion wrappers around runtime public APIs.
 - `src/pytra/std/json.py` and `src/pytra/utils/assertions.py` also generate `.h/.cpp`.
 - Missing native processing should be complemented in the matching `src/runtime/cpp/native/...` file (example: `src/runtime/cpp/native/std/math.cpp`).
 - `png.write_rgb_png(...)` always outputs PNG (PPM output is removed).
-- Use `python src/py2x.py --target cpp INPUT.py --dump-deps` to inspect import dependencies (`modules/symbols` and `graph`).
+- Use `python src/pytra-cli.py --target cpp INPUT.py --dump-deps` to inspect import dependencies (`modules/symbols` and `graph`).
 - The `pytra` namespace is reserved. `pytra.py` or `pytra/__init__.py` cannot exist in the input file directory.
 - Unresolved or circular user-module imports fail early with `[input_invalid]`.
 - Index bounds checks can be switched with `--bounds-check-mode {always,debug,off}` (`off` by default).
@@ -389,17 +389,17 @@ Notes:
 
 Examples:
 - Performance priority (default):
-  - `python src/py2x.py --target cpp INPUT.py -o OUT.cpp --preset native`
+  - `python src/pytra-cli.py --target cpp INPUT.py -o OUT.cpp --preset native`
 - Balanced compatibility:
-  - `python src/py2x.py --target cpp INPUT.py -o OUT.cpp --preset balanced`
+  - `python src/pytra-cli.py --target cpp INPUT.py -o OUT.cpp --preset balanced`
 - Compatibility priority (note: `int-width=bigint` is not implemented):
-  - `python src/py2x.py --target cpp INPUT.py -o OUT.cpp --preset python --int-width 64`
+  - `python src/pytra-cli.py --target cpp INPUT.py -o OUT.cpp --preset python --int-width 64`
 - Inspect final resolved options:
-  - `python src/py2x.py --target cpp INPUT.py --preset balanced --mod-mode native --dump-options`
+  - `python src/pytra-cli.py --target cpp INPUT.py --preset balanced --mod-mode native --dump-options`
 - For selfhost investigation (no optimization):
-  - `python src/py2x.py --target cpp INPUT.py -o OUT.cpp -O0`
+  - `python src/pytra-cli.py --target cpp INPUT.py -o OUT.cpp -O0`
 - Add top namespace:
-  - `python src/py2x.py --target cpp INPUT.py -o OUT.cpp --top-namespace myproj`
+  - `python src/pytra-cli.py --target cpp INPUT.py -o OUT.cpp --top-namespace myproj`
 
 ### Image Runtime Parity Check (Python source of truth vs C++)
 
@@ -415,7 +415,7 @@ python3 tools/verify_image_runtime_parity.py
 <summary>Rust</summary>
 
 ```bash
-python src/py2x.py --target rs test/fixtures/collections/iterable.py -o test/transpile/rs/iterable.rs
+python src/pytra-cli.py --target rs test/fixtures/collections/iterable.py -o test/transpile/rs/iterable.rs
 rustc -O test/transpile/rs/iterable.rs -o test/transpile/obj/iterable_rs.out
 ./test/transpile/obj/iterable_rs.out
 ```
@@ -429,12 +429,12 @@ Notes:
 <summary>Ruby</summary>
 
 ```bash
-python src/py2x.py --target ruby test/fixtures/collections/iterable.py -o test/transpile/ruby/iterable.rb
+python src/pytra-cli.py --target ruby test/fixtures/collections/iterable.py -o test/transpile/ruby/iterable.rb
 ruby test/transpile/ruby/iterable.rb
 ```
 
 Notes:
-- `py2x.py --target ruby` generates Ruby source directly from EAST3 via the native emitter (`src/toolchain/emit/ruby/emitter/ruby_native_emitter.py`).
+- `pytra-cli.py --target ruby` generates Ruby source directly from EAST3 via the native emitter (`src/toolchain/emit/ruby/emitter/ruby_native_emitter.py`).
 - Image APIs (`png.write_rgb_png` / `save_gif`) are currently handled by no-op runtime hooks; use the backend primarily for syntax/execution-path regression checks at this stage.
 - Check transpile regressions with `python3 tools/check_py2rb_transpile.py`.
 - Run parity entry flow with `python3 tools/runtime_parity_check.py --case-root sample --targets ruby` (environments without Ruby toolchain are recorded as `toolchain_missing`). Unstable timing lines such as `elapsed_sec` are excluded from compare by default.
@@ -445,12 +445,12 @@ Notes:
 <summary>PHP</summary>
 
 ```bash
-python src/py2x.py --target php test/fixtures/collections/iterable.py -o test/transpile/php/iterable.php
+python src/pytra-cli.py --target php test/fixtures/collections/iterable.py -o test/transpile/php/iterable.php
 php test/transpile/php/iterable.php
 ```
 
 Notes:
-- `py2x.py --target php` generates PHP source directly from EAST3 via the native emitter (`src/toolchain/emit/php/emitter/php_native_emitter.py`).
+- `pytra-cli.py --target php` generates PHP source directly from EAST3 via the native emitter (`src/toolchain/emit/php/emitter/php_native_emitter.py`).
 - Canonical PHP runtime helpers live under `src/runtime/php/{generated,native}/`, and transpilation stages only the required helper files into `test/transpile/php/`.
 - Check transpile regressions with `python3 tools/check_py2php_transpile.py`.
 - Run parity entry flow with `python3 tools/runtime_parity_check.py --case-root sample --targets php` (environments without PHP toolchain are recorded as `toolchain_missing`).
@@ -461,7 +461,7 @@ Notes:
 <summary>C#</summary>
 
 ```bash
-python src/py2x.py --target cs test/fixtures/collections/iterable.py -o test/transpile/cs/iterable.cs
+python src/pytra-cli.py --target cs test/fixtures/collections/iterable.py -o test/transpile/cs/iterable.cs
 mcs -out:test/transpile/obj/iterable.exe \
   test/transpile/cs/iterable.cs \
   src/runtime/cs/native/built_in/py_runtime.cs src/runtime/cs/native/std/time_native.cs \
@@ -479,12 +479,12 @@ Notes:
 <summary>JavaScript</summary>
 
 ```bash
-python src/py2x.py --target js test/fixtures/collections/iterable.py -o test/transpile/js/iterable.js
+python src/pytra-cli.py --target js test/fixtures/collections/iterable.py -o test/transpile/js/iterable.js
 node test/transpile/js/iterable.js
 ```
 
 Notes:
-- If input uses `import`, `py2x.py` stages the required runtime bundle from `src/runtime/js/{generated,native}/` into `runtime/js/**` next to the generated output.
+- If input uses `import`, `pytra-cli.py` stages the required runtime bundle from `src/runtime/js/{generated,native}/` into `runtime/js/**` next to the generated output.
 
 </details>
 
@@ -492,12 +492,12 @@ Notes:
 <summary>TypeScript</summary>
 
 ```bash
-python src/py2x.py --target ts test/fixtures/collections/iterable.py -o test/transpile/ts/iterable.ts
+python src/pytra-cli.py --target ts test/fixtures/collections/iterable.py -o test/transpile/ts/iterable.ts
 npx tsx test/transpile/ts/iterable.ts
 ```
 
 Notes:
-- If input uses `import`, `py2x.py` stages the shared JS runtime bundle from `src/runtime/js/{generated,native}/` into `runtime/js/**` next to the generated output.
+- If input uses `import`, `pytra-cli.py` stages the shared JS runtime bundle from `src/runtime/js/{generated,native}/` into `runtime/js/**` next to the generated output.
 
 </details>
 
@@ -505,12 +505,12 @@ Notes:
 <summary>Go</summary>
 
 ```bash
-python src/py2x.py --target go test/fixtures/collections/iterable.py -o test/transpile/go/iterable.go
+python src/pytra-cli.py --target go test/fixtures/collections/iterable.py -o test/transpile/go/iterable.go
 go run test/transpile/go/iterable.go
 ```
 
 Notes:
-- `py2x.py --target go` generates Go source directly from EAST3 via the native emitter (`src/toolchain/emit/go/emitter/go_native_emitter.py`).
+- `pytra-cli.py --target go` generates Go source directly from EAST3 via the native emitter (`src/toolchain/emit/go/emitter/go_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -520,13 +520,13 @@ Notes:
 <summary>Java</summary>
 
 ```bash
-python src/py2x.py --target java test/fixtures/collections/iterable.py -o test/transpile/java/iterable.java
+python src/pytra-cli.py --target java test/fixtures/collections/iterable.py -o test/transpile/java/iterable.java
 javac test/transpile/java/iterable.java
 java -cp test/transpile/java iterable
 ```
 
 Notes:
-- `py2x.py --target java` generates Java source directly from EAST3 via the native emitter (`src/toolchain/emit/java/emitter/java_native_emitter.py`).
+- `pytra-cli.py --target java` generates Java source directly from EAST3 via the native emitter (`src/toolchain/emit/java/emitter/java_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -536,13 +536,13 @@ Notes:
 <summary>Swift</summary>
 
 ```bash
-python src/py2x.py --target swift test/fixtures/collections/iterable.py -o test/transpile/swift/iterable.swift
+python src/pytra-cli.py --target swift test/fixtures/collections/iterable.py -o test/transpile/swift/iterable.swift
 swiftc test/transpile/swift/iterable.swift -o test/transpile/obj/iterable_swift.out
 ./test/transpile/obj/iterable_swift.out
 ```
 
 Notes:
-- `py2x.py --target swift` generates Swift source directly from EAST3 via the native emitter (`src/toolchain/emit/swift/emitter/swift_native_emitter.py`).
+- `pytra-cli.py --target swift` generates Swift source directly from EAST3 via the native emitter (`src/toolchain/emit/swift/emitter/swift_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -552,13 +552,13 @@ Notes:
 <summary>Kotlin</summary>
 
 ```bash
-python src/py2x.py --target kotlin test/fixtures/collections/iterable.py -o test/transpile/kotlin/iterable.kt
+python src/pytra-cli.py --target kotlin test/fixtures/collections/iterable.py -o test/transpile/kotlin/iterable.kt
 kotlinc test/transpile/kotlin/iterable.kt -include-runtime -d test/transpile/obj/iterable_kotlin.jar
 java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
 ```
 
 Notes:
-- `py2x.py --target kotlin` generates Kotlin source directly from EAST3 via the native emitter (`src/toolchain/emit/kotlin/emitter/kotlin_native_emitter.py`).
+- `pytra-cli.py --target kotlin` generates Kotlin source directly from EAST3 via the native emitter (`src/toolchain/emit/kotlin/emitter/kotlin_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -568,12 +568,12 @@ Notes:
 <summary>Scala3</summary>
 
 ```bash
-python src/py2x.py --target scala test/fixtures/collections/iterable.py -o test/transpile/scala/iterable.scala
+python src/pytra-cli.py --target scala test/fixtures/collections/iterable.py -o test/transpile/scala/iterable.scala
 scala run test/transpile/scala/iterable.scala
 ```
 
 Notes:
-- `py2x.py --target scala` generates Scala3 code directly from EAST3 via the native emitter (`src/toolchain/emit/scala/emitter/scala_native_emitter.py`).
+- `pytra-cli.py --target scala` generates Scala3 code directly from EAST3 via the native emitter (`src/toolchain/emit/scala/emitter/scala_native_emitter.py`).
 - Check transpile regressions with `python3 tools/check_py2scala_transpile.py` (it validates both positive success and expected-negative error categories).
 - Run full parity (sample + positive fixture manifest) with `python3 tools/check_scala_parity.py`.
 - To run sample-only parity first, use `python3 tools/check_scala_parity.py --skip-fixture`.
@@ -589,7 +589,7 @@ Notes:
 python src/pytra/compiler/east.py sample/py/01_mandelbrot.py -o test/transpile/east/01_mandelbrot.json --pretty
 
 # 2) Convert EAST(JSON) to C++ (.py input can also be given directly)
-python src/py2x.py --target cpp test/transpile/east/01_mandelbrot.json -o test/transpile/cpp/01_mandelbrot.cpp
+python src/pytra-cli.py --target cpp test/transpile/east/01_mandelbrot.json -o test/transpile/cpp/01_mandelbrot.cpp
 
 # 3) Compile and run
 g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cpp \
@@ -602,7 +602,7 @@ g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cp
 
 Notes:
 - EAST converter: `src/pytra/compiler/east.py`
-- EAST-based C++ generator: `src/py2x.py --target cpp`
+- EAST-based C++ generator: `src/pytra-cli.py --target cpp`
 
 </details>
 
@@ -629,7 +629,7 @@ mkdir -p test/transpile/cpp2
 ./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp
 
 # 3) Convert the same input with Python C++ backend
-python src/py2x.py --target cpp sample/py/01_mandelbrot.py -o test/transpile/cpp/01_mandelbrot.cpp
+python src/pytra-cli.py --target cpp sample/py/01_mandelbrot.py -o test/transpile/cpp/01_mandelbrot.cpp
 
 # 4) Check generated diff (source diff is allowed; this is for inspection)
 diff -u test/transpile/cpp/01_mandelbrot.cpp test/transpile/cpp2/01_mandelbrot.cpp || true
@@ -667,7 +667,7 @@ For detailed support granularity in `py2cpp` (`enumerate(start)`, `lambda`, comp
 
 ### 0. Error Categories
 
-Failure messages from `src/py2x.py --target cpp` are categorized as follows.
+Failure messages from `src/pytra-cli.py --target cpp` are categorized as follows.
 
 - `[user_syntax_error]`: syntax error in user code
 - `[not_implemented]`: syntax not implemented yet (future candidate)

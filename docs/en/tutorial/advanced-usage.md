@@ -45,15 +45,15 @@ def py_join(sep: str, parts: list[str]) -> str:
     ...
 ```
 
-## `py2x.py` / `py2x-selfhost.py` Entry Split
+## `pytra-cli.py` / `py2x-selfhost.py` Entry Split
 
-- Use `src/py2x.py` for normal host execution. Target backends are loaded lazily per selected language.
+- Use `src/pytra-cli.py` for normal host execution. Target backends are loaded lazily per selected language.
 - Use `src/py2x-selfhost.py` for selfhost execution. Backends are fixed to static eager imports only.
-- Existing `py2{lang}.py` wrappers are compatibility-only paths; normal execution is unified on `py2x.py` / `py2x-selfhost.py`.
+- Existing `py2{lang}.py` wrappers are compatibility-only paths; normal execution is unified on `pytra-cli.py` / `py2x-selfhost.py`.
 
 ```bash
 # Normal execution (host-lazy)
-python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add.rs
+python3 src/pytra-cli.py test/fixtures/core/add.py --target rs -o out/add.rs
 
 # Selfhost execution (static eager import)
 python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
@@ -62,12 +62,12 @@ python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_se
 ### Migration Note (`py2*.py` Compatibility Wrappers)
 
 - Existing wrappers such as `py2rs.py`, `py2js.py`, and `py2rb.py` are deprecated compatibility paths.
-- For normal usage, treat `py2x.py --target <lang>` as the only primary entry point; wrappers are scheduled for phased removal.
-- Layer options (`--lower-option`, `--optimizer-option`, `--emitter-option`) are standardized on the `py2x.py` interface.
+- For normal usage, treat `pytra-cli.py --target <lang>` as the only primary entry point; wrappers are scheduled for phased removal.
+- Layer options (`--lower-option`, `--optimizer-option`, `--emitter-option`) are standardized on the `pytra-cli.py` interface.
 
 ```bash
 # Canonical entry point (recommended)
-python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
+python3 src/pytra-cli.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
 ```
 
 ## `toolchain/emit/cpp.py` / `toolchain/emit/all.py` (EAST3 JSON → Target Backend)
@@ -79,7 +79,7 @@ python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
 
 ```bash
 # 1) Build an EAST3(JSON) fixture from .py
-python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp \
+python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp \
   -o out/seed_01.cpp --dump-east3-after-opt sample/ir/01_mandelbrot.east3.json
 
 # 2) Transpile directly from EAST3(JSON) to a target language
@@ -96,19 +96,19 @@ Notes:
 
 ## linked-program dump / link-only / emit
 
-- The canonical linked-program pipeline is `py2x.py --link-only` → `toolchain/emit/cpp.py` (for C++).
-- `py2x.py --dump-east3-dir DIR` writes raw `EAST3` documents plus `link-input.json` to `DIR` and stops.
-- `py2x.py --link-only --output-dir DIR` skips backend generation and writes only `link-output.json` plus linked modules to `DIR`.
+- The canonical linked-program pipeline is `pytra-cli.py --link-only` → `toolchain/emit/cpp.py` (for C++).
+- `pytra-cli.py --dump-east3-dir DIR` writes raw `EAST3` documents plus `link-input.json` to `DIR` and stops.
+- `pytra-cli.py --link-only --output-dir DIR` skips backend generation and writes only `link-output.json` plus linked modules to `DIR`.
 - `toolchain/emit/cpp.py` reads `link-output.json` and emits C++ multi-file output.
 - `toolchain/emit/all.py` remains available as the generic all-backend path.
 
 ```bash
 # 1) Emit raw EAST3 documents and link-input.json from .py
-python3 src/py2x.py sample/py/18_mini_language_interpreter.py --target cpp \
+python3 src/pytra-cli.py sample/py/18_mini_language_interpreter.py --target cpp \
   --dump-east3-dir out/linked_debug/raw
 
 # 2) Compile + link + optimize to produce linked output
-PYTHONPATH=src python3 src/py2x.py sample/py/18_mini_language_interpreter.py \
+PYTHONPATH=src python3 src/pytra-cli.py sample/py/18_mini_language_interpreter.py \
   --target cpp --link-only --output-dir out/linked_debug/linked
 
 # 3) Emit C++ from linked output (toolchain/emit/cpp.py — C++ backend only)

@@ -15,7 +15,7 @@ Goal:
 - Prove that the current contract both resolves imported origins correctly and lets the consumer use local alias names.
 
 In scope:
-- the sibling relative-import alias lane in `py2x.py --target cpp --multi-file`
+- the sibling relative-import alias lane in `pytra-cli.py --target cpp --multi-file`
 - a representative smoke that aliases a constant and a class/type
 - syncing docs / TODO / regressions
 

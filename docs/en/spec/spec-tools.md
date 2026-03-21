@@ -18,36 +18,36 @@ They serve three main goals:
 - `tools/check_todo_priority.py`
   - Purpose: verify that new progress `ID`s added in diffs to `docs/ja/todo/index.md` / `docs/ja/plans/*.md` match the highest-priority unfinished `ID` (or one of its children), and prevent priority drift. On the `plans` side, only decision-log lines (`- YYYY-MM-DD: ...`) are evaluated; structure-cleanup ID lists are excluded.
 - `tools/check_jsonvalue_decode_boundaries.py`
-  - Purpose: verify that `json.loads_obj(...)` is the canonical entry at JSON artifact boundaries in `py2x.py` / `east2x.py` / `toolchain/compile/east_io.py` / `toolchain/link/*`, and fail fast on any re-entry of raw `json.loads(...)`.
+  - Purpose: verify that `json.loads_obj(...)` is the canonical entry at JSON artifact boundaries in `pytra-cli.py` / `east2x.py` / `toolchain/compile/east_io.py` / `toolchain/link/*`, and fail fast on any re-entry of raw `json.loads(...)`.
 - `tools/check_runtime_cpp_layout.py`
   - Purpose: validate the C++ runtime ownership boundary in one guard: keep `src/runtime/cpp/{built_in,std,utils}` legacy-closed, enforce `generated/native/pytra` ownership, and validate the `core` compatibility surface plus the `generated/core` / `native/core` split
   - Notes: `generated/built_in` / `generated/core` require plain naming plus generated markers, ownership mixing into `native` / `core` fails, and reintroducing removed transitive includes (`predicates` / `sequence` / `iter_ops`) into `native/core/py_runtime.h` also fails
 - `tools/check_py2cpp_transpile.py`
-  - Purpose: batch-transpile `test/fixtures/` with `py2x.py --target cpp`
+  - Purpose: batch-transpile `test/fixtures/` with `pytra-cli.py --target cpp`
 - `tools/check_py2rs_transpile.py`
-  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `py2x.py --target rs`
+  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `pytra-cli.py --target rs`
 - `tools/check_py2js_transpile.py`
-  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `py2x.py --target js`
+  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `pytra-cli.py --target js`
 - `tools/check_py2cs_transpile.py`
-  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `py2x.py --target cs`
+  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `pytra-cli.py --target cs`
 - `tools/check_py2go_transpile.py`
-  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `py2x.py --target go`
+  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `pytra-cli.py --target go`
 - `tools/check_py2java_transpile.py`
-  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `py2x.py --target java`
+  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `pytra-cli.py --target java`
 - `tools/check_py2ts_transpile.py`
-  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `py2x.py --target ts`
+  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `pytra-cli.py --target ts`
 - `tools/check_py2swift_transpile.py`
-  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `py2x.py --target swift`
+  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `pytra-cli.py --target swift`
 - `tools/check_py2kotlin_transpile.py`
-  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `py2x.py --target kotlin`
+  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `pytra-cli.py --target kotlin`
 - `tools/check_py2scala_transpile.py`
-  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `py2x.py --target scala`
+  - Purpose: batch-transpile `test/fixtures/` and `sample/py` with `pytra-cli.py --target scala`
 - `tools/check_yanesdk_py2cpp_smoke.py`
-  - Purpose: verify that the canonical Yanesdk set (`1 library + 7 games`) still passes `py2x.py --target cpp`
+  - Purpose: verify that the canonical Yanesdk set (`1 library + 7 games`) still passes `pytra-cli.py --target cpp`
 - `tools/check_microgpt_original_py2cpp_regression.py`
   - Purpose: keep the original `materials/refs/microgpt/microgpt-20260222.py` fixed as input and detect the first failure stage (A-F) or success
 - `tools/build_multi_cpp.py`
-  - Purpose: read `manifest.json` emitted by `py2x.py --target cpp --multi-file` and build all related `*.cpp` files plus runtime
+  - Purpose: read `manifest.json` emitted by `pytra-cli.py --target cpp --multi-file` and build all related `*.cpp` files plus runtime
 - `tools/gen_makefile_from_manifest.py`
   - Purpose: generate a `Makefile` from `manifest.json`
 - `tools/verify_multi_file_outputs.py`
@@ -116,7 +116,7 @@ They serve three main goals:
 
 ### 2.1 Selfhost Runaway Guards
 
-To stop long-running cases caused by deep recursion, huge ASTs, or symbol explosions during selfhost investigation, the following guards are staged into `py2x.py --target cpp` / common CLI:
+To stop long-running cases caused by deep recursion, huge ASTs, or symbol explosions during selfhost investigation, the following guards are staged into `pytra-cli.py --target cpp` / common CLI:
 
 - `--guard-profile {off,default,strict}`
   - default is `default`

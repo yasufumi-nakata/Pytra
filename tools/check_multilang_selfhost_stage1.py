@@ -15,8 +15,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PY2X_CLI = ROOT / "src" / "py2x.py"
-PY2X_SRC = ROOT / "src" / "py2x.py"
+PY2X_CLI = ROOT / "src" / "pytra-cli.py"
+PY2X_SRC = ROOT / "src" / "pytra-cli.py"
 
 
 @dataclass
@@ -695,7 +695,7 @@ def _render_report(rows: list[StatusRow], out_path: Path) -> None:
         )
     lines.append("")
     lines.append("備考:")
-    lines.append("- `stage1`: `src/py2x.py --target <lang>` を同言語へ自己変換できるか。")
+    lines.append("- `stage1`: `src/pytra-cli.py --target <lang>` を同言語へ自己変換できるか。")
     lines.append("- `generated_mode`: 生成物が preview かどうか。")
     lines.append("- `stage2`: 生成された変換器で `sample/py/01_mandelbrot.py` を再変換できるか。")
     out_path.parent.mkdir(parents=True, exist_ok=True)

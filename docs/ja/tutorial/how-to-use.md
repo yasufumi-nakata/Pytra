@@ -105,7 +105,7 @@ PowerShell は独立した target backend として、ネイティブ PowerShell
 - 言語仕様の入口は [仕様書トップ](../spec/index.md) を参照してください。
 - 型推論の詳細は [EAST仕様の型推論ルール](../spec/spec-east.md#7-型推論ルール) を参照してください。
 - `@extern` / `extern(...)` の使い方は [extern.md](./extern.md) を参照してください。
-- `py2x.py` / `east2cpp.py` を直接使いたい場合は [transpiler-cli.md](./transpiler-cli.md) を参照してください。
+- `pytra-cli.py` / `east2cpp.py` を直接使いたい場合は [transpiler-cli.md](./transpiler-cli.md) を参照してください。
 - エラーカテゴリや詰まりどころは [troubleshooting.md](./troubleshooting.md) を参照してください。
 - 高度な変換ルートや `@abi` は [発展的な使い方](./advanced-usage.md) を参照してください。
 - parity / local CI / backend health などの運用手順は [開発運用ガイド](./dev-operations.md) を参照してください。

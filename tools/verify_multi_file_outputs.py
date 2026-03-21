@@ -47,7 +47,7 @@ def verify_case(root: Path, stem: str) -> tuple[bool, str]:
         rc, tr_out = run_cmd(
             [
                 "python3",
-                "src/py2x.py",
+                "src/pytra-cli.py",
                 str(py),
                 "--target",
                 "cpp",

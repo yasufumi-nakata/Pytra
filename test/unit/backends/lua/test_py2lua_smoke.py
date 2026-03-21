@@ -136,7 +136,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "lua", str(fixture), "-o", str(out_lua)],
+                [sys.executable, "src/pytra-cli.py", "--target", "lua", str(fixture), "-o", str(out_lua)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -430,7 +430,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertNotIn("for i = (#(xs) - 1), ((-1)) - 1, (-1) do", lua)
 
     def test_py2lua_does_not_import_src_common(self) -> None:
-        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 

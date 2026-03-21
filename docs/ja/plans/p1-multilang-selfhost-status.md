@@ -20,6 +20,6 @@ python3 tools/check_multilang_selfhost_stage1.py
 | kotlin | fail | unknown | skip | raise self._raise_expr_build_error( |
 
 備考:
-- `stage1`: `src/py2x.py --target <lang>` を同言語へ自己変換できるか。
+- `stage1`: `src/pytra-cli.py --target <lang>` を同言語へ自己変換できるか。
 - `generated_mode`: 生成物が preview かどうか。
 - `stage2`: 生成された変換器で `sample/py/01_mandelbrot.py` を再変換できるか。

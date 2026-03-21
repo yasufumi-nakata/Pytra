@@ -15,7 +15,7 @@ Goal:
 - Prove that imported constants and imported classes/types from the same statement still build and run under the current contract.
 
 In scope:
-- the mixed sibling relative-import lane in `py2x.py --target cpp --multi-file`
+- the mixed sibling relative-import lane in `pytra-cli.py --target cpp --multi-file`
 - a representative smoke that imports a constant and a class/type from one `ImportFrom` statement
 - syncing docs / TODO / regressions
 

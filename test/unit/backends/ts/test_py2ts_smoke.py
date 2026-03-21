@@ -201,7 +201,7 @@ def main() -> None:
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "ts", str(fixture), "-o", str(out_ts)],
+                [sys.executable, "src/pytra-cli.py", "--target", "ts", str(fixture), "-o", str(out_ts)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -224,7 +224,7 @@ def main() -> None:
             old = env.get("PYTHONPATH", "")
             env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
             proc = subprocess.run(
-                [sys.executable, "src/py2x.py", "--target", "ts", str(fixture), "-o", str(out_ts)],
+                [sys.executable, "src/pytra-cli.py", "--target", "ts", str(fixture), "-o", str(out_ts)],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -357,7 +357,7 @@ def main() -> None:
         self.assertIn("let s = p.stem;", ts)
 
     def test_py2ts_does_not_import_src_common(self) -> None:
-        src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        src = (ROOT / "src" / "pytra-cli.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 

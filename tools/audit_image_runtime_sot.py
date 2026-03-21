@@ -168,7 +168,7 @@ def _probe_transpile(target: str, module_rel: str) -> dict[str, object]:
     with tempfile.TemporaryDirectory() as td:
         out = Path(td) / f"probe_{target}.txt"
         cp = subprocess.run(
-            ["python3", "src/py2x.py", str(src), "--target", target, "-o", str(out)],
+            ["python3", "src/pytra-cli.py", str(src), "--target", target, "-o", str(out)],
             cwd=ROOT,
             capture_output=True,
             text=True,

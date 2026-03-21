@@ -111,7 +111,7 @@ src/toolchain/
   - 正規方向は `toolchain.frontends → toolchain.compile → toolchain.link → toolchain.emit`。
   - `toolchain.emit → toolchain.frontends` は禁止。
   - `toolchain.misc → toolchain.frontends|toolchain.compile` は互換層として許可。
-  - `py2x.py` は `toolchain.emit` を import しない（emit はサブプロセスで `toolchain.emit.cpp` / `toolchain.emit.all` を呼ぶ）。
+  - `pytra-cli.py` は `toolchain.emit` を import しない（emit はサブプロセスで `toolchain.emit.cpp` / `toolchain.emit.all` を呼ぶ）。
   - 暫定例外として、`toolchain.compile.core` から `toolchain.frontends.signature_registry|frontend_semantics` 参照を許容する（循環解消タスクで撤去予定）。
 
 #### 3.1.1 旧 import 経路の禁止ルール（移行規約）

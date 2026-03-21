@@ -5,7 +5,7 @@
 
 ## エラーカテゴリ
 
-`src/py2x.py --target cpp` の失敗時メッセージは、次のカテゴリで表示されます。
+`src/pytra-cli.py --target cpp` の失敗時メッセージは、次のカテゴリで表示されます。
 
 - `[user_syntax_error]`
   - ユーザーコードの文法エラーです。
@@ -39,7 +39,7 @@
 
 - parity / selfhost / local CI を確認したい
   - [dev-operations.md](./dev-operations.md)
-- `py2x.py` / `east2x.py` を直接叩きたい
+- `pytra-cli.py` / `east2x.py` を直接叩きたい
   - [transpiler-cli.md](./transpiler-cli.md)
 - `@extern` / `extern(...)` を使いたい
   - [extern.md](./extern.md)

@@ -61,9 +61,9 @@ standalone transpile は不要。link パイプラインが全てを処理する
 `pytra link user.east --target cpp` を実行すると、リンカーが `resolved_dependencies_v1` に含まれる runtime モジュール（例: `pytra.std.pathlib`）を検出し、対応する `src/runtime/generated/std/pathlib.east` を自動的に LinkedProgram に追加する。
 
 **利点**: ユーザーが runtime .east を明示指定する必要がない。
-**実装**: `build_linked_program_from_module_map` または `_build_linked_program_for_input`（py2x.py）で、依存解決後に runtime .east を追加ロードする。
+**実装**: `build_linked_program_from_module_map` または `_build_linked_program_for_input`（pytra-cli.py）で、依存解決後に runtime .east を追加ロードする。
 
-#### 方法 B: py2x.py が runtime .east を明示的に追加
+#### 方法 B: pytra-cli.py が runtime .east を明示的に追加
 
 `_build_linked_program_for_input` で `build_module_east_map` を呼ぶ際、runtime モジュールの .east もマップに含める。
 
@@ -99,7 +99,7 @@ out/cpp/
 
 | ファイル | 変更 |
 |---------|------|
-| `src/toolchain/link/program_loader.py` or `src/py2x.py` | runtime .east を LinkedProgram に自動追加 |
+| `src/toolchain/link/program_loader.py` or `src/pytra-cli.py` | runtime .east を LinkedProgram に自動追加 |
 | `src/toolchain/emit/cpp/emitter/multifile_writer.py` | runtime モジュールも emit 対象に |
 | `src/toolchain/emit/cpp/program_writer.py` | `_generate_runtime_east_headers` 廃止 |
 | `src/toolchain/frontends/runtime_symbol_index.py` | runtime module_id → .east パスの解決 |

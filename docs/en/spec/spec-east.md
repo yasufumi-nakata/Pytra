@@ -59,7 +59,7 @@ Integration policy:
 - `python src/toolchain/compiler/east.py <input.py> [-o output.json] [--pretty] [--human-output output.cpp]`
 - `--pretty`: emit formatted JSON.
 - `--human-output`: emit a C++-style human-readable view.
-- `python3 src/py2x.py <input.py|east.json> --target cpp [-o output.cpp]`: EAST-based C++ generator.
+- `python3 src/pytra-cli.py <input.py|east.json> --target cpp [-o output.cpp]`: EAST-based C++ generator.
 
 ## 3. Top-Level EAST Structure
 
@@ -112,7 +112,7 @@ Notes:
   - reserved names `main`, `py_main`, `__pytra_main`
 - `FunctionDef` and `ClassDef` contain both `name` (after renaming) and `original_name`.
 - Normalize `for ... in range(...)` into `ForRange`, preserving `start`, `stop`, `step`, and `range_mode`.
-- Lower `range(...)` into a dedicated representation during EAST construction and never pass raw `Call(Name("range"), ...)` into later stages such as `py2x.py --target cpp`.
+- Lower `range(...)` into a dedicated representation during EAST construction and never pass raw `Call(Name("range"), ...)` into later stages such as `pytra-cli.py --target cpp`.
   - In other words, downstream emitters do not interpret Python built-in `range` themselves; they only process already-normalized EAST nodes.
 - Lower `range(...)` in expression position outside `for` into `RangeExpr`, including inside `ListComp`.
 - Accept `from __future__ import annotations` as a frontend-only directive and do not emit it into EAST nodes or `meta.import_*`.
@@ -400,7 +400,7 @@ Responsibility boundary:
   - When the expected type is not `bool`, emit Python-style value-selection semantics:
     - `a or b` -> `truthy(a) ? a : b`
     - `a and b` -> `truthy(a) ? b : a`
-  - The value-selection decision and rendering are made in `src/py2x.py`; EAST itself does not lower this into another node kind.
+  - The value-selection decision and rendering are made in `src/pytra-cli.py`; EAST itself does not lower this into another node kind.
 
 About `range`:
 
@@ -551,14 +551,14 @@ Collect the following before generation:
 
 - `test/fixtures` 32/32 can be converted by `src/toolchain/compiler/east.py` (`ok: true`)
 - `sample/py` 16/16 can be converted by `src/toolchain/compiler/east.py` (`ok: true`)
-- `sample/py` 16/16 can be "convert -> compile -> run" through `src/py2x.py` (`ok`)
+- `sample/py` 16/16 can be "convert -> compile -> run" through `src/pytra-cli.py` (`ok`)
 
 <a id="east-stages"></a>
 ## 16. Current Stage Structure (2026-02-24)
 
 - EAST is handled in three stages: `EAST1 -> EAST2 -> EAST3`.
 - In the current implementation, the default route of `py2*.py` is `EAST3`.
-- `py2x.py --target cpp` accepts only `--east-stage 3` and errors out on `--east-stage 2`.
+- `pytra-cli.py --target cpp` accepts only `--east-stage 3` and errors out on `--east-stage 2`.
 - The eight non-C++ converters (`py2rs.py`, `py2cs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2kotlin.py`, `py2swift.py`) keep `--east-stage 2` as a migration-compatibility mode with a warning.
 - `meta.dispatch_mode` is preserved across all stages, and its semantics are applied only once in `EAST2 -> EAST3`.
 
@@ -643,7 +643,7 @@ Responsibility boundary:
 | EAST2 | `EAST1 -> EAST2` normalization API | `src/toolchain/compiler/east_parts/east2.py` (compat wrapper + selfhost fallback) | `src/toolchain/ir/east2.py` |
 | EAST3 | body of `EAST2 -> EAST3` lowering | `src/toolchain/compiler/east_parts/east2_to_east3_lowering.py` (compat shim) | `src/toolchain/ir/east2_to_east3_lowering.py` |
 | EAST3 | EAST3 entry API | `src/toolchain/compiler/east_parts/east3.py` (through compat wrapper) | `src/toolchain/ir/east3.py` |
-| Bridge | backend entry (C++) | `src/py2x.py` (`--east-stage 3` only) | `src/py2x.py` (`EAST3` only) |
+| Bridge | backend entry (C++) | `src/pytra-cli.py` (`--east-stage 3` only) | `src/pytra-cli.py` (`EAST3` only) |
 | CLI compat | publishing old API | `src/toolchain/compiler/transpile_cli.py` (compat shim) | `src/toolchain/frontends/transpile_cli.py` (real implementation) |
 
 <a id="east1-build-boundary"></a>
@@ -658,7 +658,7 @@ Structure:
 - `core.py`: self-hosted parser implementation (low layer; current canonical file is `src/toolchain/ir/core.py`)
 - `east1_build.py`: build entry (target file to add)
 - `east1.py`: thin helpers for stage contracts
-- `py2x.py --target cpp`: `_analyze_import_graph` and `build_module_east_map` must only delegate into `East1BuildHelpers`
+- `pytra-cli.py --target cpp`: `_analyze_import_graph` and `build_module_east_map` must only delegate into `East1BuildHelpers`
 - `transpile_cli.py`: real implementation lives in `src/toolchain/frontends/transpile_cli.py`; `src/toolchain/compiler/transpile_cli.py` remains only as a thin compatibility wrapper
 
 Acceptance conditions:
@@ -675,14 +675,14 @@ Acceptance conditions:
 
 1. Phase 0: fix contract tests (`EAST3` required fields, `ForCore` / `iter_plan` requirements, dispatch application point)
 2. Phase 1: separate APIs (move responsibilities into `east1.py`, `east2.py`, `east3.py`)
-3. Phase 2: make `EAST3` the main route (inventory re-decision logic inside `py2x.py --target cpp`)
+3. Phase 2: make `EAST3` the main route (inventory re-decision logic inside `pytra-cli.py --target cpp`)
 4. Phase 3: separate hooks (remove temporary stage mixing)
 5. Phase 4: reduce the `EAST2` route into compatibility mode, then retire it in stages
 
 Notes:
 
 - Track progress for each phase in `docs/ja/todo/index.md` and `docs/ja/plans/plan-east123-migration.md`.
-- Current Phase 4 operation: every `py2*.py` defaults to `--east-stage 3`. `py2x.py --target cpp` rejects `--east-stage 2`, while the eight non-C++ converters keep the compatibility route and print `warning: --east-stage 2 is compatibility mode; default is 3.`
+- Current Phase 4 operation: every `py2*.py` defaults to `--east-stage 3`. `pytra-cli.py --target cpp` rejects `--east-stage 2`, while the eight non-C++ converters keep the compatibility route and print `warning: --east-stage 2 is compatibility mode; default is 3.`
 
 ## 21. Acceptance Criteria for EAST Adoption
 
