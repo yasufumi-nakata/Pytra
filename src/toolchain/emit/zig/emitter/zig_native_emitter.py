@@ -1116,6 +1116,16 @@ class ZigNativeEmitter:
         fn_kw = "pub fn" if self.is_submodule else "fn"
         self._emit_line(fn_kw + " " + name + "(" + ", ".join(arg_strs) + ") " + ret_type + " {")
         self.indent += 1
+        # ArrayList 型パラメータを var にコピー（.append で mutable が必要）
+        for j in range(len(arg_names)):
+            raw = args[j] if j < len(args) else arg_names[j]
+            raw_any = arg_types.get(raw) if isinstance(raw, str) else None
+            if not isinstance(raw_any, str):
+                raw_any = arg_types.get(arg_names[j])
+            py_type = raw_any.strip() if isinstance(raw_any, str) else ""
+            norm = self._normalize_type(py_type)
+            if norm.startswith("list[") or norm in {"bytearray", "bytes"}:
+                self._emit_line("var " + arg_names[j] + " = " + arg_names[j] + ";")
         self._push_function_context(stmt, arg_names, args)
         self._emit_block(stmt.get("body"))
         self._pop_function_context()
@@ -1153,6 +1163,9 @@ class ZigNativeEmitter:
             iter_expr_node = iter_plan.get("iter_expr")
             if isinstance(iter_expr_node, dict):
                 iter_expr = self._render_expr(iter_expr_node)
+                iter_type = self._get_expr_type(iter_expr_node)
+                if iter_type.startswith("list[") or iter_type in {"bytearray", "bytes"}:
+                    iter_expr = iter_expr + ".items"
                 self._emit_line("for (" + iter_expr + ") |" + target_name + "| {")
                 self.indent += 1
                 if len(self._local_var_stack) > 0:
@@ -1170,6 +1183,9 @@ class ZigNativeEmitter:
                     self._emit_range_for_from_call(stmt, target_name, iter_any)
                     return
         iter_expr = self._render_expr(iter_any)
+        iter_type = self._get_expr_type(iter_any) if isinstance(iter_any, dict) else ""
+        if iter_type.startswith("list[") or iter_type in {"bytearray", "bytes"}:
+            iter_expr = iter_expr + ".items"
         self._emit_line("for (" + iter_expr + ") |" + target_name + "| {")
         self.indent += 1
         if len(self._local_var_stack) > 0:
@@ -1740,7 +1756,7 @@ class ZigNativeEmitter:
                     return "0"
                 if fname == "int":
                     if len(arg_strs) > 0:
-                        return "@as(i64, " + arg_strs[0] + ")"
+                        return "@as(i64, @intFromFloat(@as(f64, " + arg_strs[0] + ")))"
                     return "0"
                 if fname == "float":
                     if len(arg_strs) > 0:
