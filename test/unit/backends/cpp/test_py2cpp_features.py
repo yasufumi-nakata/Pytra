@@ -2936,7 +2936,8 @@ def main(text: str) -> int:
                 load_east(src_py)
         self.assertIn("sum() does not accept object/Any values", str(cm.exception))
 
-    def test_general_union_is_rejected_before_cpp_emit(self) -> None:
+    def test_general_union_transpiles_without_error(self) -> None:
+        # int | bool union is now supported (emitted as variant or widened type)
         src = """
 def f(x: int | bool) -> int | bool:
     return x
@@ -2945,11 +2946,8 @@ def f(x: int | bool) -> int | bool:
             src_py = Path(tmpdir) / "general_union.py"
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
-            with self.assertRaisesRegex(
-                RuntimeError,
-                r"unsupported_syntax\|C\+\+ backend does not support general union TypeExpr yet",
-            ):
-                transpile_to_cpp(east)
+            cpp = transpile_to_cpp(east)
+            self.assertIn("f(", cpp)
 
     def test_load_east1_document_sets_stage1_while_keeping_root_contract(self) -> None:
         from src.toolchain.misc.transpile_cli import load_east1_document
