@@ -246,9 +246,13 @@ class ZigNativeEmitter:
         self.relative_import_name_aliases: dict[str, str] = {}
         self.current_class_name: str = ""
         self.current_class_base_name: str = ""
+        self._dataclass_names: set[str] = set()
+        self._dataclass_fields: dict[str, list[str]] = {}
+        self._classes_with_init: set[str] = set()
         self._local_type_stack: list[dict[str, str]] = []
         self._ref_var_stack: list[set[str]] = []
         self._local_var_stack: list[set[str]] = []
+        self._mutated_var_stack: list[set[str]] = []
 
     def _current_type_map(self) -> dict[str, str]:
         if len(self._local_type_stack) == 0:
@@ -264,6 +268,64 @@ class ZigNativeEmitter:
         if len(self._local_var_stack) == 0:
             return set()
         return self._local_var_stack[-1]
+
+    def _current_mutated_vars(self) -> set[str]:
+        if len(self._mutated_var_stack) == 0:
+            return set()
+        return self._mutated_var_stack[-1]
+
+    def _scan_mutated_vars(self, body_any: Any) -> set[str]:
+        """関数本体をスキャンし、再代入・AugAssign される変数名を集める。"""
+        mutated: set[str] = set()
+        body = self._dict_list(body_any)
+        for stmt in body:
+            kind = stmt.get("kind")
+            if kind == "AugAssign":
+                target = stmt.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    mutated.add(_safe_ident(target.get("id"), ""))
+            elif kind == "Assign":
+                target = stmt.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    mutated.add(_safe_ident(target.get("id"), ""))
+                targets = stmt.get("targets")
+                if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
+                    if targets[0].get("kind") == "Name":
+                        mutated.add(_safe_ident(targets[0].get("id"), ""))
+            elif kind == "If":
+                mutated.update(self._scan_mutated_vars(stmt.get("body")))
+                mutated.update(self._scan_mutated_vars(stmt.get("orelse")))
+            elif kind == "ForCore":
+                tp = stmt.get("target_plan")
+                if isinstance(tp, dict) and tp.get("kind") == "NameTarget":
+                    mutated.add(_safe_ident(tp.get("id"), ""))
+                mutated.update(self._scan_mutated_vars(stmt.get("body")))
+            elif kind == "While":
+                mutated.update(self._scan_mutated_vars(stmt.get("body")))
+        return mutated
+
+    def _is_var_mutated(self, name: str) -> bool:
+        return name in self._current_mutated_vars()
+
+    def _body_uses_name(self, body_any: Any, name: str) -> bool:
+        """body 内で指定した名前が参照されているか簡易判定する。"""
+        if not isinstance(body_any, list):
+            return False
+        text = str(body_any)
+        return "'" + name + "'" in text
+
+    def _body_mutates_self(self, body_any: Any) -> bool:
+        """body 内で self のフィールドに代入があるか判定する。"""
+        body = self._dict_list(body_any)
+        for stmt in body:
+            kind = stmt.get("kind")
+            if kind in {"Assign", "AnnAssign", "AugAssign"}:
+                target = stmt.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Attribute":
+                    val = target.get("value")
+                    if isinstance(val, dict) and val.get("kind") == "Name" and val.get("id") == "self":
+                        return True
+        return False
 
     def _push_function_context(self, stmt: dict[str, Any], arg_names: list[str], arg_order: list[Any]) -> None:
         type_map: dict[str, str] = {}
@@ -285,6 +347,7 @@ class ZigNativeEmitter:
         self._local_type_stack.append(type_map)
         self._ref_var_stack.append(ref_vars)
         self._local_var_stack.append(local_vars)
+        self._mutated_var_stack.append(self._scan_mutated_vars(stmt.get("body")))
 
     def _pop_function_context(self) -> None:
         if len(self._local_type_stack) > 0:
@@ -293,6 +356,8 @@ class ZigNativeEmitter:
             self._ref_var_stack.pop()
         if len(self._local_var_stack) > 0:
             self._local_var_stack.pop()
+        if len(self._mutated_var_stack) > 0:
+            self._mutated_var_stack.pop()
 
     def _is_top_level_decl(self, stmt: dict[str, Any]) -> bool:
         """トップレベル宣言（関数/クラス/import/型エイリアス）かどうか判定する。"""
@@ -403,6 +468,20 @@ class ZigNativeEmitter:
             if kind == "ClassDef":
                 name = _safe_ident(stmt.get("name"), "Class")
                 self.class_names.add(name)
+                cls_body = self._dict_list(stmt.get("body"))
+                if bool(stmt.get("dataclass")):
+                    self._dataclass_names.add(name)
+                    fields: list[str] = []
+                    for sub in cls_body:
+                        if sub.get("kind") == "AnnAssign":
+                            target_any = sub.get("target")
+                            if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                                fields.append(_safe_ident(target_any.get("id"), "field"))
+                    self._dataclass_fields[name] = fields
+                for sub in cls_body:
+                    if sub.get("kind") == "FunctionDef" and sub.get("name") == "__init__":
+                        self._classes_with_init.add(name)
+                        break
 
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         self._emit_leading_trivia(stmt, prefix="// ")
@@ -435,10 +514,11 @@ class ZigNativeEmitter:
                 zig_ty = self._zig_type(decl_type)
                 if len(self._local_var_stack) > 0:
                     self._current_local_vars().add(target_name)
+                decl_kw = "var" if self._is_var_mutated(target_name) else "const"
                 if value_node is None and bool(stmt.get("declare")):
                     self._emit_line("var " + target + ": " + zig_ty + " = undefined;")
                 else:
-                    self._emit_line("var " + target + ": " + zig_ty + " = " + value + ";")
+                    self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
             else:
                 self._emit_line(target + " = " + value + ";")
             return
@@ -461,7 +541,8 @@ class ZigNativeEmitter:
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
                         zig_ty = self._zig_type(decl_type)
-                        self._emit_line("var " + target + ": " + zig_ty + " = " + value + ";")
+                        decl_kw = "var" if self._is_var_mutated(target_name) else "const"
+                        self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
                         return
                 self._emit_line(target + " = " + value + ";")
                 return
@@ -482,7 +563,8 @@ class ZigNativeEmitter:
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
                         zig_ty = self._zig_type(decl_type)
-                        self._emit_line("var " + target + ": " + zig_ty + " = " + value + ";")
+                        decl_kw = "var" if self._is_var_mutated(target_name) else "const"
+                        self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
                         return
                 self._emit_line(target + " = " + value + ";")
                 return
@@ -750,11 +832,18 @@ class ZigNativeEmitter:
         arg_types_any = stmt.get("arg_types")
         arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
         has_self = False
+        self_used = self._body_uses_name(stmt.get("body"), "self")
+        self_mutated = self._body_mutates_self(stmt.get("body"))
         for i, arg in enumerate(arg_order):
             arg_name = _safe_ident(arg, "arg")
             if i == 0 and arg_name == "self":
                 has_self = True
-                arg_strs.append("self: *" + cls_name)
+                if not self_used:
+                    arg_strs.append("_: *const " + cls_name)
+                elif self_mutated:
+                    arg_strs.append("self: *" + cls_name)
+                else:
+                    arg_strs.append("self: *const " + cls_name)
                 continue
             args.append(arg_name)
             zig_ty = self._resolve_arg_zig_type(arg_name, arg, arg_types)
@@ -804,7 +893,8 @@ class ZigNativeEmitter:
                     elt_name = _safe_ident(elt.get("id"), "value")
                     if elt_name not in self._current_local_vars():
                         self._current_local_vars().add(elt_name)
-                        self._emit_line("var " + name + " = " + tmp + "[" + str(i) + "];")
+                        decl_kw = "var" if self._is_var_mutated(elt_name) else "const"
+                        self._emit_line(decl_kw + " " + name + " = " + tmp + "[" + str(i) + "];")
                         i += 1
                         continue
                 self._emit_line(name + " = " + tmp + "[" + str(i) + "];")
@@ -889,6 +979,14 @@ class ZigNativeEmitter:
                 return "std.math.pow(f64, " + left + ", " + right + ")"
             if op == "FloorDiv":
                 return "@divFloor(" + left + ", " + right + ")"
+            if op == "Div":
+                left_type = self._lookup_expr_type(ed.get("left"))
+                right_type = self._lookup_expr_type(ed.get("right"))
+                if left_type in {"float64", "float32", "float"} or right_type in {"float64", "float32", "float"}:
+                    return "(" + left + " / " + right + ")"
+                return "@as(f64, @floatFromInt(" + left + ")) / @as(f64, @floatFromInt(" + right + "))"
+            if op == "Mod":
+                return "@mod(" + left + ", " + right + ")"
             sym = _binop_symbol(op)
             return "(" + left + " " + sym + " " + right + ")"
         if kind == "UnaryOp":
@@ -1064,7 +1162,17 @@ class ZigNativeEmitter:
                         return fn_expr + "()"
                     return "{}"
                 if fname in self.class_names:
-                    return cls_name_init(fname, arg_strs)
+                    if fname in self._dataclass_names:
+                        fields = self._dataclass_fields.get(fname, [])
+                        field_inits: list[str] = []
+                        j = 0
+                        while j < len(fields) and j < len(arg_strs):
+                            field_inits.append("." + fields[j] + " = " + arg_strs[j])
+                            j += 1
+                        return fname + "{ " + ", ".join(field_inits) + " }"
+                    if fname in self._classes_with_init:
+                        return fname + ".init(" + ", ".join(arg_strs) + ")"
+                    return fname + "{}"
                 return fname + "(" + ", ".join(arg_strs) + ")"
             if fkind == "Attribute":
                 obj = self._render_expr(func_any.get("value"))
