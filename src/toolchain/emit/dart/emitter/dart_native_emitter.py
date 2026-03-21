@@ -102,8 +102,10 @@ def _safe_ident(name: Any, fallback: str = "value") -> str:
     out = "".join(chars)
     if out == "":
         out = fallback
+    if out == "_":
+        out = "unused_"
     if out[0].isdigit():
-        out = "_" + out
+        out = "d_" + out
     if out in _DART_KEYWORDS:
         out = out + "_"
     return out
@@ -363,10 +365,10 @@ def _runtime_symbol_alias_expr(runtime_module_id: str, runtime_symbol: str) -> s
         if sym == "e":
             return "pyMathE()"
         if sym == "log10":
-            return "(double x) => __pytraLog(x) / __pytraLog(10)"
+            return "(double x) => pytraLog(x) / pytraLog(10)"
         return "pyMath" + _pascal_symbol_name(sym)
     if _is_perf_counter_runtime_symbol(mod, sym):
-        return "__pytraPerfCounter"
+        return "pytraPerfCounter"
     if _is_glob_runtime_symbol(mod, sym):
         return "(String _pattern) => <String>[]"
     if _is_os_runtime_symbol(mod, sym):
@@ -392,9 +394,9 @@ def _runtime_symbol_alias_expr(runtime_module_id: str, runtime_symbol: str) -> s
         if sym == "path":
             return "<String>[]"
         if sym == "stderr":
-            return "__PytraStderr()"
+            return "PytraStderr()"
         if sym == "stdout":
-            return "__PytraStdout()"
+            return "PytraStdout()"
         if sym == "exit":
             return "(dynamic code) => exit(code is int ? code : 0)"
         if sym == "set_argv" or sym == "set_path":
@@ -408,6 +410,8 @@ def _runtime_symbol_alias_expr(runtime_module_id: str, runtime_symbol: str) -> s
 
 def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
     mod = canonical_runtime_module_id(runtime_module_id.strip())
+    if mod == "pytra.std.math":
+        return "import 'dart:math' as " + alias_txt + ";"
     if mod in {"enum", "pytra.std.enum"}:
         return "// import " + alias_txt + " (enum stub)"
     if mod == "pytra.std.argparse":
@@ -2014,11 +2018,11 @@ class DartNativeEmitter:
             if fn_name == "int":
                 if len(rendered_args) == 0:
                     return "0"
-                return "((" + rendered_args[0] + ") is String ? int.parse(" + rendered_args[0] + ") : (" + rendered_args[0] + " as num).toInt())"
+                return "pytraInt(" + rendered_args[0] + ")"
             if fn_name == "float":
                 if len(rendered_args) == 0:
                     return "0.0"
-                return "((" + rendered_args[0] + ") is String ? double.parse(" + rendered_args[0] + ") : (" + rendered_args[0] + " as num).toDouble())"
+                return "pytraFloat(" + rendered_args[0] + ")"
             if fn_name == "bool":
                 if len(rendered_args) == 0:
                     return "false"
@@ -2064,7 +2068,7 @@ class DartNativeEmitter:
             if fn_name == "zip":
                 if len(rendered_args) < 2:
                     return "[]"
-                return "__pytraZip(" + ", ".join(rendered_args) + ")"
+                return "pytraZip(" + ", ".join(rendered_args) + ")"
             if fn_name == "range":
                 if len(rendered_args) == 1:
                     return "List.generate(" + rendered_args[0] + ", (i) => i)"
@@ -2074,11 +2078,11 @@ class DartNativeEmitter:
             if fn_name == "bytearray":
                 if len(rendered_args) == 0:
                     return "<int>[]"
-                return "List<int>.from(" + rendered_args[0] + ")"
+                return "pytraBytearray(" + rendered_args[0] + ")"
             if fn_name == "bytes":
                 if len(rendered_args) == 0:
                     return "<int>[]"
-                return "List<int>.unmodifiable(" + rendered_args[0] + ")"
+                return "pytraBytes(" + rendered_args[0] + ")"
             if fn_name in self.class_names:
                 return fn_name + "(" + ", ".join(rendered_args) + ")"
             rendered_name = self._render_name_expr(func_any)
@@ -2100,6 +2104,13 @@ class DartNativeEmitter:
             if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
                 owner_name = _safe_ident(owner_node.get("id"), "")
                 if owner_name in self.imported_modules:
+                    # Dart math: floor/ceil/fabs are instance methods, not top-level
+                    if owner_name == "math" and attr in {"floor", "ceil"}:
+                        if len(rendered_args) >= 1:
+                            return "(" + rendered_args[0] + " as num)." + attr + "()"
+                    if owner_name == "math" and attr == "fabs":
+                        if len(rendered_args) >= 1:
+                            return "(" + rendered_args[0] + " as num).abs()"
                     return owner + "." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             # String methods
             if owner_type == "str" or attr in {

@@ -17,7 +17,7 @@ double pyMathAtan2(dynamic y, dynamic x) =>
     math.atan2((y as num).toDouble(), (x as num).toDouble());
 double pyMathExp(dynamic x) => math.exp((x as num).toDouble());
 double pyMathLog(dynamic x) => math.log((x as num).toDouble());
-double __pytraLog(dynamic x) => math.log((x as num).toDouble());
+double pytraLog(dynamic x) => math.log((x as num).toDouble());
 double pyMathFloor(dynamic x) => ((x as num).toDouble()).floorToDouble();
 double pyMathCeil(dynamic x) => ((x as num).toDouble()).ceilToDouble();
 double pyMathFabs(dynamic x) => ((x as num).toDouble()).abs();
@@ -27,11 +27,11 @@ dynamic pyMathPow(dynamic x, dynamic y) =>
     math.pow((x as num).toDouble(), (y as num).toDouble());
 
 // --- perf counter ---
-double __pytraPerfCounter() =>
+double pytraPerfCounter() =>
     DateTime.now().microsecondsSinceEpoch / 1000000.0;
 
 // --- zip ---
-List<List<dynamic>> __pytraZip(dynamic a, dynamic b) {
+List<List<dynamic>> pytraZip(dynamic a, dynamic b) {
   List<dynamic> la = (a is List) ? a : [];
   List<dynamic> lb = (b is List) ? b : [];
   int n = la.length < lb.length ? la.length : lb.length;
@@ -43,10 +43,10 @@ List<List<dynamic>> __pytraZip(dynamic a, dynamic b) {
 }
 
 // --- noop ---
-void __pytraNoop() {}
+void pytraNoop() {}
 
 // --- int/float conversion ---
-int __pytraInt(dynamic v) {
+int pytraInt(dynamic v) {
   if (v is int) return v;
   if (v is double) return v.toInt();
   if (v is String) return int.parse(v);
@@ -54,7 +54,7 @@ int __pytraInt(dynamic v) {
   return 0;
 }
 
-double __pytraFloat(dynamic v) {
+double pytraFloat(dynamic v) {
   if (v is double) return v;
   if (v is int) return v.toDouble();
   if (v is String) return double.parse(v);
@@ -63,7 +63,7 @@ double __pytraFloat(dynamic v) {
 }
 
 // --- slice ---
-List<dynamic> __pytraSlice(dynamic container, int start, dynamic end_) {
+List<dynamic> pytraSlice(dynamic container, int start, dynamic end_) {
   if (container is List) {
     int len = container.length;
     int s = start < 0 ? (len + start) : start;
@@ -78,24 +78,24 @@ List<dynamic> __pytraSlice(dynamic container, int start, dynamic end_) {
 }
 
 // --- bytearray/bytes ---
-List<int> __pytraBytearray([dynamic arg]) {
+List<int> pytraBytearray([dynamic arg]) {
   if (arg == null) return <int>[];
   if (arg is int) return List<int>.filled(arg, 0);
   if (arg is List) return List<int>.from(arg);
   return <int>[];
 }
 
-List<int> __pytraBytes([dynamic arg]) {
+List<int> pytraBytes([dynamic arg]) {
   if (arg == null) return List<int>.unmodifiable(<int>[]);
   if (arg is List) return List<int>.unmodifiable(arg);
   return List<int>.unmodifiable(<int>[]);
 }
 
 // --- IO helpers (for sys.stderr/stdout stubs) ---
-class __PytraStderr {
+class PytraStderr {
   void write(dynamic text) => stderr.write(text);
 }
 
-class __PytraStdout {
+class PytraStdout {
   void write(dynamic text) => stdout.write(text);
 }
