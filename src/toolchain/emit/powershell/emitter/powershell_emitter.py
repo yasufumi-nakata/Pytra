@@ -139,7 +139,7 @@ def _is_extern_value(value: Any) -> bool:
 
 _IGNORED_IMPORT_MODULES: set[str] = {
     "typing", "pytra.typing", "dataclasses", "__future__",
-    "pytra.utils.assertions", "pytra.std.extern",
+    "pytra.utils.assertions", "pytra.std.extern", "pytra.std.abi",
 }
 
 
