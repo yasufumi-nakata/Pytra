@@ -170,6 +170,12 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
         "kind": "copy_files",
         "files": [
             ("runtime/powershell/built_in/py_runtime.ps1", "py_runtime.ps1"),
+            ("runtime/powershell/std/math_native.ps1", "std/math_native.ps1"),
+            ("runtime/powershell/std/time_native.ps1", "std/time_native.ps1"),
+            ("runtime/powershell/std/os_native.ps1", "std/os_native.ps1"),
+            ("runtime/powershell/std/os_path_native.ps1", "std/os_path_native.ps1"),
+            ("runtime/powershell/std/sys_native.ps1", "std/sys_native.ps1"),
+            ("runtime/powershell/std/glob_native.ps1", "std/glob_native.ps1"),
         ],
     },
 }

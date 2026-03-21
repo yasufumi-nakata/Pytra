@@ -119,7 +119,7 @@ def _render_lvalue(expr_any: Any) -> str:
 
 _IGNORED_IMPORT_MODULES: set[str] = {
     "typing", "pytra.typing", "dataclasses", "__future__",
-    "pytra.utils.assertions",
+    "pytra.utils.assertions", "pytra.std.extern",
 }
 
 
@@ -1335,6 +1335,18 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         ps_path = _module_to_ps_path(module)
         if ps_path != "":
             return [indent + '. (Join-Path $PSScriptRoot "' + ps_path + '")']
+        # from pytra.std import os, glob → dot-source each sub-module
+        if module in ("pytra.std", "pytra.utils"):
+            sub_lines: list[str] = []
+            for entry in _get_list(stmt, "names"):
+                if not isinstance(entry, dict):
+                    continue
+                sub_name = _get_str(entry, "name")
+                sub_path = _module_to_ps_path(module + "." + sub_name)
+                if sub_path != "":
+                    sub_lines.append(indent + '. (Join-Path $PSScriptRoot "' + sub_path + '")')
+            if len(sub_lines) > 0:
+                return sub_lines
         return [indent + "# import: " + module]
 
     if kind == "Import":
@@ -1721,6 +1733,21 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
         "$ErrorActionPreference = \"Stop\"",
         "",
     ]
+
+    # Dot-source native seam for stdlib modules
+    _NATIVE_SEAM_MAP: dict[str, str] = {
+        "math.east": "std/math_native.ps1",
+        "time.east": "std/time_native.ps1",
+        "os.east": "std/os_native.ps1",
+        "os_path.east": "std/os_path_native.ps1",
+        "sys.east": "std/sys_native.ps1",
+        "glob.east": "std/glob_native.ps1",
+    }
+    cur_mod = _CURRENT_MODULE_ID[0]
+    native_seam = _NATIVE_SEAM_MAP.get(cur_mod, "")
+    if native_seam != "":
+        lines.append('. (Join-Path $PSScriptRoot "' + native_seam + '")')
+        lines.append("")
 
     # Detect implicit format_value dependency (f-string format_spec)
     if _has_format_spec_in_doc(east_doc):

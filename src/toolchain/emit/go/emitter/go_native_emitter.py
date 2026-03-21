@@ -741,7 +741,7 @@ def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
         symbol_name = name[dot + 1 :].strip()
         if module_name == "" or symbol_name == "":
             return ""
-        return "__pytra_" + module_name + "_" + symbol_name
+        return module_name + "_native_" + symbol_name
     if runtime_source == "resolved_runtime_call":
         return "py" + _snake_to_go_helper_name(name)
     return "__pytra_" + name
@@ -839,14 +839,14 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
             runtime_symbol = _resolved_runtime_symbol(resolved_runtime, "resolved_runtime_call")
             if runtime_symbol != "":
                 if _is_math_constant(expr):
-                    return "float64(" + runtime_symbol + ")"
+                    return "float64(" + runtime_symbol + "())"
                 return runtime_symbol
             return resolved_runtime
     # Rewrite module attribute access: math.pi → __pytra_math_pi, time.x → __pytra_time_x
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner_id = value_any.get("id", "")
         if owner_id in {"math", "time"} and attr != "":
-            return "__pytra_" + owner_id + "_" + attr
+            return owner_id + "_native_" + attr + "()"
     value = _render_expr(value_any)
     return value + "." + attr
 
@@ -957,7 +957,7 @@ def _render_call_via_runtime_call(
     rendered_runtime_args = _render_runtime_args(adapter_kind, args, keywords_any)
     if runtime_call.find(".") >= 0:
         if _is_math_constant(expr):
-            return "float64(" + runtime_symbol + ")"
+            return "float64(" + runtime_symbol + "())"
         if _is_math_runtime(expr):
             rendered_math_args: list[str] = []
             i = 0
@@ -1105,7 +1105,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     rendered_utils_args.append(_render_expr(args_with_keywords[ui]))
                     ui += 1
                 if owner_id in {"math", "time"}:
-                    return "__pytra_" + owner_id + "_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
+                    return owner_id + "_native_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
                 return "__pytra_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
             if _call_name(owner_any) == "super":

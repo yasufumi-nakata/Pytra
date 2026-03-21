@@ -362,8 +362,10 @@ module PytraMathShim
   def self.e = Math::E
 end
 
-time = PytraTimeShim
-math = PytraMathShim
+# Define as Kernel methods so they are visible from all files.
+define_method(:time) { PytraTimeShim }
+define_method(:math) { PytraMathShim }
+define_method(:pi) { Math::PI }
 
 # Python built-in `open(path, mode)` shim.
 class PyFile

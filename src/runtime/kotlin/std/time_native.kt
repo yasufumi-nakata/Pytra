@@ -1,7 +1,7 @@
-// Generated std/time delegates host bindings through this native seam.
+// Generated std/time.kt delegates host bindings through this native seam.
 
-private val __pytra_time_start = System.nanoTime()
+private val time_native_start = System.nanoTime()
 
-fun __pytra_time_perf_counter(): Double {
-    return (System.nanoTime() - __pytra_time_start).toDouble() / 1_000_000_000.0
+fun time_native_perf_counter(): Double {
+    return (System.nanoTime() - time_native_start).toDouble() / 1_000_000_000.0
 }

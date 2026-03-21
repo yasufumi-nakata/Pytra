@@ -736,7 +736,7 @@ def _resolved_runtime_symbol(runtime_call: str) -> str:
         symbol_name = name[dot + 1 :].strip()
         if module_name == "" or symbol_name == "":
             return ""
-        return "__pytra_" + module_name + "_" + symbol_name
+        return module_name + "_native_" + symbol_name
     return "__pytra_" + name
 
 
@@ -848,7 +848,7 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner_id = value_any.get("id", "")
         if owner_id in {"math", "time"} and attr != "":
-            return "__pytra_" + owner_id + "_" + attr
+            return owner_id + "_native_" + attr
     value = _render_expr(value_any)
     return value + "." + attr
 
@@ -1118,7 +1118,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     rendered_utils_args.append(_render_expr(args[ui]))
                     ui += 1
                 if owner_id in {"math", "time"}:
-                    return "__pytra_" + owner_id + "_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
+                    return owner_id + "_native_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
                 return "__pytra_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
             if _call_name(owner_any) in {"super", "super_"}:
