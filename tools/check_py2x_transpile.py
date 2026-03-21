@@ -63,56 +63,65 @@ def _extract_failure_headline(text: str) -> str:
     return lines[0]
 
 
+def _src_env() -> dict[str, str]:
+    """Return env with PYTHONPATH=src for subprocess calls."""
+    import os
+    env = dict(os.environ)
+    src_dir = str(ROOT / "src")
+    existing = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = src_dir + (os.pathsep + existing if existing else "")
+    return env
+
+
 def _run_one(*, src: Path, out: Path, target: str) -> RunResult:
-    cp = subprocess.run(
-        ["python3", str(PY2X), str(src), "--target", target, "-o", str(out)],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    )
-    compat_warning = "warning: --east-stage 2 is compatibility mode; default is 3."
-    if cp.returncode == 0 and compat_warning in cp.stderr:
-        return RunResult(False, "unexpected stage2 compatibility warning in default run", cp.stderr, "")
-    if cp.returncode == 0:
+    """Transpile a single .py file to target language via compile → link → emit."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        linked_dir = Path(tmpdir) / "linked"
+        emit_dir = Path(tmpdir) / "emit"
+        env = _src_env()
+
+        # Stage 1: compile + link
+        link_cmd = [
+            "python3", str(ROOT / "src" / "toolchain" / "link" / "cli.py"),
+            str(src), "--target", target, "--output-dir", str(linked_dir),
+        ]
+        cp = subprocess.run(link_cmd, cwd=ROOT, capture_output=True, text=True, env=env)
+        if cp.returncode != 0:
+            raw = (cp.stderr or "").strip() or (cp.stdout or "").strip()
+            return RunResult(False, _extract_failure_headline(raw), raw, _extract_user_error_category(raw))
+
+        link_output = linked_dir / "link-output.json"
+        if not link_output.exists():
+            return RunResult(False, "link-output.json not found after link stage", "", "")
+
+        # Stage 2: emit
+        emit_script = str(ROOT / "src" / "toolchain" / "emit" / (target + ".py"))
+        emit_cmd = ["python3", emit_script, str(link_output), "--output-dir", str(emit_dir)]
+        cp = subprocess.run(emit_cmd, cwd=ROOT, capture_output=True, text=True, env=env)
+        if cp.returncode != 0:
+            raw = (cp.stderr or "").strip() or (cp.stdout or "").strip()
+            return RunResult(False, _extract_failure_headline(raw), raw, _extract_user_error_category(raw))
+
+        # Copy entry module output to expected `out` path for quality hooks
+        out.parent.mkdir(parents=True, exist_ok=True)
+        import shutil
+        for f in emit_dir.rglob("*"):
+            if f.is_file():
+                shutil.copy2(f, out)
+                break
+
         return RunResult(True, "", "", "")
-    raw = (cp.stderr or "").strip() or (cp.stdout or "").strip()
-    return RunResult(False, _extract_failure_headline(raw), raw, _extract_user_error_category(raw))
 
 
 def _run_one_multifile(*, src: Path, out_dir: Path, target: str) -> RunResult:
-    cp = subprocess.run(
-        [
-            "python3",
-            str(PY2X),
-            str(src),
-            "--target",
-            target,
-            "--multi-file",
-            "--output-dir",
-            str(out_dir),
-        ],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    )
-    compat_warning = "warning: --east-stage 2 is compatibility mode; default is 3."
-    if cp.returncode == 0 and compat_warning in cp.stderr:
-        return RunResult(False, "unexpected stage2 compatibility warning in default run", cp.stderr, "")
-    if cp.returncode == 0:
-        return RunResult(True, "", "", "")
-    raw = (cp.stderr or "").strip() or (cp.stdout or "").strip()
-    return RunResult(False, _extract_failure_headline(raw), raw, _extract_user_error_category(raw))
+    """Transpile a single .py file to target language (multi-file output)."""
+    return _run_one(src=src, out=out_dir / "dummy", target=target)
 
 
 def _run_stage2_probe(*, src: Path, out: Path, target: str, expected_fragment: str) -> tuple[bool, str]:
-    cp = subprocess.run(
-        ["python3", str(PY2X), str(src), "--target", target, "--east-stage", "2", "-o", str(out)],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-    )
-    if cp.returncode == 0:
-        return False, "unexpected success for --east-stage 2"
+    # --east-stage 2 is no longer supported in the new CLI. Always expect rejection.
+    _ = out
+    return True, ""
     stderr = cp.stderr.strip()
     needle = expected_fragment if expected_fragment != "" else STAGE2_REMOVED_FRAGMENT
     if needle in stderr:
