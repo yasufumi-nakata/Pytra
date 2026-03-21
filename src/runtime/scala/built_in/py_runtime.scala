@@ -644,10 +644,7 @@ def pyJsonDumps(v: Any): String = {
 object time {
     def perf_counter(): Double = System.nanoTime().toDouble / 1_000_000_000.0
 }
-// Python math compat: fabs -> abs, log10 -> log10
-// `import scala.math.*` provides sqrt, sin, cos, etc. but not fabs.
-def fabs(x: Double): Double = scala.math.abs(x)
-def log10(x: Double): Double = scala.math.log10(x)
+// Note: fabs/log10 are handled by Scala emitter math rewrite rules.
 
 
 // Python built-in `open(path, mode)` shim.

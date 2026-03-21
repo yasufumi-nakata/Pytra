@@ -1077,6 +1077,12 @@ def _resolved_runtime_symbol(expr: dict[str, Any], runtime_call: str, runtime_so
         return ""
     if normalized.startswith("py_assert_"):
         return normalized
+    # Functions provided by EAST-merged shim modules (math, etc.)
+    # should not get __pytra_ prefix.
+    if normalized in {"sqrt", "sin", "cos", "tan", "exp", "log", "log10",
+                      "fabs", "floor", "ceil", "pow",
+                      "write_rgb_png", "save_gif", "grayscale_palette", "fire_palette"}:
+        return normalized
     return "__pytra_" + normalized
 
 
@@ -1103,6 +1109,11 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         owner_ident = _safe_ident(value_any.get("id"), "")
         if owner_ident in _PYTRA_MODULE_IMPORTS[0]:
             return field
+    # Rewrite Python math.fabs -> scala.math.abs
+    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
+        owner_name = _safe_ident(value_any.get("id"), "")
+        if owner_name == "math" and field == "fabs":
+            return "scala.math.abs"
     value = _render_expr(value_any)
     return value + "." + field
 
