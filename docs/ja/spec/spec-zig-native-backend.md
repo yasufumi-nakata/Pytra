@@ -44,13 +44,15 @@ Zig には例外機構がない。Python の `try/except/finally` は Zig に変
 - `raise` は `@panic()` に変換する（プロセス即終了）。
 - 入力 Python で例外に依存するロジック（`except` で分岐するフロー）は、Zig backend では期待通りに動作しない。これは仕様上の制約とする。
 
-### 5.2 クラス継承
+### 5.2 クラス継承（composition パターン）
 
-Zig には class 継承がない。Python の継承階層は直接変換できない。
+Zig には class 継承がないため、composition（委譲）パターンで変換する。
 
 - 単一クラス（継承なし）は `struct` に変換する。
-- 継承を使うコードは現時点で未対応（fail-closed）。
-- 将来的に tagged union / interface パターンでの変換を検討する。
+- `class Dog(Animal)` は `Dog` struct に `_base: Animal` フィールドを持たせる。
+- 基底クラスのメソッドで override されていないものは、`self._base.method()` への委譲関数を自動生成する。
+- `super().__init__()` は Pytra パーサーが現在非対応のため、変換できない。
+- ポリモーフィズム（`Animal` 型変数に `Dog` を代入）は `&dog._base` でポインタを取得することで対応可能。ただし仮想ディスパッチ（override メソッドの動的呼び出し）は未対応。
 
 ### 5.3 isinstance / issubclass
 
