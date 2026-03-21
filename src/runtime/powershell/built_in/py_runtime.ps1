@@ -370,9 +370,24 @@ function py_assert_all {
 
 function py_assert_stdout {
     param($expected, $fn)
-    # Stub: just call the function, skip stdout capture
+    # Capture stdout from function call and compare with expected lines
+    $captured = @()
     if ($fn -is [scriptblock]) {
-        & $fn
+        $captured = @(& $fn | ForEach-Object { [string]$_ })
+    } elseif ($fn -is [string]) {
+        $captured = @(& (Get-Command $fn) | ForEach-Object { [string]$_ })
+    } else {
+        return $true
+    }
+    if ($expected -eq $null) { return $true }
+    $exp_arr = @($expected)
+    if ($captured.Length -ne $exp_arr.Length) {
+        throw "py_assert_stdout: expected $($exp_arr.Length) lines, got $($captured.Length): [$($captured -join ', ')]"
+    }
+    for ($i = 0; $i -lt $exp_arr.Length; $i++) {
+        if ([string]$captured[$i] -ne [string]$exp_arr[$i]) {
+            throw "py_assert_stdout: line $i mismatch: expected '$($exp_arr[$i])' got '$($captured[$i])'"
+        }
     }
     return $true
 }

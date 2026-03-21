@@ -298,6 +298,67 @@ class Py2PowerShellExecTest(unittest.TestCase):
     def test_exec_range_downcount_len_minus1(self) -> None:
         self._run_fixture("range_downcount_len_minus1")
 
+    # --- Python 出力一致検証 ---
+    def _assert_output_matches_python(self, stem: str, *, timeout: int = 10) -> None:
+        """transpile + pwsh 実行し、Python 実行結果と stdout が一致するか検証する。"""
+        fixture = find_fixture_case(stem)
+        env = dict(os.environ)
+        py_path = str(ROOT / "src")
+        old = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+
+        py_proc = subprocess.run(
+            [sys.executable, str(fixture)],
+            capture_output=True, text=True, timeout=timeout, env=env,
+        )
+        self.assertEqual(py_proc.returncode, 0, msg=f"Python run failed for {stem}")
+        py_out = py_proc.stdout.strip()
+
+        ps_result = _transpile_and_run(fixture, pwsh=_PWSH, timeout=timeout)
+        self.assertEqual(ps_result.returncode, 0, msg=f"pwsh failed for {stem}:\n{ps_result.stderr}")
+        ps_out = ps_result.stdout.strip()
+
+        self.assertEqual(py_out, ps_out, msg=f"Output mismatch for {stem}")
+
+    def test_output_match_add(self) -> None:
+        self._assert_output_matches_python("add")
+
+    def test_output_match_fib(self) -> None:
+        self._assert_output_matches_python("fib")
+
+    def test_output_match_compare(self) -> None:
+        self._assert_output_matches_python("compare")
+
+    def test_output_match_if_else(self) -> None:
+        self._assert_output_matches_python("if_else")
+
+    def test_output_match_for_range(self) -> None:
+        self._assert_output_matches_python("for_range")
+
+    def test_output_match_loop(self) -> None:
+        self._assert_output_matches_python("loop")
+
+    def test_output_match_lambda_basic(self) -> None:
+        self._assert_output_matches_python("lambda_basic")
+
+    def test_output_match_tuple_assign(self) -> None:
+        self._assert_output_matches_python("tuple_assign")
+
+    def test_output_match_class(self) -> None:
+        self._assert_output_matches_python("class")
+
+    def test_output_match_inheritance(self) -> None:
+        self._assert_output_matches_python("inheritance")
+
+    def test_output_match_super_init(self) -> None:
+        self._assert_output_matches_python("super_init")
+
+    def test_output_match_fstring(self) -> None:
+        self._assert_output_matches_python("fstring")
+
+    def test_output_match_string_ops(self) -> None:
+        self._assert_output_matches_python("string_ops")
+
 
 if __name__ == "__main__":
     unittest.main()

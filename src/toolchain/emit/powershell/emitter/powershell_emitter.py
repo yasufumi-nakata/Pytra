@@ -463,6 +463,13 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
 
         if fk == "Name":
             fn_name = _RENAMED_SYMBOLS[0].get(_get_str(func_d, "id"), _get_str(func_d, "id"))
+            # py_assert_stdout: last arg is a function name → pass as string
+            if fn_name == "py_assert_stdout" and len(args) >= 2:
+                last_arg = args[-1]
+                if isinstance(last_arg, dict) and _get_str(last_arg, "kind") == "Name":
+                    fn_ref_name = _safe_ident(_get_str(last_arg, "id"), "_fn")
+                    other_args = rendered_args[:-1]
+                    return "(py_assert_stdout " + " ".join(other_args) + ' "' + fn_ref_name + '")'
             if fn_name == "print":
                 return "__pytra_print " + " ".join(rendered_args) if len(rendered_args) > 0 else "__pytra_print"
             if fn_name == "len":
@@ -1231,47 +1238,13 @@ def _emit_class_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -
 
 
 def _simplify_main_guard_stmt(stmt: dict[str, Any]) -> dict[str, Any]:
-    """Unwrap py_assert_stdout/py_assert_all wrappers into direct function calls.
+    """main_guard_body をそのまま返す（simplify は行わない）。
 
-    main_guard_body often contains ``print(py_assert_stdout(['...'], _case_main))``
-    which passes ``_case_main`` as a function object.  PowerShell cannot do this,
-    so we extract the inner function name and emit a direct call instead.
+    以前は py_assert_stdout ラッパーを剥がして直接関数呼び出しに変換していたが、
+    それだと Python の出力と一致しない。runtime 側で py_assert_stdout を正しく
+    実装し、EAST3 のノードをそのまま emit する方式に変更。
     """
-    if _get_str(stmt, "kind") != "Expr":
-        return stmt
-    value = stmt.get("value")
-    if not isinstance(value, dict):
-        return stmt
-    # Unwrap print(py_assert_stdout(..., fn_name))
-    if _get_str(value, "kind") == "Call":
-        inner = _unwrap_assert_call(value)
-        if inner is not None:
-            return {"kind": "Expr", "value": {"kind": "Call", "func": inner, "args": []}}
     return stmt
-
-
-def _unwrap_assert_call(call: dict[str, Any]) -> Any:
-    """If call is print(py_assert_*(…, fn_ref)), return fn_ref as a Call target."""
-    func = call.get("func")
-    if not isinstance(func, dict):
-        return None
-    fn_name = _get_str(func, "id") if _get_str(func, "kind") == "Name" else ""
-    args = _get_list(call, "args")
-    # print(py_assert_stdout([...], fn)) -> unwrap inner
-    if fn_name == "print" and len(args) == 1:
-        inner = args[0]
-        if isinstance(inner, dict) and _get_str(inner, "kind") == "Call":
-            return _unwrap_assert_call(inner)
-    # py_assert_stdout([...], fn) -> return fn
-    if fn_name in ("py_assert_stdout", "py_assert_all", "py_assert_true", "py_assert_eq"):
-        if len(args) >= 2:
-            fn_ref = args[-1]
-            if isinstance(fn_ref, dict) and _get_str(fn_ref, "kind") == "Name":
-                return fn_ref
-        # py_assert_all with single arg that is a list of calls
-        if len(args) == 1:
-            return None
-    return None
 
 
 # ---------------------------------------------------------------------------
