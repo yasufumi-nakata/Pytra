@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from toolchain.emit.common.emitter.code_emitter import (
+    collect_reassigned_params,
+    mutable_param_name,
     reject_backend_general_union_type_exprs,
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
     reject_backend_typed_vararg_signatures,
@@ -1342,11 +1344,13 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
     arg_types_any = fn.get("arg_types")
     arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
     names = _function_param_names(fn, drop_self=drop_self)
+    reassigned = collect_reassigned_params(fn)
     out: list[str] = []
     i = 0
     while i < len(names):
         name = names[i]
-        out.append("_ " + name + ": " + _swift_type(arg_types.get(name), allow_void=False))
+        param_name = mutable_param_name(name) if name in reassigned else name
+        out.append("_ " + param_name + ": " + _swift_type(arg_types.get(name), allow_void=False))
         i += 1
     return out
 
@@ -2299,6 +2303,9 @@ def _emit_function(
     param_names = _function_param_names(fn, drop_self=drop_self)
     arg_types_any = fn.get("arg_types")
     arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
+    # Swift parameters are immutable (let); detect reassigned params
+    reassigned = collect_reassigned_params(fn)
+    mutable_copies: list[tuple[str, str]] = []
     i = 0
     while i < len(param_names):
         p = param_names[i]
@@ -2307,7 +2314,13 @@ def _emit_function(
         type_map[p] = _swift_type(arg_type, allow_void=False)
         if _is_container_east_type(arg_type):
             ref_vars.add(p)
+        if p in reassigned:
+            mutable_copies.append((p, mutable_param_name(p)))
         i += 1
+
+    # Emit mutable copies for reassigned params
+    for orig, renamed in mutable_copies:
+        lines.append(indent + "    var " + orig + " = " + renamed)
 
     i = 0
     while i < len(body):

@@ -3210,3 +3210,70 @@ class CodeEmitter:
         if t == "str" or self._text_has_prefix(t, "list[") or self._text_has_prefix(t, "dict[") or self._text_has_prefix(t, "set[") or self._text_has_prefix(t, "tuple["):
             return self.truthy_len_expr(body)
         return body
+
+
+# ---------------------------------------------------------------------------
+# Standalone helpers for emitters that do not inherit CodeEmitter
+# ---------------------------------------------------------------------------
+
+def collect_reassigned_params(func_def: dict[str, Any]) -> set[str]:
+    """Return parameter names reassigned in *func_def* body (standalone version).
+
+    For use by emitters that do not inherit :class:`CodeEmitter`.
+    """
+    arg_order = func_def.get("arg_order")
+    if not isinstance(arg_order, list) or len(arg_order) == 0:
+        return set()
+    param_names: set[str] = set()
+    for arg in arg_order:
+        if isinstance(arg, str) and arg != "":
+            param_names.add(arg)
+    if len(param_names) == 0:
+        return set()
+    reassigned: set[str] = set()
+    _scan_reassigned_names_standalone(func_def.get("body"), param_names, reassigned)
+    return reassigned
+
+
+def _scan_reassigned_names_standalone(node: Any, param_names: set[str], out: set[str]) -> None:
+    """Recursively scan for assignments targeting a param name."""
+    if isinstance(node, list):
+        for item in node:
+            _scan_reassigned_names_standalone(item, param_names, out)
+        return
+    if not isinstance(node, dict):
+        return
+    nd: dict[str, Any] = node
+    kind = nd.get("kind", "")
+    if kind in ("Assign", "AnnAssign", "AugAssign"):
+        target = nd.get("target")
+        if isinstance(target, dict):
+            if target.get("kind") == "Name":
+                name = target.get("id", "")
+                if name in param_names:
+                    out.add(name)
+            elif target.get("kind") == "Tuple":
+                elements = target.get("elements")
+                if isinstance(elements, list):
+                    for elem in elements:
+                        if isinstance(elem, dict) and elem.get("kind") == "Name":
+                            name = elem.get("id", "")
+                            if name in param_names:
+                                out.add(name)
+    if kind == "ForCore":
+        tp = nd.get("target_plan")
+        if isinstance(tp, dict) and tp.get("kind") == "NameTarget":
+            name = tp.get("id", "")
+            if name in param_names:
+                out.add(name)
+    for value in nd.values():
+        if isinstance(value, (dict, list)):
+            _scan_reassigned_names_standalone(value, param_names, out)
+
+
+def mutable_param_name(name: str) -> str:
+    """Return renamed parameter for immutable-param languages (standalone version).
+
+    Convention: ``data`` → ``data_``.
+    """
+    return name + "_"

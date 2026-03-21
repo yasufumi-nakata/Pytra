@@ -113,8 +113,8 @@
 文脈: [docs/ja/plans/p2-mutable-param-rename.md](../plans/p2-mutable-param-rename.md)
 
 1. [x] [ID: P2-MUTABLE-PARAM-RENAME-01] `CodeEmitter` に共通メソッドを追加する（実装済み、Zig は暫定対応済み）。
-2. [ ] [ID: P2-MUTABLE-PARAM-RENAME-02] Swift emitter を共通関数呼び出しに修正する。
-3. [ ] [ID: P2-MUTABLE-PARAM-RENAME-03] スタンドアロン関数版を `code_emitter.py` に公開する。
+2. [x] [ID: P2-MUTABLE-PARAM-RENAME-02] Swift emitter を共通関数呼び出しに修正する。
+3. [x] [ID: P2-MUTABLE-PARAM-RENAME-03] スタンドアロン関数版を `code_emitter.py` に公開する。
 
 ### P2: built-in 依存を EAST1 → linker 経由で解決
 
