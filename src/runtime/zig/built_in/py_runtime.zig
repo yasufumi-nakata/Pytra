@@ -286,8 +286,8 @@ pub fn make_obj_drop(comptime T: type, value: T, vtable: *const anyopaque, drop_
 }
 
 /// Empty list (stub for comprehensions).
-pub fn empty_list() void {
-    return;
+pub fn empty_list() std.ArrayList(i64) {
+    return std.ArrayList(i64).init(std.heap.page_allocator);
 }
 
 /// Slice (stub).
@@ -297,13 +297,21 @@ pub fn slice(lower: anytype, upper: anytype) void {
     return;
 }
 
-/// bytearray(size) — allocate zero-initialized byte buffer.
-pub fn bytearray(size: anytype) []u8 {
+/// bytearray(size) — allocate zero-initialized ArrayList(u8).
+pub fn bytearray(size: anytype) std.ArrayList(u8) {
     const alloc = std.heap.page_allocator;
     const n: usize = if (@TypeOf(size) == usize) size else @intCast(size);
-    const buf = alloc.alloc(u8, n) catch return &[_]u8{};
-    @memset(buf, 0);
-    return buf;
+    var list = std.ArrayList(u8).initCapacity(alloc, n) catch return std.ArrayList(u8).init(alloc);
+    list.appendNTimes(0, n) catch {};
+    return list;
+}
+
+/// Create an ArrayList from a slice.
+pub fn list_from(comptime T: type, items: []const T) std.ArrayList(T) {
+    const alloc = std.heap.page_allocator;
+    var list = std.ArrayList(T).init(alloc);
+    list.appendSlice(items) catch {};
+    return list;
 }
 
 /// time.perf_counter() — seconds since arbitrary epoch.

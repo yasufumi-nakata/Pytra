@@ -1586,6 +1586,8 @@ class ZigNativeEmitter:
             obj_type = self._get_expr_type(value_node)
             if obj_type.startswith("dict["):
                 return "(" + obj + ".get(" + idx + ") orelse 0)"
+            if obj_type.startswith("list[") or obj_type in {"bytearray", "bytes"}:
+                return obj + ".items[@intCast(" + idx + ")]"
             return obj + "[" + idx + "]"
         if kind == "List":
             elts_any = ed.get("elts")
@@ -1597,7 +1599,9 @@ class ZigNativeEmitter:
             if resolved.startswith("list["):
                 inner = resolved[5:-1].strip() if resolved.endswith("]") else ""
                 zig_elem = self._zig_type(inner) if inner != "" else "i64"
-                return "&[_]" + zig_elem + "{ " + ", ".join(items) + " }"
+                return "pytra.list_from(" + zig_elem + ", &[_]" + zig_elem + "{ " + ", ".join(items) + " })"
+            if len(items) == 0:
+                return "pytra.list_from(i64, &[_]i64{})"
             return "&.{ " + ", ".join(items) + " }"
         if kind == "Tuple":
             elts_any = ed.get("elts")
@@ -1831,7 +1835,7 @@ class ZigNativeEmitter:
                         return obj + "." + zig_attr + "(" + ", ".join(arg_strs) + ")"
                 if attr == "append":
                     if len(arg_strs) > 0:
-                        return obj + ".append(" + arg_strs[0] + ")"
+                        return obj + ".append(" + arg_strs[0] + ") catch {}"
                 if attr == "join":
                     if len(arg_strs) > 0:
                         return "pytra.str_join_sep(" + obj + ", " + arg_strs[0] + ")"
@@ -2018,8 +2022,8 @@ class ZigNativeEmitter:
         if t.startswith("list[") and t.endswith("]"):
             elem = t[5:-1].strip()
             if elem == "uint8":
-                return "[]u8"
-            return "[]const " + self._zig_type(elem)
+                return "std.ArrayList(u8)"
+            return "std.ArrayList(" + self._zig_type(elem) + ")"
         if t.startswith("set[") and t.endswith("]"):
             return "pytra.PyObject"
         if t.startswith("dict[") and t.endswith("]"):
@@ -2033,7 +2037,7 @@ class ZigNativeEmitter:
         if t.startswith("tuple[") and t.endswith("]"):
             parts = self._split_generic(t[6:-1])
             if len(parts) == 2 and parts[1].strip() == "...":
-                return "[]const " + self._zig_type(parts[0].strip())
+                return "std.ArrayList(" + self._zig_type(parts[0].strip()) + ")"
             inner_types = [self._zig_type(p.strip()) for p in parts]
             return "struct { " + ", ".join("_" + str(i) + ": " + zt for i, zt in enumerate(inner_types)) + " }"
         # --- クラス名 ---
