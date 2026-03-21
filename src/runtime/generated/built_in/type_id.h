@@ -7,6 +7,8 @@
 
 #include "runtime/cpp/core/py_types.h"
 
+namespace pytra::built_in::type_id {
+
 extern list<int64> _TYPE_IDS;
 extern dict<int64, int64> _TYPE_BASE;
 extern dict<int64, list<int64>> _TYPE_CHILDREN;
@@ -50,4 +52,7 @@ bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id);
 bool py_tid_isinstance(const object& value, int64 expected_type_id);
 void _py_reset_type_registry_for_test();
 
+}  // namespace pytra::built_in::type_id
+
+using namespace pytra::built_in::type_id;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_BUILT_IN_TYPE_ID_H

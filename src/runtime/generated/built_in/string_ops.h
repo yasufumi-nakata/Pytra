@@ -7,6 +7,8 @@
 
 #include "runtime/cpp/core/py_types.h"
 
+namespace pytra::built_in::string_ops {
+
 bool _is_space(const str& ch);
 bool _contains_char(const str& chars, const str& ch);
 int64 _normalize_index(int64 idx, int64 n);
@@ -28,4 +30,7 @@ int64 py_rfind(const str& s, const str& needle);
 int64 py_rfind_window(const str& s, const str& needle, int64 start, int64 end);
 str py_replace(const str& s, const str& oldv, const str& newv);
 
+}  // namespace pytra::built_in::string_ops
+
+using namespace pytra::built_in::string_ops;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_BUILT_IN_STRING_OPS_H

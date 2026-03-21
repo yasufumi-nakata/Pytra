@@ -98,6 +98,7 @@ struct Object {
     // Access
     T& operator*() const { return *ptr; }
     T* operator->() const { return ptr; }
+    operator T&() const { return *ptr; }  // implicit conversion to T&
     explicit operator bool() const { return cb != nullptr && ptr != nullptr; }
 
     // Type queries

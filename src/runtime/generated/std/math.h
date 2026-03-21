@@ -7,6 +7,8 @@
 
 #include "runtime/cpp/core/py_scalar_types.h"
 
+namespace pytra::std::math {
+
 extern float64 pi;
 extern float64 e;
 
@@ -22,4 +24,7 @@ float64 floor(float64 x);
 float64 ceil(float64 x);
 float64 pow(float64 x, float64 y);
 
+}  // namespace pytra::std::math
+
+using namespace pytra::std::math;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_STD_MATH_H

@@ -9,6 +9,8 @@
 
 #include <tuple>
 
+namespace pytra::std::os_path {
+
 str join(const str& a, const str& b);
 str dirname(const str& p);
 str basename(const str& p);
@@ -16,4 +18,7 @@ str basename(const str& p);
 str abspath(const str& p);
 bool exists(const str& p);
 
+}  // namespace pytra::std::os_path
+
+using namespace pytra::std::os_path;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_STD_OS_PATH_H

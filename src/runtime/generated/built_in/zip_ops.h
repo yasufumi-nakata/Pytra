@@ -9,6 +9,11 @@
 
 #include <tuple>
 
+namespace pytra::built_in::zip_ops {
+
 list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs);
 
+}  // namespace pytra::built_in::zip_ops
+
+using namespace pytra::built_in::zip_ops;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_BUILT_IN_ZIP_OPS_H

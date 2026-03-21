@@ -7,6 +7,11 @@
 
 #include "runtime/cpp/core/py_scalar_types.h"
 
+namespace pytra::std::timeit {
+
 float64 default_timer();
 
+}  // namespace pytra::std::timeit
+
+using namespace pytra::std::timeit;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_STD_TIMEIT_H

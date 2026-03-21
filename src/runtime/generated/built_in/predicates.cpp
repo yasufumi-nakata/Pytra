@@ -1,34 +1,38 @@
 #include "core/py_runtime.h"
 #include "core/process_runtime.h"
 
-/* Pure-Python source-of-truth for predicate helpers. */
+namespace pytra::built_in::predicates {
 
-template <class T>
-bool py_any(const T& values) {
-    {
-        object __iter_obj_1 = ([&]() -> object { object __obj = values; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }());
-        while (true) {
-            ::std::optional<object> __next_2 = ([&]() -> ::std::optional<object> { object __iter = __iter_obj_1; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }());
-            if (!__next_2.has_value()) break;
-            object value = *__next_2;
-            if (py_to<bool>(value))
-                return true;
+    /* Pure-Python source-of-truth for predicate helpers. */
+    
+    template <class T>
+    bool py_any(const T& values) {
+        {
+            object __iter_obj_1 = ([&]() -> object { object __obj = values; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }());
+            while (true) {
+                ::std::optional<object> __next_2 = ([&]() -> ::std::optional<object> { object __iter = __iter_obj_1; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }());
+                if (!__next_2.has_value()) break;
+                object value = *__next_2;
+                if (py_to<bool>(value))
+                    return true;
+            }
         }
+        return false;
     }
-    return false;
-}
-
-template <class T>
-bool py_all(const T& values) {
-    {
-        object __iter_obj_3 = ([&]() -> object { object __obj = values; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }());
-        while (true) {
-            ::std::optional<object> __next_4 = ([&]() -> ::std::optional<object> { object __iter = __iter_obj_3; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }());
-            if (!__next_4.has_value()) break;
-            object value = *__next_4;
-            if (!(py_to<bool>(value)))
-                return false;
+    
+    template <class T>
+    bool py_all(const T& values) {
+        {
+            object __iter_obj_3 = ([&]() -> object { object __obj = values; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }());
+            while (true) {
+                ::std::optional<object> __next_4 = ([&]() -> ::std::optional<object> { object __iter = __iter_obj_3; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }());
+                if (!__next_4.has_value()) break;
+                object value = *__next_4;
+                if (!(py_to<bool>(value)))
+                    return false;
+            }
         }
+        return true;
     }
-    return true;
-}
+    
+}  // namespace pytra::built_in::predicates

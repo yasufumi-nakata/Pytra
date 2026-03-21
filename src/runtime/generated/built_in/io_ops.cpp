@@ -2,8 +2,12 @@
 #include "core/process_runtime.h"
 #include "built_in/io_ops.h"
 
-/* Extern-marked I/O helper built-ins. */
+namespace pytra::built_in::io_ops {
 
-void py_print(const object& value) {
-    py_print(value);
-}
+    /* Extern-marked I/O helper built-ins. */
+    
+    void py_print(const object& value) {
+        py_print(value);
+    }
+    
+}  // namespace pytra::built_in::io_ops

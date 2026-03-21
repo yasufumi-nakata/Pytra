@@ -9,29 +9,29 @@
 
 #include <optional>
 #include "runtime/cpp/core/exceptions.h"
-#include "core/py_runtime.h"
+
+namespace pytra::std::re {
 
 struct Match;
 
 extern int64 S;
 
-struct Match : public RcObject {
-    rc<list<str>> _groups;
-    str _text;
-    PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
-    
-    Match(const str& text, const rc<list<str>>& groups) {
-        this->_text = text;
-        this->_groups = groups;
-    }
-    str group(int64 idx = 0) const {
-        if (idx == 0)
-            return this->_text;
-        if ((idx < 0) || (idx > (rc_list_ref(this->_groups)).size()))
-            throw IndexError("group index out of range");
-        return py_list_at_ref(rc_list_ref(this->_groups), idx - 1);
-    }
-};
+    struct Match {
+        Object<list<str>> _groups;
+        str _text;
+        
+        Match(const str& text, const Object<list<str>>& groups) {
+            this->_text = text;
+            this->_groups = groups;
+        }
+        str group(int64 idx = 0) const {
+            if (idx == 0)
+                return this->_text;
+            if ((idx < 0) || (idx > (rc_list_ref(this->_groups)).size()))
+                throw IndexError("group index out of range");
+            return py_list_at_ref(rc_list_ref(this->_groups), idx - 1);
+        }
+    };
 
 
 str group(const ::std::optional<rc<Match>>& m, int64 idx = 0);
@@ -45,4 +45,7 @@ int64 _skip_spaces(const str& t, int64 i);
 ::std::optional<rc<Match>> match(const str& pattern, const str& text, int64 flags = 0);
 str sub(const str& pattern, const str& repl, const str& text, int64 flags = 0);
 
+}  // namespace pytra::std::re
+
+using namespace pytra::std::re;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_STD_RE_H

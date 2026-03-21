@@ -7,6 +7,8 @@
 
 #include "runtime/cpp/core/py_types.h"
 
+namespace pytra::utils::assertions {
+
 struct _Union_str_int64_float64_bool_None {
     pytra_type_id tag;
     str str_val;
@@ -29,4 +31,7 @@ bool py_assert_eq(const _Union_str_int64_float64_bool_None& actual, const _Union
 bool py_assert_all(const list<bool>& results, const str& label = "");
 bool py_assert_stdout(const list<str>& expected_lines, const object& fn);
 
+}  // namespace pytra::utils::assertions
+
+using namespace pytra::utils::assertions;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_UTILS_ASSERTIONS_H

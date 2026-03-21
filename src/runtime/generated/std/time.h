@@ -7,6 +7,11 @@
 
 #include "runtime/cpp/core/py_scalar_types.h"
 
+namespace pytra::std::time {
+
 float64 perf_counter();
 
+}  // namespace pytra::std::time
+
+using namespace pytra::std::time;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_STD_TIME_H

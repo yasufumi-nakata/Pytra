@@ -7,6 +7,8 @@
 
 #include "runtime/cpp/core/py_types.h"
 
+namespace pytra::std::sys {
+
 extern list<str> argv;
 extern list<str> path;
 
@@ -16,4 +18,7 @@ void set_path(const rc<list<str>>& values);
 void write_stderr(const str& text);
 void write_stdout(const str& text);
 
+}  // namespace pytra::std::sys
+
+using namespace pytra::std::sys;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_STD_SYS_H

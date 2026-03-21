@@ -7,6 +7,8 @@
 
 #include "runtime/cpp/core/py_types.h"
 
+namespace pytra::utils::png {
+
 void _png_append_list(rc<list<int64>>& dst, const rc<list<int64>>& src);
 int64 _crc32(const rc<list<int64>>& data);
 int64 _adler32(const rc<list<int64>>& data);
@@ -16,4 +18,7 @@ rc<list<int64>> _zlib_deflate_store(const rc<list<int64>>& data);
 rc<list<int64>> _chunk(const rc<list<int64>>& chunk_type, const rc<list<int64>>& data);
 void write_rgb_png(const str& path, int64 width, int64 height, const bytes& pixels);
 
+}  // namespace pytra::utils::png
+
+using namespace pytra::utils::png;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_UTILS_PNG_H

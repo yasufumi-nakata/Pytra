@@ -7,6 +7,8 @@
 
 #include "runtime/cpp/core/py_types.h"
 
+namespace pytra::std::random {
+
 extern list<int64> _state_box;
 extern list<int64> _gauss_has_spare;
 extern list<float64> _gauss_spare;
@@ -19,4 +21,7 @@ rc<list<int64>> choices(const rc<list<int64>>& population, const rc<list<float64
 float64 gauss(float64 mu = 0.0, float64 sigma = 1.0);
 void shuffle(rc<list<int64>>& xs);
 
+}  // namespace pytra::std::random
+
+using namespace pytra::std::random;
 #endif  // PYTRA__WORKSPACE_PYTRA_SRC_RUNTIME_GENERATED_STD_RANDOM_H
