@@ -349,6 +349,14 @@ function __pytra_list_remove {
 function __pytra_isinstance {
     param([object]$obj, [string]$type_name)
     if ($obj -eq $null) { return $false }
+    # Normalize PYTRA_TID_* names to primitive names
+    if ($type_name -eq "PYTRA_TID_BOOL") { $type_name = "bool" }
+    elseif ($type_name -eq "PYTRA_TID_INT") { $type_name = "int" }
+    elseif ($type_name -eq "PYTRA_TID_FLOAT") { $type_name = "float" }
+    elseif ($type_name -eq "PYTRA_TID_STR") { $type_name = "str" }
+    elseif ($type_name -eq "PYTRA_TID_LIST") { $type_name = "list" }
+    elseif ($type_name -eq "PYTRA_TID_DICT") { $type_name = "dict" }
+    elseif ($type_name -eq "PYTRA_TID_NONE") { return ($obj -eq $null) }
     # Primitive type checks
     if ($type_name -eq "int" -or $type_name -eq "int64") { return ($obj -is [int] -or $obj -is [long]) }
     if ($type_name -eq "float" -or $type_name -eq "float64") { return ($obj -is [double] -or $obj -is [float]) }
