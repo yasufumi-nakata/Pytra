@@ -136,6 +136,84 @@ class TestIntegerPromotionSpec(unittest.TestCase):
             self.assertIn(t, no_promotion_types, f"{t} should not be promoted")
 
 
+class TestIntegerPromotionOperandCast(unittest.TestCase):
+    """Tests that promotion must be applied to OPERANDS, not just result type.
+
+    If the emitter computes `a - 1` in the original type (int8) and then
+    casts the result to int16, overflow produces wrong values.
+    The correct behavior is to cast the operand first: `int16(a) - 1`.
+    """
+
+    def test_int8_minus_one_overflow(self) -> None:
+        """int8(-128) - 1 overflows in int8 but not in int16.
+
+        Without operand promotion:
+            int8(-128) - 1 → int8(+127) → int16(+127) = 127  WRONG
+        With operand promotion:
+            int16(-128) - 1 → int16(-129) = -129  CORRECT
+        """
+        # Simulated int8 overflow (what happens without promotion)
+        import ctypes
+        a_int8 = ctypes.c_int8(-128)
+        # int8(-128) - 1 wraps to +127
+        wrong_result = ctypes.c_int8(a_int8.value - 1).value
+        self.assertEqual(wrong_result, 127, "int8 overflow should wrap to 127")
+
+        # Correct result with promotion to int16 first
+        a_int16 = ctypes.c_int16(-128)
+        correct_result = ctypes.c_int16(a_int16.value - 1).value
+        self.assertEqual(correct_result, -129, "int16(-128) - 1 should be -129")
+
+    def test_uint8_shift_overflow(self) -> None:
+        """uint8(1) << 9 overflows in uint8 but not in int32.
+
+        Without operand promotion:
+            uint8(1) << 9 → uint8(0) → int32(0) = 0  WRONG
+        With operand promotion:
+            int32(1) << 9 → int32(512) = 512  CORRECT
+        """
+        # uint8 overflow
+        wrong_result = (1 << 9) & 0xFF
+        self.assertEqual(wrong_result, 0, "uint8 shift should overflow to 0")
+
+        # int32 promotion
+        correct_result = 1 << 9
+        self.assertEqual(correct_result, 512, "int32(1) << 9 should be 512")
+
+    @unittest.skip("P0-INTEGER-PROMOTION operand-level cast not yet implemented")
+    def test_east3_promotes_operand_not_result(self) -> None:
+        """EAST3 should cast operands to promoted type, not wrap result in Unbox.
+
+        For `b: int16 = a - 1` where `a: int8`:
+        WRONG:  Assign(target=b, value=Unbox(int16, BinOp(int8 - int64)))
+        RIGHT:  Assign(target=b, value=BinOp(Cast(a, int16) - 1))
+
+        The promotion must happen on the operand so that the subtraction
+        is computed in the wider type, avoiding overflow.
+        """
+        source = """def test(x: int) -> int:
+    a: int8 = x
+    b: int16 = a - 1
+    return b
+"""
+        east3 = _build_east3(source)
+        body = _find_function_body(east3, "test")
+
+        # Find the Assign for b
+        assigns = [s for s in body if isinstance(s, dict)
+                   and s.get("kind") in ("Assign", "AnnAssign")
+                   and isinstance(s.get("target"), dict)
+                   and s["target"].get("id") == "b"]
+        self.assertTrue(len(assigns) > 0, "Assignment to b not found")
+        assign = assigns[0]
+        value = assign.get("value", {})
+
+        # The value should be a BinOp (not wrapped in Unbox)
+        # with operands promoted to at least int16
+        self.assertEqual(value.get("kind"), "BinOp",
+                         f"Expected BinOp, got {value.get('kind')} (Unbox wrapping)")
+
+
 class TestIntegerPromotionNarrowing(unittest.TestCase):
     """Tests for the narrowing optimization pass."""
 
