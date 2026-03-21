@@ -325,10 +325,13 @@ def _render_expr(expr_any: Any) -> str:
                 # ClassName.attr → クラス変数 $attr（モジュールスコープ）
                 return "$" + _safe_ident(attr, "_cv")
             if vtype in _CLASS_NAMES[0]:
-                # Check if attr is a @property on the resolved type
+                # Check if attr is a @property on the resolved type (local class)
                 props = _CLASS_PROPERTIES[0].get(vtype, set())
                 if attr in props:
                     return "(& (Get-Command (\"" + "{0}_{1}" + '" -f ' + value + '["__type__"], "' + attr + '")) ' + value + ")"
+                # For imported classes, use __pytra_getattr (handles property fallback)
+                if vtype not in _CLASS_PROPERTIES[0]:
+                    return "(__pytra_getattr " + value + ' "' + attr + '")'
                 return value + '["' + attr + '"]'
             # math module property: math.pi → [Math]::PI
             if vname == "math":
@@ -360,6 +363,11 @@ def _render_expr(expr_any: Any) -> str:
         }
         if safe_attr in _DOTNET_PROPS or safe_attr[0].isupper():
             return value + "." + safe_attr
+        # Use __pytra_getattr for property-aware access on unknown-typed objects
+        if isinstance(value_node, dict):
+            vtype2 = _get_str(value_node, "resolved_type")
+            if vtype2 not in _CLASS_NAMES[0] and vtype2 not in ("str", "int", "int64", "float", "float64", "bool"):
+                return "(__pytra_getattr " + value + ' "' + attr + '")'
         return value + '["' + attr + '"]'
 
     if kind == "Call":

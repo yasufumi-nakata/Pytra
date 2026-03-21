@@ -826,6 +826,14 @@ class ZigNativeEmitter:
                 # pytra.std.* の @extern 関数は py_runtime から提供
                 if module_id.startswith("pytra.std."):
                     continue
+                # from pytra.std import math → math/east.zig
+                if module_id == "pytra.std":
+                    zig_path = name + "/east.zig"
+                    safe_local = _safe_ident(local, "mod")
+                    if safe_local not in emitted:
+                        self._emit_line("const " + safe_local + " = @import(\"" + zig_path + "\");")
+                        emitted.add(safe_local)
+                    continue
                 # pytra.utils.assertions は不要
                 if module_id == "pytra.utils.assertions":
                     continue
@@ -833,11 +841,26 @@ class ZigNativeEmitter:
                 if module_id == "pytra.dataclasses":
                     continue
                 # pytra.utils のサブモジュール（png, gif 等）
-                if module_id == "pytra.utils" or module_id.startswith("pytra.utils."):
+                if module_id == "pytra.utils":
+                    # from pytra.utils import png → png/east.zig
                     zig_path = name + "/east.zig"
                     safe_local = _safe_ident(local, "mod")
                     if safe_local not in emitted:
                         self._emit_line("const " + safe_local + " = @import(\"" + zig_path + "\");")
+                        emitted.add(safe_local)
+                    continue
+                if module_id.startswith("pytra.utils."):
+                    # from pytra.utils.gif import save_gif → gif モジュールを import
+                    mod_leaf = module_id.split(".")[-1]
+                    zig_path = mod_leaf + "/east.zig"
+                    safe_mod = _safe_ident(mod_leaf, "mod")
+                    if safe_mod not in emitted:
+                        self._emit_line("const " + safe_mod + " = @import(\"" + zig_path + "\");")
+                        emitted.add(safe_mod)
+                    # 関数名のエイリアス: const save_gif = gif.save_gif;
+                    safe_local = _safe_ident(local, "fn")
+                    if safe_local != safe_mod and safe_local not in emitted:
+                        self._emit_line("const " + safe_local + " = " + safe_mod + "." + _safe_ident(name, "fn") + ";")
                         emitted.add(safe_local)
                     continue
                 # 相対 import / その他のモジュール

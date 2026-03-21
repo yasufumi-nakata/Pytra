@@ -365,4 +365,34 @@ end
 time = PytraTimeShim
 math = PytraMathShim
 
+# Python built-in `open(path, mode)` shim.
+class PyFile
+  def initialize(path, mode)
+    @io = File.open(path, mode)
+  end
+  def write(data)
+    if data.is_a?(Array)
+      @io.write(data.pack("C*"))
+    else
+      @io.write(__pytra_str(data))
+    end
+  end
+  def close
+    @io.close
+  end
+end
+
+def open(path, mode = "r")
+  PyFile.new(__pytra_str(path), mode)
+end
+
+def ord(ch)
+  s = __pytra_str(ch)
+  s.empty? ? 0 : s.ord
+end
+
+def chr(n)
+  __pytra_int(n).chr
+end
+
 # image_runtime is now provided via linker (png/gif modules)

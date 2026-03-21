@@ -663,3 +663,36 @@ time = {
 math = math or {}
 math.pi = math.pi
 math.e = 2.718281828459045
+
+-- Python built-in `open(path, mode)` shim.
+function open(path, mode)
+    local f = io.open(path, mode)
+    if not f then
+        error("cannot open file: " .. tostring(path))
+    end
+    -- Return a wrapper with write(bytes_table) that converts int table to binary.
+    local wrapper = {}
+    function wrapper:write(data)
+        if type(data) == "table" then
+            local parts = {}
+            for i = 1, #data do
+                parts[i] = string.char(data[i] % 256)
+            end
+            f:write(table.concat(parts))
+        else
+            f:write(tostring(data))
+        end
+    end
+    function wrapper:close()
+        f:close()
+    end
+    return wrapper
+end
+
+-- Python built-in `ord(ch)` / `chr(n)` shims.
+function ord(ch)
+    return string.byte(ch, 1) or 0
+end
+function chr(n)
+    return string.char(n % 256)
+end

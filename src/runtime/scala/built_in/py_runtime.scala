@@ -645,3 +645,40 @@ object time {
     def perf_counter(): Double = System.nanoTime().toDouble / 1_000_000_000.0
 }
 // Note: `math` functions are provided by `import scala.math.*` in each module.
+
+// Python built-in `open(path, mode)` shim.
+class PyFile(path: String, mode: String) {
+    private val stream: java.io.OutputStream = {
+        if (mode.contains("b")) new java.io.FileOutputStream(path)
+        else new java.io.FileOutputStream(path)
+    }
+    def write(data: Any): Unit = {
+        data match {
+            case buf: mutable.ArrayBuffer[_] =>
+                val bytes = new Array[Byte](buf.length)
+                var i = 0
+                while (i < buf.length) {
+                    bytes(i) = (buf(i).asInstanceOf[Long] & 0xFF).toByte
+                    i += 1
+                }
+                stream.write(bytes)
+            case s: String => stream.write(s.getBytes("UTF-8"))
+            case _ => stream.write(__pytra_str(data).getBytes("UTF-8"))
+        }
+    }
+    def close(): Unit = stream.close()
+}
+
+def open(path: Any, mode: String = "r"): PyFile = {
+    new PyFile(__pytra_str(path), mode)
+}
+
+def ord(ch: Any): Long = {
+    val s = __pytra_str(ch)
+    if (s.isEmpty) 0L else s.charAt(0).toLong
+}
+
+def chr(n: Any): String = {
+    val code = __pytra_int(n).toInt
+    String.valueOf(code.toChar)
+}
