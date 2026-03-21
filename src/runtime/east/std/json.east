@@ -57857,7 +57857,7 @@
                     "end_lineno": 459,
                     "end_col_offset": 52
                   },
-                  "resolved_type": "str",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "\" \" * (indent_i * (level + 1))",
@@ -58069,7 +58069,7 @@
                       "end_lineno": 459,
                       "end_col_offset": 52
                     },
-                    "resolved_type": "str",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\" \" * (indent_i * (level + 1))",
@@ -59187,7 +59187,7 @@
                   "end_lineno": 462,
                   "end_col_offset": 83
                 },
-                "resolved_type": "str",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "(\" \" * (indent_i * level))",
@@ -59300,7 +59300,7 @@
                     "end_lineno": 462,
                     "end_col_offset": 83
                   },
-                  "resolved_type": "str",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "(\" \" * (indent_i * level))",
@@ -59505,7 +59505,7 @@
                     "end_lineno": 462,
                     "end_col_offset": 83
                   },
-                  "resolved_type": "str",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "(\" \" * (indent_i * level))",
@@ -59738,7 +59738,7 @@
                     "end_lineno": 462,
                     "end_col_offset": 83
                   },
-                  "resolved_type": "str",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "(\" \" * (indent_i * level))",
@@ -61028,7 +61028,7 @@
                 "value": "{}"
               },
               "meta": {
-                "lifetime_node_id": "n16",
+                "lifetime_node_id": "n18",
                 "lifetime_defs": [],
                 "lifetime_uses": [],
                 "lifetime_live_in": [],
@@ -61039,7 +61039,7 @@
           ],
           "orelse": [],
           "meta": {
-            "lifetime_node_id": "n15",
+            "lifetime_node_id": "n17",
             "lifetime_defs": [],
             "lifetime_uses": [
               "len",
@@ -61075,6 +61075,82 @@
             "lifetime_last_use_vars": [
               "len"
             ]
+          }
+        },
+        {
+          "kind": "VarDecl",
+          "name": "k_txt",
+          "type": "str",
+          "hoisted": true,
+          "meta": {
+            "lifetime_node_id": "n16",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "_COMMA_NL",
+              "_dump_json_value",
+              "_escape_str",
+              "_join_strs",
+              "_json_indent_value",
+              "ensure_ascii",
+              "indent",
+              "item_sep",
+              "key_sep",
+              "level",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "_COMMA_NL",
+              "_dump_json_value",
+              "_escape_str",
+              "_join_strs",
+              "_json_indent_value",
+              "ensure_ascii",
+              "indent",
+              "item_sep",
+              "key_sep",
+              "level",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "VarDecl",
+          "name": "v_txt",
+          "type": "str",
+          "hoisted": true,
+          "meta": {
+            "lifetime_node_id": "n15",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "_COMMA_NL",
+              "_dump_json_value",
+              "_escape_str",
+              "_join_strs",
+              "_json_indent_value",
+              "ensure_ascii",
+              "indent",
+              "item_sep",
+              "key_sep",
+              "level",
+              "values"
+            ],
+            "lifetime_live_out": [
+              "_COMMA_NL",
+              "_dump_json_value",
+              "_escape_str",
+              "_join_strs",
+              "_json_indent_value",
+              "ensure_ascii",
+              "indent",
+              "item_sep",
+              "key_sep",
+              "level",
+              "values"
+            ],
+            "lifetime_last_use_vars": []
           }
         },
         {
@@ -61513,6 +61589,7 @@
                     "category": "static",
                     "mirror": "str"
                   },
+                  "is_reassign": true,
                   "meta": {
                     "lifetime_node_id": "n13",
                     "lifetime_defs": [
@@ -61757,6 +61834,7 @@
                     "category": "static",
                     "mirror": "str"
                   },
+                  "is_reassign": true,
                   "meta": {
                     "lifetime_node_id": "n12",
                     "lifetime_defs": [
@@ -62949,7 +63027,7 @@
                     "end_lineno": 485,
                     "end_col_offset": 52
                   },
-                  "resolved_type": "str",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "\" \" * (indent_i * (level + 1))",
@@ -63161,7 +63239,7 @@
                       "end_lineno": 485,
                       "end_col_offset": 52
                     },
-                    "resolved_type": "str",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\" \" * (indent_i * (level + 1))",
@@ -64698,7 +64776,7 @@
                   "end_lineno": 489,
                   "end_col_offset": 83
                 },
-                "resolved_type": "str",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "(\" \" * (indent_i * level))",
@@ -64811,7 +64889,7 @@
                     "end_lineno": 489,
                     "end_col_offset": 83
                   },
-                  "resolved_type": "str",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "(\" \" * (indent_i * level))",
@@ -65016,7 +65094,7 @@
                     "end_lineno": 489,
                     "end_col_offset": 83
                   },
-                  "resolved_type": "str",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "(\" \" * (indent_i * level))",
@@ -65249,7 +65327,7 @@
                     "end_lineno": 489,
                     "end_col_offset": 83
                   },
-                  "resolved_type": "str",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "(\" \" * (indent_i * level))",
@@ -65409,7 +65487,7 @@
           "schema_version": "east3_lifetime_v1",
           "status": "ok",
           "reason": "",
-          "entry_node": "n15",
+          "entry_node": "n17",
           "order": [
             "n0",
             "n1",
@@ -65427,7 +65505,9 @@
             "n13",
             "n14",
             "n15",
-            "n16"
+            "n16",
+            "n17",
+            "n18"
           ],
           "cfg": [
             {
@@ -65645,6 +65725,24 @@
             },
             {
               "id": "n15",
+              "kind": "VarDecl",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n8"
+              ]
+            },
+            {
+              "id": "n16",
+              "kind": "VarDecl",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n15"
+              ]
+            },
+            {
+              "id": "n17",
               "kind": "If",
               "defs": [],
               "uses": [
@@ -65653,11 +65751,11 @@
               ],
               "succ": [
                 "n16",
-                "n8"
+                "n18"
               ]
             },
             {
-              "id": "n16",
+              "id": "n18",
               "kind": "Return",
               "defs": [],
               "uses": [],
@@ -65754,7 +65852,7 @@
                 "n3"
               ],
               "len": [
-                "n15"
+                "n17"
               ],
               "level": [
                 "n0",
@@ -65776,7 +65874,7 @@
               "values": [
                 "n1",
                 "n10",
-                "n15"
+                "n17"
               ],
               "x": [
                 "n12",
@@ -65800,7 +65898,9 @@
                 "n6",
                 "n7",
                 "n8",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n1",
@@ -65811,7 +65911,9 @@
                 "n6",
                 "n7",
                 "n8",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [
                 "n0"
@@ -65838,7 +65940,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n1",
@@ -65854,7 +65958,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -65879,7 +65985,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n1",
@@ -65895,7 +66003,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [],
               "lifetime_class": "local_non_escape_candidate"
@@ -65922,7 +66032,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n1",
@@ -65938,7 +66050,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [
                 "n0",
@@ -65954,11 +66068,15 @@
               "live_in_nodes": [
                 "n7",
                 "n8",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n8",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [
                 "n7"
@@ -65987,7 +66105,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66003,7 +66123,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -66030,7 +66152,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66046,7 +66170,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -66133,7 +66259,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66149,7 +66277,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [
                 "n9"
@@ -66230,7 +66360,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66246,7 +66378,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -66254,14 +66388,14 @@
             "len": {
               "def_nodes": [],
               "use_nodes": [
-                "n15"
+                "n17"
               ],
               "live_in_nodes": [
-                "n15"
+                "n17"
               ],
               "live_out_nodes": [],
               "last_use_nodes": [
-                "n15"
+                "n17"
               ],
               "lifetime_class": "local_non_escape_candidate"
             },
@@ -66288,7 +66422,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66304,7 +66440,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [
                 "n0"
@@ -66388,7 +66526,7 @@
               "use_nodes": [
                 "n1",
                 "n10",
-                "n15"
+                "n17"
               ],
               "live_in_nodes": [
                 "n1",
@@ -66404,7 +66542,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "live_out_nodes": [
                 "n1",
@@ -66420,7 +66560,9 @@
                 "n12",
                 "n13",
                 "n14",
-                "n15"
+                "n15",
+                "n16",
+                "n17"
               ],
               "last_use_nodes": [],
               "lifetime_class": "escape_or_unknown"
@@ -71820,6 +71962,22 @@
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.abi"
+        },
+        {
+          "module_id": "pytra.built_in.scalar_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.scalar_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/std/json.py",
+          "source_line": 0
+        },
+        {
+          "module_id": "pytra.built_in.sequence",
+          "export_name": "",
+          "local_name": "pytra.built_in.sequence",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/std/json.py",
+          "source_line": 0
         }
       ],
       "qualified_refs": [
@@ -71838,6 +71996,22 @@
         "binding_kind": "symbol",
         "source_file": "src/pytra/std/json.py",
         "source_line": 7
+      },
+      {
+        "module_id": "pytra.built_in.scalar_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.scalar_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/std/json.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.sequence",
+        "export_name": "",
+        "local_name": "pytra.built_in.sequence",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/std/json.py",
+        "source_line": 0
       }
     ],
     "qualified_symbol_refs": [

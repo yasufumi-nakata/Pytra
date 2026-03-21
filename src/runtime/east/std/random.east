@@ -9473,7 +9473,7 @@
             "id": "mag"
           },
           "declare": true,
-          "decl_type": "float64",
+          "decl_type": "unknown",
           "declare_init": true,
           "value": {
             "kind": "Call",
@@ -9483,7 +9483,7 @@
               "end_lineno": 102,
               "end_col_offset": 42
             },
-            "resolved_type": "float64",
+            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_math.sqrt(-2.0 * _math.log(u1))",
@@ -9513,12 +9513,7 @@
                 "repr": "_math",
                 "id": "_math"
               },
-              "attr": "sqrt",
-              "resolved_runtime_call": "math.sqrt",
-              "resolved_runtime_source": "module_attr",
-              "runtime_module_id": "pytra.std.math",
-              "runtime_symbol": "sqrt",
-              "runtime_call_adapter_kind": "math.float_args"
+              "attr": "sqrt"
             },
             "args": [
               {
@@ -9529,7 +9524,7 @@
                   "end_lineno": 102,
                   "end_col_offset": 41
                 },
-                "resolved_type": "float64",
+                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "-2.0 * _math.log(u1)",
@@ -9570,7 +9565,7 @@
                     "end_lineno": 102,
                     "end_col_offset": 41
                   },
-                  "resolved_type": "float64",
+                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_math.log(u1)",
@@ -9600,12 +9595,7 @@
                       "repr": "_math",
                       "id": "_math"
                     },
-                    "attr": "log",
-                    "resolved_runtime_call": "math.log",
-                    "resolved_runtime_source": "module_attr",
-                    "runtime_module_id": "pytra.std.math",
-                    "runtime_symbol": "log",
-                    "runtime_call_adapter_kind": "math.float_args"
+                    "attr": "log"
                   },
                   "args": [
                     {
@@ -9624,16 +9614,12 @@
                     }
                   ],
                   "keywords": [],
-                  "resolved_runtime_call": "math.log",
-                  "resolved_runtime_source": "module_attr",
-                  "runtime_module_id": "pytra.std.math",
-                  "runtime_symbol": "log",
-                  "runtime_call_adapter_kind": "math.float_args",
                   "type_expr_summary_v1": {
                     "schema_version": 1,
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "float64"
+                    "kind": "DynamicType",
+                    "category": "dynamic",
+                    "mirror": "unknown",
+                    "dynamic_name": "unknown"
                   }
                 },
                 "normalized_expr_version": "east3_expr_v1",
@@ -9645,7 +9631,7 @@
                     "end_lineno": 102,
                     "end_col_offset": 41
                   },
-                  "resolved_type": "float64",
+                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "-2.0 * _math.log(u1)",
@@ -9686,7 +9672,7 @@
                       "end_lineno": 102,
                       "end_col_offset": 41
                     },
-                    "resolved_type": "float64",
+                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "_math.log(u1)",
@@ -9716,12 +9702,7 @@
                         "repr": "_math",
                         "id": "_math"
                       },
-                      "attr": "log",
-                      "resolved_runtime_call": "math.log",
-                      "resolved_runtime_source": "module_attr",
-                      "runtime_module_id": "pytra.std.math",
-                      "runtime_symbol": "log",
-                      "runtime_call_adapter_kind": "math.float_args"
+                      "attr": "log"
                     },
                     "args": [
                       {
@@ -9740,39 +9721,32 @@
                       }
                     ],
                     "keywords": [],
-                    "resolved_runtime_call": "math.log",
-                    "resolved_runtime_source": "module_attr",
-                    "runtime_module_id": "pytra.std.math",
-                    "runtime_symbol": "log",
-                    "runtime_call_adapter_kind": "math.float_args",
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "NamedType",
-                      "category": "static",
-                      "mirror": "float64"
+                      "kind": "DynamicType",
+                      "category": "dynamic",
+                      "mirror": "unknown",
+                      "dynamic_name": "unknown"
                     }
                   }
                 }
               }
             ],
             "keywords": [],
-            "resolved_runtime_call": "math.sqrt",
-            "resolved_runtime_source": "module_attr",
-            "runtime_module_id": "pytra.std.math",
-            "runtime_symbol": "sqrt",
-            "runtime_call_adapter_kind": "math.float_args",
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "NamedType",
-              "category": "static",
-              "mirror": "float64"
+              "kind": "DynamicType",
+              "category": "dynamic",
+              "mirror": "unknown",
+              "dynamic_name": "unknown"
             }
           },
           "type_expr_summary_v1": {
             "schema_version": 1,
-            "kind": "NamedType",
-            "category": "static",
-            "mirror": "float64"
+            "kind": "DynamicType",
+            "category": "dynamic",
+            "mirror": "unknown",
+            "dynamic_name": "unknown"
           },
           "meta": {
             "lifetime_node_id": "n5",
@@ -9825,7 +9799,7 @@
             "id": "z0"
           },
           "declare": true,
-          "decl_type": "float64",
+          "decl_type": "unknown",
           "declare_init": true,
           "value": {
             "kind": "BinOp",
@@ -9835,7 +9809,7 @@
               "end_lineno": 103,
               "end_col_offset": 45
             },
-            "resolved_type": "float64",
+            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "mag * _math.cos(2.0 * _math.pi * u2)",
@@ -9847,9 +9821,9 @@
                 "end_lineno": 103,
                 "end_col_offset": 12
               },
-              "resolved_type": "float64",
+              "resolved_type": "unknown",
               "casts": [],
-              "borrow_kind": "readonly_ref",
+              "borrow_kind": "value",
               "repr": "mag",
               "id": "mag"
             },
@@ -9862,7 +9836,7 @@
                 "end_lineno": 103,
                 "end_col_offset": 45
               },
-              "resolved_type": "float64",
+              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_math.cos(2.0 * _math.pi * u2)",
@@ -9892,12 +9866,7 @@
                   "repr": "_math",
                   "id": "_math"
                 },
-                "attr": "cos",
-                "resolved_runtime_call": "math.cos",
-                "resolved_runtime_source": "module_attr",
-                "runtime_module_id": "pytra.std.math",
-                "runtime_symbol": "cos",
-                "runtime_call_adapter_kind": "math.float_args"
+                "attr": "cos"
               },
               "args": [
                 {
@@ -9965,12 +9934,7 @@
                         "repr": "_math",
                         "id": "_math"
                       },
-                      "attr": "pi",
-                      "resolved_runtime_call": "math.pi",
-                      "resolved_runtime_source": "module_attr",
-                      "runtime_module_id": "pytra.std.math",
-                      "runtime_symbol": "pi",
-                      "runtime_call_adapter_kind": "math.value_getter"
+                      "attr": "pi"
                     },
                     "normalized_expr_version": "east3_expr_v1",
                     "normalized_expr": {
@@ -10026,12 +9990,7 @@
                           "repr": "_math",
                           "id": "_math"
                         },
-                        "attr": "pi",
-                        "resolved_runtime_call": "math.pi",
-                        "resolved_runtime_source": "module_attr",
-                        "runtime_module_id": "pytra.std.math",
-                        "runtime_symbol": "pi",
-                        "runtime_call_adapter_kind": "math.value_getter"
+                        "attr": "pi"
                       }
                     }
                   },
@@ -10116,12 +10075,7 @@
                           "repr": "_math",
                           "id": "_math"
                         },
-                        "attr": "pi",
-                        "resolved_runtime_call": "math.pi",
-                        "resolved_runtime_source": "module_attr",
-                        "runtime_module_id": "pytra.std.math",
-                        "runtime_symbol": "pi",
-                        "runtime_call_adapter_kind": "math.value_getter"
+                        "attr": "pi"
                       }
                     },
                     "op": "Mult",
@@ -10143,16 +10097,12 @@
                 }
               ],
               "keywords": [],
-              "resolved_runtime_call": "math.cos",
-              "resolved_runtime_source": "module_attr",
-              "runtime_module_id": "pytra.std.math",
-              "runtime_symbol": "cos",
-              "runtime_call_adapter_kind": "math.float_args",
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "NamedType",
-                "category": "static",
-                "mirror": "float64"
+                "kind": "DynamicType",
+                "category": "dynamic",
+                "mirror": "unknown",
+                "dynamic_name": "unknown"
               }
             },
             "normalized_expr_version": "east3_expr_v1",
@@ -10164,7 +10114,7 @@
                 "end_lineno": 103,
                 "end_col_offset": 45
               },
-              "resolved_type": "float64",
+              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "mag * _math.cos(2.0 * _math.pi * u2)",
@@ -10176,9 +10126,9 @@
                   "end_lineno": 103,
                   "end_col_offset": 12
                 },
-                "resolved_type": "float64",
+                "resolved_type": "unknown",
                 "casts": [],
-                "borrow_kind": "readonly_ref",
+                "borrow_kind": "value",
                 "repr": "mag",
                 "id": "mag"
               },
@@ -10191,7 +10141,7 @@
                   "end_lineno": 103,
                   "end_col_offset": 45
                 },
-                "resolved_type": "float64",
+                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_math.cos(2.0 * _math.pi * u2)",
@@ -10221,12 +10171,7 @@
                     "repr": "_math",
                     "id": "_math"
                   },
-                  "attr": "cos",
-                  "resolved_runtime_call": "math.cos",
-                  "resolved_runtime_source": "module_attr",
-                  "runtime_module_id": "pytra.std.math",
-                  "runtime_symbol": "cos",
-                  "runtime_call_adapter_kind": "math.float_args"
+                  "attr": "cos"
                 },
                 "args": [
                   {
@@ -10294,12 +10239,7 @@
                           "repr": "_math",
                           "id": "_math"
                         },
-                        "attr": "pi",
-                        "resolved_runtime_call": "math.pi",
-                        "resolved_runtime_source": "module_attr",
-                        "runtime_module_id": "pytra.std.math",
-                        "runtime_symbol": "pi",
-                        "runtime_call_adapter_kind": "math.value_getter"
+                        "attr": "pi"
                       }
                     },
                     "op": "Mult",
@@ -10320,25 +10260,22 @@
                   }
                 ],
                 "keywords": [],
-                "resolved_runtime_call": "math.cos",
-                "resolved_runtime_source": "module_attr",
-                "runtime_module_id": "pytra.std.math",
-                "runtime_symbol": "cos",
-                "runtime_call_adapter_kind": "math.float_args",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "NamedType",
-                  "category": "static",
-                  "mirror": "float64"
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "unknown",
+                  "dynamic_name": "unknown"
                 }
               }
             }
           },
           "type_expr_summary_v1": {
             "schema_version": 1,
-            "kind": "NamedType",
-            "category": "static",
-            "mirror": "float64"
+            "kind": "DynamicType",
+            "category": "dynamic",
+            "mirror": "unknown",
+            "dynamic_name": "unknown"
           },
           "meta": {
             "lifetime_node_id": "n4",
@@ -10391,7 +10328,7 @@
             "id": "z1"
           },
           "declare": true,
-          "decl_type": "float64",
+          "decl_type": "unknown",
           "declare_init": true,
           "value": {
             "kind": "BinOp",
@@ -10401,7 +10338,7 @@
               "end_lineno": 104,
               "end_col_offset": 45
             },
-            "resolved_type": "float64",
+            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "mag * _math.sin(2.0 * _math.pi * u2)",
@@ -10413,9 +10350,9 @@
                 "end_lineno": 104,
                 "end_col_offset": 12
               },
-              "resolved_type": "float64",
+              "resolved_type": "unknown",
               "casts": [],
-              "borrow_kind": "readonly_ref",
+              "borrow_kind": "value",
               "repr": "mag",
               "id": "mag"
             },
@@ -10428,7 +10365,7 @@
                 "end_lineno": 104,
                 "end_col_offset": 45
               },
-              "resolved_type": "float64",
+              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_math.sin(2.0 * _math.pi * u2)",
@@ -10458,12 +10395,7 @@
                   "repr": "_math",
                   "id": "_math"
                 },
-                "attr": "sin",
-                "resolved_runtime_call": "math.sin",
-                "resolved_runtime_source": "module_attr",
-                "runtime_module_id": "pytra.std.math",
-                "runtime_symbol": "sin",
-                "runtime_call_adapter_kind": "math.float_args"
+                "attr": "sin"
               },
               "args": [
                 {
@@ -10531,12 +10463,7 @@
                         "repr": "_math",
                         "id": "_math"
                       },
-                      "attr": "pi",
-                      "resolved_runtime_call": "math.pi",
-                      "resolved_runtime_source": "module_attr",
-                      "runtime_module_id": "pytra.std.math",
-                      "runtime_symbol": "pi",
-                      "runtime_call_adapter_kind": "math.value_getter"
+                      "attr": "pi"
                     },
                     "normalized_expr_version": "east3_expr_v1",
                     "normalized_expr": {
@@ -10592,12 +10519,7 @@
                           "repr": "_math",
                           "id": "_math"
                         },
-                        "attr": "pi",
-                        "resolved_runtime_call": "math.pi",
-                        "resolved_runtime_source": "module_attr",
-                        "runtime_module_id": "pytra.std.math",
-                        "runtime_symbol": "pi",
-                        "runtime_call_adapter_kind": "math.value_getter"
+                        "attr": "pi"
                       }
                     }
                   },
@@ -10682,12 +10604,7 @@
                           "repr": "_math",
                           "id": "_math"
                         },
-                        "attr": "pi",
-                        "resolved_runtime_call": "math.pi",
-                        "resolved_runtime_source": "module_attr",
-                        "runtime_module_id": "pytra.std.math",
-                        "runtime_symbol": "pi",
-                        "runtime_call_adapter_kind": "math.value_getter"
+                        "attr": "pi"
                       }
                     },
                     "op": "Mult",
@@ -10709,16 +10626,12 @@
                 }
               ],
               "keywords": [],
-              "resolved_runtime_call": "math.sin",
-              "resolved_runtime_source": "module_attr",
-              "runtime_module_id": "pytra.std.math",
-              "runtime_symbol": "sin",
-              "runtime_call_adapter_kind": "math.float_args",
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "NamedType",
-                "category": "static",
-                "mirror": "float64"
+                "kind": "DynamicType",
+                "category": "dynamic",
+                "mirror": "unknown",
+                "dynamic_name": "unknown"
               }
             },
             "normalized_expr_version": "east3_expr_v1",
@@ -10730,7 +10643,7 @@
                 "end_lineno": 104,
                 "end_col_offset": 45
               },
-              "resolved_type": "float64",
+              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "mag * _math.sin(2.0 * _math.pi * u2)",
@@ -10742,9 +10655,9 @@
                   "end_lineno": 104,
                   "end_col_offset": 12
                 },
-                "resolved_type": "float64",
+                "resolved_type": "unknown",
                 "casts": [],
-                "borrow_kind": "readonly_ref",
+                "borrow_kind": "value",
                 "repr": "mag",
                 "id": "mag"
               },
@@ -10757,7 +10670,7 @@
                   "end_lineno": 104,
                   "end_col_offset": 45
                 },
-                "resolved_type": "float64",
+                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_math.sin(2.0 * _math.pi * u2)",
@@ -10787,12 +10700,7 @@
                     "repr": "_math",
                     "id": "_math"
                   },
-                  "attr": "sin",
-                  "resolved_runtime_call": "math.sin",
-                  "resolved_runtime_source": "module_attr",
-                  "runtime_module_id": "pytra.std.math",
-                  "runtime_symbol": "sin",
-                  "runtime_call_adapter_kind": "math.float_args"
+                  "attr": "sin"
                 },
                 "args": [
                   {
@@ -10860,12 +10768,7 @@
                           "repr": "_math",
                           "id": "_math"
                         },
-                        "attr": "pi",
-                        "resolved_runtime_call": "math.pi",
-                        "resolved_runtime_source": "module_attr",
-                        "runtime_module_id": "pytra.std.math",
-                        "runtime_symbol": "pi",
-                        "runtime_call_adapter_kind": "math.value_getter"
+                        "attr": "pi"
                       }
                     },
                     "op": "Mult",
@@ -10886,25 +10789,22 @@
                   }
                 ],
                 "keywords": [],
-                "resolved_runtime_call": "math.sin",
-                "resolved_runtime_source": "module_attr",
-                "runtime_module_id": "pytra.std.math",
-                "runtime_symbol": "sin",
-                "runtime_call_adapter_kind": "math.float_args",
                 "type_expr_summary_v1": {
                   "schema_version": 1,
-                  "kind": "NamedType",
-                  "category": "static",
-                  "mirror": "float64"
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "unknown",
+                  "dynamic_name": "unknown"
                 }
               }
             }
           },
           "type_expr_summary_v1": {
             "schema_version": 1,
-            "kind": "NamedType",
-            "category": "static",
-            "mirror": "float64"
+            "kind": "DynamicType",
+            "category": "dynamic",
+            "mirror": "unknown",
+            "dynamic_name": "unknown"
           },
           "meta": {
             "lifetime_node_id": "n3",
@@ -10987,7 +10887,7 @@
             }
           },
           "declare": true,
-          "decl_type": "float64",
+          "decl_type": "unknown",
           "declare_init": true,
           "value": {
             "kind": "Name",
@@ -10997,17 +10897,18 @@
               "end_lineno": 105,
               "end_col_offset": 24
             },
-            "resolved_type": "float64",
+            "resolved_type": "unknown",
             "casts": [],
-            "borrow_kind": "readonly_ref",
+            "borrow_kind": "value",
             "repr": "z1",
             "id": "z1"
           },
           "type_expr_summary_v1": {
             "schema_version": 1,
-            "kind": "NamedType",
-            "category": "static",
-            "mirror": "float64"
+            "kind": "DynamicType",
+            "category": "dynamic",
+            "mirror": "unknown",
+            "dynamic_name": "unknown"
           },
           "meta": {
             "lifetime_node_id": "n2",
@@ -11136,7 +11037,7 @@
               "end_lineno": 107,
               "end_col_offset": 40
             },
-            "resolved_type": "float64",
+            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "float(mu) + float(sigma) * z0",
@@ -11163,7 +11064,7 @@
                 "end_lineno": 107,
                 "end_col_offset": 40
               },
-              "resolved_type": "float64",
+              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "float(sigma) * z0",
@@ -11190,9 +11091,9 @@
                   "end_lineno": 107,
                   "end_col_offset": 40
                 },
-                "resolved_type": "float64",
+                "resolved_type": "unknown",
                 "casts": [],
-                "borrow_kind": "readonly_ref",
+                "borrow_kind": "value",
                 "repr": "z0",
                 "id": "z0"
               },
@@ -11205,7 +11106,7 @@
                   "end_lineno": 107,
                   "end_col_offset": 40
                 },
-                "resolved_type": "float64",
+                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "float(sigma) * z0",
@@ -11232,9 +11133,9 @@
                     "end_lineno": 107,
                     "end_col_offset": 40
                   },
-                  "resolved_type": "float64",
+                  "resolved_type": "unknown",
                   "casts": [],
-                  "borrow_kind": "readonly_ref",
+                  "borrow_kind": "value",
                   "repr": "z0",
                   "id": "z0"
                 }
@@ -11249,7 +11150,7 @@
                 "end_lineno": 107,
                 "end_col_offset": 40
               },
-              "resolved_type": "float64",
+              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "float(mu) + float(sigma) * z0",
@@ -11276,7 +11177,7 @@
                   "end_lineno": 107,
                   "end_col_offset": 40
                 },
-                "resolved_type": "float64",
+                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "float(sigma) * z0",
@@ -11303,9 +11204,9 @@
                     "end_lineno": 107,
                     "end_col_offset": 40
                   },
-                  "resolved_type": "float64",
+                  "resolved_type": "unknown",
                   "casts": [],
-                  "borrow_kind": "readonly_ref",
+                  "borrow_kind": "value",
                   "repr": "z0",
                   "id": "z0"
                 }
@@ -13249,6 +13150,22 @@
           "runtime_module_id": "pytra.std.math",
           "runtime_group": "std",
           "resolved_binding_kind": "module"
+        },
+        {
+          "module_id": "pytra.built_in.scalar_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.scalar_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/std/random.py",
+          "source_line": 0
+        },
+        {
+          "module_id": "pytra.built_in.sequence",
+          "export_name": "",
+          "local_name": "pytra.built_in.sequence",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/std/random.py",
+          "source_line": 0
         }
       ],
       "qualified_refs": []
@@ -13261,6 +13178,22 @@
         "binding_kind": "module",
         "source_file": "src/pytra/std/random.py",
         "source_line": 8
+      },
+      {
+        "module_id": "pytra.built_in.scalar_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.scalar_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/std/random.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.sequence",
+        "export_name": "",
+        "local_name": "pytra.built_in.sequence",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/std/random.py",
+        "source_line": 0
       }
     ],
     "qualified_symbol_refs": [],

@@ -1396,10 +1396,28 @@
     "parser_backend": "self_hosted",
     "import_resolution": {
       "schema_version": 1,
-      "bindings": [],
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.iter_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.iter_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/built_in/iter_ops.py",
+          "source_line": 0
+        }
+      ],
       "qualified_refs": []
     },
-    "import_bindings": [],
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.iter_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.iter_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/built_in/iter_ops.py",
+        "source_line": 0
+      }
+    ],
     "qualified_symbol_refs": [],
     "import_modules": {},
     "import_symbols": {},

@@ -6674,7 +6674,7 @@
                 ]
               },
               "meta": {
-                "lifetime_node_id": "n53",
+                "lifetime_node_id": "n54",
                 "lifetime_defs": [
                   "args"
                 ],
@@ -6952,7 +6952,7 @@
                     "dynamic_name": "unknown"
                   },
                   "meta": {
-                    "lifetime_node_id": "n51",
+                    "lifetime_node_id": "n52",
                     "lifetime_defs": [
                       "args"
                     ],
@@ -7072,7 +7072,7 @@
                     "mirror": "list[unknown]"
                   },
                   "meta": {
-                    "lifetime_node_id": "n52",
+                    "lifetime_node_id": "n53",
                     "lifetime_defs": [
                       "args"
                     ],
@@ -7107,7 +7107,7 @@
                 }
               ],
               "meta": {
-                "lifetime_node_id": "n50",
+                "lifetime_node_id": "n51",
                 "lifetime_defs": [],
                 "lifetime_uses": [
                   "argv"
@@ -7218,7 +7218,7 @@
                 "rhs_kind": "List"
               },
               "meta": {
-                "lifetime_node_id": "n49",
+                "lifetime_node_id": "n50",
                 "lifetime_defs": [
                   "specs_pos"
                 ],
@@ -7326,7 +7326,7 @@
                 "rhs_kind": "List"
               },
               "meta": {
-                "lifetime_node_id": "n48",
+                "lifetime_node_id": "n49",
                 "lifetime_defs": [
                   "specs_opt"
                 ],
@@ -7532,7 +7532,7 @@
                         }
                       },
                       "meta": {
-                        "lifetime_node_id": "n46",
+                        "lifetime_node_id": "n47",
                         "lifetime_defs": [],
                         "lifetime_uses": [
                           "s",
@@ -7662,7 +7662,7 @@
                         }
                       },
                       "meta": {
-                        "lifetime_node_id": "n47",
+                        "lifetime_node_id": "n48",
                         "lifetime_defs": [],
                         "lifetime_uses": [
                           "s",
@@ -7698,7 +7698,7 @@
                     }
                   ],
                   "meta": {
-                    "lifetime_node_id": "n45",
+                    "lifetime_node_id": "n46",
                     "lifetime_defs": [],
                     "lifetime_uses": [
                       "s"
@@ -7739,7 +7739,7 @@
                 "end_col_offset": 35
               },
               "meta": {
-                "lifetime_node_id": "n44",
+                "lifetime_node_id": "n45",
                 "lifetime_defs": [
                   "s"
                 ],
@@ -7866,7 +7866,7 @@
                 "rhs_kind": "Dict"
               },
               "meta": {
-                "lifetime_node_id": "n43",
+                "lifetime_node_id": "n44",
                 "lifetime_defs": [
                   "by_name"
                 ],
@@ -7943,7 +7943,7 @@
                 "mirror": "int64"
               },
               "meta": {
-                "lifetime_node_id": "n42",
+                "lifetime_node_id": "n43",
                 "lifetime_defs": [
                   "spec_i"
                 ],
@@ -8127,7 +8127,7 @@
                         "mirror": "int64"
                       },
                       "meta": {
-                        "lifetime_node_id": "n41",
+                        "lifetime_node_id": "n42",
                         "lifetime_defs": [],
                         "lifetime_uses": [
                           "spec_i"
@@ -8172,7 +8172,7 @@
                     "end_col_offset": 35
                   },
                   "meta": {
-                    "lifetime_node_id": "n40",
+                    "lifetime_node_id": "n41",
                     "lifetime_defs": [
                       "n"
                     ],
@@ -8256,7 +8256,7 @@
                     "mirror": "int64"
                   },
                   "meta": {
-                    "lifetime_node_id": "n39",
+                    "lifetime_node_id": "n40",
                     "lifetime_defs": [
                       "spec_i"
                     ],
@@ -8301,7 +8301,7 @@
                 "end_col_offset": 0
               },
               "meta": {
-                "lifetime_node_id": "n38",
+                "lifetime_node_id": "n39",
                 "lifetime_defs": [
                   "s"
                 ],
@@ -8432,7 +8432,7 @@
                 "rhs_kind": "Dict"
               },
               "meta": {
-                "lifetime_node_id": "n37",
+                "lifetime_node_id": "n38",
                 "lifetime_defs": [
                   "values"
                 ],
@@ -8913,7 +8913,7 @@
                             "dynamic_name": "unknown"
                           },
                           "meta": {
-                            "lifetime_node_id": "n32",
+                            "lifetime_node_id": "n33",
                             "lifetime_defs": [],
                             "lifetime_uses": [
                               "bool",
@@ -9042,7 +9042,7 @@
                             "mirror": "bool"
                           },
                           "meta": {
-                            "lifetime_node_id": "n33",
+                            "lifetime_node_id": "n34",
                             "lifetime_defs": [],
                             "lifetime_uses": [],
                             "lifetime_live_in": [
@@ -9076,7 +9076,7 @@
                         }
                       ],
                       "meta": {
-                        "lifetime_node_id": "n31",
+                        "lifetime_node_id": "n32",
                         "lifetime_defs": [],
                         "lifetime_uses": [
                           "PYTRA_TID_BOOL",
@@ -9385,7 +9385,7 @@
                             "dynamic_name": "unknown"
                           },
                           "meta": {
-                            "lifetime_node_id": "n35",
+                            "lifetime_node_id": "n36",
                             "lifetime_defs": [],
                             "lifetime_uses": [
                               "s"
@@ -9512,7 +9512,7 @@
                             "mirror": "None"
                           },
                           "meta": {
-                            "lifetime_node_id": "n36",
+                            "lifetime_node_id": "n37",
                             "lifetime_defs": [],
                             "lifetime_uses": [],
                             "lifetime_live_in": [
@@ -9546,7 +9546,7 @@
                         }
                       ],
                       "meta": {
-                        "lifetime_node_id": "n34",
+                        "lifetime_node_id": "n35",
                         "lifetime_defs": [],
                         "lifetime_uses": [
                           "s"
@@ -9584,7 +9584,7 @@
                     }
                   ],
                   "meta": {
-                    "lifetime_node_id": "n30",
+                    "lifetime_node_id": "n31",
                     "lifetime_defs": [],
                     "lifetime_uses": [
                       "s"
@@ -9629,7 +9629,7 @@
                 "end_col_offset": 0
               },
               "meta": {
-                "lifetime_node_id": "n29",
+                "lifetime_node_id": "n30",
                 "lifetime_defs": [
                   "s"
                 ],
@@ -9712,7 +9712,7 @@
                 "mirror": "int64"
               },
               "meta": {
-                "lifetime_node_id": "n28",
+                "lifetime_node_id": "n29",
                 "lifetime_defs": [
                   "pos_i"
                 ],
@@ -9787,7 +9787,7 @@
                 "mirror": "int64"
               },
               "meta": {
-                "lifetime_node_id": "n27",
+                "lifetime_node_id": "n28",
                 "lifetime_defs": [
                   "i"
                 ],
@@ -10089,7 +10089,7 @@
                     "mirror": "str"
                   },
                   "meta": {
-                    "lifetime_node_id": "n26",
+                    "lifetime_node_id": "n27",
                     "lifetime_defs": [
                       "tok"
                     ],
@@ -10107,6 +10107,44 @@
                       "self",
                       "specs_opt",
                       "specs_pos",
+                      "values"
+                    ],
+                    "lifetime_live_out": [
+                      "args",
+                      "by_name",
+                      "continue",
+                      "i",
+                      "len",
+                      "pos_i",
+                      "self",
+                      "specs_opt",
+                      "specs_pos",
+                      "tok",
+                      "values"
+                    ],
+                    "lifetime_last_use_vars": []
+                  }
+                },
+                {
+                  "kind": "VarDecl",
+                  "name": "spec",
+                  "type": "_ArgSpec",
+                  "hoisted": true,
+                  "meta": {
+                    "lifetime_node_id": "n26",
+                    "lifetime_defs": [],
+                    "lifetime_uses": [],
+                    "lifetime_live_in": [
+                      "args",
+                      "by_name",
+                      "continue",
+                      "i",
+                      "len",
+                      "pos_i",
+                      "self",
+                      "specs_opt",
+                      "specs_pos",
+                      "tok",
                       "values"
                     ],
                     "lifetime_live_out": [
@@ -10597,6 +10635,7 @@
                         "category": "static",
                         "mirror": "_ArgSpec"
                       },
+                      "is_reassign": true,
                       "meta": {
                         "lifetime_node_id": "n23",
                         "lifetime_defs": [
@@ -13772,7 +13811,7 @@
               "schema_version": "east3_lifetime_v1",
               "status": "ok",
               "reason": "",
-              "entry_node": "n53",
+              "entry_node": "n54",
               "order": [
                 "n0",
                 "n1",
@@ -13827,7 +13866,8 @@
                 "n50",
                 "n51",
                 "n52",
-                "n53"
+                "n53",
+                "n54"
               ],
               "cfg": [
                 {
@@ -13877,7 +13917,7 @@
                   ],
                   "succ": [
                     "n1",
-                    "n26"
+                    "n27"
                   ]
                 },
                 {
@@ -14157,6 +14197,15 @@
                 },
                 {
                   "id": "n26",
+                  "kind": "VarDecl",
+                  "defs": [],
+                  "uses": [],
+                  "succ": [
+                    "n10"
+                  ]
+                },
+                {
+                  "id": "n27",
                   "kind": "AnnAssign",
                   "defs": [
                     "tok"
@@ -14166,11 +14215,11 @@
                     "i"
                   ],
                   "succ": [
-                    "n10"
+                    "n26"
                   ]
                 },
                 {
-                  "id": "n27",
+                  "id": "n28",
                   "kind": "Assign",
                   "defs": [
                     "i"
@@ -14181,18 +14230,18 @@
                   ]
                 },
                 {
-                  "id": "n28",
+                  "id": "n29",
                   "kind": "Assign",
                   "defs": [
                     "pos_i"
                   ],
                   "uses": [],
                   "succ": [
-                    "n27"
+                    "n28"
                   ]
                 },
                 {
-                  "id": "n29",
+                  "id": "n30",
                   "kind": "ForCore",
                   "defs": [
                     "s"
@@ -14201,20 +14250,8 @@
                     "self"
                   ],
                   "succ": [
-                    "n28",
-                    "n30"
-                  ]
-                },
-                {
-                  "id": "n30",
-                  "kind": "If",
-                  "defs": [],
-                  "uses": [
-                    "s"
-                  ],
-                  "succ": [
-                    "n31",
-                    "n34"
+                    "n29",
+                    "n31"
                   ]
                 },
                 {
@@ -14222,16 +14259,28 @@
                   "kind": "If",
                   "defs": [],
                   "uses": [
-                    "PYTRA_TID_BOOL",
                     "s"
                   ],
                   "succ": [
                     "n32",
-                    "n33"
+                    "n35"
                   ]
                 },
                 {
                   "id": "n32",
+                  "kind": "If",
+                  "defs": [],
+                  "uses": [
+                    "PYTRA_TID_BOOL",
+                    "s"
+                  ],
+                  "succ": [
+                    "n33",
+                    "n34"
+                  ]
+                },
+                {
+                  "id": "n33",
                   "kind": "Assign",
                   "defs": [],
                   "uses": [
@@ -14240,63 +14289,63 @@
                     "s"
                   ],
                   "succ": [
-                    "n29"
-                  ]
-                },
-                {
-                  "id": "n33",
-                  "kind": "Assign",
-                  "defs": [],
-                  "uses": [],
-                  "succ": [
-                    "n29"
+                    "n30"
                   ]
                 },
                 {
                   "id": "n34",
+                  "kind": "Assign",
+                  "defs": [],
+                  "uses": [],
+                  "succ": [
+                    "n30"
+                  ]
+                },
+                {
+                  "id": "n35",
                   "kind": "If",
                   "defs": [],
                   "uses": [
                     "s"
                   ],
                   "succ": [
-                    "n35",
-                    "n36"
-                  ]
-                },
-                {
-                  "id": "n35",
-                  "kind": "Assign",
-                  "defs": [],
-                  "uses": [
-                    "s"
-                  ],
-                  "succ": [
-                    "n29"
+                    "n36",
+                    "n37"
                   ]
                 },
                 {
                   "id": "n36",
                   "kind": "Assign",
                   "defs": [],
-                  "uses": [],
+                  "uses": [
+                    "s"
+                  ],
                   "succ": [
-                    "n29"
+                    "n30"
                   ]
                 },
                 {
                   "id": "n37",
+                  "kind": "Assign",
+                  "defs": [],
+                  "uses": [],
+                  "succ": [
+                    "n30"
+                  ]
+                },
+                {
+                  "id": "n38",
                   "kind": "AnnAssign",
                   "defs": [
                     "values"
                   ],
                   "uses": [],
                   "succ": [
-                    "n29"
+                    "n30"
                   ]
                 },
                 {
-                  "id": "n38",
+                  "id": "n39",
                   "kind": "ForCore",
                   "defs": [
                     "s"
@@ -14305,12 +14354,12 @@
                     "specs_opt"
                   ],
                   "succ": [
-                    "n37",
-                    "n40"
+                    "n38",
+                    "n41"
                   ]
                 },
                 {
-                  "id": "n39",
+                  "id": "n40",
                   "kind": "AugAssign",
                   "defs": [
                     "spec_i"
@@ -14319,11 +14368,11 @@
                     "spec_i"
                   ],
                   "succ": [
-                    "n38"
+                    "n39"
                   ]
                 },
                 {
-                  "id": "n40",
+                  "id": "n41",
                   "kind": "ForCore",
                   "defs": [
                     "n"
@@ -14332,45 +14381,45 @@
                     "s"
                   ],
                   "succ": [
-                    "n39",
-                    "n41"
+                    "n40",
+                    "n42"
                   ]
                 },
                 {
-                  "id": "n41",
+                  "id": "n42",
                   "kind": "Assign",
                   "defs": [],
                   "uses": [
                     "spec_i"
                   ],
                   "succ": [
-                    "n40"
+                    "n41"
                   ]
                 },
                 {
-                  "id": "n42",
+                  "id": "n43",
                   "kind": "Assign",
                   "defs": [
                     "spec_i"
                   ],
                   "uses": [],
                   "succ": [
-                    "n38"
+                    "n39"
                   ]
                 },
                 {
-                  "id": "n43",
+                  "id": "n44",
                   "kind": "AnnAssign",
                   "defs": [
                     "by_name"
                   ],
                   "uses": [],
                   "succ": [
-                    "n42"
+                    "n43"
                   ]
                 },
                 {
-                  "id": "n44",
+                  "id": "n45",
                   "kind": "ForCore",
                   "defs": [
                     "s"
@@ -14379,32 +14428,20 @@
                     "self"
                   ],
                   "succ": [
-                    "n43",
-                    "n45"
+                    "n44",
+                    "n46"
                   ]
                 },
                 {
-                  "id": "n45",
+                  "id": "n46",
                   "kind": "If",
                   "defs": [],
                   "uses": [
                     "s"
                   ],
                   "succ": [
-                    "n46",
-                    "n47"
-                  ]
-                },
-                {
-                  "id": "n46",
-                  "kind": "Expr",
-                  "defs": [],
-                  "uses": [
-                    "s",
-                    "specs_opt"
-                  ],
-                  "succ": [
-                    "n44"
+                    "n47",
+                    "n48"
                   ]
                 },
                 {
@@ -14413,57 +14450,56 @@
                   "defs": [],
                   "uses": [
                     "s",
-                    "specs_pos"
+                    "specs_opt"
                   ],
                   "succ": [
-                    "n44"
+                    "n45"
                   ]
                 },
                 {
                   "id": "n48",
-                  "kind": "AnnAssign",
-                  "defs": [
-                    "specs_opt"
+                  "kind": "Expr",
+                  "defs": [],
+                  "uses": [
+                    "s",
+                    "specs_pos"
                   ],
-                  "uses": [],
                   "succ": [
-                    "n44"
+                    "n45"
                   ]
                 },
                 {
                   "id": "n49",
                   "kind": "AnnAssign",
                   "defs": [
-                    "specs_pos"
+                    "specs_opt"
                   ],
                   "uses": [],
                   "succ": [
-                    "n48"
+                    "n45"
                   ]
                 },
                 {
                   "id": "n50",
+                  "kind": "AnnAssign",
+                  "defs": [
+                    "specs_pos"
+                  ],
+                  "uses": [],
+                  "succ": [
+                    "n49"
+                  ]
+                },
+                {
+                  "id": "n51",
                   "kind": "If",
                   "defs": [],
                   "uses": [
                     "argv"
                   ],
                   "succ": [
-                    "n51",
-                    "n52"
-                  ]
-                },
-                {
-                  "id": "n51",
-                  "kind": "Assign",
-                  "defs": [
-                    "args"
-                  ],
-                  "uses": [
-                    "sys"
-                  ],
-                  "succ": [
-                    "n49"
+                    "n52",
+                    "n53"
                   ]
                 },
                 {
@@ -14473,100 +14509,113 @@
                     "args"
                   ],
                   "uses": [
-                    "argv",
-                    "list"
+                    "sys"
                   ],
                   "succ": [
-                    "n49"
+                    "n50"
                   ]
                 },
                 {
                   "id": "n53",
+                  "kind": "Assign",
+                  "defs": [
+                    "args"
+                  ],
+                  "uses": [
+                    "argv",
+                    "list"
+                  ],
+                  "succ": [
+                    "n50"
+                  ]
+                },
+                {
+                  "id": "n54",
                   "kind": "AnnAssign",
                   "defs": [
                     "args"
                   ],
                   "uses": [],
                   "succ": [
-                    "n50"
+                    "n51"
                   ]
                 }
               ],
               "def_use": {
                 "defs": {
                   "args": [
-                    "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "by_name": [
-                    "n43"
+                    "n44"
                   ],
                   "i": [
                     "n12",
                     "n21",
-                    "n27",
+                    "n28",
                     "n4"
                   ],
                   "n": [
-                    "n40"
+                    "n41"
                   ],
                   "pos_i": [
-                    "n28",
+                    "n29",
                     "n5"
                   ],
                   "s": [
-                    "n29",
-                    "n38",
-                    "n44"
+                    "n30",
+                    "n39",
+                    "n45"
                   ],
                   "spec": [
                     "n23",
                     "n7"
                   ],
                   "spec_i": [
-                    "n39",
-                    "n42"
+                    "n40",
+                    "n43"
                   ],
                   "specs_opt": [
-                    "n48"
-                  ],
-                  "specs_pos": [
                     "n49"
                   ],
+                  "specs_pos": [
+                    "n50"
+                  ],
                   "tok": [
-                    "n26"
+                    "n27"
                   ],
                   "val": [
                     "n16"
                   ],
                   "values": [
-                    "n37"
+                    "n38"
                   ]
                 },
                 "uses": {
                   "PYTRA_TID_BOOL": [
-                    "n31"
+                    "n32"
                   ],
                   "args": [
                     "n16",
                     "n17",
-                    "n26",
+                    "n27",
                     "n3"
                   ],
                   "argv": [
-                    "n50",
-                    "n52"
+                    "n51",
+                    "n53"
                   ],
                   "bool": [
-                    "n32"
+                    "n33"
                   ],
                   "by_name": [
                     "n23",
                     "n24"
                   ],
                   "cast": [
-                    "n32"
+                    "n33"
                   ],
                   "continue": [
                     "n11",
@@ -14577,7 +14626,7 @@
                     "n16",
                     "n17",
                     "n21",
-                    "n26",
+                    "n27",
                     "n3",
                     "n4"
                   ],
@@ -14588,7 +14637,7 @@
                     "n8"
                   ],
                   "list": [
-                    "n52"
+                    "n53"
                   ],
                   "pos_i": [
                     "n1",
@@ -14598,23 +14647,23 @@
                     "n8"
                   ],
                   "s": [
-                    "n30",
                     "n31",
                     "n32",
-                    "n34",
+                    "n33",
                     "n35",
-                    "n40",
-                    "n45",
+                    "n36",
+                    "n41",
                     "n46",
-                    "n47"
+                    "n47",
+                    "n48"
                   ],
                   "self": [
                     "n15",
                     "n18",
                     "n2",
                     "n25",
-                    "n29",
-                    "n44",
+                    "n30",
+                    "n45",
                     "n9"
                   ],
                   "spec": [
@@ -14622,23 +14671,23 @@
                     "n19"
                   ],
                   "spec_i": [
-                    "n39",
-                    "n41"
+                    "n40",
+                    "n42"
                   ],
                   "specs_opt": [
                     "n23",
-                    "n38",
-                    "n46"
+                    "n39",
+                    "n47"
                   ],
                   "specs_pos": [
                     "n1",
                     "n2",
-                    "n47",
+                    "n48",
                     "n7",
                     "n8"
                   ],
                   "sys": [
-                    "n51"
+                    "n52"
                   ],
                   "tok": [
                     "n10",
@@ -14664,10 +14713,9 @@
                 "PYTRA_TID_BOOL": {
                   "def_nodes": [],
                   "use_nodes": [
-                    "n31"
+                    "n32"
                   ],
                   "live_in_nodes": [
-                    "n29",
                     "n30",
                     "n31",
                     "n32",
@@ -14691,10 +14739,10 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "live_out_nodes": [
-                    "n29",
                     "n30",
                     "n31",
                     "n32",
@@ -14718,21 +14766,22 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
                 },
                 "args": {
                   "def_nodes": [
-                    "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "use_nodes": [
                     "n16",
                     "n17",
-                    "n26",
+                    "n27",
                     "n3"
                   ],
                   "live_in_nodes": [
@@ -14782,7 +14831,8 @@
                     "n46",
                     "n47",
                     "n48",
-                    "n49"
+                    "n49",
+                    "n50"
                   ],
                   "live_out_nodes": [
                     "n3",
@@ -14832,8 +14882,9 @@
                     "n47",
                     "n48",
                     "n49",
-                    "n51",
-                    "n52"
+                    "n50",
+                    "n52",
+                    "n53"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
@@ -14841,30 +14892,29 @@
                 "argv": {
                   "def_nodes": [],
                   "use_nodes": [
-                    "n50",
-                    "n52"
+                    "n51",
+                    "n53"
                   ],
                   "live_in_nodes": [
-                    "n50",
-                    "n52",
-                    "n53"
+                    "n51",
+                    "n53",
+                    "n54"
                   ],
                   "live_out_nodes": [
-                    "n50",
-                    "n53"
+                    "n51",
+                    "n54"
                   ],
                   "last_use_nodes": [
-                    "n52"
+                    "n53"
                   ],
                   "lifetime_class": "escape_or_unknown"
                 },
                 "bool": {
                   "def_nodes": [],
                   "use_nodes": [
-                    "n32"
+                    "n33"
                   ],
                   "live_in_nodes": [
-                    "n29",
                     "n30",
                     "n31",
                     "n32",
@@ -14888,10 +14938,10 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "live_out_nodes": [
-                    "n29",
                     "n30",
                     "n31",
                     "n32",
@@ -14915,14 +14965,15 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
                 },
                 "by_name": {
                   "def_nodes": [
-                    "n43"
+                    "n44"
                   ],
                   "use_nodes": [
                     "n23",
@@ -14968,7 +15019,8 @@
                     "n39",
                     "n40",
                     "n41",
-                    "n42"
+                    "n42",
+                    "n43"
                   ],
                   "live_out_nodes": [
                     "n3",
@@ -15011,7 +15063,8 @@
                     "n40",
                     "n41",
                     "n42",
-                    "n43"
+                    "n43",
+                    "n44"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
@@ -15019,10 +15072,9 @@
                 "cast": {
                   "def_nodes": [],
                   "use_nodes": [
-                    "n32"
+                    "n33"
                   ],
                   "live_in_nodes": [
-                    "n29",
                     "n30",
                     "n31",
                     "n32",
@@ -15046,10 +15098,10 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "live_out_nodes": [
-                    "n29",
                     "n30",
                     "n31",
                     "n32",
@@ -15073,7 +15125,8 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
@@ -15135,7 +15188,8 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "live_out_nodes": [
                     "n3",
@@ -15188,7 +15242,8 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
@@ -15197,7 +15252,7 @@
                   "def_nodes": [
                     "n12",
                     "n21",
-                    "n27",
+                    "n28",
                     "n4"
                   ],
                   "use_nodes": [
@@ -15205,7 +15260,7 @@
                     "n16",
                     "n17",
                     "n21",
-                    "n26",
+                    "n27",
                     "n3",
                     "n4"
                   ],
@@ -15233,7 +15288,8 @@
                     "n23",
                     "n24",
                     "n25",
-                    "n26"
+                    "n26",
+                    "n27"
                   ],
                   "live_out_nodes": [
                     "n3",
@@ -15260,7 +15316,8 @@
                     "n24",
                     "n25",
                     "n26",
-                    "n27"
+                    "n27",
+                    "n28"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
@@ -15325,7 +15382,8 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "live_out_nodes": [
                     "n3",
@@ -15378,7 +15436,8 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "last_use_nodes": [
                     "n1"
@@ -15388,25 +15447,25 @@
                 "list": {
                   "def_nodes": [],
                   "use_nodes": [
-                    "n52"
+                    "n53"
                   ],
                   "live_in_nodes": [
-                    "n50",
-                    "n52",
-                    "n53"
+                    "n51",
+                    "n53",
+                    "n54"
                   ],
                   "live_out_nodes": [
-                    "n50",
-                    "n53"
+                    "n51",
+                    "n54"
                   ],
                   "last_use_nodes": [
-                    "n52"
+                    "n53"
                   ],
                   "lifetime_class": "local_non_escape_candidate"
                 },
                 "n": {
                   "def_nodes": [
-                    "n40"
+                    "n41"
                   ],
                   "use_nodes": [],
                   "live_in_nodes": [],
@@ -15416,7 +15475,7 @@
                 },
                 "pos_i": {
                   "def_nodes": [
-                    "n28",
+                    "n29",
                     "n5"
                   ],
                   "use_nodes": [
@@ -15453,7 +15512,8 @@
                     "n24",
                     "n25",
                     "n26",
-                    "n27"
+                    "n27",
+                    "n28"
                   ],
                   "live_out_nodes": [
                     "n1",
@@ -15482,7 +15542,8 @@
                     "n25",
                     "n26",
                     "n27",
-                    "n28"
+                    "n28",
+                    "n29"
                   ],
                   "last_use_nodes": [
                     "n2"
@@ -15491,49 +15552,49 @@
                 },
                 "s": {
                   "def_nodes": [
-                    "n29",
-                    "n38",
-                    "n44"
-                  ],
-                  "use_nodes": [
                     "n30",
-                    "n31",
-                    "n32",
-                    "n34",
-                    "n35",
-                    "n40",
-                    "n45",
-                    "n46",
-                    "n47"
-                  ],
-                  "live_in_nodes": [
-                    "n30",
-                    "n31",
-                    "n32",
-                    "n34",
-                    "n35",
-                    "n40",
-                    "n41",
-                    "n45",
-                    "n46",
-                    "n47"
-                  ],
-                  "live_out_nodes": [
-                    "n29",
-                    "n30",
-                    "n31",
-                    "n34",
-                    "n38",
-                    "n40",
-                    "n41",
-                    "n44",
+                    "n39",
                     "n45"
                   ],
-                  "last_use_nodes": [
+                  "use_nodes": [
+                    "n31",
+                    "n32",
+                    "n33",
+                    "n35",
+                    "n36",
+                    "n41",
+                    "n46",
+                    "n47",
+                    "n48"
+                  ],
+                  "live_in_nodes": [
+                    "n31",
+                    "n32",
+                    "n33",
+                    "n35",
+                    "n36",
+                    "n41",
+                    "n42",
+                    "n46",
+                    "n47",
+                    "n48"
+                  ],
+                  "live_out_nodes": [
+                    "n30",
+                    "n31",
                     "n32",
                     "n35",
-                    "n46",
-                    "n47"
+                    "n39",
+                    "n41",
+                    "n42",
+                    "n45",
+                    "n46"
+                  ],
+                  "last_use_nodes": [
+                    "n33",
+                    "n36",
+                    "n47",
+                    "n48"
                   ],
                   "lifetime_class": "local_non_escape_candidate"
                 },
@@ -15544,8 +15605,8 @@
                     "n18",
                     "n2",
                     "n25",
-                    "n29",
-                    "n44",
+                    "n30",
+                    "n45",
                     "n9"
                   ],
                   "live_in_nodes": [
@@ -15601,7 +15662,8 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "live_out_nodes": [
                     "n1",
@@ -15655,7 +15717,8 @@
                     "n50",
                     "n51",
                     "n52",
-                    "n53"
+                    "n53",
+                    "n54"
                   ],
                   "last_use_nodes": [
                     "n2"
@@ -15698,37 +15761,37 @@
                 },
                 "spec_i": {
                   "def_nodes": [
-                    "n39",
-                    "n42"
+                    "n40",
+                    "n43"
                   ],
                   "use_nodes": [
-                    "n39",
-                    "n41"
+                    "n40",
+                    "n42"
                   ],
                   "live_in_nodes": [
-                    "n38",
-                    "n39",
-                    "n40",
-                    "n41"
-                  ],
-                  "live_out_nodes": [
-                    "n38",
                     "n39",
                     "n40",
                     "n41",
                     "n42"
+                  ],
+                  "live_out_nodes": [
+                    "n39",
+                    "n40",
+                    "n41",
+                    "n42",
+                    "n43"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
                 },
                 "specs_opt": {
                   "def_nodes": [
-                    "n48"
+                    "n49"
                   ],
                   "use_nodes": [
                     "n23",
-                    "n38",
-                    "n46"
+                    "n39",
+                    "n47"
                   ],
                   "live_in_nodes": [
                     "n3",
@@ -15775,7 +15838,8 @@
                     "n44",
                     "n45",
                     "n46",
-                    "n47"
+                    "n47",
+                    "n48"
                   ],
                   "live_out_nodes": [
                     "n3",
@@ -15823,19 +15887,20 @@
                     "n45",
                     "n46",
                     "n47",
-                    "n48"
+                    "n48",
+                    "n49"
                   ],
                   "last_use_nodes": [],
                   "lifetime_class": "local_non_escape_candidate"
                 },
                 "specs_pos": {
                   "def_nodes": [
-                    "n49"
+                    "n50"
                   ],
                   "use_nodes": [
                     "n1",
                     "n2",
-                    "n47",
+                    "n48",
                     "n7",
                     "n8"
                   ],
@@ -15887,7 +15952,8 @@
                     "n45",
                     "n46",
                     "n47",
-                    "n48"
+                    "n48",
+                    "n49"
                   ],
                   "live_out_nodes": [
                     "n1",
@@ -15937,7 +16003,8 @@
                     "n46",
                     "n47",
                     "n48",
-                    "n49"
+                    "n49",
+                    "n50"
                   ],
                   "last_use_nodes": [
                     "n2"
@@ -15947,25 +16014,25 @@
                 "sys": {
                   "def_nodes": [],
                   "use_nodes": [
-                    "n51"
+                    "n52"
                   ],
                   "live_in_nodes": [
-                    "n50",
                     "n51",
-                    "n53"
+                    "n52",
+                    "n54"
                   ],
                   "live_out_nodes": [
-                    "n50",
-                    "n53"
+                    "n51",
+                    "n54"
                   ],
                   "last_use_nodes": [
-                    "n51"
+                    "n52"
                   ],
                   "lifetime_class": "local_non_escape_candidate"
                 },
                 "tok": {
                   "def_nodes": [
-                    "n26"
+                    "n27"
                   ],
                   "use_nodes": [
                     "n10",
@@ -15997,7 +16064,8 @@
                     "n22",
                     "n23",
                     "n24",
-                    "n25"
+                    "n25",
+                    "n26"
                   ],
                   "live_out_nodes": [
                     "n7",
@@ -16019,7 +16087,8 @@
                     "n23",
                     "n24",
                     "n25",
-                    "n26"
+                    "n26",
+                    "n27"
                   ],
                   "last_use_nodes": [
                     "n6"
@@ -16052,7 +16121,7 @@
                 },
                 "values": {
                   "def_nodes": [
-                    "n37"
+                    "n38"
                   ],
                   "use_nodes": [
                     "n0"
@@ -16094,7 +16163,8 @@
                     "n33",
                     "n34",
                     "n35",
-                    "n36"
+                    "n36",
+                    "n37"
                   ],
                   "live_out_nodes": [
                     "n1",
@@ -16133,7 +16203,8 @@
                     "n34",
                     "n35",
                     "n36",
-                    "n37"
+                    "n37",
+                    "n38"
                   ],
                   "last_use_nodes": [
                     "n0"
@@ -16177,6 +16248,14 @@
           "runtime_module_id": "pytra.std.sys",
           "runtime_group": "std",
           "resolved_binding_kind": "module"
+        },
+        {
+          "module_id": "pytra.built_in.sequence",
+          "export_name": "",
+          "local_name": "pytra.built_in.sequence",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/std/argparse.py",
+          "source_line": 0
         }
       ],
       "qualified_refs": [
@@ -16195,6 +16274,14 @@
         "binding_kind": "symbol",
         "source_file": "src/pytra/std/argparse.py",
         "source_line": 7
+      },
+      {
+        "module_id": "pytra.built_in.sequence",
+        "export_name": "",
+        "local_name": "pytra.built_in.sequence",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/std/argparse.py",
+        "source_line": 0
       }
     ],
     "qualified_symbol_refs": [

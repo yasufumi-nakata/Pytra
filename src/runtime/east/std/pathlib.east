@@ -6347,6 +6347,38 @@
           "docstring": null,
           "body": [
             {
+              "kind": "VarDecl",
+              "name": "base",
+              "type": "str",
+              "hoisted": true,
+              "meta": {
+                "lifetime_node_id": "n12",
+                "lifetime_defs": [],
+                "lifetime_uses": [],
+                "lifetime_live_in": [
+                  "Path",
+                  "ValueError",
+                  "cast",
+                  "len",
+                  "other",
+                  "path",
+                  "self",
+                  "str"
+                ],
+                "lifetime_live_out": [
+                  "Path",
+                  "ValueError",
+                  "cast",
+                  "len",
+                  "other",
+                  "path",
+                  "self",
+                  "str"
+                ],
+                "lifetime_last_use_vars": []
+              }
+            },
+            {
               "kind": "If",
               "source_span": {
                 "lineno": 79,
@@ -6572,6 +6604,7 @@
                     "category": "static",
                     "mirror": "str"
                   },
+                  "is_reassign": true,
                   "meta": {
                     "lifetime_node_id": "n10",
                     "lifetime_defs": [
@@ -6704,6 +6737,7 @@
                     "mirror": "unknown",
                     "dynamic_name": "unknown"
                   },
+                  "is_reassign": true,
                   "meta": {
                     "lifetime_node_id": "n11",
                     "lifetime_defs": [
@@ -8561,7 +8595,7 @@
               "schema_version": "east3_lifetime_v1",
               "status": "ok",
               "reason": "",
-              "entry_node": "n9",
+              "entry_node": "n12",
               "order": [
                 "n0",
                 "n1",
@@ -8574,7 +8608,8 @@
                 "n8",
                 "n9",
                 "n10",
-                "n11"
+                "n11",
+                "n12"
               ],
               "cfg": [
                 {
@@ -8730,6 +8765,15 @@
                   "succ": [
                     "n8"
                   ]
+                },
+                {
+                  "id": "n12",
+                  "kind": "VarDecl",
+                  "defs": [],
+                  "uses": [],
+                  "succ": [
+                    "n9"
+                  ]
                 }
               ],
               "def_use": {
@@ -8817,7 +8861,8 @@
                     "n8",
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "live_out_nodes": [
                     "n1",
@@ -8828,7 +8873,8 @@
                     "n8",
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "last_use_nodes": [
                     "n2",
@@ -8851,7 +8897,8 @@
                     "n8",
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "live_out_nodes": [
                     "n1",
@@ -8862,7 +8909,8 @@
                     "n8",
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "last_use_nodes": [
                     "n0"
@@ -8942,10 +8990,12 @@
                   "live_in_nodes": [
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "live_out_nodes": [
-                    "n9"
+                    "n9",
+                    "n12"
                   ],
                   "last_use_nodes": [
                     "n10",
@@ -8968,7 +9018,8 @@
                     "n8",
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "live_out_nodes": [
                     "n1",
@@ -8979,7 +9030,8 @@
                     "n8",
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "last_use_nodes": [
                     "n2"
@@ -8996,10 +9048,12 @@
                   "live_in_nodes": [
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "live_out_nodes": [
-                    "n9"
+                    "n9",
+                    "n12"
                   ],
                   "last_use_nodes": [
                     "n10",
@@ -9018,13 +9072,15 @@
                     "n8",
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "live_out_nodes": [
                     "n8",
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "last_use_nodes": [
                     "n7"
@@ -9047,7 +9103,8 @@
                     "n8",
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "live_out_nodes": [
                     "n1",
@@ -9058,7 +9115,8 @@
                     "n8",
                     "n9",
                     "n10",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "last_use_nodes": [
                     "n0"
@@ -9102,10 +9160,12 @@
                   ],
                   "live_in_nodes": [
                     "n9",
-                    "n11"
+                    "n11",
+                    "n12"
                   ],
                   "live_out_nodes": [
-                    "n9"
+                    "n9",
+                    "n12"
                   ],
                   "last_use_nodes": [
                     "n11"
@@ -13636,7 +13696,7 @@
           }
         }
       ],
-      "class_storage_hint": "ref",
+      "class_storage_hint": "value",
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -13689,6 +13749,30 @@
           "runtime_module_id": "pytra.std.os_path",
           "runtime_group": "std",
           "resolved_binding_kind": "module"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/std/pathlib.py",
+          "source_line": 0
+        },
+        {
+          "module_id": "pytra.built_in.scalar_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.scalar_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/std/pathlib.py",
+          "source_line": 0
+        },
+        {
+          "module_id": "pytra.built_in.sequence",
+          "export_name": "",
+          "local_name": "pytra.built_in.sequence",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/std/pathlib.py",
+          "source_line": 0
         }
       ],
       "qualified_refs": [
@@ -13733,6 +13817,30 @@
         "binding_kind": "symbol",
         "source_file": "src/pytra/std/pathlib.py",
         "source_line": 9
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/std/pathlib.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.scalar_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.scalar_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/std/pathlib.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.sequence",
+        "export_name": "",
+        "local_name": "pytra.built_in.sequence",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/std/pathlib.py",
+        "source_line": 0
       }
     ],
     "qualified_symbol_refs": [

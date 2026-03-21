@@ -10768,7 +10768,7 @@
           "target_plan": {
             "kind": "NameTarget",
             "id": "b",
-            "target_type": "uint8"
+            "target_type": "int32"
           },
           "body": [
             {
@@ -17554,10 +17554,60 @@
     "parser_backend": "self_hosted",
     "import_resolution": {
       "schema_version": 1,
-      "bindings": [],
+      "bindings": [
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/utils/png.py",
+          "source_line": 0
+        },
+        {
+          "module_id": "pytra.built_in.scalar_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.scalar_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/utils/png.py",
+          "source_line": 0
+        },
+        {
+          "module_id": "pytra.built_in.sequence",
+          "export_name": "",
+          "local_name": "pytra.built_in.sequence",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/utils/png.py",
+          "source_line": 0
+        }
+      ],
       "qualified_refs": []
     },
-    "import_bindings": [],
+    "import_bindings": [
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/utils/png.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.scalar_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.scalar_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/utils/png.py",
+        "source_line": 0
+      },
+      {
+        "module_id": "pytra.built_in.sequence",
+        "export_name": "",
+        "local_name": "pytra.built_in.sequence",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/utils/png.py",
+        "source_line": 0
+      }
+    ],
     "qualified_symbol_refs": [],
     "import_modules": {},
     "import_symbols": {},

@@ -3239,6 +3239,14 @@
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.abi"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/utils/assertions.py",
+          "source_line": 0
         }
       ],
       "qualified_refs": [
@@ -3257,6 +3265,14 @@
         "binding_kind": "symbol",
         "source_file": "src/pytra/utils/assertions.py",
         "source_line": 2
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/utils/assertions.py",
+        "source_line": 0
       }
     ],
     "qualified_symbol_refs": [

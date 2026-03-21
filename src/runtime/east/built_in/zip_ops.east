@@ -1625,6 +1625,14 @@
           "runtime_module_id": "pytra.std.template",
           "runtime_group": "std",
           "resolved_binding_kind": "module"
+        },
+        {
+          "module_id": "pytra.built_in.sequence",
+          "export_name": "",
+          "local_name": "pytra.built_in.sequence",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/built_in/zip_ops.py",
+          "source_line": 0
         }
       ],
       "qualified_refs": [
@@ -1656,6 +1664,14 @@
         "binding_kind": "symbol",
         "source_file": "src/pytra/built_in/zip_ops.py",
         "source_line": 4
+      },
+      {
+        "module_id": "pytra.built_in.sequence",
+        "export_name": "",
+        "local_name": "pytra.built_in.sequence",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/built_in/zip_ops.py",
+        "source_line": 0
       }
     ],
     "qualified_symbol_refs": [

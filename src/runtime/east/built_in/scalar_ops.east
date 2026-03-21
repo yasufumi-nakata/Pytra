@@ -711,6 +711,14 @@
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.extern"
+        },
+        {
+          "module_id": "pytra.built_in.scalar_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.scalar_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/built_in/scalar_ops.py",
+          "source_line": 0
         }
       ],
       "qualified_refs": [
@@ -729,6 +737,14 @@
         "binding_kind": "symbol",
         "source_file": "src/pytra/built_in/scalar_ops.py",
         "source_line": 4
+      },
+      {
+        "module_id": "pytra.built_in.scalar_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.scalar_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/built_in/scalar_ops.py",
+        "source_line": 0
       }
     ],
     "qualified_symbol_refs": [

@@ -775,6 +775,14 @@
           "runtime_module_id": "pytra.std.template",
           "runtime_group": "std",
           "resolved_binding_kind": "module"
+        },
+        {
+          "module_id": "pytra.built_in.scalar_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.scalar_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/built_in/predicates.py",
+          "source_line": 0
         }
       ],
       "qualified_refs": [
@@ -793,6 +801,14 @@
         "binding_kind": "symbol",
         "source_file": "src/pytra/built_in/predicates.py",
         "source_line": 3
+      },
+      {
+        "module_id": "pytra.built_in.scalar_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.scalar_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/built_in/predicates.py",
+        "source_line": 0
       }
     ],
     "qualified_symbol_refs": [
