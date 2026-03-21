@@ -1,6 +1,6 @@
 # P0: Object\<T\> 移行 — ControlBlock + テンプレート view 方式への移行
 
-最終更新: 2026-03-21
+最終更新: 2026-03-22
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P0-OBJECT-T-MIGRATION-*`
@@ -86,3 +86,12 @@ emitter が生成する C++ コードを `Object<T>` 形式に順次移行する
 ## 決定ログ
 
 - 2026-03-21: 現行 `object` の include 順序問題（forward declaration + SFINAE 失敗）が P0-17 の根本原因であることを特定。`Object<T>` + `ControlBlock` 方式への移行を計画。
+- 2026-03-22: Phase 5 S1 テストパス率改善作業。192/107 (64%) → 234/65 (78%)。主な修正:
+  - object receiver guard の誤検出修正（super()/class名/import例外、unknown除外）
+  - ForCore/AugAssign の C++ 予約語リネーム漏れ修正（`count` → `py_count` 不整合）
+  - str.h `py_to_string` forward declaration 二重定義修正
+  - テスト subprocess の PYTHONPATH 未設定修正
+  - `rc<list<T>>` → `Object<list<T>>` runtime C++ overload 移行（10ファイル）
+  - conftest の @extern 関数自己再帰 C++ 生成修正
+  - `load_cpp_identifier_rules` の profile override 復元
+  - REPO_ROOT ずれ（parents[4]→parents[5]）を特定。import alias 解決に必要だが include path 退行のため保留 → P0-22 として起票

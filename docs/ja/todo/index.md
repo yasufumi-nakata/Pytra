@@ -73,6 +73,18 @@
 19. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S3] selfhost multi-module transpile が動作する。
 20. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S4] sample/py の全 18 ケースが C++ で compile + run できる。
 
+#### P0-22: REPO_ROOT 修正 + import alias 解決 + conftest extern 関数修正
+
+文脈: [docs/ja/plans/p0-cpp-repo-root-and-import-alias-fix.md](../plans/p0-cpp-repo-root-and-import-alias-fix.md)
+
+1. [ ] [ID: P0-REPO-ROOT-IMPORT-FIX-S1] include path 生成の整合性確保（`_module_name_to_cpp_include` が `-I` フラグで解決可能なパスを生成することを保証）
+2. [ ] [ID: P0-REPO-ROOT-IMPORT-FIX-S2] `REPO_ROOT` を `parents[5]` に修正する（S1 完了後）
+3. [ ] [ID: P0-REPO-ROOT-IMPORT-FIX-S3] `_resolve_imported_symbol_cpp_target` で bare module name を正規化（`math` → `pytra.std.math`）
+4. [ ] [ID: P0-REPO-ROOT-IMPORT-FIX-S4] `build_multi_cpp.py` の generated source 自動リンク拡張
+
+進捗:
+- 2026-03-22: conftest extern stripping 修正済み（`_build_cpp_emit_module_without_extern_decls` 適用）。REPO_ROOT 修正は include path 退行のため保留。計画書起票。
+
 #### P0-21: EAST3 で C++ 準拠の integer promotion を実装
 
 文脈: [docs/ja/plans/p0-east3-integer-promotion.md](../plans/p0-east3-integer-promotion.md)
