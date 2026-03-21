@@ -31,7 +31,7 @@ class CppCallEmitter:
         Bare module names (e.g. "math") are normalized to canonical form
         (e.g. "pytra.std.math") before resolution.
         """
-        target_module = self._normalize_runtime_module_name(module_name)
+        target_module = module_name
         if target_module != "" and symbol_name != "":
             resolved_module = resolve_import_binding_runtime_module(target_module, symbol_name, "symbol")
             if resolved_module != "":
