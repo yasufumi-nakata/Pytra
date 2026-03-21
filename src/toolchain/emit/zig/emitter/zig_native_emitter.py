@@ -1308,11 +1308,16 @@ class ZigNativeEmitter:
         stop = self._render_expr(plan.get("stop"))
         step_any = plan.get("step")
         step = self._render_expr(step_any) if isinstance(step_any, dict) else "1"
-        self._emit_line("var " + target_name + ": i64 = " + start + ";")
+        already_declared = len(self._local_var_stack) > 0 and target_name in self._current_local_vars()
+        if already_declared:
+            # Reuse existing variable (avoid shadow)
+            self._emit_line(target_name + " = " + start + ";")
+        else:
+            self._emit_line("var " + target_name + ": i64 = " + start + ";")
+            if len(self._local_var_stack) > 0:
+                self._current_local_vars().add(target_name)
         self._emit_line("while (" + target_name + " < " + stop + ") : (" + target_name + " += " + step + ") {")
         self.indent += 1
-        if len(self._local_var_stack) > 0:
-            self._current_local_vars().add(target_name)
         self._emit_block(stmt.get("body"))
         self.indent -= 1
         self._emit_line("}")
@@ -1647,6 +1652,11 @@ class ZigNativeEmitter:
             op = str(ed.get("op"))
             left_type = self._lookup_expr_type(ed.get("left"))
             right_type = self._lookup_expr_type(ed.get("right"))
+            # Fallback: check resolved_type if _lookup_expr_type returns empty
+            if left_type == "":
+                left_type = self._get_expr_type(ed.get("left"))
+            if right_type == "":
+                right_type = self._get_expr_type(ed.get("right"))
             # int/float 混合演算: int 側を @floatFromInt でラップ
             _INT_TYPES = {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}
             _FLOAT_TYPES = {"float64", "float32", "float"}
@@ -1695,6 +1705,10 @@ class ZigNativeEmitter:
                 parts.append(self._render_expr(v))
             joiner = " and " if op == "And" else " or "
             return "(" + joiner.join(parts) + ")"
+        if kind == "Unbox":
+            return self._render_expr(ed.get("value"))
+        if kind == "Box":
+            return self._render_expr(ed.get("value"))
         if kind == "Call":
             return self._render_call(ed)
         if kind == "Attribute":
