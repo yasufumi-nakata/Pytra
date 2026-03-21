@@ -141,28 +141,34 @@ def load_cpp_hooks(profile: dict[str, Any] = {}) -> dict[str, Any]:
     return {}
 
 
+_CPP_KEYWORDS: set[str] = {
+    "alignas", "alignof", "asm", "auto", "break", "case", "catch", "char", "class", "const", "constexpr",
+    "continue", "default", "delete", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if",
+    "inline", "int", "long", "namespace", "new", "operator", "private", "protected", "public", "register",
+    "return", "short", "signed", "sizeof", "static", "struct", "switch", "template", "this", "throw", "try",
+    "typedef", "typename", "union", "unsigned", "virtual", "void", "volatile", "while",
+}
+# C++ standard library / common names that user identifiers should not shadow.
+_CPP_RESERVED_BUILTINS: set[str] = {
+    "main", "string", "vector", "map", "set", "list", "array", "pair", "tuple",
+    "size_t", "ptrdiff_t", "nullptr", "true", "false",
+    "cout", "cin", "cerr", "endl",
+    "sort", "find", "count", "min", "max", "swap", "move", "forward",
+    "begin", "end", "size", "empty", "push_back", "pop_back",
+    "make_pair", "make_tuple", "make_shared", "make_unique",
+    "shared_ptr", "unique_ptr", "weak_ptr",
+    "function", "bind", "ref", "cref",
+    "thread", "mutex", "lock_guard",
+    "exception", "runtime_error", "logic_error",
+    "assert", "abort", "exit",
+    "printf", "scanf", "malloc", "free",
+    "NULL", "EOF",
+}
+
 def load_cpp_identifier_rules(profile: dict[str, Any] = {}) -> tuple[set[str], str]:
-    """識別子リネーム規則を返す（profile.syntax.identifiers で上書き可能）。"""
-    reserved: set[str] = {
-        "alignas", "alignof", "asm", "auto", "break", "case", "catch", "char", "class", "const", "constexpr",
-        "continue", "default", "delete", "do", "double", "else", "enum", "extern", "float", "for", "goto", "if",
-        "inline", "int", "long", "namespace", "new", "operator", "private", "protected", "public", "register",
-        "return", "short", "signed", "sizeof", "static", "struct", "switch", "template", "this", "throw", "try",
-        "typedef", "typename", "union", "unsigned", "virtual", "void", "volatile", "while",
-    }
+    """識別子リネーム規則を返す。ハードコードの予約語セットを使用する。"""
+    reserved: set[str] = set(_CPP_KEYWORDS) | set(_CPP_RESERVED_BUILTINS)
     rename_prefix = "py_"
-    if isinstance(profile, dict):
-        syntax_map = dict_any_get_dict(profile, "syntax")
-        identifiers = dict_any_get_dict(syntax_map, "identifiers")
-        configured = dict_any_get_list(identifiers, "reserved_words")
-        if len(configured) > 0:
-            reserved = set()
-            for item in configured:
-                if isinstance(item, str) and item != "":
-                    reserved.add(item)
-        configured_prefix = dict_any_get_str(identifiers, "rename_prefix", "")
-        if configured_prefix != "":
-            rename_prefix = configured_prefix
     return reserved, rename_prefix
 
 

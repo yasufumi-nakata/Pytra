@@ -27,6 +27,18 @@ _ZIG_KEYWORDS = {
     "switch", "test", "threadlocal", "true", "try", "undefined",
     "union", "unreachable", "var", "volatile", "while",
 }
+# Zig std built-in names that user-defined identifiers should not shadow.
+_ZIG_RESERVED_BUILTINS = {
+    "std", "print", "assert",
+    "i8", "i16", "i32", "i64", "i128",
+    "u8", "u16", "u32", "u64", "u128",
+    "f16", "f32", "f64", "f128",
+    "usize", "isize", "bool",
+    "type", "void", "anyerror",
+    "allocator", "ArrayList", "HashMap",
+    "mem", "fmt", "math", "debug", "heap", "io", "os", "fs",
+    "testing", "log",
+}
 _NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool", "str"}
 _COMPILETIME_STD_IMPORT_SYMBOLS = {"abi", "template", "extern"}
 
@@ -50,6 +62,8 @@ def _safe_ident(name: Any, fallback: str = "value") -> str:
         out = "_" + out
     if out in _ZIG_KEYWORDS:
         out = "@\"" + out + "\""
+    while out in _ZIG_RESERVED_BUILTINS:
+        out = out + "_"
     return out
 
 

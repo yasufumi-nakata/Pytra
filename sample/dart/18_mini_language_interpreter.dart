@@ -334,7 +334,7 @@ int eval_expr(int expr_index, dynamic expr_nodes, dynamic env) {
     if ((!__pytraContains(env, node.name))) {
       throw Exception(("undefined variable: " + node.name));
     }
-    return env[(node.name) < 0 ? env.length + (node.name) : (node.name)];
+    return env[node.name];
   }
   if ((node.kind_tag == 4)) {
     return (-eval_expr(node.left, expr_nodes, env));

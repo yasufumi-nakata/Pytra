@@ -182,7 +182,7 @@
 
 1. [x] [ID: P2-RESERVED-NAME-ESCAPE-01] `CodeEmitter` に `_reserved_names()` / `_safe_name()` を追加する。
 2. [x] [ID: P2-RESERVED-NAME-ESCAPE-02] Julia emitter に予約語リストを追加し、識別子出力で `_safe_name()` を使用する。
-3. [ ] [ID: P2-RESERVED-NAME-ESCAPE-03] 他の主要 emitter（Dart, Zig, C++）にも予約語リストを追加する。
+3. [x] [ID: P2-RESERVED-NAME-ESCAPE-03] 他の主要 emitter（Dart, Zig, C++）にも予約語リストを追加する。
 4. [x] [ID: P2-RESERVED-NAME-ESCAPE-04] テスト検証（sample/16 Julia 通過、リグレッションなし）。
 
 ### P3: pyobj list alias escape 解析を EAST3 パスへ移行

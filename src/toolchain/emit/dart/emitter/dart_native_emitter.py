@@ -83,6 +83,17 @@ _DART_KEYWORDS = {
     "with",
     "yield",
 }
+# Dart top-level built-in names that user-defined identifiers should not shadow.
+_DART_RESERVED_BUILTINS = {
+    "print", "identical", "override",
+    "int", "double", "num", "String", "bool", "List", "Map", "Set",
+    "Object", "Type", "Symbol", "Future", "Stream", "Iterable",
+    "Iterator", "Duration", "DateTime", "RegExp", "Error",
+    "Exception", "StateError", "ArgumentError", "RangeError",
+    "TypeError", "FormatException", "UnsupportedError",
+    "Comparable", "Pattern", "Match", "Sink", "StringSink",
+    "Null", "Never", "Enum",
+}
 _NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool", "str"}
 _COMPILETIME_STD_IMPORT_SYMBOLS = {"abi", "template", "extern"}
 
@@ -107,6 +118,8 @@ def _safe_ident(name: Any, fallback: str = "value") -> str:
     if out[0].isdigit():
         out = "d_" + out
     if out in _DART_KEYWORDS:
+        out = out + "_"
+    while out in _DART_RESERVED_BUILTINS:
         out = out + "_"
     return out
 
@@ -2059,6 +2072,10 @@ class DartNativeEmitter:
                     return "pytraSlice(" + owner + ", " + lower + ", null)"
                 return "pytraSlice(" + owner + ", " + lower + ", " + upper + ")"
             index = self._render_expr(index_node)
+            # Dict subscript: no negative index adjustment
+            if owner_type.startswith("dict["):
+                return owner + "[" + index + "]"
+            # String/List index with potential negative index handling
             idx_const = self._const_int_literal(index_node)
             if isinstance(idx_const, int):
                 if owner_type == "str":
@@ -2068,6 +2085,10 @@ class DartNativeEmitter:
                 if idx_const >= 0:
                     return owner + "[" + str(idx_const) + "]"
                 return owner + "[" + owner + ".length + " + str(idx_const) + "]"
+            # If index is clearly non-numeric (string key), use direct access
+            index_type = self._lookup_expr_type(index_node)
+            if index_type == "str":
+                return owner + "[" + index + "]"
             return owner + "[(" + index + ") < 0 ? " + owner + ".length + (" + index + ") : (" + index + ")]"
         if kind == "Attribute":
             owner = self._render_expr(ed.get("value"))
@@ -2161,74 +2182,75 @@ class DartNativeEmitter:
         if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
             raise RuntimeError("lang=dart unresolved stdlib runtime call: " + semantic_tag)
         if isinstance(func_any, dict) and func_any.get("kind") == "Name":
-            fn_name = _safe_ident(func_any.get("id"), "fn")
-            if fn_name == "print":
+            raw_fn_name = func_any.get("id") if isinstance(func_any.get("id"), str) else ""
+            fn_name = _safe_ident(raw_fn_name, "fn")
+            if raw_fn_name == "print":
                 return "__pytraPrint([" + ", ".join(rendered_args) + "])"
-            if fn_name == "int":
+            if raw_fn_name == "int":
                 if len(rendered_args) == 0:
                     return "0"
                 return "pytraInt(" + rendered_args[0] + ")"
-            if fn_name == "float":
+            if raw_fn_name == "float":
                 if len(rendered_args) == 0:
                     return "0.0"
                 return "pytraFloat(" + rendered_args[0] + ")"
-            if fn_name == "bool":
+            if raw_fn_name == "bool":
                 if len(rendered_args) == 0:
                     return "false"
                 return "__pytraTruthy(" + rendered_args[0] + ")"
-            if fn_name == "str":
+            if raw_fn_name == "str":
                 if len(rendered_args) == 0:
                     return "''"
                 return "(" + rendered_args[0] + ").toString()"
-            if fn_name == "len":
+            if raw_fn_name == "len":
                 if len(rendered_args) == 0:
                     return "0"
                 return "(" + rendered_args[0] + ").length"
-            if fn_name == "max":
+            if raw_fn_name == "max":
                 self._needs_math_import = True
                 if len(rendered_args) == 0:
                     return "0"
                 if len(rendered_args) == 2:
                     return "((" + rendered_args[0] + ") > (" + rendered_args[1] + ") ? (" + rendered_args[0] + ") : (" + rendered_args[1] + "))"
                 return "[" + ", ".join(rendered_args) + "].reduce((a, b) => a > b ? a : b)"
-            if fn_name == "min":
+            if raw_fn_name == "min":
                 self._needs_math_import = True
                 if len(rendered_args) == 0:
                     return "0"
                 if len(rendered_args) == 2:
                     return "((" + rendered_args[0] + ") < (" + rendered_args[1] + ") ? (" + rendered_args[0] + ") : (" + rendered_args[1] + "))"
                 return "[" + ", ".join(rendered_args) + "].reduce((a, b) => a < b ? a : b)"
-            if fn_name == "abs":
+            if raw_fn_name == "abs":
                 if len(rendered_args) == 0:
                     return "0"
                 return "(" + rendered_args[0] + ").abs()"
-            if fn_name == "enumerate":
+            if raw_fn_name == "enumerate":
                 if len(rendered_args) == 0:
                     return "[]"
                 return "(" + rendered_args[0] + ").asMap().entries.map((e) => [e.key, e.value]).toList()"
-            if fn_name == "sorted":
+            if raw_fn_name == "sorted":
                 if len(rendered_args) == 0:
                     return "[]"
                 return "(List.from(" + rendered_args[0] + ")..sort())"
-            if fn_name == "reversed":
+            if raw_fn_name == "reversed":
                 if len(rendered_args) == 0:
                     return "[]"
                 return "(" + rendered_args[0] + ").reversed.toList()"
-            if fn_name == "zip":
+            if raw_fn_name == "zip":
                 if len(rendered_args) < 2:
                     return "[]"
                 return "pytraZip(" + ", ".join(rendered_args) + ")"
-            if fn_name == "range":
+            if raw_fn_name == "range":
                 if len(rendered_args) == 1:
                     return "List.generate(" + rendered_args[0] + ", (i) => i)"
                 if len(rendered_args) == 2:
                     return "List.generate((" + rendered_args[1] + ") - (" + rendered_args[0] + "), (i) => i + (" + rendered_args[0] + "))"
                 return "List.generate(((" + rendered_args[1] + ") - (" + rendered_args[0] + ")) ~/ (" + rendered_args[2] + "), (i) => (" + rendered_args[0] + ") + i * (" + rendered_args[2] + "))"
-            if fn_name == "bytearray":
+            if raw_fn_name == "bytearray":
                 if len(rendered_args) == 0:
                     return "<int>[]"
                 return "pytraBytearray(" + rendered_args[0] + ")"
-            if fn_name == "bytes":
+            if raw_fn_name == "bytes":
                 if len(rendered_args) == 0:
                     return "<int>[]"
                 return "pytraBytes(" + rendered_args[0] + ")"
