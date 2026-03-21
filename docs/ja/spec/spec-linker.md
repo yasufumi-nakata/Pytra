@@ -54,7 +54,7 @@
 - 必要時のみ raw `EAST3` 群と `link-input.v1` / `link-output.v1` を保存する。
 - 推奨導線は次のとおり。
   1. `pytra-cli.py` で raw `EAST3` 群と `link-input.json` を出力する。
-  2. `eastlink.py` で `link-input.json` を読み、`link-output.json` と linked module 群を出力する。
+  2. `pytra link` で `link-input.json` を読み、`link-output.json` と linked module 群を出力する。
   3. `east2cpp.py`（C++ の場合）または `east2x.py`（汎用）で `link-output.json` を読んで backend emit する。
 
 推奨拡張子 / ファイル名:
@@ -294,7 +294,7 @@ synthetic helper module の規則:
 
 - `pytra-cli.py`
   - raw `EAST3` 群と `link-input.json` を出力できる。
-- `eastlink.py`
+- `pytra link`
   - `link-input.json` を読み、`link-output.json` と linked module 群を出力する。
 - `east2cpp.py`
   - `link-output.json` を受理し、C++ multi-file 出力を生成する。非 C++ backend を import しない独立エントリポイント。
@@ -320,7 +320,7 @@ synthetic helper module の規則:
 ### 9.2 デバッグ/CI
 
 - 失敗再現時のみ raw `EAST3` dump と `link-input.v1` / `link-output.v1` を保存する。
-- 回帰テストでは `link-input.v1 -> eastlink.py -> link-output.v1` を独立に検証できるようにする。
+- 回帰テストでは `link-input.v1 -> pytra link -> link-output.v1` を独立に検証できるようにする。
 
 ## 10. エラー契約
 

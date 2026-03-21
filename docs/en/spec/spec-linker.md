@@ -63,7 +63,7 @@ Persist only when needed:
 Recommended flow:
 
 1. `pytra-cli.py` writes raw `EAST3` modules plus `link-input.json`
-2. `eastlink.py` reads `link-input.json` and writes `link-output.json` plus linked modules
+2. `pytra link` reads `link-input.json` and writes `link-output.json` plus linked modules
 3. `east2cpp.py` (for C++) or `east2x.py` (generic) reads `link-output.json` and emits target code
 
 Recommended filenames:
@@ -238,7 +238,7 @@ Canonical route:
 
 - `pytra-cli.py`
   - can output raw `EAST3` modules plus `link-input.json`
-- `eastlink.py`
+- `pytra link`
   - reads `link-input.json` and writes `link-output.json` plus linked modules
 - `east2x.py`
   - accepts either a raw single `Module` or `link-output.json`

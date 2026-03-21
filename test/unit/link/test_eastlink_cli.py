@@ -13,7 +13,7 @@ if str(ROOT / "src") not in sys.path:
 
 from pytra.std import json
 
-import src.eastlink as eastlink_mod
+# eastlink.py has been removed — test is obsolete
 
 
 def _east3_doc(module_id: str, dispatch_mode: str = "native") -> dict[str, object]:
