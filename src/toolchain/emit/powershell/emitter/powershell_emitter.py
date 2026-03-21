@@ -371,15 +371,20 @@ def _render_expr(expr_any: Any) -> str:
             # sys module property: sys.argv, sys.maxsize etc
             if vname == "sys":
                 if attr == "argv":
-                    return '@(if ($MyInvocation.MyCommand.Path) { $MyInvocation.MyCommand.Path } else { "" }) + @($args)'
+                    return "$argv"
+                if attr == "path":
+                    return "$path"
                 if attr == "maxsize":
                     return "[int64]::MaxValue"
                 if attr == "platform":
                     return '"powershell"'
+                if attr in ("stderr", "stdout"):
+                    return "$" + attr
             # stdlib module attribute: time.X, os.X, os.path.X → direct call or variable
             # These are Python stdlib references inside transpiled stdlib modules.
             # In PS, the functions are defined at module scope, so use bare name.
-            if vname in ("time", "os", "random", "re", "collections", "glob", "subprocess"):
+            if vname in ("time", "os", "random", "re", "collections", "glob",
+                        "subprocess", "sys", "png", "gif"):
                 return "$" + _safe_ident(attr, "_f")
         # Hashtable-based object field access: prefer ["attr"] over .attr
         # .NET methods (ToUpper, Split etc.) use dot notation
@@ -787,8 +792,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     if attr in ("pi", "e", "inf"):
                         return "([Math]::" + ps_name + ")"
                     return "([Math]::" + ps_name + "(" + ", ".join(rendered_args) + "))"
-            # stdlib module method call: time.perf_counter() → (perf_counter)
-            if owner_name in ("time", "os", "random", "re", "collections", "glob", "subprocess"):
+            # stdlib / imported module method call: mod.func() → (func args)
+            if owner_name in ("time", "os", "random", "re", "collections", "glob",
+                              "subprocess", "sys", "png", "gif", "json_mod", "pathlib_mod"):
                 safe_fn = _safe_ident(attr, "_f")
                 if len(rendered_args) == 0:
                     return "(" + safe_fn + ")"

@@ -1,26 +1,28 @@
 # sys_native.ps1 — native seam for pytra.std.sys
 
-$script:__sys_argv = @()
-$script:__sys_path = @()
+$script:argv = @()
+$script:path = @()
+$script:stderr = $null
+$script:stdout = $null
 
 function get_argv {
     param()
-    return $script:__sys_argv
+    return $script:argv
 }
 
 function set_argv {
     param($values)
-    $script:__sys_argv = @($values)
+    $script:argv = @($values)
 }
 
 function get_path {
     param()
-    return $script:__sys_path
+    return $script:path
 }
 
 function set_path {
     param($values)
-    $script:__sys_path = @($values)
+    $script:path = @($values)
 }
 
 function exit_ {
