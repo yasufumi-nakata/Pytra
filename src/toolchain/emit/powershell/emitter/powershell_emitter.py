@@ -281,6 +281,10 @@ def _render_expr(expr_any: Any) -> str:
         target_name = "$" + _safe_ident(_get_str(target, "id") if isinstance(target, dict) else "_lc", "_lc")
         iter_rendered = _render_expr(iter_expr)
         elt_rendered = _render_expr(elt)
+        # Nested array: protect inner array from flattening with ,@(...)
+        elt_is_array = isinstance(elt, dict) and _get_str(elt, "kind") in ("ListComp", "List", "Tuple")
+        if elt_is_array:
+            elt_rendered = "," + elt_rendered
         if len(ifs) == 0:
             return "@(" + iter_rendered + " | ForEach-Object { " + target_name + " = $_; " + elt_rendered + " })"
         cond = " -and ".join(["(" + _render_expr(c) + ")" for c in ifs])
