@@ -95,10 +95,25 @@ def emit_all_modules(
     for mod in modules:
         module_id = mod["module_id"]
         east_doc = mod["east_doc"]
+        is_entry = mod.get("is_entry", False)
         # Use module_id as filename, replacing dots with path separators
         rel_path = module_id.replace(".", "/") + ext
         out_path = out / rel_path
         out_path.parent.mkdir(parents=True, exist_ok=True)
+        # Compute root-relative prefix for sub-module import path resolution.
+        # e.g. "os/east" (depth 1) → "../", "a/b/c" (depth 2) → "../../"
+        depth = rel_path.count("/")
+        root_rel_prefix = "../" * depth if depth > 0 else "./"
+        # Inject emit context into EAST3 meta for emitter use
+        meta = east_doc.get("meta")
+        if not isinstance(meta, dict):
+            meta = {}
+            east_doc["meta"] = meta
+        meta["emit_context"] = {
+            "module_id": module_id,
+            "root_rel_prefix": root_rel_prefix,
+            "is_entry": bool(is_entry),
+        }
         source = transpile_fn(east_doc)
         out_path.write_text(source, encoding="utf-8")
         print("generated: " + str(out_path))

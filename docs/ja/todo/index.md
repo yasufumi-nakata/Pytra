@@ -101,6 +101,13 @@
 1. [x] [ID: P1-INTEGER-PROMOTION-NARROWING-01] EAST3 optimizer に代入先型縮小パスを実装する。
 2. [x] [ID: P1-INTEGER-PROMOTION-NARROWING-02] ユニットテストを追加する。
 
+### P2: emit_all_modules にルート相対パス情報を追加
+
+文脈: [docs/ja/plans/p2-emit-module-root-relative-path.md](../plans/p2-emit-module-root-relative-path.md)
+
+1. [x] [ID: P2-EMIT-ROOT-REL-PATH-01] `emit_all_modules` で `root_rel_prefix` を計算し EAST3 doc の meta に設定する。
+2. [x] [ID: P2-EMIT-ROOT-REL-PATH-02] 既存テストのリグレッションがないことを検証する。
+
 ### P2: built-in 依存を EAST1 → linker 経由で解決
 
 文脈: [docs/ja/plans/p2-builtin-dependency-via-linker.md](../plans/p2-builtin-dependency-via-linker.md)
