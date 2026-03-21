@@ -167,7 +167,8 @@ class CppStatementEmitter:
         """AugAssign 向けに左辺を簡易レンダリングする。"""
         target_node = self.any_to_dict_or_empty(target_expr)
         if self._node_kind_from_dict(target_node) == "Name":
-            return self.any_dict_get_str(target_node, "id", "_")
+            raw = self.any_dict_get_str(target_node, "id", "_")
+            return self.rename_if_reserved(raw, self.reserved_words, self.rename_prefix, self.renamed_symbols)
         return self.render_lvalue(target_expr)
 
     def _emit_annassign_stmt(self, stmt: dict[str, Any]) -> None:
@@ -1761,6 +1762,7 @@ class CppStatementEmitter:
             target_id = self.any_dict_get_str(target_plan, "id", "")
             if target_id == "":
                 raise RuntimeError("cpp emitter: invalid forcore target name")
+            target_id = self.rename_if_reserved(target_id, self.reserved_words, self.rename_prefix, self.renamed_symbols)
             target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
             if target_type in {"", "unknown"}:
                 target_type = "int64"
@@ -1874,6 +1876,7 @@ class CppStatementEmitter:
                 target_id = self.any_dict_get_str(target_plan, "id", "")
                 if target_id == "":
                     raise RuntimeError("cpp emitter: invalid forcore target name")
+                target_id = self.rename_if_reserved(target_id, self.reserved_words, self.rename_prefix, self.renamed_symbols)
                 target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
                 target_is_loop_value_list = target_type.startswith("list[") and target_type.endswith("]")
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
