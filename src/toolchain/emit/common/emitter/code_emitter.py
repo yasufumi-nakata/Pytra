@@ -3277,3 +3277,49 @@ def mutable_param_name(name: str) -> str:
     Convention: ``data`` → ``data_``.
     """
     return name + "_"
+
+
+def build_import_alias_map(meta: dict[str, Any]) -> dict[str, str]:
+    """Build a mapping from local import alias to resolved module ID.
+
+    Handles both module imports (``import os``) and symbol imports that
+    are actually sub-module aliases (``from pytra.std import os_path as path``).
+
+    Returns ``{local_name: resolved_module_id}`` e.g.
+    ``{"path": "pytra.std.os_path", "os": "os"}``.
+
+    For use by emitters that do not inherit :class:`CodeEmitter`.
+    """
+    out: dict[str, str] = {}
+    if not isinstance(meta, dict):
+        return out
+
+    # Try import_resolution first, fallback to import_bindings
+    resolution = meta.get("import_resolution")
+    binds_any = None
+    if isinstance(resolution, dict):
+        binds_any = resolution.get("bindings")
+    if not isinstance(binds_any, list):
+        binds_any = meta.get("import_bindings")
+    if not isinstance(binds_any, list):
+        return out
+
+    for ent in binds_any:
+        if not isinstance(ent, dict):
+            continue
+        binding_kind = ent.get("binding_kind", "")
+        local_name = ent.get("local_name", "")
+        module_id = ent.get("module_id", "")
+        export_name = ent.get("export_name", "")
+        if not isinstance(local_name, str) or local_name == "":
+            continue
+        if not isinstance(module_id, str) or module_id == "":
+            continue
+        if binding_kind == "module":
+            out[local_name] = module_id
+        elif binding_kind == "symbol":
+            if isinstance(export_name, str) and export_name != "":
+                out[local_name] = module_id + "." + export_name
+            else:
+                out[local_name] = module_id
+    return out
