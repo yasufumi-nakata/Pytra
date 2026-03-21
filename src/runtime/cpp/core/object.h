@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cassert>
 #include <iostream>
+#include <optional>
 #include <type_traits>
 
 #include "core/py_scalar_types.h"
@@ -150,6 +151,7 @@ struct Object<void> {
     ControlBlock* cb;
 
     Object() : cb(nullptr) {}
+    Object(::std::nullopt_t) : cb(nullptr) {}  // None
 
     Object(ControlBlock* cb_) : cb(cb_) { retain(); }
 
