@@ -871,6 +871,17 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 if len(rendered_args) == 0:
                     return "(__pytra_list_pop " + owner + ")"
                 return owner
+            if attr == "write":
+                # File write: use __pytra_file_write for bytes/string compatibility
+                if len(rendered_args) > 0:
+                    return "(__pytra_file_write " + owner + " " + rendered_args[0] + ")"
+                return owner
+            if attr == "read":
+                return owner + ".ReadToEnd()"
+            if attr == "close":
+                return owner + ".Close()"
+            if attr == "flush":
+                return owner + ".Flush()"
             if attr == "index":
                 if len(rendered_args) > 0:
                     return "[array]::IndexOf(" + owner + ", " + rendered_args[0] + ")"

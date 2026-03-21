@@ -258,16 +258,44 @@ function glob {
 
 function open {
     param($path, $mode = "r", $encoding = "utf-8")
-    # Stub: return a hashtable with read/write/close
-    $result = @{
-        "__type__" = "__file__"
-        "_path" = $path
-        "_mode" = $mode
+    # Return a .NET stream object directly so that .write()/.read()/.close()
+    # work as native .NET method calls (no hashtable wrapper needed).
+    if ($mode -eq "wb" -or $mode -eq "ab") {
+        $fm = if ($mode -eq "ab") { [System.IO.FileMode]::Append } else { [System.IO.FileMode]::Create }
+        return [System.IO.File]::Open($path, $fm, [System.IO.FileAccess]::Write)
+    }
+    if ($mode -eq "w" -or $mode -eq "wt") {
+        return [System.IO.StreamWriter]::new($path, $false, [System.Text.Encoding]::UTF8)
+    }
+    if ($mode -eq "a" -or $mode -eq "at") {
+        return [System.IO.StreamWriter]::new($path, $true, [System.Text.Encoding]::UTF8)
     }
     if ($mode -eq "r" -or $mode -eq "rt") {
-        $result["_content"] = [System.IO.File]::ReadAllText($path)
+        return [System.IO.StreamReader]::new($path, [System.Text.Encoding]::UTF8)
     }
-    return $result
+    if ($mode -eq "rb") {
+        return [System.IO.File]::OpenRead($path)
+    }
+    throw "open: unsupported mode: $mode"
+}
+
+function __pytra_file_write {
+    param([object]$stream, [object]$data)
+    if ($data -is [array] -or $data -is [System.Collections.IList]) {
+        $bytes = [byte[]]@($data | ForEach-Object { [byte]$_ })
+        $stream.Write($bytes, 0, $bytes.Length)
+        return $bytes.Length
+    }
+    if ($data -is [string]) {
+        if ($stream -is [System.IO.StreamWriter]) {
+            $stream.Write($data)
+        } else {
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($data)
+            $stream.Write($bytes, 0, $bytes.Length)
+        }
+        return $data.Length
+    }
+    return 0
 }
 
 function __pytra_in {
