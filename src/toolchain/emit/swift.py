@@ -17,7 +17,7 @@ from toolchain.emit.swift.emitter import transpile_to_swift
 from toolchain.emit.loader import emit_all_modules
 
 _ROOT = NativePath(__file__).resolve().parents[3]
-_SWIFT_BUILTIN_RUNTIME_SRC = _ROOT / "src" / "runtime" / "swift" / "built_in" / "py_runtime.swift"
+_SWIFT_NATIVE_BUILTIN_DIR = _ROOT / "src" / "runtime" / "swift" / "built_in"
 _SWIFT_NATIVE_STD_DIR = _ROOT / "src" / "runtime" / "swift" / "std"
 _RUNTIME_EAST_ROOT = _ROOT / "src" / "runtime" / "east"
 
@@ -52,10 +52,13 @@ def _generate_swift_runtime(output_dir: str) -> None:
     """Generate Swift runtime files from .east sources and copy native .swift files."""
     out = NativePath(output_dir)
 
-    # 1. Copy py_runtime.swift from src/runtime/
-    dst = out / "py_runtime.swift"
-    if _SWIFT_BUILTIN_RUNTIME_SRC.exists() and not dst.exists():
-        shutil.copy2(str(_SWIFT_BUILTIN_RUNTIME_SRC), str(dst))
+    # 1. Copy native runtime files from src/runtime/swift/built_in/
+    if _SWIFT_NATIVE_BUILTIN_DIR.is_dir():
+        for f in sorted(_SWIFT_NATIVE_BUILTIN_DIR.iterdir()):
+            if f.suffix == ".swift":
+                d = out / f.name
+                if not d.exists():
+                    shutil.copy2(str(f), str(d))
 
     # 2. Copy native std files (math_native.swift, time_native.swift)
     if _SWIFT_NATIVE_STD_DIR.is_dir():

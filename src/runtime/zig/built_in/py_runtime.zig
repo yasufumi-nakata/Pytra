@@ -331,16 +331,20 @@ pub fn list_append(obj: Obj, comptime T: type, value: T) void {
     p.append(value) catch {};
 }
 
-/// Get an element from an Obj-managed list.
+/// Get an element from an Obj-managed list (supports negative indices).
 pub fn list_get(obj: Obj, comptime T: type, idx: i64) T {
     const p: *std.ArrayList(T) = @ptrCast(@alignCast(obj.data));
-    return p.items[@intCast(idx)];
+    const len: i64 = @intCast(p.items.len);
+    const real_idx: usize = @intCast(if (idx < 0) idx + len else idx);
+    return p.items[real_idx];
 }
 
-/// Set an element in an Obj-managed list.
+/// Set an element in an Obj-managed list (supports negative indices).
 pub fn list_set(obj: Obj, comptime T: type, idx: i64, value: T) void {
     const p: *std.ArrayList(T) = @ptrCast(@alignCast(obj.data));
-    p.items[@intCast(idx)] = value;
+    const len: i64 = @intCast(p.items.len);
+    const real_idx: usize = @intCast(if (idx < 0) idx + len else idx);
+    p.items[real_idx] = value;
 }
 
 /// Get the length of an Obj-managed list.
@@ -377,7 +381,62 @@ pub fn list_extend(obj: Obj, comptime T: type, src: Obj) void {
 /// Empty vtable placeholder for containers.
 const EMPTY_VT = struct {};
 
-/// Slice (stub).
+// ─── String operations ───
+
+/// String index: str[i] → single-char slice (Python semantics).
+pub fn str_index(s: []const u8, idx: i64) []const u8 {
+    const len: i64 = @intCast(s.len);
+    const real: usize = @intCast(if (idx < 0) idx + len else idx);
+    return s[real .. real + 1];
+}
+
+/// String slice: str[start:end] → sub-slice (Python semantics).
+pub fn str_slice(s: []const u8, start: i64, end: i64) []const u8 {
+    const len: i64 = @intCast(s.len);
+    var s0 = if (start < 0) start + len else start;
+    var e0 = if (end < 0) end + len else end;
+    if (s0 < 0) s0 = 0;
+    if (e0 > len) e0 = len;
+    if (s0 >= e0) return "";
+    return s[@intCast(s0)..@intCast(e0)];
+}
+
+/// Python str.isdigit() — check if single char is a digit.
+pub fn char_isdigit(s: []const u8) bool {
+    if (s.len == 0) return false;
+    return s[0] >= '0' and s[0] <= '9';
+}
+
+/// Python str.isalpha() — check if single char is alphabetic.
+pub fn char_isalpha(s: []const u8) bool {
+    if (s.len == 0) return false;
+    const c = s[0];
+    return (c >= 'A' and c <= 'Z') or (c >= 'a' and c <= 'z');
+}
+
+/// Parse integer from string (Python int(s)).
+pub fn str_to_int(s: []const u8) i64 {
+    var result: i64 = 0;
+    var neg = false;
+    var i: usize = 0;
+    if (i < s.len and (s[i] == '-' or s[i] == '+')) {
+        neg = s[i] == '-';
+        i += 1;
+    }
+    while (i < s.len) : (i += 1) {
+        const c = s[i];
+        if (c < '0' or c > '9') break;
+        result = result * 10 + @as(i64, c - '0');
+    }
+    return if (neg) -result else result;
+}
+
+/// HashMap get with default value.
+pub fn dict_get_default(comptime V: type, map: std.StringHashMap(V), key: []const u8, default: V) V {
+    return map.get(key) orelse default;
+}
+
+/// Slice (stub — kept for backward compat, prefer str_slice).
 pub fn slice(lower: anytype, upper: anytype) void {
     _ = lower;
     _ = upper;

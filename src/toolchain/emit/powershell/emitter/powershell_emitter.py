@@ -530,7 +530,8 @@ def _render_expr(expr_any: Any) -> str:
         return "@{" + "; ".join(parts) + "}"
 
     if kind == "Subscript":
-        value = _render_expr(expr.get("value"))
+        value_node = expr.get("value")
+        value = _render_expr(value_node)
         slice_any = expr.get("slice")
         if isinstance(slice_any, dict) and _get_str(slice_any, "kind") == "Slice":
             slice_d: dict[str, object] = slice_any
@@ -538,6 +539,10 @@ def _render_expr(expr_any: Any) -> str:
             upper = _render_expr(slice_d.get("upper")) if slice_d.get("upper") is not None else (value + ".Length")
             return "(__pytra_str_slice " + value + " " + lower + " " + upper + ")"
         index = _render_expr(slice_any)
+        # str[i] returns [char] in PS — cast to [string] for consistency
+        val_type = _get_str(value_node, "resolved_type") if isinstance(value_node, dict) else ""
+        if val_type == "str":
+            return "[string]" + value + "[" + index + "]"
         return value + "[" + index + "]"
 
     if kind == "IfExp":

@@ -17,9 +17,7 @@ from toolchain.emit.kotlin.emitter import transpile_to_kotlin
 from toolchain.emit.loader import emit_all_modules
 
 _ROOT = NativePath(__file__).resolve().parents[3]
-_KT_BUILTIN_RUNTIME_SRC = _ROOT / "src" / "runtime" / "kotlin" / "built_in" / "py_runtime.kt"
-_KT_SAMPLE_DIR = _ROOT / "sample" / "kotlin"
-_KT_SAMPLE_RUNTIME_FILES = ("image_runtime.kt",)
+_KT_NATIVE_BUILTIN_DIR = _ROOT / "src" / "runtime" / "kotlin" / "built_in"
 _KT_NATIVE_STD_DIR = _ROOT / "src" / "runtime" / "kotlin" / "std"
 _RUNTIME_EAST_ROOT = _ROOT / "src" / "runtime" / "east"
 
@@ -50,15 +48,13 @@ def _generate_kotlin_runtime(output_dir: str) -> None:
     """Generate Kotlin runtime files from .east sources and copy native .kt files."""
     out = NativePath(output_dir)
 
-    # 1. Copy py_runtime.kt from src/runtime/ and image_runtime.kt from sample/
-    dst = out / "py_runtime.kt"
-    if _KT_BUILTIN_RUNTIME_SRC.exists() and not dst.exists():
-        shutil.copy2(str(_KT_BUILTIN_RUNTIME_SRC), str(dst))
-    for name in _KT_SAMPLE_RUNTIME_FILES:
-        src = _KT_SAMPLE_DIR / name
-        d = out / name
-        if src.exists() and not d.exists():
-            shutil.copy2(str(src), str(d))
+    # 1. Copy native runtime files from src/runtime/kotlin/built_in/
+    if _KT_NATIVE_BUILTIN_DIR.is_dir():
+        for f in sorted(_KT_NATIVE_BUILTIN_DIR.iterdir()):
+            if f.suffix == ".kt":
+                d = out / f.name
+                if not d.exists():
+                    shutil.copy2(str(f), str(d))
 
     # 2. Copy native std files (math_native.kt, time_native.kt)
     if _KT_NATIVE_STD_DIR.is_dir():

@@ -1238,8 +1238,56 @@ class ZigNativeEmitter:
         if len(self._local_var_stack) > 0:
             self._current_local_vars().add(name)
         self._hoisted_var_names.add(name)
-        zig_ty = self._zig_type(var_type) if var_type != "" else "anytype"
+        # object/unknown 型は具体型を推論 (PyObject は i64 alias なので float 代入に不適)
+        if var_type in {"object", "unknown", "Any", ""}:
+            inferred = self._infer_hoisted_var_type_from_body(name)
+            if inferred != "":
+                var_type = inferred
+                self._current_type_map()[name] = var_type
+        zig_ty = self._zig_type(var_type) if var_type != "" else "pytra.PyObject"
         self._emit_line("var " + name + ": " + zig_ty + " = undefined;")
+
+    def _infer_hoisted_var_type_from_body(self, name: str) -> str:
+        """VarDecl の型が object/unknown の場合、EAST 全体の Assign から具体型を推論。"""
+        body = self._dict_list(self.east_doc.get("body"))
+        main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
+        result = self._find_first_assign_type(body, name)
+        if result == "":
+            result = self._find_first_assign_type(main_guard, name)
+        return result
+
+    def _find_first_assign_type(self, nodes: list[dict[str, Any]], name: str) -> str:
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            kind = node.get("kind", "")
+            if kind in ("Assign", "AnnAssign"):
+                target = node.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    if _safe_ident(target.get("id"), "") == name:
+                        val = node.get("value")
+                        if isinstance(val, dict):
+                            t = self._lookup_expr_type(val)
+                            if t != "" and t != "unknown":
+                                return t
+            # Recurse into blocks
+            for key in ("body", "orelse", "finalbody"):
+                sub = node.get(key)
+                if isinstance(sub, list):
+                    result = self._find_first_assign_type(sub, name)
+                    if result != "":
+                        return result
+            # Also check handlers
+            handlers = node.get("handlers")
+            if isinstance(handlers, list):
+                for h in handlers:
+                    if isinstance(h, dict):
+                        sub = h.get("body")
+                        if isinstance(sub, list):
+                            result = self._find_first_assign_type(sub, name)
+                            if result != "":
+                                return result
+        return ""
 
     def _is_for_capture_var(self, name: str) -> bool:
         """Check if name is used as a for-loop capture variable in current function body."""

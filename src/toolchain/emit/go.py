@@ -17,7 +17,6 @@ from toolchain.emit.go.emitter import transpile_to_go
 from toolchain.emit.loader import emit_all_modules
 
 _ROOT = NativePath(__file__).resolve().parents[3]
-_GO_RUNTIME_SRC = _ROOT / "src" / "runtime" / "go" / "built_in" / "py_runtime.go"
 _GO_NATIVE_STD_DIR = _ROOT / "src" / "runtime" / "go" / "std"
 _RUNTIME_EAST_ROOT = _ROOT / "src" / "runtime" / "east"
 
@@ -56,16 +55,14 @@ def _generate_go_runtime(output_dir: str) -> None:
     """Generate Go runtime files from .east sources and copy native .go files."""
     out = NativePath(output_dir)
 
-    # 1. Copy py_runtime.go (built_in) and image helpers from sample/go/
-    dst = out / "py_runtime.go"
-    if _GO_RUNTIME_SRC.exists() and not dst.exists():
-        shutil.copy2(str(_GO_RUNTIME_SRC), str(dst))
-    _GO_SAMPLE_DIR = _ROOT / "sample" / "go"
-    for name in ("png.go", "gif.go"):
-        src = _GO_SAMPLE_DIR / name
-        d = out / name
-        if src.exists() and not d.exists():
-            shutil.copy2(str(src), str(d))
+    # 1. Copy native runtime files from src/runtime/go/
+    _GO_BUILTIN_DIR = _ROOT / "src" / "runtime" / "go" / "built_in"
+    if _GO_BUILTIN_DIR.is_dir():
+        for f in sorted(_GO_BUILTIN_DIR.iterdir()):
+            if f.suffix == ".go":
+                d = out / f.name
+                if not d.exists():
+                    shutil.copy2(str(f), str(d))
 
     # 2. Copy native std files (math_native.go, time_native.go)
     if _GO_NATIVE_STD_DIR.is_dir():
