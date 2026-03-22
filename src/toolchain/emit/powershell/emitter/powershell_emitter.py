@@ -1026,7 +1026,9 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
     if kind == "Return":
         value = stmt.get("value")
         if value is not None:
-            return [indent + "return " + _render_expr(value)]
+            rendered = _render_expr(value)
+            # Use , prefix to prevent PS from unrolling empty collections to null
+            return [indent + "return ,(" + rendered + ")"]
         return [indent + "return"]
 
     if kind == "Assign":
