@@ -1007,6 +1007,17 @@ class ZigNativeEmitter:
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
                         zig_ty = self._zig_type(decl_type)
+                        # PyObject fallback → 値の resolved_type で型を補正
+                        if zig_ty == "pytra.PyObject" and isinstance(stmt.get("value"), dict):
+                            val_resolved = self._get_expr_type(stmt.get("value"))
+                            if val_resolved in {"float64", "float32", "float"}:
+                                zig_ty = "f64"
+                                decl_type = val_resolved
+                                self._current_type_map()[target_name] = decl_type
+                            elif val_resolved in {"int64", "int32"}:
+                                zig_ty = "i64"
+                                decl_type = val_resolved
+                                self._current_type_map()[target_name] = decl_type
                         decl_kw = "var" if (self._is_var_mutated(target_name) or self._needs_var_for_type(decl_type)) else "const"
                         self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
                         norm_type = self._normalize_type(decl_type)
@@ -1050,6 +1061,17 @@ class ZigNativeEmitter:
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
                         zig_ty = self._zig_type(decl_type)
+                        # PyObject fallback → 値の resolved_type で型を補正
+                        if zig_ty == "pytra.PyObject" and isinstance(stmt.get("value"), dict):
+                            val_resolved = self._get_expr_type(stmt.get("value"))
+                            if val_resolved in {"float64", "float32", "float"}:
+                                zig_ty = "f64"
+                                decl_type = val_resolved
+                                self._current_type_map()[target_name] = decl_type
+                            elif val_resolved in {"int64", "int32"}:
+                                zig_ty = "i64"
+                                decl_type = val_resolved
+                                self._current_type_map()[target_name] = decl_type
                         decl_kw = "var" if (self._is_var_mutated(target_name) or self._needs_var_for_type(decl_type)) else "const"
                         self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
                         return
