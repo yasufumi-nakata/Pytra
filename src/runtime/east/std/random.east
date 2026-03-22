@@ -8767,7 +8767,7 @@
                   "end_lineno": 96,
                   "end_col_offset": 57
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "float(mu) + float(sigma) * _gauss_spare[0]",
@@ -8794,7 +8794,7 @@
                     "end_lineno": 96,
                     "end_col_offset": 57
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "float(sigma) * _gauss_spare[0]",
@@ -8863,7 +8863,7 @@
                       "end_lineno": 96,
                       "end_col_offset": 57
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "float(sigma) * _gauss_spare[0]",
@@ -8934,7 +8934,7 @@
                     "end_lineno": 96,
                     "end_col_offset": 57
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "float(mu) + float(sigma) * _gauss_spare[0]",
@@ -8961,7 +8961,7 @@
                       "end_lineno": 96,
                       "end_col_offset": 57
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "float(sigma) * _gauss_spare[0]",
@@ -9524,7 +9524,7 @@
                   "end_lineno": 102,
                   "end_col_offset": 41
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "-2.0 * _math.log(u1)",
@@ -9631,7 +9631,7 @@
                     "end_lineno": 102,
                     "end_col_offset": 41
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "-2.0 * _math.log(u1)",
@@ -9877,7 +9877,7 @@
                     "end_lineno": 103,
                     "end_col_offset": 44
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "2.0 * _math.pi * u2",
@@ -9889,7 +9889,7 @@
                       "end_lineno": 103,
                       "end_col_offset": 39
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "2.0 * _math.pi",
@@ -9945,7 +9945,7 @@
                         "end_lineno": 103,
                         "end_col_offset": 39
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "float64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "2.0 * _math.pi",
@@ -10018,7 +10018,7 @@
                       "end_lineno": 103,
                       "end_col_offset": 44
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "2.0 * _math.pi * u2",
@@ -10030,7 +10030,7 @@
                         "end_lineno": 103,
                         "end_col_offset": 39
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "float64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "2.0 * _math.pi",
@@ -10182,7 +10182,7 @@
                       "end_lineno": 103,
                       "end_col_offset": 44
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "2.0 * _math.pi * u2",
@@ -10194,7 +10194,7 @@
                         "end_lineno": 103,
                         "end_col_offset": 39
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "float64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "2.0 * _math.pi",
@@ -10406,7 +10406,7 @@
                     "end_lineno": 104,
                     "end_col_offset": 44
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "2.0 * _math.pi * u2",
@@ -10418,7 +10418,7 @@
                       "end_lineno": 104,
                       "end_col_offset": 39
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "2.0 * _math.pi",
@@ -10474,7 +10474,7 @@
                         "end_lineno": 104,
                         "end_col_offset": 39
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "float64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "2.0 * _math.pi",
@@ -10547,7 +10547,7 @@
                       "end_lineno": 104,
                       "end_col_offset": 44
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "2.0 * _math.pi * u2",
@@ -10559,7 +10559,7 @@
                         "end_lineno": 104,
                         "end_col_offset": 39
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "float64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "2.0 * _math.pi",
@@ -10711,7 +10711,7 @@
                       "end_lineno": 104,
                       "end_col_offset": 44
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "float64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "2.0 * _math.pi * u2",
@@ -10723,7 +10723,7 @@
                         "end_lineno": 104,
                         "end_col_offset": 39
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "float64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "2.0 * _math.pi",
@@ -11037,7 +11037,7 @@
               "end_lineno": 107,
               "end_col_offset": 40
             },
-            "resolved_type": "unknown",
+            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "float(mu) + float(sigma) * z0",
@@ -11064,7 +11064,7 @@
                 "end_lineno": 107,
                 "end_col_offset": 40
               },
-              "resolved_type": "unknown",
+              "resolved_type": "float64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "float(sigma) * z0",
@@ -11106,7 +11106,7 @@
                   "end_lineno": 107,
                   "end_col_offset": 40
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "float(sigma) * z0",
@@ -11150,7 +11150,7 @@
                 "end_lineno": 107,
                 "end_col_offset": 40
               },
-              "resolved_type": "unknown",
+              "resolved_type": "float64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "float(mu) + float(sigma) * z0",
@@ -11177,7 +11177,7 @@
                   "end_lineno": 107,
                   "end_col_offset": 40
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "float(sigma) * z0",

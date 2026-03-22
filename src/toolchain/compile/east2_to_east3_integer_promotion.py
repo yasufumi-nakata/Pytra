@@ -53,12 +53,17 @@ def _promote_binop_result(left_type: str, right_type: str) -> str:
     left = _normalize_type(left_type)
     right = _normalize_type(right_type)
 
-    if left == "" or left == "unknown" or right == "" or right == "unknown":
-        return ""
-
-    # Float operands → float result (no integer promotion)
+    # Float propagation: if one operand is float, result is float
+    # (even if the other is unknown)
     float_types = {"float32", "float64"}
     if left in float_types or right in float_types:
+        if left in float_types and right in float_types:
+            return "float64" if left == "float64" or right == "float64" else "float32"
+        if left in float_types:
+            return left
+        return right
+
+    if left == "" or left == "unknown" or right == "" or right == "unknown":
         return ""
 
     # If either operand needs promotion, result is at least int32
