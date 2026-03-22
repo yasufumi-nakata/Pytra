@@ -73,8 +73,9 @@ SoT（Python ソース）から生成される中間表現は `src/runtime/east/
 `@extern` 関数の取り扱い:
 
 - `@extern` 関数は SoT の Python body を参考実装とし、実際のターゲット言語実装は手書きランタイムで提供する。
-- emitter は `@extern` 関数について、手書きランタイムへの委譲コードを生成する。
-- C++ 以外の言語では、委譲先のクラス/モジュール名に `_native` suffix を付ける（例: `os` → `os_native`）。
+- **C++**: emitter は `@extern` 関数の宣言のみ出力し、手書き `.h` の `#include` で実装を結合する（テンプレート・オーバーロード等の C++ 固有機能を使うため）。
+- **他言語**: emitter は `@extern` 関数について `_native` モジュールへの委譲コードを生成する（例: `time.js` が `time_native.js` の `perf_counter()` を呼ぶ）。
+- 委譲先のファイル名に `_native` suffix を付ける（例: `os` → `os_native`）。詳細は spec-abi.md §3.2.1 を参照。
 
 必須ルール:
 

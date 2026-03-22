@@ -97,7 +97,7 @@ def extern(fn):
 
 ### 3.2 意味
 
-`@extern` が付与された関数は、ターゲット言語（ここでは C++）側で提供される関数へ委譲される。
+`@extern` が付与された関数は、ターゲット言語側で提供される手書き実装へ委譲される。
 
 Pytra は `@extern` 関数に対し、次を決定する。
 
@@ -106,8 +106,36 @@ Pytra は `@extern` 関数に対し、次を決定する。
 
 呼び出し点では、実引数が内部型で表現されていても、ABI 型へ変換して外部関数を呼ぶ。
 
-Python 実行時互換のため、`@extern` 関数は Python で実行可能な本体（例: `return __m.sin(x)`) を持ってよい。  
+Python 実行時互換のため、`@extern` 関数は Python で実行可能な本体（例: `return __m.sin(x)`) を持ってよい。
 トランスパイラは `@extern` 関数の本体をターゲット実装としては採用せず、外部シンボル呼び出しへ lower する。
+
+### 3.2.1 言語別の `@extern` 実現方式
+
+`@extern` 関数の実現方式は C++ と他言語で異なる。
+
+**C++**: 宣言のみ emit + リンカ結合
+
+- emitter は `@extern` 関数の**宣言（プロトタイプ）のみ**を `.h` に出力する。
+- 手書き実装は `src/runtime/cpp/{built_in,std}/*.h` に存在し、`#include` で結合される。
+- C++ のリンカ/インクルードシステムが宣言と実装を統合するため、委譲コードは不要。
+- 手書き実装はテンプレートやオーバーロードを自由に使える（EAST3 で表現不可能な C++ 固有機能）。
+
+**他言語（JS, Dart, Julia, Zig, PowerShell 等）**: 委譲コード生成
+
+- emitter は `@extern` 関数について、`_native` モジュールへの**委譲コード**を生成する。
+- 委譲先: `<module>_native.<ext>`（例: `time_native.js`, `math_native.dart`）
+- 生成されるコード例（JS）:
+  ```javascript
+  // std/time.js (generated)
+  const time_native = require("./time_native.js");
+  function perf_counter() { return time_native.perf_counter(); }
+  ```
+- `_native` ファイルは手書きで、host API への最小接続コードを提供する。
+- コンパイラの最適化（インライン展開）により委譲コストは実質ゼロになることを前提とする。
+
+この差異の理由:
+- C++ の手書きランタイムはテンプレート・オーバーロード等の C++ 固有機能を多用しており、EAST3 から委譲コードを自動生成するのは困難。
+- 他言語では関数呼び出しの委譲で十分であり、統一的な仕組みで対応可能。
 
 変数 `extern(...)` は関数 `@extern` とは別に扱う。
 
@@ -686,23 +714,22 @@ ownership 規則:
 
 ## 12. `pytra.std.math` の例
 
-`src/pytra/std/math.py` は `@extern` を含むため、C++ runtime では次のように構成する。
+`src/pytra/std/math.py` は `@extern` を含む。各言語での構成:
 
-- 生成宣言:
-  - `runtime/cpp/generated/std/math.h`
-- native 実体:
-  - `runtime/cpp/native/std/math.cpp`
-重要:
+**C++**（宣言 + リンカ結合）:
 
-- `math` は header-only 生成なので、`runtime/cpp/generated/std/math.cpp` は生成しない
-- `math.cpp` が `math.h` に対する native 実体を提供する
-- 生成コードは `runtime/cpp/generated/std/math.h` を include し、build graph が `generated/native` を解決する
-- manifest / build 入力は `spec-runtime.md` の配置規約に従う
+- 手書き実装: `src/runtime/cpp/std/math.h`（`@extern` 関数の実体）
+- emitter は `@extern` 関数の宣言のみ出力し、`#include` で手書き実装を結合する。
 
-つまり、`@extern` を含むモジュールであっても、
+**JS / Dart / Julia 等**（委譲コード生成）:
 
-- ABI 型は値型正規形で固定し
-- 生成物と native 実体は ownership が見える形で分離し
-- `rc<>` は ABI ではなく内部表現に閉じ込める
+- 手書き native: `src/runtime/<lang>/std/math_native.<ext>`（host API 接続）
+- emitter が生成: `std/math.<ext>`（`@extern` 関数は `math_native` への委譲）
+- 例（JS）: `function sqrt(x) { return math_native.sqrt(x); }`
 
-というのが本仕様の要点である。
+共通の原則:
+
+- ABI 型は値型正規形で固定する。
+- `@extern` 関数の Python body はターゲット実装としては採用しない。
+- `rc<>` は ABI ではなく内部表現に閉じ込める。
+- `generated/` / `native/` のディレクトリ分離は廃止済み（spec-runtime.md §0.6a 参照）。
