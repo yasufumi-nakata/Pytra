@@ -1224,6 +1224,50 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
                     lines.append(indent + "}")
                     return lines
             else:
+                # NameTarget: check if enumerate with body unpacking
+                if is_enumerate and isinstance(target_plan, dict) and _get_str(target_plan, "kind") == "NameTarget":
+                    tmp_var = "$" + _safe_ident(_get_str(target_plan, "id"), "_tmp")
+                    # Generate index counter + foreach over actual collection
+                    idx_var = "$__enum_idx"
+                    lines = [
+                        indent + idx_var + " = " + enumerate_start,
+                        indent + "foreach (" + tmp_var + " in " + iter_rendered + ") {",
+                    ]
+                    # Body starts with $i = $tmp[0]; $v = $tmp[1]; — replace with index + value
+                    new_body: list[Any] = []
+                    for bs in body:
+                        if isinstance(bs, dict) and _get_str(bs, "kind") == "Assign":
+                            val = bs.get("value")
+                            if isinstance(val, dict) and _get_str(val, "kind") == "Subscript":
+                                sv = val.get("value")
+                                if isinstance(sv, dict) and _get_str(sv, "id") == _get_str(target_plan, "id"):
+                                    sl = val.get("slice")
+                                    if isinstance(sl, dict) and sl.get("value") == 0:
+                                        # $i = $tmp[0] → $i = $__enum_idx
+                                        tgt = bs.get("targets", [bs.get("target")])
+                                        if isinstance(tgt, list) and len(tgt) > 0:
+                                            tgt0 = tgt[0] if isinstance(tgt[0], dict) else tgt
+                                        else:
+                                            tgt0 = tgt
+                                        tname = _get_str(tgt0, "id") if isinstance(tgt0, dict) else ""
+                                        lines.append(indent + "    $" + _safe_ident(tname, "_i") + " = " + idx_var)
+                                        continue
+                                    elif isinstance(sl, dict) and sl.get("value") == 1:
+                                        # $v = $tmp[1] → $v = $__iter_item (foreach var)
+                                        tgt = bs.get("targets", [bs.get("target")])
+                                        if isinstance(tgt, list) and len(tgt) > 0:
+                                            tgt0 = tgt[0] if isinstance(tgt[0], dict) else tgt
+                                        else:
+                                            tgt0 = tgt
+                                        tname = _get_str(tgt0, "id") if isinstance(tgt0, dict) else ""
+                                        lines.append(indent + "    $" + _safe_ident(tname, "_v") + " = " + tmp_var)
+                                        continue
+                        new_body.append(bs)
+                    lines.extend(_emit_body(new_body, indent=indent + "    ", ctx=ctx))
+                    lines.append(indent + "    " + idx_var + " += 1")
+                    lines.append(indent + "}")
+                    return lines
+
                 # Simple foreach with single target
                 loop_var = "$_item"
                 if isinstance(target_plan, dict):
