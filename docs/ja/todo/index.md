@@ -86,6 +86,28 @@
 - 2026-03-22: conftest extern stripping 修正済み。runtime_symbol_index.json の utils module パス修正済み。
 - 2026-03-22: REPO_ROOT parents[5] + call.py normalize コミット済み。S2,S3 完了。テスト 234 passed (78%)。
 
+#### P0-23: 組み込み型メソッドの戻り値型推論を拡充
+
+文脈: [docs/ja/plans/p0-builtin-method-return-type.md](../plans/p0-builtin-method-return-type.md)
+
+1. [ ] [ID: P0-BUILTIN-METHOD-RETURN-TYPE-01] `signature_registry.py` に不足している組み込み型メソッドの戻り値型を追加する。
+2. [ ] [ID: P0-BUILTIN-METHOD-RETURN-TYPE-02] ユニットテストを追加する。
+
+#### P0-24: Callable 型の追跡
+
+文脈: [docs/ja/plans/p0-callable-type-tracking.md](../plans/p0-callable-type-tracking.md)
+
+1. [ ] [ID: P0-CALLABLE-TYPE-TRACKING-01] EAST1 パーサーで `Callable` 型注釈を `resolved_type` に反映する。
+2. [ ] [ID: P0-CALLABLE-TYPE-TRACKING-02] ユニットテストを追加する。
+
+#### P0-25: generator の EAST3 ステートマシン lowering
+
+文脈: [docs/ja/plans/p0-generator-statemachine-lowering.md](../plans/p0-generator-statemachine-lowering.md)
+
+1. [ ] [ID: P0-GENERATOR-LOWERING-01] EAST3 で generator → ステートマシン lowering を設計する。
+2. [ ] [ID: P0-GENERATOR-LOWERING-02] lowering パスを実装する。
+3. [ ] [ID: P0-GENERATOR-LOWERING-03] ユニットテストを追加する。
+
 #### P0-21: EAST3 で C++ 準拠の integer promotion を実装
 
 文脈: [docs/ja/plans/p0-east3-integer-promotion.md](../plans/p0-east3-integer-promotion.md)
