@@ -26,21 +26,6 @@
       }
     },
     {
-      "kind": "Import",
-      "source_span": {
-        "lineno": 4,
-        "col_offset": 0,
-        "end_lineno": 4,
-        "end_col_offset": 24
-      },
-      "names": [
-        {
-          "name": "glob",
-          "asname": "_glob_mod"
-        }
-      ]
-    },
-    {
       "kind": "ImportFrom",
       "source_span": {
         "lineno": 6,
@@ -280,14 +265,6 @@
       "schema_version": 1,
       "bindings": [
         {
-          "module_id": "glob",
-          "export_name": "",
-          "local_name": "_glob_mod",
-          "binding_kind": "module",
-          "source_file": "src/pytra/std/glob.py",
-          "source_line": 4
-        },
-        {
           "module_id": "pytra.std",
           "export_name": "extern",
           "local_name": "extern",
@@ -316,14 +293,6 @@
     },
     "import_bindings": [
       {
-        "module_id": "glob",
-        "export_name": "",
-        "local_name": "_glob_mod",
-        "binding_kind": "module",
-        "source_file": "src/pytra/std/glob.py",
-        "source_line": 4
-      },
-      {
         "module_id": "pytra.std",
         "export_name": "extern",
         "local_name": "extern",
@@ -339,9 +308,7 @@
         "local_name": "extern"
       }
     ],
-    "import_modules": {
-      "_glob_mod": "glob"
-    },
+    "import_modules": {},
     "import_symbols": {
       "extern": {
         "module": "pytra.std",

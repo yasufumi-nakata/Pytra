@@ -1716,6 +1716,20 @@
                 "borrow_kind": "readonly_ref",
                 "repr": "idx",
                 "id": "idx"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 25,
+                  "col_offset": 38,
+                  "end_lineno": 25,
+                  "end_col_offset": 39
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "0",
+                "value": 0
               }
             ],
             "keywords": [],

@@ -10153,6 +10153,20 @@
                       "id": "self"
                     },
                     "attr": "_value"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 99,
+                      "col_offset": 36,
+                      "end_lineno": 99,
+                      "end_col_offset": 41
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "False",
+                    "value": false
                   }
                 ],
                 "keywords": [],

@@ -192,8 +192,8 @@
 
 文脈: [docs/ja/plans/p7-east3-default-arg-expansion.md](../plans/p7-east3-default-arg-expansion.md)
 
-1. [ ] [ID: P7-DEFAULT-ARG-EXPANSION-01] EAST3 lowering で省略されたデフォルト引数を call site に展開する。
-2. [ ] [ID: P7-DEFAULT-ARG-EXPANSION-02] ユニットテストを追加する。
+1. [x] [ID: P7-DEFAULT-ARG-EXPANSION-01] EAST3 lowering で省略されたデフォルト引数を call site に展開する。
+2. [x] [ID: P7-DEFAULT-ARG-EXPANSION-02] ユニットテストを追加する。
 
 ### P7: math.pi 等のモジュール定数の型推論
 
