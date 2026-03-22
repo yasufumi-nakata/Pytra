@@ -373,6 +373,11 @@ class CppModuleEmitter:
 
     def _normalize_runtime_module_name(self, module_name: str) -> str:
         module_name_norm = module_name
+        # Python sub-module remapping (e.g. os.path → pytra.std.os_path)
+        _SUBMODULE_REMAP = {"os.path": "pytra.std.os_path"}
+        remapped = _SUBMODULE_REMAP.get(module_name_norm)
+        if remapped is not None:
+            return remapped
         if module_name_norm.find(".") < 0:
             bare_src = RUNTIME_STD_SOURCE_ROOT / (module_name_norm.replace(".", "/") + ".py")
             if bare_src.exists():
