@@ -407,6 +407,10 @@ class CppModuleEmitter:
 
     def _module_name_to_cpp_include(self, module_name: str) -> str:
         """Python import モジュール名を C++ include へ解決する。"""
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        inc = _module_name_to_cpp_include_impl(module_name_norm)
+        if inc != "":
+            return inc
         return _module_name_to_cpp_include_impl(module_name)
 
     def _module_name_to_cpp_namespace(self, module_name: str) -> str:
@@ -425,12 +429,14 @@ class CppModuleEmitter:
     def _import_binding_cpp_include(self, binding: dict[str, Any]) -> str:
         """import binding 1件から include 対象 module を index 経由で解決する。"""
         module_id = dict_any_get_str(binding, "module_id")
+        # Normalize bare module names (e.g. "math" → "pytra.std.math")
+        module_id_norm = self._normalize_runtime_module_name(module_id)
         export_name = dict_any_get_str(binding, "export_name")
         binding_kind = dict_any_get_str(binding, "binding_kind")
-        resolved_module = resolve_import_binding_runtime_module(module_id, export_name, binding_kind)
+        resolved_module = resolve_import_binding_runtime_module(module_id_norm, export_name, binding_kind)
         if resolved_module != "":
             return self._module_name_to_cpp_include(resolved_module)
-        return self._module_name_to_cpp_include(module_id)
+        return self._module_name_to_cpp_include(module_id_norm)
 
     def _collect_runtime_modules_from_node(self, node: Any, out: set[str]) -> None:
         if isinstance(node, dict):

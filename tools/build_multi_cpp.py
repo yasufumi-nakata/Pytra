@@ -65,6 +65,7 @@ def main(argv: list[str]) -> int:
         # Only include files verified to compile correctly.
         needed = [
             gen_path / "utils" / "assertions.cpp",
+            gen_path / "utils" / "png.cpp",
             gen_path / "built_in" / "type_id.cpp",
         ]
         # Also include native C++ implementations for extern runtime modules.
