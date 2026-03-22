@@ -1832,12 +1832,12 @@ class RustEmitter(CodeEmitter):
     def _dotted_to_rust_path(module_name: str) -> str:
         """ドット区切りモジュール名を Rust パス (``a::b::c``) に変換する。
 
-        py_runtime.rs が crate 直下に re-export している std モジュールは短縮パスを使う。
+        entry モジュールが #[path] で宣言する mod 名に合わせて変換する。
+        pytra.std.time → crate::std_time, pytra.utils.png → crate::utils_png
         """
-        if module_name.startswith("pytra.std."):
-            leaf = module_name.split(".")[-1]
-            if leaf in _RS_PY_RUNTIME_REEXPORT_STD_MODULES:
-                return leaf
+        if module_name.startswith("pytra."):
+            rel = module_name[len("pytra."):]
+            return rel.replace(".", "_")
         return module_name.replace(".", "::")
 
     def _is_assertions_module(self, module_id: str) -> bool:
@@ -1857,17 +1857,17 @@ class RustEmitter(CodeEmitter):
         return leaf == "gif" or leaf == "png"
 
     def _should_skip_module_use_line(self, module_id: str, local_name: str) -> bool:
-        """互換 prelude と衝突する runtime prelude re-export module `use` を抑止する。"""
+        """entry が #[path] mod で宣言済みのモジュール全体 use をスキップする。"""
+        _ = local_name
         module_name = canonical_runtime_module_id(module_id.strip())
         if module_name == "":
             return False
-        leaf = self._last_dotted_name(module_name)
-        if module_name != "pytra.std." + leaf:
-            return False
-        if leaf not in _RS_PY_RUNTIME_REEXPORT_STD_MODULES:
-            return False
-        leaf = self._last_dotted_name(module_name)
-        return local_name == "" or local_name == leaf
+        # Entry declares std/utils modules via #[path] mod.
+        # A bare `use crate::std_time;` is redundant since the mod is already declared.
+        # Symbol imports like `use crate::std_time::perf_counter;` are NOT skipped.
+        if module_name.startswith("pytra.std.") or module_name.startswith("pytra.utils."):
+            return True
+        return False
 
     def _apply_image_runtime_ref_args(self, call_args: list[str]) -> list[str]:
         if len(call_args) > 0:
@@ -1910,6 +1910,10 @@ class RustEmitter(CodeEmitter):
                     i += 1
                     continue
                 if self._is_assertions_module(module_id):
+                    i += 1
+                    continue
+                # Skip the 'extern' decorator import — it's a compile-time marker only
+                if export_name == "extern" or local_name == "extern":
                     i += 1
                     continue
                 base_path = self._module_id_to_rust_use_path(module_id)
@@ -2093,12 +2097,91 @@ class RustEmitter(CodeEmitter):
             return "()"
         return t
 
-    def _emit_runtime_prelude(self) -> None:
-        """外部 runtime 参照の基本宣言を出力する。"""
+    # ------------------------------------------------------------------
+    # Entry / non-entry module prelude
+    # ------------------------------------------------------------------
+
+    def _emit_entry_prelude(self, meta: dict[str, Any], body: list[dict[str, Any]]) -> None:
+        """entry モジュール用: #[path] 付き mod 宣言 + pytra ファサードを出力する。"""
+        # 1. py_runtime (built-in)
+        self.emit('#[path = "built_in/py_runtime.rs"]')
         self.emit("mod py_runtime;")
-        prelude_exports = sorted(_RS_PY_RUNTIME_REEXPORT_STD_MODULES)
-        prelude_exports.insert(1 if len(prelude_exports) > 0 else 0, "pytra")
-        self.emit("pub use crate::py_runtime::{" + ", ".join(prelude_exports) + "};")
+        self.emit("use py_runtime::*;")
+        self.emit("")
+
+        # 2. Collect linked modules from import_bindings
+        bindings = self.get_import_resolution_bindings(meta)
+        declared_mod_names: dict[str, str] = {}  # mod_name -> module_id
+        std_mods: list[str] = []  # leaf names of std modules (time, math, ...)
+        utils_mods: list[str] = []  # leaf names of utils modules (png, gif, ...)
+
+        seen_module_ids: set[str] = set()
+        for ent in bindings:
+            module_id = self.any_to_str(ent.get("runtime_module_id"))
+            if module_id == "":
+                module_id = self.any_to_str(ent.get("module_id"))
+            module_id = canonical_runtime_module_id(module_id.replace(".east", ""))
+            if module_id == "" or module_id in seen_module_ids:
+                continue
+            if module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
+                continue
+            if module_id.startswith("pytra.built_in."):
+                continue
+            seen_module_ids.add(module_id)
+
+            # Determine relative path and mod name
+            rel = module_id
+            if rel.startswith("pytra."):
+                rel = rel[len("pytra."):]
+            file_path = rel.replace(".", "/") + ".rs"
+            leaf = rel.split(".")[-1]
+            category = rel.split(".")[0] if "." in rel else ""
+
+            # Declare the generated module
+            mod_name = rel.replace(".", "_")
+            if mod_name not in declared_mod_names:
+                self.emit('#[path = "' + file_path + '"]')
+                self.emit("pub mod " + mod_name + ";")
+                declared_mod_names[mod_name] = module_id
+
+                if category == "std":
+                    std_mods.append(leaf)
+                elif category == "utils":
+                    utils_mods.append(leaf)
+
+            # Also declare the _native module for std modules
+            if category == "std":
+                native_mod_name = "std_" + leaf + "_native"
+                native_file_path = "std/" + leaf + "_native.rs"
+                if native_mod_name not in declared_mod_names:
+                    self.emit('#[path = "' + native_file_path + '"]')
+                    self.emit("pub mod " + native_mod_name + ";")
+                    declared_mod_names[native_mod_name] = module_id + "_native"
+
+        # 3. Emit pytra namespace facade
+        if len(std_mods) > 0 or len(utils_mods) > 0:
+            self.emit("")
+            self.emit("pub mod pytra {")
+            self.indent += 1
+            if len(std_mods) > 0:
+                self.emit("pub mod std {")
+                self.indent += 1
+                for leaf in sorted(set(std_mods)):
+                    self.emit("pub use crate::std_" + leaf + " as " + leaf + ";")
+                self.indent -= 1
+                self.emit("}")
+            if len(utils_mods) > 0:
+                self.emit("pub mod utils {")
+                self.indent += 1
+                for leaf in sorted(set(utils_mods)):
+                    self.emit("pub use crate::utils_" + leaf + " as " + leaf + ";")
+                self.indent -= 1
+                self.emit("}")
+            self.indent -= 1
+            self.emit("}")
+
+    def _emit_nonentry_prelude(self, meta: dict[str, Any]) -> None:
+        """non-entry モジュール用: crate ルートの py_runtime を参照する。"""
         self.emit("use crate::py_runtime::*;")
 
     def _emit_type_info_registration_helper(self) -> None:
@@ -2162,10 +2245,28 @@ class RustEmitter(CodeEmitter):
                     self.function_arg_ref_modes[self._safe_name(fn_name)] = self._compute_function_arg_ref_modes(stmt)
 
         self.load_import_bindings_from_meta(meta)
+
+        # Determine entry/non-entry from emit_context
+        emit_ctx = self.any_to_dict_or_empty(meta.get("emit_context"))
+        is_entry = bool(emit_ctx.get("is_entry", True))
+        self._is_entry = is_entry
+
         self.emit_module_leading_trivia()
-        self._emit_runtime_prelude()
+        if is_entry:
+            self._emit_entry_prelude(meta, body)
+        else:
+            self._emit_nonentry_prelude(meta)
         self.emit("")
+
+        # Emit @extern __native import for non-entry modules that contain @extern functions
+        if not is_entry:
+            self._emit_native_import_if_needed(body, meta)
+
         use_lines = self._collect_use_lines(body, meta)
+        if not is_entry:
+            # Non-entry modules should not emit crate::py_runtime re-import lines
+            # since they already have `use crate::py_runtime::*;`
+            use_lines = [ln for ln in use_lines if "py_runtime" not in ln]
         for line in use_lines:
             self.emit(line)
         if len(use_lines) > 0:
@@ -2194,16 +2295,17 @@ class RustEmitter(CodeEmitter):
             top_level_stmts.append(stmt)
 
         main_guard_body = self._dict_stmt_list(module.get("main_guard_body"))
-        should_emit_main = len(main_guard_body) > 0 or len(top_level_stmts) > 0
-        if should_emit_main:
-            self.emit("fn main() {")
-            if self.uses_isinstance_runtime:
-                self.indent += 1
-                self.emit("py_register_generated_type_info();")
-                self.indent -= 1
-            scope: set[str] = set()
-            self.emit_scoped_stmt_list(top_level_stmts + main_guard_body, scope)
-            self.emit("}")
+        if is_entry:
+            should_emit_main = len(main_guard_body) > 0 or len(top_level_stmts) > 0
+            if should_emit_main:
+                self.emit("fn main() {")
+                if self.uses_isinstance_runtime:
+                    self.indent += 1
+                    self.emit("py_register_generated_type_info();")
+                    self.indent -= 1
+                scope: set[str] = set()
+                self.emit_scoped_stmt_list(top_level_stmts + main_guard_body, scope)
+                self.emit("}")
 
         return "\n".join(self.lines) + ("\n" if len(self.lines) > 0 else "")
 
@@ -2363,10 +2465,62 @@ class RustEmitter(CodeEmitter):
         self.indent -= 1
         self.emit("}")
 
+    def _emit_native_import_if_needed(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> None:
+        """non-entry モジュールで @extern 関数があれば __native mod 宣言を出力する。"""
+        has_extern = False
+        for stmt in body:
+            if self.any_dict_get_str(stmt, "kind", "") == "FunctionDef":
+                decs = stmt.get("decorators")
+                if isinstance(decs, list) and "extern" in decs:
+                    has_extern = True
+                    break
+        if not has_extern:
+            return
+        emit_ctx = self.any_to_dict_or_empty(meta.get("emit_context"))
+        mod_id = self.any_dict_get_str(emit_ctx, "module_id", "")
+        clean_mod_id = mod_id.replace(".east", "") if mod_id.endswith(".east") else mod_id
+        canonical = canonical_runtime_module_id(clean_mod_id) if clean_mod_id != "" else ""
+        if canonical == "":
+            return
+        # pytra.std.time → std_time_native
+        parts = canonical.split(".")
+        if len(parts) > 1 and parts[0] == "pytra":
+            native_mod_name = "_".join(parts[1:]) + "_native"
+        else:
+            native_mod_name = "_".join(parts) + "_native"
+        self.emit("use crate::" + native_mod_name + " as __native;")
+        self.emit("")
+
     def _emit_function(self, fn: dict[str, Any], in_class: str | None) -> None:
         """FunctionDef を Rust 関数として出力する。"""
         fn_name_raw = self.any_to_str(fn.get("name"))
         fn_name = self._safe_name(fn_name_raw)
+        arg_order = self.any_to_str_list(fn.get("arg_order"))
+
+        # @extern: generate delegation to __native module
+        decorators = fn.get("decorators")
+        if isinstance(decorators, list) and "extern" in decorators and in_class is None:
+            arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
+            ret_t_east = self.normalize_type_name(self.any_to_str(fn.get("return_type")))
+            ret_t = self._rust_type(ret_t_east)
+            safe_args: list[str] = []
+            args_with_types: list[str] = []
+            for a in arg_order:
+                safe = self._safe_name(a)
+                safe_args.append(safe)
+                arg_east_t = self.any_to_str(arg_types.get(a))
+                arg_t = self._rust_type(self.normalize_type_name(arg_east_t))
+                args_with_types.append(safe + ": " + arg_t)
+            ret_txt = "" if ret_t == "()" else " -> " + ret_t
+            self.emit("pub fn " + fn_name + "(" + ", ".join(args_with_types) + ")" + ret_txt + " {")
+            self.indent += 1
+            call_args = ", ".join(safe_args)
+            ret_kw = "return " if ret_t != "()" else ""
+            self.emit(ret_kw + "__native::" + fn_name + "(" + call_args + ");")
+            self.indent -= 1
+            self.emit("}")
+            return
+
         arg_order = self.any_to_str_list(fn.get("arg_order"))
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
         arg_type_exprs = self.any_to_dict_or_empty(fn.get("arg_type_exprs"))
@@ -2445,11 +2599,11 @@ class RustEmitter(CodeEmitter):
         ret_txt = ""
         if ret_t != "()":
             ret_txt = " -> " + ret_t
-        line = self.syntax_line(
-            "function_open",
-            "fn {name}({args}){ret_txt} {",
-            {"name": fn_name, "args": ", ".join(args_text_list), "ret_txt": ret_txt},
-        )
+        # Non-entry top-level functions need pub visibility
+        pub_prefix = ""
+        if in_class is None and hasattr(self, "_is_entry") and not self._is_entry:
+            pub_prefix = "pub "
+        line = pub_prefix + "fn " + fn_name + "(" + ", ".join(args_text_list) + ")" + ret_txt + " {"
         self.emit(line)
 
         self.emit_scoped_stmt_list(body, scope_names)

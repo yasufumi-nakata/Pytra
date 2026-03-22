@@ -2466,12 +2466,17 @@ def _native_prefix_for_module(module_id: str) -> str:
 def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None = None) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
 
-    # @extern function → generate delegation to native
+    # @extern function → generate delegation to native with `any` params
+    # Go flat layout: callers may pass int64 where float64 is expected,
+    # so extern wrappers accept `any` and let native do the cast.
     if _is_extern_function(fn) and receiver_name is None:
         return_type = _go_type(fn.get("return_type"), allow_void=True)
-        params = _function_params(fn, drop_self=False)
         param_names = _function_param_names(fn, drop_self=False)
-        sig = indent + "func " + name + "(" + ", ".join(params) + ")"
+        # All params as `any` for type flexibility
+        any_params: list[str] = []
+        for pn in param_names:
+            any_params.append(pn + " any")
+        sig = indent + "func " + name + "(" + ", ".join(any_params) + ")"
         if return_type != "":
             sig += " " + return_type
         native_prefix = _native_prefix_for_module(_CURRENT_MODULE_ID[0])

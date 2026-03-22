@@ -1000,64 +1000,6 @@ impl std::ops::Div<&str> for PyPath {
     }
 }
 
-#[path = "image_runtime.rs"]
-mod image_runtime;
-pub use self::image_runtime::{py_grayscale_palette, py_save_gif, py_write_rgb_png};
-
-#[path = "time_native.rs"]
-pub mod time_native;
-
-#[path = "time.rs"]
-pub mod time;
-
-#[path = "math_native.rs"]
-pub mod math_native;
-
-#[path = "math.rs"]
-pub mod math;
-
-pub mod pytra {
-    pub mod std {
-        pub use super::super::math;
-        pub use super::super::time;
-    }
-
-    pub mod runtime {
-        pub mod png {
-            pub fn write_rgb_png(path: impl AsRef<str>, width: i64, height: i64, pixels: &[u8]) {
-                super::super::super::py_write_rgb_png(path.as_ref(), width, height, pixels);
-            }
-        }
-
-        pub mod gif {
-            pub fn grayscale_palette() -> Vec<u8> {
-                super::super::super::py_grayscale_palette()
-            }
-
-            pub fn save_gif(
-                path: impl AsRef<str>,
-                width: i64,
-                height: i64,
-                frames: &[Vec<u8>],
-                palette: &[u8],
-                delay_cs: i64,
-                loop_count: i64,
-            ) {
-                super::super::super::py_save_gif(
-                    path.as_ref(),
-                    width,
-                    height,
-                    frames,
-                    palette,
-                    delay_cs,
-                    loop_count,
-                );
-            }
-        }
-    }
-
-    pub mod utils {
-        pub use super::runtime::gif;
-        pub use super::runtime::png;
-    }
-}
+// Sub-module declarations (std, utils, pytra facade) are generated
+// by the entry module via #[path] attributes. py_runtime.rs provides
+// only built-in helpers (print, len, range, type conversions, etc.).
