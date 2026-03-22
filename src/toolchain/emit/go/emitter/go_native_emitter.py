@@ -358,7 +358,9 @@ def _go_type(type_name: Any, *, allow_void: bool) -> str:
 
 
 def _default_return_expr(go_type: str) -> str:
-    if go_type == "int64":
+    if go_type in {"int64", "int32"}:
+        return "0"
+    if go_type == "uint8":
         return "0"
     if go_type == "float64":
         return "0.0"
@@ -1825,6 +1827,9 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
                 if isinstance(iter_elem_t_any, str) and iter_elem_t_any not in {"", "unknown"}:
                     target_type_txt = iter_elem_t_any
         target_go_type = _go_type(target_type_txt, allow_void=False)
+        # Promote small integer types to int64 for arithmetic compatibility
+        if target_go_type in {"int32", "uint8"}:
+            target_go_type = "int64"
         used_names = _read_name_set(ctx)
         lines.append(indent + iter_tmp + " := __pytra_as_list(" + iter_expr + ")")
         lines.append(indent + "for " + idx_tmp + " := int64(0); " + idx_tmp + " < int64(len(" + iter_tmp + ")); " + idx_tmp + " += 1 {")
