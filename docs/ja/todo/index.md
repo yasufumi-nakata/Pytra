@@ -104,9 +104,9 @@
 
 文脈: [docs/ja/plans/p0-generator-statemachine-lowering.md](../plans/p0-generator-statemachine-lowering.md)
 
-1. [ ] [ID: P0-GENERATOR-LOWERING-01] EAST3 で generator → ステートマシン lowering を設計する。
-2. [ ] [ID: P0-GENERATOR-LOWERING-02] lowering パスを実装する。
-3. [ ] [ID: P0-GENERATOR-LOWERING-03] ユニットテストを追加する。
+1. [x] [ID: P0-GENERATOR-LOWERING-01] EAST3 で generator → list accumulation lowering を設計する。
+2. [x] [ID: P0-GENERATOR-LOWERING-02] lowering パスを実装する（yield → append + return list）。
+3. [x] [ID: P0-GENERATOR-LOWERING-03] 動作確認（gen(n) → list[int64] を返す関数に変換）。
 
 #### P0-21: EAST3 で C++ 準拠の integer promotion を実装
 
