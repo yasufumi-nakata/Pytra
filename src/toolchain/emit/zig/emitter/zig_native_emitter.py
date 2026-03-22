@@ -1020,6 +1020,17 @@ class ZigNativeEmitter:
                         self._emit_line(target + ".release();")
                         self._emit_line(target + " = " + value + ".retain();")
                         return
+                # 型キャスト: 変数型と値型の不一致を補正
+                if td2.get("kind") == "Name":
+                    var_type = self._current_type_map().get(target_name, "")
+                    val_type = self._get_expr_type(stmt.get("value"))
+                    norm_var = self._normalize_type(var_type)
+                    _INT_T = {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}
+                    _FLOAT_T = {"float64", "float32", "float"}
+                    if norm_var in _INT_T and val_type in _FLOAT_T:
+                        value = "@as(i64, @intFromFloat(" + value + "))"
+                    elif norm_var in _FLOAT_T and val_type in _INT_T:
+                        value = "@as(f64, @floatFromInt(" + value + "))"
                 self._emit_line(target + " = " + value + ";")
                 return
             targets = stmt.get("targets")
