@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-21（P5-GO/JAVA/KOTLIN/SWIFT-PARITY を起票）
+最終更新: 2026-03-22（完了タスクをアーカイブへ移動）
 
 ## 文脈運用ルール
 
@@ -86,73 +86,6 @@
 - 2026-03-22: conftest extern stripping 修正済み。runtime_symbol_index.json の utils module パス修正済み。
 - 2026-03-22: REPO_ROOT parents[5] + call.py normalize コミット済み。S2,S3 完了。テスト 234 passed (78%)。
 
-#### P0-23: 組み込み型メソッドの戻り値型推論を拡充
-
-文脈: [docs/ja/plans/p0-builtin-method-return-type.md](../plans/p0-builtin-method-return-type.md)
-
-1. [x] [ID: P0-BUILTIN-METHOD-RETURN-TYPE-01] `core_expr_resolution_semantics.py` に組み込み型メソッドの戻り値型を追加する。
-2. [x] [ID: P0-BUILTIN-METHOD-RETURN-TYPE-02] 動作確認（dict.get→int64, values→list[int64] 等）。
-
-#### P0-24: Callable 型の追跡
-
-文脈: [docs/ja/plans/p0-callable-type-tracking.md](../plans/p0-callable-type-tracking.md)
-
-1. [x] [ID: P0-CALLABLE-TYPE-TRACKING-01] `_callable_return_type` を `callable[[Args],Ret]` 形式に対応させ、Call の resolved_type に反映する。
-2. [x] [ID: P0-CALLABLE-TYPE-TRACKING-02] 動作確認（`fn: Callable[[int], int]` → `fn(x)` の resolved_type=int64）。
-
-#### P0-26: str 型サブスクリプトの結果型推論
-
-文脈: [docs/ja/plans/p0-str-subscript-type.md](../plans/p0-str-subscript-type.md)
-
-1. [x] [ID: P0-STR-SUBSCRIPT-TYPE-01] str/list/dict/bytes 型サブスクリプトの結果型を推論する。
-2. [x] [ID: P0-STR-SUBSCRIPT-TYPE-02] 動作確認（str→str, list[int]→int64, dict[str,int]→int64）。
-
-#### P0-27: __truediv__ 演算子の lowering
-
-文脈: [docs/ja/plans/p0-truediv-operator-lowering.md](../plans/p0-truediv-operator-lowering.md)
-
-1. [x] [ID: P0-TRUEDIV-LOWERING-01] `Path / "child"` を `Path.joinpath("child")` メソッド呼び出しに lowering する。
-2. [x] [ID: P0-TRUEDIV-LOWERING-02] 動作確認（BinOp Div → Call joinpath に変換）。
-
-#### P0-25: generator の EAST3 ステートマシン lowering
-
-文脈: [docs/ja/plans/p0-generator-statemachine-lowering.md](../plans/p0-generator-statemachine-lowering.md)
-
-1. [x] [ID: P0-GENERATOR-LOWERING-01] EAST3 で generator → list accumulation lowering を設計する。
-2. [x] [ID: P0-GENERATOR-LOWERING-02] lowering パスを実装する（yield → append + return list）。
-3. [x] [ID: P0-GENERATOR-LOWERING-03] 動作確認（gen(n) → list[int64] を返す関数に変換）。
-
-#### P0-21: EAST3 で C++ 準拠の integer promotion を実装
-
-文脈: [docs/ja/plans/p0-east3-integer-promotion.md](../plans/p0-east3-integer-promotion.md)
-
-1. [x] [ID: P0-INTEGER-PROMOTION-01] EAST3 lowering に C++ 準拠の integer promotion パスを実装する。
-2. [x] [ID: P0-INTEGER-PROMOTION-02] `bytes`/`bytearray` イテレーション変数の型を `int32` に推論する。
-3. [x] [ID: P0-INTEGER-PROMOTION-03] ユニットテストを追加する。
-4. [x] [ID: P0-INTEGER-PROMOTION-04] 既存テストのリグレッションがないことを検証する。
-
-### P1: integer promotion の代入先型縮小最適化
-
-文脈: [docs/ja/plans/p1-integer-promotion-narrowing.md](../plans/p1-integer-promotion-narrowing.md)
-
-1. [x] [ID: P1-INTEGER-PROMOTION-NARROWING-01] EAST3 optimizer に代入先型縮小パスを実装する。
-2. [x] [ID: P1-INTEGER-PROMOTION-NARROWING-02] ユニットテストを追加する。
-
-### P2: emit_all_modules にルート相対パス情報を追加
-
-文脈: [docs/ja/plans/p2-emit-module-root-relative-path.md](../plans/p2-emit-module-root-relative-path.md)
-
-1. [x] [ID: P2-EMIT-ROOT-REL-PATH-01] `emit_all_modules` で `root_rel_prefix` を計算し EAST3 doc の meta に設定する。
-2. [x] [ID: P2-EMIT-ROOT-REL-PATH-02] 既存テストのリグレッションがないことを検証する。
-
-### P2: immutable 引数言語向け引数リネーム共通化
-
-文脈: [docs/ja/plans/p2-mutable-param-rename.md](../plans/p2-mutable-param-rename.md)
-
-1. [x] [ID: P2-MUTABLE-PARAM-RENAME-01] `CodeEmitter` に共通メソッドを追加する（実装済み、Zig は暫定対応済み）。
-2. [x] [ID: P2-MUTABLE-PARAM-RENAME-02] Swift emitter を共通関数呼び出しに修正する。
-3. [x] [ID: P2-MUTABLE-PARAM-RENAME-03] スタンドアロン関数版を `code_emitter.py` に公開する。
-
 ### P2: built-in 依存を EAST1 → linker 経由で解決
 
 文脈: [docs/ja/plans/p2-builtin-dependency-via-linker.md](../plans/p2-builtin-dependency-via-linker.md)
@@ -182,24 +115,6 @@
 3. [ ] [ID: P3-PYOBJ-LIST-ESCAPE-03] `analysis.py` の `_collect_assigned_name_types` を除去する（依存消滅確認後）。
 4. [ ] [ID: P3-PYOBJ-LIST-ESCAPE-04] ユニットテストを追加し、既存 pyobj list テストのリグレッションがないことを検証する。
 
-### P4: integer promotion をオペランドキャストに変更
-
-文脈: [docs/ja/plans/p4-integer-promotion-operand-cast.md](../plans/p4-integer-promotion-operand-cast.md)
-
-1. [x] [ID: P4-INTEGER-PROMOTION-OPERAND-CAST-01] promotion パスで小さい整数型オペランドの resolved_type を昇格する。
-2. [x] [ID: P4-INTEGER-PROMOTION-OPERAND-CAST-02] 不要な Unbox を除去する。
-3. [x] [ID: P4-INTEGER-PROMOTION-OPERAND-CAST-03] ユニットテストを有効化し、リグレッション検証する。
-
-### P5: C# multi-module emit parity
-
-文脈: [docs/ja/plans/p5-cs-multimodule-emit-parity.md](../plans/p5-cs-multimodule-emit-parity.md)
-
-1. [x] [ID: P5-CS-MULTIMODULE-01] C# emitter に `emit_main` フラグを追加し、entry module 以外では `Main` を生成しない。クラス名をモジュール ID ベースでユニーク化する。
-2. [x] [ID: P5-CS-MULTIMODULE-02] sub-module 間の `using` / namespace 参照を C# の namespace 規約に合わせて修正する。
-3. [x] [ID: P5-CS-MULTIMODULE-03] `cs.py` の runtime 生成を S1/S2 の修正に合わせて整合させる。
-4. [x] [ID: P5-CS-MULTIMODULE-04] `pytra-cli.py` の C# build/run を `mcs` + `mono` 方式に修正する。
-5. [x] [ID: P5-CS-MULTIMODULE-05] `runtime_parity_check.py --targets cs` で sample/py の全 18 ケースが PASS することを確認する。
-
 ### P5: Go sample parity
 
 文脈: [docs/ja/plans/p5-go-sample-parity.md](../plans/p5-go-sample-parity.md)
@@ -223,21 +138,6 @@
 文脈: [docs/ja/plans/p5-swift-sample-parity.md](../plans/p5-swift-sample-parity.md)
 
 1. [ ] [ID: P5-SWIFT-PARITY-01] `runtime_parity_check.py --targets swift` で sample/py の全 18 ケースが PASS する。
-
-### P7: EAST3 でデフォルト引数を呼び出し側に展開
-
-文脈: [docs/ja/plans/p7-east3-default-arg-expansion.md](../plans/p7-east3-default-arg-expansion.md)
-
-1. [x] [ID: P7-DEFAULT-ARG-EXPANSION-01] EAST3 lowering で省略されたデフォルト引数を call site に展開する。
-2. [x] [ID: P7-DEFAULT-ARG-EXPANSION-02] ユニットテストを追加する。
-
-### P7: math.pi 等のモジュール定数の型推論
-
-文脈: [docs/ja/plans/p7-math-pi-type-resolution.md](../plans/p7-math-pi-type-resolution.md)
-
-1. [x] [ID: P7-MODULE-CONST-TYPE-01] linked program の全モジュールからトップレベル export テーブルを収集する。
-2. [x] [ID: P7-MODULE-CONST-TYPE-02] Attribute ノードの `resolved_type` を export テーブルで更新する post-link pass を実装する。
-3. [x] [ID: P7-MODULE-CONST-TYPE-03] ユニットテストを追加する。
 
 ### P6: Zig コンテナ型の Obj（rc）管理
 
