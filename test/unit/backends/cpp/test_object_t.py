@@ -222,7 +222,7 @@ int main() {
     std::cout << "object list/dict ok" << std::endl;
     return 0;
 }
-''', "object_list_dict", extra_srcs=["src/runtime/cpp/core/gc.cpp"])
+''', "object_list_dict")
         self.assertEqual(out, "object list/dict ok")
 
 

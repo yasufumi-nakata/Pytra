@@ -13,9 +13,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 
 CPP_RUNTIME_SRCS = [
-    "src/runtime/cpp/core/gc.cpp",
     "src/runtime/cpp/core/io.cpp",
-    "src/runtime/east/built_in/string_ops.cpp",
 ]
 
 
@@ -65,7 +63,6 @@ int main() {
                     "-Isrc/runtime/cpp",
                     "-Isrc/runtime/east",
                     str(src),
-                    "src/runtime/cpp/core/gc.cpp",
                     "src/runtime/cpp/core/io.cpp",
                     "src/runtime/east/built_in/string_ops.cpp",
                     "src/runtime/east/std/pathlib.cpp",
@@ -342,7 +339,6 @@ int main() {
     def test_runtime_list_overload_inventory(self) -> None:
         process_native = (ROOT / "src/runtime/cpp/core/process_runtime.h").read_text(encoding="utf-8")
         scope_exit_native = (ROOT / "src/runtime/cpp/core/scope_exit.h").read_text(encoding="utf-8")
-        gc_header = (ROOT / "src/runtime/cpp/core/gc.h").read_text(encoding="utf-8")
         runtime_header = (ROOT / "src/runtime/cpp/core/py_runtime.h").read_text(encoding="utf-8")
         list_ops_header = (ROOT / "src/runtime/cpp/built_in/list_ops.h").read_text(encoding="utf-8")
         base_ops_header = (ROOT / "src/runtime/cpp/built_in/base_ops.h").read_text(encoding="utf-8")

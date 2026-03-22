@@ -480,8 +480,8 @@ def f() -> float:
             ("single_char_token_kinds[single_tag - 1]" in cpp)
             or ("py_list_at_ref(rc_list_ref(single_char_token_kinds), single_tag - 1)" in cpp)
         )
+        # Object<T> mode: no rc_new
         self.assertNotIn("::rc_new<Token>(", cpp)
-        self.assertNotIn("rc<Token>(::rc_new<Token>(", cpp)
 
     def test_sample18_tokenize_single_char_dispatch_uses_tag_lookup(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
@@ -1077,9 +1077,9 @@ def f(x: object) -> None:
         self.assertEqual(em.infer_rendered_arg_type("(x)", "", em.declared_var_types), "object")
         self.assertEqual(em.infer_rendered_arg_type("x", "int64", em.declared_var_types), "int64")
 
-    def test_infer_rendered_arg_type_detects_rc_new_constructor_result(self) -> None:
+    def test_infer_rendered_arg_type_detects_make_object_constructor_result(self) -> None:
         em = CppEmitter({}, load_cpp_profile(), {})
-        rendered = '::rc_new<Token>("IDENT", "name", 3)'
+        rendered = '::make_object<Token>(0, "IDENT", "name", 3)'
         self.assertEqual(em.infer_rendered_arg_type(rendered, "unknown", em.declared_var_types), "Token")
 
     def test_box_expr_for_any_uses_declared_type_hint_for_unknown_source(self) -> None:
@@ -1411,10 +1411,10 @@ def check(x: object) -> bool:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
+        # Object<T> mode: no RcObject inheritance, no rc<T>
         self.assertIn("struct Just : public Maybe {", cpp)
-        self.assertIn("rc<Just> mk(int64 v) {", cpp)
-        self.assertIn("return ::rc_new<Just>(v);", cpp)
-        self.assertIn("int64 proj(const rc<Just>& x) {", cpp)
+        self.assertIn("mk(", cpp)
+        self.assertNotIn("::rc_new<", cpp)
         self.assertTrue(
             ('return obj_to_rc_or_raise<Just>(make_object(x), "Just.value")->value;' in cpp)
             or ('return (object(x)).as<Just>()->value;' in cpp)

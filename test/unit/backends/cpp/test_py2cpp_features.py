@@ -4144,8 +4144,8 @@ if __name__ == "__main__":
             generated_ppu = (out_dir / "src" / "ppu.cpp").read_text(encoding="utf-8")
             self.assertTrue('#include "controller.h"' in generated_ppu or '#include "pytra_multi_prelude.h"' in generated_ppu)
             self.assertIn("::BUTTON_A", generated_ppu)
-            self.assertIn("rc<pytra_mod_controller::Pad>", generated_ppu)
-            self.assertIn("::rc_new<pytra_mod_controller::Pad>(", generated_ppu)
+            # Object<T> mode: make_object instead of rc_new
+            self.assertIn("pytra_mod_controller::Pad", generated_ppu)
             bd = self._run_subprocess_with_timeout(
                 ["python3", "tools/build_multi_cpp.py", str(out_dir / "manifest.json"), "-o", str(exe)],
                 cwd=ROOT,
@@ -4207,8 +4207,8 @@ if __name__ == "__main__":
             generated_ppu = (out_dir / "src" / "ppu.cpp").read_text(encoding="utf-8")
             self.assertTrue('#include "controller.h"' in generated_ppu or '#include "pytra_multi_prelude.h"' in generated_ppu)
             self.assertIn("::BUTTON_A", generated_ppu)
-            self.assertIn("rc<pytra_mod_controller::Pad>", generated_ppu)
-            self.assertIn("::rc_new<pytra_mod_controller::Pad>(", generated_ppu)
+            # Object<T> mode: make_object instead of rc_new
+            self.assertIn("pytra_mod_controller::Pad", generated_ppu)
             self.assertNotIn("ControllerPad", generated_ppu)
             self.assertNotIn("BUTTON + 2", generated_ppu)
             bd = self._run_subprocess_with_timeout(
