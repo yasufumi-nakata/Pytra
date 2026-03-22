@@ -1834,8 +1834,15 @@ class ZigNativeEmitter:
             return self._render_joined_str(ed)
         if kind == "IfExp":
             test = self._render_cond_expr(ed.get("test"))
-            body_expr = self._render_expr(ed.get("body"))
-            orelse_expr = self._render_expr(ed.get("orelse"))
+            body_node = ed.get("body")
+            orelse_node = ed.get("orelse")
+            body_expr = self._render_expr(body_node)
+            orelse_expr = self._render_expr(orelse_node)
+            # comptime_int リテラルを @as(i64, ...) にキャスト
+            if isinstance(body_node, dict) and body_node.get("kind") == "Constant" and isinstance(body_node.get("value"), int):
+                body_expr = "@as(i64, " + body_expr + ")"
+            if isinstance(orelse_node, dict) and orelse_node.get("kind") == "Constant" and isinstance(orelse_node.get("value"), int):
+                orelse_expr = "@as(i64, " + orelse_expr + ")"
             return "if (" + test + ") " + body_expr + " else " + orelse_expr
         if kind == "FormattedValue":
             return self._render_expr(ed.get("value"))
