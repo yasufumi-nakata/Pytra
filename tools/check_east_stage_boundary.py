@@ -123,8 +123,8 @@ def _check_semantic_literals(
 
 def _check_east2_boundary(errors: list[str]) -> None:
     paths = (
-        ROOT / "src" / "toolchain" / "compiler" / "east_parts" / "east2.py",
-        ROOT / "src" / "toolchain" / "ir" / "east2.py",
+        ROOT / "src" / "toolchain" / "misc" / "east_parts" / "east2.py",
+        ROOT / "src" / "toolchain" / "compile" / "east2.py",
     )
     forbidden_import_prefixes = (
         "toolchain.misc.east_parts.east3",
@@ -160,8 +160,8 @@ def _check_east2_boundary(errors: list[str]) -> None:
 
 
 def _check_code_emitter_boundary(errors: list[str]) -> None:
-    shim_path = ROOT / "src" / "toolchain" / "compiler" / "east_parts" / "code_emitter.py"
-    impl_path = ROOT / "src" / "backends" / "common" / "emitter" / "code_emitter.py"
+    shim_path = ROOT / "src" / "toolchain" / "misc" / "east_parts" / "code_emitter.py"
+    impl_path = ROOT / "src" / "toolchain" / "emit" / "common" / "emitter" / "code_emitter.py"
     paths = (
         (shim_path, ()),
         (
