@@ -4,7 +4,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-21
+最終更新: 2026-03-23
 
 ## 運用方針
 
@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-23 / P0-28〜P0-31, P2-BUILD-OUTPUT-STRUCTURE, P5-SWIFT, P6-ZIG-OBJ-CONTAINERS](20260323.md)
 - [2026-03-21 / P0-CPP-GENERATED-RUNTIME-PIPELINE-01](20260321.md)
 - [2026-03-21 / P0-UNION-ARG-ESCAPE-01/02/03](20260321.md)
 - [2026-03-21 / P0-ESCAPE-TO-STORAGE-HINT-01](20260321.md)

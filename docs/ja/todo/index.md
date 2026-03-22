@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-22（完了タスクをアーカイブへ移動）
+最終更新: 2026-03-23（完了タスクをアーカイブへ移動）
 
 ## 文脈運用ルール
 
@@ -73,45 +73,6 @@
 19. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S3] selfhost multi-module transpile が動作する。
 20. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S4] sample/py の全 18 ケースが C++ で compile + run できる。
 
-#### P0-28: main_guard_body の Expr Call 戻り値を Discard でラップ
-
-文脈: [docs/ja/plans/p0-main-guard-discard.md](../plans/p0-main-guard-discard.md)
-
-1. [x] [ID: P0-MAIN-GUARD-DISCARD-01] main_guard_body 内の Expr Call に `discard_result: true` フラグを付与する。
-2. [x] [ID: P0-MAIN-GUARD-DISCARD-02] 動作確認。
-
-#### P0-29: 未使用変数の検出
-
-文脈: [docs/ja/plans/p0-unused-variable-detection.md](../plans/p0-unused-variable-detection.md)
-
-1. [x] [ID: P0-UNUSED-VAR-01] 未使用変数検出パスを実装し、Assign target / VarDecl に `unused` フラグを付与する。
-2. [x] [ID: P0-UNUSED-VAR-02] 動作確認（unused_var=True, used=False）。
-
-#### P0-30: タプル代入の正規化（swap 検出）
-
-文脈: [docs/ja/plans/p0-tuple-assign-normalization.md](../plans/p0-tuple-assign-normalization.md)
-
-1. [x] [ID: P0-TUPLE-ASSIGN-NORM-01] 2 要素 swap パターンを検出して Swap ノードに変換する。
-2. [x] [ID: P0-TUPLE-ASSIGN-NORM-02] 動作確認（Name swap + Subscript swap）。
-
-#### P0-31: for ループの TupleTarget 事前展開
-
-文脈: [docs/ja/plans/p0-for-tuple-target-expansion.md](../plans/p0-for-tuple-target-expansion.md)
-
-1. [x] [ID: P0-FOR-TUPLE-EXPAND-01] ForCore TupleTarget を事前展開する EAST3 パスを実装する。
-2. [x] [ID: P0-FOR-TUPLE-EXPAND-02] 動作確認（TupleTarget → NameTarget + body 先頭に要素代入）。
-
-### P2: ビルド出力ディレクトリ構造の標準化
-
-文脈: [docs/ja/plans/p2-build-output-structure.md](../plans/p2-build-output-structure.md)
-
-1. [x] [ID: P2-BUILD-OUTPUT-STRUCTURE-01] linker の出力を `east3/` + `manifest.json` に変更する。
-2. [x] [ID: P2-BUILD-OUTPUT-STRUCTURE-02] emitter の出力を `emit/` に変更する。
-3. [x] [ID: P2-BUILD-OUTPUT-STRUCTURE-03] `pytra-cli.py` を新構造に対応させる。
-4. [x] [ID: P2-BUILD-OUTPUT-STRUCTURE-04] 全 backend の動作確認。
-
-進捗:
-- 2026-03-22: S1〜S4 完了。linker/emitter/cli/tools/test/docs を新構造に一括対応。regression なし確認。
 
 #### P0-22: REPO_ROOT 修正 + import alias 解決 + conftest extern 関数修正
 
@@ -173,11 +134,6 @@
 
 1. [ ] [ID: P5-KOTLIN-PARITY-01] `runtime_parity_check.py --targets kotlin` で sample/py の全 18 ケースが PASS する。
 
-### P5: Swift sample parity
-
-文脈: [docs/ja/plans/p5-swift-sample-parity.md](../plans/p5-swift-sample-parity.md)
-
-1. [x] [ID: P5-SWIFT-PARITY-01] `runtime_parity_check.py --targets swift` で sample/py の全 18 ケースが PASS する。
 
 ### P7: C++ test_py2cpp_features.py テストパス率改善
 
@@ -191,13 +147,4 @@
 進捗:
 - 2026-03-22: 192/107 (64%) → 268/31 (89.3%)。+76テスト改善。残り31件の計画書起票。
 - 2026-03-23: 250/49 → 264/35 → +修正で ~267/~33 見込み。wildcard テスト期待値修正、generated-only モジュール include フォールバック追加、test出力先 work/out/ 移行。
-
-### P6: Zig コンテナ型の Obj（rc）管理
-
-文脈: [docs/ja/plans/p6-zig-obj-managed-containers.md](../plans/p6-zig-obj-managed-containers.md)
-
-1. [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S1] `py_runtime.zig` に `make_list` / `list_append` / `list_get` / `list_set` / `list_len` / `make_bytearray` を追加する。
-2. [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S2] emitter の `_zig_type` で `list[T]` / `bytearray` / `bytes` → `pytra.Obj` に変更。List リテラル / Subscript / `.append` / `len()` をランタイム API 呼び出しに変換する。
-3. [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S3] test/fixtures の 28/30 テストが通ることを確認する。
-4. [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S4] sample/py/01_mandelbrot.py が正しい PNG を出力し、Python 版と一致することを確認する。
 
