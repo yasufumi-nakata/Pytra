@@ -13,10 +13,7 @@ from pathlib import Path as NativePath
 from typing import Any
 
 from toolchain.emit.java.emitter import transpile_to_java
-from toolchain.emit.loader import load_linked_modules
-
-_ROOT = NativePath(__file__).resolve().parents[3]
-_JAVA_SRC_RUNTIME_DIR = _ROOT / "src" / "runtime" / "java"
+from toolchain.emit.loader import copy_native_runtime, load_linked_modules
 
 
 def _emit_java_modules(input_path: str, output_dir: str) -> int:
@@ -50,19 +47,6 @@ def _emit_java_modules(input_path: str, output_dir: str) -> int:
     return 0
 
 
-def _copy_java_runtime(output_dir: str) -> None:
-    """Copy required Java runtime files."""
-    out = NativePath(output_dir)
-    # Copy native runtime files from src/runtime/java/
-    for subdir in ("built_in", "std"):
-        src_dir = _JAVA_SRC_RUNTIME_DIR / subdir
-        if not src_dir.is_dir():
-            continue
-        for f in sorted(src_dir.iterdir()):
-            if f.suffix == ".java":
-                d = out / f.name
-                if not d.exists():
-                    shutil.copy2(str(f), str(d))
 
 
 def main() -> int:
@@ -91,7 +75,7 @@ def main() -> int:
     rc = _emit_java_modules(input_path, output_dir)
     if rc != 0:
         return rc
-    _copy_java_runtime(output_dir)
+    copy_native_runtime(output_dir, "java")
     return 0
 
 

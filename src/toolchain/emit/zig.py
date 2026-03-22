@@ -2,35 +2,22 @@
 """Zig backend: manifest.json → Zig multi-file output.
 
 Usage:
-    python3 -m toolchain.emit.zig MANIFEST.json --output-dir out/zig/
+    python3 -m toolchain.emit.zig MANIFEST.json --output-dir emit/zig/
 """
 
 from __future__ import annotations
 
-import shutil
 import sys
-from pathlib import Path
 
 from toolchain.emit.zig.emitter import transpile_to_zig_native
-from toolchain.emit.loader import load_linked_modules
-
-_RUNTIME_DIR = Path(__file__).resolve().parents[2] / "runtime" / "zig" / "built_in"
-_STD_RUNTIME_DIR = Path(__file__).resolve().parents[2] / "runtime" / "zig" / "std"
+from toolchain.emit.loader import emit_all_modules
 
 
-def _copy_runtime(output_dir: str) -> None:
-    out = Path(output_dir)
-    out.mkdir(parents=True, exist_ok=True)
-    for f in _RUNTIME_DIR.iterdir():
-        if f.is_file():
-            shutil.copy2(f, out / f.name)
-    # std native runtime を全サブモジュールディレクトリにコピー
-    if _STD_RUNTIME_DIR.exists():
-        for f in _STD_RUNTIME_DIR.iterdir():
-            if f.is_file():
-                for sub_dir in out.iterdir():
-                    if sub_dir.is_dir():
-                        shutil.copy2(f, sub_dir / f.name)
+def _transpile_zig(east_doc: dict) -> str:
+    meta = east_doc.get("meta", {})
+    emit_ctx = meta.get("emit_context", {}) if isinstance(meta, dict) else {}
+    is_entry = emit_ctx.get("is_entry", False) if isinstance(emit_ctx, dict) else False
+    return transpile_to_zig_native(east_doc, is_submodule=not is_entry)
 
 
 def main() -> int:
@@ -40,7 +27,7 @@ def main() -> int:
         return 0
 
     input_path = ""
-    output_dir = "out/zig"
+    output_dir = "work/tmp/zig"
     i = 0
     while i < len(argv):
         tok = argv[i]
@@ -56,28 +43,7 @@ def main() -> int:
         print("error: input manifest.json is required", file=sys.stderr)
         return 1
 
-    modules, entry_modules = load_linked_modules(input_path)
-    out = Path(output_dir)
-    out.mkdir(parents=True, exist_ok=True)
-
-    for mod in modules:
-        module_id = mod["module_id"]
-        east_doc = mod["east_doc"]
-        is_entry = mod.get("is_entry", False)
-        rel_module = module_id
-        if rel_module.startswith("pytra."):
-            rel_module = rel_module[len("pytra."):]
-        rel_path = rel_module.replace(".", "/") + ".zig"
-        out_path = out / rel_path
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-
-        is_submodule = not is_entry
-        source = transpile_to_zig_native(east_doc, is_submodule=is_submodule)
-        out_path.write_text(source, encoding="utf-8")
-        print("generated: " + str(out_path))
-
-    _copy_runtime(output_dir)
-    return 0
+    return emit_all_modules(input_path, output_dir, ".zig", _transpile_zig, lang="zig")
 
 
 if __name__ == "__main__":

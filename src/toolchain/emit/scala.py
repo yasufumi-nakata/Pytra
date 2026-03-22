@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 from toolchain.emit.scala.emitter.scala_native_emitter import transpile_to_scala_native
-from toolchain.emit.loader import load_linked_modules
+from toolchain.emit.loader import copy_native_runtime, load_linked_modules
 
 
 def main() -> int:
@@ -87,6 +87,7 @@ def main() -> int:
     out_path.write_text(merged, encoding="utf-8")
     print("generated: " + str(out_path))
 
+    copy_native_runtime(output_dir, "scala")
     return 0
 
 
