@@ -1027,8 +1027,8 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
                     attr_name = _get_str(func_node, "attr")
                     if attr_name in ("append", "extend", "insert", "remove", "discard",
                                      "clear", "sort", "reverse", "update", "add",
-                                     "close", "flush", "write", "inc", "dec",
-                                     "set_argv", "set_path"):
+                                     "close", "flush", "write", "write_text", "read_text",
+                                     "mkdir", "inc", "dec", "set_argv", "set_path"):
                         return [indent + "[void](" + rendered + ")"]
         return [indent + rendered]
 
