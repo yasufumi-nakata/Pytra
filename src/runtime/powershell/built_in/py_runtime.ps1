@@ -14,13 +14,7 @@ function __pytra_print {
 
     $parts = New-Object System.Collections.Generic.List[string]
     foreach ($item in $items) {
-        if ($item -eq $null) {
-            $parts.Add("None")
-        } elseif ($item -is [bool]) {
-            $parts.Add($(if ($item) { "True" } else { "False" }))
-        } else {
-            $parts.Add([string]$item)
-        }
+        $parts.Add((__pytra_str $item))
     }
     Write-Output ($parts -join " ")
 }

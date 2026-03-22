@@ -1831,7 +1831,8 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
             if isinstance(stmt, dict):
                 stmt_d2: dict[str, object] = stmt
                 simplified = _simplify_main_guard_stmt(stmt_d2)
-                lines.extend(_emit_stmt(simplified, indent="", ctx=ctx))
+                emitted = _emit_stmt(simplified, indent="", ctx=ctx)
+                lines.extend(emitted)
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
