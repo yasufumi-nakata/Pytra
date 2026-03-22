@@ -14,7 +14,7 @@
 - `docs/ja/` を正本（source of truth）とし、`docs/en/` は翻訳ミラーとして扱う。
 - `docs/ja/` 直下（トップレベル）への新規ファイル追加は原則禁止（同一ターンの明示依頼がある場合のみ許可）。
 - `docs/ja/plans/`、`docs/ja/language/`、`docs/ja/todo/archive/`、`docs/ja/spec/` 配下は、運用ルールに沿う範囲で作成可。
-- 作業生成物は `work/tmp/` または `/tmp/` を使用する。**`out/` への出力は禁止**（複数インスタンスの競合リスクあり）。
+- 作業生成物は `work/tmp/` を使用する。**`out/` や `/tmp/` への出力は禁止**（`out/` は複数インスタンスの競合リスクあり、`/tmp/` はゴミが残る）。
 - リポジトリ直下に `out/` / `selfhost/` 等の新規ディレクトリを作成してはならない。
 - `materials/` はユーザー資料置き場として扱い、Codex は read-only（明示指示がある場合のみ編集可）。
 - `materials/Yanesdk/` と `materials/microgpt/` はユーザー管理資料として扱う。
