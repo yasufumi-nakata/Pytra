@@ -981,6 +981,9 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
             return f"py_to<{handle_cpp_t}>({rendered_expr})"
         if value_t.startswith("list[") and value_t.endswith("]"):
             return f"rc_list_from_value({rendered_expr})"
+        # Fallback: if target type is a ref-first list, wrap in rc_list_from_value
+        if rendered_expr != "" and not rendered_expr.startswith("rc_list_from_value("):
+            return f"rc_list_from_value({rendered_expr})"
         return rendered_expr
 
     def _uses_pyobj_ref_first_list_value_source(self, expr_node: Any) -> bool:
