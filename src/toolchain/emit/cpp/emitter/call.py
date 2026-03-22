@@ -548,7 +548,9 @@ class CppCallEmitter:
         call_args = self._coerce_args_for_module_function(module_name, func_name, rendered_args, arg_nodes)
         if func_name.startswith("py_assert_"):
             call_args = self._coerce_py_assert_args(func_name, call_args, arg_nodes)
-        return f"{namespace_name}::{func_name}({join_str_list(', ', call_args)})"
+        # Use global scope qualifier to avoid pytra::std vs ::std collision
+        qualified_ns = namespace_name if namespace_name.startswith("::") else f"::{namespace_name}"
+        return f"{qualified_ns}::{func_name}({join_str_list(', ', call_args)})"
 
     def _render_call_class_method(
         self,

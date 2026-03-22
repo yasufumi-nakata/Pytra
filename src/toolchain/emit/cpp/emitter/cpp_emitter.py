@@ -4151,7 +4151,9 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
                     self.rename_prefix,
                     self.renamed_symbols,
                 )
-                return f"{imported_ns}::{emitted_name}"
+                # Use global scope qualifier to avoid pytra::std vs ::std collision
+                qualified_ns = imported_ns if imported_ns.startswith("::") else f"::{imported_ns}"
+                return f"{qualified_ns}::{emitted_name}"
         return self.render_name_expr_common(
             expr_d,
             self.reserved_words,
