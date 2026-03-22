@@ -167,7 +167,40 @@ fun __pytra_ifexp(cond: Boolean, a: Any?, b: Any?): Any? {
     return if (cond) a else b
 }
 
-// __pytra_write_rgb_png is defined in image_runtime.kt (raw zlib store, bit-exact with Python)
+fun __pytra_write_rgb_png(path: Any?, width: Any?, height: Any?, pixels: Any?) {
+    val outPath = __pytra_str(path)
+    val w = __pytra_int(width).toInt()
+    val h = __pytra_int(height).toInt()
+    if (w <= 0 || h <= 0) return
+
+    val raw = __pytra_as_list(pixels)
+    val expected = w * h * 3
+    if (raw.size < expected) return
+
+    val image = BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
+    var i = 0
+    var y = 0
+    while (y < h) {
+        var x = 0
+        while (x < w) {
+            val r = __pytra_int(raw[i]).toInt().coerceIn(0, 255)
+            val g = __pytra_int(raw[i + 1]).toInt().coerceIn(0, 255)
+            val b = __pytra_int(raw[i + 2]).toInt().coerceIn(0, 255)
+            val rgb = (r shl 16) or (g shl 8) or b
+            image.setRGB(x, y, rgb)
+            i += 3
+            x += 1
+        }
+        y += 1
+    }
+
+    val outFile = File(outPath)
+    val parent = outFile.parentFile
+    if (parent != null && !parent.exists()) {
+        parent.mkdirs()
+    }
+    ImageIO.write(image, "png", outFile)
+}
 
 fun __pytra_bytearray(initValue: Any?): MutableList<Any?> {
     if (initValue is Long) {

@@ -778,6 +778,39 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
 _ASSERTION_RUNTIME_CALLS = set(list_noncpp_assertion_runtime_calls())
 _CURRENT_IMPORT_SYMBOLS: dict[str, dict[str, str]] = {}
 _RELATIVE_IMPORT_NAME_ALIASES: dict[str, str] = {}
+_IMPORT_ALIAS_MAP: list[dict[str, str]] = [{}]
+
+# stdlib module → Java class mapping for module.attr calls
+_JAVA_STDLIB_CLASS_MAP: dict[str, str] = {
+    "pytra.std.math": "math",
+    "pytra.std.time": "time",
+}
+_JAVA_STDLIB_ATTR_MAP: dict[str, dict[str, str]] = {
+    "pytra.std.math": {"pi": "math.pi", "e": "math.e"},
+    "pytra.std.time": {"perf_counter": "time.perf_counter"},
+}
+
+
+def _resolve_java_stdlib_call(owner_id: str, attr: str) -> str:
+    """Resolve module.attr() to Java class.method via import alias map."""
+    module_id = _IMPORT_ALIAS_MAP[0].get(owner_id, "")
+    if module_id == "":
+        return ""
+    java_class = _JAVA_STDLIB_CLASS_MAP.get(module_id, "")
+    if java_class != "":
+        return java_class + "." + attr
+    return ""
+
+
+def _resolve_java_stdlib_attr(owner_id: str, attr: str) -> str:
+    """Resolve module.attr to Java constant via import alias map."""
+    module_id = _IMPORT_ALIAS_MAP[0].get(owner_id, "")
+    if module_id == "":
+        return ""
+    mod_map = _JAVA_STDLIB_ATTR_MAP.get(module_id)
+    if mod_map is not None:
+        return mod_map.get(attr, "")
+    return ""
 
 
 def _relative_import_module_path(module_id: str) -> str:
@@ -1059,12 +1092,17 @@ def _render_call_via_runtime_call(
         fn_name = semantic_tag[len("stdlib.fn."):].strip()
         if fn_name == "":
             return ""
+        # Resolve via runtime module: stdlib.fn.sqrt → math module's sqrt
+        runtime_module = _runtime_module_id(expr, "")
+        java_class = _JAVA_STDLIB_CLASS_MAP.get(runtime_module, "")
         rendered_args: list[str] = []
         i = 0
         while i < len(args):
             rendered_args.append(_render_expr(args[i]))
             i += 1
-        return "_impl." + fn_name + "(" + ", ".join(rendered_args) + ")"
+        if java_class != "":
+            return java_class + "." + fn_name + "(" + ", ".join(rendered_args) + ")"
+        return fn_name + "(" + ", ".join(rendered_args) + ")"
     if runtime_source != "runtime_call":
         rendered_resolved = _render_resolved_runtime_call(
             expr,
@@ -1220,6 +1258,15 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         owner_any = func_any.get("value")
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner = _safe_ident(owner_any.get("id"), "")
+            # Resolve stdlib calls via import alias map
+            java_call = _resolve_java_stdlib_call(owner, attr_name)
+            if java_call != "":
+                rendered_stdlib_args: list[str] = []
+                si = 0
+                while si < len(args):
+                    rendered_stdlib_args.append(_render_expr(args[si]))
+                    si += 1
+                return java_call + "(" + ", ".join(rendered_stdlib_args) + ")"
         owner_expr = _render_expr(func_any.get("value"))
         if attr_name == "append" and len(args) == 1:
             return owner_expr + ".add(" + _render_expr(args[0]) + ")"
@@ -2691,6 +2738,9 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
         _CURRENT_IMPORT_SYMBOLS.clear()
         _RELATIVE_IMPORT_NAME_ALIASES.clear()
         _RELATIVE_IMPORT_NAME_ALIASES.update(_collect_relative_import_name_aliases(east_doc))
+        meta = east_doc.get("meta") if isinstance(east_doc.get("meta"), dict) else {}
+        from toolchain.emit.common.emitter.code_emitter import build_import_alias_map
+        _IMPORT_ALIAS_MAP[0] = build_import_alias_map(meta)
         meta_any = ed.get("meta")
         if isinstance(meta_any, dict):
             md: dict[str, Any] = meta_any

@@ -57,7 +57,7 @@ _KT_STDLIB_CALL_MAP: dict[str, dict[str, str]] = {
         "tan": "kotlin.math.tan", "exp": "kotlin.math.exp", "log": "kotlin.math.ln",
         "log10": "kotlin.math.log10", "fabs": "kotlin.math.abs",
         "floor": "kotlin.math.floor", "ceil": "kotlin.math.ceil",
-        "pow": "__pytra_math_pow",
+        "pow": "math_native_pow",
     },
 }
 _KT_STDLIB_ATTR_MAP: dict[str, dict[str, str]] = {
