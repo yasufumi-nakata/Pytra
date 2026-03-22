@@ -60,26 +60,6 @@ def _generate_runtime_cpp() -> Path:
 
         cpp = transpile_to_cpp(emit_east, top_namespace=ns)
         cpp = re.sub(r'\nint main\(int argc, char\*\* argv\) \{.*', '', cpp, flags=re.DOTALL)
-        # Runtime modules use value-type list<T> in signatures (not Object<list<T>>).
-        # The emitter generates Object<list<T>> internally, so post-process to unify
-        # with the header (which uses pyobj_ref_lists=False for runtime namespaces).
-        if ns.startswith("pytra::std") or ns.startswith("pytra::built_in") or ns.startswith("pytra::utils"):
-            cpp = re.sub(r'\bObject<(list<[^>]+>)>', r'\1', cpp)
-            # Strip rc_list_from_value / rc_list_ref wrappers with balanced parens
-            for wrapper in ("rc_list_from_value", "rc_list_ref", "rc_list_copy_value"):
-                while wrapper + "(" in cpp:
-                    idx = cpp.index(wrapper + "(")
-                    start = idx + len(wrapper) + 1
-                    depth = 1
-                    pos = start
-                    while pos < len(cpp) and depth > 0:
-                        if cpp[pos] == "(":
-                            depth += 1
-                        elif cpp[pos] == ")":
-                            depth -= 1
-                        pos += 1
-                    inner = cpp[start:pos - 1]
-                    cpp = cpp[:idx] + inner + cpp[pos:]
         # Remove trailing namespace close from cpp to avoid duplication in header
         cpp_for_header = re.sub(r'\n\}  // namespace [^\n]+\s*$', '', cpp.rstrip())
         header = build_cpp_header_from_east(east, east_path, out_base.with_suffix(".h"), cpp_text=cpp_for_header, top_namespace=ns)
