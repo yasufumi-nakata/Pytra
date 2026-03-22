@@ -238,15 +238,22 @@ def write_multi_file_cpp(
                     continue
                 mod_id = dict_any_get_str(binding, "module_id")
                 export_name = dict_any_get_str(binding, "export_name")
+                if mod_id:
+                    dep_modules.add(mod_id)
                 if mod_id and export_name:
                     dep_modules.add(mod_id + "." + export_name)
-                elif mod_id:
-                    dep_modules.add(mod_id)
 
         dep_include_lines: list[str] = []
         seen_dep_includes: set[str] = set()
         for mod_name in dep_modules:
             target_key = module_key_by_name.get(mod_name, "")
+            # Resolve relative module IDs (e.g. ".controller" → match "nes.controller")
+            if target_key == "" and mod_name.startswith("."):
+                suffix = mod_name.lstrip(".")
+                for candidate_name, candidate_key in module_key_by_name.items():
+                    if candidate_name.endswith("." + suffix) or candidate_name == suffix:
+                        target_key = candidate_key
+                        break
             if target_key != "" and target_key != mod_key:
                 # User module → include by label
                 dep_label = module_label_map.get(target_key, "")
