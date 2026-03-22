@@ -2517,6 +2517,8 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         var_type = _java_type(sd2.get("type"), allow_void=False)
         type_map = _type_map(ctx)
         type_map[name] = var_type
+        declared = _declared_set(ctx)
+        declared.add(name)
         return [indent + var_type + " " + name + " = " + _default_return_expr(var_type) + ";"]
 
     raise RuntimeError("java native emitter: unsupported stmt kind: " + str(kind))
