@@ -193,34 +193,6 @@ def cmd_build(argv: list[str]) -> int:
         if generated.exists():
             so_path.write_text(generated.read_text(encoding="utf-8"), encoding="utf-8")
 
-    # Stage 2.5: copy native runtime helpers to emit_dir if needed
-    # Skip runtime copy when -o is used (single-file output mode) because
-    # the output_dir is derived from -o's parent and should not be polluted
-    # with runtime files.  Runtime copy is only meaningful when --output-dir
-    # is explicitly given for a full build.
-    if single_output == "":
-        _runtime_copy_map: dict[str, str] = {
-            "ruby": "py_runtime.rb",
-            "lua": "py_runtime.lua",
-            "scala": "py_runtime.scala",
-        }
-        if target in _runtime_copy_map:
-            rt_name = _runtime_copy_map[target]
-            rt_src = Path(src_dir) / "runtime" / target / "built_in" / rt_name
-            rt_dst = Path(emit_dir) / rt_name
-            if rt_src.exists() and not rt_dst.exists():
-                rt_dst.write_text(rt_src.read_text(encoding="utf-8"), encoding="utf-8")
-
-        # Stage 2.6: copy native seam files (e.g., math_native, time_native)
-        import os as _os_seam
-        _seam_dir_str = str(Path(src_dir) / "runtime" / target / "std")
-        if _os_seam.path.isdir(_seam_dir_str):
-            for _ns_name in sorted(_os_seam.listdir(_seam_dir_str)):
-                _ns_src_p = Path(_seam_dir_str) / _ns_name
-                _ns_dst_p = Path(emit_dir) / _ns_name
-                if _os_seam.path.isfile(str(_ns_src_p)) and not _ns_dst_p.exists():
-                    _ns_dst_p.write_text(_ns_src_p.read_text(encoding="utf-8"), encoding="utf-8")
-
     # Stage 3: build + run
     entry_stem = Path(input_file).stem
     ext_map: dict[str, str] = {

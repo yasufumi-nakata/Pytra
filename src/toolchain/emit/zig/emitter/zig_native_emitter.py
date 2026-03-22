@@ -544,9 +544,21 @@ class ZigNativeEmitter:
         if not isinstance(target_node, dict) or target_node.get("kind") != "Name":
             return
         target_name = _safe_ident(target_node.get("id"), "value")
+        # extern() 変数 → __native 委譲（spec-emitter-guide §4）
+        value_node = stmt.get("value")
+        inner_val = value_node
+        if isinstance(inner_val, dict) and inner_val.get("kind") == "Unbox":
+            inner_val = inner_val.get("value")
+        if isinstance(inner_val, dict) and inner_val.get("kind") == "Call":
+            vfunc = inner_val.get("func")
+            if isinstance(vfunc, dict) and vfunc.get("id") in {"extern", "@\"extern\""}:
+                self._ensure_native_import()
+                decl_type = self._infer_decl_type(stmt)
+                zig_ty = self._zig_type(decl_type)
+                self._emit_line("pub const " + target_name + ": " + zig_ty + " = __native." + target_name + ";")
+                return
         decl_type = self._infer_decl_type(stmt)
         zig_ty = self._zig_type(decl_type)
-        value_node = stmt.get("value")
         value = self._render_expr(value_node) if isinstance(value_node, dict) else "undefined"
         self._emit_line("var " + target_name + ": " + zig_ty + " = " + value + ";")
 
@@ -626,11 +638,15 @@ class ZigNativeEmitter:
         # mutation パターン: var_name = / var_name += / var_name -= etc.
         import re as _re_mut
         def _is_mutated_after(var_name: str, start: int) -> bool:
-            # var_name に続く代入パターンを行内の任意位置で検出
-            pat = _re_mut.compile(r'\b' + _re_mut.escape(var_name) + r'\s*(\+\=|\-\=|\*\=|/\=|\=(?!\=))')
+            # var_name の mutation を検出:
+            # 1. var_name = / += / -= 等（直接代入）
+            # 2. var_name.field = （フィールド代入）
+            # 3. var_name.put( / var_name.append( 等（メソッド mutation）
+            pat_assign = _re_mut.compile(r'\b' + _re_mut.escape(var_name) + r'(\.\w+)?\s*(\+\=|\-\=|\*\=|/\=|\=(?!\=))')
+            pat_method = _re_mut.compile(r'\b' + _re_mut.escape(var_name) + r'\.(put|append|extend|pop)\s*\(')
             j = start
             while j < len(self.lines):
-                if pat.search(self.lines[j]):
+                if pat_assign.search(self.lines[j]) or pat_method.search(self.lines[j]):
                     return True
                 j += 1
             return False
@@ -1021,6 +1037,19 @@ class ZigNativeEmitter:
             target_node = stmt.get("target")
             target = self._render_target(target_node)
             value_node = stmt.get("value")
+            # extern() 変数 → __native 委譲（spec-emitter-guide §4）
+            # Unbox ラッパーを透過
+            inner_val = value_node
+            if isinstance(inner_val, dict) and inner_val.get("kind") == "Unbox":
+                inner_val = inner_val.get("value")
+            if isinstance(inner_val, dict) and inner_val.get("kind") == "Call":
+                vfunc = inner_val.get("func")
+                if isinstance(vfunc, dict) and (vfunc.get("id") == "extern" or vfunc.get("id") == "@\"extern\""):
+                    self._ensure_native_import()
+                    decl_type = self._infer_decl_type(stmt)
+                    zig_ty = self._zig_type(decl_type)
+                    self._emit_line("pub const " + target + ": " + zig_ty + " = __native." + target + ";")
+                    return
             value = self._render_expr(value_node) if isinstance(value_node, dict) else "undefined"
             if isinstance(target_node, dict) and target_node.get("kind") == "Name":
                 target_name = _safe_ident(target_node.get("id"), "value")
@@ -1398,23 +1427,23 @@ class ZigNativeEmitter:
         py_type = raw_any.strip() if isinstance(raw_any, str) else ""
         return self._zig_type(py_type)
 
-    def _emit_extern_delegation(self, stmt: dict[str, Any], name: str) -> None:
-        """@extern 関数の native 委譲コードを生成（spec-emitter-guide §4/§5.1）。"""
-        # native モジュールパスを emit_context.module_id から生成
-        ectx = self._get_emit_context()
-        module_id = ectx.get("module_id", "")
-        # native ファイルは同じディレクトリの _native サフィックス付きファイル
-        # pytra.std.time → time_native.zig (同ディレクトリ)
-        clean_id = module_id.replace(".east", "")
-        parts = clean_id.split(".")
-        leaf = parts[-1] if len(parts) > 0 else "unknown"
-        native_path = leaf + "_native.zig"
-        # __native import を1度だけ出力
+    def _ensure_native_import(self) -> None:
+        """__native import を1度だけ出力する（@extern 関数/変数の委譲用）。"""
         if not hasattr(self, "_extern_native_emitted"):
             self._extern_native_emitted = False
         if not self._extern_native_emitted:
+            ectx = self._get_emit_context()
+            module_id = ectx.get("module_id", "")
+            clean_id = module_id.replace(".east", "")
+            parts = clean_id.split(".")
+            leaf = parts[-1] if len(parts) > 0 else "unknown"
+            native_path = leaf + "_native.zig"
             self._emit_line("const __native = @import(\"" + native_path + "\");")
             self._extern_native_emitted = True
+
+    def _emit_extern_delegation(self, stmt: dict[str, Any], name: str) -> None:
+        """@extern 関数の native 委譲コードを生成（spec-emitter-guide §4/§5.1）。"""
+        self._ensure_native_import()
         # 引数リスト
         arg_order_any = stmt.get("arg_order")
         args = arg_order_any if isinstance(arg_order_any, list) else []
@@ -2109,10 +2138,8 @@ class ZigNativeEmitter:
                 return "@mod(" + left + ", " + right + ")"
             if op in {"LShift", "RShift"}:
                 sym = _binop_symbol(op)
-                # LHS が comptime literal の場合 @as(i64, ...) にキャスト
-                left_node = ed.get("left")
-                if isinstance(left_node, dict) and left_node.get("kind") == "Constant":
-                    left = "@as(i64, " + left + ")"
+                # LHS を常に i64 に昇格（EAST3 の型と Zig の実際の型が異なる場合の安全策）
+                left = "@as(i64, " + left + ")"
                 return "(" + left + " " + sym + " @intCast(" + right + "))"
             sym = _binop_symbol(op)
             return "(" + left + " " + sym + " " + right + ")"
@@ -2166,10 +2193,6 @@ class ZigNativeEmitter:
             attr = _safe_ident(ed.get("attr"), "attr")
             if isinstance(val_node, dict) and val_node.get("kind") == "Name":
                 owner = _safe_ident(val_node.get("id"), "")
-                if owner == "math" and attr in {"pi", "e"}:
-                    if self.is_submodule:
-                        return "math_native." + attr
-                    return "std.math." + attr
                 if owner in self._static_fields:
                     for sf_name, _, _ in self._static_fields[owner]:
                         if sf_name == attr:
@@ -2456,6 +2479,9 @@ class ZigNativeEmitter:
                     return "pytra.bytearray(0)"
                 if fname == "bytes":
                     if len(arg_strs) > 0:
+                        arg_t = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
+                        if arg_t.startswith("list["):
+                            return "pytra.list_to_bytes(" + arg_strs[0] + ")"
                         return arg_strs[0]
                     return "&[_]u8{}"
                 if fname == "perf_counter":

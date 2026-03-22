@@ -364,7 +364,7 @@ def build_cpp_header_from_east(
                     if at_cpp in by_value_types:
                         param_txt = borrow_cpp + " " + emitted_an
                     elif usage == "mutable":
-                        if at_cpp.startswith("rc<") and not _header_is_class_borrow_type(at, at_cpp, class_names, ref_classes):
+                        if (at_cpp.startswith("Object<") or at_cpp.startswith("rc<")) and not _header_is_class_borrow_type(at, at_cpp, class_names, ref_classes):
                             param_txt = at_cpp + "& " + emitted_an
                         else:
                             param_txt = borrow_cpp + " " + emitted_an if borrow_cpp == "object" else borrow_cpp + "& " + emitted_an
@@ -404,7 +404,7 @@ def build_cpp_header_from_east(
                     if at_cpp in by_value_types:
                         param_txt = borrow_cpp + " " + emitted_vararg
                     elif usage == "mutable":
-                        if at_cpp.startswith("rc<") and not _header_is_class_borrow_type(list_t, at_cpp, class_names, ref_classes):
+                        if (at_cpp.startswith("Object<") or at_cpp.startswith("rc<")) and not _header_is_class_borrow_type(list_t, at_cpp, class_names, ref_classes):
                             param_txt = at_cpp + "& " + emitted_vararg
                         else:
                             param_txt = borrow_cpp + " " + emitted_vararg if borrow_cpp == "object" else borrow_cpp + "& " + emitted_vararg
@@ -1183,6 +1183,10 @@ def _header_decl_uses_class_type_support(decl_text: str) -> bool:
 
 def _header_strip_rc_wrapper(cpp_type: str) -> str:
     txt = cpp_type.strip()
+    if txt.startswith("Object<") and txt.endswith(">"):
+        inner = txt[7:-1].strip()
+        if inner != "":
+            return inner
     if txt.startswith("rc<") and txt.endswith(">"):
         inner = txt[3:-1].strip()
         if inner != "":
@@ -1202,7 +1206,7 @@ def _header_is_class_borrow_type(
     for prefix in ("list[", "dict[", "set[", "tuple[", "deque[", "::std::optional<"):
         if type_norm.startswith(prefix):
             return False
-    if cpp_type.strip().startswith("rc<"):
+    if cpp_type.strip().startswith("Object<") or cpp_type.strip().startswith("rc<"):
         return False
     cpp_norm = _header_strip_rc_wrapper(cpp_type)
     if cpp_norm in ref_classes:
@@ -1391,7 +1395,7 @@ def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) 
         "list<",
         "dict<",
         "set<",
-        "rc<",
+        "Object<",
     )
     needs_scalar = False
     needs_rich = False
@@ -1461,9 +1465,9 @@ def _build_tagged_union_struct_lines(
         field_name = _tagged_union_field_name(p)
         if name in cpp_t or p == name:
             if cpp_t.startswith("list<"):
-                cpp_t = "rc<" + cpp_t + ">"
+                cpp_t = "Object<" + cpp_t + ">"
             elif cpp_t.startswith("dict<"):
-                cpp_t = "rc<" + cpp_t + ">"
+                cpp_t = "Object<" + cpp_t + ">"
         tag_entries.append((tid_expr, cpp_t, field_name))
     lines.append("struct " + name + " {")
     lines.append("    pytra_type_id tag;")
@@ -1491,7 +1495,7 @@ def _header_cpp_type_from_east(
     if t == "":
         return "object"
     if t in ref_classes:
-        return "rc<" + t + ">"
+        return "Object<" + t + ">"
     if t in class_names:
         return t
     prim: dict[str, str] = {
@@ -1583,7 +1587,7 @@ def _header_cpp_type_from_east(
         dot = t.rfind(".")
         leaf = t[dot + 1 :] if dot >= 0 else t
         if leaf != "" and (leaf[0] >= "A" and leaf[0] <= "Z"):
-            return "rc<" + ns_t + ">"
+            return "Object<" + ns_t + ">"
         return ns_t
     return t
 
@@ -1628,7 +1632,7 @@ def _header_cpp_signature_type_from_east(
     if use_ref_first_lists and txt.startswith("list[") and txt.endswith("]") and _header_is_concrete_type_for_typed_list(txt[5:-1].strip()):
         value_cpp = _header_cpp_type_from_east(txt, ref_classes, class_names)
         if value_cpp != "bytearray":
-            return "rc<" + value_cpp + ">"
+            return "Object<" + value_cpp + ">"
     return _header_cpp_type_from_east(txt, ref_classes, class_names)
 
 
@@ -1814,8 +1818,9 @@ def _header_render_default_expr(
             txt = east_target_t.strip()
             if txt.startswith("list[") and txt.endswith("]"):
                 default_txt = _header_cpp_type_from_east(txt, set(), set()) + "{}"
-                if pyobj_ref_lists and _header_cpp_signature_type_from_east(txt, set(), set(), pyobj_ref_lists=True).startswith("rc<"):
-                    return "rc_list_from_value(" + default_txt + ")"
+                sig_t = _header_cpp_signature_type_from_east(txt, set(), set(), pyobj_ref_lists=True)
+                if pyobj_ref_lists and (sig_t.startswith("Object<") or sig_t.startswith("rc<")):
+                    return "make_object_from_value(" + default_txt + ")"
                 return default_txt
         return ""
     if kind == "Dict":

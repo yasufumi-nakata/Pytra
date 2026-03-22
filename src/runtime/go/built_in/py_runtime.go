@@ -1272,46 +1272,8 @@ func __pytra_dict_get_default(container any, key any, defaultValue any) any {
 	return defaultValue
 }
 
-func __pytra_grayscale_palette() []any {
-	raw := grayscale_palette()
-	return __pytra_bytes(raw)
-}
-
-func __pytra_write_rgb_png(path any, width any, height any, pixels any) {
-	write_rgb_png(pyToString(path), __pytra_int(width), __pytra_int(height), __pytra_as_list(pixels))
-}
-
-func __pytra_save_gif(path any, width any, height any, frames any, palette any, delayCS any, loop any) {
-	save_gif(
-		pyToString(path),
-		__pytra_int(width),
-		__pytra_int(height),
-		__pytra_as_list(frames),
-		__pytra_as_list(palette),
-		__pytra_int(delayCS),
-		__pytra_int(loop),
-	)
-}
-
-func pyGrayscalePalette() []any {
-	return grayscale_palette()
-}
-
-func pyWriteRGBPNG(path any, width any, height any, pixels any) {
-	write_rgb_png(pyToString(path), __pytra_int(width), __pytra_int(height), __pytra_as_list(pixels))
-}
-
-func pySaveGIF(path any, width any, height any, frames any, palette any, delayCS any, loop any) {
-	save_gif(
-		pyToString(path),
-		__pytra_int(width),
-		__pytra_int(height),
-		__pytra_as_list(frames),
-		__pytra_as_list(palette),
-		__pytra_int(delayCS),
-		__pytra_int(loop),
-	)
-}
+// PNG/GIF functions removed: provided by utils_png.go / utils_gif.go
+// generated from .east by linker when needed.
 
 func __pytra_pop_last(v []any) []any {
 	if len(v) == 0 {

@@ -184,6 +184,8 @@ def emit_all_modules(
             "is_entry": bool(is_entry),
         }
         source = transpile_fn(east_doc)
+        if source == "":
+            continue
         out_path.write_text(source, encoding="utf-8")
         print("generated: " + str(out_path))
 

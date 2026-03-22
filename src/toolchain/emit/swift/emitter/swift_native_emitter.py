@@ -818,6 +818,14 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
                     return runtime_symbol
                 return runtime_symbol
             return resolved_runtime
+    # math.pi / math.e → Swift constants
+    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
+        owner_id = _safe_ident(value_any.get("id"), "")
+        if owner_id == "math":
+            if attr == "pi":
+                return "Double.pi"
+            if attr == "e":
+                return "M_E"
     value = _render_expr(value_any)
     return value + "." + attr
 
@@ -961,7 +969,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     fn_any = expr.get("func")
     if (
         callee_name == "main"
-        and _MAIN_CALL_ALIAS != ""
+        and _MAIN_CALL_ALIAS[0] != ""
         and isinstance(fn_any, dict)
         and fn_any.get("kind") == "Name"
     ):
@@ -970,7 +978,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         while i < len(args):
             rendered_main_args.append(_render_expr(args[i]))
             i += 1
-        return _MAIN_CALL_ALIAS + "(" + ", ".join(rendered_main_args) + ")"
+        return _MAIN_CALL_ALIAS[0] + "(" + ", ".join(rendered_main_args) + ")"
     semantic_tag_any = expr.get("semantic_tag")
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
     if semantic_tag == "stdlib.symbol.Path":
@@ -1069,9 +1077,28 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         owner_any = func_any.get("value")
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner_id = owner_any.get("id", "")
-            # Resolve stdlib calls via import alias map
-            pass  # module.attr calls resolved by linker → EAST3
-                return "__pytra_" + attr_name + "(" + ", ".join(rendered_utils_args) + ")"
+            # math module → Swift Foundation global functions
+            if owner_id == "math" and attr_name in _SWIFT_MATH_RUNTIME_SYMBOLS:
+                rendered_math_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_math_args.append(_to_float_expr(_render_expr(args[i])))
+                    i += 1
+                if attr_name == "pi":
+                    return "Double.pi"
+                if attr_name == "e":
+                    return "M_E"
+                if attr_name == "fabs":
+                    return "abs(" + ", ".join(rendered_math_args) + ")"
+                return attr_name + "(" + ", ".join(rendered_math_args) + ")"
+            # png/gif module → direct function calls
+            if owner_id == "png" or owner_id == "gif":
+                rendered_mod_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_mod_args.append(_render_expr(args[i]))
+                    i += 1
+                return attr_name + "(" + ", ".join(rendered_mod_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Call" and _call_name(owner_any) == "super":
             rendered_super_args: list[str] = []
             i = 0
@@ -1356,10 +1383,32 @@ def _target_name(target: Any) -> str:
 
 
 def _emit_swap(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
-    left = _target_name(stmt.get("left"))
-    right = _target_name(stmt.get("right"))
+    lhs_node = stmt.get("lhs") if stmt.get("lhs") is not None else stmt.get("left")
+    rhs_node = stmt.get("rhs") if stmt.get("rhs") is not None else stmt.get("right")
+    # Handle Subscript swap (array element exchange) via __pytra_getIndex/__pytra_setIndex
+    lhs_is_sub = isinstance(lhs_node, dict) and lhs_node.get("kind") == "Subscript"
+    rhs_is_sub = isinstance(rhs_node, dict) and rhs_node.get("kind") == "Subscript"
+    if lhs_is_sub and rhs_is_sub:
+        tmp = _fresh_tmp(ctx, "swap")
+        lhs_get = _render_expr(lhs_node)
+        rhs_get = _render_expr(rhs_node)
+        lhs_container = _render_expr(lhs_node.get("value"))
+        lhs_index = _render_expr(lhs_node.get("slice"))
+        rhs_container = _render_expr(rhs_node.get("value"))
+        rhs_index = _render_expr(rhs_node.get("slice"))
+        return [
+            indent + "var " + tmp + ": Any = " + lhs_get,
+            indent + "__pytra_setIndex(" + lhs_container + ", " + lhs_index + ", " + rhs_get + ")",
+            indent + "__pytra_setIndex(" + rhs_container + ", " + rhs_index + ", " + tmp + ")",
+        ]
+    left = _target_name(lhs_node)
+    right = _target_name(rhs_node)
+    if left == "":
+        left = _render_expr(lhs_node)
+    if right == "":
+        right = _render_expr(rhs_node)
     tmp = _fresh_tmp(ctx, "swap")
-    tmp_type = _infer_swift_type(stmt.get("left"), _type_map(ctx))
+    tmp_type = _infer_swift_type(lhs_node, _type_map(ctx))
     if tmp_type == "Any":
         tmp_type = "Any"
     return [
@@ -2216,6 +2265,44 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         declared.add(name)
         return [indent + "var " + name + ": " + var_type + " = " + _default_return_expr(var_type)]
 
+    if kind == "ForRange":
+        tgt = _safe_ident(sd2.get("target", {}).get("id") if isinstance(sd2.get("target"), dict) else None, "i")
+        start_raw = _render_expr(sd2.get("start"))
+        stop_raw = _render_expr(sd2.get("stop"))
+        step_raw = _render_expr(sd2.get("step"))
+        # Normalize to Int for stride compatibility
+        start = "Int(" + start_raw + ")"
+        stop = "Int(" + stop_raw + ")"
+        step = step_raw
+        body_any = sd2.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        if step_raw == "1" or step_raw == "Int64(1)":
+            header = "for " + tgt + " in " + start + "..<" + stop
+        elif step_raw == "-1" or step_raw == "Int64(-1)":
+            header = "for " + tgt + " in stride(from: " + start + ", to: " + stop + ", by: -1)"
+        else:
+            header = "for " + tgt + " in stride(from: " + start + ", to: " + stop + ", by: Int(" + step + "))"
+        lines = [indent + header + " {"]
+        body_ctx: dict[str, Any] = {
+            "tmp": ctx.get("tmp", 0),
+            "declared": set(_declared_set(ctx)),
+            "types": dict(_type_map(ctx)),
+            "ref_vars": set(_ref_var_set(ctx)),
+            "return_type": ctx.get("return_type", ""),
+            "continue_prefix": "",
+        }
+        declared = _declared_set(body_ctx)
+        declared.add(tgt)
+        type_map = _type_map(body_ctx)
+        type_map[tgt] = "Int"
+        i = 0
+        while i < len(body):
+            lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
+            i += 1
+        ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
+        lines.append(indent + "}")
+        return lines
+
     raise RuntimeError("swift native emitter: unsupported stmt kind: " + str(kind))
 
 
@@ -2255,6 +2342,27 @@ def _emit_function(
 ) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
     is_init = receiver_name is not None and name == "__init__"
+
+    # @extern functions → delegate to _native module
+    decorators_any = fn.get("decorators")
+    decorators = decorators_any if isinstance(decorators_any, list) else []
+    if "extern" in decorators and receiver_name is None:
+        return_type = _swift_type(fn.get("return_type"), allow_void=True)
+        drop_self = False
+        params = _function_params(fn, drop_self=drop_self)
+        param_names = _function_param_names(fn, drop_self=drop_self)
+        sig = indent + "func " + name + "(" + ", ".join(params) + ")"
+        if return_type != "Void":
+            sig += " -> " + return_type
+        # Determine native function prefix from _extern_module_stem (set by caller)
+        native_prefix = fn.get("_extern_module_stem", "") + "_native_"
+        if native_prefix == "_native_":
+            native_prefix = ""
+        call_args = ", ".join(p.split(":")[0].strip() for p in param_names)
+        delegate = native_prefix + name + "(" + call_args + ")"
+        if return_type != "Void":
+            return [sig + " {", indent + "    return " + delegate, indent + "}"]
+        return [sig + " {", indent + "    " + delegate, indent + "}"]
 
     return_type = _swift_type(fn.get("return_type"), allow_void=True)
     if is_init:
@@ -2683,6 +2791,17 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Swift backend")
     reject_backend_general_union_type_exprs(east_doc, backend_name="Swift backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Swift backend")
+    meta_any = ed.get("meta")
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    emit_ctx_any = meta.get("emit_context")
+    emit_ctx = emit_ctx_any if isinstance(emit_ctx_any, dict) else {}
+    is_entry = emit_ctx.get("is_entry", True)
+    module_id = emit_ctx.get("module_id", "")
+    # Extract stem for @extern delegation (e.g., "pytra.std.time" → "time")
+    _extern_module_stem = ""
+    if module_id != "":
+        parts = module_id.split(".")
+        _extern_module_stem = parts[-1] if len(parts) > 0 else ""
     main_guard_any = ed.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 
@@ -2697,6 +2816,8 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
             if kind == "ClassDef":
                 classes.append(node)
             elif kind == "FunctionDef":
+                # Attach module stem for @extern delegation
+                nd["_extern_module_stem"] = _extern_module_stem
                 functions.append(node)
         i += 1
 
@@ -2714,7 +2835,7 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
         _CLASS_NAMES[0].add(cls_name)
         base_any = cls.get("base")
         base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
-        _CLASS_BASES[cls_name] = base_name
+        _CLASS_BASES[0][cls_name] = base_name
         method_names: set[str] = set()
         cls_body_any = cls.get("body")
         cls_body = cls_body_any if isinstance(cls_body_any, list) else []
@@ -2724,7 +2845,7 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
             if isinstance(cls_node, dict) and cls_node.get("kind") == "FunctionDef":
                 method_names.add(_safe_ident(cls_node.get("name"), "func"))
             j += 1
-        _CLASS_METHODS[cls_name] = method_names
+        _CLASS_METHODS[0][cls_name] = method_names
         i += 1
 
     lines: list[str] = []
@@ -2798,25 +2919,26 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
             i += 1
         lines.append("}")
 
-    lines.append("")
-    lines.append("@main")
-    lines.append("struct Main {")
-    lines.append("    static func main() {")
-    if has_main_guard:
-        lines.append("        __pytra_entry_guard()")
-    else:
-        has_case_main = False
-        i = 0
-        while i < len(functions):
-            if _safe_ident(functions[i].get("name"), "") == "_case_main":
-                has_case_main = True
-                break
-            i += 1
-        if has_case_main:
-            lines.append("        _case_main()")
-        elif has_user_main:
-            lines.append("        __pytra_entry_main()")
-    lines.append("    }")
-    lines.append("}")
+    if is_entry:
+        lines.append("")
+        lines.append("@main")
+        lines.append("struct Main {")
+        lines.append("    static func main() {")
+        if has_main_guard:
+            lines.append("        __pytra_entry_guard()")
+        else:
+            has_case_main = False
+            i = 0
+            while i < len(functions):
+                if _safe_ident(functions[i].get("name"), "") == "_case_main":
+                    has_case_main = True
+                    break
+                i += 1
+            if has_case_main:
+                lines.append("        _case_main()")
+            elif has_user_main:
+                lines.append("        __pytra_entry_main()")
+        lines.append("    }")
+        lines.append("}")
     lines.append("")
     return "\n".join(lines)

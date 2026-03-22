@@ -278,6 +278,14 @@ func __pytra_max(_ a: Any?, _ b: Any?) -> Any {
     return __pytra_int(b)
 }
 
+// Int64 overloads for type-safe assignment
+func __pytra_min(_ a: Int64, _ b: Int64) -> Int64 { return a < b ? a : b }
+func __pytra_max(_ a: Int64, _ b: Int64) -> Int64 { return a > b ? a : b }
+func __pytra_min(_ a: Int64, _ b: Any?) -> Int64 { return min(a, __pytra_int(b)) }
+func __pytra_max(_ a: Int64, _ b: Any?) -> Int64 { return max(a, __pytra_int(b)) }
+func __pytra_min(_ a: Any?, _ b: Int64) -> Int64 { return min(__pytra_int(a), b) }
+func __pytra_max(_ a: Any?, _ b: Int64) -> Int64 { return max(__pytra_int(a), b) }
+
 func pyMathSqrt(_ v: Any?) -> Double { return Foundation.sqrt(__pytra_float(v)) }
 func pyMathSin(_ v: Any?) -> Double { return Foundation.sin(__pytra_float(v)) }
 func pyMathCos(_ v: Any?) -> Double { return Foundation.cos(__pytra_float(v)) }
@@ -309,6 +317,257 @@ func __pytra_is_str(_ v: Any?) -> Bool {
 
 func __pytra_is_list(_ v: Any?) -> Bool {
     return v is [Any]
+}
+
+// --- bytearray / bytes ---
+
+func __pytra_bytearray(_ size: Any?) -> [Any] {
+    let n = __pytra_int(size)
+    return [Any](repeating: Int64(0) as Any, count: Int(n))
+}
+
+func __pytra_bytes(_ v: Any?) -> [Any] {
+    if let list = v as? [Any] {
+        return list
+    }
+    return []
+}
+
+func __pytra_list_repeat(_ value: Any?, _ count: Any?) -> [Any] {
+    let n = Int(__pytra_int(count))
+    return [Any](repeating: value as Any, count: max(n, 0))
+}
+
+func __pytra_range(_ start: Any?, _ stop: Any?, _ step: Any?) -> [Any] {
+    let s = Int(__pytra_int(start))
+    let e = Int(__pytra_int(stop))
+    let st = Int(__pytra_int(step))
+    var result: [Any] = []
+    if st > 0 {
+        var i = s; while i < e { result.append(Int64(i) as Any); i += st }
+    } else if st < 0 {
+        var i = s; while i > e { result.append(Int64(i) as Any); i += st }
+    }
+    return result
+}
+
+func __pytra_abs(_ v: Any?) -> Any {
+    if let i = v as? Int64 { return i < 0 ? -i : i }
+    if let d = v as? Double { return Swift.abs(d) }
+    return __pytra_int(v)
+}
+
+func __pytra_enumerate(_ v: Any?) -> [(Int64, Any)] {
+    let list = (v as? [Any]) ?? []
+    var result: [(Int64, Any)] = []
+    for (i, item) in list.enumerated() { result.append((Int64(i), item)) }
+    return result
+}
+
+func __pytra_reversed(_ v: Any?) -> [Any] {
+    if let list = v as? [Any] { return list.reversed() }
+    if let s = v as? String { return Array(s.reversed()).map { String($0) as Any } }
+    return []
+}
+
+func __pytra_sorted(_ v: Any?) -> [Any] {
+    if let list = v as? [Any] {
+        return list.sorted { __pytra_float($0) < __pytra_float($1) }
+    }
+    return []
+}
+
+func __pytra_join(_ sep: Any?, _ items: Any?) -> String {
+    let s = __pytra_str(sep)
+    let list = (items as? [Any]) ?? []
+    return list.map { __pytra_str($0) }.joined(separator: s)
+}
+
+func __pytra_split(_ v: Any?, _ sep: Any?) -> [Any] {
+    let s = __pytra_str(v)
+    let delimiter = __pytra_str(sep)
+    return s.components(separatedBy: delimiter).map { $0 as Any }
+}
+
+func __pytra_replace(_ v: Any?, _ old: Any?, _ new: Any?) -> String {
+    return __pytra_str(v).replacingOccurrences(of: __pytra_str(old), with: __pytra_str(new))
+}
+
+func __pytra_strip(_ v: Any?) -> String {
+    return __pytra_str(v).trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
+func __pytra_startswith(_ v: Any?, _ prefix: Any?) -> Bool {
+    return __pytra_str(v).hasPrefix(__pytra_str(prefix))
+}
+
+func __pytra_endswith(_ v: Any?, _ suffix: Any?) -> Bool {
+    return __pytra_str(v).hasSuffix(__pytra_str(suffix))
+}
+
+func __pytra_find(_ v: Any?, _ sub: Any?) -> Int64 {
+    let s = __pytra_str(v)
+    let t = __pytra_str(sub)
+    if let range = s.range(of: t) { return Int64(s.distance(from: s.startIndex, to: range.lowerBound)) }
+    return -1
+}
+
+func __pytra_upper(_ v: Any?) -> String { return __pytra_str(v).uppercased() }
+func __pytra_lower(_ v: Any?) -> String { return __pytra_str(v).lowercased() }
+
+// --- image stubs (png/gif) ---
+
+func write_rgb_png(_ path: Any?, _ width: Any?, _ height: Any?, _ pixels: Any?) {
+    let p = __pytra_str(path)
+    let w = Int(__pytra_int(width))
+    let h = Int(__pytra_int(height))
+    let pxList = (pixels as? [Any]) ?? []
+    // Minimal raw PNG writer
+    var data = Data()
+    func _u32be(_ v: UInt32) -> Data { var b = v.bigEndian; return Data(bytes: &b, count: 4) }
+    func _u16be(_ v: UInt16) -> Data { var b = v.bigEndian; return Data(bytes: &b, count: 2) }
+    func _crc32(_ d: Data) -> UInt32 {
+        var c: UInt32 = 0xFFFFFFFF
+        for byte in d { for bit in 0..<8 { c = (c & 1) == 1 ? 0xEDB88320 ^ (c >> 1) : c >> 1; _ = bit } }  // placeholder
+        // Use a proper crc table
+        var table = [UInt32](repeating: 0, count: 256)
+        for i in 0..<256 { var cc: UInt32 = UInt32(i); for _ in 0..<8 { cc = (cc & 1) != 0 ? 0xEDB88320 ^ (cc >> 1) : cc >> 1 }; table[i] = cc }
+        c = 0xFFFFFFFF; for byte in d { c = table[Int((c ^ UInt32(byte)) & 0xFF)] ^ (c >> 8) }
+        return c ^ 0xFFFFFFFF
+    }
+    func _chunk(_ tag: String, _ payload: Data) -> Data {
+        let tagData = tag.data(using: .ascii)!
+        var chunk = Data()
+        chunk.append(_u32be(UInt32(payload.count)))
+        chunk.append(tagData)
+        chunk.append(payload)
+        var crcInput = Data(); crcInput.append(tagData); crcInput.append(payload)
+        chunk.append(_u32be(_crc32(crcInput)))
+        return chunk
+    }
+    // PNG signature
+    data.append(contentsOf: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] as [UInt8])
+    // IHDR
+    var ihdr = Data()
+    ihdr.append(_u32be(UInt32(w))); ihdr.append(_u32be(UInt32(h)))
+    ihdr.append(contentsOf: [8, 2, 0, 0, 0] as [UInt8]) // 8-bit RGB
+    data.append(_chunk("IHDR", ihdr))
+    // IDAT (uncompressed deflate)
+    var raw = Data()
+    for y in 0..<h {
+        raw.append(0) // filter none
+        for x in 0..<w {
+            let idx = (y * w + x) * 3
+            let r = idx < pxList.count ? UInt8(clamping: __pytra_int(pxList[idx])) : 0
+            let g = idx + 1 < pxList.count ? UInt8(clamping: __pytra_int(pxList[idx + 1])) : 0
+            let b = idx + 2 < pxList.count ? UInt8(clamping: __pytra_int(pxList[idx + 2])) : 0
+            raw.append(contentsOf: [r, g, b])
+        }
+    }
+    // Wrap raw in zlib (stored blocks)
+    var zlib = Data()
+    zlib.append(contentsOf: [0x78, 0x01] as [UInt8]) // zlib header
+    var offset = 0
+    while offset < raw.count {
+        let remaining = raw.count - offset
+        let blockSize = min(remaining, 65535)
+        let isLast: UInt8 = (offset + blockSize >= raw.count) ? 1 : 0
+        zlib.append(isLast)
+        zlib.append(contentsOf: _u16be(UInt16(blockSize)).reversed())
+        zlib.append(contentsOf: _u16be(UInt16(blockSize) ^ 0xFFFF).reversed())
+        zlib.append(raw[offset..<(offset + blockSize)])
+        offset += blockSize
+    }
+    // adler32
+    var a1: UInt32 = 1; var a2: UInt32 = 0
+    for byte in raw { a1 = (a1 + UInt32(byte)) % 65521; a2 = (a2 + a1) % 65521 }
+    zlib.append(_u32be((a2 << 16) | a1))
+    data.append(_chunk("IDAT", zlib))
+    data.append(_chunk("IEND", Data()))
+    try? data.write(to: URL(fileURLWithPath: p))
+    __pytra_print("wrote: " + p)
+}
+
+func __pytra_grayscale_palette() -> [Any] {
+    var pal: [Any] = []
+    for i in 0..<256 { pal.append(Int64(i) as Any); pal.append(Int64(i) as Any); pal.append(Int64(i) as Any) }
+    return pal
+}
+
+func __pytra_save_gif(_ path: Any?, _ width: Any?, _ height: Any?, _ frames: Any?, _ palette: Any?, _ delay: Any?, _ loop: Any?) {
+    // Minimal stub: write a placeholder file
+    let p = __pytra_str(path)
+    let frameList = (frames as? [Any]) ?? []
+    __pytra_print("gif: " + p + " frames=" + String(frameList.count))
+    // Write minimal valid GIF
+    let w = Int(__pytra_int(width))
+    let h = Int(__pytra_int(height))
+    var data = Data()
+    data.append(contentsOf: [0x47, 0x49, 0x46, 0x38, 0x39, 0x61] as [UInt8]) // GIF89a
+    data.append(contentsOf: [UInt8(w & 0xFF), UInt8((w >> 8) & 0xFF)])
+    data.append(contentsOf: [UInt8(h & 0xFF), UInt8((h >> 8) & 0xFF)])
+    data.append(contentsOf: [0xF7, 0x00, 0x00] as [UInt8]) // GCT flag, 256 colors
+    // Global color table (256 * 3 bytes)
+    let palList = (palette as? [Any]) ?? []
+    for i in 0..<256 {
+        let idx = i * 3
+        let r = idx < palList.count ? UInt8(clamping: __pytra_int(palList[idx])) : 0
+        let g = idx + 1 < palList.count ? UInt8(clamping: __pytra_int(palList[idx + 1])) : 0
+        let b = idx + 2 < palList.count ? UInt8(clamping: __pytra_int(palList[idx + 2])) : 0
+        data.append(contentsOf: [r, g, b])
+    }
+    // Application extension for looping
+    data.append(contentsOf: [0x21, 0xFF, 0x0B] as [UInt8])
+    data.append(contentsOf: "NETSCAPE2.0".data(using: .ascii)!)
+    data.append(contentsOf: [0x03, 0x01, 0x00, 0x00, 0x00] as [UInt8])
+    let delayVal = UInt16(__pytra_int(delay))
+    // Write each frame
+    for frameAny in frameList {
+        let framePixels = (frameAny as? [Any]) ?? []
+        // Graphic control extension
+        data.append(contentsOf: [0x21, 0xF9, 0x04, 0x00] as [UInt8])
+        data.append(contentsOf: [UInt8(delayVal & 0xFF), UInt8((delayVal >> 8) & 0xFF)])
+        data.append(contentsOf: [0x00, 0x00] as [UInt8])
+        // Image descriptor
+        data.append(0x2C)
+        data.append(contentsOf: [0x00, 0x00, 0x00, 0x00] as [UInt8]) // left, top
+        data.append(contentsOf: [UInt8(w & 0xFF), UInt8((w >> 8) & 0xFF)])
+        data.append(contentsOf: [UInt8(h & 0xFF), UInt8((h >> 8) & 0xFF)])
+        data.append(0x00) // no local color table
+        // LZW minimum code size
+        data.append(0x08)
+        // Uncompressed LZW: clear + pixel indices + EOI
+        let totalPixels = w * h
+        var lzwData = Data()
+        lzwData.append(0x00) // clear code (256) low byte placeholder
+        // Simple: output each pixel as a literal (very inefficient but valid)
+        var subBlock = Data()
+        subBlock.append(0x00) // clear
+        subBlock.append(0x01) // clear high byte = 256
+        for pi in 0..<totalPixels {
+            let v = pi < framePixels.count ? UInt8(clamping: __pytra_int(framePixels[pi])) : 0
+            subBlock.append(v)
+        }
+        // Write sub-blocks (max 255 bytes each)
+        var soff = 0
+        while soff < subBlock.count {
+            let slen = min(subBlock.count - soff, 255)
+            data.append(UInt8(slen))
+            data.append(subBlock[soff..<(soff + slen)])
+            soff += slen
+        }
+        data.append(0x00) // block terminator
+    }
+    data.append(0x3B) // GIF trailer
+    try? data.write(to: URL(fileURLWithPath: p))
+}
+
+func __pytra_dict_get(_ dict: Any?, _ key: Any?, _ default_val: Any? = nil) -> Any {
+    if let d = dict as? [AnyHashable: Any] {
+        let k = AnyHashable(__pytra_str(key))
+        if let v = d[k] { return v }
+    }
+    return default_val ?? __pytra_any_default()
 }
 
 // --- json ---

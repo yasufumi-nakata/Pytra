@@ -50,6 +50,7 @@ _CURRENT_RECEIVER_VAR: list[str] = ["self"]
 _INT_RESOLVED_TYPES = {"int", "int64", "uint8"}
 _FLOAT_RESOLVED_TYPES = {"float", "float64"}
 _RELATIVE_IMPORT_NAME_ALIASES: list[dict[str, str]] = [{}]
+_CURRENT_MODULE_ID: list[str] = [""]
 
 
 def _class_iface_name(class_name: str) -> str:
@@ -2344,8 +2345,46 @@ def _block_guarantees_return(body: list[Any]) -> bool:
     return False
 
 
+def _is_extern_function(fn: dict[str, Any]) -> bool:
+    """Check if a FunctionDef has @extern decorator."""
+    decorators = fn.get("decorators")
+    if isinstance(decorators, list) and "extern" in decorators:
+        return True
+    return False
+
+
+def _native_prefix_for_module(module_id: str) -> str:
+    """Compute the native function prefix for Go flat layout.
+
+    pytra.std.math → math_native_
+    pytra.utils.png → png_native_
+    pytra.built_in.io_ops → io_ops_native_
+    """
+    parts = module_id.split(".")
+    if len(parts) > 1 and parts[0] == "pytra":
+        return parts[-1] + "_native_"
+    if len(parts) > 0:
+        return parts[-1] + "_native_"
+    return "native_"
+
+
 def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None = None) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
+
+    # @extern function → generate delegation to native
+    if _is_extern_function(fn) and receiver_name is None:
+        return_type = _go_type(fn.get("return_type"), allow_void=True)
+        params = _function_params(fn, drop_self=False)
+        param_names = _function_param_names(fn, drop_self=False)
+        sig = indent + "func " + name + "(" + ", ".join(params) + ")"
+        if return_type != "":
+            sig += " " + return_type
+        native_prefix = _native_prefix_for_module(_CURRENT_MODULE_ID[0])
+        call = native_prefix + name + "(" + ", ".join(param_names) + ")"
+        if return_type != "":
+            return [sig + " {", indent + "    return " + call, indent + "}"]
+        return [sig + " {", indent + "    " + call, indent + "}"]
+
     is_init = receiver_name is not None and name == "__init__"
     if is_init:
         name = "Init"
@@ -2595,7 +2634,10 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
     _CLASS_NAMES[0] = set()
     _RELATIVE_IMPORT_NAME_ALIASES[0] = _collect_relative_import_name_aliases(east_doc)
     meta = east_doc.get("meta") if isinstance(east_doc.get("meta"), dict) else {}
-    pass  # import alias resolution handled by emit_context
+    emit_ctx = meta.get("emit_context", {}) if isinstance(meta.get("emit_context"), dict) else {}
+    is_entry = bool(emit_ctx.get("is_entry", True))
+    module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx.get("module_id"), str) else ""
+    _CURRENT_MODULE_ID[0] = module_id
     i = 0
     while i < len(classes):
         _CLASS_NAMES[0].add(_safe_ident(classes[i].get("name"), "PytraClass"))
@@ -2674,6 +2716,30 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
         lines.append("")
         lines.extend(_emit_function(functions[i], indent="", receiver_name=None))
         i += 1
+
+    # Emit extern() variable delegations (e.g. pi: float = extern(math.pi))
+    native_prefix = _native_prefix_for_module(module_id)
+    i = 0
+    while i < len(body_any):
+        node = body_any[i]
+        if isinstance(node, dict) and node.get("kind") == "AnnAssign":
+            value = node.get("value")
+            if isinstance(value, dict) and value.get("kind") == "Call":
+                func = value.get("func")
+                if isinstance(func, dict) and func.get("id") == "extern":
+                    var_name = ""
+                    target = node.get("target")
+                    if isinstance(target, dict):
+                        var_name = _safe_ident(target.get("id"), "")
+                    if var_name != "":
+                        var_type = _go_type(node.get("annotation"), allow_void=False)
+                        lines.append("")
+                        lines.append("func " + var_name + "() " + var_type + " { return " + native_prefix + var_name + "() }")
+        i += 1
+
+    if not is_entry:
+        # Sub-module: no main(), no main_guard
+        return "\n".join(lines) + ("\n" if len(lines) > 0 else "")
 
     lines.append("")
     lines.append("func main() {")

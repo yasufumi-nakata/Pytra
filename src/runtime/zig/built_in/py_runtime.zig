@@ -375,6 +375,21 @@ pub fn bytearray(size: anytype) Obj {
     return Obj{ .data = @ptrCast(p), .vtable = @ptrCast(&EMPTY_VT), .rc = rc, .drop_fn = null };
 }
 
+/// Convert list[i64] to list[u8] (Python bytes(list) semantics).
+pub fn list_to_bytes(src: Obj) Obj {
+    const alloc = std.heap.page_allocator;
+    const int_list: *std.ArrayList(i64) = @ptrCast(@alignCast(src.data));
+    const p = alloc.create(std.ArrayList(u8)) catch @panic("alloc failed");
+    p.* = std.ArrayList(u8).init(alloc);
+    p.ensureTotalCapacity(int_list.items.len) catch {};
+    for (int_list.items) |v| {
+        p.append(@intCast(v & 0xFF)) catch {};
+    }
+    const rc = alloc.create(usize) catch @panic("alloc failed");
+    rc.* = 1;
+    return Obj{ .data = @ptrCast(p), .vtable = @ptrCast(&EMPTY_VT), .rc = rc, .drop_fn = null };
+}
+
 /// Append a value to an Obj-managed list.
 pub fn list_append(obj: Obj, comptime T: type, value: T) void {
     const p: *std.ArrayList(T) = @ptrCast(@alignCast(obj.data));
@@ -534,17 +549,11 @@ pub fn file_write(handle: PyObject, data: anytype) void {
 }
 
 fn file_write_obj(p: *std.fs.File, obj: Obj) void {
-    // Interpret as ArrayList(i64) (PNG/GIF data is built as list[int64])
-    // and convert each element to u8 for writing
-    const al: *std.ArrayList(i64) = @ptrCast(@alignCast(obj.data));
-    const items = al.items;
-    if (items.len == 0) return;
-    const alloc = std.heap.page_allocator;
-    const buf = alloc.alloc(u8, items.len) catch return;
-    for (items, 0..) |v, i| {
-        buf[i] = @intCast(v & 0xFF);
+    // Obj is always ArrayList(u8) from list_to_bytes / bytearray
+    const al: *std.ArrayList(u8) = @ptrCast(@alignCast(obj.data));
+    if (al.items.len > 0) {
+        p.writeAll(al.items) catch {};
     }
-    p.writeAll(buf) catch {};
 }
 
 pub fn file_close(handle: PyObject) void {
