@@ -955,6 +955,15 @@ class ZigNativeEmitter:
                 if value_node is None and bool(stmt.get("declare")):
                     self._emit_line("var " + target + ": " + zig_ty + " = undefined;")
                 else:
+                    # 型キャスト挿入: i64 変数に f64 値、f64 変数に i64 値
+                    val_type = self._get_expr_type(value_node) if isinstance(value_node, dict) else ""
+                    _INT_T = {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}
+                    _FLOAT_T = {"float64", "float32", "float"}
+                    norm_decl = self._normalize_type(decl_type)
+                    if norm_decl in _INT_T and val_type in _FLOAT_T:
+                        value = "@as(i64, @intFromFloat(" + value + "))"
+                    elif norm_decl in _FLOAT_T and val_type in _INT_T:
+                        value = "@as(f64, @floatFromInt(" + value + "))"
                     self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
                     norm_type = self._normalize_type(decl_type)
                     if norm_type in self.class_names and self._has_vtable(norm_type):
@@ -969,6 +978,23 @@ class ZigNativeEmitter:
                 if td2.get("kind") == "Tuple":
                     self._emit_tuple_assign(target_any, stmt.get("value"))
                     return
+                # Subscript 代入: list[idx] = val → list_set
+                if td2.get("kind") == "Subscript":
+                    sub_val = td2.get("value")
+                    sub_val_type = self._get_expr_type(sub_val) if isinstance(sub_val, dict) else ""
+                    if sub_val_type.startswith("list[") or sub_val_type in {"bytearray", "bytes"}:
+                        obj_expr = self._render_expr(sub_val)
+                        idx_expr = self._render_expr(td2.get("slice"))
+                        val_expr = self._render_expr(stmt.get("value"))
+                        elem = "i64"
+                        if sub_val_type.startswith("list[") and sub_val_type.endswith("]"):
+                            elem = self._zig_type(sub_val_type[5:-1].strip())
+                        elif sub_val_type in {"bytearray", "bytes"}:
+                            elem = "u8"
+                        if elem in {"u8", "i8", "i16", "u16", "i32", "u32", "i64", "u64"}:
+                            val_expr = "@intCast(" + val_expr + ")"
+                        self._emit_line("pytra.list_set(" + obj_expr + ", " + elem + ", " + idx_expr + ", " + val_expr + ");")
+                        return
                 target = self._render_target(target_any)
                 value = self._render_expr(stmt.get("value"))
                 if td2.get("kind") == "Name":
@@ -1315,8 +1341,8 @@ class ZigNativeEmitter:
         stop = self._render_expr(plan.get("stop"))
         step_any = plan.get("step")
         step = self._render_expr(step_any) if isinstance(step_any, dict) else "1"
-        already_hoisted = target_name in self._hoisted_var_names
-        if already_hoisted:
+        already_exists = target_name in self._hoisted_var_names or (len(self._local_var_stack) > 0 and target_name in self._current_local_vars())
+        if already_exists:
             # Reuse existing variable (avoid shadow)
             self._emit_line(target_name + " = " + start + ";")
         else:
@@ -2032,7 +2058,9 @@ class ZigNativeEmitter:
                             elem_type = self._zig_type(obj_type[5:-1].strip())
                         elif obj_type in {"bytearray", "bytes"}:
                             elem_type = "u8"
-                        return "pytra.list_append(" + obj + ", " + elem_type + ", @intCast(" + arg_strs[0] + "))"
+                        if elem_type in {"u8", "i8", "i16", "u16", "i32", "u32", "i64", "u64"}:
+                            return "pytra.list_append(" + obj + ", " + elem_type + ", @intCast(" + arg_strs[0] + "))"
+                        return "pytra.list_append(" + obj + ", " + elem_type + ", " + arg_strs[0] + ")"
                 if attr == "join":
                     if len(arg_strs) > 0:
                         arg_type = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
