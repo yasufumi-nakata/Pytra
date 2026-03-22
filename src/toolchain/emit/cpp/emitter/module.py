@@ -566,9 +566,20 @@ class CppModuleEmitter:
             if inc != "" and inc not in seen:
                 seen.add(inc)
                 includes.append(inc)
+        # User module dependencies: module_id → module_id.replace(".", "/") + ".h"
+        meta = self.doc.get("meta") if isinstance(self.doc, dict) else None
+        if isinstance(meta, dict):
+            linked_meta = dict_any_get_dict(meta, "linked_program_v1")
+            user_deps = linked_meta.get("user_module_dependencies_v1") if isinstance(linked_meta, dict) else None
+            if isinstance(user_deps, list):
+                for ud in user_deps:
+                    if isinstance(ud, str) and ud != "":
+                        inc = ud.replace(".", "/") + ".h"
+                        if inc not in seen:
+                            seen.add(inc)
+                            includes.append(inc)
         # Also resolve includes from import bindings (catches sub-module imports
         # like `from pytra.utils import png` where dep is "pytra.utils" not "pytra.utils.png")
-        meta = self.doc.get("meta") if isinstance(self.doc, dict) else None
         if isinstance(meta, dict):
             bindings = dict_any_get_dict_list(meta, "import_bindings")
             for item in bindings:
