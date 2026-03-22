@@ -67,6 +67,16 @@ def main(argv: list[str]) -> int:
             gen_path / "utils" / "assertions.cpp",
             gen_path / "built_in" / "type_id.cpp",
         ]
+        # Also include native C++ implementations for extern runtime modules.
+        # Exclude files that conflict with conftest-generated headers.
+        native_exclude = {"glob.cpp"}  # glob.cpp uses Object<list<str>> but conftest header uses rc<list<str>>
+        native_cpp_root = Path("src/runtime/cpp")
+        for subdir in ["std", "utils"]:
+            native_dir = native_cpp_root / subdir
+            if native_dir.exists():
+                for cpp_file in sorted(native_dir.glob("*.cpp")):
+                    if cpp_file.name not in native_exclude:
+                        needed.append(cpp_file)
         return [str(f) for f in needed if f.exists()]
 
     manifest = _load_manifest(manifest_path)

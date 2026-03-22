@@ -97,6 +97,8 @@ def _append_unique_path(out: list[Path], path: Path) -> None:
 
 def _runtime_cpp_candidates_from_group_tail(group: str, tail: Path) -> list[Path]:
     out: list[Path] = []
+    # Direct path (src/runtime/cpp/std/time.cpp etc.)
+    _append_unique_path(out, RUNTIME_ROOT / group / (tail.as_posix() + ".cpp"))
     _append_unique_path(out, RUNTIME_ROOT / "generated" / group / (tail.as_posix() + ".cpp"))
     _append_unique_path(out, RUNTIME_ROOT / "native" / group / (tail.as_posix() + ".cpp"))
     return out
