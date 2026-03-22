@@ -753,7 +753,7 @@ def _resolved_runtime_symbol(runtime_call: str, runtime_source: str) -> str:
             return ""
         return module_name + "_native_" + symbol_name
     if runtime_source == "resolved_runtime_call":
-        return "py" + _snake_to_go_helper_name(name)
+        return name
     return "__pytra_" + name
 
 
