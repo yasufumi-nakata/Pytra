@@ -1504,11 +1504,16 @@ def _emit_class_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -
                 fn_lines = _emit_function_def(member_d, indent=indent, ctx=ctx)
                 if len(fn_lines) > 0:
                     fn_lines[0] = fn_lines[0].replace("function __init__", "function " + name, 1)
-                # Insert __type__ at end of constructor (before closing brace)
-                # Must be after super() call to avoid being overwritten
+                type_assign = indent + '    $self["__type__"] = "' + name + '"'
+                # Insert __type__ at start (after param) for self.method() in __init__
+                for i_fn in range(len(fn_lines)):
+                    if "param(" in fn_lines[i_fn]:
+                        fn_lines.insert(i_fn + 1, type_assign)
+                        break
+                # Also insert at end (before }) to override super().__init__ setting
                 for i_fn in range(len(fn_lines) - 1, -1, -1):
                     if fn_lines[i_fn].strip() == "}":
-                        fn_lines.insert(i_fn, indent + '    $self["__type__"] = "' + name + '"')
+                        fn_lines.insert(i_fn, type_assign)
                         break
                 lines.extend(fn_lines)
             else:
