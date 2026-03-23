@@ -223,11 +223,82 @@ test/
 - `core_expr_named_call_annotation.py` 等の built-in 型ハードコード
 - `_NONCPP_MODULE_ATTR_RUNTIME_CALLS` 等の runtime dispatch テーブル
 
-## 5. 移行方針
+## 5. toolchain2/ コーディング規約
+
+`toolchain2/` は selfhost 対象（トランスパイラ自身をトランスパイルして C++ 等で動かす）として設計する。現行 `toolchain/` の反省を踏まえ、以下を必須とする。
+
+### 5.1 `Any` 禁止・EAST ノードは dataclass で型付け
+
+- `dict[str, Any]` で EAST ノードを扱うことを**禁止**する。
+- EAST ノードは `@dataclass` で定義し、全フィールドに具象型を付ける。
+- これにより selfhost 時に C++ の struct / Rust の struct に直接写像できる。
+
+```python
+@dataclass
+class FunctionDef:
+    name: str
+    original_name: str
+    args: list[Arg]
+    arg_types: list[str]
+    return_type: str
+    body: list[Stmt]
+    decorators: list[str]
+    source_span: SourceSpan
+
+@dataclass
+class Call:
+    func: Expr
+    args: list[Expr]
+    resolved_type: str
+    semantic_tag: str
+    runtime_module_id: str
+    runtime_symbol: str
+    source_span: SourceSpan
+```
+
+- `typing.Any` の import 自体を禁止する（`typing` は注釈専用 no-op として許可するが、`Any` は使わない）。
+- ノード種別の判定は `isinstance()` で行い、`dict.get("kind")` パターンを使わない。
+- 既存 `toolchain/` との橋渡しで `dict[str, Any]` が必要な場合は、境界の変換関数に限定し `toolchain2/` 内部に漏らさない。
+
+### 5.2 Python 標準モジュール禁止
+
+- `json`, `pathlib`, `sys`, `os`, `glob`, `re` 等の Python 標準モジュールを直接 import しない。
+- `pytra.std.*` の shim を使う（例: `from pytra.std import json`, `from pytra.std.pathlib import Path`）。
+- 例外: `typing` と `dataclasses` は no-op import として許可。
+
+### 5.3 動的 import 禁止
+
+- `try/except ImportError` フォールバック、`importlib` による遅延 import を使わない。
+- import は静的に解決できる形で記述する。
+
+### 5.4 Python `ast` モジュール禁止
+
+- `import ast` / `from ast import ...` を使わない。
+- 構文解析は selfhost 対応の自前パーサーで行う。
+
+### 5.5 グローバル可変状態禁止
+
+- 現行 `toolchain/` の `_SH_IMPORT_MODULES`, `_SH_IMPORT_SYMBOLS` 等のモジュールレベル可変グローバルを使わない。
+- 状態はコンテキストオブジェクト（dataclass）に閉じ込め、関数引数で渡す。
+- これにより並列処理が安全になり、テストも容易になる。
+
+### 5.6 ハードコードテーブル禁止
+
+- 関数シグネチャ、semantic_tag、runtime_call 等の情報を Python コード内にハードコードしない。
+- これらは全て EAST1 から抽出し、resolve 段で解決する。
+- `signature_registry.py` や `frontend_semantics.py` のようなテーブルを `toolchain2/` に持ち込まない。
+
+### 5.7 selfhost 対象外コードの分離
+
+- テストコード（`test/`）、ツール（`tools/`）、CLI のエントリポイント（`pytra-cli2.py`）は selfhost 非対象。
+- これらでは `Any`, Python 標準モジュール, `ast` の使用を許可する。
+- `toolchain2/` 配下のみが selfhost 対象。
+
+## 6. 移行方針
 
 （未定。段階的に移行するか、一括で切り替えるかを検討する。）
 
-## 6. 未決事項
+## 7. 未決事項
 
 - `--from=python` 以外の frontend が現実的に必要になる時期
 - `.east1` / `.east2` / `.east3` のシリアライズ形式（JSON 維持 or バイナリ形式導入）
