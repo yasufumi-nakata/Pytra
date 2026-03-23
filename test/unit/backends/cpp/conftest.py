@@ -53,6 +53,12 @@ def _generate_runtime_cpp() -> Path:
         east = json.loads(east_path.read_text(encoding="utf-8"))
         out_base = gen_dir / rel
 
+        # Skip modules that produce uncompilable C++ due to Object<void> limitations
+        # (e.g. tuple boxing, iterator protocol on type-erased objects).
+        _SKIP_CPP_MODULES = {"iter_ops", "predicates"}
+        if rel.stem in _SKIP_CPP_MODULES:
+            continue
+
         # Strip @extern declarations — their C++ implementations are hand-written
         # in the native runtime, not generated from the EAST body.
         emit_east = _build_cpp_emit_module_without_extern_decls(east)
