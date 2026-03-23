@@ -2726,6 +2726,31 @@ def _resolve_interface_method_sigs(
     return out
 
 
+def _is_std_extern_only_module(east_doc: dict[str, Any]) -> bool:
+    """Check if this is a pytra.std.* module where all non-import body nodes are @extern."""
+    meta = east_doc.get("meta") if isinstance(east_doc.get("meta"), dict) else {}
+    emit_ctx = meta.get("emit_context", {}) if isinstance(meta.get("emit_context"), dict) else {}
+    module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx.get("module_id"), str) else ""
+    if not module_id.startswith("pytra.std."):
+        return False
+    body_any = east_doc.get("body")
+    if not isinstance(body_any, list):
+        return False
+    for node in body_any:
+        if not isinstance(node, dict):
+            continue
+        kind = node.get("kind", "")
+        if kind in ("Expr", "Import", "ImportFrom"):
+            continue
+        if kind == "FunctionDef":
+            decorators = node.get("decorators")
+            if isinstance(decorators, list) and "extern" in decorators:
+                continue
+        # Non-extern body node found (ClassDef, regular FunctionDef, etc.)
+        return False
+    return True
+
+
 def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
     """Emit Go native source from EAST3 Module."""
     if not isinstance(east_doc, dict):
@@ -2735,6 +2760,30 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
     body_any = east_doc.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("go native emitter: Module.body must be list")
+
+    # pytra.std.* modules with only @extern functions: generate delegation code
+    # without running type-expr rejection checks (the native runtime provides these).
+    meta = east_doc.get("meta") if isinstance(east_doc.get("meta"), dict) else {}
+    emit_ctx = meta.get("emit_context", {}) if isinstance(meta.get("emit_context"), dict) else {}
+    module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx.get("module_id"), str) else ""
+    if module_id.startswith("pytra.std."):
+        if not _is_std_extern_only_module(east_doc):
+            # Module contains ClassDef or non-extern code: skip emit (runtime provides)
+            return ""
+        # @extern-only std module: check if the corresponding _native file exists
+        # in the Go runtime. If not, skip emit (runtime provides these inline).
+        canon = canonical_runtime_module_id(module_id.replace(".east", ""))
+        parts = canon.split(".")
+        if len(parts) > 1 and parts[0] == "pytra":
+            native_leaf = "_".join(parts[1:]) + "_native.go"
+        else:
+            native_leaf = canon.replace(".", "_") + "_native.go"
+        import pathlib as _pl
+        runtime_dir = _pl.Path(__file__).resolve().parents[4] / "runtime" / "go" / "std"
+        if not (runtime_dir / (parts[-1] + "_native.go")).exists():
+            return ""
+        # Fall through to normal emit path for @extern-only std modules with native files
+
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Go backend")
     reject_backend_general_union_type_exprs(east_doc, backend_name="Go backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Go backend")

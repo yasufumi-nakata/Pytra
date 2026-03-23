@@ -791,8 +791,12 @@ func (p *Path) read_text() any {
 	return pyPathReadText(p)
 }
 
-func (p *Path) write_text(content any) any {
-	return pyPathWriteText(p, content)
+func (p *Path) write_text(args ...any) any {
+	if len(args) == 0 {
+		return nil
+	}
+	// Accept (content) or (content, encoding) — encoding is ignored (always UTF-8).
+	return pyPathWriteText(p, args[0])
 }
 
 func (p *Path) mkdir(args ...any) any {
