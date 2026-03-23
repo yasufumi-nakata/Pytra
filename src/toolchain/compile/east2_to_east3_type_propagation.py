@@ -342,4 +342,59 @@ def apply_type_propagation(module: dict[str, Any]) -> dict[str, Any]:
     func_types = _collect_function_callable_types(module)
     if len(func_types) > 0:
         _propagate_function_ref_types(module, func_types)
+    # Insert int→float casts for math stdlib function arguments
+    _insert_numeric_promotion_casts_for_calls(module)
     return module
+
+
+_FLOAT_STDLIB_SEMANTIC_TAGS: set[str] = {
+    "stdlib.method.sqrt", "stdlib.method.sin", "stdlib.method.cos",
+    "stdlib.method.tan", "stdlib.method.exp", "stdlib.method.log",
+    "stdlib.method.log10", "stdlib.method.fabs", "stdlib.method.floor",
+    "stdlib.method.ceil", "stdlib.method.pow",
+}
+
+_INT_TYPES: set[str] = {
+    "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64",
+}
+
+
+def _insert_numeric_promotion_casts_for_calls(node: Any) -> None:
+    """Insert int→float64 casts on Call arguments when the callee expects float."""
+    if isinstance(node, list):
+        for item in node:
+            _insert_numeric_promotion_casts_for_calls(item)
+        return
+    if not isinstance(node, dict):
+        return
+    nd: dict[str, Any] = node
+
+    if nd.get("kind") == "Call":
+        # Detect calls whose return type is float64 — arguments should be promoted
+        call_ret = _safe_str(nd.get("resolved_type"))
+        is_float_callee = call_ret == "float64"
+        # Also check semantic_tag for explicit math functions
+        if not is_float_callee:
+            semantic_tag = _safe_str(nd.get("semantic_tag"))
+            is_float_callee = semantic_tag in _FLOAT_STDLIB_SEMANTIC_TAGS
+        if is_float_callee:
+            args = nd.get("args")
+            if isinstance(args, list):
+                for arg in args:
+                    if isinstance(arg, dict):
+                        arg_type = _safe_str(arg.get("resolved_type"))
+                        if arg_type in _INT_TYPES:
+                            existing_casts = arg.get("casts")
+                            if not isinstance(existing_casts, list):
+                                existing_casts = []
+                            existing_casts.append({
+                                "on": "body",
+                                "from": arg_type,
+                                "to": "float64",
+                                "reason": "numeric_promotion",
+                            })
+                            arg["casts"] = existing_casts
+
+    for v in nd.values():
+        if isinstance(v, (dict, list)):
+            _insert_numeric_promotion_casts_for_calls(v)
