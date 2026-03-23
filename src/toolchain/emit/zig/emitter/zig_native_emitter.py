@@ -307,6 +307,9 @@ class ZigNativeEmitter:
         # タプル型の名前付き typedef: normalized_type → zig_name
         self._tuple_typedefs: dict[str, str] = {}
         self._tuple_typedef_seq: int = 0
+        # Class context for parameter shadowing detection
+        self._current_class_name: str = ""
+        self._current_class_methods: list[dict[str, Any]] = []
 
     def _zig_tuple_type(self, normalized_tuple_type: str) -> str:
         """タプル型を名前付き型として返す。初出時に typedef を登録する。"""
@@ -480,6 +483,31 @@ class ZigNativeEmitter:
             return False
         text = str(body_any)
         return "'" + name + "'" in text
+
+    def _strip_dead_branches(self, body_any: Any) -> list[dict[str, Any]]:
+        """body から dead branch (if false / isinstance) を除去したリストを返す。"""
+        if not isinstance(body_any, list):
+            return []
+        result: list[dict[str, Any]] = []
+        for stmt in body_any:
+            if not isinstance(stmt, dict):
+                continue
+            if stmt.get("kind") == "If":
+                test = stmt.get("test")
+                if isinstance(test, dict):
+                    if test.get("kind") == "Constant" and test.get("value") is False:
+                        # Dead branch: skip body, include only orelse
+                        orelse = stmt.get("orelse")
+                        if isinstance(orelse, list):
+                            result.extend(self._strip_dead_branches(orelse))
+                        continue
+                    if test.get("kind") == "IsInstance":
+                        orelse = stmt.get("orelse")
+                        if isinstance(orelse, list):
+                            result.extend(self._strip_dead_branches(orelse))
+                        continue
+            result.append(stmt)
+        return result
 
     def _body_mutates_self(self, body_any: Any) -> bool:
         """body 内で self のフィールドに代入があるか判定する。"""
@@ -1493,13 +1521,30 @@ class ZigNativeEmitter:
         mutable_copies: list[tuple[str, str]] = []
         arg_types_any = stmt.get("arg_types")
         arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
+        arg_usage = stmt.get("arg_usage")
+        arg_usage = arg_usage if isinstance(arg_usage, dict) else {}
+        # Collect sibling method names for shadowing detection (§ Zig param shadow)
+        sibling_method_names: set[str] = set()
+        if self._current_class_name != "":
+            for sib in self._current_class_methods:
+                sib_name = sib.get("name", "") if isinstance(sib, dict) else ""
+                if sib_name != "":
+                    sibling_method_names.add(sib_name)
         i = 0
         while i < len(arg_names):
             raw_name = args[i] if i < len(args) else arg_names[i]
             zig_ty = self._resolve_arg_zig_type(arg_names[i], raw_name, arg_types)
             param_name = arg_names[i]
-            if not self._body_uses_name(stmt.get("body"), param_name):
+            # Check unused: EAST3 arg_usage or body scan
+            is_unused = raw_name not in arg_usage
+            if not is_unused:
+                is_unused = not self._body_uses_name(stmt.get("body"), param_name)
+            if is_unused:
                 param_name = "_"
+            # Rename param if it shadows a sibling method name
+            elif raw_name in sibling_method_names and raw_name != name:
+                param_name = param_name + "_param"
+                arg_names[i] = param_name
             # Reassigned params or mutable container params: rename and copy to var
             raw_type_any = arg_types.get(raw_name) if isinstance(raw_name, str) else None
             if not isinstance(raw_type_any, str):
@@ -1785,6 +1830,12 @@ class ZigNativeEmitter:
     def _emit_class_def(self, stmt: dict[str, Any]) -> None:
         cls_name = _safe_ident(stmt.get("name"), "Class")
         base_name = self._class_base.get(cls_name, "")
+        # Track class context for param shadowing detection
+        old_class_name = self._current_class_name
+        old_class_methods = self._current_class_methods
+        self._current_class_name = cls_name
+        body_all = self._dict_list(stmt.get("body"))
+        self._current_class_methods = [s for s in body_all if isinstance(s, dict) and s.get("kind") == "FunctionDef"]
         self._emit_line("const " + cls_name + " = struct {")
         self.indent += 1
         # composition: 基底クラスフィールド
@@ -1873,6 +1924,8 @@ class ZigNativeEmitter:
         self.indent -= 1
         self._emit_line("};")
         self._emit_line("")
+        self._current_class_name = old_class_name
+        self._current_class_methods = old_class_methods
 
     def _emit_class_method(self, cls_name: str, stmt: dict[str, Any]) -> None:
         method_name = _safe_ident(stmt.get("name"), "method")
@@ -1903,6 +1956,10 @@ class ZigNativeEmitter:
                 else:
                     arg_strs.append("self: *const " + cls_name)
                 continue
+            # Check if param name shadows a sibling method name
+            sibling_names = {m.get("name", "") for m in self._current_class_methods if isinstance(m, dict)}
+            if arg_name in sibling_names and arg_name != method_name:
+                arg_name = arg_name + "_param"
             args.append(arg_name)
             zig_ty = self._resolve_arg_zig_type(arg_name, arg, arg_types)
             arg_strs.append(arg_name + ": " + zig_ty)
@@ -1925,6 +1982,19 @@ class ZigNativeEmitter:
         else:
             self._emit_line("pub fn " + method_name + "(" + ", ".join(arg_strs) + ") " + ret_type + " {")
             self.indent += 1
+            # Handle renamed params (shadowing avoidance) and unused params
+            live_body = self._strip_dead_branches(stmt.get("body"))
+            for idx_p, p in enumerate(args):
+                if p == "_" or p == "self":
+                    continue
+                # For renamed params (e.g. suffix_param), create alias to original name
+                if p.endswith("_param"):
+                    orig = p[:-len("_param")]
+                    self._emit_line("const " + orig + " = " + p + ";")
+                # Discard params unused in live branches
+                orig_name = p[:-len("_param")] if p.endswith("_param") else p
+                if not self._body_uses_name(live_body, orig_name):
+                    self._emit_line("_ = " + p + ";")
             self._push_function_context(stmt, args, arg_order[1:] if len(arg_order) > 0 else arg_order)
             self._emit_block(stmt.get("body"))
             self._pop_function_context()
@@ -1968,6 +2038,13 @@ class ZigNativeEmitter:
                         i += 1
                         continue
                 name = self._render_target(elt)
+                # EAST3 unused: true on tuple element → use _ discard
+                is_unused_elt = bool(elt.get("unused", False))
+                elt_id_raw = elt.get("id", "") if elt_kind == "Name" else ""
+                if is_unused_elt or (isinstance(elt_id_raw, str) and elt_id_raw == "_"):
+                    self._emit_line("_ = " + field_access + ";")
+                    i += 1
+                    continue
                 if len(self._local_var_stack) > 0 and elt_kind == "Name":
                     elt_name = _safe_ident(elt.get("id"), "value")
                     if elt_name not in self._current_local_vars():
