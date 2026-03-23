@@ -33,10 +33,14 @@ def _parse_one(input_path: Path, output_path: Path | None, pretty: bool) -> int:
         print(f"error: file not found: {input_path}", file=sys.stderr)
         return 1
 
-    from toolchain2.parse.py.parse_python import parse_python_file
+    # pytra-cli2.py は selfhost 非対象 (§5.7) なので toolchain/ の利用を許可。
+    # toolchain2/parse/py/ の自前パーサーが完成したらそちらに切り替える。
+    from toolchain.compile.core_entrypoints import convert_path
+    from toolchain.compile.east1 import normalize_east1_root_document
 
     try:
-        east1_doc = parse_python_file(input_path)
+        raw_east = convert_path(input_path, parser_backend="self_hosted")
+        east1_doc = normalize_east1_root_document(raw_east)
     except Exception as e:
         print(f"error: parse failed: {input_path}: {e}", file=sys.stderr)
         return 1

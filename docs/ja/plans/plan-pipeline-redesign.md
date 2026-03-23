@@ -294,9 +294,37 @@ class Call:
 - これらでは `Any`, Python 標準モジュール, `ast` の使用を許可する。
 - `toolchain2/` 配下のみが selfhost 対象。
 
-## 6. 移行方針
+## 6. 移行方針: golden file 駆動
 
-（未定。段階的に移行するか、一括で切り替えるかを検討する。）
+`toolchain2/` は `toolchain/` を import しない。現行 `toolchain/` への依存はゼロとする。
+
+移行手順（各段共通）:
+
+1. **golden file 生成**: 現行 `toolchain/` で全 sample の出力を生成し、`test/` に golden file として保存する
+2. **自前実装**: `toolchain2/` に独立実装を書く（`toolchain/` を import しない）
+3. **テスト**: 自前実装の出力が golden file と一致するか検証する
+4. **完了**: 一致したらその段は完成
+
+例（parse 段）:
+
+```bash
+# 1. 現行 toolchain で golden file を生成
+PYTHONPATH=src python3 src/toolchain/compile/cli.py sample/py/01_mandelbrot.py \
+  --east-stage 1 -o test/east1/py/01_mandelbrot.py.east1
+
+# 2. toolchain2 の自前実装で出力
+PYTHONPATH=src python3 src/pytra-cli2.py -parse sample/py/01_mandelbrot.py \
+  -o work/tmp/01_mandelbrot.py.east1
+
+# 3. diff で検証
+diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
+```
+
+この方式により:
+- `toolchain2/` が `toolchain/` に一切依存しない
+- golden file が「正解」として機能し、実装の正しさを保証する
+- `toolchain/` は golden file 生成後は不要（最終的に除去可能）
+- 各段を独立に開発・検証できる
 
 ## 7. 未決事項
 
