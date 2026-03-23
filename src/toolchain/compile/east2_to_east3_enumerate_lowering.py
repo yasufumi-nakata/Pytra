@@ -142,10 +142,37 @@ def _try_lower_enumerate_forcore(stmt: dict[str, Any]) -> list[dict[str, Any]] |
     }
 
     # 2. Build for loop over iterable (without enumerate)
+    # Derive val_name's type from the tuple's second element
+    # e.g. tuple[int64, int64] → int64 for the value variable
+    raw_target_type = _safe_str(target_plan.get("target_type"))
+    val_target_type = raw_target_type
+    if raw_target_type.startswith("tuple[") and raw_target_type.endswith("]"):
+        inner = raw_target_type[6:-1]
+        parts: list[str] = []
+        depth = 0
+        cur = ""
+        for ch in inner:
+            if ch == "[":
+                depth += 1
+                cur += ch
+            elif ch == "]":
+                if depth > 0:
+                    depth -= 1
+                cur += ch
+            elif ch == "," and depth == 0:
+                parts.append(cur.strip())
+                cur = ""
+            else:
+                cur += ch
+        tail = cur.strip()
+        if tail != "":
+            parts.append(tail)
+        if len(parts) >= 2:
+            val_target_type = parts[1]
     new_target_plan: dict[str, Any] = {
         "kind": "NameTarget",
         "id": val_name,
-        "target_type": target_plan.get("target_type", ""),
+        "target_type": val_target_type,
     }
 
     # New iter_plan: iterate over the original iterable
