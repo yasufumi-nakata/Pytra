@@ -257,6 +257,8 @@ class Call:
 ```
 
 - `typing.Any` の import 自体を禁止する（`typing` は注釈専用 no-op として許可するが、`Any` は使わない）。
+- `object` 型も禁止する（Python では `Any` と同義であり、C++ 等に写像できない）。
+- `dict[str, Any]` だけでなく `dict[str, object]` も同様に禁止。
 - ノード種別の判定は `isinstance()` で行い、`dict.get("kind")` パターンを使わない。
 - 既存 `toolchain/` との橋渡しで `dict[str, Any]` が必要な場合は、境界の変換関数に限定し `toolchain2/` 内部に漏らさない。
 
