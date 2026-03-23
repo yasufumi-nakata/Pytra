@@ -1998,9 +1998,14 @@ class LuaNativeEmitter:
             op = str(ed.get("op"))
             # Python and/or uses truthiness (0, "", [], {} are falsy).
             # Lua only treats nil/false as falsy. Use helper for value-selecting and/or.
-            resolved = ed.get("resolved_type")
-            is_bool_context = isinstance(resolved, str) and resolved == "bool"
-            if is_bool_context:
+            # Only safe to use native Lua and/or when ALL operands are bool.
+            all_bool = True
+            for v in values:
+                if isinstance(v, dict):
+                    vt = v.get("resolved_type", "")
+                    if vt != "bool":
+                        all_bool = False
+            if all_bool:
                 # Bool context: Lua and/or works correctly
                 delim = " and " if op == "And" else " or "
                 out: list[str] = []
