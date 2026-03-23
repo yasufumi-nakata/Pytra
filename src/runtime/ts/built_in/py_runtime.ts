@@ -195,7 +195,7 @@ export function pyRegisterType(typeId: number, bases: number[] = []): number {
 
 export function pyRegisterClassType(bases: number[] = [PY_TYPE_OBJECT]): number {
   initBuiltinTypeBases();
-  while (pyTypeBases.has(pyNextTypeId)) {
+  while (pyTypeBase.has(pyNextTypeId)) {
     pyNextTypeId += 1;
   }
   const out = pyNextTypeId;
