@@ -195,6 +195,27 @@ src/
       ...
 ```
 
+### 3.3 テストディレクトリ構成
+
+各段の出力を golden file として検証する。パイプラインの各段を独立にテストでき、どの段でリグレッションが起きたか特定しやすい。
+
+```
+test/
+  east1/py/      ← .py → .py.east1 のスナップショットテスト（Python 固有）
+  east2/py/      ← .py.east1 → .east2 のスナップショットテスト（入力が Python 由来）
+  east3/         ← .east2 → .east3 のスナップショットテスト（言語非依存）
+  east3-opt/     ← optimize 後の .east3 のスナップショットテスト（言語非依存）
+  emit/
+    cpp/         ← .east3 → .cpp の golden file テスト（target 固有）
+    rs/
+    ...
+```
+
+- `east1/py/`, `east2/py/` は入力言語ごとにサブディレクトリを持つ（将来 `east1/rb/` 等に対応）
+- `east3/`, `east3-opt/` は言語非依存なのでサブディレクトリなし
+- `emit/cpp/` 等は target 言語ごとにサブディレクトリを持つ
+- `toolchain2/` と `test/` の構造が対称になる
+
 ## 4. 除去されるもの
 
 - `src/toolchain/frontends/signature_registry.py` のハードコードテーブル全体

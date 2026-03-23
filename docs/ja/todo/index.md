@@ -41,6 +41,7 @@
 4. [ ] [ID: P0-PIPELINE-V2-S4] `toolchain2/optimize/` で whole-program 最適化を実装する
 5. [ ] [ID: P0-PIPELINE-V2-S5] `toolchain2/emit/cpp/` で .east3 → .cpp の emit を実装する
 6. [ ] [ID: P0-PIPELINE-V2-S6] `pytra-cli2 -build --target=cpp` で全 18 sample が compile + run できる
+7. [ ] [ID: P0-PIPELINE-V2-S7] 各段の golden file テスト整備（`test/east1/py/`, `test/east2/py/`, `test/east3/`, `test/east3-opt/`, `test/emit/cpp/`）
 
 注: 旧 TODO は [2026-03-24 アーカイブ](archive/20260324.md) に移動済み。
 
