@@ -1,6 +1,7 @@
 # 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
 # It avoids floating-point error effects, making cross-language comparisons easier.
 
+from pathlib import Path
 from pytra.std.time import perf_counter
 
 
@@ -26,10 +27,15 @@ def run_integer_benchmark() -> None:
     # meaningful in runtime benchmarks.
     width: int = 7600
     height: int = 5000
+    out_path: str = "sample/out/17_monte_carlo_pi.txt"
 
     start: float = perf_counter()
     checksum: int = run_integer_grid_checksum(width, height, 123456789)
     elapsed: float = perf_counter() - start
+
+    result: str = "pixels:" + str(width * height) + "\nchecksum:" + str(checksum) + "\n"
+    p: Path = Path(out_path)
+    p.write_text(result)
 
     print("pixels:", width * height)
     print("checksum:", checksum)

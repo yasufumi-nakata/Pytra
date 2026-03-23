@@ -109,7 +109,7 @@
   - ビルド・変換・検証の一時出力は `work/tmp/` を使用する。
   - selfhost テストの出力は `work/selfhost/` を使用する。
   - `out/` / `selfhost/` / `sample/obj/` は過去の互換ディレクトリであり、新規の出力先として使ってはならない。複数インスタンスの競合リスクがある。
-  - `sample/out/` は sample/py の出力見本（PNG/GIF）専用。それ以外の用途（変換結果、一時ファイル等）での出力は禁止。
+  - `sample/out/` は sample/py の出力見本（PNG/GIF/TXT）専用。それ以外の用途（変換結果、一時ファイル等）での出力は禁止。
   - `/tmp/` はシステム共有領域であり、掃除されずゴミが蓄積する。使用禁止。
   - `tempfile.TemporaryDirectory()` も `/tmp/` を使うため禁止。代わりに `work/tmp/` 配下にサブディレクトリを作成する。
 - `src/toolchain/emit/common/emitter/code_emitter.py` を変更した場合は `test/unit/common/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。

@@ -1,3 +1,4 @@
+from pathlib import Path
 from pytra.dataclasses import dataclass
 from pytra.std.time import perf_counter
 
@@ -319,6 +320,7 @@ def run_demo() -> None:
 
 
 def run_benchmark() -> None:
+    out_path: str = "sample/out/18_mini_language_interpreter.txt"
     source_lines: list[str] = build_benchmark_source(32, 120000)
     start: float = perf_counter()
     tokens: list[Token] = tokenize(source_lines)
@@ -326,6 +328,10 @@ def run_benchmark() -> None:
     stmts: list[StmtNode] = parser.parse_program()
     checksum: int = execute(stmts, parser.expr_nodes, False)
     elapsed: float = perf_counter() - start
+
+    result: str = "token_count:" + str(len(tokens)) + "\nexpr_count:" + str(len(parser.expr_nodes)) + "\nstmt_count:" + str(len(stmts)) + "\nchecksum:" + str(checksum) + "\n"
+    p: Path = Path(out_path)
+    p.write_text(result)
 
     print("token_count:", len(tokens))
     print("expr_count:", len(parser.expr_nodes))

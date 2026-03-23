@@ -16,7 +16,7 @@
 - `docs/ja/plans/`、`docs/ja/language/`、`docs/ja/todo/archive/`、`docs/ja/spec/` 配下は、運用ルールに沿う範囲で作成可。
 - 作業生成物は `work/tmp/` を使用する。selfhost テストは `work/selfhost/` を使用する。
 - **以下への出力は禁止**: `out/`, `selfhost/`, `sample/obj/`, `/tmp/`。
-- `sample/out/` は sample/py の出力見本（PNG/GIF）専用。それ以外の用途での出力禁止。
+- `sample/out/` は sample/py の出力見本（PNG/GIF/TXT）専用。それ以外の用途での出力禁止。
 - リポジトリ直下に一時出力ディレクトリを作成してはならない。
 - `materials/` はユーザー資料置き場として扱い、Codex は read-only（明示指示がある場合のみ編集可）。
 - `materials/Yanesdk/` と `materials/microgpt/` はユーザー管理資料として扱う。
