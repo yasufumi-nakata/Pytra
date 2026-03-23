@@ -1,6 +1,9 @@
 // Python 互換ランタイム（JavaScript版）の共通関数群。
 // 将来的な Python -> JavaScript ネイティブ変換コードから利用する。
 
+import { writeFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+
 const PY_TYPE_NONE = 0;
 const PY_TYPE_BOOL = 1;
 const PY_TYPE_NUMBER = 2;
@@ -475,7 +478,28 @@ function pyIsAlpha(value) {
   return typeof value === "string" && value.length > 0 && /^[A-Za-z]+$/.test(value);
 }
 
-module.exports = {
+/** Python の open 相当（バイナリ書き込み専用）。 */
+function open(filePath, _mode) {
+  const dir = dirname(filePath);
+  if (dir !== "" && dir !== ".") {
+    mkdirSync(dir, { recursive: true });
+  }
+  const buf = [];
+  return {
+    write(data) {
+      if (Array.isArray(data)) {
+        for (let i = 0; i < data.length; i++) {
+          buf.push(data[i] & 0xFF);
+        }
+      }
+    },
+    close() {
+      writeFileSync(filePath, Buffer.from(buf));
+    },
+  };
+}
+
+export {
   PY_TYPE_NONE,
   PY_TYPE_BOOL,
   PY_TYPE_NUMBER,
@@ -511,4 +535,5 @@ module.exports = {
   pyBytes,
   pyIsDigit,
   pyIsAlpha,
+  open,
 };

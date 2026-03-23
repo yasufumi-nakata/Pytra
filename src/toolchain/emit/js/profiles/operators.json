@@ -11,7 +11,7 @@
       "BitOr": "|",
       "BitXor": "^",
       "LShift": "<<",
-      "RShift": ">>"
+      "RShift": ">>>"
     },
     "cmp": {
       "Eq": "===",
@@ -34,7 +34,7 @@
       "BitOr": "|=",
       "BitXor": "^=",
       "LShift": "<<=",
-      "RShift": ">>="
+      "RShift": ">>>="
     }
   }
 }

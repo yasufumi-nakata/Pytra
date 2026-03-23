@@ -5,7 +5,7 @@ function _replaceArray(target, values) {
     target.splice(0, target.length, ...next);
 }
 
-const sys = {
+export const sys = {
     argv: Array.from(process.argv, (value) => String(value)),
     path: [],
     stderr: process.stderr,
@@ -15,28 +15,28 @@ const sys = {
     },
 };
 
-const argv = sys.argv;
-const path = sys.path;
-const stderr = sys.stderr;
-const stdout = sys.stdout;
+export const argv = sys.argv;
+export const path = sys.path;
+export const stderr = sys.stderr;
+export const stdout = sys.stdout;
 
-function exit(code) {
+export function exit(code) {
     return sys.exit(code);
 }
 
-function set_argv(values) {
+export function set_argv(values) {
     _replaceArray(sys.argv, values);
 }
 
-function set_path(values) {
+export function set_path(values) {
     _replaceArray(sys.path, values);
 }
 
-function write_stderr(text) {
+export function write_stderr(text) {
     sys.stderr.write(String(text));
 }
 
-function write_stdout(text) {
+export function write_stdout(text) {
     sys.stdout.write(String(text));
 }
 
@@ -44,5 +44,3 @@ sys.set_argv = set_argv;
 sys.set_path = set_path;
 sys.write_stderr = write_stderr;
 sys.write_stdout = write_stdout;
-
-module.exports = { sys, argv, path, stderr, stdout, exit, set_argv, set_path, write_stderr, write_stdout };
