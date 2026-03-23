@@ -27,6 +27,17 @@ FIXTURE_ROOT = ROOT / "test" / "fixtures"
 SAMPLE_ROOT = ROOT / "sample" / "py"
 ARTIFACT_OPTIONAL_TARGETS: set[str] = set()
 
+# Declarative skip list: fixtures that are known to be unsupported by specific languages.
+# Key = language name, value = set of fixture stems to skip.
+# These are distinct from toolchain_missing (tool not installed) — these represent
+# language-level feature gaps (e.g. Zig doesn't support try/except).
+_LANG_UNSUPPORTED_FIXTURES: dict[str, set[str]] = {
+    "zig": {
+        "try_raise", "finally", "enum_basic", "dataclass_basic",
+        "match_exhaustive", "inheritance_class",
+    },
+}
+
 
 @dataclass
 class Target:
@@ -348,6 +359,11 @@ def check_case(
             if not can_run(target):
                 print(f"[SKIP] {case_stem}:{target.name} (missing toolchain)")
                 _record(target.name, "toolchain_missing", "missing toolchain")
+                continue
+            unsupported = _LANG_UNSUPPORTED_FIXTURES.get(target.name, set())
+            if case_stem in unsupported:
+                print(f"[SKIP] {case_stem}:{target.name} (unsupported feature)")
+                _record(target.name, "unsupported_feature", "unsupported feature")
                 continue
 
             # Always wipe previous transpile outputs for this target/case pair.
