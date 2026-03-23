@@ -120,7 +120,7 @@ class JsEmitter(CodeEmitter):
         self.browser_module_aliases: dict[str, str] = {}
         self.ambient_global_aliases: dict[str, str] = {}
         self.top_function_names: set[str] = set()
-        self.current_ref_vars: set[str] = set()
+        self.current_ref_vars: set[str] = set()  # unused, kept for interface compat
 
     def _safe_name(self, name: str) -> str:
         return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, {})
@@ -136,39 +136,11 @@ class JsEmitter(CodeEmitter):
             or t == "bytearray"
         )
 
-    def _materialize_container_value_from_ref(
-        self,
-        value_obj: Any,
-        rendered_value: str,
-        east_type_hint: str,
-        *,
-        target_name_raw: str,
-    ) -> str:
-        node = self.any_to_dict_or_empty(value_obj)
-        if self.any_dict_get_str(node, "kind", "") != "Name":
-            return rendered_value
-        src_raw = self.any_dict_get_str(node, "id", "")
-        if src_raw == "" or src_raw == target_name_raw:
-            return rendered_value
-        if src_raw not in self.current_ref_vars:
-            return rendered_value
-        hint = self.normalize_type_name(east_type_hint)
-        if self._text_has_prefix(hint, "list[") or self._text_has_prefix(hint, "tuple[") or hint == "bytes" or hint == "bytearray":
-            return "(Array.isArray(" + rendered_value + ") ? " + rendered_value + ".slice() : Array.from(" + rendered_value + "))"
-        if self._text_has_prefix(hint, "dict["):
-            return "((" + rendered_value + " && typeof " + rendered_value + " === \"object\") ? { ..." + rendered_value + " } : {})"
-        if self._text_has_prefix(hint, "set["):
-            return "(" + rendered_value + " instanceof Set ? new Set(" + rendered_value + ") : new Set())"
-        return rendered_value
-
     def _render_assignment_value_with_hint(self, value_obj: Any, east_type_hint: str, *, target_name_raw: str) -> str:
-        rendered = self.render_expr(value_obj)
-        return self._materialize_container_value_from_ref(
-            value_obj,
-            rendered,
-            east_type_hint,
-            target_name_raw=target_name_raw,
-        )
+        # §10: JS の list/dict/set は参照型。コピーせずそのまま渡す。
+        _ = east_type_hint
+        _ = target_name_raw
+        return self.render_expr(value_obj)
 
     def _is_browser_module(self, module_id: Any) -> bool:
         """browser 外部参照モジュールかを判定する。"""
@@ -181,6 +153,10 @@ class JsEmitter(CodeEmitter):
         """selfhost でも安全に無視対象 import か判定する。"""
         module_text = f"{module_id_raw}"
         if module_text == "typing" or module_text == "pytra.std.typing":
+            return True
+        if module_text == "dataclasses" or module_text == "pytra.std.dataclasses":
+            return True
+        if module_text == "pytra.std" or module_text == "pytra.std.abi":
             return True
         return len(module_text) >= 10 and module_text[0:10] == "__future__"
 
@@ -195,10 +171,51 @@ class JsEmitter(CodeEmitter):
         return extern_meta
 
     def _is_ambient_global_decl_stmt(self, stmt: dict[str, Any]) -> bool:
-        """stmt が ambient global extern 宣言なら True を返す。"""
+        """stmt が ambient global extern 宣言なら True を返す。
+
+        §4: meta.extern_var_v1 を正本として判定する。
+        EAST3 が extern_var_v1 を未設定の場合のフォールバックとして
+        Call(func=Name("extern")) パターンも検出する。
+        """
         if self.any_dict_get_str(stmt, "kind", "") not in {"Assign", "AnnAssign"}:
             return False
-        return len(self._ambient_global_meta(stmt)) > 0
+        # §4 推奨: meta.extern_var_v1 で判定
+        if len(self._ambient_global_meta(stmt)) > 0:
+            return True
+        # フォールバック: EAST3 が extern_var_v1 未設定時の互換検出
+        return self._is_extern_call_decl_fallback(stmt)
+
+    def _is_extern_call_decl_fallback(self, stmt: dict[str, Any]) -> bool:
+        """extern() 呼び出しの互換検出（extern_var_v1 未設定時のみ使用）。
+
+        §4 注意: value ノードは Unbox にラップされる場合がある。
+        EAST3 が extern_var_v1 を供給するようになったらこのメソッドは削除可能。
+        """
+        value = stmt.get("value")
+        if not isinstance(value, dict):
+            return False
+        if value.get("kind") == "Unbox":
+            inner = value.get("value")
+            if isinstance(inner, dict):
+                value = inner
+        if value.get("kind") != "Call":
+            return False
+        func = value.get("func")
+        if not isinstance(func, dict):
+            return False
+        return func.get("id") == "extern" or func.get("id") == "abi"
+
+    def _get_extern_decl_name(self, stmt: dict[str, Any]) -> str:
+        """extern() 宣言の変数名を返す。§4: extern_var_v1.symbol を優先。"""
+        # §4 推奨: meta.extern_var_v1 から取得
+        extern_meta = self._ambient_global_meta(stmt)
+        if len(extern_meta) > 0:
+            return self.any_dict_get_str(extern_meta, "symbol", "")
+        # フォールバック: target.id
+        target = self.any_to_dict_or_empty(stmt.get("target"))
+        if self.any_dict_get_str(target, "kind", "") == "Name":
+            return self.any_dict_get_str(target, "id", "")
+        return ""
 
     def _collect_ambient_global_aliases(self, body: list[dict[str, Any]]) -> None:
         """top-level ambient global extern 宣言を symbol alias として登録する。"""
@@ -219,21 +236,18 @@ class JsEmitter(CodeEmitter):
             self.declared_var_types[local_name] = "Any"
 
     def _module_id_to_js_path(self, module_id: str) -> str:
-        """Python 形式モジュール名を JS import パスへ変換する。"""
+        """Python 形式モジュール名を JS import パスへ変換する（§3 準拠）。"""
         if not isinstance(module_id, str):
             return ""
         module_name = canonical_runtime_module_id(module_id.strip())
         if module_name == "":
             return ""
-        if module_name.startswith("pytra.std."):
-            tail = module_name.removeprefix("pytra.std.")
-            if tail != "":
-                return _JS_OUTPUT_RUNTIME_ROOT + "/std/" + tail.replace(".", "/") + ".js"
-        if module_name.startswith("pytra.utils."):
-            tail = module_name.removeprefix("pytra.utils.")
-            if tail != "":
-                return _JS_OUTPUT_RUNTIME_ROOT + "/utils/" + tail.replace(".", "/") + ".js"
-        return "./" + module_name.replace(".", "/") + ".js"
+        # pytra.* でないモジュール（Python 標準ライブラリ等）は JS では不要
+        if not module_name.startswith("pytra."):
+            return ""
+        # §3: module_id から pytra. prefix を除去し . を / に置換
+        rel = module_name[len("pytra."):]
+        return self._root_rel_prefix + rel.replace(".", "/") + ".js"
 
     def _module_symbol_to_js_path(self, module_id: str, symbol_name: str) -> str:
         """from-import の symbol 単位で JS import パスを解決する。"""
@@ -373,11 +387,15 @@ class JsEmitter(CodeEmitter):
                 self._collect_type_id_expr_symbols(self.any_dict_get(node_dict, "expected_type_id", None), required)
             elif kind == "Call":
                 fn = self.any_dict_get_dict(node_dict, "func")
-                if self.any_dict_get_str(fn, "kind", "") == "Name" and self.any_dict_get_str(fn, "id", "") == "isinstance":
-                    required.add("pyIsInstance")
-                    args = self.any_dict_get_list(node_dict, "args")
-                    if len(args) >= 2:
-                        self._collect_isinstance_type_symbols(self.any_to_dict_or_empty(args[1]), required)
+                if self.any_dict_get_str(fn, "kind", "") == "Name":
+                    call_id = self.any_dict_get_str(fn, "id", "")
+                    if call_id == "isinstance":
+                        required.add("pyIsInstance")
+                        args = self.any_dict_get_list(node_dict, "args")
+                        if len(args) >= 2:
+                            self._collect_isinstance_type_symbols(self.any_to_dict_or_empty(args[1]), required)
+                    elif call_id == "open":
+                        required.add("open")
             for key, value in node_dict.items():
                 if key == "comments":
                     continue
@@ -414,6 +432,7 @@ class JsEmitter(CodeEmitter):
             "pyLen",
             "pyStr",
             "pyTypeId",
+            "open",
         ]
         out: list[str] = []
         for name in ordered:
@@ -558,11 +577,16 @@ class JsEmitter(CodeEmitter):
         meta = self.any_to_dict_or_empty(module.get("meta"))
         emit_ctx = self.any_to_dict_or_empty(meta.get("emit_context"))
         self._is_submodule = not self.any_to_bool(emit_ctx.get("is_entry")) if len(emit_ctx) > 0 else False
+        self._root_rel_prefix = self.any_dict_get_str(emit_ctx, "root_rel_prefix", "./")
         self.load_import_bindings_from_meta(meta)
         self._collect_ambient_global_aliases(body)
         analysis_body: list[dict[str, Any]] = []
+        extern_var_names: list[str] = []
         for stmt in body:
             if self._is_ambient_global_decl_stmt(stmt):
+                ename = self._get_extern_decl_name(stmt)
+                if ename != "":
+                    extern_var_names.append(ename)
                 continue
             analysis_body.append(stmt)
         self.emit_module_leading_trivia()
@@ -576,16 +600,18 @@ class JsEmitter(CodeEmitter):
         runtime_symbols = self._collect_runtime_symbols(analysis_body, main_guard_body)
         runtime_import_line = ""
         if len(runtime_symbols) > 0:
-            runtime_import_line = "import { " + ", ".join(runtime_symbols) + " } from " + self.quote_string_literal(_JS_OUTPUT_RUNTIME_ROOT + "/built_in/py_runtime.js") + ";"
+            rt_root = self.any_dict_get_str(emit_ctx, "root_rel_prefix", "./")
+            runtime_import_line = "import { " + ", ".join(runtime_symbols) + " } from " + self.quote_string_literal(rt_root + "built_in/py_runtime.js") + ";"
         import_lines = self._collect_import_statements(analysis_body, meta, used_names)
-        # Detect @extern functions and generate _native import
-        has_extern = False
-        for stmt in analysis_body:
-            if self.any_dict_get_str(stmt, "kind", "") == "FunctionDef":
-                decs = stmt.get("decorators")
-                if isinstance(decs, list) and "extern" in decs:
-                    has_extern = True
-                    break
+        # Detect @extern functions or extern() variables and generate _native import
+        has_extern = len(extern_var_names) > 0
+        if not has_extern:
+            for stmt in analysis_body:
+                if self.any_dict_get_str(stmt, "kind", "") == "FunctionDef":
+                    decs = stmt.get("decorators")
+                    if isinstance(decs, list) and "extern" in decs:
+                        has_extern = True
+                        break
         native_import_line = ""
         if has_extern:
             # Derive _native module path from emit_context
@@ -617,6 +643,13 @@ class JsEmitter(CodeEmitter):
         if runtime_import_line != "" or native_import_line != "" or len(import_lines) > 0:
             self.emit("")
 
+        # Emit extern() variable delegations to __native
+        for ev_name in extern_var_names:
+            safe_ev = self._safe_name(ev_name)
+            self.emit("export const " + safe_ev + " = __native." + safe_ev + ";")
+        if len(extern_var_names) > 0:
+            self.emit("")
+
         self.class_names = set()
         for stmt in analysis_body:
             if self.any_dict_get_str(stmt, "kind", "") == "ClassDef":
@@ -641,7 +674,9 @@ class JsEmitter(CodeEmitter):
                 continue
             top_level_stmts.append(stmt)
 
-        if len(main_guard_body) > 0:
+        # §8: is_entry=True のモジュールのみ main_guard_body を出力する。
+        # is_entry=False（ライブラリモジュール）では出力しない。
+        if not self._is_submodule and len(main_guard_body) > 0:
             self.emit_stmt_list(main_guard_body)
         elif len(top_level_stmts) > 0:
             self.emit_stmt_list(top_level_stmts)
@@ -664,7 +699,8 @@ class JsEmitter(CodeEmitter):
             base_name = self._safe_name(base_raw)
         self.current_class_name = class_name
         self.current_class_base_name = base_name
-        class_header = "class " + class_name
+        class_prefix = "export " if self._is_submodule else ""
+        class_header = class_prefix + "class " + class_name
         if base_name != "":
             class_header += " extends " + base_name
         self.emit(class_header + " {")
@@ -1076,7 +1112,12 @@ class JsEmitter(CodeEmitter):
         if target_kind == "Name":
             name_raw = self.any_dict_get_str(target, "id", "_")
             name = self._safe_name(name_raw)
-            if self.should_declare_name_binding(stmt, name_raw, False):
+            # JS: 未宣言変数への代入はグローバル汚染になるため、
+            # declare フラグがなくてもスコープ未宣言なら let を付ける
+            needs_declare = self.should_declare_name_binding(stmt, name_raw, False)
+            if not needs_declare and not self.is_declared(name_raw):
+                needs_declare = True
+            if needs_declare:
                 self.declare_in_current_scope(name_raw)
                 t_hint = self.get_expr_type(value_obj)
                 if t_hint != "":
@@ -1307,7 +1348,7 @@ class JsEmitter(CodeEmitter):
         lines.append("})()")
         return " ".join(lines)
 
-    def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
+    def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any], *, call_resolved_type: str = "") -> str:
         """組み込み関数呼び出しを JavaScript 式へ変換する。"""
         fn_name = self._safe_name(fn_name_raw)
         if self._text_has_prefix(fn_name_raw, "py_assert_"):
@@ -1316,6 +1357,8 @@ class JsEmitter(CodeEmitter):
             fn_name = "__pytra_main"
         if fn_name_raw == "isinstance":
             return self._render_isinstance_call(rendered_args, arg_nodes)
+        if fn_name_raw == "cast" and len(rendered_args) >= 2:
+            return rendered_args[1]
         if fn_name_raw == "print":
             return "console.log(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "len" and len(rendered_args) == 1:
@@ -1377,6 +1420,9 @@ class JsEmitter(CodeEmitter):
                 return "[]"
             arg0_expr = "(" + rendered_args[0] + ")"
             return "(Array.isArray(" + arg0_expr + ") ? " + arg0_expr + ".slice() : Array.from(" + arg0_expr + "))"
+        # import されたクラスのインスタンシエーション: resolved_type が関数名と一致
+        if call_resolved_type != "" and call_resolved_type == fn_name_raw:
+            return "new " + fn_name + "(" + ", ".join(rendered_args) + ")"
         _ = arg_nodes
         return fn_name + "(" + ", ".join(rendered_args) + ")"
 
@@ -1455,6 +1501,9 @@ class JsEmitter(CodeEmitter):
         return "", ""
 
     def _render_call(self, expr: dict[str, Any]) -> str:
+        # §11: yields_dynamic — JS は動的型付け言語のため型アサーション不要。
+        # フラグを認識した上でスキップする。
+        _ = self.any_to_bool(expr.get("yields_dynamic"))
         semantic_tag = self.any_dict_get_str(expr, "semantic_tag", "")
         runtime_call, runtime_source = self._resolved_runtime_call(expr)
         if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
@@ -1498,7 +1547,8 @@ class JsEmitter(CodeEmitter):
 
         if fn_kind == "Name":
             fn_name_raw = self.any_dict_get_str(fn_node, "id", "")
-            return self._render_name_call(fn_name_raw, rendered_args, arg_nodes)
+            call_resolved_type = self.any_dict_get_str(expr, "resolved_type", "")
+            return self._render_name_call(fn_name_raw, rendered_args, arg_nodes, call_resolved_type=call_resolved_type)
         if fn_kind == "Attribute":
             owner_node = self.any_to_dict_or_empty(fn_node.get("value"))
             attr_raw = self.any_dict_get_str(fn_node, "attr", "")
@@ -1762,6 +1812,12 @@ class JsEmitter(CodeEmitter):
 
 def transpile_to_js(east_doc: dict[str, Any]) -> str:
     """EAST ドキュメントを JavaScript コードへ変換する。"""
+    # §6: built_in モジュールは py_runtime が提供するため emit 不要
+    meta = east_doc.get("meta", {})
+    emit_ctx = meta.get("emit_context", {}) if isinstance(meta, dict) else {}
+    module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx, dict) else ""
+    if module_id.startswith("pytra.built_in."):
+        return ""
     reject_backend_typed_vararg_signatures(east_doc, backend_name="JS backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="JS backend")
     emitter = JsEmitter(east_doc)
