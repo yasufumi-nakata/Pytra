@@ -701,7 +701,22 @@ python3 tools/runtime_parity_check.py \
   --case-root fixture --all-samples
 ```
 
-emitter 開発時は **sample と fixture の両方** で parity check を実行すること。sample は実用的な大きいプログラム（18 件）、fixture は言語機能の網羅テスト（131 件）。
+emitter 開発時は **sample と fixture の両方** で parity check を実行すること。sample は実用的な大きいプログラム（18 件）、fixture は言語機能の網羅テスト（128 件）。
+
+### unsupported feature の skip 管理
+
+言語がサポートしない機能の fixture は `runtime_parity_check.py` 内の `_LANG_UNSUPPORTED_FIXTURES` で宣言的にスキップされる。
+
+```python
+# runtime_parity_check.py 内
+_LANG_UNSUPPORTED_FIXTURES = {
+    "zig": {"try_raise", "enum_basic", "dataclass_basic", ...},
+}
+```
+
+- `toolchain_missing`（ツール未インストール）とは別カテゴリ
+- 新しい fixture を追加したとき、未対応言語は自動的にスキップされる
+- emitter 担当は自言語の skip リストを維持すること。機能を実装したら該当 fixture を skip リストから除去する
 
 ### 検証内容
 
