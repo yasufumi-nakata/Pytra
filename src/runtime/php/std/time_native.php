@@ -3,13 +3,14 @@ declare(strict_types=1);
 /**
  * Native implementation of pytra.std.time for PHP.
  *
- * This file is copied over the linker-generated time/east.php at emit time.
+ * Provides __native_<func> implementations that the emitter-generated
+ * std/time.php delegates to via @extern convention.
  *
  * source: src/pytra/std/time.py
  */
 
-if (!function_exists('perf_counter')) {
-    function perf_counter(): float {
+if (!function_exists('__native_perf_counter')) {
+    function __native_perf_counter(): float {
         return microtime(true);
     }
 }

@@ -28,6 +28,7 @@ SUPPORTED_TARGETS: list[str] = [
     "ruby",
     "php",
     "nim",
+    "dart",
 ]
 
 TARGET_EXT: dict[str, str] = {
@@ -45,6 +46,7 @@ TARGET_EXT: dict[str, str] = {
     "ruby": ".rb",
     "php": ".php",
     "nim": ".nim",
+    "dart": ".dart",
 }
 
 
@@ -73,6 +75,7 @@ _TARGET_PROFILES: dict[str, TargetProfile] = {
     "ruby": TargetProfile(target="ruby", extension=".rb", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "ruby")),
     "php": TargetProfile(target="php", extension=".php", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "php")),
     "nim": TargetProfile(target="nim", extension=".nim", build_driver="noncpp", fixed_output_name="main.nim", allow_codegen_opt=False, runner_needs=("python", "nim")),
+    "dart": TargetProfile(target="dart", extension=".dart", build_driver="noncpp", fixed_output_name="", allow_codegen_opt=False, runner_needs=("python", "dart")),
 }
 
 
@@ -89,7 +92,7 @@ def list_supported_targets() -> list[str]:
 
 def list_parity_targets() -> list[str]:
     # Keep parity output order stable for existing logs and README refresh tooling.
-    return ["cpp", "rs", "cs", "js", "ruby", "lua", "php", "ts", "go", "java", "swift", "kotlin", "scala", "nim"]
+    return ["cpp", "rs", "cs", "js", "ruby", "lua", "php", "ts", "go", "java", "swift", "kotlin", "scala", "nim", "dart"]
 
 
 def validate_profile_option_compatibility(

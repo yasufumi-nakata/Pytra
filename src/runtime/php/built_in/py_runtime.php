@@ -1,23 +1,9 @@
 <?php
 declare(strict_types=1);
 
-function __pytra_require_runtime_file(string $staged_rel, string $repo_rel): void {
-    $candidates = [
-        __DIR__ . '/' . $staged_rel,
-        __DIR__ . '/' . $repo_rel,
-    ];
-    foreach ($candidates as $candidate) {
-        if (is_file($candidate)) {
-            require_once $candidate;
-            return;
-        }
-    }
-    // Optional dependency: skip silently if not found.
-}
-
-__pytra_require_runtime_file('utils/png.php', '../../generated/utils/png.php');
-__pytra_require_runtime_file('utils/gif.php', '../../generated/utils/gif.php');
-__pytra_require_runtime_file('std/time.php', '../../generated/std/time.php');
+// Module dependencies (utils/png, utils/gif, std/time) are require_once'd
+// by the emitter-generated code, not here. py_runtime provides only
+// Python built-in function equivalents (spec §6).
 
 function __pytra_print(...$args): void {
     if (count($args) === 0) {
@@ -151,9 +137,7 @@ function __pytra_index($container, $index): int {
     return $i;
 }
 
-function __pytra_perf_counter(): float {
-    return microtime(true);
-}
+// perf_counter is provided by std/time.php via @extern delegation (spec §6)
 
 function __pytra_noop(...$_args) {
     return null;
@@ -292,133 +276,7 @@ function __pytra_list_repeat($v, int $count): array {
     return $out;
 }
 
-function pyMathSqrt($v): float {
-    return sqrt(__pytra_float($v));
-}
-
-function pyMathSin($v): float {
-    return sin(__pytra_float($v));
-}
-
-function pyMathCos($v): float {
-    return cos(__pytra_float($v));
-}
-
-function pyMathTan($v): float {
-    return tan(__pytra_float($v));
-}
-
-function pyMathExp($v): float {
-    return exp(__pytra_float($v));
-}
-
-function pyMathLog($v): float {
-    return log(__pytra_float($v));
-}
-
-function pyMathFabs($v): float {
-    return abs(__pytra_float($v));
-}
-
-function pyMathFloor($v): float {
-    return floor(__pytra_float($v));
-}
-
-function pyMathCeil($v): float {
-    return ceil(__pytra_float($v));
-}
-
-function pyMathPow($a, $b): float {
-    return pow(__pytra_float($a), __pytra_float($b));
-}
-
-function pyMathPi(): float {
-    return M_PI;
-}
-
-function pyMathE(): float {
-    return M_E;
-}
-
-function pyJsonLoads($v) {
-    $text = (string)$v;
-    return json_decode($text, true, 512, JSON_THROW_ON_ERROR);
-}
-
-function pyJsonDumps($v): string {
-    return json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-}
-
-class Path {
-    public string $path;
-    public string $name;
-    public string $stem;
-    public ?Path $parent;
-
-    public function __construct($value) {
-        $this->path = (string)$value;
-        $this->name = basename($this->path);
-        $dot = strrpos($this->name, '.');
-        $this->stem = ($dot === false || $dot === 0) ? $this->name : substr($this->name, 0, $dot);
-        $parentTxt = dirname($this->path);
-        if ($parentTxt === '' || $parentTxt === $this->path) {
-            $this->parent = null;
-        } else {
-            $this->parent = new Path($parentTxt);
-        }
-    }
-
-    public function __toString(): string {
-        return $this->path;
-    }
-
-    public function resolve(): Path {
-        $resolved = realpath($this->path);
-        if ($resolved === false) {
-            $resolved = $this->path;
-        }
-        return new Path($resolved);
-    }
-
-    public function exists(): bool {
-        return file_exists($this->path);
-    }
-
-    public function mkdir($parents = false, $exist_ok = false): void {
-        if ($exist_ok && file_exists($this->path)) {
-            return;
-        }
-        if ((bool)$parents) {
-            if (@mkdir($this->path, 0777, true)) {
-                return;
-            }
-            if ((bool)$exist_ok && is_dir($this->path)) {
-                return;
-            }
-            throw new RuntimeException("mkdir failed: " . $this->path);
-        }
-        if (@mkdir($this->path)) {
-            return;
-        }
-        if ((bool)$exist_ok && is_dir($this->path)) {
-            return;
-        }
-        throw new RuntimeException("mkdir failed: " . $this->path);
-    }
-
-    public function write_text($text, $encoding = "utf-8"): int {
-        $bytes = file_put_contents($this->path, (string)$text);
-        if ($bytes === false) {
-            throw new RuntimeException("write_text failed: " . $this->path);
-        }
-        return $bytes;
-    }
-
-    public function read_text($encoding = "utf-8"): string {
-        $data = file_get_contents($this->path);
-        if ($data === false) {
-            throw new RuntimeException("read_text failed: " . $this->path);
-        }
-        return $data;
-    }
-}
+// Math/JSON/Path functions removed per spec §6:
+// pytra.std.math → std/math.php via @extern delegation.
+// pytra.std.json → std/json.php via @extern delegation.
+// pytra.std.pathlib → std/pathlib.php (emitter-generated Path class).

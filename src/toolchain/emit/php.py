@@ -7,7 +7,6 @@ Usage:
 
 from __future__ import annotations
 
-import shutil
 import sys
 from pathlib import Path
 
@@ -16,24 +15,13 @@ from toolchain.emit.loader import emit_all_modules
 
 
 def _overlay_native_std(output_dir: str) -> None:
-    """Overwrite linker-generated std modules with native implementations.
+    """No-op: @extern delegation in emitter + _native runtime files handle this.
 
-    The linker emits math/east.php and time/east.php from the EAST IR, but
-    their function bodies reference the Python stdlib (e.g. ``$math->sqrt``)
-    which is invalid in PHP.  Native seam files provide correct
-    implementations that delegate to PHP built-in functions.
+    Previously this overwrote linker-generated std modules, but the emitter
+    now generates proper __native_ delegation code.  The native seam files
+    (std/time_native.php, std/math_native.php) are copied by copy_native_runtime.
     """
-    src_root = Path(__file__).resolve().parents[2] / "runtime" / "php"
-    out = Path(output_dir)
-    overlays = [
-        ("std/math_native.php", "math/east.php"),
-        ("std/time_native.php", "time/east.php"),
-    ]
-    for src_rel, dst_rel in overlays:
-        src = src_root / src_rel
-        dst = out / dst_rel
-        if src.exists() and dst.exists():
-            shutil.copy2(str(src), str(dst))
+    pass
 
 
 def main() -> int:

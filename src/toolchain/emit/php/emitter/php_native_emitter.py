@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from toolchain.emit.common.emitter.code_emitter import (
+    build_import_alias_map,
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
     reject_backend_typed_vararg_signatures,
 )
@@ -529,9 +530,9 @@ def _runtime_extern_kind(expr: dict[str, Any]) -> str:
 
 
 def _uses_zero_arg_runtime_value_getter(expr: dict[str, Any]) -> bool:
-    if _runtime_extern_kind(expr) != "value":
-        return False
-    return _runtime_symbol_name(expr) in {"pi", "e"}
+    # Use runtime extern_kind == "value" to detect zero-arg value getters.
+    # No hardcoded symbol names (spec §12).
+    return _runtime_extern_kind(expr) == "value"
 
 
 def _render_runtime_args(args: list[Any], keywords_any: Any) -> list[str]:
@@ -575,6 +576,11 @@ def _render_call_via_runtime_call(
     rendered_args = _render_runtime_args(args, keywords_any)
     if runtime_source == "runtime_call":
         if semantic_tag.startswith("stdlib.fn."):
+            # For imported functions (e.g. perf_counter from std/time.php),
+            # use the plain function name — the module is already require_once'd.
+            # Dotted calls (e.g. math.sqrt) are handled by the Attribute path.
+            if runtime_call.find(".") < 0:
+                return runtime_call + "(" + ", ".join(rendered_args) + ")"
             return runtime_symbol + "(" + ", ".join(rendered_args) + ")"
         return ""
     if runtime_source == "resolved_runtime_call":
@@ -725,8 +731,26 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "new Path(\"\")"
         return "new Path(" + _render_expr(args[0]) + ")"
 
+    # Use runtime_call_adapter_kind when available (spec §1)
+    adapter_kind_any = expr.get("runtime_call_adapter_kind")
+    adapter_kind = adapter_kind_any if isinstance(adapter_kind_any, str) else ""
+    if adapter_kind == "extern_delegate":
+        # Bare function name — std module's @extern delegation provides it
+        bare_name = _call_name(expr)
+        if bare_name != "":
+            rendered_args_ad: list[str] = []
+            _ad_i = 0
+            while _ad_i < len(args):
+                rendered_args_ad.append(_render_expr(args[_ad_i]))
+                _ad_i += 1
+            return bare_name + "(" + ", ".join(rendered_args_ad) + ")"
+    # For "builtin" adapter_kind, fall through to existing special-case handlers
+    # (print → __pytra_print, bytearray → bytearray, etc.) which know the
+    # correct naming for each built-in function in py_runtime.php.
+
+    # Fallback: use runtime_call / resolved_runtime_call (pre-adapter_kind path)
     runtime_call, runtime_source = _resolved_runtime_call(expr)
-    if semantic_tag.startswith("stdlib.") and runtime_call == "":
+    if semantic_tag.startswith("stdlib.") and runtime_call == "" and adapter_kind == "":
         raise RuntimeError("php native emitter: unresolved stdlib runtime call: " + semantic_tag)
     if runtime_call != "":
         rendered_runtime = _render_call_via_runtime_call(
@@ -755,6 +779,13 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
 
     if callee_name.startswith("py_assert_"):
         return "true"
+    if callee_name == "cast":
+        # cast(Type, value) is a type narrowing no-op in dynamically typed PHP
+        if len(args) >= 2:
+            return _render_expr(args[1])
+        if len(args) == 1:
+            return _render_expr(args[0])
+        return "null"
     if callee_name == "print":
         rendered: list[str] = []
         i = 0
@@ -1383,6 +1414,37 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         lhs = _target_lhs(sd.get("target"))
         if sd.get("value") is None:
             return [indent + lhs + " = null;"]
+        # Detect extern() variable declarations (spec §4)
+        # Prefer meta.extern_var_v1 when available; fallback to Unbox(Call(extern)) pattern
+        _ann_meta = sd.get("meta")
+        _ann_extern_v1 = _ann_meta.get("extern_var_v1") if isinstance(_ann_meta, dict) else None
+        _is_extern_var = False
+        _extern_symbol = ""
+        if isinstance(_ann_extern_v1, dict):
+            _extern_symbol = _ann_extern_v1.get("symbol", "")
+            if isinstance(_extern_symbol, str) and _extern_symbol != "":
+                _is_extern_var = True
+        if not _is_extern_var:
+            # Fallback: detect Unbox(Call(extern, ...)) pattern
+            _ann_val = sd.get("value")
+            if isinstance(_ann_val, dict):
+                _ann_inner = _ann_val
+                if _ann_inner.get("kind") == "Unbox":
+                    _ann_inner = _ann_inner.get("value", {})
+                    if not isinstance(_ann_inner, dict):
+                        _ann_inner = {}
+                if _ann_inner.get("kind") == "Call":
+                    _ann_func = _ann_inner.get("func")
+                    if isinstance(_ann_func, dict) and _ann_func.get("id") == "extern":
+                        _is_extern_var = True
+        if _is_extern_var:
+            target_any2 = sd.get("target")
+            var_name = ""
+            if isinstance(target_any2, dict) and target_any2.get("kind") == "Name":
+                var_name = _safe_ident(target_any2.get("id"), "var")
+            if var_name != "":
+                native_sym = _extern_symbol if _extern_symbol != "" else var_name
+                return [indent + "if (!defined('" + var_name + "')) { define('" + var_name + "', $__native_" + native_sym + "); }"]
         listcomp_lines = _emit_listcomp_assign(lhs, sd.get("value"), indent=indent, ctx=ctx)
         if listcomp_lines is not None:
             return listcomp_lines
@@ -1589,6 +1651,29 @@ def _emit_function(
 ) -> list[str]:
     name = _safe_ident(fn.get("name"), "func")
     method_name = "__construct" if in_class and name == "__init__" else name
+
+    # @extern: generate delegation to __native (same file was require_once'd above)
+    # Wrap in function_exists() to avoid redefining PHP built-in functions
+    decorators_any = fn.get("decorators")
+    if isinstance(decorators_any, list) and "extern" in decorators_any and not in_class:
+        arg_order_any = fn.get("arg_order")
+        arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+        safe_args: list[str] = []
+        sa_i = 0
+        while sa_i < len(arg_order):
+            a = arg_order[sa_i]
+            sa_i += 1
+            if isinstance(a, str):
+                safe_args.append("$" + _safe_ident(a, "arg"))
+        params_str = ", ".join(safe_args)
+        call_args = ", ".join(safe_args)
+        lines: list[str] = [indent + "if (!function_exists('" + name + "')) {"]
+        lines.append(indent + "    function " + name + "(" + params_str + ") {")
+        lines.append(indent + "        return __native_" + name + "(" + call_args + ");")
+        lines.append(indent + "    }")
+        lines.append(indent + "}")
+        return lines
+
     params = _function_params(fn, drop_self=in_class)
     prefix = "public function " if in_class else "function "
     lines: list[str] = [indent + prefix + method_name + "(" + params + ") {"]
@@ -1633,8 +1718,34 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
             j += 1
         lines.append("")
 
-    # Collect instance properties from __init__ body (self.xxx = ...)
+    # Collect instance properties from __init__ body (self.xxx = ...), recursively
     init_props: list[str] = []
+
+    def _scan_self_props(stmts: list[Any]) -> None:
+        si = 0
+        while si < len(stmts):
+            ss = stmts[si]
+            si += 1
+            if not isinstance(ss, dict):
+                continue
+            sk = ss.get("kind")
+            if sk in ("Assign", "AnnAssign"):
+                target_any2 = ss.get("target")
+                targets_any2 = ss.get("targets")
+                if isinstance(targets_any2, list) and len(targets_any2) > 0:
+                    target_any2 = targets_any2[0]
+                if isinstance(target_any2, dict) and target_any2.get("kind") == "Attribute":
+                    val_node = target_any2.get("value")
+                    if isinstance(val_node, dict) and val_node.get("kind") == "Name" and val_node.get("id") == "self":
+                        prop_name = target_any2.get("attr")
+                        if isinstance(prop_name, str) and prop_name not in init_props and prop_name not in dataclass_fields:
+                            init_props.append(prop_name)
+            # Recurse into control flow blocks
+            for block_key in ("body", "orelse", "handlers", "finalbody"):
+                block = ss.get(block_key)
+                if isinstance(block, list):
+                    _scan_self_props(block)
+
     i = 0
     while i < len(body):
         node = body[i]
@@ -1643,20 +1754,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
             if isinstance(fn_name_any, str) and fn_name_any == "__init__":
                 init_body_any = node.get("body")
                 init_body = init_body_any if isinstance(init_body_any, list) else []
-                for init_stmt in init_body:
-                    if not isinstance(init_stmt, dict):
-                        continue
-                    if init_stmt.get("kind") in {"Assign", "AnnAssign"}:
-                        target_any2 = init_stmt.get("target")
-                        targets_any2 = init_stmt.get("targets")
-                        if isinstance(targets_any2, list) and len(targets_any2) > 0:
-                            target_any2 = targets_any2[0]
-                        if isinstance(target_any2, dict) and target_any2.get("kind") == "Attribute":
-                            val_node = target_any2.get("value")
-                            if isinstance(val_node, dict) and val_node.get("kind") == "Name" and val_node.get("id") == "self":
-                                prop_name = target_any2.get("attr")
-                                if isinstance(prop_name, str) and prop_name not in init_props and prop_name not in dataclass_fields:
-                                    init_props.append(prop_name)
+                _scan_self_props(init_body)
         i += 1
     if len(init_props) > 0:
         for prop in init_props:
@@ -1704,6 +1802,16 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
     ed: dict[str, Any] = east_doc
     if ed.get("kind") != "Module":
         raise RuntimeError("php native emitter: root kind must be Module")
+
+    # Skip built_in modules — py_runtime provides their functions directly (spec §6)
+    _skip_meta = ed.get("meta")
+    if isinstance(_skip_meta, dict):
+        _skip_ctx = _skip_meta.get("emit_context")
+        if isinstance(_skip_ctx, dict):
+            _skip_mid = _skip_ctx.get("module_id")
+            if isinstance(_skip_mid, str) and ".built_in." in _skip_mid:
+                return ""
+
     body_any = ed.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("php native emitter: Module.body must be list")
@@ -1713,27 +1821,78 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
     main_guard_any = ed.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 
-    # Calculate relative path prefix for sub-modules
+    # Resolve emit_context for path computation
     meta_any = ed.get("meta")
     meta = meta_any if isinstance(meta_any, dict) else {}
-    module_id_any = meta.get("module_id")
-    module_id = module_id_any if isinstance(module_id_any, str) else ""
-    # Module depth: number of dots in module_id (e.g. "png.east" → depth 1)
-    module_depth = module_id.count(".") if module_id != "" else 0
-    parent_prefix = "../" * module_depth if module_depth > 0 else ""
+    emit_ctx_any = meta.get("emit_context")
+    emit_ctx = emit_ctx_any if isinstance(emit_ctx_any, dict) else {}
+    root_rel_prefix = emit_ctx.get("root_rel_prefix")
+    root_rel_prefix = root_rel_prefix if isinstance(root_rel_prefix, str) else "./"
+    emit_module_id = emit_ctx.get("module_id")
+    emit_module_id = emit_module_id if isinstance(emit_module_id, str) else ""
 
     lines: list[str] = [
         "<?php",
         "declare(strict_types=1);",
         "",
-        "require_once __DIR__ . '/" + parent_prefix + "pytra/py_runtime.php';",
+        "require_once __DIR__ . '/" + root_rel_prefix + "built_in/py_runtime.php';",
     ]
 
+    # Detect @extern functions or extern() variables to generate __native require
+    has_extern = False
+    extern_fn_i = 0
+    while extern_fn_i < len(body_any):
+        _ef_node = body_any[extern_fn_i]
+        extern_fn_i += 1
+        if not isinstance(_ef_node, dict):
+            continue
+        _ef_kind = _ef_node.get("kind")
+        if _ef_kind == "FunctionDef":
+            _ef_decs = _ef_node.get("decorators")
+            if isinstance(_ef_decs, list) and "extern" in _ef_decs:
+                has_extern = True
+                break
+        if _ef_kind in ("AnnAssign", "Assign"):
+            # Prefer meta.extern_var_v1 (spec §4)
+            _ef_meta = _ef_node.get("meta")
+            if isinstance(_ef_meta, dict) and isinstance(_ef_meta.get("extern_var_v1"), dict):
+                has_extern = True
+                break
+            # Fallback: Unbox(Call(extern, ...)) pattern
+            _ef_val = _ef_node.get("value")
+            if isinstance(_ef_val, dict):
+                _ef_inner = _ef_val
+                if _ef_inner.get("kind") == "Unbox":
+                    _ef_inner = _ef_inner.get("value", {})
+                    if not isinstance(_ef_inner, dict):
+                        _ef_inner = {}
+                if _ef_inner.get("kind") == "Call":
+                    _ef_func = _ef_inner.get("func")
+                    if isinstance(_ef_func, dict) and _ef_func.get("id") == "extern":
+                        has_extern = True
+                        break
+    if has_extern:
+        clean_mod_id = emit_module_id.replace(".east", "") if emit_module_id.endswith(".east") else emit_module_id
+        canonical = canonical_runtime_module_id(clean_mod_id) if clean_mod_id != "" else ""
+        native_path = ""
+        if canonical != "":
+            _np_parts = canonical.split(".")
+            if len(_np_parts) > 1 and _np_parts[0] == "pytra":
+                native_path = "/".join(_np_parts[1:]) + "_native.php"
+            else:
+                native_path = "/".join(_np_parts) + "_native.php"
+        else:
+            _np_stem = clean_mod_id.rsplit(".", 1)[-1] if "." in clean_mod_id else clean_mod_id
+            native_path = _np_stem + "_native.php"
+        if native_path != "":
+            lines.append("require_once __DIR__ . '/" + root_rel_prefix + native_path + "';")
+
     # Emit require_once for linked sub-modules
-    meta_any = ed.get("meta")
-    meta = meta_any if isinstance(meta_any, dict) else {}
+    # Use mechanical _module_id_to_import_path (spec §3): strip "pytra." prefix,
+    # replace "." with "/", append ".php".  No hardcoded module names.
     import_bindings_any = meta.get("import_bindings")
     import_bindings = import_bindings_any if isinstance(import_bindings_any, list) else []
+    _PYTRA_DECORATOR_IMPORTS = {"abi", "extern", "template"}
     required_modules: set[str] = set()
     ib_i = 0
     while ib_i < len(import_bindings):
@@ -1741,54 +1900,41 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
         ib_i += 1
         if not isinstance(binding, dict):
             continue
-        module_id_any = binding.get("module_id")
-        if not isinstance(module_id_any, str):
+        bind_module_id_any = binding.get("module_id")
+        if not isinstance(bind_module_id_any, str):
             continue
-        module_id: str = module_id_any
-        # Skip pytra.built_in.* (provided by py_runtime.php)
-        if module_id.startswith("pytra.built_in"):
+        bind_module_id: str = bind_module_id_any
+        # Skip built_in modules (provided by py_runtime.php) — spec §6
+        if ".built_in." in bind_module_id or bind_module_id.endswith(".built_in"):
             continue
-        # pytra.std → sub-module from export_name (e.g. math → math/east.php)
-        # pytra.std.time → time/east.php
-        # Skip decorator-only imports (abi, extern, template)
-        _PYTRA_STD_DECORATORS = {"abi", "extern", "template"}
-        if module_id == "pytra.std":
-            binding_kind_any2 = binding.get("binding_kind")
-            export_name_any2 = binding.get("export_name")
-            if isinstance(binding_kind_any2, str) and binding_kind_any2 == "symbol" and isinstance(export_name_any2, str) and export_name_any2 != "":
-                if export_name_any2 in _PYTRA_STD_DECORATORS:
-                    continue
-                require_path = export_name_any2 + "/east.php"
-                if require_path not in required_modules:
-                    required_modules.add(require_path)
-                    lines.append("require_once __DIR__ . '/" + require_path + "';")
-            continue
-        if module_id.startswith("pytra.std."):
-            # e.g. pytra.std.time → time/east.php
-            mod_tail = module_id[len("pytra.std."):]
-            require_path = mod_tail + "/east.php"
-            if require_path not in required_modules:
-                required_modules.add(require_path)
-                lines.append("require_once __DIR__ . '/" + require_path + "';")
-            continue
-        # pytra.utils.* → sub-module from module_id parts
+        # Skip decorator-only imports
         binding_kind_any = binding.get("binding_kind")
         binding_kind = binding_kind_any if isinstance(binding_kind_any, str) else ""
         export_name_any = binding.get("export_name")
         export_name = export_name_any if isinstance(export_name_any, str) else ""
-        if module_id.startswith("pytra.utils"):
-            parts = module_id.split(".")
-            if len(parts) >= 3:
-                # pytra.utils.gif → gif/east.php
-                require_path = parts[2] + "/east.php"
-            elif binding_kind == "symbol" and export_name != "":
-                require_path = export_name + "/east.php"
-            else:
-                continue
-        else:
-            # General: module_id dots → path e.g. io_ops.east → io_ops/east.php
-            parts = module_id.split(".")
-            require_path = "/".join(parts) + ".php"
+        if binding_kind == "symbol" and export_name in _PYTRA_DECORATOR_IMPORTS:
+            continue
+        # Resolve the effective module_id for the require path.
+        # For "from pytra.std import time" (module_id="pytra.std", export="time"),
+        # the actual sub-module is module_id + "." + export_name.
+        effective_id = bind_module_id
+        if binding_kind == "symbol" and export_name != "":
+            # Check if the linker has already resolved this to a sub-module;
+            # for aggregate modules, the imported symbol is a sub-module.
+            candidate = bind_module_id + "." + export_name
+            # Only expand if the binding looks like a sub-module (not a function symbol).
+            # If the module itself has "." beyond "pytra.", the linker resolved it fully.
+            parts_count = bind_module_id.count(".")
+            if parts_count <= 1:
+                # e.g. pytra.std + time → pytra.std.time
+                effective_id = candidate
+        # Skip non-pytra imports (Python stdlib like os.path, typing, etc.)
+        # These are handled by @extern delegation and native files.
+        if not effective_id.startswith("pytra."):
+            continue
+        # Mechanical path generation (spec §3)
+        rel = effective_id[len("pytra."):]
+        require_path = root_rel_prefix + rel.replace(".", "/") + ".php"
         if require_path not in required_modules:
             required_modules.add(require_path)
             lines.append("require_once __DIR__ . '/" + require_path + "';")
@@ -1800,33 +1946,37 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
         lines.append("")
 
     _CLASS_NAMES[0] = set()
-    _RELATIVE_IMPORT_MODULE_ALIASES[0] = _collect_relative_import_module_aliases(east_doc)
-    _RELATIVE_IMPORT_SYMBOL_ALIASES[0] = _collect_relative_import_symbol_aliases(east_doc)
-    # Collect imported module names from import_bindings for Attribute resolution
-    imported_mods: set[str] = set()
-    ib_list = import_bindings if isinstance(import_bindings, list) else []
-    for _ib_item in ib_list:
-        if isinstance(_ib_item, dict):
-            _ib_kind = _ib_item.get("binding_kind")
-            _ib_local = _ib_item.get("local_name")
-            _ib_mod = _ib_item.get("module_id")
-            if isinstance(_ib_kind, str) and isinstance(_ib_local, str) and isinstance(_ib_mod, str):
-                if _ib_kind == "symbol" and not _ib_mod.startswith("pytra.built_in"):
-                    imported_mods.add(_ib_local)
-    _IMPORTED_MODULE_NAMES[0] = imported_mods
+    # Use build_import_alias_map (spec §7) for import alias resolution
+    _alias_map = build_import_alias_map(meta)
+    _RELATIVE_IMPORT_MODULE_ALIASES[0] = {}
+    _RELATIVE_IMPORT_SYMBOL_ALIASES[0] = {}
+    _IMPORTED_MODULE_NAMES[0] = set(_alias_map.keys())
     functions: list[dict[str, Any]] = []
     classes: list[dict[str, Any]] = []
+    top_stmts: list[dict[str, Any]] = []
     i = 0
     while i < len(body_any):
         node = body_any[i]
         if isinstance(node, dict):
             nd: dict[str, Any] = node
-            if nd.get("kind") == "FunctionDef":
+            nd_kind = nd.get("kind")
+            if nd_kind == "FunctionDef":
                 functions.append(node)
-            elif nd.get("kind") == "ClassDef":
+            elif nd_kind == "ClassDef":
                 classes.append(node)
                 _CLASS_NAMES[0].add(_safe_ident(nd.get("name"), "PytraClass"))
+            elif nd_kind in ("AnnAssign", "Assign"):
+                top_stmts.append(node)
         i += 1
+
+    # Emit top-level variable declarations (e.g. extern() pi/e)
+    ctx_top: dict[str, Any] = {}
+    i = 0
+    while i < len(top_stmts):
+        lines.extend(_emit_stmt(top_stmts[i], indent="", ctx=ctx_top))
+        i += 1
+    if len(top_stmts) > 0:
+        lines.append("")
 
     i = 0
     while i < len(classes):
@@ -1861,8 +2011,10 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
             class_names.add(_safe_ident(name_any, "PytraClass"))
         i += 1
 
-    # Only emit entry point wrapper when there is a main guard body
-    if len(main_guard) > 0:
+    # Only emit entry point wrapper for entry modules (spec §8)
+    _is_entry = emit_ctx.get("is_entry")
+    _is_entry = _is_entry if isinstance(_is_entry, bool) else False
+    if _is_entry and len(main_guard) > 0:
         if "__pytra_main" in fn_names and "main" not in fn_names:
             lines.append("function main(): void {")
             lines.append("    __pytra_main();")
