@@ -474,6 +474,10 @@ class CppModuleEmitter:
                 )
                 if helper_include != "":
                     out.add(helper_include)
+                if op == "isinstance":
+                    tid_include = self._module_name_to_cpp_include("pytra.built_in.type_id")
+                    if tid_include != "":
+                        out.add(tid_include)
             elif kind == "Call":
                 helper_include = self._module_name_to_cpp_include(
                     _CPP_HELPER_MODULE_BY_RUNTIME_CALL.get(dict_any_get_str(d2, "runtime_call"), "")

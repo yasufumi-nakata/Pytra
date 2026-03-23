@@ -58,7 +58,7 @@ def main(argv: list[str]) -> int:
         Scans module sources for #include directives, resolves them against
         the generated directory, and links the corresponding .cpp if it exists.
         """
-        gen_dir = os.environ.get("PYTRA_GENERATED_CPP_DIR", "out/_test_generated_cpp")
+        gen_dir = os.environ.get("PYTRA_GENERATED_CPP_DIR", "work/out/_test_generated_cpp")
         gen_path = Path(gen_dir)
         if not gen_path.exists():
             return []
@@ -99,6 +99,12 @@ def main(argv: list[str]) -> int:
                         if header_ref in included_headers:
                             seen.add(str(cpp_file))
                             needed.append(cpp_file)
+        # type_id.cpp is always needed (provides py_tid_is_subtype etc.,
+        # referenced from type_id_support.h via forward declarations).
+        type_id_cpp = gen_path / "built_in" / "type_id.cpp"
+        if type_id_cpp.exists() and str(type_id_cpp) not in seen:
+            seen.add(str(type_id_cpp))
+            needed.append(type_id_cpp)
         return [str(f) for f in needed if f.exists()]
 
     manifest = _load_manifest(manifest_path)
@@ -123,7 +129,7 @@ def main(argv: list[str]) -> int:
         "-I",
         str(include_dir_path),
         "-I",
-        os.environ.get("PYTRA_GENERATED_CPP_DIR", "out/_test_generated_cpp"),
+        os.environ.get("PYTRA_GENERATED_CPP_DIR", "work/out/_test_generated_cpp"),
         *module_sources,
         *collect_runtime_cpp_sources(module_sources, include_dir_path),
         *_collect_generated_cpp_sources(),
