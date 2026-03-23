@@ -344,7 +344,8 @@ class ContainerValueLocalHintPass(East3OptimizerPass):
             arg_names: list[str] = []
             arg_types = stmt.get("arg_types")
             at = arg_types if isinstance(arg_types, dict) else {}
-            for raw_name in _dict_items(stmt.get("arg_order")):
+            raw_order = stmt.get("arg_order")
+            for raw_name in (raw_order if isinstance(raw_order, list) else []):
                 if isinstance(raw_name, str) and raw_name != "" and raw_name in at:
                     arg_names.append(raw_name)
             mutated = _header_collect_mutated_params_simple(fn_body, arg_names)
