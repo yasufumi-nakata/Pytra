@@ -18,7 +18,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CACHE_FILE = ROOT / "out" / "sample_regen_cache.json"
+DEFAULT_CACHE_FILE = ROOT / "work" / "sample_regen_cache.json"
 DEFAULT_VERSIONS_FILE = ROOT / "src" / "toolchain" / "compiler" / "transpiler_versions.json"
 CACHE_VERSION = 1
 
