@@ -1,4 +1,4 @@
-public final class _12_sort_visualizer {
+final class _12_sort_visualizer {
     private _12_sort_visualizer() {
     }
 
@@ -9,15 +9,13 @@ public final class _12_sort_visualizer {
         java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray(w * h);
         long n = ((long)(values.size()));
         double bar_w = ((double)(w)) / ((double)(n));
-        double __hoisted_cast_1 = ((double)(n));
-        double __hoisted_cast_2 = ((double)(h));
         for (long i = 0L; i < n; i += 1L) {
             long x0 = PyRuntime.__pytra_int(((double)(i)) * bar_w);
             long x1 = PyRuntime.__pytra_int((((double)(i + 1L))) * bar_w);
-            if ((x1 <= x0)) {
+            if (((x1) <= (x0))) {
                 x1 = x0 + 1L;
             }
-            long bh = PyRuntime.__pytra_int(((double)(((Long)(values.get((int)((((i) < 0L) ? (((long)(values.size())) + (i)) : (i)))))))) / __hoisted_cast_1 * __hoisted_cast_2);
+            long bh = PyRuntime.__pytra_int(((double)(((Long)(values.get((int)((((i) < 0L) ? (((long)(values.size())) + (i)) : (i)))))))) / ((double)(n)) * ((double)(h)));
             long y = h - bh;
             for (y = y; y < h; y += 1L) {
                 for (long x = x0; x < x1; x += 1L) {
@@ -25,7 +23,7 @@ public final class _12_sort_visualizer {
                 }
             }
         }
-        return new java.util.ArrayList<Long>(frame);
+        return PyRuntime.__pytra_bytearray(frame);
     }
 
     public static void run_12_sort_visualizer() {
@@ -33,24 +31,25 @@ public final class _12_sort_visualizer {
         long h = 180L;
         long n = 124L;
         String out_path = "sample/out/12_sort_visualizer.gif";
-        double start = (System.nanoTime() / 1000000000.0);
+        double start = time.perf_counter();
         java.util.ArrayList<Long> values = new java.util.ArrayList<Long>();
-        for (long i = 0L; i < n; i += 1L) {
+        long i = 0L;
+        for (i = 0L; i < n; i += 1L) {
             values.add((i * 37L + 19L) % n);
         }
         java.util.ArrayList<java.util.ArrayList<Long>> frames = new java.util.ArrayList<java.util.ArrayList<Long>>(java.util.Arrays.asList(render(values, w, h)));
         long frame_stride = 16L;
         long op = 0L;
-        for (long i = 0L; i < n; i += 1L) {
+        for (i = 0L; i < n; i += 1L) {
             boolean swapped = false;
             for (long j = 0L; j < n - i - 1L; j += 1L) {
-                if ((((Long)(values.get((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j)))))) > ((Long)(values.get((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L)))))))) {
-                    java.util.ArrayList<Object> __tuple_0 = ((java.util.ArrayList<Object>)(Object)(new java.util.ArrayList<Object>(java.util.Arrays.asList(((Long)(values.get((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L)))))), ((Long)(values.get((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j))))))))));
-                    values.set((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j))), ((Long)(__tuple_0.get(0))));
-                    values.set((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L))), ((Long)(__tuple_0.get(1))));
+                if (((((Long)(values.get((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j))))))) > (((Long)(values.get((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L))))))))) {
+                    long __swap_tmp_0 = ((Long)(values.get((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j))))));
+                    values.set((int)((((j) < 0L) ? (((long)(values.size())) + (j)) : (j))), ((Long)(values.get((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L)))))));
+                    values.set((int)((((j + 1L) < 0L) ? (((long)(values.size())) + (j + 1L)) : (j + 1L))), __swap_tmp_0);
                     swapped = true;
                 }
-                if ((op % frame_stride == 0L)) {
+                if (((op % frame_stride) == (0L))) {
                     frames.add(render(values, w, h));
                 }
                 op += 1L;
@@ -59,14 +58,10 @@ public final class _12_sort_visualizer {
                 break;
             }
         }
-        PyRuntime.__pytra_noop(out_path, w, h, frames, new java.util.ArrayList<Long>());
-        double elapsed = (System.nanoTime() / 1000000000.0) - start;
+        gif.save_gif(out_path, w, h, frames, gif.grayscale_palette(), 3L, 0L);
+        double elapsed = time.perf_counter() - start;
         System.out.println(String.valueOf("output:") + " " + String.valueOf(out_path));
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(((long)(frames.size()))));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
-    }
-
-    public static void main(String[] args) {
-        run_12_sort_visualizer();
     }
 }

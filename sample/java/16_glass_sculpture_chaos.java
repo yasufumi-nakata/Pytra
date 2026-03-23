@@ -1,4 +1,4 @@
-public final class _16_glass_sculpture_chaos {
+final class _16_glass_sculpture_chaos {
     private _16_glass_sculpture_chaos() {
     }
 
@@ -6,10 +6,10 @@ public final class _16_glass_sculpture_chaos {
     // 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
 
     public static double clamp01(double v) {
-        if ((v < 0.0)) {
+        if (((v) < (0.0))) {
             return 0.0;
         }
-        if ((v > 1.0)) {
+        if (((v) > (1.0))) {
             return 1.0;
         }
         return v;
@@ -20,12 +20,12 @@ public final class _16_glass_sculpture_chaos {
     }
 
     public static double length(double x, double y, double z) {
-        return Math.sqrt(x * x + y * y + z * z);
+        return math.sqrt(x * x + y * y + z * z);
     }
 
     public static Object normalize(double x, double y, double z) {
         double l = length(x, y, z);
-        if ((l < 1e-09)) {
+        if (((l) < (1e-09))) {
             return new java.util.ArrayList<Object>(java.util.Arrays.asList(0.0, 0.0, 0.0));
         }
         return new java.util.ArrayList<Object>(java.util.Arrays.asList(x / l, y / l, z / l));
@@ -37,12 +37,12 @@ public final class _16_glass_sculpture_chaos {
     }
 
     public static Object refract(double ix, double iy, double iz, double nx, double ny, double nz, double eta) {
-        double cosi = (-dot(ix, iy, iz, nx, ny, nz));
+        double cosi = (-(dot(ix, iy, iz, nx, ny, nz)));
         double sint2 = eta * eta * (1.0 - cosi * cosi);
-        if ((sint2 > 1.0)) {
+        if (((sint2) > (1.0))) {
             return reflect(ix, iy, iz, nx, ny, nz);
         }
-        double cost = Math.sqrt(1.0 - sint2);
+        double cost = math.sqrt(1.0 - sint2);
         double k = eta * cosi - cost;
         return new java.util.ArrayList<Object>(java.util.Arrays.asList(eta * ix + k * nx, eta * iy + k * ny, eta * iz + k * nz));
     }
@@ -57,7 +57,7 @@ public final class _16_glass_sculpture_chaos {
         double r = 0.06 + 0.2 * t;
         double g = 0.1 + 0.25 * t;
         double b = 0.16 + 0.45 * t;
-        double band = 0.5 + 0.5 * Math.sin(8.0 * dx + 6.0 * dz + tphase);
+        double band = 0.5 + 0.5 * math.sin(8.0 * dx + 6.0 * dz + tphase);
         r += 0.08 * band;
         g += 0.05 * band;
         b += 0.12 * band;
@@ -71,50 +71,48 @@ public final class _16_glass_sculpture_chaos {
         double b = lx * dx + ly * dy + lz * dz;
         double c = lx * lx + ly * ly + lz * lz - radius * radius;
         double h = b * b - c;
-        if ((h < 0.0)) {
-            return (-1.0);
+        if (((h) < (0.0))) {
+            return (-(1.0));
         }
-        double s = Math.sqrt(h);
-        double t0 = (-b) - s;
-        if ((t0 > 0.0001)) {
+        double s = math.sqrt(h);
+        double t0 = (-(b)) - s;
+        if (((t0) > (0.0001))) {
             return t0;
         }
-        double t1 = (-b) + s;
-        if ((t1 > 0.0001)) {
+        double t1 = (-(b)) + s;
+        if (((t1) > (0.0001))) {
             return t1;
         }
-        return (-1.0);
+        return (-(1.0));
     }
 
     public static java.util.ArrayList<Long> palette_332() {
         java.util.ArrayList<Long> p = PyRuntime.__pytra_bytearray(256L * 3L);
-        double __hoisted_cast_1 = ((double)(7L));
-        double __hoisted_cast_2 = ((double)(3L));
         for (long i = 0L; i < 256L; i += 1L) {
-            long r = i + 5L + 7L;
-            long g = i + 2L + 7L;
-            long b = i + 3L;
-            p.set((int)((((i * 3L + 0L) < 0L) ? (((long)(p.size())) + (i * 3L + 0L)) : (i * 3L + 0L))), PyRuntime.__pytra_int(((double)(255L * r)) / __hoisted_cast_1));
-            p.set((int)((((i * 3L + 1L) < 0L) ? (((long)(p.size())) + (i * 3L + 1L)) : (i * 3L + 1L))), PyRuntime.__pytra_int(((double)(255L * g)) / __hoisted_cast_1));
-            p.set((int)((((i * 3L + 2L) < 0L) ? (((long)(p.size())) + (i * 3L + 2L)) : (i * 3L + 2L))), PyRuntime.__pytra_int(((double)(255L * b)) / __hoisted_cast_2));
+            long r = i >> 5L & 7L;
+            long g = i >> 2L & 7L;
+            long b = i & 3L;
+            p.set((int)((((i * 3L + 0L) < 0L) ? (((long)(p.size())) + (i * 3L + 0L)) : (i * 3L + 0L))), PyRuntime.__pytra_int(((double)(255L * r)) / ((double)(7L))));
+            p.set((int)((((i * 3L + 1L) < 0L) ? (((long)(p.size())) + (i * 3L + 1L)) : (i * 3L + 1L))), PyRuntime.__pytra_int(((double)(255L * g)) / ((double)(7L))));
+            p.set((int)((((i * 3L + 2L) < 0L) ? (((long)(p.size())) + (i * 3L + 2L)) : (i * 3L + 2L))), PyRuntime.__pytra_int(((double)(255L * b)) / ((double)(3L))));
         }
-        return new java.util.ArrayList<Long>(p);
+        return PyRuntime.__pytra_bytearray(p);
     }
 
     public static long quantize_332(double r, double g, double b) {
         long rr = PyRuntime.__pytra_int(clamp01(r) * 255.0);
         long gg = PyRuntime.__pytra_int(clamp01(g) * 255.0);
         long bb = PyRuntime.__pytra_int(clamp01(b) * 255.0);
-        return (rr + 5L + 5L) + (gg + 5L + 2L) + (bb + 6L);
+        return (rr >> 5L << 5L) + (gg >> 5L << 2L) + (bb >> 6L);
     }
 
     public static java.util.ArrayList<Long> render_frame(long width, long height, long frame_id, long frames_n) {
         double t = ((double)(frame_id)) / ((double)(frames_n));
-        double tphase = 2.0 * Math.PI * t;
+        double tphase = 2.0 * math.pi * t;
         double cam_r = 3.0;
-        double cam_x = cam_r * Math.cos(tphase * 0.9);
-        double cam_y = 1.1 + 0.25 * Math.sin(tphase * 0.6);
-        double cam_z = cam_r * Math.sin(tphase * 0.9);
+        double cam_x = cam_r * math.cos(tphase * 0.9);
+        double cam_y = 1.1 + 0.25 * math.sin(tphase * 0.6);
+        double cam_z = cam_r * math.sin(tphase * 0.9);
         double look_x = 0.0;
         double look_y = 0.35;
         double look_z = 0.0;
@@ -122,7 +120,7 @@ public final class _16_glass_sculpture_chaos {
         double fwd_x = ((Double)(__tuple_0.get(0)));
         double fwd_y = ((Double)(__tuple_0.get(1)));
         double fwd_z = ((Double)(__tuple_0.get(2)));
-        java.util.ArrayList<Object> __tuple_1 = ((java.util.ArrayList<Object>)(Object)(normalize(fwd_z, 0.0, (-fwd_x))));
+        java.util.ArrayList<Object> __tuple_1 = ((java.util.ArrayList<Object>)(Object)(normalize(fwd_z, 0.0, (-(fwd_x)))));
         double right_x = ((Double)(__tuple_1.get(0)));
         double right_y = ((Double)(__tuple_1.get(1)));
         double right_z = ((Double)(__tuple_1.get(2)));
@@ -130,29 +128,27 @@ public final class _16_glass_sculpture_chaos {
         double up_x = ((Double)(__tuple_2.get(0)));
         double up_y = ((Double)(__tuple_2.get(1)));
         double up_z = ((Double)(__tuple_2.get(2)));
-        double s0x = 0.9 * Math.cos(1.3 * tphase);
-        double s0y = 0.15 + 0.35 * Math.sin(1.7 * tphase);
-        double s0z = 0.9 * Math.sin(1.3 * tphase);
-        double s1x = 1.2 * Math.cos(1.3 * tphase + 2.094);
-        double s1y = 0.1 + 0.4 * Math.sin(1.1 * tphase + 0.8);
-        double s1z = 1.2 * Math.sin(1.3 * tphase + 2.094);
-        double s2x = 1.0 * Math.cos(1.3 * tphase + 4.188);
-        double s2y = 0.2 + 0.3 * Math.sin(1.5 * tphase + 1.9);
-        double s2z = 1.0 * Math.sin(1.3 * tphase + 4.188);
+        double s0x = 0.9 * math.cos(1.3 * tphase);
+        double s0y = 0.15 + 0.35 * math.sin(1.7 * tphase);
+        double s0z = 0.9 * math.sin(1.3 * tphase);
+        double s1x = 1.2 * math.cos(1.3 * tphase + 2.094);
+        double s1y = 0.1 + 0.4 * math.sin(1.1 * tphase + 0.8);
+        double s1z = 1.2 * math.sin(1.3 * tphase + 2.094);
+        double s2x = 1.0 * math.cos(1.3 * tphase + 4.188);
+        double s2y = 0.2 + 0.3 * math.sin(1.5 * tphase + 1.9);
+        double s2z = 1.0 * math.sin(1.3 * tphase + 4.188);
         double lr = 0.35;
-        double lx = 2.4 * Math.cos(tphase * 1.8);
-        double ly = 1.8 + 0.8 * Math.sin(tphase * 1.2);
-        double lz = 2.4 * Math.sin(tphase * 1.8);
+        double lx = 2.4 * math.cos(tphase * 1.8);
+        double ly = 1.8 + 0.8 * math.sin(tphase * 1.2);
+        double lz = 2.4 * math.sin(tphase * 1.8);
         java.util.ArrayList<Long> frame = PyRuntime.__pytra_bytearray(width * height);
         double aspect = ((double)(width)) / ((double)(height));
         double fov = 1.25;
-        double __hoisted_cast_3 = ((double)(height));
-        double __hoisted_cast_4 = ((double)(width));
         for (long py = 0L; py < height; py += 1L) {
             long row_base = py * width;
-            double sy = 1.0 - 2.0 * (((double)(py)) + 0.5) / __hoisted_cast_3;
+            double sy = 1.0 - 2.0 * (((double)(py)) + 0.5) / ((double)(height));
             for (long px = 0L; px < width; px += 1L) {
-                double sx = (2.0 * (((double)(px)) + 0.5) / __hoisted_cast_4 - 1.0) * aspect;
+                double sx = (2.0 * (((double)(px)) + 0.5) / ((double)(width)) - 1.0) * aspect;
                 double rx = fwd_x + fov * (sx * right_x + sy * up_x);
                 double ry = fwd_y + fov * (sx * right_y + sy * up_y);
                 double rz = fwd_z + fov * (sx * right_z + sy * up_z);
@@ -165,53 +161,63 @@ public final class _16_glass_sculpture_chaos {
                 double r = 0.0;
                 double g = 0.0;
                 double b = 0.0;
-                if ((dy < (-1e-06))) {
-                    double tf = ((-1.2) - cam_y) / dy;
-                    if (((tf > 0.0001) && (tf < best_t))) {
+                if (((dy) < ((-(1e-06))))) {
+                    double tf = ((-(1.2)) - cam_y) / dy;
+                    if ((((tf) > (0.0001)) && ((tf) < (best_t)))) {
                         best_t = tf;
                         hit_kind = 1L;
                     }
                 }
                 double t0 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s0x, s0y, s0z, 0.65);
-                if (((t0 > 0.0) && (t0 < best_t))) {
+                if ((((t0) > (0.0)) && ((t0) < (best_t)))) {
                     best_t = t0;
                     hit_kind = 2L;
                 }
                 double t1 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s1x, s1y, s1z, 0.72);
-                if (((t1 > 0.0) && (t1 < best_t))) {
+                if ((((t1) > (0.0)) && ((t1) < (best_t)))) {
                     best_t = t1;
                     hit_kind = 3L;
                 }
                 double t2 = sphere_intersect(cam_x, cam_y, cam_z, dx, dy, dz, s2x, s2y, s2z, 0.58);
-                if (((t2 > 0.0) && (t2 < best_t))) {
+                if ((((t2) > (0.0)) && ((t2) < (best_t)))) {
                     best_t = t2;
                     hit_kind = 4L;
                 }
-                if ((hit_kind == 0L)) {
+                double glow = 0.0;
+                double hx = 0.0;
+                double hz = 0.0;
+                double ldx = 0.0;
+                double ldy = 0.0;
+                double ldz = 0.0;
+                double lxv = 0.0;
+                double lyv = 0.0;
+                double lzv = 0.0;
+                double ndotl = 0.0;
+                if (((hit_kind) == (0L))) {
                     java.util.ArrayList<Object> __tuple_4 = ((java.util.ArrayList<Object>)(Object)(sky_color(dx, dy, dz, tphase)));
                     r = ((Double)(__tuple_4.get(0)));
                     g = ((Double)(__tuple_4.get(1)));
                     b = ((Double)(__tuple_4.get(2)));
                 } else {
-                    if ((hit_kind == 1L)) {
-                        double hx = cam_x + best_t * dx;
-                        double hz = cam_z + best_t * dz;
-                        long cx = PyRuntime.__pytra_int(Math.floor(hx * 2.0));
-                        long cz = PyRuntime.__pytra_int(Math.floor(hz * 2.0));
-                        long checker = ((((cx + cz) % 2L == 0L)) ? (0L) : (1L));
-                        double base_r = (((checker == 0L)) ? (0.1) : (0.04));
-                        double base_g = (((checker == 0L)) ? (0.11) : (0.05));
-                        double base_b = (((checker == 0L)) ? (0.13) : (0.08));
-                        double lxv = lx - hx;
-                        double lyv = ly - (-1.2);
-                        double lzv = lz - hz;
+                    if (((hit_kind) == (1L))) {
+                        hx = cam_x + best_t * dx;
+                        hz = cam_z + best_t * dz;
+                        long cx_i = PyRuntime.__pytra_int(math.floor(hx * 2.0));
+                        long cz_i = PyRuntime.__pytra_int(math.floor(hz * 2.0));
+                        long checker = (((((cx_i + cz_i) % 2L) == (0L))) ? (0L) : (1L));
+                        double base_r = ((((checker) == (0L))) ? (0.1) : (0.04));
+                        double base_g = ((((checker) == (0L))) ? (0.11) : (0.05));
+                        double base_b = ((((checker) == (0L))) ? (0.13) : (0.08));
+                        lxv = lx - hx;
+                        lyv = ly - (-(1.2));
+                        lzv = lz - hz;
                         java.util.ArrayList<Object> __tuple_5 = ((java.util.ArrayList<Object>)(Object)(normalize(lxv, lyv, lzv)));
-                        double ldx = ((Double)(__tuple_5.get(0)));
-                        double ldy = ((Double)(__tuple_5.get(1)));
-                        double ldz = ((Double)(__tuple_5.get(2)));
-                        double ndotl = Math.max(ldy, 0.0);
+                        ldx = ((Double)(__tuple_5.get(0)));
+                        ldy = ((Double)(__tuple_5.get(1)));
+                        ldz = ((Double)(__tuple_5.get(2)));
+                        ndotl = Math.max(ldy, 0.0);
                         double ldist2 = lxv * lxv + lyv * lyv + lzv * lzv;
-                        double glow = 8.0 / (1.0 + ldist2);
+                        glow = 8.0 / (1.0 + ldist2);
                         r = base_r + 0.8 * glow + 0.2 * ndotl;
                         g = base_g + 0.5 * glow + 0.18 * ndotl;
                         b = base_b + 1.0 * glow + 0.24 * ndotl;
@@ -220,13 +226,13 @@ public final class _16_glass_sculpture_chaos {
                         double cy = 0.0;
                         double cz = 0.0;
                         double rad = 1.0;
-                        if ((hit_kind == 2L)) {
+                        if (((hit_kind) == (2L))) {
                             cx = s0x;
                             cy = s0y;
                             cz = s0z;
                             rad = 0.65;
                         } else {
-                            if ((hit_kind == 3L)) {
+                            if (((hit_kind) == (3L))) {
                                 cx = s1x;
                                 cy = s1y;
                                 cz = s1z;
@@ -238,9 +244,9 @@ public final class _16_glass_sculpture_chaos {
                                 rad = 0.58;
                             }
                         }
-                        double hx = cam_x + best_t * dx;
+                        hx = cam_x + best_t * dx;
                         double hy = cam_y + best_t * dy;
-                        double hz = cam_z + best_t * dz;
+                        hz = cam_z + best_t * dz;
                         java.util.ArrayList<Object> __tuple_6 = ((java.util.ArrayList<Object>)(Object)(normalize((hx - cx) / rad, (hy - cy) / rad, (hz - cz) / rad)));
                         double nx = ((Double)(__tuple_6.get(0)));
                         double ny = ((Double)(__tuple_6.get(1)));
@@ -261,19 +267,19 @@ public final class _16_glass_sculpture_chaos {
                         double tr = ((Double)(__tuple_10.get(0)));
                         double tg = ((Double)(__tuple_10.get(1)));
                         double tb = ((Double)(__tuple_10.get(2)));
-                        double cosi = Math.max((-dx * nx + dy * ny + dz * nz), 0.0);
+                        double cosi = Math.max((-(dx * nx + dy * ny + dz * nz)), 0.0);
                         double fr = schlick(cosi, 0.04);
                         r = tr * (1.0 - fr) + sr * fr;
                         g = tg * (1.0 - fr) + sg * fr;
                         b = tb * (1.0 - fr) + sb * fr;
-                        double lxv = lx - hx;
-                        double lyv = ly - hy;
-                        double lzv = lz - hz;
+                        lxv = lx - hx;
+                        lyv = ly - hy;
+                        lzv = lz - hz;
                         java.util.ArrayList<Object> __tuple_11 = ((java.util.ArrayList<Object>)(Object)(normalize(lxv, lyv, lzv)));
-                        double ldx = ((Double)(__tuple_11.get(0)));
-                        double ldy = ((Double)(__tuple_11.get(1)));
-                        double ldz = ((Double)(__tuple_11.get(2)));
-                        double ndotl = Math.max(nx * ldx + ny * ldy + nz * ldz, 0.0);
+                        ldx = ((Double)(__tuple_11.get(0)));
+                        ldy = ((Double)(__tuple_11.get(1)));
+                        ldz = ((Double)(__tuple_11.get(2)));
+                        ndotl = Math.max(nx * ldx + ny * ldy + nz * ldz, 0.0);
                         java.util.ArrayList<Object> __tuple_12 = ((java.util.ArrayList<Object>)(Object)(normalize(ldx - dx, ldy - dy, ldz - dz)));
                         double hvx = ((Double)(__tuple_12.get(0)));
                         double hvy = ((Double)(__tuple_12.get(1)));
@@ -283,16 +289,16 @@ public final class _16_glass_sculpture_chaos {
                         spec = spec * spec;
                         spec = spec * spec;
                         spec = spec * spec;
-                        double glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
+                        glow = 10.0 / (1.0 + lxv * lxv + lyv * lyv + lzv * lzv);
                         r += 0.2 * ndotl + 0.8 * spec + 0.45 * glow;
                         g += 0.18 * ndotl + 0.6 * spec + 0.35 * glow;
                         b += 0.26 * ndotl + 1.0 * spec + 0.65 * glow;
-                        if ((hit_kind == 2L)) {
+                        if (((hit_kind) == (2L))) {
                             r *= 0.95;
                             g *= 1.05;
                             b *= 1.1;
                         } else {
-                            if ((hit_kind == 3L)) {
+                            if (((hit_kind) == (3L))) {
                                 r *= 1.08;
                                 g *= 0.98;
                                 b *= 1.04;
@@ -304,13 +310,13 @@ public final class _16_glass_sculpture_chaos {
                         }
                     }
                 }
-                r = Math.sqrt(clamp01(r));
-                g = Math.sqrt(clamp01(g));
-                b = Math.sqrt(clamp01(b));
+                r = math.sqrt(clamp01(r));
+                g = math.sqrt(clamp01(g));
+                b = math.sqrt(clamp01(b));
                 frame.set((int)((((row_base + px) < 0L) ? (((long)(frame.size())) + (row_base + px)) : (row_base + px))), quantize_332(r, g, b));
             }
         }
-        return new java.util.ArrayList<Long>(frame);
+        return PyRuntime.__pytra_bytearray(frame);
     }
 
     public static void run_16_glass_sculpture_chaos() {
@@ -318,19 +324,15 @@ public final class _16_glass_sculpture_chaos {
         long height = 240L;
         long frames_n = 72L;
         String out_path = "sample/out/16_glass_sculpture_chaos.gif";
-        double start = (System.nanoTime() / 1000000000.0);
+        double start = time.perf_counter();
         java.util.ArrayList<java.util.ArrayList<Long>> frames = new java.util.ArrayList<java.util.ArrayList<Long>>();
         for (long i = 0L; i < frames_n; i += 1L) {
             frames.add(render_frame(width, height, i, frames_n));
         }
-        PyRuntime.__pytra_noop(out_path, width, height, frames, palette_332());
-        double elapsed = (System.nanoTime() / 1000000000.0) - start;
+        gif.save_gif(out_path, width, height, frames, palette_332(), 6L, 0L);
+        double elapsed = time.perf_counter() - start;
         System.out.println(String.valueOf("output:") + " " + String.valueOf(out_path));
         System.out.println(String.valueOf("frames:") + " " + String.valueOf(frames_n));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
-    }
-
-    public static void main(String[] args) {
-        run_16_glass_sculpture_chaos();
     }
 }

@@ -1,4 +1,4 @@
-public final class _18_mini_language_interpreter {
+final class _18_mini_language_interpreter {
     private _18_mini_language_interpreter() {
     }
 
@@ -97,7 +97,7 @@ public final class _18_mini_language_interpreter {
         public Token expect(String kind) {
             Token token = this.current_token();
             if ((!(java.util.Objects.equals(token.kind, kind)))) {
-                throw new RuntimeException(__pytra_str(new RuntimeError("parse error at pos=" + String.valueOf(token.pos) + ", expected=" + kind + ", got=" + token.kind)));
+                throw new RuntimeException(PyRuntime.pyToString("parse error at pos=" + String.valueOf(token.pos) + ", expected=" + kind + ", got=" + token.kind));
             }
             this.pos += 1L;
             return token;
@@ -149,13 +149,14 @@ public final class _18_mini_language_interpreter {
         public long parse_add() {
             long left = this.parse_mul();
             while (true) {
+                long right = 0L;
                 if (this.match("PLUS")) {
-                    long right = this.parse_mul();
+                    right = this.parse_mul();
                     left = this.add_expr(new ExprNode("bin", 0L, "", "+", left, right, 3L, 1L));
                     continue;
                 }
                 if (this.match("MINUS")) {
-                    long right = this.parse_mul();
+                    right = this.parse_mul();
                     left = this.add_expr(new ExprNode("bin", 0L, "", "-", left, right, 3L, 2L));
                     continue;
                 }
@@ -167,13 +168,14 @@ public final class _18_mini_language_interpreter {
         public long parse_mul() {
             long left = this.parse_unary();
             while (true) {
+                long right = 0L;
                 if (this.match("STAR")) {
-                    long right = this.parse_unary();
+                    right = this.parse_unary();
                     left = this.add_expr(new ExprNode("bin", 0L, "", "*", left, right, 3L, 3L));
                     continue;
                 }
                 if (this.match("SLASH")) {
-                    long right = this.parse_unary();
+                    right = this.parse_unary();
                     left = this.add_expr(new ExprNode("bin", 0L, "", "/", left, right, 3L, 4L));
                     continue;
                 }
@@ -185,7 +187,7 @@ public final class _18_mini_language_interpreter {
         public long parse_unary() {
             if (this.match("MINUS")) {
                 long child = this.parse_unary();
-                return this.add_expr(new ExprNode("neg", 0L, "", "", child, (-1L), 4L, 0L));
+                return this.add_expr(new ExprNode("neg", 0L, "", "", child, (-(1L)), 4L, 0L));
             }
             return this.parse_primary();
         }
@@ -193,11 +195,11 @@ public final class _18_mini_language_interpreter {
         public long parse_primary() {
             if (this.match("NUMBER")) {
                 Token token_num = this.previous_token();
-                return this.add_expr(new ExprNode("lit", token_num.number_value, "", "", (-1L), (-1L), 1L, 0L));
+                return this.add_expr(new ExprNode("lit", token_num.number_value, "", "", (-(1L)), (-(1L)), 1L, 0L));
             }
             if (this.match("IDENT")) {
                 Token token_ident = this.previous_token();
-                return this.add_expr(new ExprNode("var", 0L, token_ident.text, "", (-1L), (-1L), 2L, 0L));
+                return this.add_expr(new ExprNode("var", 0L, token_ident.text, "", (-(1L)), (-(1L)), 2L, 0L));
             }
             if (this.match("LPAREN")) {
                 long expr_index = this.parse_expr();
@@ -205,48 +207,50 @@ public final class _18_mini_language_interpreter {
                 return expr_index;
             }
             Token t = this.current_token();
-            throw new RuntimeException(__pytra_str(new RuntimeError("primary parse error at pos=" + String.valueOf(t.pos) + " got=" + t.kind)));
-            return 0L;
+            throw new RuntimeException(PyRuntime.pyToString("primary parse error at pos=" + String.valueOf(t.pos) + " got=" + t.kind));
         }
     }
 
     public static java.util.ArrayList<Token> tokenize(java.util.ArrayList<String> lines) {
-        java.util.HashMap<String, Long> single_char_token_tags = new java.util.HashMap<String, Long>();
+        java.util.HashMap<String, Long> single_char_token_tags = ((java.util.HashMap<String, Long>)(Object)(PyRuntime.__pytra_dict_of("+", 1L, "-", 2L, "*", 3L, "/", 4L, "(", 5L, ")", 6L, "=", 7L)));
         java.util.ArrayList<String> single_char_token_kinds = new java.util.ArrayList<String>(java.util.Arrays.asList("PLUS", "MINUS", "STAR", "SLASH", "LPAREN", "RPAREN", "EQUAL"));
         java.util.ArrayList<Token> tokens = new java.util.ArrayList<Token>();
-        java.util.ArrayList<String> __iter_0 = ((java.util.ArrayList<String>)(Object)(lines));
+        long __enum_idx_1 = 0L;
+        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(lines));
         for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
-            long line_index = __iter_i_1;
-            String source = __iter_0.get((int)(__iter_i_1));
+            String source = String.valueOf(__iter_0.get((int)(__iter_i_1)));
+            long line_index = __enum_idx_1;
             long i = 0L;
             long n = ((long)(source.length()));
-            while ((i < n)) {
+            while (((i) < (n))) {
                 String ch = String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i))))));
                 if ((java.util.Objects.equals(ch, " "))) {
                     i += 1L;
                     continue;
                 }
-                long single_tag = single_char_token_tags.get(ch, 0L);
-                if ((single_tag > 0L)) {
+                long single_tag = ((Long)(PyRuntime.__pytra_dict_get_default(single_char_token_tags, ch, 0L)));
+                if (((single_tag) > (0L))) {
                     tokens.add(new Token(String.valueOf(single_char_token_kinds.get((int)((((single_tag - 1L) < 0L) ? (((long)(single_char_token_kinds.size())) + (single_tag - 1L)) : (single_tag - 1L))))), ch, i, 0L));
                     i += 1L;
                     continue;
                 }
-                if (PyRuntime.__pytra_truthy(PyRuntime.__pytra_str_isdigit(ch))) {
-                    long start = i;
-                    while (((i < n) && PyRuntime.__pytra_str_isdigit(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i))))))))) {
+                long start = 0L;
+                String text = "";
+                if (PyRuntime.__pytra_str_isdigit(ch)) {
+                    start = i;
+                    while ((((i) < (n)) && PyRuntime.__pytra_str_isdigit(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i))))))))) {
                         i += 1L;
                     }
-                    String text = PyRuntime.__pytra_str_slice(source, (((start) < 0L) ? (((long)(source.length())) + (start)) : (start)), (((i) < 0L) ? (((long)(source.length())) + (i)) : (i)));
+                    text = PyRuntime.__pytra_str_slice(source, (((start) < 0L) ? (((long)(source.length())) + (start)) : (start)), (((i) < 0L) ? (((long)(source.length())) + (i)) : (i)));
                     tokens.add(new Token("NUMBER", text, start, PyRuntime.__pytra_int(text)));
                     continue;
                 }
                 if ((PyRuntime.__pytra_str_isalpha(ch) || (java.util.Objects.equals(ch, "_")))) {
-                    long start = i;
-                    while (((i < n) && ((PyRuntime.__pytra_str_isalpha(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i))))))) || (java.util.Objects.equals(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i)))))), "_"))) || PyRuntime.__pytra_str_isdigit(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i)))))))))) {
+                    start = i;
+                    while ((((i) < (n)) && ((PyRuntime.__pytra_str_isalpha(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i))))))) || (java.util.Objects.equals(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i)))))), "_"))) || PyRuntime.__pytra_str_isdigit(String.valueOf(String.valueOf(source.charAt((int)((((i) < 0L) ? (((long)(source.length())) + (i)) : (i)))))))))) {
                         i += 1L;
                     }
-                    String text = PyRuntime.__pytra_str_slice(source, (((start) < 0L) ? (((long)(source.length())) + (start)) : (start)), (((i) < 0L) ? (((long)(source.length())) + (i)) : (i)));
+                    text = PyRuntime.__pytra_str_slice(source, (((start) < 0L) ? (((long)(source.length())) + (start)) : (start)), (((i) < 0L) ? (((long)(source.length())) + (i)) : (i)));
                     if ((java.util.Objects.equals(text, "let"))) {
                         tokens.add(new Token("LET", text, start, 0L));
                     } else {
@@ -258,9 +262,10 @@ public final class _18_mini_language_interpreter {
                     }
                     continue;
                 }
-                throw new RuntimeException(__pytra_str(new RuntimeError("tokenize error at line=" + String.valueOf(line_index) + " pos=" + String.valueOf(i) + " ch=" + ch)));
+                throw new RuntimeException(PyRuntime.pyToString("tokenize error at line=" + String.valueOf(line_index) + " pos=" + String.valueOf(i) + " ch=" + ch));
             }
             tokens.add(new Token("NEWLINE", "", n, 0L));
+            __enum_idx_1 += 1L;
         }
         tokens.add(new Token("EOF", "", ((long)(lines.size())), 0L));
         return tokens;
@@ -268,40 +273,39 @@ public final class _18_mini_language_interpreter {
 
     public static long eval_expr(long expr_index, java.util.ArrayList<ExprNode> expr_nodes, java.util.HashMap<String, Long> env) {
         ExprNode node = ((ExprNode)(expr_nodes.get((int)((((expr_index) < 0L) ? (((long)(expr_nodes.size())) + (expr_index)) : (expr_index))))));
-        if ((node.kind_tag == 1L)) {
+        if (((node.kind_tag) == (1L))) {
             return node.value;
         }
-        if ((node.kind_tag == 2L)) {
+        if (((node.kind_tag) == (2L))) {
             if ((!(env.containsKey(node.name)))) {
-                throw new RuntimeException(__pytra_str(new RuntimeError("undefined variable: " + node.name)));
+                throw new RuntimeException(PyRuntime.pyToString("undefined variable: " + node.name));
             }
             return ((Long)(env.get(node.name)));
         }
-        if ((node.kind_tag == 4L)) {
-            return (-eval_expr(node.left, expr_nodes, env));
+        if (((node.kind_tag) == (4L))) {
+            return (-(eval_expr(node.left, expr_nodes, env)));
         }
-        if ((node.kind_tag == 3L)) {
+        if (((node.kind_tag) == (3L))) {
             long lhs = eval_expr(node.left, expr_nodes, env);
             long rhs = eval_expr(node.right, expr_nodes, env);
-            if ((node.op_tag == 1L)) {
+            if (((node.op_tag) == (1L))) {
                 return lhs + rhs;
             }
-            if ((node.op_tag == 2L)) {
+            if (((node.op_tag) == (2L))) {
                 return lhs - rhs;
             }
-            if ((node.op_tag == 3L)) {
+            if (((node.op_tag) == (3L))) {
                 return lhs * rhs;
             }
-            if ((node.op_tag == 4L)) {
-                if ((rhs == 0L)) {
-                    throw new RuntimeException(__pytra_str(new RuntimeError("division by zero")));
+            if (((node.op_tag) == (4L))) {
+                if (((rhs) == (0L))) {
+                    throw new RuntimeException(PyRuntime.pyToString("division by zero"));
                 }
                 return lhs / rhs;
             }
-            throw new RuntimeException(__pytra_str(new RuntimeError("unknown operator: " + node.op)));
+            throw new RuntimeException(PyRuntime.pyToString("unknown operator: " + node.op));
         }
-        throw new RuntimeException(__pytra_str(new RuntimeError("unknown node kind: " + node.kind)));
-        return 0L;
+        throw new RuntimeException(PyRuntime.pyToString("unknown node kind: " + node.kind));
     }
 
     public static long execute(java.util.ArrayList<StmtNode> stmts, java.util.ArrayList<ExprNode> expr_nodes, boolean trace) {
@@ -311,13 +315,13 @@ public final class _18_mini_language_interpreter {
         java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(stmts));
         for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
             StmtNode stmt = ((StmtNode)(__iter_0.get((int)(__iter_i_1))));
-            if ((stmt.kind_tag == 1L)) {
+            if (((stmt.kind_tag) == (1L))) {
                 env.put(stmt.name, eval_expr(stmt.expr_index, expr_nodes, env));
                 continue;
             }
-            if ((stmt.kind_tag == 2L)) {
+            if (((stmt.kind_tag) == (2L))) {
                 if ((!(env.containsKey(stmt.name)))) {
-                    throw new RuntimeException(__pytra_str(new RuntimeError("assign to undefined variable: " + stmt.name)));
+                    throw new RuntimeException(PyRuntime.pyToString("assign to undefined variable: " + stmt.name));
                 }
                 env.put(stmt.name, eval_expr(stmt.expr_index, expr_nodes, env));
                 continue;
@@ -327,7 +331,7 @@ public final class _18_mini_language_interpreter {
                 System.out.println(value);
             }
             long norm = value % 1000000007L;
-            if ((norm < 0L)) {
+            if (((norm) < (0L))) {
                 norm += 1000000007L;
             }
             checksum = (checksum * 131L + norm) % 1000000007L;
@@ -341,16 +345,17 @@ public final class _18_mini_language_interpreter {
 
     public static java.util.ArrayList<String> build_benchmark_source(long var_count, long loops) {
         java.util.ArrayList<String> lines = new java.util.ArrayList<String>();
-        for (long i = 0L; i < var_count; i += 1L) {
+        long i = 0L;
+        for (i = 0L; i < var_count; i += 1L) {
             lines.add("let v" + String.valueOf(i) + " = " + String.valueOf(i + 1L));
         }
-        for (long i = 0L; i < loops; i += 1L) {
+        for (i = 0L; i < loops; i += 1L) {
             long x = i % var_count;
             long y = (i + 3L) % var_count;
             long c1 = i % 7L + 1L;
             long c2 = i % 11L + 2L;
             lines.add("v" + String.valueOf(x) + " = (v" + String.valueOf(x) + " * " + String.valueOf(c1) + " + v" + String.valueOf(y) + " + 10000) / " + String.valueOf(c2));
-            if ((i % 97L == 0L)) {
+            if (((i % 97L) == (0L))) {
                 lines.add("print v" + String.valueOf(x));
             }
         }
@@ -373,13 +378,17 @@ public final class _18_mini_language_interpreter {
     }
 
     public static void run_benchmark() {
+        String out_path = "sample/out/18_mini_language_interpreter.txt";
         java.util.ArrayList<String> source_lines = build_benchmark_source(32L, 120000L);
-        double start = (System.nanoTime() / 1000000000.0);
+        double start = time.perf_counter();
         java.util.ArrayList<Token> tokens = tokenize(source_lines);
         Parser parser = new Parser(tokens);
         java.util.ArrayList<StmtNode> stmts = parser.parse_program();
         long checksum = execute(stmts, parser.expr_nodes, false);
-        double elapsed = (System.nanoTime() / 1000000000.0) - start;
+        double elapsed = time.perf_counter() - start;
+        String result = "token_count:" + String.valueOf(((long)(tokens.size()))) + "\nexpr_count:" + String.valueOf(PyRuntime.__pytra_len(parser.expr_nodes)) + "\nstmt_count:" + String.valueOf(((long)(stmts.size()))) + "\nchecksum:" + String.valueOf(checksum) + "\n";
+        pathlib.Path p = new pathlib.Path(out_path);
+        p.write_text(result, "utf-8");
         System.out.println(String.valueOf("token_count:") + " " + String.valueOf(((long)(tokens.size()))));
         System.out.println(String.valueOf("expr_count:") + " " + String.valueOf(PyRuntime.__pytra_len(parser.expr_nodes)));
         System.out.println(String.valueOf("stmt_count:") + " " + String.valueOf(((long)(stmts.size()))));
@@ -390,9 +399,5 @@ public final class _18_mini_language_interpreter {
     public static void __pytra_main() {
         run_demo();
         run_benchmark();
-    }
-
-    public static void main(String[] args) {
-        __pytra_main();
     }
 }

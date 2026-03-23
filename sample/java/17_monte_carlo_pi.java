@@ -1,4 +1,4 @@
-public final class _17_monte_carlo_pi {
+final class _17_monte_carlo_pi {
     private _17_monte_carlo_pi() {
     }
 
@@ -25,15 +25,15 @@ public final class _17_monte_carlo_pi {
     public static void run_integer_benchmark() {
         long width = 7600L;
         long height = 5000L;
-        double start = (System.nanoTime() / 1000000000.0);
+        String out_path = "sample/out/17_monte_carlo_pi.txt";
+        double start = time.perf_counter();
         long checksum = run_integer_grid_checksum(width, height, 123456789L);
-        double elapsed = (System.nanoTime() / 1000000000.0) - start;
+        double elapsed = time.perf_counter() - start;
+        String result = "pixels:" + String.valueOf(width * height) + "\nchecksum:" + String.valueOf(checksum) + "\n";
+        pathlib.Path p = new pathlib.Path(out_path);
+        p.write_text(result, "utf-8");
         System.out.println(String.valueOf("pixels:") + " " + String.valueOf(width * height));
         System.out.println(String.valueOf("checksum:") + " " + String.valueOf(checksum));
         System.out.println(String.valueOf("elapsed_sec:") + " " + String.valueOf(elapsed));
-    }
-
-    public static void main(String[] args) {
-        run_integer_benchmark();
     }
 }
