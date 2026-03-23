@@ -7,6 +7,7 @@ __pycache__/
 .DS_Store
 
 /work/
+/test/transpile/
 /sample/obj/
 /sample/out/
 /sample/java/*.class
