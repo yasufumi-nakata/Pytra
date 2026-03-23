@@ -13,6 +13,87 @@ import (
 	"unicode"
 )
 
+// ---------- PyList: reference-semantic list wrapper ----------
+
+type PyList struct {
+	Items []any
+}
+
+func NewPyList(items ...any) *PyList {
+	return &PyList{Items: items}
+}
+
+func (pl *PyList) Append(v any) {
+	pl.Items = append(pl.Items, v)
+}
+
+func (pl *PyList) AppendSlice(src []any) {
+	pl.Items = append(pl.Items, src...)
+}
+
+func (pl *PyList) Len() int64 {
+	return int64(len(pl.Items))
+}
+
+func (pl *PyList) Get(i int64) any {
+	if i < 0 {
+		i += int64(len(pl.Items))
+	}
+	return pl.Items[i]
+}
+
+func (pl *PyList) Set(i int64, v any) {
+	if i < 0 {
+		i += int64(len(pl.Items))
+	}
+	pl.Items[i] = v
+}
+
+func (pl *PyList) Pop(idx any) any {
+	n := len(pl.Items)
+	i := n - 1
+	if idx != nil {
+		i = int(__pytra_int_raw(idx))
+		if i < 0 {
+			i += n
+		}
+	}
+	val := pl.Items[i]
+	pl.Items = append(pl.Items[:i], pl.Items[i+1:]...)
+	return val
+}
+
+// __pytra_int_raw is a minimal int coercion that avoids circular dependency
+// with the full __pytra_int (which may reference PyList).
+func __pytra_int_raw(v any) int64 {
+	switch t := v.(type) {
+	case int:
+		return int64(t)
+	case int64:
+		return t
+	case int32:
+		return int64(t)
+	case uint8:
+		return int64(t)
+	case float64:
+		return int64(t)
+	case nil:
+		return 0
+	default:
+		return 0
+	}
+}
+
+func __pytra_as_PyList(v any) *PyList {
+	if t, ok := v.(*PyList); ok {
+		return t
+	}
+	if t, ok := v.([]any); ok {
+		return &PyList{Items: t}
+	}
+	return NewPyList()
+}
+
 func pyToString(v any) string {
 	switch x := v.(type) {
 	case nil:
@@ -33,6 +114,12 @@ func pyToString(v any) string {
 	case []any:
 		parts := make([]string, 0, len(x))
 		for _, it := range x {
+			parts = append(parts, pyToString(it))
+		}
+		return "[" + strings.Join(parts, ", ") + "]"
+	case *PyList:
+		parts := make([]string, 0, len(x.Items))
+		for _, it := range x.Items {
 			parts = append(parts, pyToString(it))
 		}
 		return "[" + strings.Join(parts, ", ") + "]"
@@ -80,6 +167,8 @@ func pyBool(v any) bool {
 		return x != ""
 	case []any:
 		return len(x) > 0
+	case *PyList:
+		return len(x.Items) > 0
 	case []byte:
 		return len(x) > 0
 	case map[any]any:
@@ -95,6 +184,8 @@ func pyLen(v any) int {
 		return len([]rune(x))
 	case []any:
 		return len(x)
+	case *PyList:
+		return len(x.Items)
 	case []byte:
 		return len(x)
 	case map[any]any:
@@ -280,6 +371,13 @@ func pyIn(item, container any) bool {
 			}
 		}
 		return false
+	case *PyList:
+		for _, v := range c.Items {
+			if pyEq(v, item) {
+				return true
+			}
+		}
+		return false
 	case map[any]any:
 		_, ok := c[item]
 		return ok
@@ -292,6 +390,8 @@ func pyIter(value any) []any {
 	switch v := value.(type) {
 	case []any:
 		return v
+	case *PyList:
+		return v.Items
 	case []byte:
 		out := make([]any, 0, len(v))
 		for _, b := range v {
@@ -404,6 +504,42 @@ func pySlice(value any, start any, end any) any {
 		out := make([]any, e-s)
 		copy(out, v[s:e])
 		return out
+	case *PyList:
+		n := len(v.Items)
+		if start == nil {
+			s = 0
+		} else {
+			s = pyToInt(start)
+			if s < 0 {
+				s += n
+			}
+			if s < 0 {
+				s = 0
+			}
+			if s > n {
+				s = n
+			}
+		}
+		if end == nil {
+			e = n
+		} else {
+			e = pyToInt(end)
+			if e < 0 {
+				e += n
+			}
+			if e < 0 {
+				e = 0
+			}
+			if e > n {
+				e = n
+			}
+		}
+		if s > e {
+			s = e
+		}
+		out := make([]any, e-s)
+		copy(out, v.Items[s:e])
+		return &PyList{Items: out}
 	default:
 		panic("slice unsupported")
 	}
@@ -417,6 +553,12 @@ func pyGet(value any, key any) any {
 			i += len(v)
 		}
 		return v[i]
+	case *PyList:
+		i := pyToInt(key)
+		if i < 0 {
+			i += len(v.Items)
+		}
+		return v.Items[i]
 	case []byte:
 		i := pyToInt(key)
 		if i < 0 {
@@ -445,6 +587,12 @@ func pySet(value any, key any, newValue any) {
 			i += len(v)
 		}
 		v[i] = newValue
+	case *PyList:
+		i := pyToInt(key)
+		if i < 0 {
+			i += len(v.Items)
+		}
+		v.Items[i] = newValue
 	case []byte:
 		i := pyToInt(key)
 		if i < 0 {
@@ -459,26 +607,36 @@ func pySet(value any, key any, newValue any) {
 }
 
 func pyPop(lst *any, idx any) any {
-	arr := (*lst).([]any)
-	n := len(arr)
-	i := n - 1
-	if idx != nil {
-		i = pyToInt(idx)
-		if i < 0 {
-			i += n
+	switch v := (*lst).(type) {
+	case *PyList:
+		return v.Pop(idx)
+	default:
+		arr := (*lst).([]any)
+		n := len(arr)
+		i := n - 1
+		if idx != nil {
+			i = pyToInt(idx)
+			if i < 0 {
+				i += n
+			}
 		}
+		val := arr[i]
+		arr = append(arr[:i], arr[i+1:]...)
+		*lst = arr
+		return val
 	}
-	val := arr[i]
-	arr = append(arr[:i], arr[i+1:]...)
-	*lst = arr
-	return val
 }
 
 func pyPopAt(container any, key any, idx any) any {
 	lst := pyGet(container, key)
-	val := pyPop(&lst, idx)
-	pySet(container, key, lst)
-	return val
+	switch pl := lst.(type) {
+	case *PyList:
+		return pl.Pop(idx)
+	default:
+		val := pyPop(&lst, idx)
+		pySet(container, key, lst)
+		return val
+	}
 }
 
 func pyOrd(v any) any {
@@ -504,6 +662,9 @@ func pyAppend(seq any, value any) any {
 	switch s := seq.(type) {
 	case []any:
 		return append(s, value)
+	case *PyList:
+		s.Append(value)
+		return s
 	case []byte:
 		return append(s, byte(pyToInt(value)))
 	default:
@@ -748,6 +909,14 @@ func __pytra_any_to_bytes(v any) []byte {
 			i += 1
 		}
 		return out
+	case *PyList:
+		out := make([]byte, 0, len(t.Items))
+		i := 0
+		for i < len(t.Items) {
+			out = append(out, byte(__pytra_int(t.Items[i])))
+			i += 1
+		}
+		return out
 	case string:
 		return []byte(t)
 	default:
@@ -820,6 +989,12 @@ func pyToJSONValue(v any) any {
 			out = append(out, pyToJSONValue(it))
 		}
 		return out
+	case *PyList:
+		out := make([]any, 0, len(x.Items))
+		for _, it := range x.Items {
+			out = append(out, pyToJSONValue(it))
+		}
+		return out
 	case map[any]any:
 		out := map[string]any{}
 		for k, v := range x {
@@ -852,6 +1027,12 @@ func pyFromJSONValue(v any) any {
 	case []any:
 		out := make([]any, 0, len(x))
 		for _, it := range x {
+			out = append(out, pyFromJSONValue(it))
+		}
+		return out
+	case *PyList:
+		out := make([]any, 0, len(x.Items))
+		for _, it := range x.Items {
 			out = append(out, pyFromJSONValue(it))
 		}
 		return out
@@ -912,6 +1093,8 @@ func __pytra_truthy(v any) bool {
 		return t != ""
 	case []any:
 		return len(t) != 0
+	case *PyList:
+		return len(t.Items) != 0
 	case map[any]any:
 		return len(t) != 0
 	default:
@@ -927,6 +1110,10 @@ func __pytra_int(v any) int64 {
 		return int64(t)
 	case int64:
 		return t
+	case int32:
+		return int64(t)
+	case uint8:
+		return int64(t)
 	case float64:
 		return int64(t)
 	case bool:
@@ -997,6 +1184,8 @@ func __pytra_len(v any) int64 {
 		return int64(len([]rune(t)))
 	case []any:
 		return int64(len(t))
+	case *PyList:
+		return int64(len(t.Items))
 	case map[any]any:
 		return int64(len(t))
 	default:
@@ -1022,6 +1211,15 @@ func __pytra_get_index(container any, index any) any {
 			return nil
 		}
 		return t[i]
+	case *PyList:
+		if len(t.Items) == 0 {
+			return nil
+		}
+		i := __pytra_index(__pytra_int(index), int64(len(t.Items)))
+		if i < 0 || i >= int64(len(t.Items)) {
+			return nil
+		}
+		return t.Items[i]
 	case map[any]any:
 		return t[index]
 	case string:
@@ -1050,6 +1248,15 @@ func __pytra_set_index(container any, index any, value any) {
 			return
 		}
 		t[i] = value
+	case *PyList:
+		if len(t.Items) == 0 {
+			return
+		}
+		i := __pytra_index(__pytra_int(index), int64(len(t.Items)))
+		if i < 0 || i >= int64(len(t.Items)) {
+			return
+		}
+		t.Items[i] = value
 	case map[any]any:
 		t[index] = value
 	}
@@ -1104,6 +1311,32 @@ func __pytra_slice(container any, lower any, upper any) any {
 			i += 1
 		}
 		return out
+	case *PyList:
+		n := int64(len(t.Items))
+		lo := __pytra_index(__pytra_int(lower), n)
+		hi := __pytra_index(__pytra_int(upper), n)
+		if lo < 0 {
+			lo = 0
+		}
+		if hi < 0 {
+			hi = 0
+		}
+		if lo > n {
+			lo = n
+		}
+		if hi > n {
+			hi = n
+		}
+		if hi < lo {
+			hi = lo
+		}
+		out := []any{}
+		i := lo
+		for i < hi {
+			out = append(out, t.Items[i])
+			i += 1
+		}
+		return &PyList{Items: out}
 	default:
 		return nil
 	}
@@ -1141,6 +1374,15 @@ func __pytra_contains(container any, value any) bool {
 		i := 0
 		for i < len(t) {
 			if t[i] == value {
+				return true
+			}
+			i += 1
+		}
+		return false
+	case *PyList:
+		i := 0
+		for i < len(t.Items) {
+			if t.Items[i] == value {
 				return true
 			}
 			i += 1
@@ -1222,12 +1464,20 @@ func __pytra_bytes(v any) []any {
 			i += 1
 		}
 		return out
+	case *PyList:
+		out := []any{}
+		i := 0
+		for i < len(t.Items) {
+			out = append(out, t.Items[i])
+			i += 1
+		}
+		return out
 	default:
 		return []any{}
 	}
 }
 
-func __pytra_list_repeat(value any, count any) []any {
+func __pytra_list_repeat(value any, count any) *PyList {
 	out := []any{}
 	n := __pytra_int(count)
 	i := int64(0)
@@ -1235,11 +1485,17 @@ func __pytra_list_repeat(value any, count any) []any {
 		out = append(out, value)
 		i += 1
 	}
-	return out
+	return &PyList{Items: out}
 }
 
 func __pytra_enumerate(v any) []any {
-	items := __pytra_as_list(v)
+	var items []any
+	switch t := v.(type) {
+	case *PyList:
+		items = t.Items
+	default:
+		items = __pytra_as_list(v)
+	}
 	out := []any{}
 	i := int64(0)
 	for i < int64(len(items)) {
@@ -1252,6 +1508,9 @@ func __pytra_enumerate(v any) []any {
 func __pytra_as_list(v any) []any {
 	if t, ok := v.([]any); ok {
 		return t
+	}
+	if t, ok := v.(*PyList); ok {
+		return t.Items
 	}
 	return []any{}
 }
@@ -1275,11 +1534,22 @@ func __pytra_dict_get_default(container any, key any, defaultValue any) any {
 // PNG/GIF functions removed: provided by utils_png.go / utils_gif.go
 // generated from .east by linker when needed.
 
-func __pytra_pop_last(v []any) []any {
-	if len(v) == 0 {
+func __pytra_pop_last(v any) any {
+	switch t := v.(type) {
+	case *PyList:
+		if len(t.Items) == 0 {
+			return t
+		}
+		t.Items = t.Items[:len(t.Items)-1]
+		return t
+	case []any:
+		if len(t) == 0 {
+			return t
+		}
+		return t[:len(t)-1]
+	default:
 		return v
 	}
-	return v[:len(v)-1]
 }
 
 func __pytra_print(args ...any) {
@@ -1345,8 +1615,13 @@ func __pytra_is_str(v any) bool {
 }
 
 func __pytra_is_list(v any) bool {
-	_, ok := v.([]any)
-	return ok
+	if _, ok := v.([]any); ok {
+		return true
+	}
+	if _, ok := v.(*PyList); ok {
+		return true
+	}
+	return false
 }
 
 func __pytra_as_int32(v any) int32 {

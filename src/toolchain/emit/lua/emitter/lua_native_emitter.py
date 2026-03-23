@@ -391,9 +391,13 @@ def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
     if mod == "pytra.std.pathlib":
         return "local " + alias_txt + " = { Path = Path }"
     if mod.startswith("pytra.utils."):
-        leaf = _safe_ident(mod.rsplit(".", 1)[-1], "utils")
+        # module_id → file path: pytra.utils.png → utils/png.lua
+        rel = mod
+        if rel.startswith("pytra."):
+            rel = rel[len("pytra."):]
+        lua_path = rel.replace(".", "/") + ".lua"
         return ('dofile((debug.getinfo(1, "S").source:sub(2):match("^(.*[\\\\/])") or "") .. "'
-                + leaf + '/east.lua")')
+                + lua_path + '")')
     return ""
 
 
@@ -422,9 +426,12 @@ def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_s
     if mod.startswith("pytra.utils.") and sym != "":
         # The symbol comes from a linked submodule loaded via dofile.
         # After dofile the function is global, so alias to it directly.
-        leaf = mod.rsplit(".", 1)[-1]
+        rel = mod
+        if rel.startswith("pytra."):
+            rel = rel[len("pytra."):]
+        lua_path = rel.replace(".", "/") + ".lua"
         dofile_line = ('dofile((debug.getinfo(1, "S").source:sub(2):match("^(.*[\\\\/])") or "") .. "'
-                       + _safe_ident(leaf, "utils") + '/east.lua")')
+                       + lua_path + '")')
         return dofile_line + "\n" + "local " + alias_txt + " = " + _safe_ident(sym, sym)
     return ""
 
@@ -495,6 +502,10 @@ class LuaNativeEmitter:
         self._ref_var_stack: list[set[str]] = []
         self._local_var_stack: list[set[str]] = []
         self.is_submodule: bool = is_submodule
+        self._native_loaded: bool = False
+        meta = east_doc.get("meta") if isinstance(east_doc.get("meta"), dict) else {}
+        emit_ctx = meta.get("emit_context", {}) if isinstance(meta.get("emit_context"), dict) else {}
+        self.module_id: str = emit_ctx.get("module_id", "") if isinstance(emit_ctx.get("module_id"), str) else ""
 
     def _current_type_map(self) -> dict[str, str]:
         if len(self._local_type_stack) == 0:
@@ -958,7 +969,7 @@ class LuaNativeEmitter:
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
         import_lines: list[str] = []
         if not self.is_submodule:
-            self._emit_line('dofile((debug.getinfo(1, "S").source:sub(2):match("^(.*[\\\\/])") or "") .. "py_runtime.lua")')
+            self._emit_line('dofile((debug.getinfo(1, "S").source:sub(2):match("^(.*[\\\\/])") or "") .. "built_in/py_runtime.lua")')
             self._emit_line("")
         for stmt in body:
             kind = stmt.get("kind")
@@ -1294,6 +1305,17 @@ class LuaNativeEmitter:
             self._emit_line("return " + val)
             return
         if kind == "AnnAssign":
+            # extern() variable → delegate to __native module (spec §4)
+            value_node_check = stmt.get("value")
+            if isinstance(value_node_check, dict) and value_node_check.get("kind") == "Call":
+                func_check = value_node_check.get("func")
+                if isinstance(func_check, dict) and func_check.get("id") == "extern":
+                    target_node_e = stmt.get("target")
+                    if isinstance(target_node_e, dict) and target_node_e.get("kind") == "Name":
+                        var_name = _safe_ident(target_node_e.get("id"), "v")
+                        self._ensure_native_loaded()
+                        self._emit_line(var_name + " = __native." + var_name)
+                        return
             target_node = stmt.get("target")
             target = self._render_target(target_node)
             value_node = stmt.get("value")
@@ -1501,6 +1523,11 @@ class LuaNativeEmitter:
 
     def _emit_function_def(self, stmt: dict[str, Any]) -> None:
         name = _safe_ident(stmt.get("name"), "fn")
+        # @extern function → delegate to __native module
+        decorators = stmt.get("decorators")
+        if isinstance(decorators, list) and "extern" in decorators:
+            self._emit_extern_delegation(stmt, name)
+            return
         arg_order_any = stmt.get("arg_order")
         args = arg_order_any if isinstance(arg_order_any, list) else []
         arg_names: list[str] = []
@@ -1513,6 +1540,48 @@ class LuaNativeEmitter:
         self._pop_function_context()
         self.indent -= 1
         self._emit_line("end")
+        self._emit_line("")
+
+    def _native_dofile_path(self) -> str:
+        """Compute native file path relative to the current .lua file's directory."""
+        module_id = self.module_id
+        clean_id = module_id.replace(".east", "")
+        canonical = canonical_runtime_module_id(clean_id)
+        parts = canonical.split(".")
+        if len(parts) > 1 and parts[0] == "pytra":
+            # e.g. pytra.std.time → leaf = "time" → "time_native.lua"
+            leaf = parts[-1]
+        else:
+            leaf = parts[-1] if len(parts) > 0 else "native"
+        return leaf + "_native.lua"
+
+    def _ensure_native_loaded(self) -> None:
+        """Emit __native dofile once per file."""
+        if self._native_loaded:
+            return
+        native_rel = self._native_dofile_path()
+        self._emit_line(
+            'local __native = dofile((debug.getinfo(1, "S").source:sub(2):match("^(.*[\\\\/])") or "") .. "'
+            + native_rel + '")'
+        )
+        self._native_loaded = True
+
+    def _emit_extern_delegation(self, stmt: dict[str, Any], name: str) -> None:
+        """Generate @extern function → __native module delegation (spec §4)."""
+        self._ensure_native_loaded()
+        # Generate delegation: function name(...) return __native.name(...) end
+        arg_order_any = stmt.get("arg_order")
+        args = arg_order_any if isinstance(arg_order_any, list) else []
+        arg_names: list[str] = []
+        for a in args:
+            arg_names.append(_safe_ident(a, "arg"))
+        params = ", ".join(arg_names)
+        return_type = stmt.get("return_type")
+        has_return = isinstance(return_type, str) and return_type != "None" and return_type != ""
+        if has_return:
+            self._emit_line("function " + name + "(" + params + ") return __native." + name + "(" + params + ") end")
+        else:
+            self._emit_line("function " + name + "(" + params + ") __native." + name + "(" + params + ") end")
         self._emit_line("")
 
     def _emit_if(self, stmt: dict[str, Any]) -> None:

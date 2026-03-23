@@ -16,6 +16,7 @@ from toolchain.compile.east2_to_east3_tuple_target_expansion import expand_forco
 from toolchain.compile.east2_to_east3_swap_detection import detect_swap_patterns
 from toolchain.compile.east2_to_east3_type_propagation import apply_type_propagation
 from toolchain.compile.east2_to_east3_unused_var_detection import detect_unused_variables
+from toolchain.compile.east2_to_east3_yields_dynamic import apply_yields_dynamic
 from toolchain.compile.east2_to_east3_yield_lowering import lower_yield_generators
 from toolchain.compile.east2_to_east3_call_metadata import _decorate_call_metadata
 from toolchain.compile.east2_to_east3_dispatch_orchestration import _lower_node_dispatch
@@ -653,6 +654,11 @@ def lower_east2_to_east3(east_module: dict[str, Any], object_dispatch_mode: str 
     # Type propagation: fill in missing resolved_type on Assign targets,
     # BinOp results, tuple unpacking elements, etc.
     apply_type_propagation(lowered)
+
+    # yields_dynamic annotation: mark expressions that return dynamically
+    # typed values at runtime (IfExp, min/max, dict.get) so that emitters
+    # for statically typed languages know to insert explicit casts.
+    apply_yields_dynamic(lowered)
 
     # Swap pattern detection: a,b = b,a → Swap(lhs=a, rhs=b)
     detect_swap_patterns(lowered)

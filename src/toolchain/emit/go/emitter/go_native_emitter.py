@@ -214,8 +214,11 @@ def _is_float_cast_expr(expr: str) -> bool:
 
 
 def _coerce_int_expr(expr_any: Any, rendered: str) -> str:
-    if _resolved_type(expr_any) in _INT_RESOLVED_TYPES:
+    resolved = _resolved_type(expr_any)
+    if resolved in {"int", "int64"}:
         return rendered
+    if resolved in {"int32", "uint8"}:
+        return "int64(" + rendered + ")"
     if _is_int_cast_expr(rendered):
         return rendered
     return "__pytra_int(" + rendered + ")"
@@ -339,7 +342,7 @@ def _go_type(type_name: Any, *, allow_void: bool) -> str:
     if tn == "str":
         return "string"
     if tn.startswith("list["):
-        return "[]any"
+        return "*PyList"
     if tn.startswith("tuple["):
         return "[]any"
     if tn.startswith("dict["):
@@ -349,7 +352,7 @@ def _go_type(type_name: Any, *, allow_void: bool) -> str:
     if tn in {"unknown", "object", "any"}:
         return "any"
     if tn in _CLASS_NAMES[0]:
-        if tn not in _CLASS_HAS_DERIVED[0][0]:
+        if tn not in _CLASS_HAS_DERIVED[0]:
             return "*" + _safe_ident(tn, "Any")
         return _class_iface_name(tn)
     if tn.isidentifier():
@@ -412,6 +415,10 @@ def _tuple_element_types(type_name: Any) -> list[str]:
 def _needs_explicit_cast(value_any: Any) -> bool:
     if not isinstance(value_any, dict):
         return False
+    # EAST3 yields_dynamic flag (set by east2_to_east3_yields_dynamic pass)
+    if value_any.get("yields_dynamic") is True:
+        return True
+    # Fallback for pre-annotated EAST3 documents
     nc: dict[str, Any] = value_any
     kind = nc.get("kind")
     if kind == "IfExp":
@@ -422,12 +429,17 @@ def _needs_explicit_cast(value_any: Any) -> bool:
     return False
 
 
-def _is_any_runtime_value_expr(expr: str) -> bool:
+def _is_any_runtime_value_expr(expr: str, value_any: Any = None) -> bool:
+    # Prefer EAST3 yields_dynamic flag
+    if isinstance(value_any, dict) and value_any.get("yields_dynamic") is True:
+        return True
+    # Fallback: string pattern matching for backward compatibility
     text = expr.strip()
     return (
         _is_wrapped_call(text, "__pytra_ifexp")
         or _is_wrapped_call(text, "__pytra_min")
         or _is_wrapped_call(text, "__pytra_max")
+        or _is_wrapped_call(text, "__pytra_dict_get_default")
     )
 
 
@@ -437,7 +449,7 @@ def _cast_from_any(expr: str, go_type: str, value_any: Any = None, type_map: dic
             isinstance(value_any, dict)
             and _infer_go_type(value_any, type_map) == "int64"
             and not _needs_explicit_cast(value_any)
-            and not _is_any_runtime_value_expr(expr)
+            and not _is_any_runtime_value_expr(expr, value_any)
         ):
             return expr
         if _is_int_cast_expr(expr):
@@ -448,7 +460,7 @@ def _cast_from_any(expr: str, go_type: str, value_any: Any = None, type_map: dic
             isinstance(value_any, dict)
             and _infer_go_type(value_any, type_map) == "float64"
             and not _needs_explicit_cast(value_any)
-            and not _is_any_runtime_value_expr(expr)
+            and not _is_any_runtime_value_expr(expr, value_any)
         ):
             return expr
         if _is_float_cast_expr(expr):
@@ -462,6 +474,8 @@ def _cast_from_any(expr: str, go_type: str, value_any: Any = None, type_map: dic
         return "__pytra_truthy(" + expr + ")"
     if go_type == "string":
         return "__pytra_str(" + expr + ")"
+    if go_type == "*PyList":
+        return "__pytra_as_PyList(" + expr + ")"
     if go_type == "[]any":
         return "__pytra_as_list(" + expr + ")"
     if go_type == "map[any]any":
@@ -1253,6 +1267,8 @@ def _render_expr(expr: Any) -> str:
         while i < len(elements):
             rendered.append(_render_expr(elements[i]))
             i += 1
+        if kind == "List":
+            return "NewPyList(" + ", ".join(rendered) + ")"
         return "[]any{" + ", ".join(rendered) + "}"
 
     if kind == "Dict":
@@ -1288,18 +1304,18 @@ def _render_expr(expr: Any) -> str:
         gens_any = re_d.get("generators")
         gens = gens_any if isinstance(gens_any, list) else []
         if len(gens) != 1 or not isinstance(gens[0], dict):
-            return "[]any{}"
+            return "NewPyList()"
         gen = gens[0]
         ifs_any = gen.get("ifs")
         ifs = ifs_any if isinstance(ifs_any, list) else []
         if len(ifs) != 0:
-            return "[]any{}"
+            return "NewPyList()"
         target_any = gen.get("target")
         iter_any = gen.get("iter")
         if not isinstance(target_any, dict) or target_any.get("kind") != "Name":
-            return "[]any{}"
+            return "NewPyList()"
         if not isinstance(iter_any, dict) or iter_any.get("kind") != "RangeExpr":
-            return "[]any{}"
+            return "NewPyList()"
         loop_var = _safe_ident(target_any.get("id"), "i")
         if loop_var == "_":
             loop_var = "__lc_i"
@@ -1308,13 +1324,13 @@ def _render_expr(expr: Any) -> str:
         step = _render_expr(iter_any.get("step"))
         elt = _render_expr(re_d.get("elt"))
         return (
-            "func() []any { "
-            "__out := []any{}; "
+            "func() *PyList { "
+            "__out := NewPyList(); "
             "__step := __pytra_int(" + step + "); "
             "for " + loop_var + " := __pytra_int(" + start + "); "
             "(__step >= 0 && " + loop_var + " < __pytra_int(" + stop + ")) || (__step < 0 && " + loop_var + " > __pytra_int(" + stop + ")); "
             + loop_var + " += __step { "
-            "__out = append(__out, " + elt + ")"
+            "__out.Append(" + elt + ")"
             " }; "
             "return __out"
             " }()"
@@ -1402,6 +1418,8 @@ def _target_name(target: Any) -> str:
 
 
 def _emit_swap(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
+    # Swap contract: left/right are always Name nodes.
+    # Subscript swaps are lowered to temp-var Assign sequences in EAST3.
     left = _target_name(stmt.get("left"))
     right = _target_name(stmt.get("right"))
     tmp = _fresh_tmp(ctx, "swap")
@@ -1480,6 +1498,9 @@ def _materialize_container_value_from_ref(
     if source_name not in _ref_var_set(ctx):
         return rendered_value
     t = target_go_type.strip()
+    # *PyList is a reference wrapper — assignment shares the reference (no copy)
+    if t == "*PyList":
+        return rendered_value
     if t.startswith("[]"):
         return "append(" + t + "(nil), " + rendered_value + "...)"
     if t.startswith("map["):
@@ -2055,6 +2076,8 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     args_any = value_any.get("args")
                     args = args_any if isinstance(args_any, list) else []
                     if len(args) == 1:
+                        if owner_go_type == "*PyList":
+                            return [indent + owner + ".Append(" + _render_expr(args[0]) + ")"]
                         if owner_go_type == "[]any":
                             return [indent + owner + " = append(" + owner + ", " + _render_expr(args[0]) + ")"]
                         return [indent + owner + " = append(__pytra_as_list(" + owner + "), " + _render_expr(args[0]) + ")"]
@@ -2065,9 +2088,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     args_any = value_any.get("args")
                     args = args_any if isinstance(args_any, list) else []
                     if len(args) == 0:
-                        if owner_go_type == "[]any":
-                            return [indent + owner + " = __pytra_pop_last(" + owner + ")"]
-                        return [indent + owner + " = __pytra_pop_last(__pytra_as_list(" + owner + "))"]
+                        if owner_go_type == "*PyList":
+                            return [indent + owner + ".Pop(nil)"]
+                        return [indent + "__pytra_pop_last(" + owner + ")"]
         return [indent + _render_expr(value_any)]
 
     if kind == "AnnAssign":
