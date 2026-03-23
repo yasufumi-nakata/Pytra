@@ -193,6 +193,11 @@
 - 2026-03-23: S1 完了。`_sh_infer_known_name_call_return_type` に `cast` 分岐追加。`cast(Path, value)` → `Path`、`cast(str, value)` → `str`。
 - 2026-03-23: S2 完了。`_lookup_builtin_method_return` の `list` セクションに generic 解決追加。`list[int].pop()` → `int64`、`list[str].pop()` → `str`。
 
+### P2: cast() に semantic_tag 追加 + 非 pytra import_bindings フィルタ
+
+1. [ ] [ID: P2-CAST-SEMTAG-S1] cast() の Call ノードに `semantic_tag: "cast.typed"` を設定し、emitter が callee_name ハードコードなしで判定できるようにする
+2. [ ] [ID: P2-HOST-IMPORT-FILTER-S1] @extern モジュール内の Python stdlib import を import_bindings から除外またはフラグ付与する
+
 ### P2: runtime_call_adapter_kind 拡充 + extern_var_v1 実装
 
 1. [x] [ID: P2-ADAPTER-EXTERN-S1] `runtime_call_adapter_kind` を `runtime_module_id` の group から自動導出する（built_in → "builtin"、std/utils → "extern_delegate"）
@@ -313,5 +318,5 @@
 
 進捗:
 - 2026-03-22: 192/107 (64%) → 268/31 (89.3%)。+76テスト改善。残り31件の計画書起票。
-- 2026-03-23: 250/49 → 283/17 (94.3%)。+33テスト改善。主な修正: wildcard テスト期待値、generated-only include フォールバック、Any is None emit、module_id 正規化、scope_exit.h include、user_module_dependencies pytra.* skip、py_to_bool object unbox、imported class Object<T> 統一、enumerate TupleTarget 型修正、テスト期待値多数更新。
+- 2026-03-23: 250/49 → 285/15 (95%)。+35テスト改善。主な修正: wildcard テスト期待値、generated-only include フォールバック、Any is None emit、module_id 正規化、scope_exit.h include、user_module_dependencies pytra.* skip、py_to_bool object unbox、imported class Object<T> 統一、enumerate TupleTarget 型修正、runtime_expr Object<void> iter スタブ化、テスト期待値多数更新。
 
