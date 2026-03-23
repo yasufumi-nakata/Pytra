@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from toolchain.emit.common.emitter.code_emitter import (
+    build_import_alias_map,
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
     reject_backend_typed_vararg_signatures,
 )
 
 from toolchain.frontends.runtime_symbol_index import (
     canonical_runtime_module_id,
-    lookup_runtime_module_symbols,
-    lookup_runtime_symbol_doc,
     resolve_import_binding_doc,
 )
 
@@ -98,7 +98,7 @@ _DART_RESERVED_BUILTINS = {
     "Comparable", "Pattern", "Match", "Sink", "StringSink",
     "Null", "Never", "Enum",
 }
-_NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool", "str"}
+_NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool"}
 _COMPILETIME_STD_IMPORT_SYMBOLS = {"abi", "template", "extern"}
 
 
@@ -234,6 +234,22 @@ def _dart_string(text: str) -> str:
     return '"' + out + '"'
 
 
+def _module_id_to_import_path(module_id: str, ext: str, root_rel_prefix: str) -> str:
+    """module_id から機械的にインポートパスを生成する (§3)."""
+    rel = module_id
+    if rel.startswith("pytra."):
+        rel = rel[len("pytra."):]
+    return root_rel_prefix + rel.replace(".", "/") + ext
+
+
+def _module_id_to_native_import_path(module_id: str, ext: str, root_rel_prefix: str) -> str:
+    """module_id から _native ファイルのインポートパスを生成する (§4)."""
+    rel = module_id
+    if rel.startswith("pytra."):
+        rel = rel[len("pytra."):]
+    return root_rel_prefix + rel.replace(".", "/") + "_native" + ext
+
+
 def _binop_symbol(op: str) -> str:
     if op == "Add":
         return "+"
@@ -276,210 +292,6 @@ def _cmp_symbol(op: str) -> str:
     return "=="
 
 
-def _runtime_module_symbol_names(runtime_module_id: str) -> tuple[str, ...]:
-    mod = canonical_runtime_module_id(runtime_module_id.strip())
-    if mod == "":
-        return ()
-    symbols = lookup_runtime_module_symbols(mod)
-    out = [name for name in symbols if isinstance(name, str) and name != ""]
-    out.sort()
-    return tuple(out)
-
-
-def _runtime_symbol_call_adapter_kind(runtime_module_id: str, runtime_symbol: str) -> str:
-    symbol_doc = lookup_runtime_symbol_doc(runtime_module_id, runtime_symbol)
-    adapter_kind_any = symbol_doc.get("call_adapter_kind")
-    if isinstance(adapter_kind_any, str):
-        ak: str = adapter_kind_any
-        return ak.strip()
-    return ""
-
-
-def _runtime_symbol_semantic_tag(runtime_module_id: str, runtime_symbol: str) -> str:
-    symbol_doc = lookup_runtime_symbol_doc(runtime_module_id, runtime_symbol)
-    semantic_tag_any = symbol_doc.get("semantic_tag")
-    if isinstance(semantic_tag_any, str):
-        ss: str = semantic_tag_any
-        return ss.strip()
-    return ""
-
-
-def _is_math_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
-    return _runtime_symbol_call_adapter_kind(runtime_module_id, runtime_symbol) in {
-        "math.float_args",
-        "math.value_getter",
-    }
-
-
-def _is_perf_counter_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
-    return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) == "stdlib.fn.perf_counter"
-
-
-def _is_glob_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
-    return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) == "stdlib.fn.glob"
-
-
-def _is_os_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
-    return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) in {
-        "stdlib.fn.getcwd",
-        "stdlib.fn.mkdir",
-        "stdlib.fn.makedirs",
-    }
-
-
-def _is_os_path_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
-    return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) in {
-        "stdlib.fn.join",
-        "stdlib.fn.dirname",
-        "stdlib.fn.basename",
-        "stdlib.fn.splitext",
-        "stdlib.fn.abspath",
-        "stdlib.fn.exists",
-    }
-
-
-def _is_sys_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
-    return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) in {
-        "stdlib.symbol.argv",
-        "stdlib.symbol.path",
-        "stdlib.symbol.stderr",
-        "stdlib.symbol.stdout",
-        "stdlib.fn.exit",
-        "stdlib.fn.set_argv",
-        "stdlib.fn.set_path",
-        "stdlib.fn.write_stderr",
-        "stdlib.fn.write_stdout",
-    }
-
-
-def _pascal_symbol_name(name: str) -> str:
-    out: list[str] = []
-    uppercase_next = True
-    i = 0
-    while i < len(name):
-        ch = name[i]
-        if ch == "_":
-            uppercase_next = True
-            i += 1
-            continue
-        if uppercase_next:
-            out.append(ch.upper())
-            uppercase_next = False
-        else:
-            out.append(ch)
-        i += 1
-    return "".join(out)
-
-
-def _runtime_symbol_alias_expr(runtime_module_id: str, runtime_symbol: str) -> str:
-    mod = canonical_runtime_module_id(runtime_module_id.strip())
-    sym = runtime_symbol.strip()
-    if sym == "":
-        return ""
-    if _is_math_runtime_symbol(mod, sym):
-        if sym == "pi":
-            return "pyMathPi()"
-        if sym == "e":
-            return "pyMathE()"
-        if sym == "log10":
-            return "(double x) => pytraLog(x) / pytraLog(10)"
-        return "pyMath" + _pascal_symbol_name(sym)
-    if _is_perf_counter_runtime_symbol(mod, sym):
-        return "pytraPerfCounter"
-    if _is_glob_runtime_symbol(mod, sym):
-        return "(String _pattern) => <String>[]"
-    if _is_os_runtime_symbol(mod, sym):
-        if sym == "getcwd":
-            return "() => '.'"
-        return "([String? _p, bool? _existOk]) {}"
-    if _is_os_path_runtime_symbol(mod, sym):
-        if sym == "join":
-            return r"(dynamic a, dynamic b) => '${a}/${b}'"
-        if sym == "dirname":
-            return "(dynamic _p) => ''"
-        if sym == "basename":
-            return r"(dynamic p) => '$p'"
-        if sym == "splitext":
-            return r"(dynamic p) => ['$p', '']"
-        if sym == "abspath":
-            return r"(dynamic p) => '$p'"
-        if sym == "exists":
-            return "(dynamic _p) => false"
-    if _is_sys_runtime_symbol(mod, sym):
-        if sym == "argv":
-            return "<String>[]"
-        if sym == "path":
-            return "<String>[]"
-        if sym == "stderr":
-            return "PytraStderr()"
-        if sym == "stdout":
-            return "PytraStdout()"
-        if sym == "exit":
-            return "(dynamic code) => exit(code is int ? code : 0)"
-        if sym == "set_argv" or sym == "set_path":
-            return "(dynamic _values) {}"
-        if sym == "write_stderr":
-            return "(dynamic text) => stderr.write(text)"
-        if sym == "write_stdout":
-            return "(dynamic text) => stdout.write(text)"
-    return ""
-
-
-def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
-    mod = canonical_runtime_module_id(runtime_module_id.strip())
-    if mod == "pytra.std.math":
-        return "import 'dart:math' as " + alias_txt + ";"
-    if mod in {"enum", "pytra.std.enum"}:
-        return "// import " + alias_txt + " (enum stub)"
-    if mod == "pytra.std.argparse":
-        return "// import " + alias_txt + " (argparse stub)"
-    if mod == "pytra.std.re":
-        return "// import " + alias_txt + " (re stub)"
-    if mod == "pytra.std.json":
-        return "// import " + alias_txt + " (json stub)"
-    if mod == "pytra.std.pathlib":
-        return "// import " + alias_txt + " (pathlib stub)"
-    if mod == "pytra.utils.png":
-        return "import 'png/east.dart' as " + alias_txt + ";"
-    if mod == "pytra.utils.gif":
-        return "import 'gif/east.dart' as " + alias_txt + ";"
-    symbol_names = _runtime_module_symbol_names(mod)
-    if len(symbol_names) == 0:
-        return ""
-    return "// import " + alias_txt + " (module stub)"
-
-
-def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_symbol: str) -> str:
-    mod = canonical_runtime_module_id(runtime_module_id.strip())
-    sym = runtime_symbol.strip()
-    alias_expr = _runtime_symbol_alias_expr(mod, sym)
-    if alias_expr != "":
-        return "var " + alias_txt + " = " + alias_expr + ";"
-    if mod in {"enum", "pytra.std.enum"}:
-        if sym in {"Enum", "IntEnum", "IntFlag"}:
-            return "// " + alias_txt + " (enum stub)"
-        return ""
-    if mod == "pytra.std.argparse" and sym == "ArgumentParser":
-        return "// " + alias_txt + " (argparse stub)"
-    if mod == "pytra.std.re" and sym == "sub":
-        return "var " + alias_txt + " = (dynamic _pattern, dynamic _repl, dynamic text, [dynamic _flags]) => text;"
-    if mod == "pytra.std.json":
-        if sym == "loads":
-            return "// " + alias_txt + " (json.loads stub)"
-        if sym == "dumps":
-            return "// " + alias_txt + " (json.dumps stub)"
-        return ""
-    if mod == "pytra.std.pathlib" and sym == "Path":
-        return "// " + alias_txt + " (pathlib stub)"
-    if mod.startswith("pytra.utils.") and sym != "":
-        # Symbol imported from utils module — available via module-level import
-        return "// " + alias_txt + " from " + mod + " (via module import)"
-    return ""
-
-
-def _is_compile_time_std_import_symbol(module_id: str, symbol: str) -> bool:
-    mod = canonical_runtime_module_id(module_id.strip())
-    return mod == "pytra.std" and symbol in _COMPILETIME_STD_IMPORT_SYMBOLS
 
 
 def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
@@ -544,6 +356,15 @@ class DartNativeEmitter:
         self._needs_io_import = False
         self._class_field_types: dict[str, dict[str, str]] = {}
         self._function_return_types: dict[str, str] = {}
+        # emit_context (injected by emit_all_modules)
+        meta_any = east_doc.get("meta")
+        meta = meta_any if isinstance(meta_any, dict) else {}
+        emit_ctx_any = meta.get("emit_context")
+        emit_ctx = emit_ctx_any if isinstance(emit_ctx_any, dict) else {}
+        self._module_id: str = emit_ctx.get("module_id", "") if isinstance(emit_ctx.get("module_id"), str) else ""
+        self._root_rel_prefix: str = emit_ctx.get("root_rel_prefix", "./") if isinstance(emit_ctx.get("root_rel_prefix"), str) else "./"
+        self._is_entry: bool = bool(emit_ctx.get("is_entry", False))
+        self._has_extern_delegation: bool = False
 
     # --- type mapping ---
 
@@ -796,7 +617,7 @@ class DartNativeEmitter:
     def _render_cond_expr(self, test_any: Any) -> str:
         test = self._render_expr(test_any)
         if self._is_sequence_expr(test_any):
-            return "__pytraTruthy(" + test + ")"
+            return "pytraTruthy(" + test + ")"
         return test
 
     def _is_str_expr(self, node_any: Any) -> bool:
@@ -854,6 +675,31 @@ class DartNativeEmitter:
             return inferred
         return ""
 
+    def _is_extern_var(self, stmt: dict[str, Any]) -> bool:
+        """Check if a statement is an extern() variable declaration (§4).
+
+        Uses meta.extern_var_v1 as the canonical detection method.
+        """
+        meta_any = stmt.get("meta")
+        if isinstance(meta_any, dict) and isinstance(meta_any.get("extern_var_v1"), dict):
+            return True
+        return False
+
+    def _scan_extern_usage(self, body: list[dict[str, Any]]) -> None:
+        """Pre-scan body for @extern functions/variables to set _has_extern_delegation."""
+        for stmt in body:
+            kind = stmt.get("kind")
+            if kind == "FunctionDef":
+                decorators_any = stmt.get("decorators")
+                decorators = decorators_any if isinstance(decorators_any, list) else []
+                if "extern" in decorators:
+                    self._has_extern_delegation = True
+                    return
+            if kind in {"AnnAssign", "Assign"}:
+                if self._is_extern_var(stmt):
+                    self._has_extern_delegation = True
+                    return
+
     def transpile(self) -> str:
         module_comments = self._module_leading_comment_lines(prefix="// ")
         if len(module_comments) > 0:
@@ -862,29 +708,16 @@ class DartNativeEmitter:
         body = self._dict_list(self.east_doc.get("body"))
         main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
         self._scan_module_symbols(body)
+        # Pre-scan for @extern to know if __native import is needed
+        self._scan_extern_usage(body)
         # Emit imports header
         self._emit_imports(body)
-        # Emit runtime helpers
-        self._emit_line("// --- pytra runtime helpers ---")
-        self._emit_print_helper()
-        self._emit_line("")
-        self._emit_truthy_helper()
-        self._emit_line("")
-        self._emit_contains_helper()
-        self._emit_line("")
-        self._emit_repeat_helper()
-        self._emit_line("")
-        self._emit_string_predicate_helpers()
-        if len(self.class_names) > 0:
-            self._emit_line("")
-            self._emit_isinstance_helper()
-        self._emit_line("// --- end runtime helpers ---")
-        self._emit_line("")
+        # Runtime helpers are provided by py_runtime.dart (no inline emit needed)
         # Emit body
         for stmt in body:
             self._emit_stmt(stmt)
-        # Emit main guard
-        if len(main_guard) > 0:
+        # Emit main guard — only for entry modules (§8)
+        if self._is_entry and len(main_guard) > 0:
             self._emit_line("")
             self._emit_line("void main() {")
             self.indent += 1
@@ -1080,12 +913,26 @@ class DartNativeEmitter:
         return self.relative_import_name_aliases.get(ident, ident)
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
-        import_lines: list[str] = []
-        import_lines.append("import 'py_runtime.dart';")
-        import_lines.append("")
+        """Emit import section using build_import_alias_map (§3/§7).
+
+        Uses _module_id_to_import_path to compute paths from module_id
+        without hardcoding any specific module names (§1).
+        """
+        rt_prefix = self._root_rel_prefix
+        dart_import_lines: list[str] = []
+        alias_lines: list[str] = []
+        # Always import py_runtime
+        dart_import_lines.append("import '" + rt_prefix + "built_in/py_runtime.dart';")
+        # Use build_import_alias_map + resolve_import_binding_doc (§3/§7)
+        meta_any = self.east_doc.get("meta")
+        meta = meta_any if isinstance(meta_any, dict) else {}
+        # Track which module_ids we've already emitted import statements for
+        imported_module_paths: dict[str, str] = {}  # module_id -> dart alias
+        mod_alias_seq = 0
+        # Scan body for import statements and use resolve_import_binding_doc
         for stmt in body:
-            kind = stmt.get("kind")
-            if kind == "Import":
+            stmt_kind = stmt.get("kind")
+            if stmt_kind == "Import":
                 names_any = stmt.get("names")
                 names = names_any if isinstance(names_any, list) else []
                 for ent in names:
@@ -1098,18 +945,19 @@ class DartNativeEmitter:
                     alias = asname if isinstance(asname, str) and asname != "" else mod.split(".")[-1]
                     alias_txt = _safe_ident(alias, "mod")
                     resolved = resolve_import_binding_doc(mod, "", "module")
-                    if len(resolved) > 0:
-                        runtime_module_id = resolved.get("runtime_module_id")
-                        if isinstance(runtime_module_id, str):
-                            line = _runtime_module_alias_line(alias_txt, runtime_module_id)
-                            if line != "":
-                                import_lines.append(line)
-                                continue
-                    if mod.startswith("pytra."):
-                        raise RuntimeError("lang=dart unresolved import module: " + mod)
-                    import_lines.append("// import " + mod + " as " + alias_txt + " (not yet mapped)")
-                continue
-            if kind == "ImportFrom":
+                    if len(resolved) == 0:
+                        continue
+                    runtime_mod = resolved.get("runtime_module_id", "")
+                    if runtime_mod == "":
+                        runtime_mod = mod
+                    mod_canon = canonical_runtime_module_id(runtime_mod)
+                    if mod_canon == "":
+                        mod_canon = runtime_mod
+                    imp_path = _module_id_to_import_path(mod_canon, ".dart", rt_prefix)
+                    dart_import_lines.append("import '" + imp_path + "' as " + alias_txt + ";")
+                    imported_module_paths[mod_canon] = alias_txt
+                    self.imported_modules.add(alias_txt)
+            elif stmt_kind == "ImportFrom":
                 mod = stmt.get("module")
                 if not isinstance(mod, str):
                     continue
@@ -1128,190 +976,54 @@ class DartNativeEmitter:
                     asname = ent.get("asname")
                     alias = asname if isinstance(asname, str) and asname != "" else sym
                     alias_txt = _safe_ident(alias, sym)
-                    if _is_compile_time_std_import_symbol(mod, sym):
-                        continue
-                    # pytra.utils.png / pytra.utils.gif: emit import for the generated module
-                    if mod == "pytra.utils.png":
-                        dart_import = "import 'png/east.dart';"
-                        if dart_import not in import_lines:
-                            import_lines.append(dart_import)
-                        continue
-                    if mod == "pytra.utils.gif":
-                        dart_import = "import 'gif/east.dart';"
-                        if dart_import not in import_lines:
-                            import_lines.append(dart_import)
-                        continue
-                    if mod in {"pytra.utils.assertions", "pytra.std.test"} and sym == "py_assert_stdout":
-                        import_lines.append(
-                            "dynamic " + alias_txt + " = (dynamic _expected, dynamic _fn) => true;"
-                        )
-                        continue
-                    if mod in {"pytra.utils.assertions", "pytra.std.test"} and sym == "py_assert_eq":
-                        import_lines.append("dynamic " + alias_txt + " = (dynamic a, dynamic b, [dynamic _label]) => a == b;")
-                        continue
-                    if mod in {"pytra.utils.assertions", "pytra.std.test"} and sym == "py_assert_true":
-                        import_lines.append("dynamic " + alias_txt + " = (dynamic v, [dynamic _label]) => v != null && v != false && v != 0;")
-                        continue
-                    if mod in {"pytra.utils.assertions", "pytra.std.test"} and sym == "py_assert_all":
-                        import_lines.append(
-                            "dynamic "
-                            + alias_txt
-                            + " = (dynamic checks, [dynamic _label]) { if (checks == null) return false; for (var c in checks) { if (c != true) return false; } return true; };"
-                        )
+                    # Skip compile-time-only symbols
+                    if sym in _COMPILETIME_STD_IMPORT_SYMBOLS:
                         continue
                     resolved = resolve_import_binding_doc(mod, sym, "symbol")
-                    if len(resolved) > 0:
-                        runtime_module_id = resolved.get("runtime_module_id")
-                        resolved_kind = resolved.get("resolved_binding_kind")
-                        runtime_symbol = resolved.get("runtime_symbol")
-                        if isinstance(runtime_module_id, str):
-                            if resolved_kind == "module":
-                                line = _runtime_module_alias_line(alias_txt, runtime_module_id)
-                                if line != "":
-                                    import_lines.append(line)
-                                    continue
-                            if isinstance(runtime_symbol, str):
-                                line = _runtime_symbol_alias_line(alias_txt, runtime_module_id, runtime_symbol)
-                                if line != "":
-                                    import_lines.append(line)
-                                    continue
-                    if mod.startswith("pytra."):
-                        raise RuntimeError("lang=dart unresolved import symbol: " + mod + "." + sym)
-                    import_lines.append(
-                        "// from " + mod + " import " + sym + " as " + alias_txt + " (not yet mapped)"
-                    )
-        # Dart requires all import directives before declarations.
-        # Split import lines into import directives and other lines.
-        dart_imports: list[str] = []
-        other_lines: list[str] = []
-        for line in import_lines:
-            if line.startswith("import "):
-                dart_imports.append(line)
-            else:
-                other_lines.append(line)
-        for line in dart_imports:
+                    if len(resolved) == 0:
+                        # Unresolved import (e.g., Python stdlib) — skip
+                        continue
+                    resolved_kind = resolved.get("resolved_binding_kind", "")
+                    runtime_mod = resolved.get("runtime_module_id", "")
+                    if runtime_mod == "":
+                        runtime_mod = mod
+                    mod_canon = canonical_runtime_module_id(runtime_mod)
+                    if mod_canon == "":
+                        mod_canon = runtime_mod
+                    if resolved_kind == "module":
+                        # Submodule import (e.g., from pytra.utils import png)
+                        imp_path = _module_id_to_import_path(mod_canon, ".dart", rt_prefix)
+                        dart_import_lines.append("import '" + imp_path + "' as " + alias_txt + ";")
+                        imported_module_paths[mod_canon] = alias_txt
+                        self.imported_modules.add(alias_txt)
+                    else:
+                        # Symbol import (e.g., from pytra.std.time import perf_counter)
+                        if mod_canon not in imported_module_paths:
+                            mod_alias_seq += 1
+                            mod_alias = "__mod_" + str(mod_alias_seq)
+                            imp_path = _module_id_to_import_path(mod_canon, ".dart", rt_prefix)
+                            dart_import_lines.append("import '" + imp_path + "' as " + mod_alias + ";")
+                            imported_module_paths[mod_canon] = mod_alias
+                        mod_alias = imported_module_paths[mod_canon]
+                        runtime_sym_kind = resolved.get("runtime_symbol_kind", "")
+                        if runtime_sym_kind == "class":
+                            # Class constructor: use name alias (module.Class) instead of var
+                            self.relative_import_name_aliases[alias_txt] = mod_alias + "." + alias_txt
+                        else:
+                            alias_lines.append("var " + alias_txt + " = " + mod_alias + "." + alias_txt + ";")
+        # If this module has @extern delegation, add the __native import (§4/§5.1)
+        if self._has_extern_delegation and self._module_id != "":
+            native_path = _module_id_to_native_import_path(self._module_id, ".dart", rt_prefix)
+            dart_import_lines.append("import '" + native_path + "' as __native;")
+        # Emit all lines with Dart import directives first, then alias lines
+        for line in dart_import_lines:
             self._emit_line(line)
-        if len(dart_imports) > 0 and len(other_lines) > 0:
+        if len(dart_import_lines) > 0 and len(alias_lines) > 0:
             self._emit_line("")
-        for line in other_lines:
+        for line in alias_lines:
             self._emit_line(line)
-        if len(import_lines) > 0:
+        if len(dart_import_lines) > 0 or len(alias_lines) > 0:
             self._emit_line("")
-
-    def _emit_print_helper(self) -> None:
-        self._emit_line("String __pytraPrintRepr(dynamic v) {")
-        self.indent += 1
-        self._emit_line("if (v == true) return 'True';")
-        self._emit_line("if (v == false) return 'False';")
-        self._emit_line("if (v == null) return 'None';")
-        self._emit_line("return v.toString();")
-        self.indent -= 1
-        self._emit_line("}")
-        self._emit_line("")
-        self._emit_line("void __pytraPrint(List<dynamic> args) {")
-        self.indent += 1
-        self._emit_line("print(args.map(__pytraPrintRepr).join(' '));")
-        self.indent -= 1
-        self._emit_line("}")
-
-    def _emit_truthy_helper(self) -> None:
-        self._emit_line("bool __pytraTruthy(dynamic v) {")
-        self.indent += 1
-        self._emit_line("if (v == null) return false;")
-        self._emit_line("if (v is bool) return v;")
-        self._emit_line("if (v is num) return v != 0;")
-        self._emit_line("if (v is String) return v.isNotEmpty;")
-        self._emit_line("if (v is List) return v.isNotEmpty;")
-        self._emit_line("if (v is Map) return v.isNotEmpty;")
-        self._emit_line("return true;")
-        self.indent -= 1
-        self._emit_line("}")
-
-    def _emit_contains_helper(self) -> None:
-        self._emit_line("bool __pytraContains(dynamic container, dynamic value) {")
-        self.indent += 1
-        self._emit_line("if (container is List) return container.contains(value);")
-        self._emit_line("if (container is Map) return container.containsKey(value);")
-        self._emit_line("if (container is Set) return container.contains(value);")
-        self._emit_line("if (container is String) return container.contains(value.toString());")
-        self._emit_line("return false;")
-        self.indent -= 1
-        self._emit_line("}")
-
-    def _emit_repeat_helper(self) -> None:
-        self._emit_line("dynamic __pytraRepeatSeq(dynamic a, dynamic b) {")
-        self.indent += 1
-        self._emit_line("dynamic seq = a;")
-        self._emit_line("dynamic count = b;")
-        self._emit_line("if (a is num && b is! num) { seq = b; count = a; }")
-        self._emit_line("int n = (count is num) ? count.toInt() : 0;")
-        self._emit_line("if (n <= 0) {")
-        self.indent += 1
-        self._emit_line("if (seq is String) return '';")
-        self._emit_line("return [];")
-        self.indent -= 1
-        self._emit_line("}")
-        self._emit_line("if (seq is String) return seq * n;")
-        self._emit_line("if (seq is List) {")
-        self.indent += 1
-        self._emit_line("var out = [];")
-        self._emit_line("for (var i = 0; i < n; i++) { out.addAll(seq); }")
-        self._emit_line("return out;")
-        self.indent -= 1
-        self._emit_line("}")
-        self._emit_line("return (a is num ? a : 0) * (b is num ? b : 0);")
-        self.indent -= 1
-        self._emit_line("}")
-
-    def _emit_string_predicate_helpers(self) -> None:
-        self._emit_line("bool __pytraStrIsdigit(String s) {")
-        self.indent += 1
-        self._emit_line("if (s.isEmpty) return false;")
-        self._emit_line("for (var i = 0; i < s.length; i++) {")
-        self.indent += 1
-        self._emit_line("var c = s.codeUnitAt(i);")
-        self._emit_line("if (c < 48 || c > 57) return false;")
-        self.indent -= 1
-        self._emit_line("}")
-        self._emit_line("return true;")
-        self.indent -= 1
-        self._emit_line("}")
-        self._emit_line("")
-        self._emit_line("bool __pytraStrIsalpha(String s) {")
-        self.indent += 1
-        self._emit_line("if (s.isEmpty) return false;")
-        self._emit_line("for (var i = 0; i < s.length; i++) {")
-        self.indent += 1
-        self._emit_line("var c = s.codeUnitAt(i);")
-        self._emit_line("if (!((c >= 65 && c <= 90) || (c >= 97 && c <= 122))) return false;")
-        self.indent -= 1
-        self._emit_line("}")
-        self._emit_line("return true;")
-        self.indent -= 1
-        self._emit_line("}")
-        self._emit_line("")
-        self._emit_line("bool __pytraStrIsalnum(String s) {")
-        self.indent += 1
-        self._emit_line("if (s.isEmpty) return false;")
-        self._emit_line("for (var i = 0; i < s.length; i++) {")
-        self.indent += 1
-        self._emit_line("var c = s.codeUnitAt(i);")
-        self._emit_line("if (!((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122))) return false;")
-        self.indent -= 1
-        self._emit_line("}")
-        self._emit_line("return true;")
-        self.indent -= 1
-        self._emit_line("}")
-
-    def _emit_isinstance_helper(self) -> None:
-        self._emit_line("bool __pytraIsinstance(dynamic obj, dynamic classType) {")
-        self.indent += 1
-        self._emit_line("if (obj == null) return false;")
-        self._emit_line("// Dart runtime type check is handled via 'is' keyword at emit site")
-        self._emit_line("return false;")
-        self.indent -= 1
-        self._emit_line("}")
-        self._emit_line("")
 
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         self._emit_leading_trivia(stmt, prefix="// ")
@@ -1329,9 +1041,29 @@ class DartNativeEmitter:
             self._emit_line("return " + val + ";")
             return
         if kind == "AnnAssign":
+            # §4: extern() variable → __native delegation (detect via meta.extern_var_v1)
+            if self._is_extern_var(stmt):
+                target_node = stmt.get("target")
+                if isinstance(target_node, dict) and target_node.get("kind") == "Name":
+                    var_name = _safe_ident(target_node.get("id"), "value")
+                    # Use extern_var_v1.symbol if available, else fall back to var_name
+                    meta_stmt = stmt.get("meta")
+                    ev1 = meta_stmt.get("extern_var_v1") if isinstance(meta_stmt, dict) else None
+                    sym_name = ev1.get("symbol", "") if isinstance(ev1, dict) else ""
+                    if sym_name == "":
+                        sym_name = var_name
+                    decl_type_any = stmt.get("decl_type")
+                    decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
+                    if decl_type == "":
+                        anno_any = stmt.get("annotation")
+                        if isinstance(anno_any, str):
+                            decl_type = anno_any.strip()
+                    dart_t = self._dart_type(decl_type) if decl_type != "" else "dynamic"
+                    self._emit_line("final " + dart_t + " " + var_name + " = __native." + sym_name + ";")
+                    return
+            value_node = stmt.get("value")
             target_node = stmt.get("target")
             target = self._render_target(target_node)
-            value_node = stmt.get("value")
             value = self._render_expr(value_node) if isinstance(value_node, dict) else "null"
             if isinstance(target_node, dict) and target_node.get("kind") == "Name":
                 target_name = _safe_ident(target_node.get("id"), "value")
@@ -1354,6 +1086,14 @@ class DartNativeEmitter:
                             self._current_local_vars().add(target_name)
                         self._emit_line(dart_t + " " + target + ";")
                         return
+                # null assignment to non-nullable type → use late or nullable
+                if value == "null" and dart_t not in {"var", "dynamic"} and not dart_t.endswith("?"):
+                    if decl_type != "":
+                        self._current_type_map()[target_name] = decl_type
+                    if len(self._local_var_stack) > 0:
+                        self._current_local_vars().add(target_name)
+                    self._emit_line("late " + dart_t + " " + target + ";")
+                    return
                 if decl_type != "":
                     self._current_type_map()[target_name] = decl_type
                 if len(self._local_var_stack) > 0:
@@ -1545,6 +1285,12 @@ class DartNativeEmitter:
         arg_names: list[str] = []
         for a in args:
             arg_names.append(_safe_ident(a, "arg"))
+        # @extern function → delegate to runtime helper
+        decorators_any = stmt.get("decorators")
+        decorators = decorators_any if isinstance(decorators_any, list) else []
+        if "extern" in decorators:
+            self._emit_extern_function(stmt, name, arg_names)
+            return
         param_parts: list[str] = []
         for a_raw, a_safe in zip(args, arg_names):
             raw_name = a_raw if isinstance(a_raw, str) else a_safe
@@ -1557,6 +1303,57 @@ class DartNativeEmitter:
         self._push_function_context(stmt, arg_names, args)
         self._emit_block(stmt.get("body"))
         self._pop_function_context()
+        self.indent -= 1
+        self._emit_line("}")
+        self._emit_line("")
+
+    def _emit_extern_function(self, stmt: dict[str, Any], name: str, arg_names: list[str]) -> None:
+        """Emit @extern function as __native delegation (§4/§5.1).
+
+        Generates: ret_type name(params) { return __native.name(args); }
+        The __native import is tracked and emitted in the import header.
+        """
+        original_name = stmt.get("original_name")
+        fn_name = original_name if isinstance(original_name, str) and original_name != "" else name
+        # Mark that this module needs a __native import
+        self._has_extern_delegation = True
+        # Build parameter list using dynamic types to accept any caller convention.
+        # @extern functions delegate to __native which handles type coercion.
+        arg_order_any = stmt.get("arg_order")
+        args_raw = arg_order_any if isinstance(arg_order_any, list) else []
+        arg_defaults_any = stmt.get("arg_defaults")
+        arg_defaults = arg_defaults_any if isinstance(arg_defaults_any, dict) else {}
+        all_arg_names: list[str] = list(arg_names)
+        # Append default args that aren't in arg_order
+        for dk in arg_defaults:
+            dk_safe = _safe_ident(dk, "arg")
+            if dk_safe not in all_arg_names:
+                all_arg_names.append(dk_safe)
+        # Use List<dynamic> args to forward any number of arguments
+        param_parts: list[str] = []
+        optional_parts: list[str] = []
+        for idx, a_safe in enumerate(all_arg_names):
+            raw_name = args_raw[idx] if idx < len(args_raw) else a_safe
+            at = self._dart_arg_type(stmt, raw_name if isinstance(raw_name, str) else a_safe)
+            if at in {"double", "int"}:
+                at = "num"
+            dk_key = raw_name if isinstance(raw_name, str) else a_safe
+            if dk_key in arg_defaults:
+                default_node = arg_defaults[dk_key]
+                default_val = self._render_expr(default_node) if isinstance(default_node, dict) else "null"
+                optional_parts.append("dynamic " + a_safe + " = " + default_val)
+            else:
+                param_parts.append(at + " " + a_safe)
+        if len(optional_parts) > 0:
+            params = ", ".join(param_parts + ["[" + ", ".join(optional_parts) + "]"]) if len(param_parts) > 0 else "[" + ", ".join(optional_parts) + "]"
+        else:
+            params = ", ".join(param_parts)
+        call_args = ", ".join(all_arg_names)
+        ret_type = self._dart_return_type(stmt)
+        # §5.1: function name matches original Python name exactly
+        self._emit_line(ret_type + " " + fn_name + "(" + params + ") {")
+        self.indent += 1
+        self._emit_line("return __native." + fn_name + "(" + call_args + ");")
         self.indent -= 1
         self._emit_line("}")
         self._emit_line("")
@@ -1945,7 +1742,7 @@ class DartNativeEmitter:
             op_raw = str(ed.get("op"))
             op = _binop_symbol(op_raw)
             if op_raw == "Mult" and (self._is_sequence_expr(left_node) or self._is_sequence_expr(right_node)):
-                return "__pytraRepeatSeq(" + left + ", " + right + ")"
+                return "pytraRepeatSeq(" + left + ", " + right + ")"
             return "(" + left + " " + op + " " + right + ")"
         if kind == "UnaryOp":
             operand = self._render_expr(ed.get("operand"))
@@ -1968,9 +1765,9 @@ class DartNativeEmitter:
             right = self._render_expr(comps[0])
             op0 = str(ops[0])
             if op0 == "In":
-                return "__pytraContains(" + right + ", " + left + ")"
+                return "pytraContains(" + right + ", " + left + ")"
             if op0 == "NotIn":
-                return "(!__pytraContains(" + right + ", " + left + "))"
+                return "(!pytraContains(" + right + ", " + left + "))"
             return "(" + left + " " + _cmp_symbol(op0) + " " + right + ")"
         if kind == "BoolOp":
             values_any = ed.get("values")
@@ -2128,7 +1925,7 @@ class DartNativeEmitter:
             test = self._render_expr(ed.get("test"))
             body = self._render_expr(ed.get("body"))
             orelse = self._render_expr(ed.get("orelse"))
-            return "(__pytraTruthy(" + test + ") ? (" + body + ") : (" + orelse + "))"
+            return "(pytraTruthy(" + test + ") ? (" + body + ") : (" + orelse + "))"
         if kind == "JoinedStr":
             values_any = ed.get("values")
             values = values_any if isinstance(values_any, list) else []
@@ -2155,7 +1952,7 @@ class DartNativeEmitter:
             return "(" + self._render_expr(ed.get("value")) + ").toString()"
         if kind == "ObjBool":
             val = self._render_expr(ed.get("value"))
-            return "__pytraTruthy(" + val + ")"
+            return "pytraTruthy(" + val + ")"
         if kind == "ObjLen":
             return "(" + self._render_expr(ed.get("value")) + ").length"
         raise RuntimeError("lang=dart unsupported expr kind: " + str(kind))
@@ -2188,8 +1985,23 @@ class DartNativeEmitter:
         if isinstance(func_any, dict) and func_any.get("kind") == "Name":
             raw_fn_name = func_any.get("id") if isinstance(func_any.get("id"), str) else ""
             fn_name = _safe_ident(raw_fn_name, "fn")
+            if raw_fn_name == "cast":
+                # cast(Type, value) → (value as Type)
+                if len(rendered_args) >= 2:
+                    # First arg is the type — get the raw type name from the EAST node
+                    type_arg = args[0] if len(args) > 0 else None
+                    type_name = ""
+                    if isinstance(type_arg, dict) and type_arg.get("kind") == "Name":
+                        type_name = type_arg.get("id", "")
+                    dart_type = self._dart_type(type_name) if type_name != "" else "dynamic"
+                    if dart_type == "dynamic":
+                        return rendered_args[1]
+                    return "(" + rendered_args[1] + " as " + dart_type + ")"
+                if len(rendered_args) == 1:
+                    return rendered_args[0]
+                return "null"
             if raw_fn_name == "print":
-                return "__pytraPrint([" + ", ".join(rendered_args) + "])"
+                return "pytraPrint([" + ", ".join(rendered_args) + "])"
             if raw_fn_name == "int":
                 if len(rendered_args) == 0:
                     return "0"
@@ -2201,7 +2013,7 @@ class DartNativeEmitter:
             if raw_fn_name == "bool":
                 if len(rendered_args) == 0:
                     return "false"
-                return "__pytraTruthy(" + rendered_args[0] + ")"
+                return "pytraTruthy(" + rendered_args[0] + ")"
             if raw_fn_name == "str":
                 if len(rendered_args) == 0:
                     return "''"
@@ -2308,11 +2120,11 @@ class DartNativeEmitter:
                 "lower",
             }:
                 if attr == "isdigit":
-                    return "__pytraStrIsdigit(" + owner + ")"
+                    return "pytraStrIsdigit(" + owner + ")"
                 if attr == "isalpha":
-                    return "__pytraStrIsalpha(" + owner + ")"
+                    return "pytraStrIsalpha(" + owner + ")"
                 if attr == "isalnum":
-                    return "__pytraStrIsalnum(" + owner + ")"
+                    return "pytraStrIsalnum(" + owner + ")"
                 if attr == "strip":
                     return owner + ".trim()"
                 if attr == "lstrip":
@@ -2506,8 +2318,31 @@ class DartNativeEmitter:
         return "null"
 
 
+_REPO_ROOT = Path(__file__).resolve().parents[5]
+
+
+def _has_handwritten_runtime(module_id: str) -> bool:
+    """Check if a hand-written .dart file exists in src/runtime/dart/ for this module."""
+    if not module_id.startswith("pytra."):
+        return False
+    rel = module_id[len("pytra."):]
+    runtime_path = _REPO_ROOT / "src" / "runtime" / "dart" / (rel.replace(".", "/") + ".dart")
+    return runtime_path.exists()
+
+
 def transpile_to_dart_native(east_doc: dict[str, Any]) -> str:
     """EAST3 ドキュメントを Dart native ソースへ変換する。"""
+    # built_in modules are provided by py_runtime — skip emit
+    meta_any = east_doc.get("meta")
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    emit_ctx_any = meta.get("emit_context")
+    emit_ctx = emit_ctx_any if isinstance(emit_ctx_any, dict) else {}
+    module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx.get("module_id"), str) else ""
+    if module_id.startswith("pytra.built_in."):
+        return ""
+    # Skip modules that have hand-written runtime replacements
+    if _has_handwritten_runtime(module_id):
+        return ""
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Dart backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Dart backend")
     return DartNativeEmitter(east_doc).transpile()

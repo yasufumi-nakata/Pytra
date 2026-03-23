@@ -1,34 +1,95 @@
-// py_runtime.dart — Pytra Dart runtime helpers
+// py_runtime.dart — Pytra Dart runtime helpers (Python built-in functions only)
 // source: src/runtime/dart/built_in/py_runtime.dart
-// generated-by: pytra dart native emitter
+//
+// §6: py_runtime provides ONLY Python built-in function equivalents.
+// pytra.std.* functions (math, time, etc.) are in std/*_native.dart files.
 
-import 'dart:math' as math;
 import 'dart:io';
 
-// --- math helpers ---
-double pyMathSqrt(dynamic x) => math.sqrt((x as num).toDouble());
-double pyMathSin(dynamic x) => math.sin((x as num).toDouble());
-double pyMathCos(dynamic x) => math.cos((x as num).toDouble());
-double pyMathTan(dynamic x) => math.tan((x as num).toDouble());
-double pyMathAsin(dynamic x) => math.asin((x as num).toDouble());
-double pyMathAcos(dynamic x) => math.acos((x as num).toDouble());
-double pyMathAtan(dynamic x) => math.atan((x as num).toDouble());
-double pyMathAtan2(dynamic y, dynamic x) =>
-    math.atan2((y as num).toDouble(), (x as num).toDouble());
-double pyMathExp(dynamic x) => math.exp((x as num).toDouble());
-double pyMathLog(dynamic x) => math.log((x as num).toDouble());
-double pytraLog(dynamic x) => math.log((x as num).toDouble());
-double pyMathFloor(dynamic x) => ((x as num).toDouble()).floorToDouble();
-double pyMathCeil(dynamic x) => ((x as num).toDouble()).ceilToDouble();
-double pyMathFabs(dynamic x) => ((x as num).toDouble()).abs();
-double pyMathPi() => math.pi;
-double pyMathE() => math.e;
-dynamic pyMathPow(dynamic x, dynamic y) =>
-    math.pow((x as num).toDouble(), (y as num).toDouble());
+// --- print / repr ---
+String pytraPrintRepr(dynamic v) {
+  if (v == true) return 'True';
+  if (v == false) return 'False';
+  if (v == null) return 'None';
+  return v.toString();
+}
 
-// --- perf counter ---
-double pytraPerfCounter() =>
-    DateTime.now().microsecondsSinceEpoch / 1000000.0;
+void pytraPrint(List<dynamic> args) {
+  print(args.map(pytraPrintRepr).join(' '));
+}
+
+// --- truthiness ---
+bool pytraTruthy(dynamic v) {
+  if (v == null) return false;
+  if (v is bool) return v;
+  if (v is num) return v != 0;
+  if (v is String) return v.isNotEmpty;
+  if (v is List) return v.isNotEmpty;
+  if (v is Map) return v.isNotEmpty;
+  return true;
+}
+
+// --- contains (in operator) ---
+bool pytraContains(dynamic container, dynamic value) {
+  if (container is List) return container.contains(value);
+  if (container is Map) return container.containsKey(value);
+  if (container is Set) return container.contains(value);
+  if (container is String) return container.contains(value.toString());
+  return false;
+}
+
+// --- sequence repeat (* operator) ---
+dynamic pytraRepeatSeq(dynamic a, dynamic b) {
+  dynamic seq = a;
+  dynamic count = b;
+  if (a is num && b is! num) { seq = b; count = a; }
+  int n = (count is num) ? count.toInt() : 0;
+  if (n <= 0) {
+    if (seq is String) return '';
+    return [];
+  }
+  if (seq is String) return seq * n;
+  if (seq is List) {
+    var out = [];
+    for (var i = 0; i < n; i++) { out.addAll(seq); }
+    return out;
+  }
+  return (a is num ? a : 0) * (b is num ? b : 0);
+}
+
+// --- string predicates ---
+bool pytraStrIsdigit(String s) {
+  if (s.isEmpty) return false;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.codeUnitAt(i);
+    if (c < 48 || c > 57) return false;
+  }
+  return true;
+}
+
+bool pytraStrIsalpha(String s) {
+  if (s.isEmpty) return false;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.codeUnitAt(i);
+    if (!((c >= 65 && c <= 90) || (c >= 97 && c <= 122))) return false;
+  }
+  return true;
+}
+
+bool pytraStrIsalnum(String s) {
+  if (s.isEmpty) return false;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.codeUnitAt(i);
+    if (!((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122))) return false;
+  }
+  return true;
+}
+
+// --- isinstance helper ---
+bool pytraIsinstance(dynamic obj, dynamic classType) {
+  if (obj == null) return false;
+  return false;
+}
 
 // --- zip ---
 List<List<dynamic>> pytraZip(dynamic a, dynamic b) {
