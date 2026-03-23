@@ -595,6 +595,17 @@
         }
       }
     },
+    "pytra.std.collections": {
+      "runtime_group": "std",
+      "source_py": "src/pytra/std/collections.py",
+      "symbols": {
+        "deque": {
+          "dispatch": "ctor",
+          "kind": "class",
+          "semantic_tag": "stdlib.symbol.deque"
+        }
+      }
+    },
     "pytra.std.enum": {
       "runtime_group": "std",
       "source_py": "src/pytra/std/enum.py",
