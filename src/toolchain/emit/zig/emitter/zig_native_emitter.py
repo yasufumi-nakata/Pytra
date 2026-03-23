@@ -610,13 +610,16 @@ class ZigNativeEmitter:
                 self._emit_stmt(stmt)
         # vtable を emit
         self._emit_vtables()
-        # 残りのステートメント + main_guard_body を pub fn main() に入れる
+        # §8: 残りのステートメント + main_guard_body (is_entry のみ) を pub fn main() に入れる
+        ectx_main = self._get_emit_context()
+        is_entry = ectx_main.get("is_entry", False) if isinstance(ectx_main, dict) else False
         top_stmts: list[dict[str, Any]] = []
         for stmt in body:
             if not self._is_top_level_decl(stmt) and not self._is_top_level_var(stmt):
                 top_stmts.append(stmt)
-        for stmt in main_guard:
-            top_stmts.append(stmt)
+        if is_entry:
+            for stmt in main_guard:
+                top_stmts.append(stmt)
         if len(top_stmts) > 0:
             self._mutated_var_stack.append(self._scan_mutated_vars(top_stmts))
             self._local_var_stack.append(set())
@@ -969,70 +972,54 @@ class ZigNativeEmitter:
         return self._root_rel_prefix() + rel.replace(".", "/") + ".zig"
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
-        """ImportFrom ノードから Zig の @import を生成（module_id ベース、ハードコード禁止）。"""
+        """import_bindings から Zig の @import を生成（§3: linker 解決済み情報を使用）。"""
         from toolchain.emit.common.emitter.code_emitter import build_import_alias_map
         emitted: set[str] = set()
-        # import alias map を構築
         self._import_alias_map = build_import_alias_map(self.east_doc.get("meta", {}))
-        # body 内の ImportFrom の module フィールドを収集（モジュール判定用）
-        all_import_modules: set[str] = set()
-        for s in body:
-            if isinstance(s, dict) and s.get("kind") == "ImportFrom":
-                m = s.get("module")
-                if isinstance(m, str) and m != "":
-                    all_import_modules.add(m)
-        for stmt in body:
-            kind = stmt.get("kind")
-            if kind != "ImportFrom":
+        _DECORATORS = {"abi", "extern", "template"}
+        meta = self.east_doc.get("meta")
+        meta = meta if isinstance(meta, dict) else {}
+        import_bindings_any = meta.get("import_bindings")
+        import_bindings = import_bindings_any if isinstance(import_bindings_any, list) else []
+        for binding in import_bindings:
+            if not isinstance(binding, dict):
                 continue
-            module_any = stmt.get("module")
-            module_id = module_any if isinstance(module_any, str) else ""
-            if module_id == "":
+            module_id = binding.get("module_id", "")
+            if not isinstance(module_id, str) or module_id == "":
                 continue
-            names_any = stmt.get("names")
-            names = names_any if isinstance(names_any, list) else []
-            # コンパイル時のみの import はスキップ
-            if module_id in _COMPILETIME_STD_IMPORT_SYMBOLS:
+            # Skip pytra.built_in (provided by py_runtime.zig)
+            if module_id.startswith("pytra.built_in"):
                 continue
-            for entry in names:
-                if not isinstance(entry, dict):
+            # Skip non-pytra modules (Python stdlib used by @extern source)
+            if not module_id.startswith("pytra.") and not module_id.startswith("."):
+                continue
+            binding_kind = binding.get("binding_kind", "")
+            export_name = binding.get("export_name", "")
+            local_name = binding.get("local_name", "")
+            if isinstance(export_name, str) and export_name in _DECORATORS:
+                continue
+            # Mechanically derive import path from module_id (§3)
+            rel = module_id
+            if rel.startswith("pytra."):
+                rel = rel[len("pytra."):]
+            # Parent module with symbol binding → sub-module
+            if "." not in rel and binding_kind == "symbol" and isinstance(export_name, str) and export_name != "":
+                if export_name in _DECORATORS:
                     continue
-                name = entry.get("name")
-                if not isinstance(name, str) or name == "":
-                    continue
-                # extern/abi/template は special シンボル → スキップ
-                if name in {"extern", "abi", "template"}:
-                    continue
-                asname = entry.get("asname")
-                local = asname if isinstance(asname, str) and asname != "" else name
-                # import される module_id を決定
-                # "from pytra.std import math" → module_id="pytra.std", name="math"
-                #   → imported module = "pytra.std.math"
-                # "from pytra.utils.gif import save_gif" → module_id="pytra.utils.gif", name="save_gif"
-                #   → imported module = "pytra.utils.gif" (name は関数名)
-                # 区別: name がモジュールか関数かは、module_id + "." + name が別のモジュールとして
-                # 存在するか否かで判断。簡易的に: import_alias_map にあればモジュール扱い。
-                imported_module = module_id + "." + name
-                # name がサブモジュールか関数名かの判定:
-                # "from pytra.std import math" (depth=2) → math はサブモジュール
-                # "from pytra.std.time import perf_counter" (depth=3+) → perf_counter は関数
-                # "from pytra.utils import png" (depth=2) → png はサブモジュール
-                # "from pytra.utils.gif import save_gif" (depth=3+) → save_gif は関数
-                pytra_depth = len(module_id.split(".")) if module_id.startswith("pytra.") else 0
-                is_module_import = pytra_depth == 2  # pytra.std / pytra.utils
-                if not is_module_import:
-                    imported_module = module_id
-                import_path = self._module_id_to_import_path(imported_module)
-                safe_mod = _safe_ident(imported_module.split(".")[-1], "mod")
-                if safe_mod not in emitted:
-                    self._emit_line("const " + safe_mod + " = @import(\"" + import_path + "\");")
-                    emitted.add(safe_mod)
-                # 関数 alias: const save_gif = gif.save_gif;
-                if not is_module_import:
-                    safe_local = _safe_ident(local, "fn")
-                    if safe_local != safe_mod and safe_local not in emitted:
-                        self._emit_line("const " + safe_local + " = " + safe_mod + "." + _safe_ident(name, "fn") + ";")
-                        emitted.add(safe_local)
+                imported_module = module_id + "." + export_name
+            else:
+                imported_module = module_id
+            import_path = self._module_id_to_import_path(imported_module)
+            safe_mod = _safe_ident(imported_module.split(".")[-1], "mod")
+            if safe_mod not in emitted:
+                self._emit_line("const " + safe_mod + " = @import(\"" + import_path + "\");")
+                emitted.add(safe_mod)
+            # Symbol binding: add const alias (e.g. const Path = pathlib.Path;)
+            if binding_kind == "symbol" and isinstance(local_name, str) and local_name != "":
+                safe_local = _safe_ident(local_name, "fn")
+                if safe_local != safe_mod and safe_local not in emitted:
+                    self._emit_line("const " + safe_local + " = " + safe_mod + "." + _safe_ident(export_name, "fn") + ";")
+                    emitted.add(safe_local)
 
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         self._emit_leading_trivia(stmt, prefix="// ")
@@ -1549,7 +1536,20 @@ class ZigNativeEmitter:
         self._emit_line("")
 
     def _emit_if(self, stmt: dict[str, Any]) -> None:
-        test = self._render_cond_expr(stmt.get("test"))
+        test_node = stmt.get("test")
+        # Skip dead branches (isinstance lowered to false, constant false)
+        if isinstance(test_node, dict):
+            if test_node.get("kind") == "Constant" and test_node.get("value") is False:
+                orelse = self._dict_list(stmt.get("orelse"))
+                for sub in orelse:
+                    self._emit_stmt(sub)
+                return
+            if test_node.get("kind") == "IsInstance":
+                orelse = self._dict_list(stmt.get("orelse"))
+                for sub in orelse:
+                    self._emit_stmt(sub)
+                return
+        test = self._render_cond_expr(test_node)
         self._emit_line("if (" + test + ") {")
         self.indent += 1
         self._emit_block(stmt.get("body"))
@@ -2504,8 +2504,13 @@ class ZigNativeEmitter:
                             return "pytra.list_to_bytes(" + arg_strs[0] + ")"
                         return arg_strs[0]
                     return "&[_]u8{}"
-                if fname == "perf_counter":
-                    return "pytra.perf_counter()"
+                # perf_counter は @extern 委譲経由 (time モジュール) で提供
+                # import されていれば perf_counter() としてアクセス可能
+                if fname == "cast":
+                    # cast(T, value) is a Python type narrowing hint; just return the value
+                    if len(arg_strs) >= 2:
+                        return arg_strs[1]
+                    return arg_strs[0] if len(arg_strs) == 1 else "null"
                 if fname == "@\"extern\"" or fname == "extern":
                     # @extern(value) → value を直接返す
                     if len(arg_strs) > 0:
