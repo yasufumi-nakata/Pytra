@@ -91,7 +91,7 @@ def _run_one(stem: str, east3_opt_level: str) -> CaseResult:
                 "--target",
                 "ruby",
                 "-o",
-                f"test/transpile/ruby/{stem}.rb",
+                f"work/transpile/ruby/{stem}.rb",
                 "--east3-opt-level",
                 east3_opt_level,
             ],
@@ -103,7 +103,7 @@ def _run_one(stem: str, east3_opt_level: str) -> CaseResult:
             return CaseResult(stem, False, f"ruby transpile failed: {detail}")
 
         rb = _run(
-            ["ruby", f"test/transpile/ruby/{stem}.rb"],
+            ["ruby", f"work/transpile/ruby/{stem}.rb"],
             cwd=work,
         )
         if rb.returncode != 0:

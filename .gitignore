@@ -6,12 +6,9 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 
-/test/transpile/
 /work/
 /sample/obj/
 /sample/out/
-
-/test/transpile/java/*.class
 /sample/java/*.class
 
 # legacy output paths (avoid accidental tracking if recreated)

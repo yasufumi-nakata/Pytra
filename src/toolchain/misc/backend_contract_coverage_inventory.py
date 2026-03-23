@@ -201,7 +201,7 @@ COVERAGE_BUNDLE_TAXONOMY_V1: Final[tuple[CoverageBundleTaxonomyEntry, ...]] = (
     },
     {
         "bundle_id": "runtime",
-        "source_roots": ("test/transpile", "tools/runtime_parity_check.py"),
+        "source_roots": ("work/transpile", "tools/runtime_parity_check.py"),
         "suite_ids": ("transpile_artifact",),
         "harness_kinds": ("runtime_parity_compare",),
         "notes": "Representative runtime parity and staged artifact coverage.",
@@ -302,7 +302,7 @@ LIVE_SUITE_FAMILY_INVENTORY_V1: Final[tuple[LiveSuiteFamilyEntry, ...]] = (
     {
         "suite_id": "transpile_artifact",
         "suite_kind": "test_transpile",
-        "source_roots": ("test/transpile",),
+        "source_roots": ("work/transpile",),
         "coverage_role": "direct_matrix_input",
         "bundle_candidates": ("runtime",),
         "notes": "Artifact and parity-driven staged runtime verification.",
@@ -355,7 +355,7 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
         "bundle_kind": "runtime",
         "suite_kind": "test_transpile",
         "harness_kind": "runtime_parity_cli",
-        "source_paths": ("tools/runtime_parity_check.py", "test/transpile"),
+        "source_paths": ("tools/runtime_parity_check.py", "work/transpile"),
         "evidence_refs": (
             {
                 "relpath": "test/unit/tooling/test_runtime_parity_check_cli.py",
@@ -363,7 +363,7 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
             },
             {
                 "relpath": "tools/runtime_parity_check.py",
-                "needle": 'return f"test/transpile/{target}/{case_stem}"',
+                "needle": 'return f"work/transpile/{target}/{case_stem}"',
             },
         ),
         "notes": "Runtime bundle owns staged sample/runtime parity verification.",

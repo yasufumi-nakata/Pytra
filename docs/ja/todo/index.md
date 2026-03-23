@@ -166,6 +166,10 @@
 - 2026-03-23: S1 完了。`runtime_parity_check.py` の fixture 対応で代替達成。pytest ラッパーは不要と判断。
 - 2026-03-23: S2 完了。`_LANG_UNSUPPORTED_FIXTURES` を `runtime_parity_check.py` に追加。Zig の初期 skip リストを設定。他言語は parity 実行結果を見て追加。
 
+### P2: test/transpile/ → work/transpile/ 移行
+
+1. [ ] [ID: P2-TRANSPILE-DIR-MIGRATE-S1] `test/transpile/` の参照を `work/transpile/` に変更し、`.gitignore` を更新する
+
 ### P2: ContainerValueLocalHintPass 汎化（全 backend 共通化）
 
 文脈: [docs/ja/plans/p2-container-value-local-hint-generalize.md](../plans/p2-container-value-local-hint-generalize.md)

@@ -172,7 +172,7 @@ def py_join(sep: str, parts: list[str]) -> str:
 ## Runtime Parity Runbook (sample, all targets)
 
 - `tools/runtime_parity_check.py` validates not only stdout but also artifact `size` and `CRC32` from each `output:` path.
-- During parity runs, stale artifacts are purged per case from `sample/out`, `test/out`, `out`, and `test/transpile/<target>/<case>`.
+- During parity runs, stale artifacts are purged per case from `sample/out`, `test/out`, `out`, and `work/transpile/<target>/<case>`.
 - Unstable timing lines such as `elapsed_sec` are excluded by default (`--ignore-unstable-stdout` is compatibility-only).
 - Canonical wrapper for validating all 14 targets:
 
@@ -339,14 +339,14 @@ Use only the target language section you need.
 <summary>C++</summary>
 
 ```bash
-python src/pytra-cli.py --target cpp test/fixtures/collections/iterable.py -o test/transpile/cpp/iterable.cpp
-g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cpp/iterable.cpp \
+python src/pytra-cli.py --target cpp test/fixtures/collections/iterable.py -o work/transpile/cpp/iterable.cpp
+g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp work/transpile/cpp/iterable.cpp \
   src/runtime/cpp/generated/utils/png.cpp src/runtime/cpp/generated/utils/gif.cpp \
   src/runtime/cpp/native/std/math.cpp src/runtime/cpp/native/std/time.cpp src/runtime/cpp/generated/std/pathlib.cpp \
   src/runtime/cpp/generated/built_in/type_id.cpp \
   src/runtime/cpp/native/core/gc.cpp src/runtime/cpp/native/core/io.cpp \
-  -o test/transpile/obj/iterable.out
-./test/transpile/obj/iterable.out
+  -o work/transpile/obj/iterable.out
+./work/transpile/obj/iterable.out
 ```
 
 Notes:
@@ -415,9 +415,9 @@ python3 tools/verify_image_runtime_parity.py
 <summary>Rust</summary>
 
 ```bash
-python src/pytra-cli.py --target rs test/fixtures/collections/iterable.py -o test/transpile/rs/iterable.rs
-rustc -O test/transpile/rs/iterable.rs -o test/transpile/obj/iterable_rs.out
-./test/transpile/obj/iterable_rs.out
+python src/pytra-cli.py --target rs test/fixtures/collections/iterable.py -o work/transpile/rs/iterable.rs
+rustc -O work/transpile/rs/iterable.rs -o work/transpile/obj/iterable_rs.out
+./work/transpile/obj/iterable_rs.out
 ```
 
 Notes:
@@ -429,8 +429,8 @@ Notes:
 <summary>Ruby</summary>
 
 ```bash
-python src/pytra-cli.py --target ruby test/fixtures/collections/iterable.py -o test/transpile/ruby/iterable.rb
-ruby test/transpile/ruby/iterable.rb
+python src/pytra-cli.py --target ruby test/fixtures/collections/iterable.py -o work/transpile/ruby/iterable.rb
+ruby work/transpile/ruby/iterable.rb
 ```
 
 Notes:
@@ -445,13 +445,13 @@ Notes:
 <summary>PHP</summary>
 
 ```bash
-python src/pytra-cli.py --target php test/fixtures/collections/iterable.py -o test/transpile/php/iterable.php
-php test/transpile/php/iterable.php
+python src/pytra-cli.py --target php test/fixtures/collections/iterable.py -o work/transpile/php/iterable.php
+php work/transpile/php/iterable.php
 ```
 
 Notes:
 - `pytra-cli.py --target php` generates PHP source directly from EAST3 via the native emitter (`src/toolchain/emit/php/emitter/php_native_emitter.py`).
-- Canonical PHP runtime helpers live under `src/runtime/php/{generated,native}/`, and transpilation stages only the required helper files into `test/transpile/php/`.
+- Canonical PHP runtime helpers live under `src/runtime/php/{generated,native}/`, and transpilation stages only the required helper files into `work/transpile/php/`.
 - Check transpile regressions with `python3 tools/check_py2php_transpile.py`.
 - Run parity entry flow with `python3 tools/runtime_parity_check.py --case-root sample --targets php` (environments without PHP toolchain are recorded as `toolchain_missing`).
 
@@ -461,13 +461,13 @@ Notes:
 <summary>C#</summary>
 
 ```bash
-python src/pytra-cli.py --target cs test/fixtures/collections/iterable.py -o test/transpile/cs/iterable.cs
-mcs -out:test/transpile/obj/iterable.exe \
-  test/transpile/cs/iterable.cs \
+python src/pytra-cli.py --target cs test/fixtures/collections/iterable.py -o work/transpile/cs/iterable.cs
+mcs -out:work/transpile/obj/iterable.exe \
+  work/transpile/cs/iterable.cs \
   src/runtime/cs/native/built_in/py_runtime.cs src/runtime/cs/native/std/time_native.cs \
   src/runtime/cs/generated/utils/png.cs src/runtime/cs/generated/utils/gif.cs \
   src/runtime/cs/native/std/pathlib.cs src/runtime/cs/generated/std/time.cs
-mono test/transpile/obj/iterable.exe
+mono work/transpile/obj/iterable.exe
 ```
 
 Notes:
@@ -479,8 +479,8 @@ Notes:
 <summary>JavaScript</summary>
 
 ```bash
-python src/pytra-cli.py --target js test/fixtures/collections/iterable.py -o test/transpile/js/iterable.js
-node test/transpile/js/iterable.js
+python src/pytra-cli.py --target js test/fixtures/collections/iterable.py -o work/transpile/js/iterable.js
+node work/transpile/js/iterable.js
 ```
 
 Notes:
@@ -492,8 +492,8 @@ Notes:
 <summary>TypeScript</summary>
 
 ```bash
-python src/pytra-cli.py --target ts test/fixtures/collections/iterable.py -o test/transpile/ts/iterable.ts
-npx tsx test/transpile/ts/iterable.ts
+python src/pytra-cli.py --target ts test/fixtures/collections/iterable.py -o work/transpile/ts/iterable.ts
+npx tsx work/transpile/ts/iterable.ts
 ```
 
 Notes:
@@ -505,8 +505,8 @@ Notes:
 <summary>Go</summary>
 
 ```bash
-python src/pytra-cli.py --target go test/fixtures/collections/iterable.py -o test/transpile/go/iterable.go
-go run test/transpile/go/iterable.go
+python src/pytra-cli.py --target go test/fixtures/collections/iterable.py -o work/transpile/go/iterable.go
+go run work/transpile/go/iterable.go
 ```
 
 Notes:
@@ -520,9 +520,9 @@ Notes:
 <summary>Java</summary>
 
 ```bash
-python src/pytra-cli.py --target java test/fixtures/collections/iterable.py -o test/transpile/java/iterable.java
-javac test/transpile/java/iterable.java
-java -cp test/transpile/java iterable
+python src/pytra-cli.py --target java test/fixtures/collections/iterable.py -o work/transpile/java/iterable.java
+javac work/transpile/java/iterable.java
+java -cp work/transpile/java iterable
 ```
 
 Notes:
@@ -536,9 +536,9 @@ Notes:
 <summary>Swift</summary>
 
 ```bash
-python src/pytra-cli.py --target swift test/fixtures/collections/iterable.py -o test/transpile/swift/iterable.swift
-swiftc test/transpile/swift/iterable.swift -o test/transpile/obj/iterable_swift.out
-./test/transpile/obj/iterable_swift.out
+python src/pytra-cli.py --target swift test/fixtures/collections/iterable.py -o work/transpile/swift/iterable.swift
+swiftc work/transpile/swift/iterable.swift -o work/transpile/obj/iterable_swift.out
+./work/transpile/obj/iterable_swift.out
 ```
 
 Notes:
@@ -552,9 +552,9 @@ Notes:
 <summary>Kotlin</summary>
 
 ```bash
-python src/pytra-cli.py --target kotlin test/fixtures/collections/iterable.py -o test/transpile/kotlin/iterable.kt
-kotlinc test/transpile/kotlin/iterable.kt -include-runtime -d test/transpile/obj/iterable_kotlin.jar
-java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
+python src/pytra-cli.py --target kotlin test/fixtures/collections/iterable.py -o work/transpile/kotlin/iterable.kt
+kotlinc work/transpile/kotlin/iterable.kt -include-runtime -d work/transpile/obj/iterable_kotlin.jar
+java -cp work/transpile/obj/iterable_kotlin.jar pytra_iterable
 ```
 
 Notes:
@@ -568,8 +568,8 @@ Notes:
 <summary>Scala3</summary>
 
 ```bash
-python src/pytra-cli.py --target scala test/fixtures/collections/iterable.py -o test/transpile/scala/iterable.scala
-scala run test/transpile/scala/iterable.scala
+python src/pytra-cli.py --target scala test/fixtures/collections/iterable.py -o work/transpile/scala/iterable.scala
+scala run work/transpile/scala/iterable.scala
 ```
 
 Notes:
@@ -586,18 +586,18 @@ Notes:
 
 ```bash
 # 1) Convert Python to EAST (JSON)
-python src/pytra/compiler/east.py sample/py/01_mandelbrot.py -o test/transpile/east/01_mandelbrot.json --pretty
+python src/pytra/compiler/east.py sample/py/01_mandelbrot.py -o work/transpile/east/01_mandelbrot.json --pretty
 
 # 2) Convert EAST(JSON) to C++ (.py input can also be given directly)
-python src/pytra-cli.py --target cpp test/transpile/east/01_mandelbrot.json -o test/transpile/cpp/01_mandelbrot.cpp
+python src/pytra-cli.py --target cpp work/transpile/east/01_mandelbrot.json -o work/transpile/cpp/01_mandelbrot.cpp
 
 # 3) Compile and run
-g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cpp \
+g++ -std=c++20 -O2 -I src -I src/runtime/cpp work/transpile/cpp/01_mandelbrot.cpp \
   src/runtime/cpp/generated/utils/png.cpp src/runtime/cpp/generated/utils/gif.cpp \
   src/runtime/cpp/generated/built_in/type_id.cpp \
   src/runtime/cpp/native/core/gc.cpp src/runtime/cpp/native/core/io.cpp \
-  -o test/transpile/obj/01_mandelbrot
-./test/transpile/obj/01_mandelbrot
+  -o work/transpile/obj/01_mandelbrot
+./work/transpile/obj/01_mandelbrot
 ```
 
 Notes:
@@ -625,14 +625,14 @@ Comparison steps when compilation succeeds:
 
 ```bash
 # 2) Convert sample/py/01 with selfhost executable
-mkdir -p test/transpile/cpp2
-./selfhost/py2cpp.out sample/py/01_mandelbrot.py test/transpile/cpp2/01_mandelbrot.cpp
+mkdir -p work/transpile/cpp2
+./selfhost/py2cpp.out sample/py/01_mandelbrot.py work/transpile/cpp2/01_mandelbrot.cpp
 
 # 3) Convert the same input with Python C++ backend
-python src/pytra-cli.py --target cpp sample/py/01_mandelbrot.py -o test/transpile/cpp/01_mandelbrot.cpp
+python src/pytra-cli.py --target cpp sample/py/01_mandelbrot.py -o work/transpile/cpp/01_mandelbrot.cpp
 
 # 4) Check generated diff (source diff is allowed; this is for inspection)
-diff -u test/transpile/cpp/01_mandelbrot.cpp test/transpile/cpp2/01_mandelbrot.cpp || true
+diff -u work/transpile/cpp/01_mandelbrot.cpp work/transpile/cpp2/01_mandelbrot.cpp || true
 
 # 5) Batch-check output diff on representative cases
 python3 tools/check_selfhost_cpp_diff.py --show-diff

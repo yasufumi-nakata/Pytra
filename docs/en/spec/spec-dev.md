@@ -633,11 +633,11 @@ Constraints:
 
 ## 4. Validation Procedure (C++)
 
-1. Use the Python transpiler to convert `test/fixtures` into `test/transpile/cpp`.
-2. Compile the generated C++ into `test/transpile/obj/`.
+1. Use the Python transpiler to convert `test/fixtures` into `work/transpile/cpp`.
+2. Compile the generated C++ into `work/transpile/obj/`.
 3. Compare the execution result with the Python execution result.
-4. During self-host verification, use the self-transpiled executable to generate `test/fixtures -> test/transpile/cpp2`.
-5. Confirm `test/transpile/cpp` and `test/transpile/cpp2` match.
+4. During self-host verification, use the self-transpiled executable to generate `test/fixtures -> work/transpile/cpp2`.
+5. Confirm `work/transpile/cpp` and `work/transpile/cpp2` match.
 
 ### 4.1 Goal Conditions for Selfhost Validation
 

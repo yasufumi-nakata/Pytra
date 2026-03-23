@@ -12,7 +12,7 @@ This page collects day-to-day operational runbooks for parity, local CI, and bac
 ## Runtime Parity Operations (sample, all targets)
 
 - `tools/runtime_parity_check.py` compares not only stdout but also the `size` and `CRC32` of artifacts indicated by `output:`.
-- On each parity run, stale artifacts under `sample/out`, `test/out`, `out`, and `test/transpile/<target>/<case>` are automatically deleted per case.
+- On each parity run, stale artifacts under `sample/out`, `test/out`, `out`, and `work/transpile/<target>/<case>` are automatically deleted per case.
 - Unstable lines such as `elapsed_sec` are excluded from comparison by default (`--ignore-unstable-stdout` is a compatibility flag).
 - Canonical wrapper to verify all 14 targets at once:
 
@@ -132,11 +132,11 @@ Comparison procedure after a successful compile:
 
 ```bash
 # 2) Convert sample/py/01 from .py input using the selfhost binary
-mkdir -p test/transpile/cpp2
-./selfhost/py2cpp.out sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp2/01_mandelbrot.cpp
+mkdir -p work/transpile/cpp2
+./selfhost/py2cpp.out sample/py/01_mandelbrot.py --target cpp -o work/transpile/cpp2/01_mandelbrot.cpp
 
 # 3) Convert the same input with the Python C++ backend
-python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp/01_mandelbrot.cpp
+python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o work/transpile/cpp/01_mandelbrot.cpp
 
 # 4) Verify the direct route passes -fsyntax-only for all samples
 python3 tools/check_selfhost_direct_compile.py

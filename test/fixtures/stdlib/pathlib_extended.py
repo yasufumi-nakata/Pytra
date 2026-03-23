@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def run_pathlib_extended() -> bool:
-    root = Path("test/transpile/obj/pathlib_case32")
+    root = Path("work/transpile/obj/pathlib_case32")
     root.mkdir(parents=True, exist_ok=True)
 
     child = root / "values.txt"

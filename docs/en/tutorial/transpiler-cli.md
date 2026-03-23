@@ -91,9 +91,9 @@ Notes:
 <summary>Rust</summary>
 
 ```bash
-python src/pytra-cli.py --target rs test/fixtures/collections/iterable.py -o test/transpile/rs/iterable.rs
-rustc -O test/transpile/rs/iterable.rs -o test/transpile/obj/iterable_rs.out
-./test/transpile/obj/iterable_rs.out
+python src/pytra-cli.py --target rs test/fixtures/collections/iterable.py -o work/transpile/rs/iterable.rs
+rustc -O work/transpile/rs/iterable.rs -o work/transpile/obj/iterable_rs.out
+./work/transpile/obj/iterable_rs.out
 ```
 
 Notes:
@@ -105,8 +105,8 @@ Notes:
 <summary>Ruby</summary>
 
 ```bash
-python src/pytra-cli.py --target ruby test/fixtures/collections/iterable.py -o test/transpile/ruby/iterable.rb
-ruby test/transpile/ruby/iterable.rb
+python src/pytra-cli.py --target ruby test/fixtures/collections/iterable.py -o work/transpile/ruby/iterable.rb
+ruby work/transpile/ruby/iterable.rb
 ```
 
 Notes:
@@ -121,8 +121,8 @@ Notes:
 <summary>Lua</summary>
 
 ```bash
-python src/pytra-cli.py --target lua test/fixtures/collections/iterable.py -o test/transpile/lua/iterable.lua
-lua test/transpile/lua/iterable.lua
+python src/pytra-cli.py --target lua test/fixtures/collections/iterable.py -o work/transpile/lua/iterable.lua
+lua work/transpile/lua/iterable.lua
 ```
 
 Notes:
@@ -138,13 +138,13 @@ Notes:
 <summary>PHP</summary>
 
 ```bash
-python src/pytra-cli.py --target php test/fixtures/collections/iterable.py -o test/transpile/php/iterable.php
-php test/transpile/php/iterable.php
+python src/pytra-cli.py --target php test/fixtures/collections/iterable.py -o work/transpile/php/iterable.php
+php work/transpile/php/iterable.php
 ```
 
 Notes:
 - `pytra-cli.py --target php` generates PHP code directly from EAST3 via the native emitter (`src/toolchain/emit/php/emitter/php_native_emitter.py`).
-- Canonical PHP runtime helpers live under `src/runtime/php/{generated,native}/`, and transpilation stages only the required helpers into `test/transpile/php/`.
+- Canonical PHP runtime helpers live under `src/runtime/php/{generated,native}/`, and transpilation stages only the required helpers into `work/transpile/php/`.
 - Check transpile regressions with `python3 tools/check_py2php_transpile.py`.
 - Run parity with `python3 tools/runtime_parity_check.py --case-root sample --targets php` (environments without PHP toolchain are recorded as `toolchain_missing`).
 
@@ -154,7 +154,7 @@ Notes:
 <summary>C#</summary>
 
 ```bash
-python src/pytra-cli.py --target cs test/fixtures/collections/iterable.py -o test/transpile/cs/iterable.cs
+python src/pytra-cli.py --target cs test/fixtures/collections/iterable.py -o work/transpile/cs/iterable.cs
 python3 tools/check_py2cs_transpile.py
 ```
 
@@ -168,8 +168,8 @@ Notes:
 <summary>JavaScript</summary>
 
 ```bash
-python src/pytra-cli.py --target js test/fixtures/collections/iterable.py -o test/transpile/js/iterable.js
-node test/transpile/js/iterable.js
+python src/pytra-cli.py --target js test/fixtures/collections/iterable.py -o work/transpile/js/iterable.js
+node work/transpile/js/iterable.js
 ```
 
 Notes:
@@ -181,8 +181,8 @@ Notes:
 <summary>TypeScript</summary>
 
 ```bash
-python src/pytra-cli.py --target ts test/fixtures/collections/iterable.py -o test/transpile/ts/iterable.ts
-npx tsx test/transpile/ts/iterable.ts
+python src/pytra-cli.py --target ts test/fixtures/collections/iterable.py -o work/transpile/ts/iterable.ts
+npx tsx work/transpile/ts/iterable.ts
 ```
 
 Notes:
@@ -195,8 +195,8 @@ Notes:
 <summary>Go</summary>
 
 ```bash
-python src/pytra-cli.py --target go test/fixtures/collections/iterable.py -o test/transpile/go/iterable.go
-go run test/transpile/go/iterable.go
+python src/pytra-cli.py --target go test/fixtures/collections/iterable.py -o work/transpile/go/iterable.go
+go run work/transpile/go/iterable.go
 ```
 
 Notes:
@@ -210,9 +210,9 @@ Notes:
 <summary>Java</summary>
 
 ```bash
-python src/pytra-cli.py --target java test/fixtures/collections/iterable.py -o test/transpile/java/iterable.java
-javac test/transpile/java/iterable.java
-java -cp test/transpile/java iterable
+python src/pytra-cli.py --target java test/fixtures/collections/iterable.py -o work/transpile/java/iterable.java
+javac work/transpile/java/iterable.java
+java -cp work/transpile/java iterable
 ```
 
 Notes:
@@ -226,9 +226,9 @@ Notes:
 <summary>Swift</summary>
 
 ```bash
-python src/pytra-cli.py --target swift test/fixtures/collections/iterable.py -o test/transpile/swift/iterable.swift
-swiftc test/transpile/swift/iterable.swift -o test/transpile/obj/iterable_swift.out
-./test/transpile/obj/iterable_swift.out
+python src/pytra-cli.py --target swift test/fixtures/collections/iterable.py -o work/transpile/swift/iterable.swift
+swiftc work/transpile/swift/iterable.swift -o work/transpile/obj/iterable_swift.out
+./work/transpile/obj/iterable_swift.out
 ```
 
 Notes:
@@ -242,9 +242,9 @@ Notes:
 <summary>Kotlin</summary>
 
 ```bash
-python src/pytra-cli.py --target kotlin test/fixtures/collections/iterable.py -o test/transpile/kotlin/iterable.kt
-kotlinc test/transpile/kotlin/iterable.kt -include-runtime -d test/transpile/obj/iterable_kotlin.jar
-java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
+python src/pytra-cli.py --target kotlin test/fixtures/collections/iterable.py -o work/transpile/kotlin/iterable.kt
+kotlinc work/transpile/kotlin/iterable.kt -include-runtime -d work/transpile/obj/iterable_kotlin.jar
+java -cp work/transpile/obj/iterable_kotlin.jar pytra_iterable
 ```
 
 Notes:
@@ -258,8 +258,8 @@ Notes:
 <summary>Scala3</summary>
 
 ```bash
-python src/pytra-cli.py --target scala test/fixtures/collections/iterable.py -o test/transpile/scala/iterable.scala
-scala run test/transpile/scala/iterable.scala
+python src/pytra-cli.py --target scala test/fixtures/collections/iterable.py -o work/transpile/scala/iterable.scala
+scala run work/transpile/scala/iterable.scala
 ```
 
 Notes:

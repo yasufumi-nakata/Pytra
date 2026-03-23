@@ -12,7 +12,7 @@
 ## runtime parity 運用（sample, 全target）
 
 - `tools/runtime_parity_check.py` は stdout だけでなく、`output:` で示された artifact の `size` と `CRC32` まで比較します。
-- parity 実行時は case ごとに `sample/out`, `test/out`, `out`, `test/transpile/<target>/<case>` の stale artifact を自動削除します。
+- parity 実行時は case ごとに `sample/out`, `test/out`, `out`, `work/transpile/<target>/<case>` の stale artifact を自動削除します。
 - `elapsed_sec` などの不安定行は既定で比較対象外です（`--ignore-unstable-stdout` は互換フラグ）。
 - 全14targetを一括検証する場合の canonical wrapper:
 
@@ -132,11 +132,11 @@ rg "error:" selfhost/build.all.log
 
 ```bash
 # 2) selfhost 実行ファイルで sample/py/01 を .py 直入力から変換
-mkdir -p test/transpile/cpp2
-./selfhost/py2cpp.out sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp2/01_mandelbrot.cpp
+mkdir -p work/transpile/cpp2
+./selfhost/py2cpp.out sample/py/01_mandelbrot.py --target cpp -o work/transpile/cpp2/01_mandelbrot.cpp
 
 # 3) Python 版 C++ backend でも同じ入力を変換
-python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp/01_mandelbrot.cpp
+python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o work/transpile/cpp/01_mandelbrot.cpp
 
 # 4) direct route が sample 全件で -fsyntax-only まで通るか確認
 python3 tools/check_selfhost_direct_compile.py

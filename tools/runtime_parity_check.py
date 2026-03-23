@@ -258,7 +258,7 @@ def build_targets(
     opt_arg = "--east3-opt-level " + shlex.quote(str(east3_opt_level))
 
     def _output_dir_for_target(target: str) -> str:
-        return f"test/transpile/{target}/{case_stem}"
+        return f"work/transpile/{target}/{case_stem}"
 
     def _pytra_cmd(target: str, out_dir: str, *, build: bool, run: bool) -> str:
         parts: list[str] = [

@@ -116,9 +116,9 @@ runtime モジュールの Python 正本は `src/pytra/` にあり、`.east`（E
 <summary>Rust</summary>
 
 ```bash
-python src/pytra-cli.py --target rs test/fixtures/collections/iterable.py -o test/transpile/rs/iterable.rs
-rustc -O test/transpile/rs/iterable.rs -o test/transpile/obj/iterable_rs.out
-./test/transpile/obj/iterable_rs.out
+python src/pytra-cli.py --target rs test/fixtures/collections/iterable.py -o work/transpile/rs/iterable.rs
+rustc -O work/transpile/rs/iterable.rs -o work/transpile/obj/iterable_rs.out
+./work/transpile/obj/iterable_rs.out
 ```
 
 補足:
@@ -130,8 +130,8 @@ rustc -O test/transpile/rs/iterable.rs -o test/transpile/obj/iterable_rs.out
 <summary>Ruby</summary>
 
 ```bash
-python src/pytra-cli.py --target ruby test/fixtures/collections/iterable.py -o test/transpile/ruby/iterable.rb
-ruby test/transpile/ruby/iterable.rb
+python src/pytra-cli.py --target ruby test/fixtures/collections/iterable.py -o work/transpile/ruby/iterable.rb
+ruby work/transpile/ruby/iterable.rb
 ```
 
 補足:
@@ -146,8 +146,8 @@ ruby test/transpile/ruby/iterable.rb
 <summary>Lua</summary>
 
 ```bash
-python src/pytra-cli.py --target lua test/fixtures/collections/iterable.py -o test/transpile/lua/iterable.lua
-lua test/transpile/lua/iterable.lua
+python src/pytra-cli.py --target lua test/fixtures/collections/iterable.py -o work/transpile/lua/iterable.lua
+lua work/transpile/lua/iterable.lua
 ```
 
 補足:
@@ -163,13 +163,13 @@ lua test/transpile/lua/iterable.lua
 <summary>PHP</summary>
 
 ```bash
-python src/pytra-cli.py --target php test/fixtures/collections/iterable.py -o test/transpile/php/iterable.php
-php test/transpile/php/iterable.php
+python src/pytra-cli.py --target php test/fixtures/collections/iterable.py -o work/transpile/php/iterable.php
+php work/transpile/php/iterable.php
 ```
 
 補足:
 - `pytra-cli.py --target php` は EAST3 から PHP native emitter（`src/toolchain/emit/php/emitter/php_native_emitter.py`）で直接コード生成します。
-- runtime helper の正本は `src/runtime/php/{generated,native}/` にあり、変換時は必要な helper だけを `test/transpile/php/` 側へ stage します。
+- runtime helper の正本は `src/runtime/php/{generated,native}/` にあり、変換時は必要な helper だけを `work/transpile/php/` 側へ stage します。
 - 変換回帰は `python3 tools/check_py2php_transpile.py` で確認できます。
 - parity 導線は `python3 tools/runtime_parity_check.py --case-root sample --targets php` で実行できます（toolchain 未導入環境では `toolchain_missing` として記録されます）。
 
@@ -179,7 +179,7 @@ php test/transpile/php/iterable.php
 <summary>C#</summary>
 
 ```bash
-python src/pytra-cli.py --target cs test/fixtures/collections/iterable.py -o test/transpile/cs/iterable.cs
+python src/pytra-cli.py --target cs test/fixtures/collections/iterable.py -o work/transpile/cs/iterable.cs
 python3 tools/check_py2cs_transpile.py
 ```
 
@@ -193,8 +193,8 @@ python3 tools/check_py2cs_transpile.py
 <summary>JavaScript</summary>
 
 ```bash
-python src/pytra-cli.py --target js test/fixtures/collections/iterable.py -o test/transpile/js/iterable.js
-node test/transpile/js/iterable.js
+python src/pytra-cli.py --target js test/fixtures/collections/iterable.py -o work/transpile/js/iterable.js
+node work/transpile/js/iterable.js
 ```
 
 補足:
@@ -206,8 +206,8 @@ node test/transpile/js/iterable.js
 <summary>TypeScript</summary>
 
 ```bash
-python src/pytra-cli.py --target ts test/fixtures/collections/iterable.py -o test/transpile/ts/iterable.ts
-npx tsx test/transpile/ts/iterable.ts
+python src/pytra-cli.py --target ts test/fixtures/collections/iterable.py -o work/transpile/ts/iterable.ts
+npx tsx work/transpile/ts/iterable.ts
 ```
 
 補足:
@@ -220,8 +220,8 @@ npx tsx test/transpile/ts/iterable.ts
 <summary>Go</summary>
 
 ```bash
-python src/pytra-cli.py --target go test/fixtures/collections/iterable.py -o test/transpile/go/iterable.go
-go run test/transpile/go/iterable.go
+python src/pytra-cli.py --target go test/fixtures/collections/iterable.py -o work/transpile/go/iterable.go
+go run work/transpile/go/iterable.go
 ```
 
 補足:
@@ -235,9 +235,9 @@ go run test/transpile/go/iterable.go
 <summary>Java</summary>
 
 ```bash
-python src/pytra-cli.py --target java test/fixtures/collections/iterable.py -o test/transpile/java/iterable.java
-javac test/transpile/java/iterable.java
-java -cp test/transpile/java iterable
+python src/pytra-cli.py --target java test/fixtures/collections/iterable.py -o work/transpile/java/iterable.java
+javac work/transpile/java/iterable.java
+java -cp work/transpile/java iterable
 ```
 
 補足:
@@ -251,9 +251,9 @@ java -cp test/transpile/java iterable
 <summary>Swift</summary>
 
 ```bash
-python src/pytra-cli.py --target swift test/fixtures/collections/iterable.py -o test/transpile/swift/iterable.swift
-swiftc test/transpile/swift/iterable.swift -o test/transpile/obj/iterable_swift.out
-./test/transpile/obj/iterable_swift.out
+python src/pytra-cli.py --target swift test/fixtures/collections/iterable.py -o work/transpile/swift/iterable.swift
+swiftc work/transpile/swift/iterable.swift -o work/transpile/obj/iterable_swift.out
+./work/transpile/obj/iterable_swift.out
 ```
 
 補足:
@@ -267,9 +267,9 @@ swiftc test/transpile/swift/iterable.swift -o test/transpile/obj/iterable_swift.
 <summary>Kotlin</summary>
 
 ```bash
-python src/pytra-cli.py --target kotlin test/fixtures/collections/iterable.py -o test/transpile/kotlin/iterable.kt
-kotlinc test/transpile/kotlin/iterable.kt -include-runtime -d test/transpile/obj/iterable_kotlin.jar
-java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
+python src/pytra-cli.py --target kotlin test/fixtures/collections/iterable.py -o work/transpile/kotlin/iterable.kt
+kotlinc work/transpile/kotlin/iterable.kt -include-runtime -d work/transpile/obj/iterable_kotlin.jar
+java -cp work/transpile/obj/iterable_kotlin.jar pytra_iterable
 ```
 
 補足:
@@ -283,8 +283,8 @@ java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
 <summary>Scala3</summary>
 
 ```bash
-python src/pytra-cli.py --target scala test/fixtures/collections/iterable.py -o test/transpile/scala/iterable.scala
-scala run test/transpile/scala/iterable.scala
+python src/pytra-cli.py --target scala test/fixtures/collections/iterable.py -o work/transpile/scala/iterable.scala
+scala run work/transpile/scala/iterable.scala
 ```
 
 補足:

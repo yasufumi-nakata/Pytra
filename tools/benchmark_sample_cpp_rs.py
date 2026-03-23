@@ -107,35 +107,35 @@ def benchmark_case(case: str, work: Path, warmup: int, repeat: int, runtime_cpp:
     src = sample_path.as_posix()
 
     tr_cpp = _run(
-        f"python src/pytra-cli.py {shlex.quote(src)} --target cpp -o test/transpile/cpp/{case}.cpp",
+        f"python src/pytra-cli.py {shlex.quote(src)} --target cpp -o work/transpile/cpp/{case}.cpp",
         work,
     )
     if tr_cpp.returncode != 0:
         raise RuntimeError("py2cpp failed: " + tr_cpp.stderr.strip())
     tr_rs = _run(
-        f"python src/pytra-cli.py {shlex.quote(src)} --target rs -o test/transpile/rs/{case}.rs",
+        f"python src/pytra-cli.py {shlex.quote(src)} --target rs -o work/transpile/rs/{case}.rs",
         work,
     )
     if tr_rs.returncode != 0:
         raise RuntimeError("py2rs failed: " + tr_rs.stderr.strip())
 
     build_cpp = (
-        f"g++ -std=c++20 -O2 -I src test/transpile/cpp/{case}.cpp "
+        f"g++ -std=c++20 -O2 -I src work/transpile/cpp/{case}.cpp "
         "-I src/runtime/cpp "
         f"{runtime_cpp} "
-        f"-o test/transpile/obj/{case}_cpp.out"
+        f"-o work/transpile/obj/{case}_cpp.out"
     )
     b_cpp = _run(build_cpp, work)
     if b_cpp.returncode != 0:
         raise RuntimeError("g++ failed: " + b_cpp.stderr.strip())
 
-    build_rs = f"rustc -O test/transpile/rs/{case}.rs -o test/transpile/obj/{case}_rs.out"
+    build_rs = f"rustc -O work/transpile/rs/{case}.rs -o work/transpile/obj/{case}_rs.out"
     b_rs = _run(build_rs, work)
     if b_rs.returncode != 0:
         raise RuntimeError("rustc failed: " + b_rs.stderr.strip())
 
-    cpp_runs = _run_repeated(f"test/transpile/obj/{case}_cpp.out", work, warmup, repeat)
-    rs_runs = _run_repeated(f"test/transpile/obj/{case}_rs.out", work, warmup, repeat)
+    cpp_runs = _run_repeated(f"work/transpile/obj/{case}_cpp.out", work, warmup, repeat)
+    rs_runs = _run_repeated(f"work/transpile/obj/{case}_rs.out", work, warmup, repeat)
 
     return CaseResult(
         case=case,

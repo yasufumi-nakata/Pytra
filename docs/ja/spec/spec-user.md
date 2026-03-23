@@ -107,7 +107,7 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
 ## 3. テストケース方針
 
 - 入力 Python は `test/fixtures/` 配下に配置します（カテゴリ別サブディレクトリ）。
-- 言語別の変換結果は `test/transpile/cs/`, `test/transpile/cpp/`, `test/transpile/rs/`, `test/transpile/js/`, `test/transpile/ts/`, `test/transpile/go/`, `test/transpile/java/`, `test/transpile/swift/`, `test/transpile/kotlin/`, `test/transpile/ruby/`, `test/transpile/lua/`, `test/transpile/php/` に配置します。
+- 言語別の変換結果は `work/transpile/cs/`, `work/transpile/cpp/`, `work/transpile/rs/`, `work/transpile/js/`, `work/transpile/ts/`, `work/transpile/go/`, `work/transpile/java/`, `work/transpile/swift/`, `work/transpile/kotlin/`, `work/transpile/ruby/`, `work/transpile/lua/`, `work/transpile/php/` に配置します。
 - 変換器都合で `test/fixtures/` の入力ケースを変更してはなりません。変換失敗時は、トランスパイラ実装側を修正します。
 - ケース命名は説明的な `snake_case`（例: `dict_get_items.py`）を基本とします。
 
@@ -130,7 +130,7 @@ test/
   transpile/    # 変換生成物と実行生成物（Git管理外）
 ```
 
-- `test/transpile/` は使い捨ての生成物置き場です。必要に応じて全削除して再生成します。
+- `work/transpile/` は使い捨ての生成物置き場です。必要に応じて全削除して再生成します。
 
 ## 4. サンプルプログラム方針
 
@@ -168,7 +168,7 @@ python -m unittest discover -s test/unit/common -p "test_fixtures_truth.py" -v
 
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - 未対応構文はトランスパイル時に `TranspileError` で失敗します。
-- `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/` は生成物ディレクトリです。
+- `work/transpile/obj/`, `work/transpile/cpp2/`, `sample/obj/`, `sample/out/` は生成物ディレクトリです。
 - `src/pytra/` 配下モジュールを使う Python サンプルは、必要に応じて `PYTHONPATH=src` を付与して実行します。
 
 ## 7. 関連ドキュメント

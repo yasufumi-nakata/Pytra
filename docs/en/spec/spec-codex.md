@@ -89,7 +89,7 @@ This document defines the operational rules Codex follows while working.
 - Do not modify source-of-truth references used for compatibility checks (`materials/`, especially `materials/refs/microgpt/*.py`) for transpiler convenience.
 - If derived files are needed for workaround verification, create `work/tmp/*-lite.py` and keep source references unchanged as final evaluation targets.
 - Use `-O3 -ffast-math -flto` for C++ in performance comparisons.
-- Keep generated artifact directories (`out/`, `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/`) outside Git management.
+- Keep generated artifact directories (`out/`, `work/transpile/obj/`, `work/transpile/cpp2/`, `sample/obj/`, `sample/out/`) outside Git management.
 - `out/` is for local temporary outputs only; do not place irreproducible source-of-truth data there.
 - If `src/toolchain/emit/common/emitter/code_emitter.py` is changed, run `test/unit/common/test_code_emitter.py` first to verify shared utility regressions.
 - For `CodeEmitter` / `py2cpp` changes, pass both `python3 tools/check_py2cpp_transpile.py` and `python3 tools/build_selfhost.py` before commit.

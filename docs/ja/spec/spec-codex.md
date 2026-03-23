@@ -104,7 +104,7 @@
 - 変換器の互換性検証に使う原本（`materials/` 配下、特に `materials/refs/microgpt/*.py`）を変換都合で改変してはなりません。
 - 変換回避の検証用派生ファイルが必要な場合は `work/tmp/*-lite.py` を作成して分離し、原本を評価基準（最終的に通す対象）として維持します。
 - 実行速度比較時の C++ は `-O3 -ffast-math -flto` を使用します。
-- 生成物ディレクトリ（`out/`, `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/`）は Git 管理外運用を維持します。
+- 生成物ディレクトリ（`out/`, `work/transpile/obj/`, `work/transpile/cpp2/`, `sample/obj/`, `sample/out/`）は Git 管理外運用を維持します。
 - **以下への一時出力は禁止**: `out/`, `selfhost/`, `sample/obj/`, `/tmp/`。
   - ビルド・変換・検証の一時出力は `work/tmp/` を使用する。
   - selfhost テストの出力は `work/selfhost/` を使用する。

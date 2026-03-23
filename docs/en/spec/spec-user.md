@@ -94,7 +94,7 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
 ## 3. Test Case Policy
 
 - Place input Python cases under `test/fixtures/` (category-based subdirectories).
-- Per-language transpilation outputs go to `test/transpile/cs/`, `test/transpile/cpp/`, `test/transpile/rs/`, `test/transpile/js/`, `test/transpile/ts/`, `test/transpile/go/`, `test/transpile/java/`, `test/transpile/swift/`, `test/transpile/kotlin/`, `test/transpile/ruby/`, `test/transpile/lua/`, `test/transpile/php/`.
+- Per-language transpilation outputs go to `work/transpile/cs/`, `work/transpile/cpp/`, `work/transpile/rs/`, `work/transpile/js/`, `work/transpile/ts/`, `work/transpile/go/`, `work/transpile/java/`, `work/transpile/swift/`, `work/transpile/kotlin/`, `work/transpile/ruby/`, `work/transpile/lua/`, `work/transpile/php/`.
 - Do not modify `test/fixtures/` input cases for transpiler convenience. If transpilation fails, fix the transpiler implementation.
 - Use descriptive `snake_case` for case naming (e.g., `dict_get_items.py`).
 
@@ -117,7 +117,7 @@ test/
   transpile/    # transpilation artifacts and runtime artifacts (not tracked by Git)
 ```
 
-- `test/transpile/` is a disposable artifact area. Delete and regenerate fully as needed.
+- `work/transpile/` is a disposable artifact area. Delete and regenerate fully as needed.
 
 ## 4. Sample Program Policy
 
@@ -155,7 +155,7 @@ python -m unittest discover -s test/unit/common -p "test_fixtures_truth.py" -v
 
 - Use `-O3 -ffast-math -flto` for C++ speed comparisons.
 - Unsupported syntax fails at transpilation time with `TranspileError`.
-- `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/` are artifact directories.
+- `work/transpile/obj/`, `work/transpile/cpp2/`, `sample/obj/`, `sample/out/` are artifact directories.
 - For Python samples that use modules under `src/pytra/`, run with `PYTHONPATH=src` when needed.
 
 ## 7. Related Documents

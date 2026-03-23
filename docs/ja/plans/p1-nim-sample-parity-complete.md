@@ -45,7 +45,7 @@
 
 決定ログ:
 - 2026-03-04: ユーザー指示により、Nim parity 完了までの計画を P1 で起票。
-- 2026-03-04: `S1-01` を完了。`tools/runtime_parity_check.py` の `build_targets()` に `nim` target を追加し、`test/unit/tooling/test_runtime_parity_check_cli.py` に Nim エントリ検証を追加。Nim のモジュール名制約（先頭数字不可）対策として parity 実行時は `test/transpile/nim/case_<stem>.nim` へ出力する運用にした。
+- 2026-03-04: `S1-01` を完了。`tools/runtime_parity_check.py` の `build_targets()` に `nim` target を追加し、`test/unit/tooling/test_runtime_parity_check_cli.py` に Nim エントリ検証を追加。Nim のモジュール名制約（先頭数字不可）対策として parity 実行時は `work/transpile/nim/case_<stem>.nim` へ出力する運用にした。
 - 2026-03-04: `S1-02` を完了。`tools/regenerate_samples.py` に `nim` を追加し、`src/toolchain/misc/transpiler_versions.json` へ `languages.nim` を追加。`python3 tools/regenerate_samples.py --langs nim --force` で `summary: total=18 skip=0 regen=18 fail=0` を確認。
 - 2026-03-04: `S1-03` を完了。`python3 tools/runtime_parity_check.py --case-root sample --targets nim --all-samples --summary-json work/logs/runtime_parity_sample_nim_rebaseline_20260304.json` を実行し、`case_pass=0/case_fail=18`、カテゴリは `run_failed=16`, `output_mismatch=2` で固定した。
 - 2026-03-04: `S2-01` を完了。`src/runtime/nim/pytra/py_runtime.nim` の `write_rgb_png` stub を pure Nim 実装へ置換（CRC32/Adler32/zlib stored block/PNG chunk 組立）。`work/logs/runtime_nim_png_crc_check_20260304.json` で `sample/01` の PNG artifact が `size+crc32` 一致（`artifact_match=true`）を確認。

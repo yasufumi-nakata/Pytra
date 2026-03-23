@@ -12,7 +12,7 @@ public static class Program
 {
     public static bool run_pathlib_extended()
     {
-        Path root = new Path("test/transpile/obj/pathlib_case32");
+        Path root = new Path("work/transpile/obj/pathlib_case32");
         root.mkdir(true, true);
         
         Path child = System.Convert.ToDouble(root) / System.Convert.ToDouble("values.txt");
