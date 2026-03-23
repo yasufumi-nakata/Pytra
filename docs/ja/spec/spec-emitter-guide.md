@@ -6,8 +6,32 @@
 
 - emitter は **EAST3 の情報だけ** を使ってコードを生成する。モジュール名やパスのハードコード禁止。
 - `pytra.std.*` / `pytra.utils.*` / `pytra.built_in.*` 等の具体的なモジュール ID を emitter にハードコードしてはならない。
+- runtime 関数の呼び出し規約（builtin か extern delegate か）は `runtime_call_adapter_kind` フィールドで判定する。`runtime_module_id.startswith("pytra.std.")` のようなハードコードは禁止。
 - import パス解決、@extern 委譲、runtime コピーは `loader.py` の共通関数に委譲する。
 - emitter 固有のロジックは「EAST3 ノード → ターゲット言語の構文」の変換のみに限定する。
+
+### runtime_call_adapter_kind
+
+Call ノードの `runtime_call_adapter_kind` は、runtime 関数の呼び出し規約を示す。EAST3 が `runtime_module_id` の所属グループから自動導出する。
+
+| 値 | 意味 | 例 |
+|---|---|---|
+| `"builtin"` | `py_runtime` が `__pytra_` prefix で提供する関数 | `py_print`, `py_len` |
+| `"extern_delegate"` | 生成された `std/<mod>.<ext>` が bare name で提供する `@extern` 委譲関数 | `perf_counter`, `sqrt` |
+| `""` (空) | 未解決またはユーザー定義関数 | user-defined functions |
+
+```python
+# 禁止パターン
+if runtime_mod_id.startswith("pytra.std."):  # ← ハードコード
+    call_name = bare_name
+
+# 正しいパターン
+adapter = call_node.get("runtime_call_adapter_kind", "")
+if adapter == "extern_delegate":
+    call_name = bare_name
+elif adapter == "builtin":
+    call_name = "__pytra_" + bare_name
+```
 
 ## 2. エントリポイント（`*.py`）の標準形
 
@@ -178,7 +202,7 @@ pi: float = extern(math.pi)   # extern() 変数宣言
 e: float = extern(math.e)
 ```
 
-EAST3 では `AnnAssign` の value が `Call(func=Name("extern"), args=[...])` として表現される。
+EAST3 では `AnnAssign` に `meta.extern_var_v1` が付与される。
 
 emitter は `extern()` 変数を見たら、`@extern` 関数と同じく `__native` モジュールへの委譲を生成する:
 
@@ -214,14 +238,23 @@ export const e = Math.E;
 ### 検出方法
 
 ```python
-# AnnAssign/Assign の value が extern() 呼び出しかチェック
-value = stmt.get("value", {})
-if isinstance(value, dict) and value.get("kind") == "Call":
-    func = value.get("func", {})
-    if isinstance(func, dict) and func.get("id") == "extern":
-        # extern() 変数 → __native への委譲を生成
-        # value.args[0] は Python フォールバック（ターゲット言語では無視）
+# 推奨: meta.extern_var_v1 で判定（構造に依存しない）
+meta = stmt.get("meta", {})
+extern_v1 = meta.get("extern_var_v1")
+if isinstance(extern_v1, dict):
+    symbol = extern_v1.get("symbol", "")  # 委譲先シンボル名
+    # extern() 変数 → __native への委譲を生成
 ```
+
+`meta.extern_var_v1` の構造:
+```json
+{"schema_version": 1, "symbol": "pi", "same_name": 1}
+```
+
+- `symbol`: 委譲先の native シンボル名
+- `same_name`: target 名と symbol が一致するなら `1`
+
+注意: value ノードは EAST3 lowering で `Unbox` にラップされる場合があるため、`value.get("kind") == "Call"` による直接検出は信頼できない。`meta.extern_var_v1` を正本とすること。
 
 **禁止**: emitter がターゲット言語の標準ライブラリ定数（`std.math.pi`, `Math.PI` 等）をハードコードしてはならない。定数の値は native ファイルが提供する。
 
@@ -294,10 +327,26 @@ emit/
 ### エントリモジュールの命名
 
 - **標準**: module_id そのまま → `17_monte_carlo_pi.<ext>`
-- **Java のみ例外**: `Main.java`（Java 言語仕様でクラス名 = ファイル名が必須）
 - **Scala のみ例外**: 全モジュールを単一ファイルにマージ
 
 これら以外のエントリファイル名の変更は禁止。
+
+### Java の main 分離
+
+Java ではクラス名＝ファイル名が言語仕様で必須のため、`main()` メソッドだけを `Main.java` に分離する。ロジック本体は module_id から導出したファイル名で出力する。
+
+```
+emit/
+├── 01_mandelbrot.java    # ロジック本体（関数・クラス定義）
+├── Main.java             # main() のみ。本体クラスを呼び出す
+├── std/time.java
+└── ...
+```
+
+これにより:
+- `sample/java/01_mandelbrot.java` と一致する（リネーム不要）
+- `javac *.java` でコンパイルでき、`java Main` で実行できる
+- `regenerate_samples.py` や `pytra-cli.py` に Java 固有のリネームロジックが不要
 
 ## 5.1 @extern 委譲の命名統一
 
@@ -435,22 +484,245 @@ is_entry = emit_ctx.get("is_entry", False)         # エントリモジュール
 ```
 
 - `root_rel_prefix` はサブモジュールからの import パス解決に使う
-- `is_entry` は main 関数の emit や emit_main フラグに使う
+- `is_entry` は main 関数の emit 判定に使う（下記参照）
 - `module_id` は @extern 委譲先の native パス解決に使う
+
+### is_entry と main_guard_body の扱い
+
+リンクパイプラインは CLI で指定された 1 ファイルだけを `is_entry=True` とする。依存先モジュールは常に `is_entry=False` である。
+
+emitter は以下のルールに従う:
+
+- **`is_entry=True` のモジュール**: `main_guard_body`（`if __name__ == "__main__":` の本体）をターゲット言語の `main` 関数として出力する。
+- **`is_entry=False` のモジュール**: `main_guard_body` が EAST に含まれていても **出力しない**。ライブラリモジュールとして扱う。
+- Java のように `main` が別ファイルに分離される言語では、`is_entry=True` のモジュールに対してのみ `Main.java` を生成する（§5 参照）。
+- emitter は `is_entry` を **自前で判定してはならない**。`emit_context.is_entry` を正本とする。
 
 ## 9. EAST3 ノードで emitter が対応すべきもの
 
 | ノード | 説明 | emitter の責務 |
 |---|---|---|
 | `VarDecl` | hoist された変数宣言 | 型付き変数宣言を生成 |
-| `Swap` | `a, b = b, a` パターン | swap コードを生成 |
+| `Swap` | `a, b = b, a` パターン（**left/right は常に Name**） | 言語固有の swap コードを生成 |
 | `discard_result: true` | main_guard_body の戻り値抑制 | 戻り値を捨てるコードを生成 |
 | `unused: true` | 未使用変数 | 警告抑制コード or 宣言省略 |
 | `decorators: ["extern"]` | @extern 関数 | `_native` への委譲コードを生成 |
 | `decorators: ["property"]` | @property メソッド | getter アクセスに変換 |
 | `mutates_self: true/false` | メソッドの self mutation | mutable/immutable self を選択 |
 
-## 10. チェックリスト
+### 9.1 Swap ノードの契約
+
+Swap ノードの `left` / `right` は **常に Name ノード** である。Subscript を含む swap（`values[i], values[j] = values[j], values[i]`）は EAST3 lowering で一時変数付き Assign 列に展開済みのため、emitter に Swap として到達しない。
+
+emitter は Swap ノードを受け取ったら、**Name 同士の単純な値交換** だけを処理すればよい。Subscript 分岐は不要。
+
+```python
+# Swap ノードの構造（保証）
+{"kind": "Swap", "left": {"kind": "Name", "id": "a"}, "right": {"kind": "Name", "id": "b"}}
+```
+
+各言語での生成例:
+
+| 言語 | 生成コード |
+|---|---|
+| C++ | `std::swap(a, b);` |
+| Go | `a, b = b, a` |
+| Rust | `std::mem::swap(&mut a, &mut b);` |
+| Swift | `swap(&a, &b)` |
+| その他 | `tmp := a; a = b; b = tmp` |
+
+Subscript swap は Assign として到達するため、emitter の通常の Assign 処理で自然に処理される。
+
+## 10. コンテナ参照セマンティクス要件
+
+### 10.1 必須ルール
+
+Python の `list` / `dict` / `set` は参照セマンティクスである。関数にコンテナを渡して `.append()` / `.pop()` / `[]=` 等の破壊的操作を行った場合、呼び出し元のコンテナにその変更が反映されなければならない。
+
+全 backend は、コンテナを**参照型ラッパー**（参照カウント、GC 参照、ポインタ等）で保持しなければならない。
+
+```python
+def add_item(xs: list[int], v: int) -> None:
+    xs.append(v)  # 呼び出し元の xs に反映される
+
+items: list[int] = [1, 2, 3]
+add_item(items, 4)
+print(items)  # [1, 2, 3, 4]
+```
+
+### 10.2 禁止パターン
+
+言語ネイティブの値型コンテナをラッパーなしで直接使用してはならない。
+
+| 言語 | NG（値型） | OK（参照型ラッパー） |
+|---|---|---|
+| Go | `[]any` | `*PyList` / 参照ラッパー構造体 |
+| Swift | `[Any]` | `class PyList` / 参照型ラッパー |
+| Rust | `Vec<PyAny>`（所有権 move） | `Rc<RefCell<Vec<T>>>` / 参照ラッパー |
+| C++ | `list<T>`（値型直接） | `Object<list<T>>`（参照カウント） |
+
+値型のまま EAST3 に `mutates_params` 等のアノテーションを追加して回避してはならない。これは runtime が値型であるというターゲット固有の問題を言語非依存 IR に漏らすワークアラウンドであり、メソッド追加のたびに IR 拡張が必要になる。参照型ラッパーにすれば `append` / `extend` / `pop` / `[]=` / `clear` / `sort` / `reverse` がすべて一括で解決する。
+
+### 10.3 参考実装
+
+| backend | 参照型ラッパー | 実装場所 |
+|---|---|---|
+| C++ | `Object<list<T>>` — `ControlBlock` による参照カウント + 型付きポインタ | `src/runtime/cpp/core/object.h` |
+| Zig | `Obj` — `*anyopaque` + `*usize` (rc) + `drop_fn` | `src/runtime/zig/built_in/py_runtime.zig` |
+| Java/Kotlin/C#/Scala | 言語の参照型クラス（`ArrayList`, `MutableList` 等）がそのまま参照セマンティクスを満たす | 各 `src/runtime/<lang>/` |
+
+### 10.4 値型縮退の許可条件
+
+型既知かつ non-escape であることが証明された局所経路に限り、値型への縮退を許可する。
+
+- `container_ref_boundary`（`Any` / `object` / `unknown` への流入経路）では参照表現を維持する。
+- `typed_non_escape_value_path`（型既知 + 局所 non-escape）でのみ shallow copy 材料化を許可する。
+- 判定不能時は fail-closed で参照表現に倒す。
+
+詳細は `spec-cpp-list-reference-semantics.md` §5 および `p3-multilang-container-ref-model-rollout.md` §S1-02 を参照。
+
+### 10.5 optimizer ヒントによる値型縮退の実装
+
+Go / Swift / Rust のようにコンテナの参照型ラッパーを導入した backend では、既定で全コンテナを参照型として保持する。ただし EAST3 optimizer（`ContainerValueLocalHintPass`）が escape 解析を行い、値型で安全に保持できるローカル変数を `container_value_locals_v1` ヒントとして linker 経由で供給する。
+
+emitter は linked module の `meta.linked_program_v1.container_ownership_hints_v1.container_value_locals_v1` を参照し、ヒントに含まれるローカル変数については参照ラッパーではなく言語ネイティブの値型コンテナを使ってよい。
+
+```
+# linked module metadata の構造
+meta.linked_program_v1.container_ownership_hints_v1:
+  container_value_locals_v1:
+    "<module_id>::<function_name>":
+      version: "1"
+      locals: ["xs", "buf"]    # 値型で安全な変数名リスト
+```
+
+実装例（Go emitter 擬似コード）:
+
+```
+# ヒントなし（既定）: 参照ラッパーを使用
+xs := NewPyList()       # *PyList（参照型）
+
+# ヒントあり: 値型で直接保持
+xs := make([]int64, 0)  # []int64（値型スライス）
+```
+
+注意事項:
+
+- ヒントが存在しない変数は**必ず参照型**で保持する（fail-closed）。
+- ヒントは list のみが対象（dict / set は将来拡張）。
+
+## 11. `yields_dynamic` 契約
+
+コンテナ要素を抽出するメソッド呼び出し（`dict.get`, `dict.pop`, `dict.setdefault`, `list.pop`）では、Python 意味論上の型（`resolved_type`）は具象型（例: `int64`）だが、非テンプレート言語（Go, Java 等）の runtime 実装は動的型（`any` / `interface{}` / `Object`）を返す場合がある。
+
+- このような Call ノードには EAST3 で `yields_dynamic: true` が付与される。
+- `resolved_type` が既に動的型（`Any`, `object`, `unknown`）の場合は付与されない。
+- emitter は `yields_dynamic: true` を見て型アサーション / ダウンキャストの要否を判断する。
+- 生成済みターゲット言語式の文字列パターンマッチで判断してはならない。
+- 対応する `semantic_tag` は `container.dict.get`, `container.dict.pop`, `container.dict.setdefault`, `container.list.pop` である。
+
+詳細は `spec-east.md` §7 の「`yields_dynamic` について」を参照。
+
+## 12. EAST3 型情報の利用規約
+
+### 12.1 emitter は型推論を再実装しない
+
+EAST3 の `resolved_type` / `decl_type` / `type_expr` は型推論パイプラインが確定した正本である。emitter がこれらの値を信頼できない場合は EAST3 側の型推論を修正すべきであり、emitter 側にワークアラウンドを追加してはならない。
+
+禁止パターン:
+
+```python
+# NG: emitter 側で math モジュールの戻り型を再判定
+if owner_name in _IMPORT_ALIAS_MAP and _IMPORT_ALIAS_MAP[owner_name].endswith("math"):
+    return "double"  # ← EAST3 の resolved_type を使え
+
+# NG: emitter 側で VarDecl の型を後続 Assign から先読み
+for stmt in body[i+1:]:
+    if stmt.get("target", {}).get("id") == var_name:
+        real_type = stmt.get("decl_type")  # ← EAST3 の VarDecl.type を使え
+```
+
+### 12.2 resolved_type / decl_type の保証
+
+EAST3 パイプラインは以下を保証する。emitter はこれらを前提として実装してよい。
+
+| フィールド | 保証 |
+|---|---|
+| `Call.resolved_type` | stdlib 関数（`math.sin` 等）は具象型が設定される。`from pytra.std import math` スタイルの import を含む |
+| `cast(T, value)` | `resolved_type` にキャスト先の型名 `T` が設定される。emitter は `resolved_type` を見てターゲット言語のキャストを生成する |
+| `list[T].pop()` | 要素型 `T` が `resolved_type` に設定される（`object` ではない） |
+| コンテナメソッド戻り値 | `list.append()` / `list.extend()` → `None`、`dict.get()` / `dict.pop()` → 値型。generic パラメータから導出される |
+| `VarDecl.type` | 型注釈がない変数でも、代入式の型推論結果から具象型が設定される。`object` になるのは本当に動的型の場合のみ |
+| `Assign.decl_type` | `declare: true` の Assign では、value 式の `resolved_type` から導出された型が設定される |
+| tuple destructuring | `x, y = stack[-1]` で `stack: list[tuple[int, int]]` の場合、`x` / `y` の `resolved_type` は `int64` に解決される |
+| `FunctionDef.returns` | `return_type` が設定されていれば `returns` にも同じ値が反映される。emitter は forward declaration 等で `returns` を参照してよい |
+| `VarDecl.name` | 常に非空文字列。`None` や空文字の VarDecl は生成されない |
+
+注意:
+- Call ノードの `func`（関数名/属性アクセスの式ノード）の `resolved_type` は callable 型であり、`unknown` のまま残り得る。emitter は `func.resolved_type` ではなく **`Call.resolved_type`（呼び出し結果の型）** を使うこと。
+- `FunctionDef` の戻り値型は `return_type` が正本。`returns` は `return_type` からの同期コピーであり、両方が設定されている場合は `return_type` を優先する。
+
+### 12.3 unknown が残った場合
+
+`resolved_type: "unknown"` が emitter に到達した場合：
+
+- emitter は `object` / `any` / `Any` 等のターゲット言語の動的型にフォールバックしてよい。
+- ただし、`unknown` の頻出は EAST3 型推論のバグである可能性が高い。issue として報告すべきであり、emitter 側に恒久的なワークアラウンドを追加すべきではない。
+
+## 13. parity check の実施
+
+sample/py の全 18 ケースについて、Python 実行結果（stdout + artifact）とターゲット言語の実行結果が一致することを検証する。
+
+### 正本ツール
+
+**`tools/runtime_parity_check.py` が全言語共通の parity check 正本ツール** である。言語別に独自の検証スクリプトを作成してはならない。
+
+```bash
+# sample parity（単一言語）
+python3 tools/runtime_parity_check.py --targets <lang> --case-root sample --all-samples
+
+# sample parity（全言語一括）
+python3 tools/runtime_parity_check.py \
+  --targets cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim \
+  --case-root sample --all-samples
+```
+
+### fixture parity check
+
+`test/fixtures/` の全テストケース（131 件）も同じツールで全言語検証できる。`ng_*`（negative test）は自動スキップされる。
+
+```bash
+# fixture parity（単一言語）
+python3 tools/runtime_parity_check.py --targets <lang> --case-root fixture --all-samples
+
+# fixture parity（全言語一括）
+python3 tools/runtime_parity_check.py \
+  --targets cpp,rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,php,scala,nim \
+  --case-root fixture --all-samples
+```
+
+emitter 開発時は **sample と fixture の両方** で parity check を実行すること。sample は実用的な大きいプログラム（18 件）、fixture は言語機能の網羅テスト（131 件）。
+
+### 検証内容
+
+`runtime_parity_check.py` は以下を自動で行う:
+
+1. Python でケースを実行し、stdout と artifact（`sample/out/*.png`, `*.gif`, `*.txt`）を記録
+2. ターゲット言語で transpile → compile → run
+3. stdout の正規化比較（`elapsed_sec` 等のタイミング行は除外）
+4. artifact のサイズ + CRC32 比較
+
+### 既存ツールとの関係
+
+| ツール | 用途 | 正本か |
+|---|---|---|
+| `tools/runtime_parity_check.py` | 全言語 parity check（stdout + artifact） | **正本** |
+| `tools/benchmark_sample_cpp_rs.py` | C++/Rust 実行時間ベンチマーク | 別責務（parity ではない） |
+| `tools/regenerate_samples.py` | sample/py → sample/<lang> の再生成 | 再生成専用（実行しない） |
+
+emitter 開発時の parity 検証は `runtime_parity_check.py` を使うこと。独自スクリプトの作成は禁止。
+
+## 14. チェックリスト
 
 新しい emitter を実装するときのチェックリスト:
 
@@ -464,3 +736,8 @@ is_entry = emit_ctx.get("is_entry", False)         # エントリモジュール
 - [ ] immutable 引数言語は `collect_reassigned_params` + `mutable_param_name` を使っている
 - [ ] 個別の `_copy_runtime` がない（`lang=` で自動コピー）
 - [ ] 出力先のデフォルトが `work/tmp/<lang>`（`out/` 禁止）
+- [ ] コンテナ（list/dict/set）が参照型ラッパーで保持されている（§10）
+- [ ] `yields_dynamic: true` の Call ノードで型アサーションを生成している（§11）
+- [ ] emitter 側に型推論のワークアラウンド（math 戻り型判定、VarDecl 先読み等）がない（§12）
+- [ ] `runtime_parity_check.py --targets <lang> --case-root sample --all-samples` で sample 検証している（§13）
+- [ ] `runtime_parity_check.py --targets <lang> --case-root fixture --all-samples` で fixture 検証している（§13）
