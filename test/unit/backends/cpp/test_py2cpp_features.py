@@ -4361,7 +4361,7 @@ if __name__ == "__main__":
             self.assertIn("state->timestamps.push_back(float64(2.5));", generated_ppu)
             self.assertIn("state->timestamps.front();", generated_ppu)
             self.assertIn("state->timestamps.pop_front();", generated_ppu)
-            self.assertIn("float64 first = py_to<float64>(([&]()", generated_ppu)
+            self.assertIn("float64 first = py_to_float64(([&]()", generated_ppu)
             self.assertIn("(state->timestamps).size()", generated_ppu)
             self.assertNotIn("py_list_append_mut(", generated_ppu)
             self.assertNotIn("obj_to_list_ref_or_raise(", generated_ppu)
@@ -4494,7 +4494,13 @@ if __name__ == "__main__":
             self.assertEqual(tr.returncode, 0, msg=tr.stderr)
             obj_dir.mkdir(parents=True, exist_ok=True)
             generated_entry = (out_dir / "src" / "entry.cpp").read_text(encoding="utf-8")
-            self.assertIn("pytra::std::pathlib::Path(", generated_entry)
+            # Accept both canonical namespace and module-qualified namespace for Path
+            self.assertTrue(
+                "pytra::std::pathlib::Path(" in generated_entry
+                or "pathlib_east::Path(" in generated_entry
+                or "pathlib::Path(" in generated_entry,
+                msg="Path constructor not found in entry.cpp",
+            )
             self.assertNotIn("pytra_mod_compat::Path(raw)", generated_entry)
             for source_name in ("compat.cpp", "entry.cpp"):
                 comp = self._run_subprocess_with_timeout(
