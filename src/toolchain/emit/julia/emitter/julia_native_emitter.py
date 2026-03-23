@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from toolchain.emit.common.emitter.code_emitter import (
+    build_import_alias_map,
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
     reject_backend_typed_vararg_signatures,
 )
@@ -307,36 +308,12 @@ def _runtime_symbol_alias_expr(runtime_module_id: str, runtime_symbol: str) -> s
     sym = runtime_symbol.strip()
     if sym == "":
         return ""
+    # math and perf_counter symbols are resolved via generated std/*.jl
+    # that delegate to __native. No inline expressions here.
     if _is_math_runtime_symbol(mod, sym):
-        if sym == "pi":
-            return "Base.MathConstants.pi"
-        if sym == "e":
-            return "Base.MathConstants.e"
-        if sym == "inf":
-            return "Inf"
-        if sym == "nan":
-            return "NaN"
-        if sym == "sqrt":
-            return "sqrt"
-        if sym == "floor":
-            return "(x -> Int(floor(x)))"
-        if sym == "ceil":
-            return "(x -> Int(ceil(x)))"
-        if sym == "fabs" or sym == "abs":
-            return "abs"
-        if sym == "log":
-            return "log"
-        if sym == "sin":
-            return "sin"
-        if sym == "cos":
-            return "cos"
-        if sym == "tan":
-            return "tan"
-        if sym == "pow":
-            return "((b, e) -> b^e)"
-        return sym
+        return ""
     if _is_perf_counter_runtime_symbol(mod, sym):
-        return "__pytra_perf_counter"
+        return ""
     if _is_sys_runtime_symbol(mod, sym):
         if sym == "argv":
             return "ARGS"
@@ -357,16 +334,11 @@ def _runtime_module_alias_line(alias: str, runtime_module_id: str) -> str:
     if mod in {"enum", "pytra.std.enum"}:
         return "# import " + alias + " (enum stub)"
     if mod in {"pytra.std.math", "math"}:
-        return (
-            alias + " = ("
-            "sqrt=sqrt, sin=sin, cos=cos, tan=tan, "
-            "asin=asin, acos=acos, atan=atan, atan2=atan, "
-            "floor=x->Int(floor(x)), ceil=x->Int(ceil(x)), "
-            "fabs=abs, abs=abs, log=log, log2=log2, log10=log10, exp=exp, "
-            "pow=(b, e)->b^e, "
-            "pi=Base.MathConstants.pi, e=Base.MathConstants.e, inf=Inf, nan=NaN"
-            ")"
-        )
+        # Include std/math.jl then wrap exported symbols in a NamedTuple
+        # so that `math.sqrt(...)` works.
+        symbol_names_list = lookup_runtime_module_symbols(mod)
+        fields = ", ".join(s + "=" + s for s in symbol_names_list if s != "")
+        return "__PYTRA_INCLUDE_STD_MATH__\n" + alias + " = (" + fields + ")"
     if mod == "pytra.std.argparse":
         return "# import " + alias + " (argparse stub)"
     if mod == "pytra.std.re":
@@ -374,23 +346,24 @@ def _runtime_module_alias_line(alias: str, runtime_module_id: str) -> str:
     if mod == "pytra.std.json":
         return "# import " + alias + " (json stub)"
     if mod == "pytra.std.pathlib":
-        return "# import " + alias + " (pathlib stub)"
+        return "__PYTRA_INCLUDE_STD_PATHLIB__"
     if mod == "pytra.std.collections":
         return "# import " + alias + " (collections stub)"
-    if mod == "pytra.utils.png":
-        return (
-            'include(joinpath(@__DIR__, "utils", "png.jl"))\n'
-            + alias + " = (write_rgb_png=write_rgb_png,)"
-        )
-    if mod == "pytra.utils.gif":
-        return (
-            'include(joinpath(@__DIR__, "utils", "gif.jl"))\n'
-            + alias + " = (save_gif=save_gif, grayscale_palette=grayscale_palette)"
-        )
+    # Generic module import: include generated file and wrap symbols in NamedTuple
     symbol_names = lookup_runtime_module_symbols(mod)
     if len(symbol_names) == 0:
         return ""
-    return "# module alias: " + alias + " -> " + mod
+    # Derive include path from module_id (§3: mechanical path generation)
+    rel = mod
+    if rel.startswith("pytra."):
+        rel = rel[len("pytra."):]
+    include_path = rel.replace(".", "/") + ".jl"
+    # Derive include marker from path
+    marker = "__PYTRA_INCLUDE_" + rel.replace(".", "_").replace("/", "_").upper() + "__"
+    fields = ", ".join(s + "=" + s for s in symbol_names if s != "")
+    if fields != "":
+        return marker + "\n" + alias + " = (" + fields + ")"
+    return marker
 
 
 def _runtime_symbol_alias_line(alias: str, runtime_module_id: str, runtime_symbol: str) -> str:
@@ -399,6 +372,11 @@ def _runtime_symbol_alias_line(alias: str, runtime_module_id: str, runtime_symbo
     expr = _runtime_symbol_alias_expr(runtime_module_id, runtime_symbol)
     if expr != "":
         return alias + " = " + expr
+    # math/time symbols: include generated std/*.jl (which delegates to __native)
+    if _is_math_runtime_symbol(mod, sym):
+        return "__PYTRA_INCLUDE_STD_MATH__"
+    if _is_perf_counter_runtime_symbol(mod, sym):
+        return "__PYTRA_INCLUDE_STD_TIME__"
     if mod in {"enum", "pytra.std.enum"}:
         if sym in {"Enum", "IntEnum", "IntFlag"}:
             return "# " + alias + " (enum stub)"
@@ -414,7 +392,7 @@ def _runtime_symbol_alias_line(alias: str, runtime_module_id: str, runtime_symbo
             return "# " + alias + " (json.dumps stub)"
         return ""
     if mod == "pytra.std.pathlib" and sym == "Path":
-        return "# " + alias + " (pathlib stub)"
+        return "__PYTRA_INCLUDE_STD_PATHLIB__"
     if mod == "pytra.std.collections" and sym == "deque":
         return "# " + alias + " (deque stub)"
     if mod == "pytra.utils.png" and sym != "":
@@ -447,6 +425,57 @@ class JuliaNativeEmitter:
         self.current_class_name: str = ""
         self.current_class_base_name: str = ""
         self._local_type_stack: list[dict[str, str]] = [{}]
+        meta = east_doc.get("meta", {})
+        emit_ctx = meta.get("emit_context", {}) if isinstance(meta, dict) else {}
+        self._root_rel_prefix: str = emit_ctx.get("root_rel_prefix", "./") if isinstance(emit_ctx, dict) else "./"
+        self._native_module_name: str = ""
+        self._import_alias_map: dict[str, str] = build_import_alias_map(meta if isinstance(meta, dict) else {})
+
+    def _include_line(self, rel_path: str) -> str:
+        """Generate an include() statement using root_rel_prefix.
+
+        *rel_path* is relative to the emit root, e.g. ``"built_in/py_runtime.jl"``
+        or ``"utils/png.jl"``.  The generated ``include()`` call uses ``@__DIR__``
+        combined with ``root_rel_prefix`` so that sub-modules resolve correctly.
+        """
+        prefix = self._root_rel_prefix
+        # Normalise: drop leading "./" if present
+        if prefix == "./" or prefix == "":
+            # Entry file sits at the emit root – include directly
+            parts = rel_path.replace("\\", "/").split("/")
+        else:
+            combined = prefix.rstrip("/") + "/" + rel_path
+            parts = combined.replace("\\", "/").split("/")
+        args = ', '.join('"' + p + '"' for p in parts)
+        return 'include(joinpath(@__DIR__, ' + args + '))'
+
+    @staticmethod
+    def _is_extern_var(stmt: dict[str, Any]) -> bool:
+        """Check if a statement is an extern() variable declaration.
+
+        Preferred: ``meta.extern_var_v1`` (spec §4).
+        Fallback: value node is ``extern()`` call (possibly wrapped in Unbox).
+        """
+        meta = stmt.get("meta")
+        if isinstance(meta, dict):
+            extern_v1 = meta.get("extern_var_v1")
+            if isinstance(extern_v1, dict):
+                return True
+        # Fallback: check value node directly
+        value_node = stmt.get("value")
+        if not isinstance(value_node, dict):
+            return False
+        node = value_node
+        if node.get("kind") == "Unbox":
+            inner = node.get("value")
+            if isinstance(inner, dict):
+                node = inner
+        if node.get("kind") != "Call":
+            return False
+        func = node.get("func")
+        if isinstance(func, dict) and func.get("id") == "extern":
+            return True
+        return False
 
     def _current_type_map(self) -> dict[str, str]:
         if len(self._local_type_stack) == 0:
@@ -474,21 +503,81 @@ class JuliaNativeEmitter:
         if len(self._local_type_stack) > 0:
             self._local_type_stack.pop()
 
+    def _has_extern_declarations(self, body: list[dict[str, Any]]) -> bool:
+        """Check if any statement in body uses @extern or extern()."""
+        for stmt in body:
+            if not isinstance(stmt, dict):
+                continue
+            kind = stmt.get("kind", "")
+            if kind == "FunctionDef":
+                decorators = stmt.get("decorators")
+                if isinstance(decorators, list) and "extern" in decorators:
+                    return True
+            if kind == "AnnAssign" and self._is_extern_var(stmt):
+                return True
+        return False
+
+    def _resolve_native_module_info(self) -> tuple[str, str]:
+        """Return (native_file_path, julia_module_name) for this module's _native file.
+
+        Example: ``pytra.std.time`` → ``("std/time_native.jl", "__TimeNative")``.
+        """
+        meta = self.east_doc.get("meta", {})
+        emit_ctx = meta.get("emit_context", {}) if isinstance(meta, dict) else {}
+        module_id = emit_ctx.get("module_id", "") if isinstance(emit_ctx, dict) else ""
+        clean_id = module_id.replace(".east", "") if module_id.endswith(".east") else module_id
+        canonical = canonical_runtime_module_id(clean_id) if clean_id != "" else ""
+        if canonical != "":
+            parts = canonical.split(".")
+            if len(parts) > 1 and parts[0] == "pytra":
+                native_path = "/".join(parts[1:]) + "_native.jl"
+            else:
+                native_path = "/".join(parts) + "_native.jl"
+        else:
+            native_stem = clean_id.rsplit(".", 1)[-1] if "." in clean_id else clean_id
+            native_path = native_stem + "_native.jl"
+        # Derive Julia module name: std/time_native.jl → __TimeNative
+        path_stem = native_path.rsplit("/", 1)[-1].replace(".jl", "")
+        parts_name = path_stem.split("_")
+        module_name = "__" + "".join(p.capitalize() for p in parts_name)
+        return native_path, module_name
+
+    def _emit_native_import(self, body: list[dict[str, Any]]) -> None:
+        """If module has @extern declarations, generate __native module include.
+
+        Julia's ``include()`` expands at top-level scope, so ``const __native``
+        would collide when multiple std modules are included by the same entry
+        file.  Instead, we use the unique Julia module name directly (e.g.
+        ``__TimeNative.perf_counter()``).
+        """
+        if not self._has_extern_declarations(body):
+            return
+        native_path, module_name = self._resolve_native_module_info()
+        self._native_module_name = module_name
+        self._emit_line(self._include_line(native_path))
+        self._emit_line("")
+
     def transpile(self) -> str:
         module_comments = self._module_leading_comment_lines(prefix="# ")
         if len(module_comments) > 0:
             self.lines.extend(module_comments)
             self.lines.append("")
         body = self._dict_list(self.east_doc.get("body"))
-        main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
         self._scan_module_symbols(body)
         self._emit_imports(body)
+        self._emit_native_import(body)
         for stmt in body:
             self._emit_stmt(stmt)
-        if len(main_guard) > 0:
-            self.lines.append("")
-            for stmt in main_guard:
-                self._emit_stmt(stmt)
+        # §8: main_guard_body is only emitted for the entry module
+        meta = self.east_doc.get("meta", {})
+        emit_ctx = meta.get("emit_context", {}) if isinstance(meta, dict) else {}
+        is_entry = emit_ctx.get("is_entry", False) if isinstance(emit_ctx, dict) else False
+        if is_entry:
+            main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
+            if len(main_guard) > 0:
+                self.lines.append("")
+                for stmt in main_guard:
+                    self._emit_stmt(stmt)
         return "\n".join(self.lines).rstrip() + "\n"
 
     def _dict_list(self, value: Any) -> list[dict[str, Any]]:
@@ -733,7 +822,7 @@ class JuliaNativeEmitter:
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
         import_lines: list[str] = []
-        self._emit_line('include(joinpath(@__DIR__, "py_runtime.jl"))')
+        self._emit_line(self._include_line("built_in/py_runtime.jl"))
         self._emit_line("")
         for stmt in body:
             kind = stmt.get("kind")
@@ -827,21 +916,24 @@ class JuliaNativeEmitter:
                     import_lines.append(
                         "# from " + mod + " import " + sym + " as " + alias_txt + " (not yet mapped)"
                     )
-        # Deduplicate and resolve utils include markers
+        # Deduplicate and resolve include markers (__PYTRA_INCLUDE_<PATH>__)
+        _MARKER_PREFIX = "__PYTRA_INCLUDE_"
+        _MARKER_SUFFIX = "__"
         seen_includes: set[str] = set()
         resolved_lines: list[str] = []
-        for line in import_lines:
-            if line == "__PYTRA_INCLUDE_UTILS_PNG__":
-                if "utils_png" not in seen_includes:
-                    seen_includes.add("utils_png")
-                    resolved_lines.append('include(joinpath(@__DIR__, "utils", "png.jl"))')
-                continue
-            if line == "__PYTRA_INCLUDE_UTILS_GIF__":
-                if "utils_gif" not in seen_includes:
-                    seen_includes.add("utils_gif")
-                    resolved_lines.append('include(joinpath(@__DIR__, "utils", "gif.jl"))')
-                continue
-            resolved_lines.append(line)
+        for raw_line in import_lines:
+            # Split multi-line entries into individual lines for marker detection
+            sub_lines = raw_line.split("\n")
+            for line in sub_lines:
+                if line.startswith(_MARKER_PREFIX) and line.endswith(_MARKER_SUFFIX):
+                    key = line[len(_MARKER_PREFIX):-len(_MARKER_SUFFIX)].lower()
+                    if key not in seen_includes:
+                        seen_includes.add(key)
+                        # Reconstruct path: STD_MATH → std/math.jl
+                        path = key.replace("_", "/", 1) + ".jl"
+                        resolved_lines.append(self._include_line(path))
+                    continue
+                resolved_lines.append(line)
         for line in resolved_lines:
             self._emit_line(line)
         if len(resolved_lines) > 0:
@@ -868,6 +960,11 @@ class JuliaNativeEmitter:
             target_node = stmt.get("target")
             target = self._render_target(target_node)
             value_node = stmt.get("value")
+            # extern() variable → __native delegation (spec §4: prefer meta.extern_var_v1)
+            if self._is_extern_var(stmt):
+                var_name = _safe_ident(target_node.get("id"), "value") if isinstance(target_node, dict) else target
+                self._emit_line(var_name + " = " + self._native_module_name + "." + var_name)
+                return
             value = self._render_expr(value_node) if isinstance(value_node, dict) else "nothing"
             if isinstance(target_node, dict) and target_node.get("kind") == "Name":
                 target_name = _safe_ident(target_node.get("id"), "value")
@@ -940,7 +1037,11 @@ class JuliaNativeEmitter:
                 if loop_kw == "continue":
                     self._emit_line("continue")
                     return
-            self._emit_line(self._render_expr(value_any))
+            # discard_result: suppress return value (spec §9)
+            if bool(stmt.get("discard_result")):
+                self._emit_line(self._render_expr(value_any) + ";")
+            else:
+                self._emit_line(self._render_expr(value_any))
             return
         if kind == "Raise":
             exc_any = stmt.get("exc")
@@ -1011,6 +1112,9 @@ class JuliaNativeEmitter:
 
     def _emit_var_decl(self, stmt: dict[str, Any]) -> None:
         """Emit a hoisted variable declaration (VarDecl node)."""
+        # unused: true → skip declaration (Julia has no unused-variable warnings)
+        if bool(stmt.get("unused")):
+            return
         name_raw = stmt.get("name")
         name = _safe_ident(name_raw, "v") if isinstance(name_raw, str) else "v"
         var_type_any = stmt.get("type")
@@ -1026,6 +1130,17 @@ class JuliaNativeEmitter:
         arg_names: list[str] = []
         for a in args:
             arg_names.append(_safe_ident(a, "arg"))
+        # @extern: generate delegation to __native module
+        decorators = stmt.get("decorators")
+        if isinstance(decorators, list) and "extern" in decorators:
+            self._emit_line("function " + name + "(" + ", ".join(arg_names) + ")")
+            self.indent += 1
+            call_args = ", ".join(arg_names)
+            self._emit_line("return " + self._native_module_name + "." + name + "(" + call_args + ")")
+            self.indent -= 1
+            self._emit_line("end")
+            self._emit_line("")
+            return
         self._emit_line("function " + name + "(" + ", ".join(arg_names) + ")")
         self.indent += 1
         self._push_function_context(stmt, arg_names, args)
@@ -1797,7 +1912,7 @@ class JuliaNativeEmitter:
             owner_type = self._lookup_expr_type(owner_node)
             if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
                 owner_name = _safe_ident(owner_node.get("id"), "")
-                if owner_name in self.imported_modules:
+                if owner_name in self.imported_modules or owner_name in self._import_alias_map:
                     return owner + "." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             # dict.get
             if attr == "get" and len(rendered_args) >= 1:

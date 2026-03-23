@@ -1,7 +1,8 @@
-include(joinpath(@__DIR__, "py_runtime.jl"))
+include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))
 
-math = (sqrt=sqrt, sin=sin, cos=cos, tan=tan, asin=asin, acos=acos, atan=atan, atan2=atan, floor=x->Int(floor(x)), ceil=x->Int(ceil(x)), fabs=abs, abs=abs, log=log, log2=log2, log10=log10, exp=exp, pow=(b, e)->b^e, pi=Base.MathConstants.pi, e=Base.MathConstants.e, inf=Inf, nan=NaN)
-perf_counter = __pytra_perf_counter
+include(joinpath(@__DIR__, "std", "math.jl"))
+math = (ceil=ceil, cos=cos, e=e, exp=exp, fabs=fabs, floor=floor, log=log, log10=log10, pi=pi, pow=pow, sin=sin, sqrt=sqrt, tan=tan)
+include(joinpath(@__DIR__, "std", "time.jl"))
 include(joinpath(@__DIR__, "utils", "gif.jl"))
 
 # 15: Sample that renders wave interference animation and writes a GIF.
@@ -44,4 +45,4 @@ function run_15_wave_interference_loop()
 end
 
 
-run_15_wave_interference_loop()
+run_15_wave_interference_loop();

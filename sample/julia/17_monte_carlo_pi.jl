@@ -1,6 +1,7 @@
-include(joinpath(@__DIR__, "py_runtime.jl"))
+include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))
 
-perf_counter = __pytra_perf_counter
+include(joinpath(@__DIR__, "std", "pathlib.jl"))
+include(joinpath(@__DIR__, "std", "time.jl"))
 
 # 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
 # It avoids floating-point error effects, making cross-language comparisons easier.
@@ -28,10 +29,15 @@ function run_integer_benchmark()
     # meaningful in runtime benchmarks.
     width = 7600
     height = 5000
+    out_path = "sample/out/17_monte_carlo_pi.txt"
     
     start = perf_counter()
     checksum = run_integer_grid_checksum(width, height, 123456789)
     elapsed = (perf_counter() - start)
+    
+    result = (((("pixels:" * string((width * height))) * "\nchecksum:") * string(checksum)) * "\n")
+    p = Path(out_path)
+    write_text(p, result, "utf-8")
     
     __pytra_print("pixels:", (width * height))
     __pytra_print("checksum:", checksum)
@@ -39,4 +45,4 @@ function run_integer_benchmark()
 end
 
 
-run_integer_benchmark()
+run_integer_benchmark();

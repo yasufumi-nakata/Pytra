@@ -1,6 +1,6 @@
-include(joinpath(@__DIR__, "py_runtime.jl"))
+include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))
 
-perf_counter = __pytra_perf_counter
+include(joinpath(@__DIR__, "std", "time.jl"))
 include(joinpath(@__DIR__, "utils", "gif.jl"))
 
 # 13: Sample that outputs DFS maze-generation progress as a GIF.
@@ -89,4 +89,4 @@ function run_13_maze_generation_steps()
 end
 
 
-run_13_maze_generation_steps()
+run_13_maze_generation_steps();

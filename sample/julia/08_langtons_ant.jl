@@ -1,6 +1,6 @@
-include(joinpath(@__DIR__, "py_runtime.jl"))
+include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))
 
-perf_counter = __pytra_perf_counter
+include(joinpath(@__DIR__, "std", "time.jl"))
 include(joinpath(@__DIR__, "utils", "gif.jl"))
 
 # 08: Sample that outputs Langton's Ant trajectories as a GIF.
@@ -65,4 +65,4 @@ function run_08_langtons_ant()
 end
 
 
-run_08_langtons_ant()
+run_08_langtons_ant();

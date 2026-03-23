@@ -1,6 +1,6 @@
-include(joinpath(@__DIR__, "py_runtime.jl"))
+include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))
 
-perf_counter = __pytra_perf_counter
+include(joinpath(@__DIR__, "std", "time.jl"))
 include(joinpath(@__DIR__, "utils", "gif.jl"))
 
 # 09: Sample that outputs a simple fire effect as a GIF.
@@ -79,4 +79,4 @@ function run_09_fire_simulation()
 end
 
 
-run_09_fire_simulation()
+run_09_fire_simulation();

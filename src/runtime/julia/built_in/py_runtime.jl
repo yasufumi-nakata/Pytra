@@ -187,10 +187,6 @@ function __pytra_str_isalnum(s)
     return all(c -> isdigit(c) || isletter(c), s)
 end
 
-function __pytra_perf_counter()
-    return time()
-end
-
 function __pytra_noop()
     return nothing
 end

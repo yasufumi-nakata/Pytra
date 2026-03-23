@@ -1,8 +1,8 @@
-include(joinpath(@__DIR__, "py_runtime.jl"))
+include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))
 
-perf_counter = __pytra_perf_counter
+include(joinpath(@__DIR__, "std", "time.jl"))
 include(joinpath(@__DIR__, "utils", "png.jl"))
-png = (write_rgb_png=write_rgb_png,)
+png = (_adler32=_adler32, _chunk=_chunk, _crc32=_crc32, _png_append_list=_png_append_list, _png_u16le=_png_u16le, _png_u32be=_png_u32be, _zlib_deflate_store=_zlib_deflate_store, write_rgb_png=write_rgb_png)
 
 # 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
 
@@ -104,4 +104,4 @@ function run_04_orbit_trap_julia()
 end
 
 
-run_04_orbit_trap_julia()
+run_04_orbit_trap_julia();

@@ -1,6 +1,6 @@
-include(joinpath(@__DIR__, "py_runtime.jl"))
+include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))
 
-perf_counter = __pytra_perf_counter
+include(joinpath(@__DIR__, "std", "time.jl"))
 include(joinpath(@__DIR__, "utils", "gif.jl"))
 
 # 07: Sample that outputs Game of Life evolution as a GIF.
@@ -133,4 +133,4 @@ function run_07_game_of_life_loop()
 end
 
 
-run_07_game_of_life_loop()
+run_07_game_of_life_loop();

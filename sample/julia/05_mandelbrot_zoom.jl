@@ -1,6 +1,6 @@
-include(joinpath(@__DIR__, "py_runtime.jl"))
+include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))
 
-perf_counter = __pytra_perf_counter
+include(joinpath(@__DIR__, "std", "time.jl"))
 include(joinpath(@__DIR__, "utils", "gif.jl"))
 
 # 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
@@ -57,4 +57,4 @@ function run_05_mandelbrot_zoom()
 end
 
 
-run_05_mandelbrot_zoom()
+run_05_mandelbrot_zoom();

@@ -1,6 +1,6 @@
-include(joinpath(@__DIR__, "py_runtime.jl"))
+include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))
 
-perf_counter = __pytra_perf_counter
+include(joinpath(@__DIR__, "std", "time.jl"))
 include(joinpath(@__DIR__, "utils", "gif.jl"))
 
 # 12: Sample that outputs intermediate states of bubble sort as a GIF.
@@ -46,7 +46,9 @@ function run_12_sort_visualizer()
         swapped = false
         for j in 0:(((n - i) - 1)) - 1
             if (values[__pytra_idx(j, length(values))] > values[__pytra_idx((j + 1), length(values))])
-                (nothing, nothing) = (nothing, nothing)
+                __swap_tmp_0 = values[__pytra_idx(j, length(values))]
+                values[__pytra_idx(j, length(values))] = values[__pytra_idx((j + 1), length(values))]
+                values[__pytra_idx((j + 1), length(values))] = __swap_tmp_0
                 swapped = true
             end
             if ((op % frame_stride) == 0)
@@ -66,4 +68,4 @@ function run_12_sort_visualizer()
 end
 
 
-run_12_sort_visualizer()
+run_12_sort_visualizer();

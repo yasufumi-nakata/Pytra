@@ -1,6 +1,7 @@
-include(joinpath(@__DIR__, "py_runtime.jl"))
+include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))
 
-perf_counter = __pytra_perf_counter
+include(joinpath(@__DIR__, "std", "pathlib.jl"))
+include(joinpath(@__DIR__, "std", "time.jl"))
 
 mutable struct Token
     kind
@@ -349,6 +350,7 @@ function run_demo()
 end
 
 function run_benchmark()
+    out_path = "sample/out/18_mini_language_interpreter.txt"
     source_lines = build_benchmark_source(32, 120000)
     start = perf_counter()
     tokens = tokenize(source_lines)
@@ -356,6 +358,10 @@ function run_benchmark()
     stmts = parse_program(parser)
     checksum = execute(stmts, parser.expr_nodes, false)
     elapsed = (perf_counter() - start)
+    
+    result = (((((((("token_count:" * string(length(tokens))) * "\nexpr_count:") * string(length(parser.expr_nodes))) * "\nstmt_count:") * string(length(stmts))) * "\nchecksum:") * string(checksum)) * "\n")
+    p = Path(out_path)
+    write_text(p, result, "utf-8")
     
     __pytra_print("token_count:", length(tokens))
     __pytra_print("expr_count:", length(parser.expr_nodes))
@@ -365,9 +371,9 @@ function run_benchmark()
 end
 
 function __pytra_main()
-    run_demo()
-    run_benchmark()
+    run_demo();
+    run_benchmark();
 end
 
 
-__pytra_main()
+__pytra_main();
