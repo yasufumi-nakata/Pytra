@@ -2757,6 +2757,18 @@ def _is_std_extern_only_module(east_doc: dict[str, Any]) -> bool:
             decorators = node.get("decorators")
             if isinstance(decorators, list) and "extern" in decorators:
                 continue
+        if kind == "AnnAssign":
+            # extern() variable: check meta.extern_var_v1 or value.func.id == "extern"
+            node_meta = node.get("meta")
+            if isinstance(node_meta, dict) and isinstance(node_meta.get("extern_var_v1"), dict):
+                continue
+            value = node.get("value")
+            if isinstance(value, dict) and value.get("kind") == "Unbox":
+                value = value.get("value", {})
+            if isinstance(value, dict) and value.get("kind") == "Call":
+                func = value.get("func")
+                if isinstance(func, dict) and func.get("id") == "extern":
+                    continue
         # Non-extern body node found (ClassDef, regular FunctionDef, etc.)
         return False
     return True
@@ -2907,21 +2919,33 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
     while i < len(body_any):
         node = body_any[i]
         if isinstance(node, dict) and node.get("kind") == "AnnAssign":
-            value = node.get("value")
-            # Unwrap Unbox if present
-            if isinstance(value, dict) and value.get("kind") == "Unbox":
-                value = value.get("value", {})
-            if isinstance(value, dict) and value.get("kind") == "Call":
-                func = value.get("func")
-                if isinstance(func, dict) and func.get("id") == "extern":
-                    var_name = ""
-                    target = node.get("target")
-                    if isinstance(target, dict):
-                        var_name = _safe_ident(target.get("id"), "")
-                    if var_name != "":
-                        var_type = _go_type(node.get("annotation"), allow_void=False)
-                        lines.append("")
-                        lines.append("func " + var_name + "() " + var_type + " { return " + native_prefix + var_name + "() }")
+            # extern() variable: detect via meta.extern_var_v1 (spec §4)
+            node_meta = node.get("meta")
+            extern_v1 = node_meta.get("extern_var_v1") if isinstance(node_meta, dict) else None
+            is_extern_var = False
+            symbol = ""
+            var_name = ""
+            if isinstance(extern_v1, dict):
+                symbol = extern_v1.get("symbol", "")
+                target = node.get("target")
+                var_name = _safe_ident(target.get("id"), "") if isinstance(target, dict) else ""
+                is_extern_var = var_name != "" and symbol != ""
+            if not is_extern_var:
+                # Fallback: detect via value.func.id == "extern" (Unbox unwrap)
+                value = node.get("value")
+                if isinstance(value, dict) and value.get("kind") == "Unbox":
+                    value = value.get("value", {})
+                if isinstance(value, dict) and value.get("kind") == "Call":
+                    func = value.get("func")
+                    if isinstance(func, dict) and func.get("id") == "extern":
+                        target = node.get("target")
+                        var_name = _safe_ident(target.get("id"), "") if isinstance(target, dict) else ""
+                        symbol = var_name
+                        is_extern_var = var_name != ""
+            if is_extern_var:
+                var_type = _go_type(node.get("annotation"), allow_void=False)
+                lines.append("")
+                lines.append("func " + var_name + "() " + var_type + " { return " + native_prefix + symbol + "() }")
         i += 1
 
     if not is_entry:

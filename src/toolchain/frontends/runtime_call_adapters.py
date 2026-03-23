@@ -12,7 +12,7 @@ def normalize_rendered_runtime_args(
     defaults = default_values if isinstance(default_values, dict) else {}
     if adapter_kind == "":
         return list(rendered_args)
-    if adapter_kind in {"math.float_args", "math.value_getter"}:
+    if adapter_kind in {"math.float_args", "math.value_getter", "extern_delegate"}:
         if rendered_keywords:
             raise RuntimeError(error_prefix + ": unsupported runtime keywords for adapter: " + adapter_kind)
         return list(rendered_args)

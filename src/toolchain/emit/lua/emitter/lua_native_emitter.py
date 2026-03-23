@@ -1306,16 +1306,33 @@ class LuaNativeEmitter:
             return
         if kind == "AnnAssign":
             # extern() variable → delegate to __native module (spec §4)
-            value_node_check = stmt.get("value")
-            if isinstance(value_node_check, dict) and value_node_check.get("kind") == "Call":
-                func_check = value_node_check.get("func")
-                if isinstance(func_check, dict) and func_check.get("id") == "extern":
-                    target_node_e = stmt.get("target")
-                    if isinstance(target_node_e, dict) and target_node_e.get("kind") == "Name":
-                        var_name = _safe_ident(target_node_e.get("id"), "v")
-                        self._ensure_native_loaded()
-                        self._emit_line(var_name + " = __native." + var_name)
-                        return
+            # Detect via meta.extern_var_v1 (preferred) or value.func.id == "extern" (fallback)
+            stmt_meta = stmt.get("meta")
+            extern_v1 = stmt_meta.get("extern_var_v1") if isinstance(stmt_meta, dict) else None
+            is_extern_var = False
+            extern_symbol = ""
+            extern_var_name = ""
+            if isinstance(extern_v1, dict):
+                extern_symbol = extern_v1.get("symbol", "")
+                target_node_e = stmt.get("target")
+                if isinstance(target_node_e, dict) and target_node_e.get("kind") == "Name":
+                    extern_var_name = _safe_ident(target_node_e.get("id"), "v")
+                    is_extern_var = extern_symbol != ""
+            if not is_extern_var:
+                # Fallback: detect via value.func.id == "extern"
+                value_node_check = stmt.get("value")
+                if isinstance(value_node_check, dict) and value_node_check.get("kind") == "Call":
+                    func_check = value_node_check.get("func")
+                    if isinstance(func_check, dict) and func_check.get("id") == "extern":
+                        target_node_e = stmt.get("target")
+                        if isinstance(target_node_e, dict) and target_node_e.get("kind") == "Name":
+                            extern_var_name = _safe_ident(target_node_e.get("id"), "v")
+                            extern_symbol = extern_var_name
+                            is_extern_var = True
+            if is_extern_var:
+                self._ensure_native_loaded()
+                self._emit_line(extern_var_name + " = __native." + extern_symbol)
+                return
             target_node = stmt.get("target")
             target = self._render_target(target_node)
             value_node = stmt.get("value")
