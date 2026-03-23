@@ -10,13 +10,16 @@
   -optimize   *.east3 → *.east3       whole-program 最適化
   -emit       *.east3 → *.cpp 等      target コード生成
   -build      .py → target            一括実行
+
+selfhost 対象 (§5.7): toolchain2/ + pytra.std.* のみ使用。
+golden file 生成は tools/generate_golden.py に分離。
 """
 
 from __future__ import annotations
 
-import sys
-import json
-from pathlib import Path
+from pytra.std import sys
+from pytra.std import json
+from pytra.std.pathlib import Path
 
 # ---------------------------------------------------------------------------
 # parse: .py → .py.east1
@@ -30,11 +33,11 @@ def _default_east1_output_path(input_path: Path) -> Path:
 def _parse_one(input_path: Path, output_path: Path | None, pretty: bool) -> int:
     """1 ファイルを parse して .py.east1 を生成する。"""
     if not input_path.exists():
-        print(f"error: file not found: {input_path}", file=sys.stderr)
+        print("error: file not found: " + str(input_path))
         return 1
 
-    # pytra-cli2.py は selfhost 非対象 (§5.7) なので toolchain/ の利用を許可。
-    # toolchain2/parse/py/ の自前パーサーが完成したらそちらに切り替える。
+    # TODO: toolchain2/parse/py/ の自前パーサーに切り替える。
+    # 暫定で toolchain/ を使用（selfhost 移行完了まで）。
     from toolchain.compile.core_entrypoints import convert_path
     from toolchain.compile.east1 import normalize_east1_root_document
 
@@ -42,7 +45,7 @@ def _parse_one(input_path: Path, output_path: Path | None, pretty: bool) -> int:
         raw_east = convert_path(input_path, parser_backend="self_hosted")
         east1_doc = normalize_east1_root_document(raw_east)
     except Exception as e:
-        print(f"error: parse failed: {input_path}: {e}", file=sys.stderr)
+        print("error: parse failed: " + str(input_path) + ": " + str(e))
         return 1
 
     if output_path is None:
@@ -54,7 +57,7 @@ def _parse_one(input_path: Path, output_path: Path | None, pretty: bool) -> int:
         json.dumps(east1_doc, ensure_ascii=False, indent=indent) + "\n",
         encoding="utf-8",
     )
-    print(f"parsed: {output_path}")
+    print("parsed: " + str(output_path))
     return 0
 
 
@@ -69,7 +72,7 @@ def cmd_parse(args: list[str]) -> int:
         tok = args[i]
         if tok == "-o" or tok == "--output":
             if i + 1 >= len(args):
-                print(f"error: missing value for {tok}", file=sys.stderr)
+                print("error: missing value for " + tok)
                 return 1
             output_text = args[i + 1]
             i += 2
@@ -87,11 +90,11 @@ def cmd_parse(args: list[str]) -> int:
         i += 1
 
     if len(inputs) == 0:
-        print("error: at least one input file is required", file=sys.stderr)
+        print("error: at least one input file is required")
         return 1
 
     if output_text != "" and len(inputs) > 1:
-        print("error: -o cannot be used with multiple input files", file=sys.stderr)
+        print("error: -o cannot be used with multiple input files")
         return 1
 
     exit_code = 0
@@ -109,7 +112,7 @@ def cmd_parse(args: list[str]) -> int:
 # ---------------------------------------------------------------------------
 
 def cmd_resolve(args: list[str]) -> int:
-    print("error: -resolve is not yet implemented", file=sys.stderr)
+    print("error: -resolve is not yet implemented")
     return 1
 
 
@@ -118,7 +121,7 @@ def cmd_resolve(args: list[str]) -> int:
 # ---------------------------------------------------------------------------
 
 def cmd_compile(args: list[str]) -> int:
-    print("error: -compile is not yet implemented", file=sys.stderr)
+    print("error: -compile is not yet implemented")
     return 1
 
 
@@ -127,7 +130,7 @@ def cmd_compile(args: list[str]) -> int:
 # ---------------------------------------------------------------------------
 
 def cmd_optimize(args: list[str]) -> int:
-    print("error: -optimize is not yet implemented", file=sys.stderr)
+    print("error: -optimize is not yet implemented")
     return 1
 
 
@@ -136,176 +139,8 @@ def cmd_optimize(args: list[str]) -> int:
 # ---------------------------------------------------------------------------
 
 def cmd_emit(args: list[str]) -> int:
-    print("error: -emit is not yet implemented", file=sys.stderr)
+    print("error: -emit is not yet implemented")
     return 1
-
-
-# ---------------------------------------------------------------------------
-# golden: 現行 toolchain/ を使って golden file を生成 (§6.1)
-# ---------------------------------------------------------------------------
-
-_GOLDEN_STAGES = ("east1", "east2", "east3", "east3-opt")
-
-_GOLDEN_DEFAULT_OUTPUT: dict[str, str] = {
-    "east1": "test/east1/py",
-    "east2": "test/east2/py",
-    "east3": "test/east3",
-    "east3-opt": "test/east3-opt",
-}
-
-_GOLDEN_SAMPLE_DIR = "sample/py"
-
-
-def _golden_output_filename(sample_stem: str, stage: str) -> str:
-    """golden file のファイル名を返す。"""
-    if stage == "east1":
-        return sample_stem + ".py.east1"
-    if stage == "east2":
-        return sample_stem + ".east2"
-    if stage == "east3" or stage == "east3-opt":
-        return sample_stem + ".east3"
-    return sample_stem + "." + stage
-
-
-def _generate_east1(input_path: Path) -> dict[str, object]:
-    """現行 toolchain/ で EAST1 を生成する。"""
-    from toolchain.compile.core_entrypoints import convert_path
-    from toolchain.compile.east1 import normalize_east1_root_document
-
-    raw = convert_path(input_path, parser_backend="self_hosted")
-    return normalize_east1_root_document(raw)
-
-
-def _generate_east2(input_path: Path) -> dict[str, object]:
-    """現行 toolchain/ で EAST2 を生成する。"""
-    from toolchain.frontends.transpile_cli import load_east_document
-
-    return load_east_document(input_path, parser_backend="self_hosted")
-
-
-def _generate_east3(input_path: Path, opt_level: int) -> dict[str, object]:
-    """現行 toolchain/ で EAST3 を生成する。"""
-    from toolchain.frontends.transpile_cli import load_east3_document
-
-    return load_east3_document(
-        input_path,
-        parser_backend="self_hosted",
-        object_dispatch_mode="native",
-        east3_opt_level=opt_level,
-    )
-
-
-def _generate_golden(input_path: Path, stage: str) -> dict[str, object]:
-    """指定 stage の golden file を生成する。"""
-    if stage == "east1":
-        return _generate_east1(input_path)
-    if stage == "east2":
-        return _generate_east2(input_path)
-    if stage == "east3":
-        return _generate_east3(input_path, opt_level=0)
-    if stage == "east3-opt":
-        return _generate_east3(input_path, opt_level=1)
-    raise ValueError(f"unknown stage: {stage}")
-
-
-def cmd_golden(args: list[str]) -> int:
-    """golden サブコマンド: 現行 toolchain/ で golden file を一括生成 (§6.1)。"""
-    stage = ""
-    output_dir_text = ""
-    sample_dir_text = _GOLDEN_SAMPLE_DIR
-
-    i = 0
-    while i < len(args):
-        tok = args[i]
-        if tok == "--stage":
-            if i + 1 >= len(args):
-                print(f"error: missing value for {tok}", file=sys.stderr)
-                return 1
-            stage = args[i + 1]
-            i += 2
-            continue
-        if tok.startswith("--stage="):
-            stage = tok[len("--stage="):]
-            i += 1
-            continue
-        if tok == "-o" or tok == "--output":
-            if i + 1 >= len(args):
-                print(f"error: missing value for {tok}", file=sys.stderr)
-                return 1
-            output_dir_text = args[i + 1]
-            i += 2
-            continue
-        if tok == "--from":
-            # --from=python は現時点では python のみ対応。無視して進む。
-            if i + 1 >= len(args):
-                i += 1
-                continue
-            i += 2
-            continue
-        if tok.startswith("--from="):
-            i += 1
-            continue
-        if tok == "--sample-dir":
-            if i + 1 >= len(args):
-                print(f"error: missing value for {tok}", file=sys.stderr)
-                return 1
-            sample_dir_text = args[i + 1]
-            i += 2
-            continue
-        if tok == "-h" or tok == "--help":
-            print("usage: pytra-cli2 -golden --stage=STAGE [-o OUTPUT_DIR] [--from=python]")
-            print()
-            print("stages: " + ", ".join(_GOLDEN_STAGES))
-            print()
-            print("examples:")
-            print("  pytra-cli2 -golden --stage=east1 --from=python -o test/east1/py/")
-            print("  pytra-cli2 -golden --stage=east2 --from=python -o test/east2/py/")
-            print("  pytra-cli2 -golden --stage=east3 -o test/east3/")
-            print("  pytra-cli2 -golden --stage=east3-opt -o test/east3-opt/")
-            return 0
-        i += 1
-
-    if stage == "":
-        print("error: --stage is required", file=sys.stderr)
-        return 1
-    if stage not in _GOLDEN_STAGES:
-        print(f"error: unknown stage: {stage} (available: {', '.join(_GOLDEN_STAGES)})", file=sys.stderr)
-        return 1
-
-    if output_dir_text == "":
-        output_dir_text = _GOLDEN_DEFAULT_OUTPUT[stage]
-    output_dir = Path(output_dir_text)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    sample_dir = Path(sample_dir_text)
-    samples = sorted(sample_dir.glob("*.py"))
-    if len(samples) == 0:
-        print(f"error: no .py files found in {sample_dir}", file=sys.stderr)
-        return 1
-
-    print(f"golden: stage={stage}, samples={len(samples)}, output={output_dir}")
-    exit_code = 0
-    ok_count = 0
-    fail_count = 0
-    for sample_path in samples:
-        stem = sample_path.stem
-        out_name = _golden_output_filename(stem, stage)
-        out_path = output_dir / out_name
-        try:
-            doc = _generate_golden(sample_path, stage)
-            out_path.write_text(
-                json.dumps(doc, ensure_ascii=False, indent=2, default=str) + "\n",
-                encoding="utf-8",
-            )
-            print(f"  ok: {out_path}")
-            ok_count += 1
-        except Exception as e:
-            print(f"  FAIL: {sample_path}: {e}", file=sys.stderr)
-            fail_count += 1
-            exit_code = 1
-
-    print(f"golden: {ok_count} ok, {fail_count} failed")
-    return exit_code
 
 
 # ---------------------------------------------------------------------------
@@ -313,7 +148,7 @@ def cmd_golden(args: list[str]) -> int:
 # ---------------------------------------------------------------------------
 
 def cmd_build(args: list[str]) -> int:
-    print("error: -build is not yet implemented", file=sys.stderr)
+    print("error: -build is not yet implemented")
     return 1
 
 
@@ -327,31 +162,31 @@ _COMMANDS = {
     "-compile": cmd_compile,
     "-optimize": cmd_optimize,
     "-emit": cmd_emit,
-    "-golden": cmd_golden,
     "-build": cmd_build,
 }
 
 
 def main() -> int:
     argv = sys.argv[1:]
-    if len(argv) == 0 or argv[0] in ("-h", "--help"):
+    if len(argv) == 0 or argv[0] == "-h" or argv[0] == "--help":
         print("usage: pytra-cli2 <command> [options]")
-        print()
+        print("")
         print("commands:")
-        print("  -parse      .py → .py.east1         (Python parse)")
-        print("  -resolve    *.py.east1 → *.east2    (type resolve + normalize)")
-        print("  -compile    *.east2 → *.east3       (core lowering)")
-        print("  -optimize   *.east3 → *.east3       (whole-program optimization)")
-        print("  -emit       *.east3 → target         (code generation)")
-        print("  -golden     generate golden files     (uses current toolchain/)")
-        print("  -build      .py → target             (all-in-one)")
+        print("  -parse      .py -> .py.east1         (Python parse)")
+        print("  -resolve    *.py.east1 -> *.east2    (type resolve + normalize)")
+        print("  -compile    *.east2 -> *.east3       (core lowering)")
+        print("  -optimize   *.east3 -> *.east3       (whole-program optimization)")
+        print("  -emit       *.east3 -> target         (code generation)")
+        print("  -build      .py -> target             (all-in-one)")
+        print("")
+        print("golden file generation: python3 tools/generate_golden.py --help")
         return 0
 
     cmd_name = argv[0]
     cmd_fn = _COMMANDS.get(cmd_name)
     if cmd_fn is None:
-        print(f"error: unknown command: {cmd_name}", file=sys.stderr)
-        print("run 'pytra-cli2 --help' for available commands", file=sys.stderr)
+        print("error: unknown command: " + cmd_name)
+        print("run 'pytra-cli2 --help' for available commands")
         return 1
 
     return cmd_fn(argv[1:])
