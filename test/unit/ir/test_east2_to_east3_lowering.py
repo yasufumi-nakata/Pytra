@@ -317,10 +317,24 @@ class East2ToEast3LoweringTest(East23LoweringNominalAdtFixtureMixin, unittest.Te
             ],
         }
         out = lower_east2_to_east3(east2)
-        target_plan = out.get("body", [])[0].get("target_plan", {})
-        elems = target_plan.get("elements", [])
-        self.assertEqual(elems[0].get("target_type"), "int64")
-        self.assertEqual(elems[1].get("target_type"), "str")
+        for_node = out.get("body", [])[0]
+        target_plan = for_node.get("target_plan", {})
+        if target_plan.get("kind") == "NameTarget":
+            # Tuple was expanded: check element types via body Assign nodes
+            self.assertTrue(target_plan.get("tuple_expanded", False))
+            body = for_node.get("body", [])
+            assign_types = [
+                a.get("target", {}).get("resolved_type")
+                for a in body
+                if isinstance(a, dict) and a.get("kind") == "Assign"
+                and isinstance(a.get("target"), dict) and a["target"].get("kind") == "Name"
+            ]
+            self.assertEqual(assign_types[:2], ["int64", "str"])
+        else:
+            # TupleTarget path (legacy)
+            elems = target_plan.get("elements", [])
+            self.assertEqual(elems[0].get("target_type"), "int64")
+            self.assertEqual(elems[1].get("target_type"), "str")
 
     def test_lower_nested_for_statements_inside_function(self) -> None:
         east2 = {

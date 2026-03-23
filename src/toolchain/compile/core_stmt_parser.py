@@ -1031,6 +1031,19 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     )
                 )
                 continue
+            # Propagate tuple element types to name_types
+            rhs_type = str(rhs.get("resolved_type", "unknown")) if isinstance(rhs, dict) else "unknown"
+            if rhs_type.startswith("tuple[") and rhs_type.endswith("]"):
+                tuple_inner = rhs_type[6:-1]
+                tuple_elem_types = _sh_split_top_commas(tuple_inner)
+                if len(tuple_elem_types) >= 1:
+                    et1 = tuple_elem_types[0].strip()
+                    if et1 != "" and et1 != "unknown":
+                        name_types[n1] = et1
+                if len(tuple_elem_types) >= 2:
+                    et2 = tuple_elem_types[1].strip()
+                    if et2 != "" and et2 != "unknown":
+                        name_types[n2] = et2
             pending_blank_count = _sh_push_stmt_with_trivia(
                 stmts,
                 pending_leading_trivia,
@@ -1062,6 +1075,23 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 nm = str(target_expr.get("id", ""))
                 if nm != "":
                     name_types[nm] = str(decl_type)
+            elif isinstance(target_expr, dict) and target_expr.get("kind") == "Tuple":
+                # Propagate tuple element types to name_types
+                dt = str(decl_type)
+                if dt.startswith("tuple[") and dt.endswith("]"):
+                    tuple_inner = dt[6:-1]
+                    elem_types = _sh_split_top_commas(tuple_inner)
+                    elems = target_expr.get("elements")
+                    if isinstance(elems, list):
+                        idx = 0
+                        while idx < len(elems) and idx < len(elem_types):
+                            el = elems[idx]
+                            if isinstance(el, dict) and el.get("kind") == "Name":
+                                el_name = str(el.get("id", ""))
+                                et = elem_types[idx].strip()
+                                if el_name != "" and et != "" and et != "unknown":
+                                    name_types[el_name] = et
+                            idx += 1
             pending_blank_count = _sh_push_stmt_with_trivia(
                 stmts,
                 pending_leading_trivia,

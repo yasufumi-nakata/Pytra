@@ -101,6 +101,13 @@ class _ShExprResolutionSemanticsMixin:
                 "index": "int64",
                 "count": "int64",
             }
+            # Refine types from generic parameter if available
+            if cls_name.startswith("list[") and cls_name.endswith("]"):
+                inner = cls_name[5:-1]
+                parts = self._split_generic_types(inner)
+                if len(parts) == 1:
+                    elem_t = parts[0].strip()
+                    methods["pop"] = elem_t
         elif cls_name == "dict" or cls_name.startswith("dict["):
             methods = {
                 "get": "object",

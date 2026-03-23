@@ -30,6 +30,13 @@ def _propagate_assign_target_type(node: Any) -> None:
     nd: dict[str, Any] = node
     kind = nd.get("kind", "")
 
+    # Sync FunctionDef.returns from return_type if missing
+    if kind == "FunctionDef":
+        ret_type = _safe_str(nd.get("return_type"))
+        returns = nd.get("returns")
+        if returns is None and ret_type not in ("", "unknown"):
+            nd["returns"] = ret_type
+
     if kind in ("Assign", "AnnAssign"):
         target = nd.get("target")
         value = nd.get("value")

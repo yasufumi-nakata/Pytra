@@ -7,7 +7,7 @@ from typing import Any
 
 from toolchain.frontends.signature_registry import lookup_stdlib_method_return_type
 from toolchain.compile.core_entrypoints import _make_east_build_error
-from toolchain.compile.core_parse_context import _SH_IMPORT_MODULES, _SH_CLASS_BASE
+from toolchain.compile.core_parse_context import _SH_IMPORT_MODULES, _SH_IMPORT_SYMBOLS, _SH_CLASS_BASE
 from toolchain.compile.core_runtime_call_semantics import _sh_annotate_runtime_method_call_expr
 
 
@@ -21,7 +21,8 @@ class _ShExprAttrCallAnnotationMixin:
             # For import module calls (math.sin etc.), try function return type
             if owner.get("kind") == "Name":
                 owner_id = str(owner.get("id", ""))
-                if owner_id in _SH_IMPORT_MODULES:
+                # Check both 'import math' and 'from pytra.std import math' styles
+                if owner_id in _SH_IMPORT_MODULES or owner_id in _SH_IMPORT_SYMBOLS:
                     from toolchain.frontends.signature_registry import lookup_stdlib_function_return_type
                     fn_ret = lookup_stdlib_function_return_type(attr)
                     if fn_ret != "":
@@ -121,7 +122,7 @@ class _ShExprAttrCallAnnotationMixin:
         owner_kind = str(owner_expr.get("kind", ""))
         if owner_kind == "Name":
             owner_id = str(owner_expr.get("id", ""))
-            if owner_id in _SH_IMPORT_MODULES:
+            if owner_id in _SH_IMPORT_MODULES or owner_id in _SH_IMPORT_SYMBOLS:
                 return owner_t
             # クラス名のクラス属性アクセス (e.g. Color.RED) は許可
             if owner_id in _SH_CLASS_BASE:

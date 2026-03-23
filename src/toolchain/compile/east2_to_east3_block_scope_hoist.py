@@ -528,8 +528,10 @@ def _hoist_block_scope_vars_in_stmt_list(stmts: list[Any], param_names: set[str]
                 continue
             to_hoist[name] = var_type
 
-        # 4. Insert VarDecl nodes before the block
+        # 4. Insert VarDecl nodes before the block (skip empty/None names)
         for name in sorted(to_hoist.keys()):
+            if name is None or name == "":
+                continue
             var_decl = _make_var_decl(name, to_hoist[name])
             result.append(var_decl)
             already_declared.add(name)
