@@ -1841,6 +1841,17 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             target_name = _fresh_tmp(ctx, "item")
         target_type_any = target_plan_any.get("target_type")
         target_type_txt = target_type_any if isinstance(target_type_any, str) else ""
+        # enumerate-lowered NameTarget has target_type="tuple[int64, T]" but
+        # the loop variable receives each element of the iterable (type T),
+        # not the tuple itself.  Fall back to the iterable's element type.
+        if target_type_txt.startswith("tuple["):
+            iter_expr_any = iter_plan_any.get("iter_expr")
+            if isinstance(iter_expr_any, dict):
+                iter_resolved = iter_expr_any.get("resolved_type")
+                if isinstance(iter_resolved, str) and iter_resolved.startswith("list["):
+                    target_type_txt = iter_resolved[5:-1].strip()
+                else:
+                    target_type_txt = ""
         if target_type_txt in {"", "unknown"}:
             iter_expr_any = iter_plan_any.get("iter_expr")
             if isinstance(iter_expr_any, dict):
