@@ -134,6 +134,10 @@ def _normalize_output_for_compare(stdout_text: str, target_name: str = "") -> st
             continue
         if target_name == "nim" and "warning:" in low:
             continue
+        # C++ build via make: filter build log lines
+        if target_name == "cpp":
+            if low.startswith("make:") or low.startswith("g++") or low.startswith("clang"):
+                continue
         lines.append(line)
     return "\n".join(lines)
 

@@ -2202,7 +2202,10 @@ class CppStatementEmitter:
                     if ct.startswith("rc<") and not borrow_param:
                         param_txt = f"{ct}& {emitted_n}"
                     else:
-                        param_txt = f"{borrow_ct} {emitted_n}" if borrow_ct == "object" else f"{borrow_ct}& {emitted_n}"
+                        # Object<T> は参照カウントハンドル。値渡しでも内部データを共有し
+                        # 参照セマンティクスが保たれる。&渡しだと rvalue をバインドできない。
+                        use_value_param = borrow_ct == "object" or borrow_ct.startswith("Object<")
+                        param_txt = f"{borrow_ct} {emitted_n}" if use_value_param else f"{borrow_ct}& {emitted_n}"
                 elif by_ref:
                     if borrow_param:
                         param_txt = f"const {borrow_ct}& {emitted_n}"

@@ -364,7 +364,11 @@ def build_cpp_header_from_east(
                     if at_cpp in by_value_types:
                         param_txt = borrow_cpp + " " + emitted_an
                     elif usage == "mutable":
-                        if (at_cpp.startswith("Object<") or at_cpp.startswith("rc<")) and not _header_is_class_borrow_type(at, at_cpp, class_names, ref_classes):
+                        if at_cpp.startswith("Object<") and not _header_is_class_borrow_type(at, at_cpp, class_names, ref_classes):
+                            # Object<T> は参照カウントハンドル。値渡しでも内部データを共有し
+                            # 参照セマンティクスが保たれる。&渡しだと rvalue をバインドできない。
+                            param_txt = at_cpp + " " + emitted_an
+                        elif at_cpp.startswith("rc<") and not _header_is_class_borrow_type(at, at_cpp, class_names, ref_classes):
                             param_txt = at_cpp + "& " + emitted_an
                         else:
                             param_txt = borrow_cpp + " " + emitted_an if borrow_cpp == "object" else borrow_cpp + "& " + emitted_an
