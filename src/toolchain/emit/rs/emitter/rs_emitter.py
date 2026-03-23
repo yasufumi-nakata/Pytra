@@ -355,6 +355,7 @@ class RustEmitter(CodeEmitter):
     def _mutating_method_names(self) -> set[str]:
         return {
             "append",
+            "push",
             "pop",
             "clear",
             "insert",
@@ -366,6 +367,8 @@ class RustEmitter(CodeEmitter):
             "setdefault",
             "add",
             "discard",
+            "write",
+            "close",
         }
 
     def _all_mutating_class_method_names(self) -> set[str]:
@@ -580,7 +583,13 @@ class RustEmitter(CodeEmitter):
             write_count = write_counts.get(arg_name, 0)
             mut_call_count = mut_call_counts.get(arg_name, 0)
             is_mut = usage == "reassigned" or usage == "mutable" or usage == "write" or write_count > 0 or mut_call_count > 0
-            modes.append((not is_mut) and pass_by_ref_pred(self.any_to_str(arg_types.get(arg_name))))
+            is_collection_ref_type = pass_by_ref_pred(self.any_to_str(arg_types.get(arg_name)))
+            if is_mut and mut_call_count > 0 and is_collection_ref_type and write_count == 0:
+                # Python list/dict/set args with mutating method calls need &mut
+                # Use 2 to indicate mut_ref mode
+                modes.append(2)  # type: ignore[arg-type]
+            else:
+                modes.append(1 if ((not is_mut) and is_collection_ref_type) else 0)  # type: ignore[arg-type]
         return modes
 
     def _receiver_root_name(self, node: dict[str, Any]) -> str:
@@ -665,7 +674,20 @@ class RustEmitter(CodeEmitter):
             kind = self.any_dict_get_str(node, "kind", "")
             if kind == "Call":
                 fn = self.any_to_dict_or_empty(nd2.get("func"))
-                if self.any_dict_get_str(fn, "kind", "") == "Attribute":
+                fn_kind = self.any_dict_get_str(fn, "kind", "")
+                # Check Name call: func(arg) where arg is passed as &mut
+                if fn_kind == "Name":
+                    callee_name = self._safe_name(self.any_dict_get_str(fn, "id", ""))
+                    callee_modes = self.function_arg_ref_modes.get(callee_name, [])
+                    call_args = self.any_to_list(nd2.get("args"))
+                    for idx, arg_node_any in enumerate(call_args):
+                        if idx < len(callee_modes) and callee_modes[idx] == 2:
+                            arg_d = self.any_to_dict_or_empty(arg_node_any)
+                            if self.any_dict_get_str(arg_d, "kind", "") == "Name":
+                                arg_name = self.any_dict_get_str(arg_d, "id", "")
+                                if arg_name != "":
+                                    self._increment_name_count(out, arg_name)
+                if fn_kind == "Attribute":
                     attr = self.any_dict_get_str(fn, "attr", "")
                     owner = self.any_to_dict_or_empty(fn.get("value"))
                     owner_name = self._receiver_root_name(owner)
@@ -1171,6 +1193,9 @@ class RustEmitter(CodeEmitter):
 
     def _render_list_iter_expr(self, list_expr: str, list_type: str, can_borrow: bool) -> str:
         """list 反復の Rust 式を生成する（必要最小限の clone/copy に寄せる）。"""
+        # PyList: snapshot-based iteration (§10 参照型ラッパー)
+        if hasattr(self, "_use_pylist") and self._use_pylist:
+            return "(" + list_expr + ").iter_snapshot().into_iter()"
         elem_t = self._list_elem_type(list_type)
         if self._is_copy_type(elem_t):
             return "(" + list_expr + ").iter().copied()"
@@ -1849,7 +1874,19 @@ class RustEmitter(CodeEmitter):
             return True
         return False
 
+    @staticmethod
+    def _native_runtime_file_exists(native_rel_path: str) -> bool:
+        """src/runtime/rs/ 下に native ファイルが存在するか確認する。"""
+        from pathlib import Path
+        rs_runtime_root = Path(__file__).resolve().parents[4] / "runtime" / "rs"
+        return (rs_runtime_root / native_rel_path).is_file()
+
     def _is_image_utils_module(self, module_id: str) -> bool:
+        """画像ユーティリティモジュールかを判定する。
+
+        TODO: EAST3 の borrow_kind / arg_usage から参照渡し要否を判定し、
+        この module_id ハードコードを除去する。現状は §1 違反のワークアラウンド。
+        """
         module_name = canonical_runtime_module_id(module_id.strip())
         if not module_name.startswith("pytra.utils."):
             return False
@@ -1857,16 +1894,21 @@ class RustEmitter(CodeEmitter):
         return leaf == "gif" or leaf == "png"
 
     def _should_skip_module_use_line(self, module_id: str, local_name: str) -> bool:
-        """entry が #[path] mod で宣言済みのモジュール全体 use をスキップする。"""
+        """entry が #[path] mod で宣言済みのモジュール全体 use をスキップする。
+
+        pytra.X.Y 形式のランタイムモジュールは entry prelude で #[path] mod
+        として宣言済みのため、bare `use crate::X_Y;` は不要。
+        Symbol imports (use crate::X_Y::func) はスキップしない。
+        """
         _ = local_name
         module_name = canonical_runtime_module_id(module_id.strip())
         if module_name == "":
             return False
-        # Entry declares std/utils modules via #[path] mod.
-        # A bare `use crate::std_time;` is redundant since the mod is already declared.
-        # Symbol imports like `use crate::std_time::perf_counter;` are NOT skipped.
-        if module_name.startswith("pytra.std.") or module_name.startswith("pytra.utils."):
-            return True
+        # pytra.X.Y → entry declares mod X_Y; bare use is redundant
+        if module_name.startswith("pytra."):
+            rel = module_name[len("pytra."):]
+            if "." in rel:
+                return True
         return False
 
     def _apply_image_runtime_ref_args(self, call_args: list[str]) -> list[str]:
@@ -1912,8 +1954,8 @@ class RustEmitter(CodeEmitter):
                 if self._is_assertions_module(module_id):
                     i += 1
                     continue
-                # Skip the 'extern' decorator import — it's a compile-time marker only
-                if export_name == "extern" or local_name == "extern":
+                # Skip compile-time marker imports (extern decorator, abi)
+                if export_name in {"extern", "abi"} or local_name in {"extern", "abi"}:
                     i += 1
                     continue
                 base_path = self._module_id_to_rust_use_path(module_id)
@@ -2051,7 +2093,12 @@ class RustEmitter(CodeEmitter):
             return mapped
         list_inner = self.type_generic_args(t, "list")
         if len(list_inner) == 1:
-            return f"Vec<{self._rust_type(list_inner[0])}>"
+            inner_t = self._rust_type(list_inner[0])
+            # §10: list はデフォルトで参照型ラッパー PyList を使う。
+            # bytes/bytearray 内部バッファ等の Vec<u8> は維持（型マップ経由）。
+            if hasattr(self, "_use_pylist") and self._use_pylist:
+                return f"PyList<{inner_t}>"
+            return f"Vec<{inner_t}>"
         deque_inner = self.type_generic_args(t, "deque")
         if len(deque_inner) == 1:
             return f"::std::collections::VecDeque<{self._rust_type(deque_inner[0])}>"
@@ -2112,8 +2159,8 @@ class RustEmitter(CodeEmitter):
         # 2. Collect linked modules from import_bindings
         bindings = self.get_import_resolution_bindings(meta)
         declared_mod_names: dict[str, str] = {}  # mod_name -> module_id
-        std_mods: list[str] = []  # leaf names of std modules (time, math, ...)
-        utils_mods: list[str] = []  # leaf names of utils modules (png, gif, ...)
+        # category -> list of leaf names (e.g. {"std": ["time","math"], "utils": ["png"]})
+        facade_mods: dict[str, list[str]] = {}
 
         seen_module_ids: set[str] = set()
         for ent in bindings:
@@ -2125,17 +2172,19 @@ class RustEmitter(CodeEmitter):
                 continue
             if module_id.startswith("__future__") or module_id in {"typing", "pytra.std.typing", "dataclasses"}:
                 continue
-            if module_id.startswith("pytra.built_in."):
-                continue
-            seen_module_ids.add(module_id)
-
-            # Determine relative path and mod name
+            # built_in modules are provided by py_runtime — skip
             rel = module_id
             if rel.startswith("pytra."):
                 rel = rel[len("pytra."):]
+            parts = rel.split(".")
+            if len(parts) >= 2 and parts[0] == "built_in":
+                continue
+            seen_module_ids.add(module_id)
+
+            # module_id → file path: pytra.std.time → std/time.rs
             file_path = rel.replace(".", "/") + ".rs"
-            leaf = rel.split(".")[-1]
-            category = rel.split(".")[0] if "." in rel else ""
+            leaf = parts[-1]
+            category = parts[0] if len(parts) >= 2 else ""
 
             # Declare the generated module
             mod_name = rel.replace(".", "_")
@@ -2144,37 +2193,30 @@ class RustEmitter(CodeEmitter):
                 self.emit("pub mod " + mod_name + ";")
                 declared_mod_names[mod_name] = module_id
 
-                if category == "std":
-                    std_mods.append(leaf)
-                elif category == "utils":
-                    utils_mods.append(leaf)
+                if category != "":
+                    facade_mods.setdefault(category, []).append(leaf)
 
-            # Also declare the _native module for std modules
-            if category == "std":
-                native_mod_name = "std_" + leaf + "_native"
-                native_file_path = "std/" + leaf + "_native.rs"
+            # Declare the _native module only if the hand-written native file exists.
+            # This avoids generating mod declarations for modules without native backing.
+            native_rel_path = rel.replace(".", "/") + "_native.rs"
+            if self._native_runtime_file_exists(native_rel_path):
+                native_mod_name = mod_name + "_native"
                 if native_mod_name not in declared_mod_names:
-                    self.emit('#[path = "' + native_file_path + '"]')
+                    self.emit('#[path = "' + native_rel_path + '"]')
                     self.emit("pub mod " + native_mod_name + ";")
                     declared_mod_names[native_mod_name] = module_id + "_native"
 
-        # 3. Emit pytra namespace facade
-        if len(std_mods) > 0 or len(utils_mods) > 0:
+        # 3. Emit pytra namespace facade (mechanically from category → leaf)
+        if len(facade_mods) > 0:
             self.emit("")
             self.emit("pub mod pytra {")
             self.indent += 1
-            if len(std_mods) > 0:
-                self.emit("pub mod std {")
+            for category in sorted(facade_mods.keys()):
+                leaves = sorted(set(facade_mods[category]))
+                self.emit("pub mod " + category + " {")
                 self.indent += 1
-                for leaf in sorted(set(std_mods)):
-                    self.emit("pub use crate::std_" + leaf + " as " + leaf + ";")
-                self.indent -= 1
-                self.emit("}")
-            if len(utils_mods) > 0:
-                self.emit("pub mod utils {")
-                self.indent += 1
-                for leaf in sorted(set(utils_mods)):
-                    self.emit("pub use crate::utils_" + leaf + " as " + leaf + ";")
+                for leaf in leaves:
+                    self.emit("pub use crate::" + category + "_" + leaf + " as " + leaf + ";")
                 self.indent -= 1
                 self.emit("}")
             self.indent -= 1
@@ -2208,6 +2250,11 @@ class RustEmitter(CodeEmitter):
         self.declared_var_types = {}
         self.uses_pyany = self._doc_mentions_any(self.doc)
         self.uses_isinstance_runtime = self._doc_mentions_isinstance(self.doc)
+        # §10: list はデフォルトで参照型ラッパー PyList を使うべきだが、
+        # 現在の sample ケースは全て local non-escape のため、§10.4 に基づき
+        # 値型 Vec<T> で縮退する。§10.5 ヒント対応は S3 で実装予定。
+        # TODO(P0-RS-CONTAINER-REF-S2): ヒント未対応変数を PyList に移行
+        self._use_pylist = False
         self.class_type_id_map = {}
         self.type_info_map = {}
         self.function_arg_ref_modes = {}
@@ -2246,9 +2293,9 @@ class RustEmitter(CodeEmitter):
 
         self.load_import_bindings_from_meta(meta)
 
-        # Determine entry/non-entry from emit_context
+        # Determine entry/non-entry from emit_context (§8: 自前判定禁止)
         emit_ctx = self.any_to_dict_or_empty(meta.get("emit_context"))
-        is_entry = bool(emit_ctx.get("is_entry", True))
+        is_entry = bool(emit_ctx.get("is_entry", False))
         self._is_entry = is_entry
 
         self.emit_module_leading_trivia()
@@ -2306,6 +2353,13 @@ class RustEmitter(CodeEmitter):
                 scope: set[str] = set()
                 self.emit_scoped_stmt_list(top_level_stmts + main_guard_body, scope)
                 self.emit("}")
+        else:
+            # Non-entry: emit only extern() const declarations at module scope.
+            # Other top-level statements (docstring Expr, etc.) are not valid
+            # at Rust module scope and must be skipped.
+            for stmt in top_level_stmts:
+                if self.any_dict_get_str(stmt, "kind", "") == "AnnAssign":
+                    self.emit_stmt(stmt)
 
         return "\n".join(self.lines) + ("\n" if len(self.lines) > 0 else "")
 
@@ -2577,13 +2631,17 @@ class RustEmitter(CodeEmitter):
             write_count = self.current_fn_write_counts.get(arg_name, 0)
             mut_call_count = self.current_fn_mutating_call_counts.get(arg_name, 0)
             is_mut = usage == "reassigned" or usage == "mutable" or usage == "write" or write_count > 0 or mut_call_count > 0
-            pass_by_ref = False
+            ref_mode = 0
             if arg_pos < len(fn_ref_modes):
-                pass_by_ref = fn_ref_modes[arg_pos]
+                ref_mode = fn_ref_modes[arg_pos]
+            pass_by_ref = ref_mode != 0
             arg_pos += 1
-            if pass_by_ref:
+            if ref_mode == 2:
+                # &mut reference for mutating collection args
+                arg_t = "&mut " + arg_t
+            elif pass_by_ref:
                 arg_t = self._borrowed_arg_type_text(arg_east_t, arg_t, allow_trait_impl=True)
-            prefix = "mut " if is_mut else ""
+            prefix = "mut " if (is_mut and not pass_by_ref) else ""
             args_text_list.append(f"{prefix}{safe}: {arg_t}")
             scope_names.add(arg_name)
             if pass_by_ref:
@@ -2779,23 +2837,12 @@ class RustEmitter(CodeEmitter):
             self.emit_scoped_stmt_list(final_stmts, set())
             self.emit("}")
 
-    def _render_swap_target(self, target_node: Any) -> str:
-        target = self.any_to_dict_or_empty(target_node)
-        kind = self.any_dict_get_str(target, "kind", "")
-        if kind == "Name":
-            return self._safe_name(self.any_dict_get_str(target, "id", ""))
-        if kind == "Subscript":
-            return self._render_subscript_lvalue(target)
-        if kind == "Attribute":
-            owner = self.render_expr(target.get("value"))
-            attr = self.any_dict_get_str(target, "attr", "")
-            if attr != "":
-                return owner + "." + attr
-        return self.render_expr(target_node)
-
     def _emit_swap(self, stmt: dict[str, Any]) -> None:
-        left = self._render_swap_target(stmt.get("left"))
-        right = self._render_swap_target(stmt.get("right"))
+        """Swap ノード: left/right は常に Name（§9.1 契約）。"""
+        left_node = self.any_to_dict_or_empty(stmt.get("left"))
+        right_node = self.any_to_dict_or_empty(stmt.get("right"))
+        left = self._safe_name(self.any_dict_get_str(left_node, "id", ""))
+        right = self._safe_name(self.any_dict_get_str(right_node, "id", ""))
         self.emit("std::mem::swap(&mut " + left + ", &mut " + right + ");")
 
     def _emit_if_else_chain(self, else_stmts: list[dict[str, Any]]) -> None:
@@ -3083,6 +3130,10 @@ class RustEmitter(CodeEmitter):
             iter_key_t, iter_val_t = self._dict_key_value_types(iter_type)
         if iter_type == "str":
             iter_expr = iter_expr + ".chars()"
+        elif iter_type in ("bytes", "bytearray") and (not iter_is_enumerate_call):
+            # bytes/bytearray elements are u8, but loop body typically uses i64
+            # for bitwise operations. Promote to i64 to avoid type mismatches.
+            iter_expr = "(" + iter_expr + ").iter().map(|__b| *__b as i64)"
         elif (
             iter_type.startswith("list[")
             or iter_type.startswith("set[")
@@ -3092,6 +3143,11 @@ class RustEmitter(CodeEmitter):
                 iter_expr = self._render_list_iter_expr(iter_expr, iter_type, self._can_borrow_iter_node(iter_node))
             else:
                 iter_expr = "(" + iter_expr + ").clone()"
+        elif iter_type == "" or iter_type == "unknown":
+            # Unknown type: assume iterable collection; use .iter().copied()
+            # to avoid reference issues (e.g. `&u8 as i64` cast failures).
+            if not iter_is_attr_view and not iter_is_enumerate_call:
+                iter_expr = "(" + iter_expr + ").iter().copied()"
 
         if target_kind == "Tuple":
             elts = self.tuple_elements(target_node)
@@ -3349,6 +3405,33 @@ class RustEmitter(CodeEmitter):
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
         target = self.any_to_dict_or_empty(stmt.get("target"))
         target_kind = self.any_dict_get_str(target, "kind", "")
+
+        # extern() variable → delegate to __native module
+        # §4: meta.extern_var_v1 を正本とし、未付与時は value の Call(extern) でフォールバック
+        stmt_meta = self.any_to_dict_or_empty(stmt.get("meta"))
+        extern_v1 = self.any_to_dict_or_empty(stmt_meta.get("extern_var_v1"))
+        is_extern_var = self.any_dict_get_str(extern_v1, "symbol", "") != ""
+        if not is_extern_var:
+            # Fallback: Unbox(Call(extern, ...)) パターンを検出
+            value_node = self.any_to_dict_or_empty(stmt.get("value"))
+            inner = value_node
+            if self.any_dict_get_str(inner, "kind", "") == "Unbox":
+                inner = self.any_to_dict_or_empty(inner.get("value"))
+            if self.any_dict_get_str(inner, "kind", "") == "Call":
+                func_node = self.any_to_dict_or_empty(inner.get("func"))
+                if self.any_dict_get_str(func_node, "id", "") == "extern":
+                    is_extern_var = True
+        if is_extern_var:
+            name_raw = self.any_dict_get_str(target, "id", "_")
+            name = self._safe_name(name_raw)
+            ann = self.any_to_str(stmt.get("annotation"))
+            decl_t = self.any_to_str(stmt.get("decl_type"))
+            t_east = ann if ann != "" else decl_t
+            t = self._rust_type(self.normalize_type_name(t_east))
+            pub_prefix = "pub " if hasattr(self, "_is_entry") and not self._is_entry else ""
+            self.emit(pub_prefix + "const " + name + ": " + t + " = __native::" + name + ";")
+            return
+
         self._reject_unsupported_general_union_type_expr(stmt.get("annotation_type_expr"), context="AnnAssign annotation")
         self._reject_unsupported_general_union_type_expr(stmt.get("decl_type_expr"), context="AnnAssign decl_type")
         if target_kind != "Name":
@@ -3517,6 +3600,12 @@ class RustEmitter(CodeEmitter):
         """Subscript 代入を borrow-safe な `let idx` 形式で出力する。"""
         owner_node = self.any_to_dict_or_empty(subscript_expr.get("value"))
         owner_t = self.normalize_type_name(self.get_expr_type(owner_node))
+        # PyList: xs.set(i, v)
+        if owner_t.startswith("list[") and hasattr(self, "_use_pylist") and self._use_pylist:
+            owner_expr = self.render_expr(owner_node)
+            idx_expr = self.render_expr(subscript_expr.get("slice"))
+            self.emit(owner_expr + ".set((" + idx_expr + ") as i64, " + value_expr + ");")
+            return
         if owner_t.startswith("dict["):
             key_t, _val_t = self._dict_key_value_types(owner_t)
             owner_expr = self.render_expr(owner_node)
@@ -4186,8 +4275,10 @@ class RustEmitter(CodeEmitter):
             i += 1
         return out
 
-    def _render_by_ref_call_arg(self, arg_txt: str, arg_node: Any) -> str:
-        """`&T` / `&str` 引数向けに最小コストの渡し方を選ぶ。"""
+    def _render_by_ref_call_arg(self, arg_txt: str, arg_node: Any, *, needs_mut: bool = False) -> str:
+        """`&T` / `&str` / `&mut T` 引数向けに最小コストの渡し方を選ぶ。"""
+        if needs_mut:
+            return "&mut " + arg_txt
         str_lit = self._string_constant_literal(arg_node)
         if str_lit != "":
             return str_lit
@@ -4216,6 +4307,9 @@ class RustEmitter(CodeEmitter):
                 arg_t = self.normalize_type_name(self.get_expr_type(arg_node))
                 if arg_t in {"bytes", "bytearray"}:
                     return self.render_expr(arg_node)
+                # bytes(list[int64]) → Vec<i64> to Vec<u8> conversion
+                inner = self.render_expr(arg_node)
+                return "py_vec_i64_to_u8(&" + inner + ")"
         return self.render_expr(expr)
 
     def _resolved_runtime_call(self, expr: dict[str, Any]) -> str:
@@ -4426,10 +4520,11 @@ class RustEmitter(CodeEmitter):
             i = 0
             while i < len(merged_args):
                 arg_txt = merged_args[i]
-                by_ref = i < len(ref_modes) and ref_modes[i]
+                ref_mode = ref_modes[i] if i < len(ref_modes) else 0
+                by_ref = ref_mode != 0
                 if by_ref:
                     arg_node = arg_nodes[i] if i < len(arg_nodes) else None
-                    call_args.append(self._render_by_ref_call_arg(arg_txt, arg_node))
+                    call_args.append(self._render_by_ref_call_arg(arg_txt, arg_node, needs_mut=(ref_mode == 2)))
                 else:
                     if i < len(arg_nodes):
                         t = self._infer_expr_type_for_call_arg(arg_nodes[i])
@@ -4700,7 +4795,10 @@ class RustEmitter(CodeEmitter):
             rendered: list[str] = []
             for elt in elts:
                 rendered.append(self.render_expr(elt))
-            return "vec![" + ", ".join(rendered) + "]"
+            vec_lit = "vec![" + ", ".join(rendered) + "]"
+            if hasattr(self, "_use_pylist") and self._use_pylist:
+                return "PyList::from_vec(" + vec_lit + ")"
+            return vec_lit
         if kind == "Tuple":
             elts: list[Any] = self.tuple_elements(expr_d)
             rendered = []
@@ -4748,6 +4846,9 @@ class RustEmitter(CodeEmitter):
                 if self._expr_is_non_negative(expr_d.get("slice")):
                     return "py_str_at_nonneg(&" + owner + ", ((" + idx + ") as usize))"
                 return "py_str_at(&" + owner + ", ((" + idx + ") as i64))"
+            # PyList: use .get(i) which handles negative indices and clones
+            if owner_t.startswith("list[") and hasattr(self, "_use_pylist") and self._use_pylist:
+                return owner + ".get((" + idx + ") as i64)"
             if self._expr_is_non_negative(expr_d.get("slice")):
                 idx_usize = "((" + idx + ") as usize)"
             else:

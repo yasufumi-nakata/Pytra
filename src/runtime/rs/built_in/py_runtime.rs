@@ -4,12 +4,95 @@
 // source: src/pytra/utils/png.py
 // source: src/pytra/utils/gif.py
 
+use std::cell::RefCell;
 use std::hash::Hash;
 use std::fs;
 use std::io::Write;
 use std::path::{Path as StdPath, PathBuf};
+use std::rc::Rc;
 use std::sync::Once;
 use std::{collections::BTreeMap, collections::BTreeSet, collections::HashMap, collections::HashSet};
+
+// ---------------------------------------------------------------------------
+// PyList<T> — Python list の参照セマンティクスラッパー (spec-emitter-guide §10)
+// Clone は Rc のコピー（shallow）で Python の代入・引数渡しと一致。
+// ---------------------------------------------------------------------------
+
+#[derive(Debug)]
+pub struct PyList<T> {
+    inner: Rc<RefCell<Vec<T>>>,
+}
+
+impl<T> Clone for PyList<T> {
+    fn clone(&self) -> Self {
+        PyList { inner: Rc::clone(&self.inner) }
+    }
+}
+
+impl<T> PyList<T> {
+    pub fn new() -> Self {
+        PyList { inner: Rc::new(RefCell::new(Vec::new())) }
+    }
+    pub fn with_capacity(cap: usize) -> Self {
+        PyList { inner: Rc::new(RefCell::new(Vec::with_capacity(cap))) }
+    }
+    pub fn from_vec(v: Vec<T>) -> Self {
+        PyList { inner: Rc::new(RefCell::new(v)) }
+    }
+    pub fn push(&self, val: T) {
+        self.inner.borrow_mut().push(val);
+    }
+    pub fn len(&self) -> usize {
+        self.inner.borrow().len()
+    }
+    pub fn py_len(&self) -> usize {
+        self.inner.borrow().len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.inner.borrow().is_empty()
+    }
+    pub fn py_borrow(&self) -> std::cell::Ref<'_, Vec<T>> {
+        self.inner.borrow()
+    }
+    pub fn py_borrow_mut(&self) -> std::cell::RefMut<'_, Vec<T>> {
+        self.inner.borrow_mut()
+    }
+}
+
+impl<T: Clone> PyList<T> {
+    pub fn get(&self, idx: i64) -> T {
+        let v = self.inner.borrow();
+        let i = if idx < 0 { (v.len() as i64 + idx) as usize } else { idx as usize };
+        v[i].clone()
+    }
+    pub fn set(&self, idx: i64, val: T) {
+        let mut v = self.inner.borrow_mut();
+        let i = if idx < 0 { (v.len() as i64 + idx) as usize } else { idx as usize };
+        v[i] = val;
+    }
+    pub fn pop(&self) -> Option<T> {
+        self.inner.borrow_mut().pop()
+    }
+    /// for ループ用: 内部 Vec のスナップショットを返す。
+    /// Python では for 中にリスト変更しても iterating は元のコピーを使う。
+    pub fn iter_snapshot(&self) -> Vec<T> {
+        self.inner.borrow().clone()
+    }
+    pub fn extend_from_slice(&self, src: &[T]) {
+        self.inner.borrow_mut().extend_from_slice(src);
+    }
+    /// Vec<T> への一時的な不変参照コールバック（添字アクセス最適化用）
+    pub fn with_borrow<R, F: FnOnce(&Vec<T>) -> R>(&self, f: F) -> R {
+        f(&self.inner.borrow())
+    }
+    /// 内部 Vec の所有権を取り出す（消費的操作、最終出力用）
+    pub fn into_vec(self) -> Vec<T> {
+        match Rc::try_unwrap(self.inner) {
+            Ok(cell) => cell.into_inner(),
+            Err(rc) => rc.borrow().clone(),
+        }
+    }
+}
 
 pub trait PyStringify {
     fn py_stringify(&self) -> String;
@@ -160,6 +243,11 @@ impl<T> PyBool for Vec<T> {
         !self.is_empty()
     }
 }
+impl<T> PyBool for PyList<T> {
+    fn py_bool(&self) -> bool {
+        !self.is_empty()
+    }
+}
 impl<K, V> PyBool for HashMap<K, V> {
     fn py_bool(&self) -> bool {
         !self.is_empty()
@@ -303,6 +391,11 @@ pub trait PyLen {
 impl<T> PyLen for Vec<T> {
     fn py_len(&self) -> usize {
         self.len()
+    }
+}
+impl<T> PyLen for PyList<T> {
+    fn py_len(&self) -> usize {
+        self.inner.borrow().len()
     }
 }
 
@@ -864,6 +957,17 @@ pub fn py_slice<T: PySlice>(value: &T, start: Option<i64>, end: Option<i64>) -> 
     value.py_slice(start, end)
 }
 
+/// Convert Vec<i64> to Vec<u8> (for image encoding where internal computation
+/// uses i64 but the output format requires u8 bytes).
+pub fn py_vec_i64_to_u8(v: &Vec<i64>) -> Vec<u8> {
+    v.iter().map(|x| (*x & 0xFF) as u8).collect()
+}
+
+/// Convert Vec<u8> to Vec<i64>.
+pub fn py_vec_u8_to_i64(v: &Vec<u8>) -> Vec<i64> {
+    v.iter().map(|x| *x as i64).collect()
+}
+
 pub fn math_sin(v: f64) -> f64 {
     v.sin()
 }
@@ -998,6 +1102,35 @@ impl std::ops::Div<&str> for PyPath {
         let joined = StdPath::new(&self.value).join(rhs);
         PyPath::new(joined.to_string_lossy().as_ref())
     }
+}
+
+/// Python-compatible file object for binary write.
+pub struct PyFile {
+    inner: fs::File,
+}
+
+impl PyFile {
+    pub fn write(&mut self, data: Vec<i64>) {
+        let bytes: Vec<u8> = data.iter().map(|v| (*v & 0xFF) as u8).collect();
+        self.inner.write_all(&bytes).expect("write failed");
+    }
+
+    pub fn close(self) {
+        // File is closed when dropped; explicit close is a no-op.
+        drop(self.inner);
+    }
+}
+
+/// Python `open(path, mode)` emulation (only "wb" mode supported).
+pub fn open(path: &str, _mode: String) -> PyFile {
+    // Ensure parent directory exists (Python's open does this implicitly via os)
+    if let Some(parent) = StdPath::new(path).parent() {
+        if !parent.as_os_str().is_empty() {
+            let _ = fs::create_dir_all(parent);
+        }
+    }
+    let file = fs::File::create(path).expect("open failed");
+    PyFile { inner: file }
 }
 
 // Sub-module declarations (std, utils, pytra facade) are generated
