@@ -344,6 +344,19 @@ diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
 - `toolchain/` は golden file 生成後は不要（最終的に除去可能）
 - 各段を独立に開発・検証できる
 
+## 決定ログ
+
+### 2026-03-24: [ID: P0-PIPELINE-V2-S0] `-golden` コマンド実装
+
+- `pytra-cli2 -golden --stage={east1,east2,east3,east3-opt} -o DIR` を実装。
+- 現行 `toolchain/` を使い、`sample/py/*.py` 全18件を自動列挙して golden file を生成する。
+- EAST1: `convert_path` + `normalize_east1_root_document`
+- EAST2: `load_east_document`（parse + east1→east2 正規化）
+- EAST3: `load_east3_document` with `east3_opt_level=0`
+- EAST3-opt: `load_east3_document` with `east3_opt_level=1`
+- 全4段 × 18 sample = 72 golden file の生成を確認。冪等性も検証済み。
+- emit 段の golden file 生成は現時点では対応しない（S5 時に追加）。
+
 ## 7. 未決事項
 
 - `--from=python` 以外の frontend が現実的に必要になる時期

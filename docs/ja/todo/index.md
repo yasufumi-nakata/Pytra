@@ -35,7 +35,7 @@
 
 文脈: [docs/ja/plans/plan-pipeline-redesign.md](../plans/plan-pipeline-redesign.md)
 
-1. [ ] [ID: P0-PIPELINE-V2-S0] `pytra-cli2 -golden` コマンドを実装し、現行 toolchain/ を使って各段の golden file を `test/` に一括生成する
+1. [x] [ID: P0-PIPELINE-V2-S0] `pytra-cli2 -golden` コマンドを実装し、現行 toolchain/ を使って各段の golden file を `test/` に一括生成する — 完了: east1/east2/east3/east3-opt 全4段 × 18 sample = 72 golden file 生成
 2. [ ] [ID: P0-PIPELINE-V2-S1] `toolchain2/parse/py/` で built-in + stdlib + ユーザーコードの .py.east1 生成が全 sample で動作する + `test/east1/py/` golden file テスト
 2. [ ] [ID: P0-PIPELINE-V2-S2] `toolchain2/resolve/py/` で cross-module 型解決を実装し、signature_registry のハードコードなしで .east2 を生成する + `test/east2/py/` golden file テスト
 3. [ ] [ID: P0-PIPELINE-V2-S3] `toolchain2/compile/` で .east2 → .east3 の core lowering を実装する + `test/east3/` golden file テスト
