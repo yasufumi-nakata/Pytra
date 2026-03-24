@@ -31,17 +31,66 @@
 
 ## 未完了タスク
 
-### P0: パイプライン再設計 (parse / resolve / compile / optimize / emit)
+### 共通
 
 文脈: [docs/ja/plans/plan-pipeline-redesign.md](../plans/plan-pipeline-redesign.md)
+コーディング規約: plan §5（Any/object 禁止、pytra.std 再実装禁止、グローバル可変状態禁止 等）
 
-1. [x] [ID: P0-PIPELINE-V2-S0] `pytra-cli2 -golden` コマンドを実装し、現行 toolchain/ を使って各段の golden file を `test/` に一括生成する — 完了: east1/east2/east3/east3-opt 全4段 × 18 sample = 72 golden file 生成
-2. [ ] [ID: P0-PIPELINE-V2-S1] `toolchain2/parse/py/` で built-in + stdlib + ユーザーコードの .py.east1 生成が全 sample で動作する + `test/east1/py/` golden file テスト
-2. [ ] [ID: P0-PIPELINE-V2-S2] `toolchain2/resolve/py/` で cross-module 型解決を実装し、signature_registry のハードコードなしで .east2 を生成する + `test/east2/py/` golden file テスト
-3. [ ] [ID: P0-PIPELINE-V2-S3] `toolchain2/compile/` で .east2 → .east3 の core lowering を実装する + `test/east3/` golden file テスト
-4. [ ] [ID: P0-PIPELINE-V2-S4] `toolchain2/optimize/` で whole-program 最適化を実装する + `test/east3-opt/` golden file テスト
-5. [ ] [ID: P0-PIPELINE-V2-S5] `toolchain2/emit/cpp/` で .east3 → .cpp の emit を実装する + `test/emit/cpp/` golden file テスト
-6. [ ] [ID: P0-PIPELINE-V2-S6] `pytra-cli2 -build --target=cpp` で全 18 sample が compile + run できる
+1. [x] [ID: P0-PIPELINE-V2-S0] golden file 生成ツール (`tools/generate_golden.py`) — 完了
+
+### P0-PARSE: py → east1 (Agent A)
+
+作業ディレクトリ: `toolchain2/parse/py/`
+入力: `test/fixture/source/py/*.py`, `sample/py/*.py`
+正解: `test/fixture/east1/py/`, `test/sample/east1/py/`
+
+1. [ ] [ID: P0-PARSE-S1] 自前パーサーで fixture 132 件の .py.east1 が golden と一致する
+2. [ ] [ID: P0-PARSE-S2] sample 18 件の .py.east1 が golden と一致する
+3. [ ] [ID: P0-PARSE-S3] `pytra-cli2 -parse` を toolchain2 の自前パーサーに切り替える
+
+### P0-RESOLVE: east1 → east2 (Agent B)
+
+作業ディレクトリ: `toolchain2/resolve/py/`
+入力: `test/fixture/east1/py/*.py.east1`, `test/sample/east1/py/*.py.east1`
+正解: `test/fixture/east2/`, `test/sample/east2/`
+
+1. [ ] [ID: P0-RESOLVE-S1] cross-module 型解決を実装し、fixture 132 件の .east2 が golden と一致する
+2. [ ] [ID: P0-RESOLVE-S2] sample 18 件の .east2 が golden と一致する（signature_registry のハードコードなし）
+3. [ ] [ID: P0-RESOLVE-S3] `pytra-cli2 -resolve` を実装する
+
+### P0-COMPILE: east2 → east3 (Agent C)
+
+作業ディレクトリ: `toolchain2/compile/`
+入力: `test/fixture/east2/*.east2`, `test/sample/east2/*.east2`
+正解: `test/fixture/east3/`, `test/sample/east3/`
+
+1. [ ] [ID: P0-COMPILE-S1] core lowering を実装し、fixture 132 件の .east3 が golden と一致する
+2. [ ] [ID: P0-COMPILE-S2] sample 18 件の .east3 が golden と一致する
+3. [ ] [ID: P0-COMPILE-S3] `pytra-cli2 -compile` を実装する
+
+### P0-OPTIMIZE: east3 最適化 (Agent D)
+
+作業ディレクトリ: `toolchain2/optimize/`
+入力: `test/fixture/east3/*.east3`, `test/sample/east3/*.east3`
+正解: `test/fixture/east3-opt/`, `test/sample/east3-opt/`
+
+1. [ ] [ID: P0-OPTIMIZE-S1] whole-program 最適化を実装し、fixture 132 件の .east3 が golden と一致する
+2. [ ] [ID: P0-OPTIMIZE-S2] sample 18 件の .east3 が golden と一致する
+3. [ ] [ID: P0-OPTIMIZE-S3] `pytra-cli2 -optimize` を実装する
+
+### P0-EMIT: east3 → target (Agent E 以降)
+
+作業ディレクトリ: `toolchain2/emit/cpp/` 等
+入力: `test/fixture/east3-opt/*.east3`, `test/sample/east3-opt/*.east3`
+正解: fixture は `test/fixture/emit/*.txt`、sample は `sample/golden/manifest.json`
+
+1. [ ] [ID: P0-EMIT-S1] C++ emit を実装し、fixture の parity テストが通る
+2. [ ] [ID: P0-EMIT-S2] sample 18 件の parity テストが通る
+3. [ ] [ID: P0-EMIT-S3] `pytra-cli2 -emit --target=cpp` を実装する
+
+### P0-BUILD: 一括実行
+
+1. [ ] [ID: P0-BUILD-S1] `pytra-cli2 -build --target=cpp` で全 18 sample が compile + run できる
 
 注: 旧 TODO は [2026-03-24 アーカイブ](archive/20260324.md) に移動済み。
 
