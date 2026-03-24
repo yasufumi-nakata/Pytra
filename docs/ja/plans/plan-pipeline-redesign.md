@@ -603,18 +603,22 @@ AGENT-B（resolve）が型解決を始めるために、built-in 宣言ファイ
 - built-in 宣言（builtins.py, containers.py）の EAST1 golden を test/builtin/east1/py/ に配置済み。
 - AGENT-B が strip 済み EAST1 を入力にして、既存 EAST2 golden と一致する resolve を実装する。
 
-### 2026-03-25: [ID: P0-RESOLVE-S1] resolve 本格実装着手 — 27/132 fixture pass
+### 2026-03-25: [ID: P0-RESOLVE-S1] resolve 本格実装 — 36/132 fixture pass
 
 - `toolchain2/resolve/py/` を全面再実装。4 モジュール構成:
   - `type_norm.py`: 型名正規化 (int→int64 等)、TypeExpr 構築
   - `builtin_registry.py`: builtins.py.east1/containers.py.east1 からシグネチャ抽出、runtime binding テーブル
   - `resolver.py`: 全式 resolved_type 確定、borrow_kind 判定、builtin→py_* 変換、ForRange 変換、import 解決
   - `normalize_order.py`: golden file 一致のためのフィールド順序正規化
-- 27/132 fixture pass (20.5%)。カテゴリ別: core 9/22, control 5/10, strings 6/12, collections 2/20, signature 2/13
-- 通過パターン: 基本型推論、関数呼び出し、比較演算、ForRange 変換、文字列操作、ブール演算
-- 残課題: OOP (0/16) class メソッド self 型/arg_type_exprs null 制御、stdlib (0/14) import binding host_only/adapter_kind、
-  typing (2/18) DynamicType/bytes/bytearray、collections (2/20) comprehension source_span/container method 検出精度、
-  f-string/lambda/decorator の型推論、import resolution binding 詳細フィールド
+- 36/132 fixture pass (27.3%)。カテゴリ別: core 8/22, control 6/10, strings 5/12, collections 5/20, oop 5/16, signature 3/13, stdlib 1/14, imports 1/7, typing 2/18
+- extern_v2 正本化完了: ハードコードテーブル全除去、builtins/containers/stdlib の meta.extern_v2 から runtime 情報直接取得
+- 通過パターン: 基本型推論、関数呼び出し、比較演算、ForRange 変換、文字列操作、ブール演算、
+  OOP self.field 型推論 (field_types 参照)、container method (append/split/join 等)、
+  dict リテラル entries 形式、BoolOp→bool、class_storage_hint (ref/value 自動判定)
+- 残 diff の主因: golden 側の古い runtime 値 (v2 extern 以前の生成物) と構造差分が混在。
+  golden 再生成後に pass 率は大幅改善見込み。
+  構造的な残課題: f-string/lambda 型推論、comprehension source_span、typing DynamicType/bytes、
+  OOP 継承時の self.field 解決 (field_types が空のケース)
 
 ## 7. toolchain2/ → toolchain/ 置換手順
 
