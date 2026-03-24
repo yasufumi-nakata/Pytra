@@ -1119,7 +1119,8 @@ def _parse_module_body(
 
         # Blank line
         if s == "":
-            if leading_file_trivia_done:
+            # ファイル冒頭コメントが既に蓄積されている場合、空行も trivia に蓄積
+            if len(pending_comments) > 0 or leading_file_trivia_done:
                 pending_trivia.append(TriviaBlank(count=1))
             ln_no += 1
             continue
@@ -1127,12 +1128,8 @@ def _parse_module_body(
         # Comment line
         if s.startswith("#"):
             text = s[1:].lstrip() if len(s) > 1 else ""
-            if not leading_file_trivia_done:
-                pending_trivia.append(TriviaComment(text=text))
-                pending_comments.append(text)
-            else:
-                pending_trivia.append(TriviaComment(text=text))
-                pending_comments.append(text)
+            pending_trivia.append(TriviaComment(text=text))
+            pending_comments.append(text)
             ln_no += 1
             continue
 
@@ -2029,9 +2026,12 @@ def _build_meta(ctx: ParseContext) -> dict[str, JsonVal]:
         rb: dict[str, JsonVal] = dict(binding)
         # Add resolution fields
         mod_id = str(binding.get("module_id", ""))
+        binding_kind = str(binding.get("binding_kind", ""))
         rb["source_module_id"] = mod_id
-        rb["source_export_name"] = binding.get("export_name", "")
-        rb["source_binding_kind"] = binding.get("binding_kind", "")
+        # implicit_builtin は source_export_name を持たない
+        if binding_kind != "implicit_builtin":
+            rb["source_export_name"] = binding.get("export_name", "")
+        rb["source_binding_kind"] = binding_kind
         # Resolve runtime module
         if mod_id == "pathlib":
             rb["runtime_module_id"] = "pytra.std.pathlib"
