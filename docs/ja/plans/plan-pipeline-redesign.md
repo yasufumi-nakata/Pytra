@@ -487,7 +487,8 @@ diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
 
 ### 2026-03-24: [ID: P0-PARSE-S1] fixture golden 一致 進捗
 
-- fixture 132件中: exact_match=42, parse_err=0 (全件パース成功), diff=90
+- fixture 132件中: exact_match=66/132 (50%), parse_err=0 (全件パース成功), diff=66
+- EAST1 spec 準拠リファクタ完了: 型解決/セマンティクス全削除、golden も strip 済み
 - 完了した修正: キー順序、trivia/leading_comments、main リネーム、ClassDef 構造、
   ForRange target/span、numeric promotion casts、listcomp/slice/decorator 構文対応、
   set リテラル、論理行マージ、import symbol runtime 情報、OOP self パラメータ、
