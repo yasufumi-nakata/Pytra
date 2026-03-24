@@ -28,10 +28,11 @@ from toolchain2.parse.py.nodes import (
     # Expressions
     ExprBase, Name, Constant, BinOp, UnaryOp, BoolOp, Compare,
     Call, Attribute, Subscript, SliceExpr, IfExp, ListExpr, TupleExpr,
-    SetExpr, DictExpr, ListComp, JoinedStr, FormattedValue, LambdaExpr, LambdaArg, Expr, expr_to_jv,
+    SetExpr, DictExpr, ListComp, SetComp, DictComp, JoinedStr, FStringText, FormattedValue,
+    LambdaExpr, LambdaArg, Starred, Expr, expr_to_jv,
     # Statements
-    Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass, Try, ExceptHandler,
-    If, For, While, FunctionDef, ClassDef, Stmt,
+    Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Yield, Raise, Pass, Try, ExceptHandler,
+    If, For, While, FunctionDef, ClassDef, TypeAlias, Stmt,
     # Module
     Module,
 )
@@ -96,6 +97,21 @@ def _is_identifier(s: str) -> bool:
 
 
 
+def _normalize_typing_prefix(ann: str) -> str:
+    """typing.List[int] → list[int] など、typing. プレフィックスの正規化。"""
+    _TYPING_ALIASES: dict[str, str] = {
+        "typing.List": "list", "typing.Dict": "dict",
+        "typing.Tuple": "tuple", "typing.Set": "set",
+        "typing.Optional": "Optional", "typing.Union": "Union",
+    }
+    for prefix, replacement in _TYPING_ALIASES.items():
+        if ann.startswith(prefix):
+            rest = ann[len(prefix):]
+            if rest == "" or rest[0] == "[":
+                return replacement + rest
+    return ann
+
+
 def _parse_from_import(s: str) -> tuple[str, str]:
     """'from MOD import NAMES' をパースして (module, names_text) を返す。失敗時は ("", "")。"""
     m = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s)
@@ -127,8 +143,8 @@ def _parse_class_name(s: str) -> str:
 
 
 def _parse_ann_assign(s: str) -> tuple[str, str, str]:
-    """'NAME: TYPE = VALUE' をパース。失敗時は ("", "", "")。"""
-    m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
+    """'NAME: TYPE = VALUE' or 'self.attr: TYPE = VALUE' をパース。失敗時は ("", "", "")。"""
+    m = re.match(r"^([A-Za-z_][A-Za-z0-9_.]*)\s*:\s*([^=]+?)\s*=\s*(.+)$", s)
     if m is None:
         return "", "", ""
     return re.strip_group(m, 1), re.strip_group(m, 2), re.strip_group(m, 3)
@@ -143,8 +159,9 @@ def _parse_aug_assign(s: str) -> tuple[str, str, str]:
 
 
 def _parse_simple_assign(s: str) -> tuple[str, str]:
-    """simple assignment をパース。失敗時は ("", "")。"""
-    m = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
+    """simple assignment をパース。失敗時は ("", "")。
+    self.attr = value や name[idx] = value も対応。"""
+    m = re.match(r"^([A-Za-z_][A-Za-z0-9_.]*(?:\[[^\]]*\])?)\s*=\s*(.+)$", s)
     if m is None:
         return "", ""
     return re.strip_group(m, 1), re.strip_group(m, 2)
@@ -437,25 +454,29 @@ class ExprParser:
 
     def _parse_or(self) -> Expr:
         left = self._parse_and()
+        if self.peek().value != "or":
+            return left
+        values: list[Expr] = [left]
         while self.peek().value == "or":
             self.advance()
-            right = self._parse_and()
-            start = self._child_local_start(left)
-            end = self._child_local_end(right)
-            base = self._base(start, end)
-            left = BoolOp(base=base, op="Or", values=[left, right])
-        return left
+            values.append(self._parse_and())
+        start = self._child_local_start(values[0])
+        end = self._child_local_end(values[-1])
+        base = self._base(start, end)
+        return BoolOp(base=base, op="Or", values=values)
 
     def _parse_and(self) -> Expr:
         left = self._parse_not()
+        if self.peek().value != "and":
+            return left
+        values: list[Expr] = [left]
         while self.peek().value == "and":
             self.advance()
-            right = self._parse_not()
-            start = self._child_local_start(left)
-            end = self._child_local_end(right)
-            base = self._base(start, end)
-            left = BoolOp(base=base, op="And", values=[left, right])
-        return left
+            values.append(self._parse_not())
+        start = self._child_local_start(values[0])
+        end = self._child_local_end(values[-1])
+        base = self._base(start, end)
+        return BoolOp(base=base, op="And", values=values)
 
     def _parse_not(self) -> Expr:
         if self.peek().value == "not":
@@ -641,6 +662,7 @@ class ExprParser:
                 sub = Subscript(base=base, value=expr, slice_expr=index)
                 # Slice の場合、lower/upper を Subscript に直接設定 (lowered_kind は resolve の責務)
                 if isinstance(index, SliceExpr):
+                    sub.is_slice = True
                     sub.lower = index.lower
                     sub.upper = index.upper
                 expr = sub
@@ -664,9 +686,12 @@ class ExprParser:
                     kw_value = self.parse_expr()
                     keywords.append(Keyword(arg=kw_name, value_node=kw_value))
                 elif self.peek().value == "*":
-                    # *args — starred argument, skip * and parse expr
-                    self.advance()
-                    args.append(self.parse_expr())
+                    # *args — starred argument
+                    star_tok = self.advance()
+                    inner_expr = self.parse_expr()
+                    star_repr = "*" + (inner_expr.base.repr_text if hasattr(inner_expr, 'base') else "")
+                    star_base = ExprBase(source_span=inner_expr.base.source_span if hasattr(inner_expr, 'base') else NULL_SPAN, repr_text=star_repr)
+                    args.append(Starred(base=star_base, value=inner_expr))
                 else:
                     arg_expr = self.parse_expr()
                     # Check for generator expression: func(expr for x in iter)
@@ -683,8 +708,11 @@ class ExprParser:
                                 ifs.append(self._parse_comp_iter())
                             gens.append(Comprehension(target=target, iter_expr=iter_expr, ifs=ifs, is_async=False))
                         # Wrap as ListComp (generator)
-                        gen_base = ExprBase(source_span=arg_expr.base.source_span if hasattr(arg_expr, 'base') else NULL_SPAN,
-                                          repr_text="")
+                        gen_start = self._child_local_start(arg_expr)
+                        gen_end = self.tokens[self.pos - 1].end
+                        gen_repr = self.source_text[gen_start:gen_end]
+                        gen_base = self._base(gen_start, gen_end)
+                        gen_base.repr_text = gen_repr
                         arg_expr = ListComp(base=gen_base, elt=arg_expr, generators=gens)
                     args.append(arg_expr)
                 if self.peek().value != ",":
@@ -759,7 +787,8 @@ class ExprParser:
             base = self._base(tok.start, tok.end)
             # f-string → JoinedStr
             if is_fstring:
-                values = _parse_fstring_parts(inner, self.source_line, self.line_col_offset + tok.start, self.ctx)
+                fstr_span = self._span(tok.start, tok.end)
+                values = _parse_fstring_parts(inner, self.source_line, self.line_col_offset + tok.start, self.ctx, fstr_span)
                 return JoinedStr(base=base, values=values)
             return Constant(base=base, value=val_s)
 
@@ -832,7 +861,7 @@ class ExprParser:
             # 括弧付き式: span を括弧を含めた範囲に拡張
             paren_start = tok.start
             paren_end = close_tok.end
-            if isinstance(first, (Name, Constant, BinOp, UnaryOp, BoolOp, Compare, Call, Attribute, Subscript, IfExp, ListExpr, TupleExpr, DictExpr, ListComp)):
+            if hasattr(first, 'base') and isinstance(first.base, ExprBase):
                 first.base.source_span = self._span(paren_start, paren_end)
                 first.base.repr_text = self.source_text[paren_start:paren_end]
             return first
@@ -917,6 +946,21 @@ class ExprParser:
         # これは _parse_ternary の 'if' と衝突するため、or レベルまでパースする
         return self._parse_or()
 
+    def _parse_comprehension_generators(self) -> list[Comprehension]:
+        """comprehension の generator 部分をパース (for ... in ... if ...)。"""
+        gens: list[Comprehension] = []
+        while self.peek().value == "for":
+            self.advance()
+            target = self._parse_comp_target()
+            self.expect("NAME", "in")
+            iter_expr = self._parse_comp_iter()
+            ifs: list[Expr] = []
+            while self.peek().value == "if":
+                self.advance()
+                ifs.append(self._parse_comp_iter())
+            gens.append(Comprehension(target=target, iter_expr=iter_expr, ifs=ifs, is_async=False))
+        return gens
+
     def _parse_subscript_index(self) -> Expr:
         """subscript の index をパース。`:` が来たら SliceExpr を生成。"""
         # Check for initial `:` (e.g., a[:3])
@@ -954,14 +998,11 @@ class ExprParser:
             self.advance()
             first_val = self.parse_expr()
             if self.peek().value == "for":
-                # dict comprehension — 簡易実装: 式として扱う
-                # TODO: proper DictComp node
-                while self.peek().value != "}":
-                    self.advance()
+                gens = self._parse_comprehension_generators()
                 self.expect("OP", "}")
                 end_tok = self.tokens[self.pos - 1]
                 base = self._base(open_tok.start, end_tok.end)
-                return DictExpr(base=base, keys=[first], dict_values=[first_val], entries=[DictEntry(key=first, value=first_val)])
+                return DictComp(base=base, key=first, value=first_val, generators=gens)
             # Regular dict
             keys: list[Expr] = [first]
             values: list[Expr] = [first_val]
@@ -978,18 +1019,15 @@ class ExprParser:
                 entries.append(DictEntry(key=k, value=v))
             self.expect("OP", "}")
             end_tok = self.tokens[self.pos - 1]
-            # Infer dict type from first key/value
             base = self._base(open_tok.start, end_tok.end)
             return DictExpr(base=base, keys=keys, dict_values=values, entries=entries)
         # Set literal or set comprehension
         if self.peek().value == "for":
-            # set comprehension — skip for now
-            while self.peek().value != "}":
-                self.advance()
+            gens = self._parse_comprehension_generators()
             self.expect("OP", "}")
             end_tok = self.tokens[self.pos - 1]
             base = self._base(open_tok.start, end_tok.end)
-            return SetExpr(base=base, elements=[first])
+            return SetComp(base=base, elt=first, generators=gens)
         # Set literal: {a, b, c}
         elements: list[Expr] = [first]
         while self.peek().value == ",":
@@ -1014,7 +1052,7 @@ class ExprParser:
 
 def _expr_col(e: Expr) -> int:
     """式ノードの source_span.col (絶対位置)。"""
-    if isinstance(e, (Name, Constant, BinOp, UnaryOp, BoolOp, Compare, Call, Attribute, Subscript, IfExp, ListExpr, TupleExpr, DictExpr, ListComp)):
+    if hasattr(e, 'base') and isinstance(e.base, ExprBase):
         sp = e.base.source_span
         if sp.col is not None:
             return sp.col
@@ -1023,7 +1061,7 @@ def _expr_col(e: Expr) -> int:
 
 def _expr_end_col(e: Expr) -> int:
     """式ノードの source_span.end_col (絶対位置)。"""
-    if isinstance(e, (Name, Constant, BinOp, UnaryOp, BoolOp, Compare, Call, Attribute, Subscript, IfExp, ListExpr, TupleExpr, DictExpr, ListComp)):
+    if hasattr(e, 'base') and isinstance(e.base, ExprBase):
         sp = e.base.source_span
         if sp.end_col is not None:
             return sp.end_col
@@ -1082,6 +1120,9 @@ def _unescape_string(s: str) -> str:
 
 def parse_python_source(source: str, filename: str) -> Module:
     """Python ソースを EAST1 Module に変換する。"""
+    # Strip BOM
+    if source.startswith("\ufeff"):
+        source = source[1:]
     lines = source.splitlines()
     ctx = ParseContext(
         filename=filename,
@@ -1349,8 +1390,19 @@ def _parse_module_body(
             pending_comments = []
             continue
 
-        # Function def
+        # Function def (including multi-line signatures)
         fn_name = _parse_def_name(s_clean)
+        if fn_name == "" and s_clean.startswith("def "):
+            # Multi-line def: merge lines until we get a complete header
+            merged = s_clean
+            merge_ln = ln_no + 1
+            while merge_ln < total:
+                next_s = lines[merge_ln].strip()
+                merged = merged.rstrip() + " " + next_s
+                merge_ln += 1
+                if next_s.endswith(":"):
+                    break
+            fn_name = _parse_def_name(merged)
         if fn_name != "":
             fn_stmt, ln_no = _parse_function_def(ctx, lines, ln_no, fn_name, pending_trivia, pending_comments)
             body_items.append(fn_stmt)
@@ -1373,7 +1425,56 @@ def _parse_module_body(
             skip_next_blanks = True
             continue
 
-        # Skip other top-level statements for now
+        # type alias: type Name = ...
+        type_alias_m = re.match(r"^type\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s_clean)
+        if type_alias_m is not None:
+            ta_name = re.strip_group(type_alias_m, 1)
+            ta_value = re.strip_group(type_alias_m, 2)
+            span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
+            body_items.append(TypeAlias(source_span=span, name=ta_name, value=ta_value))
+            ln_no += 1
+            pending_trivia = []
+            pending_comments = []
+            continue
+
+        # Top-level annotated assignment: x: Type = value
+        tl_var, tl_type, tl_value = _parse_ann_assign(s_clean)
+        if tl_var != "":
+            target = _make_attr_or_name_expr(tl_var, ln_no + 1, 0, ctx)
+            val_expr = _parse_expr_text(ctx, tl_value, ln_no + 1, _find_expr_col(ctx, tl_value, ln_no + 1, 0), {})
+            span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
+            ann_stmt = AnnAssign(source_span=span, target=target, annotation=tl_type, value=val_expr, declare=True)
+            if len(pending_trivia) > 0:
+                ann_stmt.leading_trivia = list(pending_trivia)
+            if len(pending_comments) > 0:
+                ann_stmt.leading_comments = list(pending_comments)
+            body_items.append(ann_stmt)
+            ln_no += 1
+            first_nonimport_done = True
+            pending_trivia = []
+            pending_comments = []
+            continue
+
+        # Top-level simple assignment: x = value
+        tl_target, tl_val_text = _parse_simple_assign(s_clean)
+        if tl_target != "":
+            target = _parse_expr_text(ctx, tl_target, ln_no + 1, 0, {})
+            val_expr = _parse_expr_text(ctx, tl_val_text, ln_no + 1, _find_expr_col(ctx, tl_val_text, ln_no + 1, 0), {})
+            span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
+            is_declare = isinstance(target, Name)
+            assign_stmt = Assign(source_span=span, target=target, value=val_expr, declare=is_declare)
+            if len(pending_trivia) > 0:
+                assign_stmt.leading_trivia = list(pending_trivia)
+            if len(pending_comments) > 0:
+                assign_stmt.leading_comments = list(pending_comments)
+            body_items.append(assign_stmt)
+            ln_no += 1
+            first_nonimport_done = True
+            pending_trivia = []
+            pending_comments = []
+            continue
+
+        # Skip unhandled top-level statements
         ln_no += 1
         pending_trivia = []
         pending_comments = []
@@ -1414,6 +1515,12 @@ def _parse_function_def(
     header = _strip_inline_comment(header_line.strip())
     header_indent = len(header_line) - len(header_line.lstrip(" "))
 
+    # Multi-line header: merge continuation lines
+    merge_ln = start_ln
+    while _parse_def_header(header)[0] == "" and header.startswith("def ") and merge_ln + 1 < len(lines):
+        merge_ln += 1
+        header = header.rstrip() + " " + lines[merge_ln].strip()
+
     # Parse signature via pytra.std.re
     _, args_text, return_ann = _parse_def_header(header)
     return_type = return_ann if return_ann != "" else "None"
@@ -1424,6 +1531,8 @@ def _parse_function_def(
     arg_defaults: dict[str, JsonVal] = {}
     arg_index: dict[str, int] = {}
     arg_type_exprs: dict[str, dict[str, JsonVal]] = {}
+    vararg_name_val: Optional[str] = None
+    vararg_type_val: Optional[str] = None
 
     name_types_empty: dict[str, str] = {}
     if args_text.strip() != "" and (args_text.strip() != "self" or class_name != ""):
@@ -1431,6 +1540,19 @@ def _parse_function_def(
         for param in _split_type_args_outer(args_text):
             param = param.strip()
             if param == "" or param == "*":
+                continue
+            # *args: capture vararg info, skip from regular args
+            if param.startswith("**"):
+                continue
+            if param.startswith("*"):
+                vararg_param = param[1:].strip()
+                if ":" in vararg_param:
+                    colon_pos = vararg_param.find(":")
+                    vararg_name_val = vararg_param[:colon_pos].strip()
+                    vararg_type_val = _normalize_typing_prefix(vararg_param[colon_pos + 1:].strip())
+                else:
+                    vararg_name_val = vararg_param
+                    vararg_type_val = "unknown"
                 continue
             # self パラメータ: クラスメソッドなら class_name を型として追加
             if param == "self":
@@ -1451,7 +1573,7 @@ def _parse_function_def(
                 colon_pos = param.find(":")
                 pname = param[:colon_pos].strip()
                 ptype_ann = param[colon_pos + 1:].strip()
-                ptype = ptype_ann
+                ptype = _normalize_typing_prefix(ptype_ann)
             else:
                 pname = param
                 ptype = "unknown"
@@ -1466,7 +1588,7 @@ def _parse_function_def(
             idx += 1
 
     # Collect body
-    block_lines, end_ln = _collect_block(lines, start_ln + 1, header_indent)
+    block_lines, end_ln = _collect_block(lines, merge_ln + 1, header_indent)
 
     # Parse body with arg types in scope
     name_types: dict[str, str] = dict(arg_types)
@@ -1488,6 +1610,17 @@ def _parse_function_def(
 
     span = make_span(start_ln + 1, header_indent, end_lineno, end_col)
 
+    # Detect generator (yield in body)
+    gen_flag = 0
+    gen_yield_type = "unknown"
+    if _has_yield(body_stmts):
+        gen_flag = 1
+        # yield_value_type from return annotation: e.g., "int" for "def gen() -> int"
+        gen_yield_type = return_type if return_type != "None" else "unknown"
+        # return_type for generators becomes list[yield_type]
+        if gen_yield_type != "unknown":
+            return_type = "list[" + gen_yield_type + "]"
+
     fd = FunctionDef(
         source_span=span,
         name=fn_name,
@@ -1500,9 +1633,12 @@ def _parse_function_def(
         renamed_symbols={},
         docstring=docstring,
         body=body_stmts,
-        is_generator=0,
-        yield_value_type="unknown",
+        is_generator=gen_flag,
+        yield_value_type=gen_yield_type,
     )
+    if vararg_name_val is not None:
+        fd.vararg_name = vararg_name_val
+        fd.vararg_type = vararg_type_val
 
     # Optional fields: クラスメソッドとトップレベル関数で異なる
     if class_name != "":
@@ -1514,6 +1650,26 @@ def _parse_function_def(
         fd.leading_trivia = list(trivia)
 
     return fd, end_ln
+
+
+def _has_yield(stmts: list[Stmt]) -> bool:
+    """ステートメントリストに yield が含まれるか再帰的にチェック。"""
+    for s in stmts:
+        if isinstance(s, Yield):
+            return True
+        if isinstance(s, If):
+            if _has_yield(s.body) or _has_yield(s.orelse):
+                return True
+        if isinstance(s, (For, While)):
+            if _has_yield(s.body):
+                return True
+        if isinstance(s, Try):
+            if _has_yield(s.body) or _has_yield(s.finalbody):
+                return True
+            for h in s.handlers:
+                if _has_yield(h.body):
+                    return True
+    return False
 
 
 def _parse_class_def(
@@ -1541,12 +1697,26 @@ def _parse_class_def(
     name_types: dict[str, str] = {}
     body_stmts = _parse_block_lines(ctx, block_lines, name_types, cls_name, start_hint=start_ln)
 
-    # Collect field types from annotated assignments
+    # Collect field types from annotated assignments and __init__ self.attr assignments
     field_types: dict[str, str] = {}
     for stmt in body_stmts:
         if isinstance(stmt, AnnAssign):
             if isinstance(stmt.target, Name):
                 field_types[stmt.target.id] = stmt.annotation
+        # Scan __init__ for self.attr assignments
+        if isinstance(stmt, FunctionDef) and stmt.original_name == "__init__":
+            for init_stmt in stmt.body:
+                if isinstance(init_stmt, AnnAssign) and isinstance(init_stmt.target, Attribute):
+                    if isinstance(init_stmt.target.value, Name) and init_stmt.target.value.id == "self":
+                        field_types[init_stmt.target.attr] = init_stmt.annotation
+                if isinstance(init_stmt, Assign) and isinstance(init_stmt.target, Attribute):
+                    if isinstance(init_stmt.target.value, Name) and init_stmt.target.value.id == "self":
+                        # Infer type from arg_types: try attr name, then RHS value name
+                        attr_name = init_stmt.target.attr
+                        ft = stmt.arg_types.get(attr_name, "unknown")
+                        if ft == "unknown" and isinstance(init_stmt.value, Name):
+                            ft = stmt.arg_types.get(init_stmt.value.id, "unknown")
+                        field_types[attr_name] = ft
 
     # ClassDef span: end_lineno = _collect_block が返した end_ln (次のトップレベル行の前)
     span = make_span(start_ln + 1, 0, end_ln, 0)
@@ -1603,20 +1773,23 @@ def _parse_try_stmt(
             # Parse except clause
             m_exc_as = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", s)
             m_exc = re.match(r"^except\s+(.+?)\s*:\s*$", s)
-            exc_type: Optional[str] = None
+            exc_type_str: Optional[str] = None
             exc_name: Optional[str] = None
             if m_exc_as is not None:
-                exc_type = re.strip_group(m_exc_as, 1)
+                exc_type_str = re.strip_group(m_exc_as, 1)
                 exc_name = re.strip_group(m_exc_as, 2)
             elif m_exc is not None:
-                exc_type = re.strip_group(m_exc, 1)
+                exc_type_str = re.strip_group(m_exc, 1)
             elif s == "except:" or s.startswith("except:"):
                 pass  # bare except
+            exc_type_expr: Optional[Expr] = None
+            if exc_type_str is not None:
+                exc_type_expr = _make_name_expr(exc_type_str, handler_abs_ln, indent + 7, ctx)
             handler_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
             handler_body = _parse_block_lines(ctx, handler_lines, name_types, "except")
             span = make_span(handler_abs_ln, indent, handler_abs_ln, indent + len(s))
             handlers.append(ExceptHandler(
-                exc_type=exc_type,
+                exc_type_expr=exc_type_expr,
                 name=exc_name,
                 body=handler_body,
                 source_span=span,
@@ -1834,6 +2007,17 @@ def _parse_block_lines(
             pending_comments = []
             continue
 
+        # yield statement
+        if s_clean.startswith("yield "):
+            expr_text = s_clean[6:].strip()
+            expr = _parse_expr_text(ctx, expr_text, abs_ln, _find_expr_col(ctx, expr_text, abs_ln, indent + 6), name_types)
+            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            stmts.append(Yield(source_span=span, value=expr))
+            i += 1
+            pending_trivia = []
+            pending_comments = []
+            continue
+
         # raise
         if s_clean.startswith("raise "):
             expr_text = s_clean[6:].strip()
@@ -1902,12 +2086,12 @@ def _parse_block_lines(
             pending_comments = []
             continue
 
-        # Annotated assignment: x: Type = value
+        # Annotated assignment: x: Type = value or self.x: Type = value
         var_name, type_ann, value_text = _parse_ann_assign(s_clean)
         if var_name != "":
             resolved = type_ann
             name_types[var_name] = resolved
-            target = _make_name_expr(var_name, abs_ln, indent, ctx)
+            target: Expr = _make_attr_or_name_expr(var_name, abs_ln, indent, ctx)
             value = _parse_expr_text(ctx, value_text, abs_ln, _find_expr_col(ctx, value_text, abs_ln, indent + s_clean.index("=") + 2), name_types)
             span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             ann_stmt = AnnAssign(
@@ -1939,16 +2123,16 @@ def _parse_block_lines(
             if "=" not in ann_type:
                 resolved = ann_type
                 name_types[ann_var] = resolved
-                target = _make_name_expr(ann_var, abs_ln, indent, ctx)
+                target = _make_attr_or_name_expr(ann_var, abs_ln, indent, ctx)
                 span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
                 ann_stmt = AnnAssign(
                     source_span=span,
                     target=target,
                     annotation=resolved,
-                    
+
                     value=None,
-                    
-                    
+
+
                     declare=True,
                 )
                 if len(pending_trivia) > 0:
@@ -1987,33 +2171,41 @@ def _parse_block_lines(
             pending_comments = []
             continue
 
-        # Swap pattern: a, b = b, a
-        swap_match = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s_clean)
-        if swap_match is not None:
-            swap_left_name = re.strip_group(swap_match, 1)
-            swap_right_name = re.strip_group(swap_match, 2)
-            swap_rhs = re.strip_group(swap_match, 3)
-            # Check if rhs is "b, a" (reverse of lhs)
-            rhs_parts = swap_rhs.split(",")
-            if len(rhs_parts) == 2:
-                rhs_a = rhs_parts[0].strip()
-                rhs_b = rhs_parts[1].strip()
-                if rhs_a == swap_right_name and rhs_b == swap_left_name:
-                    # Swap detected
-                    left_type = name_types.get(swap_left_name, "unknown")
-                    right_type = name_types.get(swap_right_name, "unknown")
-                    left = _make_name_expr(swap_left_name, abs_ln, indent, ctx)
-                    left.base.borrow_kind = "value"
-                    left.type_expr = None
-                    right = _make_name_expr(swap_right_name, abs_ln, indent, ctx)
-                    right.base.borrow_kind = "value"
-                    right.type_expr = None
-                    span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-                    stmts.append(Swap(source_span=span, left=left, right=right))
-                    i += 1
-                    pending_trivia = []
-                    pending_comments = []
-                    continue
+        # Tuple unpacking or swap: a, b = ...
+        tuple_assign_match = re.match(r"^([A-Za-z_][A-Za-z0-9_]*(?:\s*,\s*[A-Za-z_][A-Za-z0-9_]*)+)\s*=\s*(.+)$", s_clean)
+        if tuple_assign_match is not None:
+            lhs_text = re.strip_group(tuple_assign_match, 1)
+            rhs_text = re.strip_group(tuple_assign_match, 2)
+            lhs_names = [n.strip() for n in lhs_text.split(",") if n.strip() != ""]
+            # Check for swap pattern: a, b = b, a
+            rhs_parts = [p.strip() for p in rhs_text.split(",") if p.strip() != ""]
+            is_swap = len(lhs_names) == 2 and len(rhs_parts) == 2 and rhs_parts[0] == lhs_names[1] and rhs_parts[1] == lhs_names[0]
+            if is_swap:
+                left = _make_name_expr(lhs_names[0], abs_ln, indent, ctx)
+                right = _make_name_expr(lhs_names[1], abs_ln, indent, ctx)
+                span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+                stmts.append(Swap(source_span=span, left=left, right=right))
+                i += 1
+                pending_trivia = []
+                pending_comments = []
+                continue
+            # Tuple unpacking: a, b = expr
+            elements = [_make_name_expr(n, abs_ln, indent, ctx) for n in lhs_names]
+            target_col = _find_expr_col(ctx, lhs_text, abs_ln, indent)
+            target_span = make_span(abs_ln, target_col, abs_ln, target_col + len(lhs_text))
+            tuple_target = TupleExpr(base=ExprBase(source_span=target_span, repr_text=lhs_text), elements=elements)
+            value = _parse_expr_text(ctx, rhs_text, abs_ln, _find_expr_col(ctx, rhs_text, abs_ln, indent + len(lhs_text) + 3), name_types)
+            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            assign_stmt = Assign(source_span=span, target=tuple_target, value=value, declare=False)
+            if len(pending_trivia) > 0:
+                assign_stmt.leading_trivia = list(pending_trivia)
+            if len(pending_comments) > 0:
+                assign_stmt.leading_comments = list(pending_comments)
+            stmts.append(assign_stmt)
+            i += 1
+            pending_trivia = []
+            pending_comments = []
+            continue
 
         # Simple assignment: x = value
         target_text, value_text = _parse_simple_assign(s_clean)
@@ -2021,10 +2213,9 @@ def _parse_block_lines(
             # Check it's not a comparison or augmented op
             if not target_text.endswith(("!", "<", ">", "+", "-", "*", "/", "%", "&", "|", "^")):
                 target = _parse_expr_text(ctx, target_text, abs_ln, _find_expr_col(ctx, target_text, abs_ln, indent), name_types)
-                value = _parse_expr_text(ctx, value_text, abs_ln, _find_expr_col(ctx, value_text, abs_ln, indent + len(target_text) + 3), name_types)
-                # Infer type from value
-                # declare: True if this is a simple Name target (not subscript/attr)
-                is_declare = isinstance(target, Name)
+                value = _parse_assign_value(ctx, value_text, abs_ln, indent + len(target_text) + 3, name_types)
+                # EAST1: declare is always True for simple assignments
+                is_declare = True
                 
                 span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
                 assign_stmt = Assign(
@@ -2075,33 +2266,51 @@ def _find_abs_line(all_lines: list[str], target_line: str, hint: int) -> int:
     return hint + 1
 
 
-def _parse_fstring_parts(inner: str, line: int, col_base: int, ctx: ParseContext) -> list[Union[Constant, FormattedValue]]:
-    """f-string の内部を Constant と FormattedValue に分解する。"""
-    parts: list[Union[Constant, FormattedValue]] = []
+def _parse_fstring_parts(inner: str, line: int, col_base: int, ctx: ParseContext, fstr_span: SourceSpan) -> list[Union[FStringText, FormattedValue]]:
+    """f-string の内部を FStringText と FormattedValue に分解する。
+
+    {{/}} はリテラル {/} に変換。{expr} は FormattedValue に。
+    """
+    parts: list[Union[FStringText, FormattedValue]] = []
     i = 0
     n = len(inner)
-    text_start = 0
+    text_buf: list[str] = []
+
+    def flush_text() -> None:
+        if len(text_buf) > 0:
+            t = "".join(text_buf)
+            parts.append(FStringText(source_span=fstr_span, repr_text=t, value=t))
+            text_buf.clear()
+
     while i < n:
-        if inner[i] == "{":
+        ch = inner[i]
+        if ch == "{":
             if i + 1 < n and inner[i + 1] == "{":
+                # Escaped brace: {{ → literal {. Create separate text part.
+                flush_text()
+                parts.append(FStringText(source_span=fstr_span, repr_text="{", value="{"))
                 i += 2
                 continue
-            # テキスト部分を Constant として追加
-            if i > text_start:
-                text = inner[text_start:i]
-                span = make_span(line, col_base, line, col_base + len(text))
-                parts.append(Constant(base=ExprBase(source_span=span, repr_text=repr(text)), value=text))
-            # 式部分を抽出
+            # Expression: {expr} or {expr:fmt}
+            flush_text()
             depth = 1
             j = i + 1
             format_spec: Optional[str] = None
+            in_str = ""
             while j < n and depth > 0:
-                if inner[j] == "{":
+                c = inner[j]
+                if in_str != "":
+                    if c == in_str:
+                        in_str = ""
+                    j += 1
+                    continue
+                if c == "'" or c == '"':
+                    in_str = c
+                elif c == "{":
                     depth += 1
-                elif inner[j] == "}":
+                elif c == "}":
                     depth -= 1
-                elif inner[j] == ":" and depth == 1:
-                    # format spec
+                elif c == ":" and depth == 1:
                     expr_text = inner[i + 1:j]
                     k = j + 1
                     while k < n and inner[k] != "}":
@@ -2115,18 +2324,19 @@ def _parse_fstring_parts(inner: str, line: int, col_base: int, ctx: ParseContext
                 expr_text = inner[i + 1:j - 1] if depth == 0 else inner[i + 1:]
             expr_node = _parse_expr_text(ctx, expr_text.strip(), line, col_base + i + 1, {})
             parts.append(FormattedValue(value=expr_node, format_spec=format_spec))
-            text_start = j + 1 if depth == 0 else j
-            i = text_start
-        elif inner[i] == "}" and i + 1 < n and inner[i + 1] == "}":
+            if format_spec is not None:
+                i = j + 1
+            else:
+                i = j
+        elif ch == "}" and i + 1 < n and inner[i + 1] == "}":
+            # Escaped brace: }} → literal }
+            text_buf.append("}")
             i += 2
-            continue
         else:
+            text_buf.append(ch)
             i += 1
-    # 残りのテキスト
-    if text_start < n:
-        text = inner[text_start:]
-        span = make_span(line, col_base, line, col_base + len(text))
-        parts.append(Constant(base=ExprBase(source_span=span, repr_text=repr(text)), value=text))
+
+    flush_text()
     return parts
 
 
@@ -2181,6 +2391,33 @@ def _make_name_expr(name: str, line: int, col: int, ctx: ParseContext) -> Name:
     return name_node
 
 
+def _parse_assign_value(ctx: ParseContext, value_text: str, line: int, col_hint: int, name_types: dict[str, str]) -> Expr:
+    """代入右辺をパース。末尾カンマはタプルとして扱う。"""
+    vt = value_text.rstrip()
+    col = _find_expr_col(ctx, value_text, line, col_hint)
+    if vt.endswith(","):
+        # Trailing comma = tuple: parse comma-separated elements
+        parts = [p.strip() for p in _split_type_args_outer(vt.rstrip(",")) if p.strip() != ""]
+        elements = [_parse_expr_text(ctx, p, line, _find_expr_col(ctx, p, line, col), name_types) for p in parts]
+        repr_text = vt.rstrip(",") + ","
+        span = make_span(line, col, line, col + len(repr_text))
+        return TupleExpr(base=ExprBase(source_span=span, repr_text=repr_text), elements=elements)
+    return _parse_expr_text(ctx, vt, line, col, name_types)
+
+
+def _make_attr_or_name_expr(text: str, line: int, col: int, ctx: ParseContext) -> Expr:
+    """self.attr のような属性アクセスを Attribute ノードに、単純名を Name ノードに変換。"""
+    if "." in text:
+        parts = text.split(".", 1)
+        obj_name = parts[0]
+        attr_name = parts[1]
+        obj = _make_name_expr(obj_name, line, col, ctx)
+        actual_col = _find_expr_col(ctx, text, line, col)
+        span = make_span(line, actual_col, line, actual_col + len(text))
+        return Attribute(base=ExprBase(source_span=span, repr_text=text), value=obj, attr=attr_name)
+    return _make_name_expr(text, line, col, ctx)
+
+
 # ---------------------------------------------------------------------------
 # Control flow parsers
 # ---------------------------------------------------------------------------
@@ -2226,7 +2463,16 @@ def _parse_for_stmt(
 
     # EAST1: range() は変換しない。全て For ノード。
     iter_expr = _parse_expr_text(ctx, iter_text, abs_ln, _find_expr_col(ctx, iter_text, abs_ln, indent), name_types)
-    target = _make_name_expr(target_name, abs_ln, indent + 4, ctx)
+    # Tuple unpacking target: for i, x in ...
+    target: Expr
+    if "," in target_name:
+        parts = [p.strip() for p in target_name.split(",") if p.strip() != ""]
+        elements: list[Expr] = [_make_name_expr(p, abs_ln, indent + 4, ctx) for p in parts]
+        target_col = _find_expr_col(ctx, target_name, abs_ln, indent + 4)
+        target_span = make_span(abs_ln, target_col, abs_ln, target_col + len(target_name))
+        target = TupleExpr(base=ExprBase(source_span=target_span, repr_text=target_name), elements=elements)
+    else:
+        target = _make_name_expr(target_name, abs_ln, indent + 4, ctx)
     for_stmt = For(
         source_span=span,
         target=target,

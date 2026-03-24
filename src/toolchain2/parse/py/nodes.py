@@ -227,6 +227,7 @@ class Subscript:
     base: ExprBase
     value: Expr
     slice_expr: Expr
+    is_slice: bool = False
     lowered_kind: Optional[str] = None
     lower: Optional[Expr] = None
     upper: Optional[Expr] = None
@@ -237,10 +238,9 @@ class Subscript:
         d["slice"] = expr_to_jv(self.slice_expr)
         if self.lowered_kind is not None:
             d["lowered_kind"] = self.lowered_kind
-        if self.lower is not None:
-            d["lower"] = expr_to_jv(self.lower)
-        if self.upper is not None:
-            d["upper"] = expr_to_jv(self.upper)
+        if self.is_slice:
+            d["lower"] = expr_to_jv(self.lower) if self.lower is not None else None
+            d["upper"] = expr_to_jv(self.upper) if self.upper is not None else None
         return d
 
 @dataclass
@@ -327,6 +327,15 @@ class ListComp:
         return d
 
 @dataclass
+class FStringText:
+    """f-string 内のリテラルテキスト部分 (borrow_kind/casts なし)。"""
+    source_span: SourceSpan
+    repr_text: str
+    value: str
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {"kind": K.CONSTANT, "source_span": self.source_span.to_jv(),
+                "repr": self.repr_text, "value": self.value}
+
 @dataclass
 class FormattedValue:
     value: Expr
@@ -340,7 +349,7 @@ class FormattedValue:
 @dataclass
 class JoinedStr:
     base: ExprBase
-    values: list[Union[Constant, FormattedValue]]
+    values: list[Union[FStringText, FormattedValue]]
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "JoinedStr"}
         d.update(_expr_base_jv(self.base))
@@ -388,10 +397,47 @@ class RangeExpr:
         return d
 
 
+@dataclass
+class SetComp:
+    base: ExprBase
+    elt: Expr
+    generators: list[Comprehension]
+    def to_jv(self) -> dict[str, JsonVal]:
+        d: dict[str, JsonVal] = {"kind": "SetComp"}
+        d.update(_expr_base_jv(self.base))
+        d["elt"] = expr_to_jv(self.elt)
+        d["generators"] = [g.to_jv() for g in self.generators]
+        return d
+
+@dataclass
+class DictComp:
+    base: ExprBase
+    key: Expr
+    value: Expr
+    generators: list[Comprehension]
+    def to_jv(self) -> dict[str, JsonVal]:
+        d: dict[str, JsonVal] = {"kind": "DictComp"}
+        d.update(_expr_base_jv(self.base))
+        d["key"] = expr_to_jv(self.key)
+        d["value"] = expr_to_jv(self.value)
+        d["generators"] = [g.to_jv() for g in self.generators]
+        return d
+
+@dataclass
+class Starred:
+    base: ExprBase
+    value: Expr
+    def to_jv(self) -> dict[str, JsonVal]:
+        d: dict[str, JsonVal] = {"kind": K.STARRED}
+        d.update(_expr_base_jv(self.base))
+        d["value"] = expr_to_jv(self.value)
+        return d
+
 Expr = Union[
     Name, Constant, BinOp, UnaryOp, BoolOp, Compare, Call, Attribute,
-    Subscript, SliceExpr, IfExp, ListExpr, SetExpr, TupleExpr, DictExpr, ListComp, JoinedStr,
-    RangeExpr, LambdaExpr,
+    Subscript, SliceExpr, IfExp, ListExpr, SetExpr, TupleExpr, DictExpr,
+    ListComp, SetComp, DictComp, JoinedStr,
+    RangeExpr, LambdaExpr, Starred,
 ]
 
 def expr_to_jv(e: Expr) -> dict[str, JsonVal]:
@@ -514,6 +560,14 @@ class Return:
         return d
 
 @dataclass
+class Yield:
+    source_span: SourceSpan
+    value: Expr
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {"kind": K.YIELD, "source_span": self.source_span.to_jv(),
+                "value": expr_to_jv(self.value)}
+
+@dataclass
 class Raise:
     source_span: SourceSpan
     exc: Expr
@@ -525,13 +579,14 @@ class Raise:
 
 @dataclass
 class ExceptHandler:
-    exc_type: Optional[str]
+    exc_type_expr: Optional[Expr]
     name: Optional[str]
     body: list[Stmt]
     source_span: SourceSpan
     def to_jv(self) -> dict[str, JsonVal]:
-        return {"kind": "ExceptHandler", "source_span": self.source_span.to_jv(),
-                "exc_type": self.exc_type, "name": self.name,
+        return {"kind": "ExceptHandler",
+                "type": expr_to_jv(self.exc_type_expr) if self.exc_type_expr is not None else None,
+                "name": self.name,
                 "body": [stmt_to_jv(s) for s in self.body]}
 
 @dataclass
@@ -618,6 +673,8 @@ class FunctionDef:
     body: list[Stmt]
     is_generator: int
     yield_value_type: str
+    vararg_name: Optional[str] = None
+    vararg_type: Optional[str] = None
     decorators: Optional[list[str]] = None
     leading_trivia: Optional[list[TriviaNode]] = None
     leading_comments: Optional[list[str]] = None
@@ -632,6 +689,9 @@ class FunctionDef:
             "body": [stmt_to_jv(s) for s in self.body],
             "is_generator": self.is_generator, "yield_value_type": self.yield_value_type,
         }
+        if self.vararg_name is not None:
+            d["vararg_name"] = self.vararg_name
+            d["vararg_type"] = self.vararg_type if self.vararg_type is not None else "unknown"
         if self.decorators is not None:
             d["decorators"] = list(self.decorators)
         if self.leading_comments is not None:
@@ -666,9 +726,18 @@ class ClassDef:
         return d
 
 
+@dataclass
+class TypeAlias:
+    source_span: SourceSpan
+    name: str
+    value: str
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {"kind": "TypeAlias", "source_span": self.source_span.to_jv(),
+                "name": self.name}
+
 Stmt = Union[
-    Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass,
-    If, For, While, Try, FunctionDef, ClassDef,
+    Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Yield, Raise, Pass,
+    If, For, While, Try, FunctionDef, ClassDef, TypeAlias,
 ]
 
 def stmt_to_jv(s: Stmt) -> dict[str, JsonVal]:
