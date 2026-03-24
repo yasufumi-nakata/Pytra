@@ -746,7 +746,25 @@ class ExprParser:
                     self.advance()
                     args.append(self.parse_expr())
                 else:
-                    args.append(self.parse_expr())
+                    arg_expr = self.parse_expr()
+                    # Check for generator expression: func(expr for x in iter)
+                    if self.peek().value == "for" and len(args) == 0 and len(keywords) == 0:
+                        gens: list[Comprehension] = []
+                        while self.peek().value == "for":
+                            self.advance()
+                            target = self._parse_comp_target()
+                            self.expect("NAME", "in")
+                            iter_expr = self._parse_comp_iter()
+                            ifs: list[Expr] = []
+                            while self.peek().value == "if":
+                                self.advance()
+                                ifs.append(self._parse_comp_iter())
+                            gens.append(Comprehension(target=target, iter_expr=iter_expr, ifs=ifs, is_async=False))
+                        # Wrap as ListComp (generator)
+                        gen_base = ExprBase(source_span=arg_expr.base.source_span if hasattr(arg_expr, 'base') else NULL_SPAN,
+                                          resolved_type="unknown", casts=[], borrow_kind="value", repr_text="")
+                        arg_expr = ListComp(base=gen_base, elt=arg_expr, generators=gens)
+                    args.append(arg_expr)
                 if self.peek().value != ",":
                     break
                 self.advance()  # skip comma
