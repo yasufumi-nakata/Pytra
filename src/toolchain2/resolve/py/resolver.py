@@ -1379,7 +1379,18 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
 
     # Add class_storage_hint if not present
     if "class_storage_hint" not in stmt:
-        stmt["class_storage_hint"] = "value"
+        # Classes with base class or @dataclass use "ref", others use "value"
+        base_val = stmt.get("base")
+        has_base: bool = base_val is not None and isinstance(base_val, str) and base_val != ""
+        is_dataclass: bool = stmt.get("dataclass") is True
+        stmt["class_storage_hint"] = "ref" if (has_base or is_dataclass) else "value"
+
+    # Normalize field_types
+    ft_raw = stmt.get("field_types")
+    if isinstance(ft_raw, dict):
+        for fk, fv in ft_raw.items():
+            if isinstance(fv, str):
+                ft_raw[fk] = normalize_type(fv)
 
     # Collect fields from body
     cls_scope: Scope = ctx.scope.child()

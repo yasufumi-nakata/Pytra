@@ -31,7 +31,7 @@ _TYPE_MAP: dict[str, str] = {
     "Path": "Path",
     "pathlib.Path": "Path",
     "any": "Any",
-    "object": "Any",
+    "object": "object",
     "Any": "Any",
     "bytes": "list[uint8]",
     "bytearray": "list[uint8]",
