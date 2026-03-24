@@ -1006,7 +1006,7 @@ class ExprParser:
                 # Tuple 型推論: tuple[elem_type1,elem_type2,...]
                 elem_types = [_get_resolved_type(e) for e in elements]
                 if all(t != "unknown" for t in elem_types):
-                    tuple_type = "tuple[" + ",".join(elem_types) + "]"
+                    tuple_type = "tuple[" + ", ".join(elem_types) + "]"
                 else:
                     tuple_type = "unknown"
                 base = self._base(tok.start, end_tok.end, tuple_type, "value")
