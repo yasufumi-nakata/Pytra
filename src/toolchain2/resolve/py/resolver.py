@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from pytra.std import json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
+from toolchain2.common.jv import deep_copy_json
 
 from toolchain2.resolve.py.type_norm import (
     normalize_type,
@@ -917,7 +918,6 @@ def _resolve_container_method_call(
     # Runtime owner: the receiver expression
     value = func.get("value")
     if isinstance(value, dict):
-        from toolchain2.common.jv import deep_copy_json
         owner_copy: JsonVal = deep_copy_json(value)
         expr["runtime_owner"] = owner_copy
 
