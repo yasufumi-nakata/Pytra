@@ -223,6 +223,14 @@ def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
                     if p2 != "":
                         tparams.append(p2)
     extern: ExternV2 | None = _extract_extern_v2(node)
+    # Fallback: well-known container template params
+    if len(tparams) == 0:
+        if name == "list" or name == "set" or name == "deque":
+            tparams = ["T"]
+        elif name == "dict":
+            tparams = ["K", "V"]
+        elif name == "Iterable":
+            tparams = ["T"]
     return ClassSig(name=name, bases=bases, methods=methods, fields=fields,
                     template_params=tparams, extern=extern)
 
