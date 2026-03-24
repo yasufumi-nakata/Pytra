@@ -48,6 +48,22 @@
 2. [x] [ID: P0-PARSE-S2] sample 18 件の .py.east1 が golden と一致する — 完了
 3. [x] [ID: P0-PARSE-S3] `pytra-cli2 -parse` を toolchain2 の自前パーサーに切り替える — 完了
 4. [x] [ID: P0-PARSE-S4] builtins.py / containers.py の新構文に対応し、golden を `test/builtin/east1/py/` に配置する — 完了
+5. [ ] [ID: P0-PARSE-S5] v2 extern (`extern_fn` / `extern_var` / `extern_class`) の構文に対応し、include/ の golden を再生成する
+
+P0-PARSE-S5 の詳細:
+
+パーサーを以下の v2 extern 構文に対応させる。仕様: `spec-builtin-functions.md §10`
+
+対応が必要な構文:
+1. `@extern_fn(module="...", symbol="...", tag="...")` — 関数 decorator。EAST1 の `FunctionDef.meta.extern_v2: {module, symbol, tag}` に格納
+2. `extern_var(module="...", symbol="...", tag="...")` — 変数初期化。EAST1 の `AnnAssign.meta.extern_v2: {module, symbol, tag}` に格納
+3. `@extern_class(module="...", symbol="...", tag="...")` — クラス decorator。EAST1 の `ClassDef.meta.extern_v2: {module, symbol, tag}` に格納
+
+完了条件:
+- `src/include/py/pytra/built_in/builtins.py` が parse 成功し、meta に extern_v2 が付与される
+- `src/include/py/pytra/std/math.py` 等の全 stdlib 宣言が parse 成功
+- golden を `test/builtin/east1/py/` と `test/stdlib/east1/py/` に配置
+- AGENT-B が resolve で meta.extern_v2 から runtime 情報を取得可能
 
 ### P0-RESOLVE: east1 → east2 (Agent B)
 
