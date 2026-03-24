@@ -46,8 +46,8 @@
 
 1. [x] [ID: P0-PARSE-S1] 自前パーサーで fixture 132 件の .py.east1 が golden と一致する — 完了
 2. [x] [ID: P0-PARSE-S2] sample 18 件の .py.east1 が golden と一致する — 完了
-3. [ ] [ID: P0-PARSE-S3] `pytra-cli2 -parse` を toolchain2 の自前パーサーに切り替える
-4. [ ] [ID: P0-PARSE-S4] builtins.py / containers.py の新構文に対応し、golden を `test/builtin/east1/py/` に配置する
+3. [x] [ID: P0-PARSE-S3] `pytra-cli2 -parse` を toolchain2 の自前パーサーに切り替える — 完了
+4. [x] [ID: P0-PARSE-S4] builtins.py / containers.py の新構文に対応し、golden を `test/builtin/east1/py/` に配置する — 完了
 
 ### P0-RESOLVE: east1 → east2 (Agent B)
 
