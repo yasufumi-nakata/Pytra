@@ -421,7 +421,35 @@ class ExprParser:
     # --- Precedence climbing ---
 
     def parse_expr(self) -> Expr:
+        if self.peek().value == "lambda":
+            return self._parse_lambda()
         return self._parse_ternary()
+
+    def _parse_lambda(self) -> Expr:
+        """lambda args: body"""
+        tok = self.advance()  # consume 'lambda'
+        start = tok.start
+        # Parse parameter list until ':'
+        params: list[str] = []
+        while self.peek().value != ":":
+            if self.peek().kind == "NAME":
+                params.append(self.advance().value)
+            elif self.peek().value == ",":
+                self.advance()
+            elif self.peek().value == "=":
+                # default value — skip until , or :
+                self.advance()
+                self._parse_or()  # consume default value
+            else:
+                break
+        self.expect("OP", ":")
+        body = self._parse_ternary()
+        end = self._child_local_end(body)
+        base = self._base(start, end, "unknown", "value")
+        # Lambda は Call ノードではなく、golden では特殊な FunctionDef-like 構造
+        # 簡易実装: Name("lambda") として返す
+        # TODO: proper Lambda node
+        return body  # 暫定: lambda body をそのまま返す
 
     def _parse_ternary(self) -> Expr:
         """a if cond else b"""
@@ -676,6 +704,10 @@ class ExprParser:
                     self.advance()  # skip =
                     kw_value = self.parse_expr()
                     keywords.append(Keyword(arg=kw_name, value_node=kw_value))
+                elif self.peek().value == "*":
+                    # *args — starred argument, skip * and parse expr
+                    self.advance()
+                    args.append(self.parse_expr())
                 else:
                     args.append(self.parse_expr())
                 if self.peek().value != ",":
@@ -898,6 +930,24 @@ class ExprParser:
                 base = self._base(tok.start, self.tokens[self.pos - 1].end, "tuple[]", "value")
                 return TupleExpr(base=base, elements=[])
             first = self.parse_expr()
+            if self.peek().value == "for":
+                # Generator expression: (expr for x in iterable)
+                # Treat as listcomp for now, wrapped in parens
+                gens: list[Comprehension] = []
+                while self.peek().value == "for":
+                    self.advance()
+                    target = self._parse_comp_target()
+                    self.expect("NAME", "in")
+                    iter_expr = self._parse_comp_iter()
+                    ifs: list[Expr] = []
+                    while self.peek().value == "if":
+                        self.advance()
+                        ifs.append(self._parse_comp_iter())
+                    gens.append(Comprehension(target=target, iter_expr=iter_expr, ifs=ifs, is_async=False))
+                self.expect("OP", ")")
+                end_tok = self.tokens[self.pos - 1]
+                base = self._base(tok.start, end_tok.end, "unknown", "value")
+                return ListComp(base=base, elt=first, generators=gens)
             if self.peek().value == ",":
                 # Tuple
                 elements: list[Expr] = [first]
