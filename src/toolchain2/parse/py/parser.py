@@ -28,7 +28,7 @@ from toolchain2.parse.py.nodes import (
     # Expressions
     ExprBase, Name, Constant, BinOp, UnaryOp, BoolOp, Compare,
     Call, Attribute, Subscript, SliceExpr, IfExp, ListExpr, TupleExpr,
-    SetExpr, DictExpr, ListComp, LambdaExpr, LambdaArg, Expr, expr_to_jv,
+    SetExpr, DictExpr, ListComp, JoinedStr, FormattedValue, LambdaExpr, LambdaArg, Expr, expr_to_jv,
     # Statements
     Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass, Try, ExceptHandler,
     If, For, While, FunctionDef, ClassDef, Stmt,
@@ -756,10 +756,11 @@ class ExprParser:
                 val_s = inner
             else:
                 val_s = _unescape_string(inner)
-            res_type = "str"
-            if prefix_end > 0 and raw[0] in "bB":
-                res_type = "bytes"
             base = self._base(tok.start, tok.end)
+            # f-string → JoinedStr
+            if is_fstring:
+                values = _parse_fstring_parts(inner, self.source_line, self.line_col_offset + tok.start, self.ctx)
+                return JoinedStr(base=base, values=values)
             return Constant(base=base, value=val_s)
 
         # Name / keyword literals
@@ -2072,6 +2073,61 @@ def _find_abs_line(all_lines: list[str], target_line: str, hint: int) -> int:
         if all_lines[i].rstrip() == stripped:
             return i + 1
     return hint + 1
+
+
+def _parse_fstring_parts(inner: str, line: int, col_base: int, ctx: ParseContext) -> list[Union[Constant, FormattedValue]]:
+    """f-string の内部を Constant と FormattedValue に分解する。"""
+    parts: list[Union[Constant, FormattedValue]] = []
+    i = 0
+    n = len(inner)
+    text_start = 0
+    while i < n:
+        if inner[i] == "{":
+            if i + 1 < n and inner[i + 1] == "{":
+                i += 2
+                continue
+            # テキスト部分を Constant として追加
+            if i > text_start:
+                text = inner[text_start:i]
+                span = make_span(line, col_base, line, col_base + len(text))
+                parts.append(Constant(base=ExprBase(source_span=span, repr_text=repr(text)), value=text))
+            # 式部分を抽出
+            depth = 1
+            j = i + 1
+            format_spec: Optional[str] = None
+            while j < n and depth > 0:
+                if inner[j] == "{":
+                    depth += 1
+                elif inner[j] == "}":
+                    depth -= 1
+                elif inner[j] == ":" and depth == 1:
+                    # format spec
+                    expr_text = inner[i + 1:j]
+                    k = j + 1
+                    while k < n and inner[k] != "}":
+                        k += 1
+                    format_spec = inner[j + 1:k]
+                    j = k
+                    depth = 0
+                    break
+                j += 1
+            if format_spec is None:
+                expr_text = inner[i + 1:j - 1] if depth == 0 else inner[i + 1:]
+            expr_node = _parse_expr_text(ctx, expr_text.strip(), line, col_base + i + 1, {})
+            parts.append(FormattedValue(value=expr_node, format_spec=format_spec))
+            text_start = j + 1 if depth == 0 else j
+            i = text_start
+        elif inner[i] == "}" and i + 1 < n and inner[i + 1] == "}":
+            i += 2
+            continue
+        else:
+            i += 1
+    # 残りのテキスト
+    if text_start < n:
+        text = inner[text_start:]
+        span = make_span(line, col_base, line, col_base + len(text))
+        parts.append(Constant(base=ExprBase(source_span=span, repr_text=repr(text)), value=text))
+    return parts
 
 
 def _find_expr_col(ctx: ParseContext, expr_text: str, abs_ln: int, fallback: int) -> int:

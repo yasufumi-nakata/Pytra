@@ -328,6 +328,26 @@ class ListComp:
 
 @dataclass
 @dataclass
+class FormattedValue:
+    value: Expr
+    format_spec: Optional[str] = None
+    def to_jv(self) -> dict[str, JsonVal]:
+        d: dict[str, JsonVal] = {"kind": "FormattedValue", "value": expr_to_jv(self.value)}
+        if self.format_spec is not None:
+            d["format_spec"] = self.format_spec
+        return d
+
+@dataclass
+class JoinedStr:
+    base: ExprBase
+    values: list[Union[Constant, FormattedValue]]
+    def to_jv(self) -> dict[str, JsonVal]:
+        d: dict[str, JsonVal] = {"kind": "JoinedStr"}
+        d.update(_expr_base_jv(self.base))
+        d["values"] = [v.to_jv() for v in self.values]
+        return d
+
+@dataclass
 class LambdaArg:
     name: str
     default_expr: Optional[Expr] = None
@@ -370,7 +390,7 @@ class RangeExpr:
 
 Expr = Union[
     Name, Constant, BinOp, UnaryOp, BoolOp, Compare, Call, Attribute,
-    Subscript, SliceExpr, IfExp, ListExpr, SetExpr, TupleExpr, DictExpr, ListComp,
+    Subscript, SliceExpr, IfExp, ListExpr, SetExpr, TupleExpr, DictExpr, ListComp, JoinedStr,
     RangeExpr, LambdaExpr,
 ]
 
