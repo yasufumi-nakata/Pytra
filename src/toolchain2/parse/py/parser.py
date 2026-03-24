@@ -32,7 +32,7 @@ from toolchain2.parse.py.nodes import (
     Call, Attribute, Subscript, SliceExpr, IfExp, ListExpr, TupleExpr,
     DictExpr, ListComp, RangeExpr, LambdaExpr, Expr, expr_to_jv,
     # Statements
-    ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass, Try, ExceptHandler,
+    Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass, Try, ExceptHandler,
     If, ForRange, For, While, FunctionDef, ClassDef, Stmt,
     # Module
     Module,
@@ -1614,6 +1614,43 @@ def _parse_module_body(
                 })
             ln_no += 1
             # import 後の空行は trivia に蓄積しない
+            skip_next_blanks = True
+            continue
+
+        # import MOD (not from)
+        imp_match = re.match(r"^import\s+(.+)$", s_clean)
+        if imp_match is not None:
+            imp_names_text = re.strip_group(imp_match, 1)
+            imp_aliases: list[ImportAlias] = []
+            for part in imp_names_text.split(","):
+                part = part.strip()
+                if part == "":
+                    continue
+                asname_i: Optional[str] = None
+                name_i = part
+                if " as " in part:
+                    split_i = part.split(" as ")
+                    name_i = split_i[0].strip()
+                    asname_i = split_i[1].strip()
+                imp_aliases.append(ImportAlias(name=name_i, asname=asname_i))
+                # Register module import
+                local_i = asname_i if asname_i is not None else name_i
+                ctx.import_modules[local_i] = name_i
+            span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
+            body_items.append(Import(source_span=span, names=imp_aliases))
+            # Build import binding
+            for alias in imp_aliases:
+                local = alias.asname if alias.asname is not None else alias.name
+                binding: dict[str, JsonVal] = {
+                    "module_id": alias.name,
+                    "export_name": "",
+                    "local_name": local,
+                    "binding_kind": "module",
+                    "source_file": ctx.filename,
+                    "source_line": ln_no + 1,
+                }
+                ctx.import_bindings.append(binding)
+            ln_no += 1
             skip_next_blanks = True
             continue
 

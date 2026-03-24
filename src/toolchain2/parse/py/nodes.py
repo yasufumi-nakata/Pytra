@@ -532,6 +532,19 @@ def expr_to_jv(e: Expr) -> dict[str, JsonVal]:
 # ---------------------------------------------------------------------------
 
 @dataclass
+class Import:
+    source_span: SourceSpan
+    names: list[ImportAlias]
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {
+            "kind": "Import",
+            "source_span": self.source_span.to_jv(),
+            "names": [n.to_jv() for n in self.names],
+        }
+
+
+@dataclass
 class ImportFrom:
     source_span: SourceSpan
     module: str
@@ -940,7 +953,7 @@ class ClassDef:
 
 # Stmt union type
 Stmt = Union[
-    ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass,
+    Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass,
     If, ForRange, For, While, Try, FunctionDef, ClassDef,
 ]
 
