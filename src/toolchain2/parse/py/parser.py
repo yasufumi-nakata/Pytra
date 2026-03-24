@@ -32,7 +32,7 @@ from toolchain2.parse.py.nodes import (
     Call, Attribute, Subscript, SliceExpr, IfExp, ListExpr, TupleExpr,
     DictExpr, ListComp, RangeExpr, Expr, expr_to_jv,
     # Statements
-    ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Return, Raise, Pass,
+    ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass,
     If, ForRange, For, While, FunctionDef, ClassDef, Stmt,
     # Module
     Module,
@@ -1861,6 +1861,34 @@ def _parse_block_lines(
             pending_comments = []
             continue
 
+        # Swap pattern: a, b = b, a
+        swap_match = re.match(r"^([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s_clean)
+        if swap_match is not None:
+            swap_left_name = re.strip_group(swap_match, 1)
+            swap_right_name = re.strip_group(swap_match, 2)
+            swap_rhs = re.strip_group(swap_match, 3)
+            # Check if rhs is "b, a" (reverse of lhs)
+            rhs_parts = swap_rhs.split(",")
+            if len(rhs_parts) == 2:
+                rhs_a = rhs_parts[0].strip()
+                rhs_b = rhs_parts[1].strip()
+                if rhs_a == swap_right_name and rhs_b == swap_left_name:
+                    # Swap detected
+                    left_type = name_types.get(swap_left_name, "unknown")
+                    right_type = name_types.get(swap_right_name, "unknown")
+                    left = _make_name_expr(swap_left_name, left_type, abs_ln, indent, ctx)
+                    left.base.borrow_kind = "value"
+                    left.type_expr = None
+                    right = _make_name_expr(swap_right_name, right_type, abs_ln, indent, ctx)
+                    right.base.borrow_kind = "value"
+                    right.type_expr = None
+                    span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+                    stmts.append(Swap(source_span=span, left=left, right=right))
+                    i += 1
+                    pending_trivia = []
+                    pending_comments = []
+                    continue
+
         # Simple assignment: x = value
         target_text, value_text = _parse_simple_assign(s_clean)
         if target_text != "":
@@ -2293,6 +2321,11 @@ def _collect_reassigned(stmts: list[Stmt], out: set[str]) -> None:
         elif isinstance(s, AnnAssign):
             if isinstance(s.target, Name):
                 out.add(s.target.id)
+        elif isinstance(s, Swap):
+            if isinstance(s.left, Name):
+                out.add(s.left.id)
+            if isinstance(s.right, Name):
+                out.add(s.right.id)
         elif isinstance(s, If):
             _collect_reassigned(s.body, out)
             _collect_reassigned(s.orelse, out)

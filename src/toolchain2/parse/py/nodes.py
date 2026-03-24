@@ -619,6 +619,21 @@ class ExprStmt:
 
 
 @dataclass
+class Swap:
+    source_span: SourceSpan
+    left: Expr
+    right: Expr
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {
+            "kind": "Swap",
+            "source_span": self.source_span.to_jv(),
+            "left": expr_to_jv(self.left),
+            "right": expr_to_jv(self.right),
+        }
+
+
+@dataclass
 class Return:
     source_span: SourceSpan
     value: Expr
@@ -850,7 +865,7 @@ class ClassDef:
 
 # Stmt union type
 Stmt = Union[
-    ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Return, Raise, Pass,
+    ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass,
     If, ForRange, For, While, FunctionDef, ClassDef,
 ]
 
