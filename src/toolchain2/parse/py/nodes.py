@@ -303,28 +303,46 @@ class Call:
         d["func"] = expr_to_jv(self.func)
         d["args"] = [expr_to_jv(a) for a in self.args]
         d["keywords"] = [kw.to_jv() for kw in self.keywords]
-        if self.lowered_kind is not None:
-            d["lowered_kind"] = self.lowered_kind
-        if self.builtin_name is not None:
-            d["builtin_name"] = self.builtin_name
-        if self.runtime_call is not None:
-            d["runtime_call"] = self.runtime_call
-        if self.resolved_runtime_call is not None:
-            d["resolved_runtime_call"] = self.resolved_runtime_call
-        if self.resolved_runtime_source is not None:
-            d["resolved_runtime_source"] = self.resolved_runtime_source
-        if self.runtime_module_id is not None:
-            d["runtime_module_id"] = self.runtime_module_id
-        if self.runtime_symbol is not None:
-            d["runtime_symbol"] = self.runtime_symbol
-        if self.runtime_call_adapter_kind is not None:
-            d["runtime_call_adapter_kind"] = self.runtime_call_adapter_kind
-        if self.semantic_tag is not None:
-            d["semantic_tag"] = self.semantic_tag
-        if self.runtime_owner is not None:
+        if self.runtime_owner is not None and self.yields_dynamic is not None:
+            # Method call with yields_dynamic (pop, get): semantic_tag が先
+            if self.semantic_tag is not None:
+                d["semantic_tag"] = self.semantic_tag
+            if self.lowered_kind is not None:
+                d["lowered_kind"] = self.lowered_kind
+            if self.builtin_name is not None:
+                d["builtin_name"] = self.builtin_name
+            if self.runtime_call is not None:
+                d["runtime_call"] = self.runtime_call
+            if self.runtime_module_id is not None:
+                d["runtime_module_id"] = self.runtime_module_id
+            if self.runtime_symbol is not None:
+                d["runtime_symbol"] = self.runtime_symbol
+            if self.runtime_call_adapter_kind is not None:
+                d["runtime_call_adapter_kind"] = self.runtime_call_adapter_kind
             d["runtime_owner"] = expr_to_jv(self.runtime_owner)
-        if self.yields_dynamic is not None:
             d["yields_dynamic"] = self.yields_dynamic
+        else:
+            # Builtin/import/method call: lowered_kind が先、semantic_tag は後
+            if self.lowered_kind is not None:
+                d["lowered_kind"] = self.lowered_kind
+            if self.builtin_name is not None:
+                d["builtin_name"] = self.builtin_name
+            if self.runtime_call is not None:
+                d["runtime_call"] = self.runtime_call
+            if self.resolved_runtime_call is not None:
+                d["resolved_runtime_call"] = self.resolved_runtime_call
+            if self.resolved_runtime_source is not None:
+                d["resolved_runtime_source"] = self.resolved_runtime_source
+            if self.runtime_module_id is not None:
+                d["runtime_module_id"] = self.runtime_module_id
+            if self.runtime_symbol is not None:
+                d["runtime_symbol"] = self.runtime_symbol
+            if self.runtime_call_adapter_kind is not None:
+                d["runtime_call_adapter_kind"] = self.runtime_call_adapter_kind
+            if self.semantic_tag is not None:
+                d["semantic_tag"] = self.semantic_tag
+            if self.runtime_owner is not None:
+                d["runtime_owner"] = expr_to_jv(self.runtime_owner)
         if self.iter_element_type is not None:
             d["iter_element_type"] = self.iter_element_type
         if self.iter_protocol is not None:

@@ -722,6 +722,14 @@ class ExprParser:
         # Resolve call type
         func_name = _get_func_name(func)
         res_type = self._resolve_call_type(func_name, args)
+        # Method call: owner type から戻り値型を推論
+        if isinstance(func, Attribute) and res_type == "unknown":
+            owner_type = _get_resolved_type(func.value)
+            owner_base = owner_type.split("[")[0] if "[" in owner_type else owner_type
+            if func_name == "pop" and owner_base in ("list", "deque"):
+                res_type = _extract_element_type(owner_type)
+            elif func_name == "get" and owner_base == "dict":
+                res_type = _extract_element_type(owner_type)  # value type
         base = self._base(start, end, res_type, "value")
         call = Call(base=base, func=func, args=args, keywords=keywords)
         # Annotate builtin calls
@@ -880,9 +888,10 @@ class ExprParser:
                     call.runtime_module_id = "pytra.core.list"
                     call.runtime_symbol = "list." + method_name
                     call.runtime_call_adapter_kind = "builtin"
-                    # list.pop は container.list.pop
+                    # list.pop は container.list.pop + yields_dynamic
                     if method_name == "pop":
                         call.semantic_tag = "container.list.pop"
+                        call.yields_dynamic = True
                 elif owner_base == "dict":
                     call.runtime_call = "dict." + method_name
                     call.runtime_module_id = "pytra.core.dict"
