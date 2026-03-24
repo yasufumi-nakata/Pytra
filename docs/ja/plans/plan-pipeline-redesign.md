@@ -197,42 +197,76 @@ src/
 
 ### 3.3 テストディレクトリ構成
 
-各段の出力を golden file として検証する。パイプラインの各段を独立にテストでき、どの段でリグレッションが起きたか特定しやすい。
+fixture テストと sample テストを分離する。粒度・実行時間が異なるため混在させない。
+
+#### fixture 系（小さい・多数・高速）
 
 ```
 test/
-  source/py/                         ← パイプラインの入力ソース
-    optional_syntax.py
-  east1/py/                          ← parse の期待出力
-    optional_syntax.py.east1
-  east2/                             ← resolve の期待出力
-    optional_syntax.east2
-  east3/                             ← compile の期待出力
-    optional_syntax.east3
-  east3-opt/                         ← optimize の期待出力
-    optional_syntax.east3
-  emit/
-    cpp/                             ← emit parity テスト（target 固有）
-    rs/
-    ...
+  fixture/
+    source/py/                       ← fixture ソース（小さい .py）
+      optional_syntax.py
+      union_syntax.py
+    east1/py/                        ← parse の期待出力
+      optional_syntax.py.east1
+    east2/                           ← resolve の期待出力
+      optional_syntax.east2
+    east3/                           ← compile の期待出力
+      optional_syntax.east3
+    east3-opt/                       ← optimize の期待出力
+      optional_syntax.east3
+    emit/
+      cpp/                           ← emit parity テスト
 ```
 
-データの流れ:
+#### sample 系（大きい・18件・重い end-to-end）
 
 ```
-test/source/py/*.py         → parse    → test/east1/py/*.py.east1（golden 一致で検証）
-test/east1/py/*.py.east1    → resolve  → test/east2/*.east2（golden 一致で検証）
-test/east2/*.east2          → compile  → test/east3/*.east3（golden 一致で検証）
-test/east3/*.east3          → optimize → test/east3-opt/*.east3（golden 一致で検証）
-test/east3-opt/*.east3      → emit     → compile → run → Python と実行結果一致で検証
+sample/py/                           ← sample ソース（既存のまま、移動しない）
+
+test/
+  sample/                            ← sample の golden のみ
+    east1/py/                        ← parse の期待出力
+      01_mandelbrot.py.east1
+    east2/                           ← resolve の期待出力
+      01_mandelbrot.east2
+    east3/                           ← compile の期待出力
+      01_mandelbrot.east3
+    east3-opt/                       ← optimize の期待出力
+      01_mandelbrot.east3
+    emit/
+      cpp/                           ← emit parity テスト
 ```
 
-- `source/py/` は入力ソースのみ。各段のディレクトリは期待出力のみ。全段で構造が統一される。
+sample のソースは `sample/py/` を直接参照する（コピーや symlink は作らない）。テストランナーが参照先を明示的に指定する。
+
+#### データの流れ
+
+fixture 系:
+```
+test/fixture/source/py/*.py      → parse    → test/fixture/east1/py/*.py.east1
+test/fixture/east1/py/*.py.east1 → resolve  → test/fixture/east2/*.east2
+test/fixture/east2/*.east2       → compile  → test/fixture/east3/*.east3
+test/fixture/east3/*.east3       → optimize → test/fixture/east3-opt/*.east3
+test/fixture/east3-opt/*.east3   → emit     → compile → run → Python と実行結果一致
+```
+
+sample 系:
+```
+sample/py/*.py                   → parse    → test/sample/east1/py/*.py.east1
+test/sample/east1/py/*.py.east1  → resolve  → test/sample/east2/*.east2
+test/sample/east2/*.east2        → compile  → test/sample/east3/*.east3
+test/sample/east3/*.east3        → optimize → test/sample/east3-opt/*.east3
+test/sample/east3-opt/*.east3    → emit     → compile → run → Python と実行結果一致
+```
+
+#### 設計原則
+
+- fixture と sample は独立に実行できる（CI で分けられる）
+- 各段のディレクトリは期待出力のみを持つ（`source/py/` だけが入力ソース）
 - `emit/` は golden file テスト（テキスト一致）ではなく parity テスト（実行結果一致）
   - emit の生成コードはフォーマット変更で頻繁に変わるため、テキスト一致は脆い
-  - `.east3` を emit → compile → run して Python 実行結果と比較する
 - `source/py/` は将来 `source/rb/` 等に対応可能
-- `sample/py/` の 18 件も golden file の対象に含める（大規模な end-to-end 検証用）
 
 ## 4. 除去されるもの
 
