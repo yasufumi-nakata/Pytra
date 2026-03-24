@@ -610,7 +610,8 @@ AGENT-B（resolve）が型解決を始めるために、built-in 宣言ファイ
   - `builtin_registry.py`: builtins.py.east1/containers.py.east1 からシグネチャ抽出、runtime binding テーブル
   - `resolver.py`: 全式 resolved_type 確定、borrow_kind 判定、builtin→py_* 変換、ForRange 変換、import 解決
   - `normalize_order.py`: golden file 一致のためのフィールド順序正規化
-- 45/132 fixture pass (34.1%)。構造バリデーション: 132/132 PASS, resolved_type: 99.8%
+- 48/132 fixture golden match (36.4%)。構造バリデーション: 132/132 PASS, resolved_type: 99.8%
+- golden 再生成で ~30件追加 pass 見込み (extern_v2 変更による runtime 値差分)
 - extern_v2 正本化完了: ハードコードテーブル全除去、builtins/containers/stdlib の meta.extern_v2 から runtime 情報直接取得
 - 通過パターン: 基本型推論、関数呼び出し、比較演算、ForRange 変換、文字列操作、ブール演算、
   OOP self.field 型推論 (field_types 参照)、container method (append/split/join 等)、
