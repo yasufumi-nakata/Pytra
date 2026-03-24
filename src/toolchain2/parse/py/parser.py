@@ -841,7 +841,7 @@ class ExprParser:
 
         # Dict literal
         if tok.value == "{":
-            return self._parse_dict()
+            return self._parse_dict_or_set()
 
         raise ValueError("unexpected token in expression: " + tok.value + " at pos " + str(tok.start))
 
@@ -943,31 +943,65 @@ class ExprParser:
                 step = self.parse_expr()
         return SliceExpr(lower=lower, upper=upper, step=step)
 
-    def _parse_dict(self) -> DictExpr:
+    def _parse_dict_or_set(self) -> Expr:
+        """dict リテラル、set リテラル、dict/set comprehension をパース。"""
         open_tok = self.advance()  # {
         if self.peek().value == "}":
             close_tok = self.advance()
             base = self._base(open_tok.start, close_tok.end, "dict[unknown, unknown]", "value")
             return DictExpr(base=base, keys=[], dict_values=[])
-        keys: list[Expr] = []
-        values: list[Expr] = []
-        entries: list[DictEntry] = []
-        while True:
-            k = self.parse_expr()
-            self.expect("OP", ":")
-            v = self.parse_expr()
-            keys.append(k)
-            values.append(v)
-            entries.append(DictEntry(key=k, value=v))
-            if self.peek().value != ",":
-                break
+        first = self.parse_expr()
+        # Dict comprehension: {k: v for ...}
+        if self.peek().value == ":":
+            self.advance()
+            first_val = self.parse_expr()
+            if self.peek().value == "for":
+                # dict comprehension — 簡易実装: 式として扱う
+                # TODO: proper DictComp node
+                while self.peek().value != "}":
+                    self.advance()
+                self.expect("OP", "}")
+                end_tok = self.tokens[self.pos - 1]
+                base = self._base(open_tok.start, end_tok.end, "unknown", "value")
+                return DictExpr(base=base, keys=[first], dict_values=[first_val], entries=[DictEntry(key=first, value=first_val)])
+            # Regular dict
+            keys: list[Expr] = [first]
+            values: list[Expr] = [first_val]
+            entries: list[DictEntry] = [DictEntry(key=first, value=first_val)]
+            while self.peek().value == ",":
+                self.advance()
+                if self.peek().value == "}":
+                    break
+                k = self.parse_expr()
+                self.expect("OP", ":")
+                v = self.parse_expr()
+                keys.append(k)
+                values.append(v)
+                entries.append(DictEntry(key=k, value=v))
+            self.expect("OP", "}")
+            end_tok = self.tokens[self.pos - 1]
+            base = self._base(open_tok.start, end_tok.end, "unknown", "value")
+            return DictExpr(base=base, keys=keys, dict_values=values, entries=entries)
+        # Set literal or set comprehension
+        if self.peek().value == "for":
+            # set comprehension — skip for now
+            while self.peek().value != "}":
+                self.advance()
+            self.expect("OP", "}")
+            end_tok = self.tokens[self.pos - 1]
+            base = self._base(open_tok.start, end_tok.end, "unknown", "value")
+            return ListExpr(base=base, elements=[first])  # TODO: SetExpr
+        # Set literal: {a, b, c}
+        elements: list[Expr] = [first]
+        while self.peek().value == ",":
             self.advance()
             if self.peek().value == "}":
                 break
+            elements.append(self.parse_expr())
         self.expect("OP", "}")
         end_tok = self.tokens[self.pos - 1]
         base = self._base(open_tok.start, end_tok.end, "unknown", "value")
-        return DictExpr(base=base, keys=keys, dict_values=values, entries=entries)
+        return ListExpr(base=base, elements=elements)  # TODO: SetExpr
 
 
 # ---------------------------------------------------------------------------
@@ -1469,6 +1503,68 @@ def _parse_class_def(
     return cd, end_ln
 
 
+def _merge_logical_lines(lines: list[str]) -> list[str]:
+    """未閉じ括弧や行末バックスラッシュで物理行を論理行にマージする。"""
+    merged: list[str] = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        ln = lines[i]
+        s = ln.rstrip()
+        # Count bracket depth
+        depth = 0
+        in_str = ""
+        for ch in s:
+            if in_str != "":
+                if ch == "\\" and len(in_str) == 1:
+                    continue  # skip escaped char (simplified)
+                if ch == in_str[0]:
+                    in_str = ""
+                continue
+            if ch == '"' or ch == "'":
+                in_str = ch
+            elif ch == "(" or ch == "[" or ch == "{":
+                depth += 1
+            elif ch == ")" or ch == "]" or ch == "}":
+                depth -= 1
+        explicit_cont = s.endswith("\\")
+        if depth > 0 or explicit_cont:
+            # Merge with next lines until balanced
+            acc = _strip_inline_comment(s).rstrip()
+            if explicit_cont and acc.endswith("\\"):
+                acc = acc[:-1].rstrip()
+            i += 1
+            while i < n and (depth > 0 or explicit_cont):
+                next_ln = lines[i]
+                next_s = next_ln.strip()
+                for ch in next_s:
+                    if in_str != "":
+                        if ch == in_str[0]:
+                            in_str = ""
+                        continue
+                    if ch == '"' or ch == "'":
+                        in_str = ch
+                    elif ch == "(" or ch == "[" or ch == "{":
+                        depth += 1
+                    elif ch == ")" or ch == "]" or ch == "}":
+                        depth -= 1
+                explicit_cont = next_s.rstrip().endswith("\\")
+                next_clean = _strip_inline_comment(next_s).strip()
+                if explicit_cont and next_clean.endswith("\\"):
+                    next_clean = next_clean[:-1].rstrip()
+                acc = acc + " " + next_clean
+                i += 1
+                if depth <= 0 and not explicit_cont:
+                    break
+            # Preserve original indentation
+            indent = len(ln) - len(ln.lstrip(" "))
+            merged.append(" " * indent + acc.lstrip())
+        else:
+            merged.append(ln)
+            i += 1
+    return merged
+
+
 def _split_type_args_outer(text: str) -> list[str]:
     """トップレベルのカンマで分割（括弧ネストを考慮）。"""
     args: list[str] = []
@@ -1502,6 +1598,7 @@ def _parse_block_lines(
     scope_label: str,
 ) -> list[Stmt]:
     """インデントされたブロック内の文をパースする。"""
+    block_lines = _merge_logical_lines(block_lines)
     stmts: list[Stmt] = []
     i = 0
     total = len(block_lines)
