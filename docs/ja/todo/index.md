@@ -104,8 +104,26 @@ parser 等を修正するたびに golden file を手動で全段再生成する
 `toolchain2/emit/` にゼロから書き直す。入力は `.east3` の JSON のみ。
 完成後に `toolchain/` を完全に除去できる。
 
-作業ディレクトリ: `toolchain2/emit/cpp/` 等
 コーディング規約: plan §5（Any/object 禁止、pytra.std のみ、selfhost 対象）
+
+**Go emitter を最初に実装する（お手本）。** 理由:
+- 型マッピングが素直（`int8`→`int8`, `float64`→`float64`, `str`→`string`）
+- boxing / RC / Object<T> が不要
+- コンパイルが速く `go run` で即実行
+- emitter フレームワーク（ノード走査、インデント、import 生成）を最小の複雑さで確立できる
+- 他言語 emitter のテンプレートになる
+
+#### P1-EMIT-GO: Go emitter（お手本）
+
+作業ディレクトリ: `toolchain2/emit/go/`
+
+1. [ ] [ID: P1-EMIT-GO-S1] Go emitter を `toolchain2/emit/go/` に新規実装し、fixture parity が通る
+2. [ ] [ID: P1-EMIT-GO-S2] sample 18 件の parity テストが通る
+3. [ ] [ID: P1-EMIT-GO-S3] `pytra-cli2 -emit --target=go` を実装する
+
+#### P1-EMIT-CPP: C++ emitter
+
+作業ディレクトリ: `toolchain2/emit/cpp/`
 
 1. [ ] [ID: P1-EMIT-CPP-S1] C++ emitter を `toolchain2/emit/cpp/` に新規実装し、fixture parity が通る
 2. [ ] [ID: P1-EMIT-CPP-S2] sample 18 件の parity テストが通る
