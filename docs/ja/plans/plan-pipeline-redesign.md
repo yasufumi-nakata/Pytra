@@ -557,11 +557,35 @@ src/toolchain/
 - `toolchain/emit/cpp/` 等を新方式（EAST3 入力、写像のみ）に書き換え
 - 完了したら `toolchain/unused/` を削除
 
-### Phase 3: クリーンアップ
+### Phase 3: runtime 配置の移行
+
+`src/pytra/std/` 等を `include/py/pytra/` に移動し、言語別の include ディレクトリ構成にする。
+
+```
+include/
+  py/                          ← Python frontend 用 include path
+    pytra/
+      std/                     ← stdlib shim（math, json, pathlib 等）
+      built_in/                ← built-in 宣言（builtins.py, containers.py）
+      utils/                   ← ユーティリティ（png, gif）
+      types.py                 ← 型定義（POD, Obj, int8 等）
+      typing.py
+  kt/                          ← 将来の Kotlin frontend 用
+    pytra/
+      std/
+      ...
+```
+
+- Python 直接実行: `PYTHONPATH=include/py` で `from pytra.std import math` が動く
+- パーサー: `include/py/` を Python frontend の include path として解決
+- 各 frontend が独立した include ディレクトリを持つ
+
+### Phase 4: クリーンアップ
 
 - `toolchain/unused/` を削除
 - `pytra-cli-legacy.py` を削除
 - `tools/generate_golden.py` を toolchain2 ベース（toolchain/ の新実装）に切り替え
+- `src/pytra/` の残骸を除去
 
 ## 8. 未決事項
 
