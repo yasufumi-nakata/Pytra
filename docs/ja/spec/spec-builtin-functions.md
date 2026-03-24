@@ -332,5 +332,5 @@ print([ObjBox(1), "hello", ObjBox(3.14)])  # POD を boxing
 - ~~`range` のオーバーロード~~ → resolve が `start/stop/step` に正規化し `ForRange` / `RangeExpr` に変換。emitter には届かない。
 - ~~dunder 展開のタイミング~~ → resolve が `len(x)` → `py_len(x)` 等のノードに変換。dunder 展開はしない（型チェックのみ）。emitter は `py_len` を各言語 runtime に写像。
 - ~~`min`/`max` の引数が 2 個以上の場合~~ → varargs（`*args: T` → `list[T]`）。optimize が要素数 2 を特殊化してもよい。
-- `int(x, base=16)` のような base 引数付き変換の扱い
+- ~~`int(x, base=16)` の base 引数~~ → 当面サポートしない。必要になったら別関数として追加。
 - コンテナ型の宣言が `src/pytra/built_in/` にあるべきか、`src/pytra/std/` にあるべきか
