@@ -1173,19 +1173,39 @@ def _compute_binop_casts(left_type: str, right_type: str, op: str) -> list[Cast]
     return casts
 
 
+_KNOWN_NUMERIC_TYPES = {"int64", "float64", "bool"}
+
+
+def _is_known_numeric(t: str) -> bool:
+    return t in _KNOWN_NUMERIC_TYPES
+
+
 def _binop_result_type(left_type: str, right_type: str, op: str) -> str:
     """二項演算の結果型を推論する。"""
     if op == "Div":
-        return "float64"
+        if _is_known_numeric(left_type) and _is_known_numeric(right_type):
+            return "float64"
+        return "unknown"
     if op == "Pow":
-        return "float64"
+        if _is_known_numeric(left_type) and _is_known_numeric(right_type):
+            return "float64"
+        return "unknown"
     if op == "Add" and (left_type == "str" or right_type == "str"):
         return "str"
     if left_type == "float64" or right_type == "float64":
-        return "float64"
-    if left_type == "int64" or right_type == "int64":
+        if _is_known_numeric(left_type) and _is_known_numeric(right_type):
+            return "float64"
+    if left_type == "int64" and _is_known_numeric(right_type):
+        return "int64"
+    if right_type == "int64" and _is_known_numeric(left_type):
         return "int64"
     if left_type == "unknown" or right_type == "unknown":
+        return "unknown"
+    # Both same known type
+    if left_type == right_type and _is_known_numeric(left_type):
+        return left_type
+    # Non-standard type → unknown
+    if not _is_known_numeric(left_type) or not _is_known_numeric(right_type):
         return "unknown"
     return left_type
 
@@ -1807,7 +1827,7 @@ def _parse_block_lines(
 
         # pass
         if s_clean == "pass":
-            span = make_span(abs_ln, indent, abs_ln, indent + 4)
+            span = make_span(abs_ln, 0, abs_ln, indent + 4)
             stmts.append(Pass(source_span=span))
             i += 1
             pending_trivia = []
