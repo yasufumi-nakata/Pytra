@@ -774,7 +774,11 @@ class ExprParser:
         end = end_tok.end
         # Resolve call type
         func_name = _get_func_name(func)
-        res_type = self._resolve_call_type(func_name, args)
+        # Attribute call (Class.method / obj.method): fn_returns を使わない
+        if isinstance(func, Attribute):
+            res_type = self._resolve_call_type_method(func_name, func, args)
+        else:
+            res_type = self._resolve_call_type(func_name, args)
         # Method call: owner type から戻り値型を推論
         if isinstance(func, Attribute) and res_type == "unknown":
             owner_type = _get_resolved_type(func.value)
@@ -788,6 +792,37 @@ class ExprParser:
         # Annotate builtin calls
         self._annotate_call(call, func_name)
         return call
+
+    def _resolve_call_type_method(self, method_name: str, func: Attribute, args: list[Expr]) -> str:
+        """Attribute call (obj.method / Class.method) の戻り値型を推論。"""
+        # obj.method() の場合: owner がクラスインスタンスなら fn_returns を参照
+        owner_type = _get_resolved_type(func.value)
+        owner_base = owner_type.split("[")[0] if "[" in owner_type else owner_type
+        if owner_base in self.ctx.class_names or (isinstance(func.value, Name) and func.value.id == "self"):
+            if method_name in self.ctx.fn_returns:
+                return _resolve_type(self.ctx.fn_returns[method_name], self.ctx)
+        # Method return types (builtin types only)
+        if method_name == "append" or method_name == "extend" or method_name == "insert" or method_name == "clear" or method_name == "sort" or method_name == "reverse":
+            return "None"
+        if method_name == "pop":
+            return "unknown"
+        if method_name == "get":
+            return "unknown"
+        if method_name == "join":
+            return "str"
+        if method_name == "split" or method_name == "strip" or method_name == "lstrip" or method_name == "rstrip" or method_name == "lower" or method_name == "upper" or method_name == "replace":
+            return "str"
+        if method_name == "find" or method_name == "index" or method_name == "count":
+            return "int64"
+        if method_name == "startswith" or method_name == "endswith":
+            return "bool"
+        if method_name == "write_text" or method_name == "write_rgb_png" or method_name == "save":
+            return "None"
+        if method_name == "read_text":
+            return "str"
+        if method_name == "keys" or method_name == "values" or method_name == "items":
+            return "unknown"
+        return "unknown"
 
     def _resolve_call_type(self, func_name: str, args: list[Expr]) -> str:
         """関数呼び出しの戻り値型を推論する。"""
