@@ -1977,6 +1977,14 @@ def _parse_for_stmt(
     range_args_text = _parse_range_call(iter_text)
     if range_args_text is not None:
         name_types[target_name] = "int64"
+    else:
+        # Non-range for: infer element type from iterable BEFORE body parsing
+        iter_name = iter_text.strip()
+        if iter_name in name_types:
+            container_type = name_types[iter_name]
+            elem = _extract_element_type(container_type)
+            if elem != "unknown":
+                name_types[target_name] = elem
 
     # Collect body
     sub_lines, end_i = _collect_sub_block(block_lines, start_i + 1, indent)

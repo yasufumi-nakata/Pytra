@@ -198,12 +198,12 @@ class Name:
         d["id"] = self.id
         if self.type_expr is not None:
             d["type_expr"] = self.type_expr.to_jv()
-        if self.iter_element_type is not None:
-            d["iter_element_type"] = self.iter_element_type
-        if self.iter_protocol is not None:
-            d["iter_protocol"] = self.iter_protocol
         if self.iterable_trait is not None:
             d["iterable_trait"] = self.iterable_trait
+        if self.iter_protocol is not None:
+            d["iter_protocol"] = self.iter_protocol
+        if self.iter_element_type is not None:
+            d["iter_element_type"] = self.iter_element_type
         return d
 
 
@@ -734,10 +734,10 @@ class For:
             "source_span": self.source_span.to_jv(),
             "target": expr_to_jv(self.target),
             "target_type": self.target_type,
-            "iter": expr_to_jv(self.iter_expr),
-            "iter_element_type": self.iter_element_type,
             "iter_mode": self.iter_mode,
             "iter_source_type": self.iter_source_type,
+            "iter_element_type": self.iter_element_type,
+            "iter": expr_to_jv(self.iter_expr),
             "body": [stmt_to_jv(s) for s in self.body],
             "orelse": [stmt_to_jv(s) for s in self.orelse],
         }
