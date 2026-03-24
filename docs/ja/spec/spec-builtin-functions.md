@@ -68,20 +68,36 @@ def repr(x: Obj) -> str:
 
 ### 3.2 スタンドアロン型（dunder に委譲しない）
 
+各言語の runtime が実装する関数。`@extern` で宣言し、body には Python fallback を書く（`pass` でもよい）。resolve はシグネチャのみ参照し、body は無視する。トランスパイル時は emitter が各言語の runtime に写像する。
+
 ```python
-def print(*args: Obj) -> None: ...
+@extern
+def print(*args: Obj) -> None:
+    pass  # runtime 実装
 
-def isinstance(x: Obj, t: type) -> bool: ...
+@extern
+def isinstance(x: Obj, t: type) -> bool:
+    pass  # runtime 実装
 
-def issubclass(cls: type, parent: type) -> bool: ...
+@extern
+def issubclass(cls: type, parent: type) -> bool:
+    pass  # runtime 実装
 
-def round(x: float, ndigits: int = 0) -> int: ...
+@extern
+def round(x: float, ndigits: int = 0) -> int:
+    pass  # runtime 実装
 
-def abs(x: int) -> int: ...
+@extern
+def abs(x: int) -> int:
+    pass  # runtime 実装
 
-def ord(c: str) -> int: ...
+@extern
+def ord(c: str) -> int:
+    pass  # runtime 実装
 
-def chr(i: int) -> str: ...
+@extern
+def chr(i: int) -> str:
+    pass  # runtime 実装
 ```
 
 ### 3.3 ジェネリック型（型パラメータが必要）
