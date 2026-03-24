@@ -214,6 +214,11 @@ def strip_node(node: object) -> object:
             result[key] = _denormalize_type(val)
             continue
 
+        # field_types: ClassDef のフィールド型をソース型に戻す
+        if key == "field_types" and isinstance(val, dict):
+            result["field_types"] = {k: _denormalize_type(str(v)) if isinstance(v, str) else v for k, v in val.items()}
+            continue
+
         # arg_types: 正規化済み型をソース型に戻す（list or dict）
         if key == "arg_types":
             if isinstance(val, list):

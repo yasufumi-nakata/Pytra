@@ -38,7 +38,7 @@
       "base": null,
       "dataclass": false,
       "field_types": {
-        "v": "int64"
+        "v": "int"
       },
       "body": [
         {

@@ -57,8 +57,8 @@
       "field_types": {
         "kind": "str",
         "text": "str",
-        "pos": "int64",
-        "number_value": "int64"
+        "pos": "int",
+        "number_value": "int"
       },
       "body": [
         {
@@ -180,13 +180,13 @@
       "dataclass": true,
       "field_types": {
         "kind": "str",
-        "value": "int64",
+        "value": "int",
         "name": "str",
         "op": "str",
-        "left": "int64",
-        "right": "int64",
-        "kind_tag": "int64",
-        "op_tag": "int64"
+        "left": "int",
+        "right": "int",
+        "kind_tag": "int",
+        "op_tag": "int"
       },
       "body": [
         {
@@ -407,8 +407,8 @@
       "field_types": {
         "kind": "str",
         "name": "str",
-        "expr_index": "int64",
-        "kind_tag": "int64"
+        "expr_index": "int",
+        "kind_tag": "int"
       },
       "body": [
         {
@@ -4231,7 +4231,7 @@
       "dataclass": false,
       "field_types": {
         "tokens": "list[Token]",
-        "pos": "int64",
+        "pos": "int",
         "expr_nodes": "list[ExprNode]"
       },
       "body": [

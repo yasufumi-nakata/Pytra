@@ -42,7 +42,7 @@
       "base": null,
       "dataclass": false,
       "field_types": {
-        "_mapper_value": "int64"
+        "_mapper_value": "int"
       },
       "body": [
         {
