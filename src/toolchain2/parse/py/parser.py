@@ -603,7 +603,7 @@ class ExprParser:
                 expr = Attribute(base=base, value=expr, attr=attr_tok.value)
             elif tok.value == "[":
                 self.advance()
-                index = self.parse_expr()
+                index = self._parse_subscript_index()
                 self.expect("OP", "]")
                 end_tok = self.tokens[self.pos - 1]
                 base = self._base(self._child_local_start(expr), end_tok.end, "unknown", "value")
@@ -875,19 +875,73 @@ class ExprParser:
     def _parse_listcomp_tail(self, open_tok: Token, elt: Expr) -> ListComp:
         gens: list[Comprehension] = []
         while self.peek().value == "for":
-            self.advance()
-            target = self.parse_expr()
+            self.advance()  # consume 'for'
+            # target は単純な Name または Tuple（'in' で止める必要がある）
+            target = self._parse_comp_target()
             self.expect("NAME", "in")
-            iter_expr = self.parse_expr()
+            # iter_expr は 'if', 'for', ']' で止める
+            iter_expr = self._parse_comp_iter()
             ifs: list[Expr] = []
             while self.peek().value == "if":
                 self.advance()
-                ifs.append(self.parse_expr())
+                ifs.append(self._parse_comp_iter())
             gens.append(Comprehension(target=target, iter_expr=iter_expr, ifs=ifs, is_async=False))
         self.expect("OP", "]")
         end_tok = self.tokens[self.pos - 1]
         base = self._base(open_tok.start, end_tok.end, "unknown", "value")
         return ListComp(base=base, elt=elt, generators=gens)
+
+    def _parse_comp_target(self) -> Expr:
+        """comprehension の target をパース。'in' キーワードで止める。"""
+        tok = self.peek()
+        if tok.kind == "NAME" and tok.value != "in":
+            self.advance()
+            base = self._base(tok.start, tok.end, "unknown", "value")
+            first = Name(base=base, id=tok.value)
+            # Check for tuple target: x, y
+            if self.peek().value == ",":
+                elements: list[Expr] = [first]
+                while self.peek().value == ",":
+                    self.advance()
+                    if self.peek().value == "in":
+                        break
+                    next_tok = self.advance()
+                    nbase = self._base(next_tok.start, next_tok.end, "unknown", "value")
+                    elements.append(Name(base=nbase, id=next_tok.value))
+                tbase = self._base(tok.start, self.tokens[self.pos - 1].end, "unknown", "value")
+                return TupleExpr(base=tbase, elements=elements)
+            return first
+        return self.parse_expr()
+
+    def _parse_comp_iter(self) -> Expr:
+        """comprehension の iter/if 式をパース。'for', 'if', ']', '}', ')' で止める。"""
+        # 通常の式パースを行うが、トップレベルの 'for', 'if' で止める
+        # これは _parse_ternary の 'if' と衝突するため、or レベルまでパースする
+        return self._parse_or()
+
+    def _parse_subscript_index(self) -> Expr:
+        """subscript の index をパース。`:` が来たら SliceExpr を生成。"""
+        # Check for initial `:` (e.g., a[:3])
+        if self.peek().value == ":":
+            return self._parse_slice(None)
+        first = self.parse_expr()
+        # Check for slice
+        if self.peek().value == ":":
+            return self._parse_slice(first)
+        return first
+
+    def _parse_slice(self, lower: Optional[Expr]) -> SliceExpr:
+        """slice 式をパース。`:` を消費した状態で呼ばれる。"""
+        self.advance()  # consume ':'
+        upper: Optional[Expr] = None
+        step: Optional[Expr] = None
+        if self.peek().value != "]" and self.peek().value != ":":
+            upper = self.parse_expr()
+        if self.peek().value == ":":
+            self.advance()
+            if self.peek().value != "]":
+                step = self.parse_expr()
+        return SliceExpr(lower=lower, upper=upper, step=step)
 
     def _parse_dict(self) -> DictExpr:
         open_tok = self.advance()  # {
@@ -1146,6 +1200,11 @@ def _parse_module_body(
             continue
 
         s_clean = _strip_inline_comment(s)
+
+        # Decorator at module level: skip
+        if s_clean.startswith("@"):
+            ln_no += 1
+            continue
 
         # Import: from X import Y
         mod, names_text = _parse_from_import(s_clean)
@@ -1475,9 +1534,15 @@ def _parse_block_lines(
             continue
 
         s_clean = _strip_inline_comment(s)
+
+        # Decorator: @name
+        if s_clean.startswith("@"):
+            # Accumulate decorator, will be attached to next def/class
+            # For now just skip (decorator info tracked separately)
+            i += 1
+            continue
+
         # Calculate absolute line number
-        # We need to figure out what line this is in the original file
-        # For now, use a heuristic based on source_span from parent context
         abs_ln = _find_abs_line(ctx.lines, ln, 0)
 
         # return statement
