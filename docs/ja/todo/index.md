@@ -118,8 +118,8 @@ EAST1 の `meta.extern_v2` を正本にすること。
 - `*args: T` → `args: list[T]` の varargs 変換
 
 1. [x] [ID: P0-RESOLVE-S1] strip 済み EAST1 を入力にして、fixture 132 件の .east2 が golden と一致する — 完了 (132/132)
-2. [ ] [ID: P0-RESOLVE-S2] sample 18 件の .east2 が golden と一致する（sample golden 再生成待ち）
-3. [ ] [ID: P0-RESOLVE-S3] `pytra-cli2 -resolve` を toolchain2 の resolve に切り替える
+2. [x] [ID: P0-RESOLVE-S2] sample 18 件の .east2 が golden と一致する — 完了 (18/18)
+3. [x] [ID: P0-RESOLVE-S3] `pytra-cli2 -resolve` を toolchain2 の resolve に切り替える — 完了
 
 ### P0-COMPILE: east2 → east3 (Agent C)
 
