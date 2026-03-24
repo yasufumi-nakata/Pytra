@@ -201,20 +201,38 @@ src/
 
 ```
 test/
-  east1/py/      ← .py → .py.east1 のスナップショットテスト（Python 固有）
-  east2/py/      ← .py.east1 → .east2 のスナップショットテスト（入力が Python 由来）
-  east3/         ← .east2 → .east3 のスナップショットテスト（言語非依存）
-  east3-opt/     ← optimize 後の .east3 のスナップショットテスト（言語非依存）
+  east1/py/                          ← parse テスト（Python 固有）
+    optional_syntax.py                 fixture ソース
+    optional_syntax.py.east1           parse の期待出力（golden）
+  east2/                             ← resolve テスト（言語非依存）
+    optional_syntax.east2              resolve の期待出力（golden）
+  east3/                             ← compile テスト（言語非依存）
+    optional_syntax.east3              compile の期待出力（golden）
+  east3-opt/                         ← optimize テスト（言語非依存）
+    optional_syntax.east3              optimize の期待出力（golden）
   emit/
-    cpp/         ← .east3 → .cpp の golden file テスト（target 固有）
+    cpp/                             ← emit parity テスト（target 固有）
     rs/
     ...
 ```
 
-- `east1/py/`, `east2/py/` は入力言語ごとにサブディレクトリを持つ（将来 `east1/rb/` 等に対応）
-- `east3/`, `east3-opt/` は言語非依存なのでサブディレクトリなし
-- `emit/cpp/` 等は target 言語ごとにサブディレクトリを持つ
-- `toolchain2/` と `test/` の構造が対称になる
+データの流れ:
+
+```
+test/east1/py/*.py          → parse   → test/east1/py/*.py.east1（golden 一致で検証）
+test/east1/py/*.py.east1    → resolve → test/east2/*.east2（golden 一致で検証）
+test/east2/*.east2          → compile → test/east3/*.east3（golden 一致で検証）
+test/east3/*.east3          → optimize → test/east3-opt/*.east3（golden 一致で検証）
+test/east3-opt/*.east3      → emit    → compile → run → Python と実行結果一致で検証
+```
+
+- `east1/py/` には fixture ソース `.py` と期待出力 `.py.east1` が並置（拡張子で区別）
+- `east2/` 以降は前段の golden が入力になるので、期待出力だけ置く
+- `emit/` は golden file テスト（テキスト一致）ではなく parity テスト（実行結果一致）
+  - emit の生成コードはフォーマット変更で頻繁に変わるため、テキスト一致は脆い
+  - `.east3` を emit → compile → run して Python 実行結果と比較する
+- `east1/py/` は将来 `east1/rb/` 等に対応可能
+- `sample/py/` の 18 件も golden file の対象に含める（大規模な end-to-end 検証用）
 
 ## 4. 除去されるもの
 
