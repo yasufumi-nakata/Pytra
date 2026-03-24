@@ -4,6 +4,8 @@ Provides typed access to JSON trees without using Any/object.
 §5.1: Any/object 禁止。
 §5.3: Python 標準モジュール直接 import 禁止。
 §5.6: グローバル可変状態禁止 — CompileContext に閉じ込める。
+
+deep_copy_json と normalize_type_name は toolchain2.common から re-export する。
 """
 
 from __future__ import annotations
@@ -11,6 +13,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Union
 
+# common/ から共有ユーティリティを re-export
+from toolchain2.common.jv import deep_copy_json as deep_copy_json
+from toolchain2.common.types import normalize_type_name as normalize_type_name
 
 # JsonVal 再帰型エイリアス (pytra.std.json.JsonVal と同等)
 JsonVal = Union[None, bool, int, float, str, list["JsonVal"], dict[str, "JsonVal"]]
@@ -54,17 +59,6 @@ class CompileContext:
         name = "__swap_tmp_" + str(self.swap_counter)
         self.swap_counter += 1
         return name
-
-
-def deep_copy_json(val: JsonVal) -> JsonVal:
-    """Deep copy a JSON-compatible value (copy.deepcopy の代替)。"""
-    if val is None or isinstance(val, bool) or isinstance(val, int) or isinstance(val, float) or isinstance(val, str):
-        return val
-    if isinstance(val, list):
-        return [deep_copy_json(item) for item in val]
-    if isinstance(val, dict):
-        return {key: deep_copy_json(value) for key, value in val.items()}
-    return val
 
 
 def jv_str(v: JsonVal) -> str:
@@ -146,11 +140,3 @@ def nd_source_span(node: Node) -> JsonVal:
 
 def nd_repr(node: Node) -> str:
     return jv_str(node.get("repr", ""))
-
-
-def normalize_type_name(value: JsonVal) -> str:
-    if isinstance(value, str):
-        t = value.strip()
-        if t != "":
-            return t
-    return "unknown"

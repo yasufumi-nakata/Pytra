@@ -9,6 +9,7 @@ Removes Module-level source_span (which has null fields).
 from __future__ import annotations
 
 from toolchain2.compile.jv import JsonVal, Node, jv_is_dict, jv_is_list
+from toolchain2.common.kinds import MODULE
 
 
 def normalize_source_span(span: JsonVal) -> JsonVal:
@@ -43,7 +44,7 @@ def walk_normalize_spans(node: JsonVal) -> JsonVal:
     out: Node = {}
     for k, v in d.items():
         if k == "source_span":
-            if kind == "Module":
+            if kind == MODULE:
                 # Remove Module-level source_span
                 continue
             out[k] = normalize_source_span(v)

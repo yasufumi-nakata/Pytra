@@ -14,6 +14,10 @@ from toolchain2.compile.jv import JsonVal, Node, CompileContext
 from toolchain2.compile.jv import jv_str, jv_dict, jv_list, jv_is_dict
 from toolchain2.compile.jv import nd_kind, nd_get_str, nd_get_dict
 from toolchain2.compile.jv import normalize_type_name
+from toolchain2.common.kinds import (
+    CLASS_DEF, NAMED_TYPE, GENERIC_TYPE, DYNAMIC_TYPE, NOMINAL_ADT_TYPE,
+    OPTIONAL_TYPE, UNION_TYPE, NAME,
+)
 
 
 _TYPE_EXPR_SUMMARY_KEY: str = "type_expr_summary_v1"
@@ -123,14 +127,14 @@ def _is_named_ellipsis(expr: JsonVal) -> bool:
     if not isinstance(expr, dict):
         return False
     d: Node = expr
-    return d.get("kind") == "NamedType" and d.get("name") == "..."
+    return d.get("kind") == NAMED_TYPE and d.get("name") == "..."
 
 
 def _is_homogeneous_tuple_ellipsis(expr: JsonVal) -> bool:
     if not isinstance(expr, dict):
         return False
     d: Node = expr
-    if d.get("kind") != "GenericType" or jv_str(d.get("base", "")).strip() != "tuple":
+    if d.get("kind") != GENERIC_TYPE or jv_str(d.get("base", "")).strip() != "tuple":
         return False
     ts = jv_str(d.get("tuple_shape", "")).strip()
     if ts == "homogeneous_ellipsis":
@@ -144,37 +148,37 @@ def _is_homogeneous_tuple_ellipsis(expr: JsonVal) -> bool:
 
 def _make_named_like(name: str) -> Node:
     if name == "Any" or name == "object" or name == "unknown":
-        return {"kind": "DynamicType", "name": name}
+        return {"kind": DYNAMIC_TYPE, "name": name}
     if name == "JsonValue" or name == "JsonObj" or name == "JsonArr":
-        return {"kind": "NominalAdtType", "name": name, "adt_family": "json", "variant_domain": "closed"}
-    return {"kind": "NamedType", "name": name}
+        return {"kind": NOMINAL_ADT_TYPE, "name": name, "adt_family": "json", "variant_domain": "closed"}
+    return {"kind": NAMED_TYPE, "name": name}
 
 
 def _make_union_type_expr(options: list[Node]) -> Node:
     non_none: list[Node] = []
     has_none = False
     for option in options:
-        if option.get("kind") == "NamedType" and option.get("name") == "None":
+        if option.get("kind") == NAMED_TYPE and option.get("name") == "None":
             has_none = True
         else:
             non_none.append(option)
     if has_none and len(non_none) == 1:
-        return {"kind": "OptionalType", "inner": non_none[0]}
+        return {"kind": OPTIONAL_TYPE, "inner": non_none[0]}
     union_opts: list[JsonVal] = list(non_none)
     if has_none:
-        union_opts.append({"kind": "NamedType", "name": "None"})
+        union_opts.append({"kind": NAMED_TYPE, "name": "None"})
     mode = "general"
     for opt_item in union_opts:
-        if isinstance(opt_item, dict) and opt_item.get("kind") == "DynamicType":
+        if isinstance(opt_item, dict) and opt_item.get("kind") == DYNAMIC_TYPE:
             mode = "dynamic"
             break
-    return {"kind": "UnionType", "union_mode": mode, "options": union_opts}
+    return {"kind": UNION_TYPE, "union_mode": mode, "options": union_opts}
 
 
 def _parse_type_expr(raw: str) -> Node:
     txt = _strip_typing_prefix(_strip_quotes(raw))
     if txt == "":
-        return {"kind": "DynamicType", "name": "unknown"}
+        return {"kind": DYNAMIC_TYPE, "name": "unknown"}
     union_parts = _split_top_level(txt, "|")
     if len(union_parts) > 1:
         return _make_union_type_expr([_parse_type_expr(p) for p in union_parts])
@@ -189,12 +193,12 @@ def _parse_type_expr(raw: str) -> Node:
         inner = txt[lb + 1:-1].strip()
         args = [_parse_type_expr(p) for p in _split_top_level(inner, ",")]
         if head == "Optional" and len(args) == 1:
-            return {"kind": "OptionalType", "inner": args[0]}
+            return {"kind": OPTIONAL_TYPE, "inner": args[0]}
         if head == "Union" and len(args) > 0:
             return _make_union_type_expr(args)
         if head == "tuple" and len(args) == 2 and _is_named_ellipsis(args[1]):
-            return {"kind": "GenericType", "base": head, "args": args, "tuple_shape": "homogeneous_ellipsis"}
-        return {"kind": "GenericType", "base": head, "args": args}
+            return {"kind": GENERIC_TYPE, "base": head, "args": args, "tuple_shape": "homogeneous_ellipsis"}
+        return {"kind": GENERIC_TYPE, "base": head, "args": args}
     return _make_named_like(txt)
 
 
@@ -203,14 +207,14 @@ def _type_expr_to_string(expr: JsonVal) -> str:
         return "unknown"
     d: Node = expr
     kind = jv_str(d.get("kind", ""))
-    if kind == "DynamicType" or kind == "NamedType" or kind == "NominalAdtType":
+    if kind == DYNAMIC_TYPE or kind == NAMED_TYPE or kind == NOMINAL_ADT_TYPE:
         return jv_str(d.get("name", "unknown"))
-    if kind == "OptionalType":
+    if kind == OPTIONAL_TYPE:
         inner = d.get("inner")
         if isinstance(inner, dict):
             return _type_expr_to_string(inner) + " | None"
         return "unknown | None"
-    if kind == "GenericType":
+    if kind == GENERIC_TYPE:
         base = jv_str(d.get("base", "unknown"))
         args_obj = d.get("args")
         parts: list[str] = []
@@ -218,7 +222,7 @@ def _type_expr_to_string(expr: JsonVal) -> str:
             for arg in args_obj:
                 parts.append(_type_expr_to_string(arg))
         return base + "[" + ",".join(parts) + "]"
-    if kind == "UnionType":
+    if kind == UNION_TYPE:
         opts_obj = d.get("options")
         opts: list[str] = []
         if isinstance(opts_obj, list):
@@ -249,11 +253,11 @@ def summarize_type_expr(expr: JsonVal) -> Node:
     kind = jv_str(d.get("kind", "unknown"))
     out["kind"] = kind
     out["mirror"] = _type_expr_to_string(d)
-    if kind == "DynamicType":
+    if kind == DYNAMIC_TYPE:
         out["category"] = "dynamic"
         out["dynamic_name"] = jv_str(d.get("name", "unknown"))
         return out
-    if kind == "NominalAdtType":
+    if kind == NOMINAL_ADT_TYPE:
         out["category"] = "nominal_adt"
         nn = jv_str(d.get("name", "")).strip()
         if nn != "":
@@ -265,7 +269,7 @@ def summarize_type_expr(expr: JsonVal) -> Node:
         if vd != "":
             out["nominal_variant_domain"] = vd
         return out
-    if kind == "OptionalType":
+    if kind == OPTIONAL_TYPE:
         out["category"] = "optional"
         inner_summary = summarize_type_expr(d.get("inner"))
         ic = jv_str(inner_summary.get("category", "unknown"))
@@ -281,7 +285,7 @@ def summarize_type_expr(expr: JsonVal) -> Node:
         if vd2 != "":
             out["nominal_variant_domain"] = vd2
         return out
-    if kind == "UnionType":
+    if kind == UNION_TYPE:
         um = jv_str(d.get("union_mode", "")).strip()
         out["union_mode"] = um
         if um == "dynamic":
@@ -289,7 +293,7 @@ def summarize_type_expr(expr: JsonVal) -> Node:
         else:
             out["category"] = "general_union"
         return out
-    if kind == "GenericType" and _is_homogeneous_tuple_ellipsis(d):
+    if kind == GENERIC_TYPE and _is_homogeneous_tuple_ellipsis(d):
         out["category"] = "homogeneous_tuple"
         out["tuple_shape"] = "homogeneous_ellipsis"
         args = d.get("args")
@@ -302,7 +306,7 @@ def summarize_type_expr(expr: JsonVal) -> Node:
             if ic2 != "" and ic2 != "unknown":
                 out["item_category"] = ic2
         return out
-    if kind == "NamedType" or kind == "GenericType":
+    if kind == NAMED_TYPE or kind == GENERIC_TYPE:
         out["category"] = "static"
         return out
     return out
@@ -388,7 +392,7 @@ def collect_nominal_adt_table(east_module: Node) -> dict[str, Node]:
         if not isinstance(item, dict):
             continue
         nd: Node = item
-        if nd.get("kind") != "ClassDef":
+        if nd.get("kind") != CLASS_DEF:
             continue
         class_name = normalize_type_name(nd.get("name"))
         if class_name == "unknown":
@@ -446,7 +450,7 @@ def collect_nominal_adt_family_variants(ctx: CompileContext, family_name: str) -
 
 def make_nominal_adt_type_summary(name: str, family_name: str) -> Node:
     return {
-        "kind": "NominalAdtType",
+        "kind": NOMINAL_ADT_TYPE,
         "category": "nominal_adt",
         "mirror": name,
         "nominal_adt_name": name,
