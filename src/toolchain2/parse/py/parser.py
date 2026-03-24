@@ -790,6 +790,35 @@ class ExprParser:
                     call.resolved_runtime_source = mod_id
                 elif mod_id == "pathlib":
                     call.semantic_tag = "stdlib.symbol.Path"
+        # Method call: obj.method(...) → semantic_tag, runtime_owner
+        if isinstance(call.func, Attribute):
+            attr = call.func
+            method_name = attr.attr
+            owner_type = _get_resolved_type(attr.value)
+            # semantic_tag: stdlib.method.<name>
+            call.semantic_tag = "stdlib.method." + method_name
+            call.lowered_kind = "BuiltinCall"
+            call.builtin_name = method_name
+            # runtime owner
+            call.runtime_owner = attr.value
+            # runtime info based on owner type
+            owner_base = owner_type.split("[")[0] if "[" in owner_type else owner_type
+            if owner_base == "list":
+                call.runtime_call = "py_" + method_name
+                call.runtime_module_id = "pytra.built_in.sequence"
+                call.runtime_symbol = "list." + method_name
+                call.runtime_call_adapter_kind = "builtin"
+            elif owner_base == "dict":
+                call.runtime_call = "py_dict_" + method_name
+                call.runtime_module_id = "pytra.built_in.sequence"
+                call.runtime_symbol = "dict." + method_name
+                call.runtime_call_adapter_kind = "builtin"
+                call.semantic_tag = "container.dict." + method_name
+            elif owner_base == "str":
+                call.runtime_call = "py_" + method_name
+                call.runtime_module_id = "pytra.built_in.string_ops"
+                call.runtime_symbol = "str." + method_name
+                call.runtime_call_adapter_kind = "builtin"
 
     def _parse_primary(self) -> Expr:
         """基本式: リテラル、名前、括弧、リスト、タプル、辞書。"""
