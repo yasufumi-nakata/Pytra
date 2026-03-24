@@ -477,6 +477,26 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
         func["resolved_type"] = "unknown"
         return t
 
+    # Exception constructor? (Exception, RuntimeError, etc.)
+    exception_names: set[str] = {"Exception", "RuntimeError", "NotImplementedError", "ValueError", "TypeError", "KeyError", "IndexError"}
+    if name in exception_names:
+        expr["resolved_type"] = name
+        func["resolved_type"] = "unknown"
+        # Annotate as BuiltinCall
+        exc_extern: ExternV2 | None = None
+        exc_sig: FuncSig | None = ctx.registry.lookup_function(name)
+        if exc_sig is not None:
+            exc_extern = exc_sig.extern
+        if exc_extern is not None:
+            expr["lowered_kind"] = "BuiltinCall"
+            expr["builtin_name"] = name
+            expr["runtime_call"] = exc_extern.symbol
+            expr["runtime_module_id"] = exc_extern.module
+            expr["runtime_symbol"] = exc_extern.symbol
+            expr["runtime_call_adapter_kind"] = "builtin"
+            expr["semantic_tag"] = exc_extern.tag
+        return name
+
     # Class constructor?
     local_class: ClassSig | None = ctx.lookup_class(name)
     if local_class is not None:
@@ -878,6 +898,13 @@ def _resolve_container_method_call(
     else:
         expr["semantic_tag"] = "stdlib.method." + method
 
+    # yields_dynamic for methods that can return None/dynamic values
+    if (owner_base == "dict" and method == "get") or \
+       (owner_base == "dict" and method == "pop") or \
+       (owner_base == "dict" and method == "setdefault") or \
+       (owner_base == "list" and method == "pop"):
+        expr["yields_dynamic"] = True
+
     return ret
 
 
@@ -983,9 +1010,15 @@ def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
             is_slice = True
 
     # Slice subscript: list[T][a:b] → list[T], str[a:b] → str
-    if is_slice:
+    if is_slice and isinstance(slice_node, dict):
         expr["resolved_type"] = vt
         expr["lowered_kind"] = "SliceExpr"
+        # Promote Slice fields to Subscript (golden convention)
+        # Only include non-null values
+        for sk in ("lower", "upper", "step"):
+            sv = slice_node.get(sk)
+            if sv is not None:
+                expr[sk] = sv
         return vt
 
     # list[T][i] → T
