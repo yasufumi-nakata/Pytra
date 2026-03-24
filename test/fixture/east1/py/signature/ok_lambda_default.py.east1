@@ -23,7 +23,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -43,7 +42,6 @@
               "end_lineno": 5,
               "end_col": 10
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "matrix",
@@ -57,7 +55,6 @@
               "end_lineno": 5,
               "end_col": 57
             },
-            "resolved_type": "callable[unknown,unknown,float64->unknown]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "lambda nout, nin, std=0.08: nout + nin * std",
@@ -65,20 +62,17 @@
               {
                 "kind": "arg",
                 "arg": "nout",
-                "annotation": null,
-                "resolved_type": "unknown"
+                "annotation": null
               },
               {
                 "kind": "arg",
                 "arg": "nin",
-                "annotation": null,
-                "resolved_type": "unknown"
+                "annotation": null
               },
               {
                 "kind": "arg",
                 "arg": "std",
                 "annotation": null,
-                "resolved_type": "float64",
                 "default": {
                   "kind": "Constant",
                   "source_span": {
@@ -87,7 +81,6 @@
                     "end_lineno": 5,
                     "end_col": 39
                   },
-                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "0.08",
@@ -103,7 +96,6 @@
                 "end_lineno": 5,
                 "end_col": 57
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "nout + nin * std",
@@ -115,7 +107,6 @@
                   "end_lineno": 5,
                   "end_col": 45
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "nout",
@@ -130,7 +121,6 @@
                   "end_lineno": 5,
                   "end_col": 57
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "nin * std",
@@ -142,7 +132,6 @@
                     "end_lineno": 5,
                     "end_col": 51
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "nin",
@@ -157,7 +146,6 @@
                     "end_lineno": 5,
                     "end_col": 57
                   },
-                  "resolved_type": "float64",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "std",
@@ -168,7 +156,6 @@
             "return_type": "unknown"
           },
           "declare": true,
-          "decl_type": "callable[unknown,unknown,float64->unknown]",
           "declare_init": true
         },
         {
@@ -187,7 +174,6 @@
               "end_lineno": 6,
               "end_col": 23
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(matrix(1, 2))",
@@ -199,7 +185,6 @@
                 "end_lineno": 6,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -214,7 +199,6 @@
                   "end_lineno": 6,
                   "end_col": 22
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "matrix(1, 2)",
@@ -226,7 +210,6 @@
                     "end_lineno": 6,
                     "end_col": 16
                   },
-                  "resolved_type": "callable[unknown,unknown,float64->unknown]",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "matrix",
@@ -241,7 +224,6 @@
                       "end_lineno": 6,
                       "end_col": 18
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "1",
@@ -255,7 +237,6 @@
                       "end_lineno": 6,
                       "end_col": 21
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "2",
@@ -265,14 +246,7 @@
                 "keywords": []
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         },
         {
@@ -291,7 +265,6 @@
               "end_lineno": 7,
               "end_col": 28
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(matrix(1, 2, 0.5))",
@@ -303,7 +276,6 @@
                 "end_lineno": 7,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -318,7 +290,6 @@
                   "end_lineno": 7,
                   "end_col": 27
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "matrix(1, 2, 0.5)",
@@ -330,7 +301,6 @@
                     "end_lineno": 7,
                     "end_col": 16
                   },
-                  "resolved_type": "callable[unknown,unknown,float64->unknown]",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "matrix",
@@ -345,7 +315,6 @@
                       "end_lineno": 7,
                       "end_col": 18
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "1",
@@ -359,7 +328,6 @@
                       "end_lineno": 7,
                       "end_col": 21
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "2",
@@ -373,7 +341,6 @@
                       "end_lineno": 7,
                       "end_col": 26
                     },
-                    "resolved_type": "float64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "0.5",
@@ -383,24 +350,12 @@
                 "keywords": []
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [
         "self_hosted parser: lambda with default argument."
       ],
@@ -437,7 +392,6 @@
           "end_lineno": 11,
           "end_col": 24
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "run_lambda_default()",
@@ -449,7 +403,6 @@
             "end_lineno": 11,
             "end_col": 22
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_lambda_default",
@@ -462,9 +415,7 @@
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.built_in.io_ops",
@@ -475,7 +426,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

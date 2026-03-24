@@ -19,7 +19,7 @@
       "name": "gen",
       "original_name": "gen",
       "arg_types": {
-        "n": "int64"
+        "n": "int"
       },
       "arg_order": [
         "n"
@@ -28,10 +28,7 @@
       "arg_index": {
         "n": 0
       },
-      "return_type": "list[int64]",
-      "arg_usage": {
-        "n": "readonly"
-      },
+      "return_type": "list[int]",
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -51,15 +48,10 @@
               "end_lineno": 2,
               "end_col": 5
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
-            "id": "i",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "i"
           },
           "annotation": "int64",
           "value": {
@@ -70,14 +62,12 @@
               "end_lineno": 2,
               "end_col": 14
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "0",
             "value": 0
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -103,7 +93,6 @@
               "end_lineno": 3,
               "end_col": 15
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i < n",
@@ -115,7 +104,6 @@
                 "end_lineno": 3,
                 "end_col": 11
               },
-              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "i",
@@ -133,7 +121,6 @@
                   "end_lineno": 3,
                   "end_col": 15
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "n",
@@ -158,7 +145,6 @@
                   "end_lineno": 4,
                   "end_col": 10
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "i",
@@ -181,7 +167,6 @@
                   "end_lineno": 5,
                   "end_col": 9
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "i",
@@ -196,14 +181,12 @@
                   "end_lineno": 5,
                   "end_col": 14
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "1",
                 "value": 1
               },
-              "declare": false,
-              "decl_type": "int64"
+              "declare": false
             }
           ],
           "orelse": []
@@ -211,22 +194,6 @@
       ],
       "is_generator": 1,
       "yield_value_type": "int64",
-      "arg_type_exprs": {
-        "n": {
-          "kind": "NamedType",
-          "name": "int64"
-        }
-      },
-      "return_type_expr": {
-        "kind": "GenericType",
-        "base": "list",
-        "args": [
-          {
-            "kind": "NamedType",
-            "name": "int64"
-          }
-        ]
-      },
       "leading_comments": [],
       "leading_trivia": []
     },
@@ -245,7 +212,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -265,15 +231,10 @@
               "end_lineno": 9,
               "end_col": 9
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "total",
-            "id": "total",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "total"
           },
           "annotation": "int64",
           "value": {
@@ -284,14 +245,12 @@
               "end_lineno": 9,
               "end_col": 18
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "0",
             "value": 0
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -317,7 +276,6 @@
               "end_lineno": 10,
               "end_col": 9
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "v",
@@ -335,7 +293,6 @@
               "end_lineno": 10,
               "end_col": 19
             },
-            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "gen(5)",
@@ -347,7 +304,6 @@
                 "end_lineno": 10,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "gen",
@@ -362,7 +318,6 @@
                   "end_lineno": 10,
                   "end_col": 18
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "5",
@@ -391,7 +346,6 @@
                   "end_lineno": 11,
                   "end_col": 13
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "total",
@@ -406,14 +360,12 @@
                   "end_lineno": 11,
                   "end_col": 18
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "v",
                 "id": "v"
               },
-              "declare": false,
-              "decl_type": "int64"
+              "declare": false
             }
           ],
           "orelse": []
@@ -434,7 +386,6 @@
               "end_lineno": 12,
               "end_col": 22
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(total == 10)",
@@ -446,7 +397,6 @@
                 "end_lineno": 12,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -461,7 +411,6 @@
                   "end_lineno": 12,
                   "end_col": 21
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "total == 10",
@@ -473,7 +422,6 @@
                     "end_lineno": 12,
                     "end_col": 15
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "total",
@@ -491,7 +439,6 @@
                       "end_lineno": 12,
                       "end_col": 21
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "10",
@@ -500,24 +447,12 @@
                 ]
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -539,7 +474,6 @@
           "end_lineno": 16,
           "end_col": 10
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "main()",
@@ -551,7 +485,6 @@
             "end_lineno": 16,
             "end_col": 8
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "main",
@@ -566,9 +499,7 @@
     "main": "__pytra_main"
   },
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.built_in.io_ops",
@@ -579,7 +510,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

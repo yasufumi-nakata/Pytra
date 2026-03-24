@@ -40,7 +40,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "str",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -60,15 +59,10 @@
               "end_lineno": 7,
               "end_col": 7
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "sep",
-            "id": "sep",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "sep"
           },
           "annotation": "str",
           "value": {
@@ -79,14 +73,12 @@
               "end_lineno": 7,
               "end_col": 18
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\",\"",
             "value": ","
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -112,21 +104,10 @@
               "end_lineno": 8,
               "end_col": 9
             },
-            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "items",
-            "id": "items",
-            "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "str"
-                }
-              ]
-            }
+            "id": "items"
           },
           "annotation": "list[str]",
           "value": {
@@ -137,7 +118,6 @@
               "end_lineno": 8,
               "end_col": 38
             },
-            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[\"a\", \"b\", \"c\"]",
@@ -150,7 +130,6 @@
                   "end_lineno": 8,
                   "end_col": 27
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"a\"",
@@ -164,7 +143,6 @@
                   "end_lineno": 8,
                   "end_col": 32
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"b\"",
@@ -178,7 +156,6 @@
                   "end_lineno": 8,
                   "end_col": 37
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"c\"",
@@ -187,7 +164,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "list[str]",
           "annotation_type_expr": {
             "kind": "GenericType",
             "base": "list",
@@ -225,7 +201,6 @@
               "end_lineno": 9,
               "end_col": 26
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "sep.join(items)",
@@ -237,7 +212,6 @@
                 "end_lineno": 9,
                 "end_col": 19
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "sep.join",
@@ -249,7 +223,6 @@
                   "end_lineno": 9,
                   "end_col": 14
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "sep",
@@ -266,7 +239,6 @@
                   "end_lineno": 9,
                   "end_col": 25
                 },
-                "resolved_type": "list[str]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "items",
@@ -274,13 +246,6 @@
               }
             ],
             "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "join",
-            "runtime_call": "py_join",
-            "runtime_module_id": "pytra.built_in.string_ops",
-            "runtime_symbol": "str.join",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "stdlib.method.join",
             "runtime_owner": {
               "kind": "Name",
               "source_span": {
@@ -289,7 +254,6 @@
                 "end_lineno": 9,
                 "end_col": 14
               },
-              "resolved_type": "str",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "sep",
@@ -300,11 +264,6 @@
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "str"
-      },
       "leading_comments": [
         "Regression: preserve method receiver for str.join in selfhost direct transpile."
       ],
@@ -334,7 +293,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -354,7 +312,6 @@
               "end_lineno": 13,
               "end_col": 23
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(join_words())",
@@ -366,7 +323,6 @@
                 "end_lineno": 13,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -381,7 +337,6 @@
                   "end_lineno": 13,
                   "end_col": 22
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "join_words()",
@@ -393,7 +348,6 @@
                     "end_lineno": 13,
                     "end_col": 20
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "join_words",
@@ -403,24 +357,12 @@
                 "keywords": []
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -442,7 +384,6 @@
           "end_lineno": 17,
           "end_col": 50
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "print(py_assert_stdout([\"a,b,c\"], _case_main))",
@@ -454,7 +395,6 @@
             "end_lineno": 17,
             "end_col": 9
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -469,7 +409,6 @@
               "end_lineno": 17,
               "end_col": 49
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "py_assert_stdout([\"a,b,c\"], _case_main)",
@@ -481,7 +420,6 @@
                 "end_lineno": 17,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",
@@ -496,7 +434,6 @@
                   "end_lineno": 17,
                   "end_col": 36
                 },
-                "resolved_type": "list[str]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "[\"a,b,c\"]",
@@ -509,7 +446,6 @@
                       "end_lineno": 17,
                       "end_col": 35
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"a,b,c\"",
@@ -525,37 +461,22 @@
                   "end_lineno": 17,
                   "end_col": 48
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_case_main",
                 "id": "_case_main"
               }
             ],
-            "keywords": [],
-            "resolved_runtime_call": "py_assert_stdout",
-            "resolved_runtime_source": "import_symbol",
-            "runtime_module_id": "pytra.utils.assertions",
-            "runtime_symbol": "py_assert_stdout",
-            "runtime_call_adapter_kind": "extern_delegate"
+            "keywords": []
           }
         ],
-        "keywords": [],
-        "lowered_kind": "BuiltinCall",
-        "builtin_name": "print",
-        "runtime_call": "py_print",
-        "runtime_module_id": "pytra.built_in.io_ops",
-        "runtime_symbol": "py_print",
-        "runtime_call_adapter_kind": "builtin",
-        "semantic_tag": "core.print"
+        "keywords": []
       }
     }
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.utils.assertions",
@@ -567,10 +488,8 @@
           "source_module_id": "pytra.utils.assertions",
           "source_export_name": "py_assert_stdout",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils.assertions",
           "runtime_group": "utils",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "py_assert_stdout",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
@@ -584,7 +503,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

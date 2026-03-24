@@ -45,9 +45,6 @@
             "self": 0
           },
           "return_type": "None",
-          "arg_usage": {
-            "self": "readonly"
-          },
           "renamed_symbols": {},
           "docstring": null,
           "body": [
@@ -67,7 +64,6 @@
                   "end_lineno": 3,
                   "end_col": 18
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "self.value",
@@ -79,17 +75,12 @@
                     "end_lineno": 3,
                     "end_col": 12
                   },
-                  "resolved_type": "Obj",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "self",
                   "id": "self"
                 },
-                "attr": "value",
-                "type_expr": {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
+                "attr": "value"
               },
               "annotation": "int64",
               "value": {
@@ -100,14 +91,12 @@
                   "end_lineno": 3,
                   "end_col": 27
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "7",
                 "value": 7
               },
               "declare": true,
-              "decl_type": "int64",
               "annotation_type_expr": {
                 "kind": "NamedType",
                 "name": "int64"
@@ -142,7 +131,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -162,15 +150,10 @@
               "end_lineno": 7,
               "end_col": 5
             },
-            "resolved_type": "Obj",
             "casts": [],
             "borrow_kind": "value",
             "repr": "o",
-            "id": "o",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "Obj"
-            }
+            "id": "o"
           },
           "annotation": "Obj",
           "value": {
@@ -181,7 +164,6 @@
               "end_lineno": 7,
               "end_col": 18
             },
-            "resolved_type": "Obj",
             "casts": [],
             "borrow_kind": "value",
             "repr": "Obj()",
@@ -193,7 +175,6 @@
                 "end_lineno": 7,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Obj",
@@ -203,7 +184,6 @@
             "keywords": []
           },
           "declare": true,
-          "decl_type": "Obj",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "Obj"
@@ -229,7 +209,6 @@
               "end_lineno": 8,
               "end_col": 24
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(o. value == 7)",
@@ -241,7 +220,6 @@
                 "end_lineno": 8,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -256,7 +234,6 @@
                   "end_lineno": 8,
                   "end_col": 23
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "o. value == 7",
@@ -268,7 +245,6 @@
                     "end_lineno": 8,
                     "end_col": 18
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "o. value",
@@ -280,7 +256,6 @@
                       "end_lineno": 8,
                       "end_col": 11
                     },
-                    "resolved_type": "Obj",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "o",
@@ -300,7 +275,6 @@
                       "end_lineno": 8,
                       "end_col": 23
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "7",
@@ -309,24 +283,12 @@
                 ]
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -348,7 +310,6 @@
           "end_lineno": 12,
           "end_col": 10
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "main()",
@@ -360,7 +321,6 @@
             "end_lineno": 12,
             "end_col": 8
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "main",
@@ -375,9 +335,7 @@
     "main": "__pytra_main"
   },
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.built_in.io_ops",
@@ -388,7 +346,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

@@ -23,7 +23,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -43,15 +42,10 @@
               "end_lineno": 2,
               "end_col": 5
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "s",
-            "id": "s",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "s"
           },
           "annotation": "str",
           "value": {
@@ -62,14 +56,12 @@
               "end_lineno": 2,
               "end_col": 18
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\"ABC\"",
             "value": "ABC"
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -95,15 +87,10 @@
               "end_lineno": 3,
               "end_col": 5
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
-            "id": "i",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "i"
           },
           "annotation": "int64",
           "value": {
@@ -114,14 +101,12 @@
               "end_lineno": 3,
               "end_col": 14
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "1",
             "value": 1
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -147,15 +132,10 @@
               "end_lineno": 4,
               "end_col": 6
             },
-            "resolved_type": "uint8",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ch",
-            "id": "ch",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "uint8"
-            }
+            "id": "ch"
           },
           "annotation": "uint8",
           "value": {
@@ -166,7 +146,6 @@
               "end_lineno": 4,
               "end_col": 19
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "s[i]",
@@ -178,7 +157,6 @@
                 "end_lineno": 4,
                 "end_col": 16
               },
-              "resolved_type": "str",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "s",
@@ -192,7 +170,6 @@
                 "end_lineno": 4,
                 "end_col": 18
               },
-              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "i",
@@ -200,7 +177,6 @@
             }
           },
           "declare": true,
-          "decl_type": "uint8",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "uint8"
@@ -226,15 +202,10 @@
               "end_lineno": 5,
               "end_col": 6
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok",
-            "id": "ok",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "bool"
-            }
+            "id": "ok"
           },
           "annotation": "bool",
           "value": {
@@ -245,7 +216,6 @@
               "end_lineno": 5,
               "end_col": 26
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "s[i] == \"B\"",
@@ -257,7 +227,6 @@
                 "end_lineno": 5,
                 "end_col": 19
               },
-              "resolved_type": "str",
               "casts": [],
               "borrow_kind": "value",
               "repr": "s[i]",
@@ -269,7 +238,6 @@
                   "end_lineno": 5,
                   "end_col": 16
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "s",
@@ -283,7 +251,6 @@
                   "end_lineno": 5,
                   "end_col": 18
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "i",
@@ -302,7 +269,6 @@
                   "end_lineno": 5,
                   "end_col": 26
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"B\"",
@@ -311,7 +277,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "bool"
@@ -337,15 +302,10 @@
               "end_lineno": 6,
               "end_col": 7
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok2",
-            "id": "ok2",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "bool"
-            }
+            "id": "ok2"
           },
           "annotation": "bool",
           "value": {
@@ -356,7 +316,6 @@
               "end_lineno": 6,
               "end_col": 27
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "s[0] != \"B\"",
@@ -368,7 +327,6 @@
                 "end_lineno": 6,
                 "end_col": 20
               },
-              "resolved_type": "str",
               "casts": [],
               "borrow_kind": "value",
               "repr": "s[0]",
@@ -380,7 +338,6 @@
                   "end_lineno": 6,
                   "end_col": 17
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "s",
@@ -394,7 +351,6 @@
                   "end_lineno": 6,
                   "end_col": 19
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "0",
@@ -413,7 +369,6 @@
                   "end_lineno": 6,
                   "end_col": 27
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"B\"",
@@ -422,7 +377,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "bool"
@@ -448,7 +402,6 @@
               "end_lineno": 7,
               "end_col": 34
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(ok and ok2 and ch == 66)",
@@ -460,7 +413,6 @@
                 "end_lineno": 7,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -475,7 +427,6 @@
                   "end_lineno": 7,
                   "end_col": 33
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "ok and ok2 and ch == 66",
@@ -489,7 +440,6 @@
                       "end_lineno": 7,
                       "end_col": 12
                     },
-                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "ok",
@@ -503,7 +453,6 @@
                       "end_lineno": 7,
                       "end_col": 20
                     },
-                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "ok2",
@@ -517,7 +466,6 @@
                       "end_lineno": 7,
                       "end_col": 33
                     },
-                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "ch == 66",
@@ -529,7 +477,6 @@
                         "end_lineno": 7,
                         "end_col": 27
                       },
-                      "resolved_type": "uint8",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "ch",
@@ -547,7 +494,6 @@
                           "end_lineno": 7,
                           "end_col": 33
                         },
-                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "66",
@@ -558,24 +504,12 @@
                 ]
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -597,7 +531,6 @@
           "end_lineno": 11,
           "end_col": 14
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "run_case()",
@@ -609,7 +542,6 @@
             "end_lineno": 11,
             "end_col": 12
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_case",
@@ -622,9 +554,7 @@
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.built_in.io_ops",
@@ -635,7 +565,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

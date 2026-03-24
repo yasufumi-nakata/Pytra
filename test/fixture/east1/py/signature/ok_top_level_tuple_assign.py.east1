@@ -23,7 +23,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -43,15 +42,10 @@
               "end_lineno": 5,
               "end_col": 5
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "a",
-            "id": "a",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "a"
           },
           "annotation": "int64",
           "value": {
@@ -62,14 +56,12 @@
               "end_lineno": 5,
               "end_col": 14
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "1",
             "value": 1
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -95,15 +87,10 @@
               "end_lineno": 6,
               "end_col": 5
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "b",
-            "id": "b",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "b"
           },
           "annotation": "int64",
           "value": {
@@ -114,14 +101,12 @@
               "end_lineno": 6,
               "end_col": 14
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "2",
             "value": 2
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -147,7 +132,6 @@
               "end_lineno": 7,
               "end_col": 5
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "a",
@@ -161,7 +145,6 @@
               "end_lineno": 7,
               "end_col": 8
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "b",
@@ -184,7 +167,6 @@
               "end_lineno": 8,
               "end_col": 15
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(a, b)",
@@ -196,7 +178,6 @@
                 "end_lineno": 8,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -211,7 +192,6 @@
                   "end_lineno": 8,
                   "end_col": 11
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "a",
@@ -225,31 +205,18 @@
                   "end_lineno": 8,
                   "end_col": 14
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "b",
                 "id": "b"
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [
         "self_hosted parser: top-level tuple parallel assignment."
       ],
@@ -286,7 +253,6 @@
           "end_lineno": 12,
           "end_col": 22
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "run_tuple_assign()",
@@ -298,7 +264,6 @@
             "end_lineno": 12,
             "end_col": 20
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_tuple_assign",
@@ -311,9 +276,7 @@
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.built_in.io_ops",
@@ -324,7 +287,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

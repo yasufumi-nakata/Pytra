@@ -44,7 +44,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -64,7 +63,6 @@
               "end_lineno": 5,
               "end_col": 10
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "joined",
@@ -78,7 +76,6 @@
               "end_lineno": 5,
               "end_col": 46
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "os.path.join(\"alpha\", \"beta.txt\")",
@@ -90,7 +87,6 @@
                 "end_lineno": 5,
                 "end_col": 25
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "os.path.join",
@@ -102,7 +98,6 @@
                   "end_lineno": 5,
                   "end_col": 20
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "os.path",
@@ -114,7 +109,6 @@
                     "end_lineno": 5,
                     "end_col": 15
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "os",
@@ -133,7 +127,6 @@
                   "end_lineno": 5,
                   "end_col": 33
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"alpha\"",
@@ -147,7 +140,6 @@
                   "end_lineno": 5,
                   "end_col": 45
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"beta.txt\"",
@@ -157,7 +149,6 @@
             "keywords": []
           },
           "declare": true,
-          "decl_type": "unknown",
           "declare_init": true
         },
         {
@@ -176,7 +167,6 @@
               "end_lineno": 6,
               "end_col": 13
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "root, ext",
@@ -189,7 +179,6 @@
                   "end_lineno": 6,
                   "end_col": 8
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "root",
@@ -203,7 +192,6 @@
                   "end_lineno": 6,
                   "end_col": 13
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "ext",
@@ -219,7 +207,6 @@
               "end_lineno": 6,
               "end_col": 40
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "os.path.splitext(joined)",
@@ -231,7 +218,6 @@
                 "end_lineno": 6,
                 "end_col": 32
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "os.path.splitext",
@@ -243,7 +229,6 @@
                   "end_lineno": 6,
                   "end_col": 23
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "os.path",
@@ -255,7 +240,6 @@
                     "end_lineno": 6,
                     "end_col": 18
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "os",
@@ -274,7 +258,6 @@
                   "end_lineno": 6,
                   "end_col": 39
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "joined",
@@ -283,8 +266,7 @@
             ],
             "keywords": []
           },
-          "declare": false,
-          "decl_type": null
+          "declare": false
         },
         {
           "kind": "Assign",
@@ -302,7 +284,6 @@
               "end_lineno": 7,
               "end_col": 6
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok",
@@ -316,14 +297,12 @@
               "end_lineno": 7,
               "end_col": 13
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "True",
             "value": true
           },
           "declare": true,
-          "decl_type": "bool",
           "declare_init": true
         },
         {
@@ -342,7 +321,6 @@
               "end_lineno": 8,
               "end_col": 6
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "ok",
@@ -356,7 +334,6 @@
               "end_lineno": 8,
               "end_col": 56
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok and (os.path.basename(joined) == \"beta.txt\")",
@@ -370,7 +347,6 @@
                   "end_lineno": 8,
                   "end_col": 11
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ok",
@@ -384,7 +360,6 @@
                   "end_lineno": 8,
                   "end_col": 56
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "(os.path.basename(joined) == \"beta.txt\")",
@@ -396,7 +371,6 @@
                     "end_lineno": 8,
                     "end_col": 41
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "os.path.basename(joined)",
@@ -408,7 +382,6 @@
                       "end_lineno": 8,
                       "end_col": 33
                     },
-                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "os.path.basename",
@@ -420,7 +393,6 @@
                         "end_lineno": 8,
                         "end_col": 24
                       },
-                      "resolved_type": "unknown",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "os.path",
@@ -432,7 +404,6 @@
                           "end_lineno": 8,
                           "end_col": 19
                         },
-                        "resolved_type": "unknown",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "os",
@@ -451,7 +422,6 @@
                         "end_lineno": 8,
                         "end_col": 40
                       },
-                      "resolved_type": "unknown",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "joined",
@@ -472,7 +442,6 @@
                       "end_lineno": 8,
                       "end_col": 55
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"beta.txt\"",
@@ -483,7 +452,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "declare_init": true
         },
         {
@@ -502,7 +470,6 @@
               "end_lineno": 9,
               "end_col": 6
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "ok",
@@ -516,7 +483,6 @@
               "end_lineno": 9,
               "end_col": 38
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok and (root == \"alpha/beta\")",
@@ -530,7 +496,6 @@
                   "end_lineno": 9,
                   "end_col": 11
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ok",
@@ -544,7 +509,6 @@
                   "end_lineno": 9,
                   "end_col": 38
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "(root == \"alpha/beta\")",
@@ -556,7 +520,6 @@
                     "end_lineno": 9,
                     "end_col": 21
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "root",
@@ -574,7 +537,6 @@
                       "end_lineno": 9,
                       "end_col": 37
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"alpha/beta\"",
@@ -585,7 +547,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "declare_init": true
         },
         {
@@ -604,7 +565,6 @@
               "end_lineno": 10,
               "end_col": 6
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "ok",
@@ -618,7 +578,6 @@
               "end_lineno": 10,
               "end_col": 31
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok and (ext == \".txt\")",
@@ -632,7 +591,6 @@
                   "end_lineno": 10,
                   "end_col": 11
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ok",
@@ -646,7 +604,6 @@
                   "end_lineno": 10,
                   "end_col": 31
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "(ext == \".txt\")",
@@ -658,7 +615,6 @@
                     "end_lineno": 10,
                     "end_col": 20
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "ext",
@@ -676,7 +632,6 @@
                       "end_lineno": 10,
                       "end_col": 30
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\".txt\"",
@@ -687,7 +642,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "declare_init": true
         },
         {
@@ -706,7 +660,6 @@
               "end_lineno": 11,
               "end_col": 6
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "ok",
@@ -720,7 +673,6 @@
               "end_lineno": 11,
               "end_col": 52
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok and (os.path.dirname(joined) == \"alpha\")",
@@ -734,7 +686,6 @@
                   "end_lineno": 11,
                   "end_col": 11
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ok",
@@ -748,7 +699,6 @@
                   "end_lineno": 11,
                   "end_col": 52
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "(os.path.dirname(joined) == \"alpha\")",
@@ -760,7 +710,6 @@
                     "end_lineno": 11,
                     "end_col": 40
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "os.path.dirname(joined)",
@@ -772,7 +721,6 @@
                       "end_lineno": 11,
                       "end_col": 32
                     },
-                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "os.path.dirname",
@@ -784,7 +732,6 @@
                         "end_lineno": 11,
                         "end_col": 24
                       },
-                      "resolved_type": "unknown",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "os.path",
@@ -796,7 +743,6 @@
                           "end_lineno": 11,
                           "end_col": 19
                         },
-                        "resolved_type": "unknown",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "os",
@@ -815,7 +761,6 @@
                         "end_lineno": 11,
                         "end_col": 39
                       },
-                      "resolved_type": "unknown",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "joined",
@@ -836,7 +781,6 @@
                       "end_lineno": 11,
                       "end_col": 51
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"alpha\"",
@@ -847,7 +791,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "declare_init": true
         },
         {
@@ -866,7 +809,6 @@
               "end_lineno": 13,
               "end_col": 6
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "ok",
@@ -880,7 +822,6 @@
               "end_lineno": 13,
               "end_col": 35
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok and os.path.exists(\".\")",
@@ -894,7 +835,6 @@
                   "end_lineno": 13,
                   "end_col": 11
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ok",
@@ -908,7 +848,6 @@
                   "end_lineno": 13,
                   "end_col": 35
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "os.path.exists(\".\")",
@@ -920,7 +859,6 @@
                     "end_lineno": 13,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "os.path.exists",
@@ -932,7 +870,6 @@
                       "end_lineno": 13,
                       "end_col": 23
                     },
-                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "os.path",
@@ -944,7 +881,6 @@
                         "end_lineno": 13,
                         "end_col": 18
                       },
-                      "resolved_type": "unknown",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "os",
@@ -963,7 +899,6 @@
                       "end_lineno": 13,
                       "end_col": 34
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\".\"",
@@ -975,7 +910,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "declare_init": true,
           "leading_trivia": [
             {
@@ -1003,7 +937,6 @@
               "end_lineno": 14,
               "end_col": 6
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "ok",
@@ -1017,7 +950,6 @@
               "end_lineno": 14,
               "end_col": 45
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok and (len(glob.glob(\"*.cpp\")) > 0)",
@@ -1031,7 +963,6 @@
                   "end_lineno": 14,
                   "end_col": 11
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ok",
@@ -1045,7 +976,6 @@
                   "end_lineno": 14,
                   "end_col": 45
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "(len(glob.glob(\"*.cpp\")) > 0)",
@@ -1057,7 +987,6 @@
                     "end_lineno": 14,
                     "end_col": 40
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "len(glob.glob(\"*.cpp\"))",
@@ -1069,7 +998,6 @@
                       "end_lineno": 14,
                       "end_col": 20
                     },
-                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "len",
@@ -1084,7 +1012,6 @@
                         "end_lineno": 14,
                         "end_col": 39
                       },
-                      "resolved_type": "list[str]",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "glob.glob(\"*.cpp\")",
@@ -1096,7 +1023,6 @@
                           "end_lineno": 14,
                           "end_col": 30
                         },
-                        "resolved_type": "unknown",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "glob.glob",
@@ -1108,7 +1034,6 @@
                             "end_lineno": 14,
                             "end_col": 25
                           },
-                          "resolved_type": "unknown",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "glob",
@@ -1125,7 +1050,6 @@
                             "end_lineno": 14,
                             "end_col": 38
                           },
-                          "resolved_type": "str",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "\"*.cpp\"",
@@ -1135,14 +1059,7 @@
                       "keywords": []
                     }
                   ],
-                  "keywords": [],
-                  "lowered_kind": "BuiltinCall",
-                  "builtin_name": "len",
-                  "runtime_call": "py_len",
-                  "runtime_module_id": "pytra.core.py_runtime",
-                  "runtime_symbol": "len",
-                  "runtime_call_adapter_kind": "builtin",
-                  "semantic_tag": "core.len"
+                  "keywords": []
                 },
                 "ops": [
                   "Gt"
@@ -1156,7 +1073,6 @@
                       "end_lineno": 14,
                       "end_col": 44
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "0",
@@ -1167,7 +1083,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "declare_init": true
         },
         {
@@ -1186,7 +1101,6 @@
               "end_lineno": 15,
               "end_col": 13
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(ok)",
@@ -1198,7 +1112,6 @@
                 "end_lineno": 15,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -1213,31 +1126,18 @@
                   "end_lineno": 15,
                   "end_col": 12
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ok",
                 "id": "ok"
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -1259,7 +1159,6 @@
           "end_lineno": 19,
           "end_col": 14
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "run_case()",
@@ -1271,7 +1170,6 @@
             "end_lineno": 19,
             "end_col": 12
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_case",
@@ -1284,9 +1182,7 @@
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.std",
@@ -1298,7 +1194,6 @@
           "source_module_id": "pytra.std",
           "source_export_name": "glob",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std.glob",
           "runtime_group": "std",
           "resolved_binding_kind": "module"
         },
@@ -1312,7 +1207,6 @@
           "source_module_id": "pytra.std",
           "source_export_name": "os",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std.os",
           "runtime_group": "std",
           "resolved_binding_kind": "module"
         },
@@ -1325,7 +1219,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         },
         {
@@ -1337,7 +1230,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.sequence",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.sequence",
           "runtime_group": "built_in"
         }
       ],

@@ -44,7 +44,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "bool",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -64,15 +63,10 @@
               "end_lineno": 6,
               "end_col": 5
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "x",
-            "id": "x",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "x"
           },
           "annotation": "str",
           "value": {
@@ -83,14 +77,12 @@
               "end_lineno": 6,
               "end_col": 15
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\"\"",
             "value": ""
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -116,15 +108,10 @@
               "end_lineno": 7,
               "end_col": 5
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "y",
-            "id": "y",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "y"
           },
           "annotation": "str",
           "value": {
@@ -135,14 +122,12 @@
               "end_lineno": 7,
               "end_col": 23
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\"fallback\"",
             "value": "fallback"
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -168,15 +153,10 @@
               "end_lineno": 8,
               "end_col": 5
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "z",
-            "id": "z",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "z"
           },
           "annotation": "str",
           "value": {
@@ -187,7 +167,6 @@
               "end_lineno": 8,
               "end_col": 19
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "x or y",
@@ -201,7 +180,6 @@
                   "end_lineno": 8,
                   "end_col": 14
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "x",
@@ -215,7 +193,6 @@
                   "end_lineno": 8,
                   "end_col": 19
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "y",
@@ -224,7 +201,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -250,15 +226,10 @@
               "end_lineno": 9,
               "end_col": 5
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "p",
-            "id": "p",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "p"
           },
           "annotation": "str",
           "value": {
@@ -269,14 +240,12 @@
               "end_lineno": 9,
               "end_col": 19
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\"left\"",
             "value": "left"
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -302,15 +271,10 @@
               "end_lineno": 10,
               "end_col": 5
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "q",
-            "id": "q",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "q"
           },
           "annotation": "str",
           "value": {
@@ -321,14 +285,12 @@
               "end_lineno": 10,
               "end_col": 20
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\"right\"",
             "value": "right"
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -354,15 +316,10 @@
               "end_lineno": 11,
               "end_col": 5
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "r",
-            "id": "r",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "r"
           },
           "annotation": "str",
           "value": {
@@ -373,7 +330,6 @@
               "end_lineno": 11,
               "end_col": 20
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "p and q",
@@ -387,7 +343,6 @@
                   "end_lineno": 11,
                   "end_col": 14
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "p",
@@ -401,7 +356,6 @@
                   "end_lineno": 11,
                   "end_col": 20
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "q",
@@ -410,7 +364,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -436,15 +389,10 @@
               "end_lineno": 12,
               "end_col": 5
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "n",
-            "id": "n",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "n"
           },
           "annotation": "int64",
           "value": {
@@ -455,14 +403,12 @@
               "end_lineno": 12,
               "end_col": 14
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "0",
             "value": 0
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -488,15 +434,10 @@
               "end_lineno": 13,
               "end_col": 5
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "m",
-            "id": "m",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "m"
           },
           "annotation": "int64",
           "value": {
@@ -507,14 +448,12 @@
               "end_lineno": 13,
               "end_col": 14
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "9",
             "value": 9
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -540,15 +479,10 @@
               "end_lineno": 14,
               "end_col": 5
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "t",
-            "id": "t",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "t"
           },
           "annotation": "int64",
           "value": {
@@ -559,7 +493,6 @@
               "end_lineno": 14,
               "end_col": 19
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "n or m",
@@ -573,7 +506,6 @@
                   "end_lineno": 14,
                   "end_col": 14
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "n",
@@ -587,7 +519,6 @@
                   "end_lineno": 14,
                   "end_col": 19
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "m",
@@ -596,7 +527,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -622,21 +552,10 @@
               "end_lineno": 15,
               "end_col": 10
             },
-            "resolved_type": "list[bool]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "checks",
-            "id": "checks",
-            "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "bool"
-                }
-              ]
-            }
+            "id": "checks"
           },
           "annotation": "list[bool]",
           "value": {
@@ -647,14 +566,12 @@
               "end_lineno": 15,
               "end_col": 27
             },
-            "resolved_type": "list[unknown]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
             "elements": []
           },
           "declare": true,
-          "decl_type": "list[bool]",
           "annotation_type_expr": {
             "kind": "GenericType",
             "base": "list",
@@ -692,7 +609,6 @@
               "end_lineno": 16,
               "end_col": 65
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "checks.append(py_assert_eq(z, \"fallback\", \"or value select\"))",
@@ -704,7 +620,6 @@
                 "end_lineno": 16,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -716,7 +631,6 @@
                   "end_lineno": 16,
                   "end_col": 10
                 },
-                "resolved_type": "list[bool]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "checks",
@@ -733,7 +647,6 @@
                   "end_lineno": 16,
                   "end_col": 64
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "py_assert_eq(z, \"fallback\", \"or value select\")",
@@ -745,7 +658,6 @@
                     "end_lineno": 16,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -760,7 +672,6 @@
                       "end_lineno": 16,
                       "end_col": 32
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "z",
@@ -774,7 +685,6 @@
                       "end_lineno": 16,
                       "end_col": 44
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"fallback\"",
@@ -788,29 +698,16 @@
                       "end_lineno": 16,
                       "end_col": 63
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"or value select\"",
                     "value": "or value select"
                   }
                 ],
-                "keywords": [],
-                "resolved_runtime_call": "py_assert_eq",
-                "resolved_runtime_source": "import_symbol",
-                "runtime_module_id": "pytra.utils.assertions",
-                "runtime_symbol": "py_assert_eq",
-                "runtime_call_adapter_kind": "extern_delegate"
+                "keywords": []
               }
             ],
             "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "append",
-            "runtime_call": "list.append",
-            "runtime_module_id": "pytra.core.list",
-            "runtime_symbol": "list.append",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "stdlib.method.append",
             "runtime_owner": {
               "kind": "Name",
               "source_span": {
@@ -819,7 +716,6 @@
                 "end_lineno": 16,
                 "end_col": 10
               },
-              "resolved_type": "list[bool]",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "checks",
@@ -843,7 +739,6 @@
               "end_lineno": 17,
               "end_col": 63
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "checks.append(py_assert_eq(r, \"right\", \"and value select\"))",
@@ -855,7 +750,6 @@
                 "end_lineno": 17,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -867,7 +761,6 @@
                   "end_lineno": 17,
                   "end_col": 10
                 },
-                "resolved_type": "list[bool]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "checks",
@@ -884,7 +777,6 @@
                   "end_lineno": 17,
                   "end_col": 62
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "py_assert_eq(r, \"right\", \"and value select\")",
@@ -896,7 +788,6 @@
                     "end_lineno": 17,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -911,7 +802,6 @@
                       "end_lineno": 17,
                       "end_col": 32
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "r",
@@ -925,7 +815,6 @@
                       "end_lineno": 17,
                       "end_col": 41
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"right\"",
@@ -939,29 +828,16 @@
                       "end_lineno": 17,
                       "end_col": 61
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"and value select\"",
                     "value": "and value select"
                   }
                 ],
-                "keywords": [],
-                "resolved_runtime_call": "py_assert_eq",
-                "resolved_runtime_source": "import_symbol",
-                "runtime_module_id": "pytra.utils.assertions",
-                "runtime_symbol": "py_assert_eq",
-                "runtime_call_adapter_kind": "extern_delegate"
+                "keywords": []
               }
             ],
             "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "append",
-            "runtime_call": "list.append",
-            "runtime_module_id": "pytra.core.list",
-            "runtime_symbol": "list.append",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "stdlib.method.append",
             "runtime_owner": {
               "kind": "Name",
               "source_span": {
@@ -970,7 +846,6 @@
                 "end_lineno": 17,
                 "end_col": 10
               },
-              "resolved_type": "list[bool]",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "checks",
@@ -994,7 +869,6 @@
               "end_lineno": 18,
               "end_col": 60
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "checks.append(py_assert_eq(t, 9, \"int or value select\"))",
@@ -1006,7 +880,6 @@
                 "end_lineno": 18,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1018,7 +891,6 @@
                   "end_lineno": 18,
                   "end_col": 10
                 },
-                "resolved_type": "list[bool]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "checks",
@@ -1035,7 +907,6 @@
                   "end_lineno": 18,
                   "end_col": 59
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "py_assert_eq(t, 9, \"int or value select\")",
@@ -1047,7 +918,6 @@
                     "end_lineno": 18,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1062,7 +932,6 @@
                       "end_lineno": 18,
                       "end_col": 32
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "t",
@@ -1076,7 +945,6 @@
                       "end_lineno": 18,
                       "end_col": 35
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "9",
@@ -1090,29 +958,16 @@
                       "end_lineno": 18,
                       "end_col": 58
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"int or value select\"",
                     "value": "int or value select"
                   }
                 ],
-                "keywords": [],
-                "resolved_runtime_call": "py_assert_eq",
-                "resolved_runtime_source": "import_symbol",
-                "runtime_module_id": "pytra.utils.assertions",
-                "runtime_symbol": "py_assert_eq",
-                "runtime_call_adapter_kind": "extern_delegate"
+                "keywords": []
               }
             ],
             "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "append",
-            "runtime_call": "list.append",
-            "runtime_module_id": "pytra.core.list",
-            "runtime_symbol": "list.append",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "stdlib.method.append",
             "runtime_owner": {
               "kind": "Name",
               "source_span": {
@@ -1121,7 +976,6 @@
                 "end_lineno": 18,
                 "end_col": 10
               },
-              "resolved_type": "list[bool]",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "checks",
@@ -1145,7 +999,6 @@
               "end_lineno": 19,
               "end_col": 42
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "py_assert_all(checks, \"case42\")",
@@ -1157,7 +1010,6 @@
                 "end_lineno": 19,
                 "end_col": 24
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_all",
@@ -1172,7 +1024,6 @@
                   "end_lineno": 19,
                   "end_col": 31
                 },
-                "resolved_type": "list[bool]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "checks",
@@ -1186,29 +1037,18 @@
                   "end_lineno": 19,
                   "end_col": 41
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"case42\"",
                 "value": "case42"
               }
             ],
-            "keywords": [],
-            "resolved_runtime_call": "py_assert_all",
-            "resolved_runtime_source": "import_symbol",
-            "runtime_module_id": "pytra.utils.assertions",
-            "runtime_symbol": "py_assert_all",
-            "runtime_call_adapter_kind": "extern_delegate"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "bool"
-      },
       "leading_comments": [
         "This file contains test/implementation code for `test/fixtures/boolop_value_select.py`."
       ],
@@ -1245,7 +1085,6 @@
           "end_lineno": 23,
           "end_col": 36
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "print(run_boolop_value_select())",
@@ -1257,7 +1096,6 @@
             "end_lineno": 23,
             "end_col": 9
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -1272,7 +1110,6 @@
               "end_lineno": 23,
               "end_col": 35
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "run_boolop_value_select()",
@@ -1284,7 +1121,6 @@
                 "end_lineno": 23,
                 "end_col": 33
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_boolop_value_select",
@@ -1294,22 +1130,13 @@
             "keywords": []
           }
         ],
-        "keywords": [],
-        "lowered_kind": "BuiltinCall",
-        "builtin_name": "print",
-        "runtime_call": "py_print",
-        "runtime_module_id": "pytra.built_in.io_ops",
-        "runtime_symbol": "py_print",
-        "runtime_call_adapter_kind": "builtin",
-        "semantic_tag": "core.print"
+        "keywords": []
       }
     }
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.utils.assertions",
@@ -1321,10 +1148,8 @@
           "source_module_id": "pytra.utils.assertions",
           "source_export_name": "py_assert_all",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils.assertions",
           "runtime_group": "utils",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "py_assert_all",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.py_assert_all"
@@ -1339,10 +1164,8 @@
           "source_module_id": "pytra.utils.assertions",
           "source_export_name": "py_assert_eq",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils.assertions",
           "runtime_group": "utils",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "py_assert_eq",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
@@ -1356,7 +1179,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

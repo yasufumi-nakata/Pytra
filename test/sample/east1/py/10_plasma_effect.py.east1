@@ -78,7 +78,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -98,7 +97,6 @@
               "end_lineno": 10,
               "end_col": 5
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "w",
@@ -112,14 +110,12 @@
               "end_lineno": 10,
               "end_col": 11
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "320",
             "value": 320
           },
           "declare": true,
-          "decl_type": "int64",
           "declare_init": true
         },
         {
@@ -138,7 +134,6 @@
               "end_lineno": 11,
               "end_col": 5
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "h",
@@ -152,14 +147,12 @@
               "end_lineno": 11,
               "end_col": 11
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "240",
             "value": 240
           },
           "declare": true,
-          "decl_type": "int64",
           "declare_init": true
         },
         {
@@ -178,7 +171,6 @@
               "end_lineno": 12,
               "end_col": 12
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "frames_n",
@@ -192,14 +184,12 @@
               "end_lineno": 12,
               "end_col": 18
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "216",
             "value": 216
           },
           "declare": true,
-          "decl_type": "int64",
           "declare_init": true
         },
         {
@@ -218,7 +208,6 @@
               "end_lineno": 13,
               "end_col": 12
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out_path",
@@ -232,14 +221,12 @@
               "end_lineno": 13,
               "end_col": 48
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\"sample/out/10_plasma_effect.gif\"",
             "value": "sample/out/10_plasma_effect.gif"
           },
           "declare": true,
-          "decl_type": "str",
           "declare_init": true
         },
         {
@@ -258,7 +245,6 @@
               "end_lineno": 15,
               "end_col": 9
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "start",
@@ -272,7 +258,6 @@
               "end_lineno": 15,
               "end_col": 26
             },
-            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "perf_counter()",
@@ -284,24 +269,15 @@
                 "end_lineno": 15,
                 "end_col": 24
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "perf_counter",
               "id": "perf_counter"
             },
             "args": [],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "perf_counter",
-            "runtime_call": "perf_counter",
-            "runtime_module_id": "pytra.std.time",
-            "runtime_symbol": "perf_counter",
-            "runtime_call_adapter_kind": "extern_delegate",
-            "semantic_tag": "stdlib.fn.perf_counter"
+            "keywords": []
           },
           "declare": true,
-          "decl_type": "float64",
           "declare_init": true,
           "leading_trivia": [
             {
@@ -326,21 +302,10 @@
               "end_lineno": 16,
               "end_col": 10
             },
-            "resolved_type": "list[bytes]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "frames",
-            "id": "frames",
-            "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "bytes"
-                }
-              ]
-            }
+            "id": "frames"
           },
           "annotation": "list[bytes]",
           "value": {
@@ -351,14 +316,12 @@
               "end_lineno": 16,
               "end_col": 28
             },
-            "resolved_type": "list[unknown]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
             "elements": []
           },
           "declare": true,
-          "decl_type": "list[bytes]",
           "annotation_type_expr": {
             "kind": "GenericType",
             "base": "list",
@@ -396,7 +359,6 @@
               "end_lineno": 18,
               "end_col": 9
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "t",
@@ -411,7 +373,6 @@
               "end_lineno": 18,
               "end_col": 18
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "0",
@@ -425,7 +386,6 @@
               "end_lineno": 18,
               "end_col": 27
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "frames_n",
@@ -439,7 +399,6 @@
               "end_lineno": 18,
               "end_col": 18
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "1",
@@ -463,7 +422,6 @@
                   "end_lineno": 19,
                   "end_col": 13
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "frame",
@@ -477,7 +435,6 @@
                   "end_lineno": 19,
                   "end_col": 32
                 },
-                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "bytearray(w * h)",
@@ -489,7 +446,6 @@
                     "end_lineno": 19,
                     "end_col": 25
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "bytearray",
@@ -504,7 +460,6 @@
                       "end_lineno": 19,
                       "end_col": 31
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "w * h",
@@ -516,7 +471,6 @@
                         "end_lineno": 19,
                         "end_col": 27
                       },
-                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "w",
@@ -531,7 +485,6 @@
                         "end_lineno": 19,
                         "end_col": 31
                       },
-                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "h",
@@ -539,17 +492,9 @@
                     }
                   }
                 ],
-                "keywords": [],
-                "lowered_kind": "BuiltinCall",
-                "builtin_name": "bytearray",
-                "runtime_call": "bytearray_ctor",
-                "runtime_module_id": "pytra.core.py_runtime",
-                "runtime_symbol": "bytearray",
-                "runtime_call_adapter_kind": "builtin",
-                "semantic_tag": "ctor.bytearray"
+                "keywords": []
               },
               "declare": true,
-              "decl_type": "bytearray",
               "declare_init": true
             },
             {
@@ -568,7 +513,6 @@
                   "end_lineno": 20,
                   "end_col": 13
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "y",
@@ -583,7 +527,6 @@
                   "end_lineno": 20,
                   "end_col": 22
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "0",
@@ -597,7 +540,6 @@
                   "end_lineno": 20,
                   "end_col": 24
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "h",
@@ -611,7 +553,6 @@
                   "end_lineno": 20,
                   "end_col": 22
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "1",
@@ -635,7 +576,6 @@
                       "end_lineno": 21,
                       "end_col": 20
                     },
-                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "row_base",
@@ -649,7 +589,6 @@
                       "end_lineno": 21,
                       "end_col": 28
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "y * w",
@@ -661,7 +600,6 @@
                         "end_lineno": 21,
                         "end_col": 24
                       },
-                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "y",
@@ -676,7 +614,6 @@
                         "end_lineno": 21,
                         "end_col": 28
                       },
-                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "w",
@@ -684,7 +621,6 @@
                     }
                   },
                   "declare": true,
-                  "decl_type": "int64",
                   "declare_init": true
                 },
                 {
@@ -703,7 +639,6 @@
                       "end_lineno": 22,
                       "end_col": 17
                     },
-                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "x",
@@ -718,7 +653,6 @@
                       "end_lineno": 22,
                       "end_col": 26
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "0",
@@ -732,7 +666,6 @@
                       "end_lineno": 22,
                       "end_col": 28
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "w",
@@ -746,7 +679,6 @@
                       "end_lineno": 22,
                       "end_col": 26
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "1",
@@ -770,7 +702,6 @@
                           "end_lineno": 23,
                           "end_col": 18
                         },
-                        "resolved_type": "unknown",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "dx",
@@ -784,7 +715,6 @@
                           "end_lineno": 23,
                           "end_col": 28
                         },
-                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "x - 160",
@@ -796,7 +726,6 @@
                             "end_lineno": 23,
                             "end_col": 22
                           },
-                          "resolved_type": "int64",
                           "casts": [],
                           "borrow_kind": "readonly_ref",
                           "repr": "x",
@@ -811,7 +740,6 @@
                             "end_lineno": 23,
                             "end_col": 28
                           },
-                          "resolved_type": "int64",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "160",
@@ -819,7 +747,6 @@
                         }
                       },
                       "declare": true,
-                      "decl_type": "int64",
                       "declare_init": true
                     },
                     {
@@ -838,7 +765,6 @@
                           "end_lineno": 24,
                           "end_col": 18
                         },
-                        "resolved_type": "unknown",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "dy",
@@ -852,7 +778,6 @@
                           "end_lineno": 24,
                           "end_col": 28
                         },
-                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "y - 120",
@@ -864,7 +789,6 @@
                             "end_lineno": 24,
                             "end_col": 22
                           },
-                          "resolved_type": "int64",
                           "casts": [],
                           "borrow_kind": "readonly_ref",
                           "repr": "y",
@@ -879,7 +803,6 @@
                             "end_lineno": 24,
                             "end_col": 28
                           },
-                          "resolved_type": "int64",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "120",
@@ -887,7 +810,6 @@
                         }
                       },
                       "declare": true,
-                      "decl_type": "int64",
                       "declare_init": true
                     },
                     {
@@ -906,7 +828,6 @@
                           "end_lineno": 25,
                           "end_col": 17
                         },
-                        "resolved_type": "unknown",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "v",
@@ -920,7 +841,6 @@
                           "end_lineno": 25,
                           "end_col": 184
                         },
-                        "resolved_type": "float64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "( math.sin((x + t * 2.0) * 0.045) + math.sin((y - t * 1.2) * 0.05) + math.sin((x + y + t * 1.7) * 0.03) + math.sin(math.sqrt(dx * dx + dy * dy) * 0.07 - t * 0.18) )",
@@ -932,7 +852,6 @@
                             "end_lineno": 25,
                             "end_col": 123
                           },
-                          "resolved_type": "float64",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "math.sin((x + t * 2.0) * 0.045) + math.sin((y - t * 1.2) * 0.05) + math.sin((x + y + t * 1.7) * 0.03)",
@@ -944,7 +863,6 @@
                               "end_lineno": 25,
                               "end_col": 86
                             },
-                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "math.sin((x + t * 2.0) * 0.045) + math.sin((y - t * 1.2) * 0.05)",
@@ -956,7 +874,6 @@
                                 "end_lineno": 25,
                                 "end_col": 53
                               },
-                              "resolved_type": "float64",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "math.sin((x + t * 2.0) * 0.045)",
@@ -968,7 +885,6 @@
                                   "end_lineno": 25,
                                   "end_col": 30
                                 },
-                                "resolved_type": "unknown",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "math.sin",
@@ -980,7 +896,6 @@
                                     "end_lineno": 25,
                                     "end_col": 26
                                   },
-                                  "resolved_type": "unknown",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "math",
@@ -997,7 +912,6 @@
                                     "end_lineno": 25,
                                     "end_col": 52
                                   },
-                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "(x + t * 2.0) * 0.045",
@@ -1009,15 +923,7 @@
                                       "end_lineno": 25,
                                       "end_col": 44
                                     },
-                                    "resolved_type": "float64",
-                                    "casts": [
-                                      {
-                                        "on": "left",
-                                        "from": "int64",
-                                        "to": "float64",
-                                        "reason": "numeric_promotion"
-                                      }
-                                    ],
+                                    "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "(x + t * 2.0)",
                                     "left": {
@@ -1028,7 +934,6 @@
                                         "end_lineno": 25,
                                         "end_col": 33
                                       },
-                                      "resolved_type": "int64",
                                       "casts": [],
                                       "borrow_kind": "readonly_ref",
                                       "repr": "x",
@@ -1043,15 +948,7 @@
                                         "end_lineno": 25,
                                         "end_col": 43
                                       },
-                                      "resolved_type": "float64",
-                                      "casts": [
-                                        {
-                                          "on": "left",
-                                          "from": "int64",
-                                          "to": "float64",
-                                          "reason": "numeric_promotion"
-                                        }
-                                      ],
+                                      "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "t * 2.0",
                                       "left": {
@@ -1062,7 +959,6 @@
                                           "end_lineno": 25,
                                           "end_col": 37
                                         },
-                                        "resolved_type": "int64",
                                         "casts": [],
                                         "borrow_kind": "readonly_ref",
                                         "repr": "t",
@@ -1077,7 +973,6 @@
                                           "end_lineno": 25,
                                           "end_col": 43
                                         },
-                                        "resolved_type": "float64",
                                         "casts": [],
                                         "borrow_kind": "value",
                                         "repr": "2.0",
@@ -1094,7 +989,6 @@
                                       "end_lineno": 25,
                                       "end_col": 52
                                     },
-                                    "resolved_type": "float64",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "0.045",
@@ -1102,13 +996,7 @@
                                   }
                                 }
                               ],
-                              "keywords": [],
-                              "resolved_runtime_call": "math.sin",
-                              "resolved_runtime_source": "module_attr",
-                              "runtime_module_id": "pytra.std.math",
-                              "runtime_symbol": "sin",
-                              "runtime_call_adapter_kind": "math.float_args",
-                              "semantic_tag": "stdlib.method.sin"
+                              "keywords": []
                             },
                             "op": "Add",
                             "right": {
@@ -1119,7 +1007,6 @@
                                 "end_lineno": 25,
                                 "end_col": 86
                               },
-                              "resolved_type": "float64",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "math.sin((y - t * 1.2) * 0.05)",
@@ -1131,7 +1018,6 @@
                                   "end_lineno": 25,
                                   "end_col": 64
                                 },
-                                "resolved_type": "unknown",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "math.sin",
@@ -1143,7 +1029,6 @@
                                     "end_lineno": 25,
                                     "end_col": 60
                                   },
-                                  "resolved_type": "unknown",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "math",
@@ -1160,7 +1045,6 @@
                                     "end_lineno": 25,
                                     "end_col": 85
                                   },
-                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "(y - t * 1.2) * 0.05",
@@ -1172,15 +1056,7 @@
                                       "end_lineno": 25,
                                       "end_col": 78
                                     },
-                                    "resolved_type": "float64",
-                                    "casts": [
-                                      {
-                                        "on": "left",
-                                        "from": "int64",
-                                        "to": "float64",
-                                        "reason": "numeric_promotion"
-                                      }
-                                    ],
+                                    "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "(y - t * 1.2)",
                                     "left": {
@@ -1191,7 +1067,6 @@
                                         "end_lineno": 25,
                                         "end_col": 67
                                       },
-                                      "resolved_type": "int64",
                                       "casts": [],
                                       "borrow_kind": "readonly_ref",
                                       "repr": "y",
@@ -1206,15 +1081,7 @@
                                         "end_lineno": 25,
                                         "end_col": 77
                                       },
-                                      "resolved_type": "float64",
-                                      "casts": [
-                                        {
-                                          "on": "left",
-                                          "from": "int64",
-                                          "to": "float64",
-                                          "reason": "numeric_promotion"
-                                        }
-                                      ],
+                                      "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "t * 1.2",
                                       "left": {
@@ -1225,7 +1092,6 @@
                                           "end_lineno": 25,
                                           "end_col": 71
                                         },
-                                        "resolved_type": "int64",
                                         "casts": [],
                                         "borrow_kind": "readonly_ref",
                                         "repr": "t",
@@ -1240,7 +1106,6 @@
                                           "end_lineno": 25,
                                           "end_col": 77
                                         },
-                                        "resolved_type": "float64",
                                         "casts": [],
                                         "borrow_kind": "value",
                                         "repr": "1.2",
@@ -1257,7 +1122,6 @@
                                       "end_lineno": 25,
                                       "end_col": 85
                                     },
-                                    "resolved_type": "float64",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "0.05",
@@ -1265,13 +1129,7 @@
                                   }
                                 }
                               ],
-                              "keywords": [],
-                              "resolved_runtime_call": "math.sin",
-                              "resolved_runtime_source": "module_attr",
-                              "runtime_module_id": "pytra.std.math",
-                              "runtime_symbol": "sin",
-                              "runtime_call_adapter_kind": "math.float_args",
-                              "semantic_tag": "stdlib.method.sin"
+                              "keywords": []
                             }
                           },
                           "op": "Add",
@@ -1283,7 +1141,6 @@
                               "end_lineno": 25,
                               "end_col": 123
                             },
-                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "math.sin((x + y + t * 1.7) * 0.03)",
@@ -1295,7 +1152,6 @@
                                 "end_lineno": 25,
                                 "end_col": 97
                               },
-                              "resolved_type": "unknown",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "math.sin",
@@ -1307,7 +1163,6 @@
                                   "end_lineno": 25,
                                   "end_col": 93
                                 },
-                                "resolved_type": "unknown",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "math",
@@ -1324,7 +1179,6 @@
                                   "end_lineno": 25,
                                   "end_col": 122
                                 },
-                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "(x + y + t * 1.7) * 0.03",
@@ -1336,15 +1190,7 @@
                                     "end_lineno": 25,
                                     "end_col": 115
                                   },
-                                  "resolved_type": "float64",
-                                  "casts": [
-                                    {
-                                      "on": "left",
-                                      "from": "int64",
-                                      "to": "float64",
-                                      "reason": "numeric_promotion"
-                                    }
-                                  ],
+                                  "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "(x + y + t * 1.7)",
                                   "left": {
@@ -1355,7 +1201,6 @@
                                       "end_lineno": 25,
                                       "end_col": 104
                                     },
-                                    "resolved_type": "int64",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "x + y",
@@ -1367,7 +1212,6 @@
                                         "end_lineno": 25,
                                         "end_col": 100
                                       },
-                                      "resolved_type": "int64",
                                       "casts": [],
                                       "borrow_kind": "readonly_ref",
                                       "repr": "x",
@@ -1382,7 +1226,6 @@
                                         "end_lineno": 25,
                                         "end_col": 104
                                       },
-                                      "resolved_type": "int64",
                                       "casts": [],
                                       "borrow_kind": "readonly_ref",
                                       "repr": "y",
@@ -1398,15 +1241,7 @@
                                       "end_lineno": 25,
                                       "end_col": 114
                                     },
-                                    "resolved_type": "float64",
-                                    "casts": [
-                                      {
-                                        "on": "left",
-                                        "from": "int64",
-                                        "to": "float64",
-                                        "reason": "numeric_promotion"
-                                      }
-                                    ],
+                                    "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "t * 1.7",
                                     "left": {
@@ -1417,7 +1252,6 @@
                                         "end_lineno": 25,
                                         "end_col": 108
                                       },
-                                      "resolved_type": "int64",
                                       "casts": [],
                                       "borrow_kind": "readonly_ref",
                                       "repr": "t",
@@ -1432,7 +1266,6 @@
                                         "end_lineno": 25,
                                         "end_col": 114
                                       },
-                                      "resolved_type": "float64",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "1.7",
@@ -1449,7 +1282,6 @@
                                     "end_lineno": 25,
                                     "end_col": 122
                                   },
-                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "0.03",
@@ -1457,13 +1289,7 @@
                                 }
                               }
                             ],
-                            "keywords": [],
-                            "resolved_runtime_call": "math.sin",
-                            "resolved_runtime_source": "module_attr",
-                            "runtime_module_id": "pytra.std.math",
-                            "runtime_symbol": "sin",
-                            "runtime_call_adapter_kind": "math.float_args",
-                            "semantic_tag": "stdlib.method.sin"
+                            "keywords": []
                           }
                         },
                         "op": "Add",
@@ -1475,7 +1301,6 @@
                             "end_lineno": 25,
                             "end_col": 182
                           },
-                          "resolved_type": "float64",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "math.sin(math.sqrt(dx * dx + dy * dy) * 0.07 - t * 0.18)",
@@ -1487,7 +1312,6 @@
                               "end_lineno": 25,
                               "end_col": 134
                             },
-                            "resolved_type": "unknown",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "math.sin",
@@ -1499,7 +1323,6 @@
                                 "end_lineno": 25,
                                 "end_col": 130
                               },
-                              "resolved_type": "unknown",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "math",
@@ -1516,7 +1339,6 @@
                                 "end_lineno": 25,
                                 "end_col": 181
                               },
-                              "resolved_type": "float64",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "math.sqrt(dx * dx + dy * dy) * 0.07 - t * 0.18",
@@ -1528,7 +1350,6 @@
                                   "end_lineno": 25,
                                   "end_col": 170
                                 },
-                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "math.sqrt(dx * dx + dy * dy) * 0.07",
@@ -1540,7 +1361,6 @@
                                     "end_lineno": 25,
                                     "end_col": 163
                                   },
-                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "math.sqrt(dx * dx + dy * dy)",
@@ -1552,7 +1372,6 @@
                                       "end_lineno": 25,
                                       "end_col": 144
                                     },
-                                    "resolved_type": "unknown",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "math.sqrt",
@@ -1564,7 +1383,6 @@
                                         "end_lineno": 25,
                                         "end_col": 139
                                       },
-                                      "resolved_type": "unknown",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "math",
@@ -1581,7 +1399,6 @@
                                         "end_lineno": 25,
                                         "end_col": 162
                                       },
-                                      "resolved_type": "int64",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "dx * dx + dy * dy",
@@ -1593,7 +1410,6 @@
                                           "end_lineno": 25,
                                           "end_col": 152
                                         },
-                                        "resolved_type": "int64",
                                         "casts": [],
                                         "borrow_kind": "value",
                                         "repr": "dx * dx",
@@ -1605,7 +1421,6 @@
                                             "end_lineno": 25,
                                             "end_col": 147
                                           },
-                                          "resolved_type": "int64",
                                           "casts": [],
                                           "borrow_kind": "readonly_ref",
                                           "repr": "dx",
@@ -1620,7 +1435,6 @@
                                             "end_lineno": 25,
                                             "end_col": 152
                                           },
-                                          "resolved_type": "int64",
                                           "casts": [],
                                           "borrow_kind": "readonly_ref",
                                           "repr": "dx",
@@ -1636,7 +1450,6 @@
                                           "end_lineno": 25,
                                           "end_col": 162
                                         },
-                                        "resolved_type": "int64",
                                         "casts": [],
                                         "borrow_kind": "value",
                                         "repr": "dy * dy",
@@ -1648,7 +1461,6 @@
                                             "end_lineno": 25,
                                             "end_col": 157
                                           },
-                                          "resolved_type": "int64",
                                           "casts": [],
                                           "borrow_kind": "readonly_ref",
                                           "repr": "dy",
@@ -1663,7 +1475,6 @@
                                             "end_lineno": 25,
                                             "end_col": 162
                                           },
-                                          "resolved_type": "int64",
                                           "casts": [],
                                           "borrow_kind": "readonly_ref",
                                           "repr": "dy",
@@ -1672,13 +1483,7 @@
                                       }
                                     }
                                   ],
-                                  "keywords": [],
-                                  "resolved_runtime_call": "math.sqrt",
-                                  "resolved_runtime_source": "module_attr",
-                                  "runtime_module_id": "pytra.std.math",
-                                  "runtime_symbol": "sqrt",
-                                  "runtime_call_adapter_kind": "math.float_args",
-                                  "semantic_tag": "stdlib.method.sqrt"
+                                  "keywords": []
                                 },
                                 "op": "Mult",
                                 "right": {
@@ -1689,7 +1494,6 @@
                                     "end_lineno": 25,
                                     "end_col": 170
                                   },
-                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "0.07",
@@ -1705,15 +1509,7 @@
                                   "end_lineno": 25,
                                   "end_col": 181
                                 },
-                                "resolved_type": "float64",
-                                "casts": [
-                                  {
-                                    "on": "left",
-                                    "from": "int64",
-                                    "to": "float64",
-                                    "reason": "numeric_promotion"
-                                  }
-                                ],
+                                "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "t * 0.18",
                                 "left": {
@@ -1724,7 +1520,6 @@
                                     "end_lineno": 25,
                                     "end_col": 174
                                   },
-                                  "resolved_type": "int64",
                                   "casts": [],
                                   "borrow_kind": "readonly_ref",
                                   "repr": "t",
@@ -1739,7 +1534,6 @@
                                     "end_lineno": 25,
                                     "end_col": 181
                                   },
-                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "0.18",
@@ -1748,17 +1542,10 @@
                               }
                             }
                           ],
-                          "keywords": [],
-                          "resolved_runtime_call": "math.sin",
-                          "resolved_runtime_source": "module_attr",
-                          "runtime_module_id": "pytra.std.math",
-                          "runtime_symbol": "sin",
-                          "runtime_call_adapter_kind": "math.float_args",
-                          "semantic_tag": "stdlib.method.sin"
+                          "keywords": []
                         }
                       },
                       "declare": true,
-                      "decl_type": "float64",
                       "declare_init": true
                     },
                     {
@@ -1777,7 +1564,6 @@
                           "end_lineno": 31,
                           "end_col": 17
                         },
-                        "resolved_type": "unknown",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "c",
@@ -1791,7 +1577,6 @@
                           "end_lineno": 31,
                           "end_col": 50
                         },
-                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "int((v + 4.0) * (255.0 / 8.0))",
@@ -1803,7 +1588,6 @@
                             "end_lineno": 31,
                             "end_col": 23
                           },
-                          "resolved_type": "unknown",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "int",
@@ -1818,7 +1602,6 @@
                               "end_lineno": 31,
                               "end_col": 49
                             },
-                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "(v + 4.0) * (255.0 / 8.0)",
@@ -1830,7 +1613,6 @@
                                 "end_lineno": 31,
                                 "end_col": 33
                               },
-                              "resolved_type": "float64",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "(v + 4.0)",
@@ -1842,7 +1624,6 @@
                                   "end_lineno": 31,
                                   "end_col": 26
                                 },
-                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "readonly_ref",
                                 "repr": "v",
@@ -1857,7 +1638,6 @@
                                   "end_lineno": 31,
                                   "end_col": 32
                                 },
-                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "4.0",
@@ -1873,7 +1653,6 @@
                                 "end_lineno": 31,
                                 "end_col": 49
                               },
-                              "resolved_type": "float64",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "(255.0 / 8.0)",
@@ -1885,7 +1664,6 @@
                                   "end_lineno": 31,
                                   "end_col": 42
                                 },
-                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "255.0",
@@ -1900,7 +1678,6 @@
                                   "end_lineno": 31,
                                   "end_col": 48
                                 },
-                                "resolved_type": "float64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "8.0",
@@ -1909,17 +1686,9 @@
                             }
                           }
                         ],
-                        "keywords": [],
-                        "lowered_kind": "BuiltinCall",
-                        "builtin_name": "int",
-                        "runtime_call": "static_cast",
-                        "runtime_module_id": "pytra.core.py_runtime",
-                        "runtime_symbol": "int",
-                        "runtime_call_adapter_kind": "builtin",
-                        "semantic_tag": "cast.int"
+                        "keywords": []
                       },
                       "declare": true,
-                      "decl_type": "int64",
                       "declare_init": true
                     },
                     {
@@ -1938,7 +1707,6 @@
                           "end_lineno": 32,
                           "end_col": 24
                         },
-                        "resolved_type": "bool",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "c < 0",
@@ -1950,7 +1718,6 @@
                             "end_lineno": 32,
                             "end_col": 20
                           },
-                          "resolved_type": "int64",
                           "casts": [],
                           "borrow_kind": "readonly_ref",
                           "repr": "c",
@@ -1968,7 +1735,6 @@
                               "end_lineno": 32,
                               "end_col": 24
                             },
-                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "0",
@@ -1993,7 +1759,6 @@
                               "end_lineno": 33,
                               "end_col": 21
                             },
-                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "readonly_ref",
                             "repr": "c",
@@ -2007,14 +1772,12 @@
                               "end_lineno": 33,
                               "end_col": 25
                             },
-                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "0",
                             "value": 0
                           },
                           "declare": true,
-                          "decl_type": "int64",
                           "declare_init": true
                         }
                       ],
@@ -2036,7 +1799,6 @@
                           "end_lineno": 34,
                           "end_col": 26
                         },
-                        "resolved_type": "bool",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "c > 255",
@@ -2048,7 +1810,6 @@
                             "end_lineno": 34,
                             "end_col": 20
                           },
-                          "resolved_type": "int64",
                           "casts": [],
                           "borrow_kind": "readonly_ref",
                           "repr": "c",
@@ -2066,7 +1827,6 @@
                               "end_lineno": 34,
                               "end_col": 26
                             },
-                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "255",
@@ -2091,7 +1851,6 @@
                               "end_lineno": 35,
                               "end_col": 21
                             },
-                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "readonly_ref",
                             "repr": "c",
@@ -2105,14 +1864,12 @@
                               "end_lineno": 35,
                               "end_col": 27
                             },
-                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "255",
                             "value": 255
                           },
                           "declare": true,
-                          "decl_type": "int64",
                           "declare_init": true
                         }
                       ],
@@ -2134,7 +1891,6 @@
                           "end_lineno": 36,
                           "end_col": 35
                         },
-                        "resolved_type": "uint8",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "frame[row_base + x]",
@@ -2146,7 +1902,6 @@
                             "end_lineno": 36,
                             "end_col": 21
                           },
-                          "resolved_type": "bytearray",
                           "casts": [],
                           "borrow_kind": "readonly_ref",
                           "repr": "frame",
@@ -2160,7 +1915,6 @@
                             "end_lineno": 36,
                             "end_col": 34
                           },
-                          "resolved_type": "int64",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "row_base + x",
@@ -2172,7 +1926,6 @@
                               "end_lineno": 36,
                               "end_col": 30
                             },
-                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "readonly_ref",
                             "repr": "row_base",
@@ -2187,7 +1940,6 @@
                               "end_lineno": 36,
                               "end_col": 34
                             },
-                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "readonly_ref",
                             "repr": "x",
@@ -2203,14 +1955,12 @@
                           "end_lineno": 36,
                           "end_col": 39
                         },
-                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "readonly_ref",
                         "repr": "c",
                         "id": "c"
                       },
                       "declare": true,
-                      "decl_type": "int64",
                       "declare_init": true
                     }
                   ],
@@ -2235,7 +1985,6 @@
                   "end_lineno": 37,
                   "end_col": 35
                 },
-                "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "frames.append(bytes(frame))",
@@ -2247,7 +1996,6 @@
                     "end_lineno": 37,
                     "end_col": 21
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "frames.append",
@@ -2259,7 +2007,6 @@
                       "end_lineno": 37,
                       "end_col": 14
                     },
-                    "resolved_type": "list[bytes]",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "frames",
@@ -2276,7 +2023,6 @@
                       "end_lineno": 37,
                       "end_col": 34
                     },
-                    "resolved_type": "bytes",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "bytes(frame)",
@@ -2288,7 +2034,6 @@
                         "end_lineno": 37,
                         "end_col": 27
                       },
-                      "resolved_type": "unknown",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "bytes",
@@ -2303,31 +2048,16 @@
                           "end_lineno": 37,
                           "end_col": 33
                         },
-                        "resolved_type": "bytearray",
                         "casts": [],
                         "borrow_kind": "readonly_ref",
                         "repr": "frame",
                         "id": "frame"
                       }
                     ],
-                    "keywords": [],
-                    "lowered_kind": "BuiltinCall",
-                    "builtin_name": "bytes",
-                    "runtime_call": "bytes_ctor",
-                    "runtime_module_id": "pytra.core.py_runtime",
-                    "runtime_symbol": "bytes",
-                    "runtime_call_adapter_kind": "builtin",
-                    "semantic_tag": "ctor.bytes"
+                    "keywords": []
                   }
                 ],
                 "keywords": [],
-                "lowered_kind": "BuiltinCall",
-                "builtin_name": "append",
-                "runtime_call": "list.append",
-                "runtime_module_id": "pytra.core.list",
-                "runtime_symbol": "list.append",
-                "runtime_call_adapter_kind": "builtin",
-                "semantic_tag": "stdlib.method.append",
                 "runtime_owner": {
                   "kind": "Name",
                   "source_span": {
@@ -2336,7 +2066,6 @@
                     "end_lineno": 37,
                     "end_col": 14
                   },
-                  "resolved_type": "list[bytes]",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "frames",
@@ -2369,7 +2098,6 @@
               "end_lineno": 39,
               "end_col": 77
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "save_gif(out_path, w, h, frames, grayscale_palette(), delay_cs=3, loop=0)",
@@ -2381,7 +2109,6 @@
                 "end_lineno": 39,
                 "end_col": 12
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "save_gif",
@@ -2396,7 +2123,6 @@
                   "end_lineno": 39,
                   "end_col": 21
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "out_path",
@@ -2410,7 +2136,6 @@
                   "end_lineno": 39,
                   "end_col": 24
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "w",
@@ -2424,7 +2149,6 @@
                   "end_lineno": 39,
                   "end_col": 27
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "h",
@@ -2438,7 +2162,6 @@
                   "end_lineno": 39,
                   "end_col": 35
                 },
-                "resolved_type": "list[bytes]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "frames",
@@ -2452,7 +2175,6 @@
                   "end_lineno": 39,
                   "end_col": 56
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "grayscale_palette()",
@@ -2464,19 +2186,13 @@
                     "end_lineno": 39,
                     "end_col": 54
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "grayscale_palette",
                   "id": "grayscale_palette"
                 },
                 "args": [],
-                "keywords": [],
-                "resolved_runtime_call": "grayscale_palette",
-                "resolved_runtime_source": "import_symbol",
-                "runtime_module_id": "pytra.utils.gif",
-                "runtime_symbol": "grayscale_palette",
-                "runtime_call_adapter_kind": "extern_delegate"
+                "keywords": []
               }
             ],
             "keywords": [
@@ -2490,7 +2206,6 @@
                     "end_lineno": 39,
                     "end_col": 68
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "3",
@@ -2507,19 +2222,13 @@
                     "end_lineno": 39,
                     "end_col": 76
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "0",
                   "value": 0
                 }
               }
-            ],
-            "resolved_runtime_call": "save_gif",
-            "resolved_runtime_source": "import_symbol",
-            "runtime_module_id": "pytra.utils.gif",
-            "runtime_symbol": "save_gif",
-            "runtime_call_adapter_kind": "image.save_gif.keyword_defaults"
+            ]
           }
         },
         {
@@ -2538,7 +2247,6 @@
               "end_lineno": 40,
               "end_col": 11
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "elapsed",
@@ -2552,7 +2260,6 @@
               "end_lineno": 40,
               "end_col": 36
             },
-            "resolved_type": "float64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "perf_counter() - start",
@@ -2564,7 +2271,6 @@
                 "end_lineno": 40,
                 "end_col": 28
               },
-              "resolved_type": "float64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "perf_counter()",
@@ -2576,21 +2282,13 @@
                   "end_lineno": 40,
                   "end_col": 26
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "perf_counter",
                 "id": "perf_counter"
               },
               "args": [],
-              "keywords": [],
-              "lowered_kind": "BuiltinCall",
-              "builtin_name": "perf_counter",
-              "runtime_call": "perf_counter",
-              "runtime_module_id": "pytra.std.time",
-              "runtime_symbol": "perf_counter",
-              "runtime_call_adapter_kind": "extern_delegate",
-              "semantic_tag": "stdlib.fn.perf_counter"
+              "keywords": []
             },
             "op": "Sub",
             "right": {
@@ -2601,7 +2299,6 @@
                 "end_lineno": 40,
                 "end_col": 36
               },
-              "resolved_type": "float64",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "start",
@@ -2609,7 +2306,6 @@
             }
           },
           "declare": true,
-          "decl_type": "float64",
           "declare_init": true
         },
         {
@@ -2628,7 +2324,6 @@
               "end_lineno": 41,
               "end_col": 30
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(\"output:\", out_path)",
@@ -2640,7 +2335,6 @@
                 "end_lineno": 41,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -2655,7 +2349,6 @@
                   "end_lineno": 41,
                   "end_col": 19
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"output:\"",
@@ -2669,21 +2362,13 @@
                   "end_lineno": 41,
                   "end_col": 29
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "out_path",
                 "id": "out_path"
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         },
         {
@@ -2702,7 +2387,6 @@
               "end_lineno": 42,
               "end_col": 30
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(\"frames:\", frames_n)",
@@ -2714,7 +2398,6 @@
                 "end_lineno": 42,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -2729,7 +2412,6 @@
                   "end_lineno": 42,
                   "end_col": 19
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"frames:\"",
@@ -2743,21 +2425,13 @@
                   "end_lineno": 42,
                   "end_col": 29
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "frames_n",
                 "id": "frames_n"
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         },
         {
@@ -2776,7 +2450,6 @@
               "end_lineno": 43,
               "end_col": 34
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(\"elapsed_sec:\", elapsed)",
@@ -2788,7 +2461,6 @@
                 "end_lineno": 43,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -2803,7 +2475,6 @@
                   "end_lineno": 43,
                   "end_col": 24
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"elapsed_sec:\"",
@@ -2817,31 +2488,18 @@
                   "end_lineno": 43,
                   "end_col": 33
                 },
-                "resolved_type": "float64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "elapsed",
                 "id": "elapsed"
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [
         "10: Sample that outputs a plasma effect as a GIF."
       ],
@@ -2874,7 +2532,6 @@
           "end_lineno": 47,
           "end_col": 26
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "run_10_plasma_effect()",
@@ -2886,7 +2543,6 @@
             "end_lineno": 47,
             "end_col": 24
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_10_plasma_effect",
@@ -2899,9 +2555,7 @@
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.std",
@@ -2913,7 +2567,6 @@
           "source_module_id": "pytra.std",
           "source_export_name": "math",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std.math",
           "runtime_group": "std",
           "resolved_binding_kind": "module"
         },
@@ -2927,10 +2580,8 @@
           "source_module_id": "pytra.std.time",
           "source_export_name": "perf_counter",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std.time",
           "runtime_group": "std",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "perf_counter",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.perf_counter"
@@ -2945,10 +2596,8 @@
           "source_module_id": "pytra.utils.gif",
           "source_export_name": "grayscale_palette",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils.gif",
           "runtime_group": "utils",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "grayscale_palette",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.grayscale_palette"
@@ -2963,14 +2612,11 @@
           "source_module_id": "pytra.utils.gif",
           "source_export_name": "save_gif",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils.gif",
           "runtime_group": "utils",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "save_gif",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
-          "runtime_semantic_tag": "stdlib.fn.save_gif",
-          "runtime_call_adapter_kind": "image.save_gif.keyword_defaults"
+          "runtime_semantic_tag": "stdlib.fn.save_gif"
         },
         {
           "module_id": "pytra.built_in.io_ops",
@@ -2981,7 +2627,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         },
         {
@@ -2993,7 +2638,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.scalar_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.scalar_ops",
           "runtime_group": "built_in"
         }
       ],

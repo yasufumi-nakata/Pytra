@@ -23,7 +23,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -43,25 +42,10 @@
               "end_lineno": 2,
               "end_col": 5
             },
-            "resolved_type": "dict[str,int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d",
-            "id": "d",
-            "type_expr": {
-              "kind": "GenericType",
-              "base": "dict",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "str"
-                },
-                {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
-              ]
-            }
+            "id": "d"
           },
           "annotation": "dict[str,int64]",
           "value": {
@@ -72,7 +56,6 @@
               "end_lineno": 2,
               "end_col": 40
             },
-            "resolved_type": "dict[str,int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "{\"a\": 1, \"b\": 2}",
@@ -86,7 +69,6 @@
                     "end_lineno": 2,
                     "end_col": 28
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "\"a\"",
@@ -100,7 +82,6 @@
                     "end_lineno": 2,
                     "end_col": 31
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "1",
@@ -116,7 +97,6 @@
                     "end_lineno": 2,
                     "end_col": 36
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "\"b\"",
@@ -130,7 +110,6 @@
                     "end_lineno": 2,
                     "end_col": 39
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "2",
@@ -140,7 +119,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "dict[str,int64]",
           "annotation_type_expr": {
             "kind": "GenericType",
             "base": "dict",
@@ -186,15 +164,10 @@
               "end_lineno": 4,
               "end_col": 18
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok_get_default",
-            "id": "ok_get_default",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "bool"
-            }
+            "id": "ok_get_default"
           },
           "annotation": "bool",
           "value": {
@@ -205,7 +178,6 @@
               "end_lineno": 4,
               "end_col": 47
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d.get(\"x\", 99) == 99",
@@ -217,7 +189,6 @@
                 "end_lineno": 4,
                 "end_col": 41
               },
-              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "d.get(\"x\", 99)",
@@ -229,7 +200,6 @@
                   "end_lineno": 4,
                   "end_col": 32
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "d.get",
@@ -241,7 +211,6 @@
                     "end_lineno": 4,
                     "end_col": 28
                   },
-                  "resolved_type": "dict[str,int64]",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "d",
@@ -258,7 +227,6 @@
                     "end_lineno": 4,
                     "end_col": 36
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "\"x\"",
@@ -272,7 +240,6 @@
                     "end_lineno": 4,
                     "end_col": 40
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "99",
@@ -280,13 +247,6 @@
                 }
               ],
               "keywords": [],
-              "semantic_tag": "container.dict.get",
-              "lowered_kind": "BuiltinCall",
-              "builtin_name": "get",
-              "runtime_call": "dict.get",
-              "runtime_module_id": "pytra.core.dict",
-              "runtime_symbol": "dict.get",
-              "runtime_call_adapter_kind": "builtin",
               "runtime_owner": {
                 "kind": "Name",
                 "source_span": {
@@ -295,13 +255,11 @@
                   "end_lineno": 4,
                   "end_col": 28
                 },
-                "resolved_type": "dict[str,int64]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "d",
                 "id": "d"
-              },
-              "yields_dynamic": true
+              }
             },
             "ops": [
               "Eq"
@@ -315,7 +273,6 @@
                   "end_lineno": 4,
                   "end_col": 47
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "99",
@@ -324,7 +281,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "bool"
@@ -356,15 +312,10 @@
               "end_lineno": 5,
               "end_col": 16
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ok_get_exist",
-            "id": "ok_get_exist",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "bool"
-            }
+            "id": "ok_get_exist"
           },
           "annotation": "bool",
           "value": {
@@ -375,7 +326,6 @@
               "end_lineno": 5,
               "end_col": 43
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d.get(\"a\", 0) == 1",
@@ -387,7 +337,6 @@
                 "end_lineno": 5,
                 "end_col": 38
               },
-              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "d.get(\"a\", 0)",
@@ -399,7 +348,6 @@
                   "end_lineno": 5,
                   "end_col": 30
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "d.get",
@@ -411,7 +359,6 @@
                     "end_lineno": 5,
                     "end_col": 26
                   },
-                  "resolved_type": "dict[str,int64]",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "d",
@@ -428,7 +375,6 @@
                     "end_lineno": 5,
                     "end_col": 34
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "\"a\"",
@@ -442,7 +388,6 @@
                     "end_lineno": 5,
                     "end_col": 37
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "0",
@@ -450,13 +395,6 @@
                 }
               ],
               "keywords": [],
-              "semantic_tag": "container.dict.get",
-              "lowered_kind": "BuiltinCall",
-              "builtin_name": "get",
-              "runtime_call": "dict.get",
-              "runtime_module_id": "pytra.core.dict",
-              "runtime_symbol": "dict.get",
-              "runtime_call_adapter_kind": "builtin",
               "runtime_owner": {
                 "kind": "Name",
                 "source_span": {
@@ -465,13 +403,11 @@
                   "end_lineno": 5,
                   "end_col": 26
                 },
-                "resolved_type": "dict[str,int64]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "d",
                 "id": "d"
-              },
-              "yields_dynamic": true
+              }
             },
             "ops": [
               "Eq"
@@ -485,7 +421,6 @@
                   "end_lineno": 5,
                   "end_col": 43
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "1",
@@ -494,7 +429,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "bool"
@@ -520,21 +454,10 @@
               "end_lineno": 7,
               "end_col": 6
             },
-            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ks",
-            "id": "ks",
-            "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "str"
-                }
-              ]
-            }
+            "id": "ks"
           },
           "annotation": "list[str]",
           "value": {
@@ -545,7 +468,6 @@
               "end_lineno": 7,
               "end_col": 28
             },
-            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d.keys()",
@@ -557,7 +479,6 @@
                 "end_lineno": 7,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "d.keys",
@@ -569,7 +490,6 @@
                   "end_lineno": 7,
                   "end_col": 21
                 },
-                "resolved_type": "dict[str,int64]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "d",
@@ -579,13 +499,6 @@
             },
             "args": [],
             "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "keys",
-            "runtime_call": "dict.keys",
-            "runtime_module_id": "pytra.core.dict",
-            "runtime_symbol": "dict.keys",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "stdlib.method.keys",
             "runtime_owner": {
               "kind": "Name",
               "source_span": {
@@ -594,7 +507,6 @@
                 "end_lineno": 7,
                 "end_col": 21
               },
-              "resolved_type": "dict[str,int64]",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "d",
@@ -602,7 +514,6 @@
             }
           },
           "declare": true,
-          "decl_type": "list[str]",
           "annotation_type_expr": {
             "kind": "GenericType",
             "base": "list",
@@ -646,21 +557,10 @@
               "end_lineno": 8,
               "end_col": 6
             },
-            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "vs",
-            "id": "vs",
-            "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
-              ]
-            }
+            "id": "vs"
           },
           "annotation": "list[int64]",
           "value": {
@@ -671,7 +571,6 @@
               "end_lineno": 8,
               "end_col": 30
             },
-            "resolved_type": "list[int64]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d.values()",
@@ -683,7 +582,6 @@
                 "end_lineno": 8,
                 "end_col": 28
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "d.values",
@@ -695,7 +593,6 @@
                   "end_lineno": 8,
                   "end_col": 21
                 },
-                "resolved_type": "dict[str,int64]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "d",
@@ -705,13 +602,6 @@
             },
             "args": [],
             "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "values",
-            "runtime_call": "dict.values",
-            "runtime_module_id": "pytra.core.dict",
-            "runtime_symbol": "dict.values",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "stdlib.method.values",
             "runtime_owner": {
               "kind": "Name",
               "source_span": {
@@ -720,7 +610,6 @@
                 "end_lineno": 8,
                 "end_col": 21
               },
-              "resolved_type": "dict[str,int64]",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "d",
@@ -728,7 +617,6 @@
             }
           },
           "declare": true,
-          "decl_type": "list[int64]",
           "annotation_type_expr": {
             "kind": "GenericType",
             "base": "list",
@@ -766,15 +654,10 @@
               "end_lineno": 10,
               "end_col": 9
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "has_a",
-            "id": "has_a",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "bool"
-            }
+            "id": "has_a"
           },
           "annotation": "bool",
           "value": {
@@ -785,7 +668,6 @@
               "end_lineno": 10,
               "end_col": 27
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\"a\" in ks",
@@ -797,7 +679,6 @@
                 "end_lineno": 10,
                 "end_col": 21
               },
-              "resolved_type": "str",
               "casts": [],
               "borrow_kind": "value",
               "repr": "\"a\"",
@@ -815,7 +696,6 @@
                   "end_lineno": 10,
                   "end_col": 27
                 },
-                "resolved_type": "list[str]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ks",
@@ -824,7 +704,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "bool"
@@ -856,15 +735,10 @@
               "end_lineno": 11,
               "end_col": 9
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "has_2",
-            "id": "has_2",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "bool"
-            }
+            "id": "has_2"
           },
           "annotation": "bool",
           "value": {
@@ -875,7 +749,6 @@
               "end_lineno": 11,
               "end_col": 25
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "2 in vs",
@@ -887,7 +760,6 @@
                 "end_lineno": 11,
                 "end_col": 19
               },
-              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "2",
@@ -905,7 +777,6 @@
                   "end_lineno": 11,
                   "end_col": 25
                 },
-                "resolved_type": "list[int64]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "vs",
@@ -914,7 +785,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "bool",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "bool"
@@ -940,7 +810,6 @@
               "end_lineno": 13,
               "end_col": 62
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(ok_get_default and ok_get_exist and has_a and has_2)",
@@ -952,7 +821,6 @@
                 "end_lineno": 13,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -967,7 +835,6 @@
                   "end_lineno": 13,
                   "end_col": 61
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "ok_get_default and ok_get_exist and has_a and has_2",
@@ -981,7 +848,6 @@
                       "end_lineno": 13,
                       "end_col": 24
                     },
-                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "ok_get_default",
@@ -995,7 +861,6 @@
                       "end_lineno": 13,
                       "end_col": 41
                     },
-                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "ok_get_exist",
@@ -1009,7 +874,6 @@
                       "end_lineno": 13,
                       "end_col": 51
                     },
-                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "has_a",
@@ -1023,7 +887,6 @@
                       "end_lineno": 13,
                       "end_col": 61
                     },
-                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "has_2",
@@ -1032,14 +895,7 @@
                 ]
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           },
           "leading_trivia": [
             {
@@ -1051,11 +907,6 @@
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -1077,7 +928,6 @@
           "end_lineno": 17,
           "end_col": 14
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "run_case()",
@@ -1089,7 +939,6 @@
             "end_lineno": 17,
             "end_col": 12
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_case",
@@ -1102,9 +951,7 @@
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.built_in.io_ops",
@@ -1115,7 +962,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

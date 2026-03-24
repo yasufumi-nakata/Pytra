@@ -19,7 +19,7 @@
       "name": "twice",
       "original_name": "twice",
       "arg_types": {
-        "x": "int64"
+        "x": "int"
       },
       "arg_order": [
         "x"
@@ -28,10 +28,7 @@
       "arg_index": {
         "x": 0
       },
-      "return_type": "int64",
-      "arg_usage": {
-        "x": "readonly"
-      },
+      "return_type": "int",
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -51,7 +48,6 @@
               "end_lineno": 5,
               "end_col": 16
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "x * 2",
@@ -63,7 +59,6 @@
                 "end_lineno": 5,
                 "end_col": 12
               },
-              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "x",
@@ -78,7 +73,6 @@
                 "end_lineno": 5,
                 "end_col": 16
               },
-              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "value",
               "repr": "2",
@@ -89,16 +83,6 @@
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {
-        "x": {
-          "kind": "NamedType",
-          "name": "int64"
-        }
-      },
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "int64"
-      },
       "leading_comments": [
         "self_hosted parser signature test: untyped parameter is accepted as unknown."
       ],
@@ -135,7 +119,6 @@
           "end_lineno": 9,
           "end_col": 20
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "print(twice(21))",
@@ -147,7 +130,6 @@
             "end_lineno": 9,
             "end_col": 9
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -162,7 +144,6 @@
               "end_lineno": 9,
               "end_col": 19
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "twice(21)",
@@ -174,7 +155,6 @@
                 "end_lineno": 9,
                 "end_col": 15
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "twice",
@@ -189,7 +169,6 @@
                   "end_lineno": 9,
                   "end_col": 18
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "21",
@@ -199,22 +178,13 @@
             "keywords": []
           }
         ],
-        "keywords": [],
-        "lowered_kind": "BuiltinCall",
-        "builtin_name": "print",
-        "runtime_call": "py_print",
-        "runtime_module_id": "pytra.built_in.io_ops",
-        "runtime_symbol": "py_print",
-        "runtime_call_adapter_kind": "builtin",
-        "semantic_tag": "core.print"
+        "keywords": []
       }
     }
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.built_in.io_ops",
@@ -225,7 +195,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

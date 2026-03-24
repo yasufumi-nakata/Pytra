@@ -60,9 +60,6 @@
             "self": 0
           },
           "return_type": "str",
-          "arg_usage": {
-            "self": "readonly"
-          },
           "renamed_symbols": {},
           "docstring": null,
           "body": [
@@ -82,7 +79,6 @@
                   "end_lineno": 9,
                   "end_col": 24
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"generic\"",
@@ -159,9 +155,6 @@
             "self": 0
           },
           "return_type": "str",
-          "arg_usage": {
-            "self": "readonly"
-          },
           "renamed_symbols": {},
           "docstring": null,
           "body": [
@@ -181,7 +174,6 @@
                   "end_lineno": 14,
                   "end_col": 37
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "self.sound() + \"-bark\"",
@@ -193,7 +185,6 @@
                     "end_lineno": 14,
                     "end_col": 27
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "self.sound()",
@@ -205,7 +196,6 @@
                       "end_lineno": 14,
                       "end_col": 25
                     },
-                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "self.sound",
@@ -217,7 +207,6 @@
                         "end_lineno": 14,
                         "end_col": 19
                       },
-                      "resolved_type": "Dog",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "self",
@@ -237,7 +226,6 @@
                     "end_lineno": 14,
                     "end_col": 37
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "\"-bark\"",
@@ -268,7 +256,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -288,15 +275,10 @@
               "end_lineno": 18,
               "end_col": 5
             },
-            "resolved_type": "Dog",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d",
-            "id": "d",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "Dog"
-            }
+            "id": "d"
           },
           "annotation": "Dog",
           "value": {
@@ -307,7 +289,6 @@
               "end_lineno": 18,
               "end_col": 18
             },
-            "resolved_type": "Dog",
             "casts": [],
             "borrow_kind": "value",
             "repr": "Dog()",
@@ -319,7 +300,6 @@
                 "end_lineno": 18,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Dog",
@@ -329,7 +309,6 @@
             "keywords": []
           },
           "declare": true,
-          "decl_type": "Dog",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "Dog"
@@ -355,7 +334,6 @@
               "end_lineno": 19,
               "end_col": 19
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(d.bark())",
@@ -367,7 +345,6 @@
                 "end_lineno": 19,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -382,7 +359,6 @@
                   "end_lineno": 19,
                   "end_col": 18
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "d.bark()",
@@ -394,7 +370,6 @@
                     "end_lineno": 19,
                     "end_col": 16
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "d.bark",
@@ -406,7 +381,6 @@
                       "end_lineno": 19,
                       "end_col": 11
                     },
-                    "resolved_type": "Dog",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "d",
@@ -418,24 +392,12 @@
                 "keywords": []
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -457,7 +419,6 @@
           "end_lineno": 22,
           "end_col": 57
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "print(py_assert_stdout(['generic-bark'], _case_main))",
@@ -469,7 +430,6 @@
             "end_lineno": 22,
             "end_col": 9
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -484,7 +444,6 @@
               "end_lineno": 22,
               "end_col": 56
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "py_assert_stdout(['generic-bark'], _case_main)",
@@ -496,7 +455,6 @@
                 "end_lineno": 22,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",
@@ -511,7 +469,6 @@
                   "end_lineno": 22,
                   "end_col": 43
                 },
-                "resolved_type": "list[str]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "['generic-bark']",
@@ -524,7 +481,6 @@
                       "end_lineno": 22,
                       "end_col": 42
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "'generic-bark'",
@@ -540,37 +496,22 @@
                   "end_lineno": 22,
                   "end_col": 55
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_case_main",
                 "id": "_case_main"
               }
             ],
-            "keywords": [],
-            "resolved_runtime_call": "py_assert_stdout",
-            "resolved_runtime_source": "import_symbol",
-            "runtime_module_id": "pytra.utils.assertions",
-            "runtime_symbol": "py_assert_stdout",
-            "runtime_call_adapter_kind": "extern_delegate"
+            "keywords": []
           }
         ],
-        "keywords": [],
-        "lowered_kind": "BuiltinCall",
-        "builtin_name": "print",
-        "runtime_call": "py_print",
-        "runtime_module_id": "pytra.built_in.io_ops",
-        "runtime_symbol": "py_print",
-        "runtime_call_adapter_kind": "builtin",
-        "semantic_tag": "core.print"
+        "keywords": []
       }
     }
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.utils.assertions",
@@ -582,10 +523,8 @@
           "source_module_id": "pytra.utils.assertions",
           "source_export_name": "py_assert_stdout",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils.assertions",
           "runtime_group": "utils",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "py_assert_stdout",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
@@ -599,7 +538,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

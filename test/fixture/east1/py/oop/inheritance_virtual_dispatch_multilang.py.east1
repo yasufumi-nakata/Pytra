@@ -60,9 +60,6 @@
             "self": 0
           },
           "return_type": "str",
-          "arg_usage": {
-            "self": "readonly"
-          },
           "renamed_symbols": {},
           "docstring": null,
           "body": [
@@ -82,7 +79,6 @@
                   "end_lineno": 8,
                   "end_col": 23
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"animal\"",
@@ -145,9 +141,6 @@
             "self": 0
           },
           "return_type": "str",
-          "arg_usage": {
-            "self": "readonly"
-          },
           "renamed_symbols": {},
           "docstring": null,
           "body": [
@@ -167,7 +160,6 @@
                   "end_lineno": 13,
                   "end_col": 20
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"dog\"",
@@ -217,9 +209,6 @@
             "self": 0
           },
           "return_type": "str",
-          "arg_usage": {
-            "self": "readonly"
-          },
           "renamed_symbols": {},
           "docstring": null,
           "body": [
@@ -239,7 +228,6 @@
                   "end_lineno": 18,
                   "end_col": 40
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"loud-\" + super().speak()",
@@ -251,7 +239,6 @@
                     "end_lineno": 18,
                     "end_col": 22
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "\"loud-\"",
@@ -266,7 +253,6 @@
                     "end_lineno": 18,
                     "end_col": 40
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "super().speak()",
@@ -278,7 +264,6 @@
                       "end_lineno": 18,
                       "end_col": 38
                     },
-                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "super().speak",
@@ -290,7 +275,6 @@
                         "end_lineno": 18,
                         "end_col": 32
                       },
-                      "resolved_type": "unknown",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "super()",
@@ -302,7 +286,6 @@
                           "end_lineno": 18,
                           "end_col": 30
                         },
-                        "resolved_type": "unknown",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "super",
@@ -347,9 +330,6 @@
         "a": 0
       },
       "return_type": "str",
-      "arg_usage": {
-        "a": "readonly"
-      },
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -369,7 +349,6 @@
               "end_lineno": 22,
               "end_col": 20
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "a.speak()",
@@ -381,7 +360,6 @@
                 "end_lineno": 22,
                 "end_col": 18
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "a.speak",
@@ -393,7 +371,6 @@
                   "end_lineno": 22,
                   "end_col": 12
                 },
-                "resolved_type": "Animal",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "a",
@@ -408,16 +385,6 @@
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {
-        "a": {
-          "kind": "NamedType",
-          "name": "Animal"
-        }
-      },
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "str"
-      },
       "leading_comments": [],
       "leading_trivia": []
     },
@@ -442,9 +409,6 @@
         "d": 0
       },
       "return_type": "str",
-      "arg_usage": {
-        "d": "readonly"
-      },
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -464,7 +428,6 @@
               "end_lineno": 26,
               "end_col": 20
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d.speak()",
@@ -476,7 +439,6 @@
                 "end_lineno": 26,
                 "end_col": 18
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "d.speak",
@@ -488,7 +450,6 @@
                   "end_lineno": 26,
                   "end_col": 12
                 },
-                "resolved_type": "Dog",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "d",
@@ -503,16 +464,6 @@
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {
-        "d": {
-          "kind": "NamedType",
-          "name": "Dog"
-        }
-      },
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "str"
-      },
       "leading_comments": [],
       "leading_trivia": []
     },
@@ -531,7 +482,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -551,15 +501,10 @@
               "end_lineno": 30,
               "end_col": 5
             },
-            "resolved_type": "Animal",
             "casts": [],
             "borrow_kind": "value",
             "repr": "a",
-            "id": "a",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "Animal"
-            }
+            "id": "a"
           },
           "annotation": "Animal",
           "value": {
@@ -570,7 +515,6 @@
               "end_lineno": 30,
               "end_col": 25
             },
-            "resolved_type": "LoudDog",
             "casts": [],
             "borrow_kind": "value",
             "repr": "LoudDog()",
@@ -582,7 +526,6 @@
                 "end_lineno": 30,
                 "end_col": 23
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "LoudDog",
@@ -592,7 +535,6 @@
             "keywords": []
           },
           "declare": true,
-          "decl_type": "Animal",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "Animal"
@@ -618,15 +560,10 @@
               "end_lineno": 31,
               "end_col": 5
             },
-            "resolved_type": "Dog",
             "casts": [],
             "borrow_kind": "value",
             "repr": "d",
-            "id": "d",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "Dog"
-            }
+            "id": "d"
           },
           "annotation": "Dog",
           "value": {
@@ -637,7 +574,6 @@
               "end_lineno": 31,
               "end_col": 22
             },
-            "resolved_type": "LoudDog",
             "casts": [],
             "borrow_kind": "value",
             "repr": "LoudDog()",
@@ -649,7 +585,6 @@
                 "end_lineno": 31,
                 "end_col": 20
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "LoudDog",
@@ -659,7 +594,6 @@
             "keywords": []
           },
           "declare": true,
-          "decl_type": "Dog",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "Dog"
@@ -685,7 +619,6 @@
               "end_lineno": 32,
               "end_col": 29
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(call_via_animal(a))",
@@ -697,7 +630,6 @@
                 "end_lineno": 32,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -712,7 +644,6 @@
                   "end_lineno": 32,
                   "end_col": 28
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "call_via_animal(a)",
@@ -724,7 +655,6 @@
                     "end_lineno": 32,
                     "end_col": 25
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "call_via_animal",
@@ -739,7 +669,6 @@
                       "end_lineno": 32,
                       "end_col": 27
                     },
-                    "resolved_type": "Animal",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "a",
@@ -749,14 +678,7 @@
                 "keywords": []
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         },
         {
@@ -775,7 +697,6 @@
               "end_lineno": 33,
               "end_col": 26
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(call_via_dog(d))",
@@ -787,7 +708,6 @@
                 "end_lineno": 33,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -802,7 +722,6 @@
                   "end_lineno": 33,
                   "end_col": 25
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "call_via_dog(d)",
@@ -814,7 +733,6 @@
                     "end_lineno": 33,
                     "end_col": 22
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "call_via_dog",
@@ -829,7 +747,6 @@
                       "end_lineno": 33,
                       "end_col": 24
                     },
-                    "resolved_type": "Dog",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "d",
@@ -839,24 +756,12 @@
                 "keywords": []
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -878,7 +783,6 @@
           "end_lineno": 37,
           "end_col": 65
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "print(py_assert_stdout([\"loud-dog\", \"loud-dog\"], _case_main))",
@@ -890,7 +794,6 @@
             "end_lineno": 37,
             "end_col": 9
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -905,7 +808,6 @@
               "end_lineno": 37,
               "end_col": 64
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "py_assert_stdout([\"loud-dog\", \"loud-dog\"], _case_main)",
@@ -917,7 +819,6 @@
                 "end_lineno": 37,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",
@@ -932,7 +833,6 @@
                   "end_lineno": 37,
                   "end_col": 51
                 },
-                "resolved_type": "list[str]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "[\"loud-dog\", \"loud-dog\"]",
@@ -945,7 +845,6 @@
                       "end_lineno": 37,
                       "end_col": 38
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"loud-dog\"",
@@ -959,7 +858,6 @@
                       "end_lineno": 37,
                       "end_col": 50
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"loud-dog\"",
@@ -975,37 +873,22 @@
                   "end_lineno": 37,
                   "end_col": 63
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_case_main",
                 "id": "_case_main"
               }
             ],
-            "keywords": [],
-            "resolved_runtime_call": "py_assert_stdout",
-            "resolved_runtime_source": "import_symbol",
-            "runtime_module_id": "pytra.utils.assertions",
-            "runtime_symbol": "py_assert_stdout",
-            "runtime_call_adapter_kind": "extern_delegate"
+            "keywords": []
           }
         ],
-        "keywords": [],
-        "lowered_kind": "BuiltinCall",
-        "builtin_name": "print",
-        "runtime_call": "py_print",
-        "runtime_module_id": "pytra.built_in.io_ops",
-        "runtime_symbol": "py_print",
-        "runtime_call_adapter_kind": "builtin",
-        "semantic_tag": "core.print"
+        "keywords": []
       }
     }
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.utils.assertions",
@@ -1017,10 +900,8 @@
           "source_module_id": "pytra.utils.assertions",
           "source_export_name": "py_assert_stdout",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils.assertions",
           "runtime_group": "utils",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "py_assert_stdout",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
@@ -1034,7 +915,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

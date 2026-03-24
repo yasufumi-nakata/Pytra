@@ -36,7 +36,7 @@
       "name": "abs_like",
       "original_name": "abs_like",
       "arg_types": {
-        "n": "int64"
+        "n": "int"
       },
       "arg_order": [
         "n"
@@ -45,10 +45,7 @@
       "arg_index": {
         "n": 0
       },
-      "return_type": "int64",
-      "arg_usage": {
-        "n": "readonly"
-      },
+      "return_type": "int",
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -68,7 +65,6 @@
               "end_lineno": 8,
               "end_col": 12
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "n < 0",
@@ -80,7 +76,6 @@
                 "end_lineno": 8,
                 "end_col": 8
               },
-              "resolved_type": "int64",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "n",
@@ -98,7 +93,6 @@
                   "end_lineno": 8,
                   "end_col": 12
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "0",
@@ -123,7 +117,6 @@
                   "end_lineno": 9,
                   "end_col": 17
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "-n",
@@ -136,7 +129,6 @@
                     "end_lineno": 9,
                     "end_col": 17
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "n",
@@ -162,7 +154,6 @@
                   "end_lineno": 11,
                   "end_col": 14
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "n",
@@ -174,16 +165,6 @@
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {
-        "n": {
-          "kind": "NamedType",
-          "name": "int64"
-        }
-      },
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "int64"
-      },
       "leading_comments": [
         "This file contains test/implementation code for `test/fixtures/if_else.py`.",
         "Reader-facing comments are added to make roles easier to understand.",
@@ -227,7 +208,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -247,7 +227,6 @@
               "end_lineno": 15,
               "end_col": 24
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(abs_like(-12))",
@@ -259,7 +238,6 @@
                 "end_lineno": 15,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -274,7 +252,6 @@
                   "end_lineno": 15,
                   "end_col": 23
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "abs_like(-12)",
@@ -286,7 +263,6 @@
                     "end_lineno": 15,
                     "end_col": 18
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "abs_like",
@@ -301,7 +277,6 @@
                       "end_lineno": 15,
                       "end_col": 22
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "-12",
@@ -314,7 +289,6 @@
                         "end_lineno": 15,
                         "end_col": 22
                       },
-                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "12",
@@ -325,24 +299,12 @@
                 "keywords": []
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -364,7 +326,6 @@
           "end_lineno": 18,
           "end_col": 47
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "print(py_assert_stdout(['12'], _case_main))",
@@ -376,7 +337,6 @@
             "end_lineno": 18,
             "end_col": 9
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -391,7 +351,6 @@
               "end_lineno": 18,
               "end_col": 46
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "py_assert_stdout(['12'], _case_main)",
@@ -403,7 +362,6 @@
                 "end_lineno": 18,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",
@@ -418,7 +376,6 @@
                   "end_lineno": 18,
                   "end_col": 33
                 },
-                "resolved_type": "list[str]",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "['12']",
@@ -431,7 +388,6 @@
                       "end_lineno": 18,
                       "end_col": 32
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "'12'",
@@ -447,37 +403,22 @@
                   "end_lineno": 18,
                   "end_col": 45
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_case_main",
                 "id": "_case_main"
               }
             ],
-            "keywords": [],
-            "resolved_runtime_call": "py_assert_stdout",
-            "resolved_runtime_source": "import_symbol",
-            "runtime_module_id": "pytra.utils.assertions",
-            "runtime_symbol": "py_assert_stdout",
-            "runtime_call_adapter_kind": "extern_delegate"
+            "keywords": []
           }
         ],
-        "keywords": [],
-        "lowered_kind": "BuiltinCall",
-        "builtin_name": "print",
-        "runtime_call": "py_print",
-        "runtime_module_id": "pytra.built_in.io_ops",
-        "runtime_symbol": "py_print",
-        "runtime_call_adapter_kind": "builtin",
-        "semantic_tag": "core.print"
+        "keywords": []
       }
     }
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.utils.assertions",
@@ -489,10 +430,8 @@
           "source_module_id": "pytra.utils.assertions",
           "source_export_name": "py_assert_stdout",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils.assertions",
           "runtime_group": "utils",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "py_assert_stdout",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
@@ -506,7 +445,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

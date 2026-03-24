@@ -23,7 +23,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "None",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -43,15 +42,10 @@
               "end_lineno": 5,
               "end_col": 11
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "n_layer",
-            "id": "n_layer",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "n_layer"
           },
           "annotation": "int64",
           "value": {
@@ -62,14 +56,12 @@
               "end_lineno": 5,
               "end_col": 20
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "2",
             "value": 2
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -95,27 +87,10 @@
               "end_lineno": 6,
               "end_col": 8
             },
-            "resolved_type": "list[list[int64]]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "keys",
-            "id": "keys",
-            "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "GenericType",
-                  "base": "list",
-                  "args": [
-                    {
-                      "kind": "NamedType",
-                      "name": "int64"
-                    }
-                  ]
-                }
-              ]
-            }
+            "id": "keys"
           },
           "annotation": "list[list[int64]]",
           "value": {
@@ -126,7 +101,6 @@
               "end_lineno": 6,
               "end_col": 56
             },
-            "resolved_type": "list[list[unknown]]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[[] for _ in range(n_layer)]",
@@ -138,7 +112,6 @@
                 "end_lineno": 6,
                 "end_col": 31
               },
-              "resolved_type": "list[unknown]",
               "casts": [],
               "borrow_kind": "value",
               "repr": "[]",
@@ -154,7 +127,6 @@
                     "end_lineno": 6,
                     "end_col": 37
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_",
@@ -168,7 +140,6 @@
                     "end_lineno": 6,
                     "end_col": 55
                   },
-                  "resolved_type": "range",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "range(n_layer)",
@@ -180,7 +151,6 @@
                       "end_lineno": 6,
                       "end_col": 28
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "0",
@@ -194,7 +164,6 @@
                       "end_lineno": 6,
                       "end_col": 54
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "n_layer",
@@ -208,7 +177,6 @@
                       "end_lineno": 6,
                       "end_col": 28
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "1",
@@ -222,7 +190,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "list[list[int64]]",
           "annotation_type_expr": {
             "kind": "GenericType",
             "base": "list",
@@ -272,27 +239,10 @@
               "end_lineno": 7,
               "end_col": 10
             },
-            "resolved_type": "list[list[int64]]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "values",
-            "id": "values",
-            "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "GenericType",
-                  "base": "list",
-                  "args": [
-                    {
-                      "kind": "NamedType",
-                      "name": "int64"
-                    }
-                  ]
-                }
-              ]
-            }
+            "id": "values"
           },
           "annotation": "list[list[int64]]",
           "value": {
@@ -303,7 +253,6 @@
               "end_lineno": 7,
               "end_col": 58
             },
-            "resolved_type": "list[list[unknown]]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[[] for _ in range(n_layer)]",
@@ -315,7 +264,6 @@
                 "end_lineno": 7,
                 "end_col": 33
               },
-              "resolved_type": "list[unknown]",
               "casts": [],
               "borrow_kind": "value",
               "repr": "[]",
@@ -331,7 +279,6 @@
                     "end_lineno": 7,
                     "end_col": 39
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_",
@@ -345,7 +292,6 @@
                     "end_lineno": 7,
                     "end_col": 57
                   },
-                  "resolved_type": "range",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "range(n_layer)",
@@ -357,7 +303,6 @@
                       "end_lineno": 7,
                       "end_col": 30
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "0",
@@ -371,7 +316,6 @@
                       "end_lineno": 7,
                       "end_col": 56
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "n_layer",
@@ -385,7 +329,6 @@
                       "end_lineno": 7,
                       "end_col": 30
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "1",
@@ -399,7 +342,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "list[list[int64]]",
           "annotation_type_expr": {
             "kind": "GenericType",
             "base": "list",
@@ -449,7 +391,6 @@
               "end_lineno": 8,
               "end_col": 33
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "print(len(keys), len(values))",
@@ -461,7 +402,6 @@
                 "end_lineno": 8,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -476,7 +416,6 @@
                   "end_lineno": 8,
                   "end_col": 19
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len(keys)",
@@ -488,7 +427,6 @@
                     "end_lineno": 8,
                     "end_col": 13
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "len",
@@ -503,21 +441,13 @@
                       "end_lineno": 8,
                       "end_col": 18
                     },
-                    "resolved_type": "list[list[int64]]",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "keys",
                     "id": "keys"
                   }
                 ],
-                "keywords": [],
-                "lowered_kind": "BuiltinCall",
-                "builtin_name": "len",
-                "runtime_call": "py_len",
-                "runtime_module_id": "pytra.core.py_runtime",
-                "runtime_symbol": "len",
-                "runtime_call_adapter_kind": "builtin",
-                "semantic_tag": "core.len"
+                "keywords": []
               },
               {
                 "kind": "Call",
@@ -527,7 +457,6 @@
                   "end_lineno": 8,
                   "end_col": 32
                 },
-                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len(values)",
@@ -539,7 +468,6 @@
                     "end_lineno": 8,
                     "end_col": 24
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "len",
@@ -554,41 +482,21 @@
                       "end_lineno": 8,
                       "end_col": 31
                     },
-                    "resolved_type": "list[list[int64]]",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "values",
                     "id": "values"
                   }
                 ],
-                "keywords": [],
-                "lowered_kind": "BuiltinCall",
-                "builtin_name": "len",
-                "runtime_call": "py_len",
-                "runtime_module_id": "pytra.core.py_runtime",
-                "runtime_symbol": "len",
-                "runtime_call_adapter_kind": "builtin",
-                "semantic_tag": "core.len"
+                "keywords": []
               }
             ],
-            "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "print",
-            "runtime_call": "py_print",
-            "runtime_module_id": "pytra.built_in.io_ops",
-            "runtime_symbol": "py_print",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "core.print"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
-      },
       "leading_comments": [
         "self_hosted parser: tuple of list comprehensions."
       ],
@@ -625,7 +533,6 @@
           "end_lineno": 12,
           "end_col": 28
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "run_tuple_of_list_comp()",
@@ -637,7 +544,6 @@
             "end_lineno": 12,
             "end_col": 26
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_tuple_of_list_comp",
@@ -650,9 +556,7 @@
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.built_in.io_ops",
@@ -663,7 +567,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         },
         {
@@ -675,7 +578,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.sequence",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.sequence",
           "runtime_group": "built_in"
         }
       ],

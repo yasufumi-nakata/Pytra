@@ -40,20 +40,14 @@
               "end_lineno": 2,
               "end_col": 11
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "pressed",
-            "id": "pressed",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "bool"
-            }
+            "id": "pressed"
           },
           "annotation": "bool",
           "value": null,
           "declare": true,
-          "decl_type": "bool",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "bool"
@@ -89,9 +83,6 @@
         "target": 0
       },
       "return_type": "None",
-      "arg_usage": {
-        "target": "readonly"
-      },
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -111,7 +102,6 @@
               "end_lineno": 6,
               "end_col": 13
             },
-            "resolved_type": "ControllerState",
             "casts": [],
             "borrow_kind": "value",
             "repr": "state",
@@ -129,7 +119,6 @@
               "end_lineno": 6,
               "end_col": 23
             },
-            "resolved_type": "list[ControllerState]",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "states",
@@ -155,7 +144,6 @@
                   "end_lineno": 7,
                   "end_col": 22
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "target.pressed",
@@ -167,7 +155,6 @@
                     "end_lineno": 7,
                     "end_col": 14
                   },
-                  "resolved_type": "ControllerState",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "target",
@@ -183,7 +170,6 @@
                   "end_lineno": 7,
                   "end_col": 56
                 },
-                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "target.pressed or state.pressed",
@@ -197,7 +183,6 @@
                       "end_lineno": 7,
                       "end_col": 39
                     },
-                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "target.pressed",
@@ -209,7 +194,6 @@
                         "end_lineno": 7,
                         "end_col": 31
                       },
-                      "resolved_type": "ControllerState",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "target",
@@ -225,7 +209,6 @@
                       "end_lineno": 7,
                       "end_col": 56
                     },
-                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "state.pressed",
@@ -237,7 +220,6 @@
                         "end_lineno": 7,
                         "end_col": 48
                       },
-                      "resolved_type": "ControllerState",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "state",
@@ -248,7 +230,6 @@
                 ]
               },
               "declare": true,
-              "decl_type": "bool",
               "declare_init": true
             }
           ],
@@ -262,16 +243,6 @@
       "vararg_type_expr": {
         "kind": "NamedType",
         "name": "ControllerState"
-      },
-      "arg_type_exprs": {
-        "target": {
-          "kind": "NamedType",
-          "name": "ControllerState"
-        }
-      },
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "None"
       },
       "leading_comments": [],
       "leading_trivia": []
@@ -303,11 +274,6 @@
         "rhs": 2
       },
       "return_type": "bool",
-      "arg_usage": {
-        "target": "readonly",
-        "lhs": "readonly",
-        "rhs": "readonly"
-      },
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -327,7 +293,6 @@
               "end_lineno": 15,
               "end_col": 45
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "merge_controller_states(target, lhs, rhs)",
@@ -339,7 +304,6 @@
                 "end_lineno": 15,
                 "end_col": 27
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "merge_controller_states",
@@ -354,7 +318,6 @@
                   "end_lineno": 15,
                   "end_col": 34
                 },
-                "resolved_type": "ControllerState",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "target",
@@ -368,7 +331,6 @@
                   "end_lineno": 15,
                   "end_col": 39
                 },
-                "resolved_type": "ControllerState",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "lhs",
@@ -382,7 +344,6 @@
                   "end_lineno": 15,
                   "end_col": 44
                 },
-                "resolved_type": "ControllerState",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "rhs",
@@ -408,7 +369,6 @@
               "end_lineno": 16,
               "end_col": 25
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "target.pressed",
@@ -420,7 +380,6 @@
                 "end_lineno": 16,
                 "end_col": 17
               },
-              "resolved_type": "ControllerState",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "target",
@@ -432,24 +391,6 @@
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {
-        "target": {
-          "kind": "NamedType",
-          "name": "ControllerState"
-        },
-        "lhs": {
-          "kind": "NamedType",
-          "name": "ControllerState"
-        },
-        "rhs": {
-          "kind": "NamedType",
-          "name": "ControllerState"
-        }
-      },
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "bool"
-      },
       "leading_comments": [],
       "leading_trivia": []
     }
@@ -471,15 +412,10 @@
           "end_lineno": 20,
           "end_col": 5
         },
-        "resolved_type": "ControllerState",
         "casts": [],
         "borrow_kind": "value",
         "repr": "t",
-        "id": "t",
-        "type_expr": {
-          "kind": "NamedType",
-          "name": "ControllerState"
-        }
+        "id": "t"
       },
       "annotation": "ControllerState",
       "value": {
@@ -490,7 +426,6 @@
           "end_lineno": 20,
           "end_col": 42
         },
-        "resolved_type": "ControllerState",
         "casts": [],
         "borrow_kind": "value",
         "repr": "ControllerState()",
@@ -502,7 +437,6 @@
             "end_lineno": 20,
             "end_col": 40
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "ControllerState",
@@ -512,7 +446,6 @@
         "keywords": []
       },
       "declare": true,
-      "decl_type": "ControllerState",
       "annotation_type_expr": {
         "kind": "NamedType",
         "name": "ControllerState"
@@ -538,7 +471,6 @@
           "end_lineno": 21,
           "end_col": 13
         },
-        "resolved_type": "unknown",
         "casts": [],
         "borrow_kind": "value",
         "repr": "t.pressed",
@@ -550,7 +482,6 @@
             "end_lineno": 21,
             "end_col": 5
           },
-          "resolved_type": "ControllerState",
           "casts": [],
           "borrow_kind": "readonly_ref",
           "repr": "t",
@@ -566,14 +497,12 @@
           "end_lineno": 21,
           "end_col": 21
         },
-        "resolved_type": "bool",
         "casts": [],
         "borrow_kind": "value",
         "repr": "False",
         "value": false
       },
       "declare": true,
-      "decl_type": "bool",
       "declare_init": true
     },
     {
@@ -592,15 +521,10 @@
           "end_lineno": 22,
           "end_col": 5
         },
-        "resolved_type": "ControllerState",
         "casts": [],
         "borrow_kind": "value",
         "repr": "a",
-        "id": "a",
-        "type_expr": {
-          "kind": "NamedType",
-          "name": "ControllerState"
-        }
+        "id": "a"
       },
       "annotation": "ControllerState",
       "value": {
@@ -611,7 +535,6 @@
           "end_lineno": 22,
           "end_col": 42
         },
-        "resolved_type": "ControllerState",
         "casts": [],
         "borrow_kind": "value",
         "repr": "ControllerState()",
@@ -623,7 +546,6 @@
             "end_lineno": 22,
             "end_col": 40
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "ControllerState",
@@ -633,7 +555,6 @@
         "keywords": []
       },
       "declare": true,
-      "decl_type": "ControllerState",
       "annotation_type_expr": {
         "kind": "NamedType",
         "name": "ControllerState"
@@ -659,7 +580,6 @@
           "end_lineno": 23,
           "end_col": 13
         },
-        "resolved_type": "unknown",
         "casts": [],
         "borrow_kind": "value",
         "repr": "a.pressed",
@@ -671,7 +591,6 @@
             "end_lineno": 23,
             "end_col": 5
           },
-          "resolved_type": "ControllerState",
           "casts": [],
           "borrow_kind": "readonly_ref",
           "repr": "a",
@@ -687,14 +606,12 @@
           "end_lineno": 23,
           "end_col": 20
         },
-        "resolved_type": "bool",
         "casts": [],
         "borrow_kind": "value",
         "repr": "True",
         "value": true
       },
       "declare": true,
-      "decl_type": "bool",
       "declare_init": true
     },
     {
@@ -713,15 +630,10 @@
           "end_lineno": 24,
           "end_col": 5
         },
-        "resolved_type": "ControllerState",
         "casts": [],
         "borrow_kind": "value",
         "repr": "b",
-        "id": "b",
-        "type_expr": {
-          "kind": "NamedType",
-          "name": "ControllerState"
-        }
+        "id": "b"
       },
       "annotation": "ControllerState",
       "value": {
@@ -732,7 +644,6 @@
           "end_lineno": 24,
           "end_col": 42
         },
-        "resolved_type": "ControllerState",
         "casts": [],
         "borrow_kind": "value",
         "repr": "ControllerState()",
@@ -744,7 +655,6 @@
             "end_lineno": 24,
             "end_col": 40
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "ControllerState",
@@ -754,7 +664,6 @@
         "keywords": []
       },
       "declare": true,
-      "decl_type": "ControllerState",
       "annotation_type_expr": {
         "kind": "NamedType",
         "name": "ControllerState"
@@ -780,7 +689,6 @@
           "end_lineno": 25,
           "end_col": 13
         },
-        "resolved_type": "unknown",
         "casts": [],
         "borrow_kind": "value",
         "repr": "b.pressed",
@@ -792,7 +700,6 @@
             "end_lineno": 25,
             "end_col": 5
           },
-          "resolved_type": "ControllerState",
           "casts": [],
           "borrow_kind": "readonly_ref",
           "repr": "b",
@@ -808,14 +715,12 @@
           "end_lineno": 25,
           "end_col": 21
         },
-        "resolved_type": "bool",
         "casts": [],
         "borrow_kind": "value",
         "repr": "False",
         "value": false
       },
       "declare": true,
-      "decl_type": "bool",
       "declare_init": true
     },
     {
@@ -834,7 +739,6 @@
           "end_lineno": 26,
           "end_col": 43
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "print(apply_controller_states(t, a, b))",
@@ -846,7 +750,6 @@
             "end_lineno": 26,
             "end_col": 9
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -861,7 +764,6 @@
               "end_lineno": 26,
               "end_col": 42
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "apply_controller_states(t, a, b)",
@@ -873,7 +775,6 @@
                 "end_lineno": 26,
                 "end_col": 33
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "apply_controller_states",
@@ -888,7 +789,6 @@
                   "end_lineno": 26,
                   "end_col": 35
                 },
-                "resolved_type": "ControllerState",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "t",
@@ -902,7 +802,6 @@
                   "end_lineno": 26,
                   "end_col": 38
                 },
-                "resolved_type": "ControllerState",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "a",
@@ -916,7 +815,6 @@
                   "end_lineno": 26,
                   "end_col": 41
                 },
-                "resolved_type": "ControllerState",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "b",
@@ -926,22 +824,13 @@
             "keywords": []
           }
         ],
-        "keywords": [],
-        "lowered_kind": "BuiltinCall",
-        "builtin_name": "print",
-        "runtime_call": "py_print",
-        "runtime_module_id": "pytra.built_in.io_ops",
-        "runtime_symbol": "py_print",
-        "runtime_call_adapter_kind": "builtin",
-        "semantic_tag": "core.print"
+        "keywords": []
       }
     }
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.built_in.io_ops",
@@ -952,7 +841,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],

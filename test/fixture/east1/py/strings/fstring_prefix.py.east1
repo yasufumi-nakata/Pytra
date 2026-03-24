@@ -44,7 +44,6 @@
       "arg_defaults": {},
       "arg_index": {},
       "return_type": "bool",
-      "arg_usage": {},
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -64,15 +63,10 @@
               "end_lineno": 6,
               "end_col": 8
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "name",
-            "id": "name",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "name"
           },
           "annotation": "str",
           "value": {
@@ -83,14 +77,12 @@
               "end_lineno": 6,
               "end_col": 23
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "\"Pytra\"",
             "value": "Pytra"
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -116,15 +108,10 @@
               "end_lineno": 7,
               "end_col": 5
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "x",
-            "id": "x",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "x"
           },
           "annotation": "int64",
           "value": {
@@ -135,14 +122,12 @@
               "end_lineno": 7,
               "end_col": 14
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "7",
             "value": 7
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -168,15 +153,10 @@
               "end_lineno": 8,
               "end_col": 5
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "y",
-            "id": "y",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "int64"
-            }
+            "id": "y"
           },
           "annotation": "int64",
           "value": {
@@ -187,14 +167,12 @@
               "end_lineno": 8,
               "end_col": 14
             },
-            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "5",
             "value": 5
           },
           "declare": true,
-          "decl_type": "int64",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "int64"
@@ -220,15 +198,10 @@
               "end_lineno": 9,
               "end_col": 6
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "s1",
-            "id": "s1",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "s1"
           },
           "annotation": "str",
           "value": {
@@ -239,7 +212,6 @@
               "end_lineno": 9,
               "end_col": 35
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "f\"name={name}, x={x}\"",
@@ -252,7 +224,6 @@
                   "end_lineno": 9,
                   "end_col": 35
                 },
-                "resolved_type": "str",
                 "repr": "name=",
                 "value": "name="
               },
@@ -266,7 +237,6 @@
                     "end_lineno": 9,
                     "end_col": 24
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "name",
@@ -281,7 +251,6 @@
                   "end_lineno": 9,
                   "end_col": 35
                 },
-                "resolved_type": "str",
                 "repr": ", x=",
                 "value": ", x="
               },
@@ -295,7 +264,6 @@
                     "end_lineno": 9,
                     "end_col": 31
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "x",
@@ -305,7 +273,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -331,15 +298,10 @@
               "end_lineno": 10,
               "end_col": 6
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "s2",
-            "id": "s2",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "s2"
           },
           "annotation": "str",
           "value": {
@@ -350,7 +312,6 @@
               "end_lineno": 10,
               "end_col": 36
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "f\"{{escaped}}:{x + y}\"",
@@ -363,7 +324,6 @@
                   "end_lineno": 10,
                   "end_col": 36
                 },
-                "resolved_type": "str",
                 "repr": "{",
                 "value": "{"
               },
@@ -375,7 +335,6 @@
                   "end_lineno": 10,
                   "end_col": 36
                 },
-                "resolved_type": "str",
                 "repr": "escaped}:",
                 "value": "escaped}:"
               },
@@ -389,7 +348,6 @@
                     "end_lineno": 10,
                     "end_col": 32
                   },
-                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "x + y",
@@ -401,7 +359,6 @@
                       "end_lineno": 10,
                       "end_col": 28
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "x",
@@ -416,7 +373,6 @@
                       "end_lineno": 10,
                       "end_col": 32
                     },
-                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "y",
@@ -427,7 +383,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -453,15 +408,10 @@
               "end_lineno": 11,
               "end_col": 6
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "s3",
-            "id": "s3",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "s3"
           },
           "annotation": "str",
           "value": {
@@ -472,7 +422,6 @@
               "end_lineno": 11,
               "end_col": 35
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "rf\"raw\\\\path\\\\{name}\"",
@@ -485,7 +434,6 @@
                   "end_lineno": 11,
                   "end_col": 35
                 },
-                "resolved_type": "str",
                 "repr": "raw\\\\path\\\\",
                 "value": "raw\\\\path\\\\"
               },
@@ -499,7 +447,6 @@
                     "end_lineno": 11,
                     "end_col": 30
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "name",
@@ -509,7 +456,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -535,15 +481,10 @@
               "end_lineno": 12,
               "end_col": 6
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "s4",
-            "id": "s4",
-            "type_expr": {
-              "kind": "NamedType",
-              "name": "str"
-            }
+            "id": "s4"
           },
           "annotation": "str",
           "value": {
@@ -554,7 +495,6 @@
               "end_lineno": 12,
               "end_col": 53
             },
-            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "f\"mix:{name}:{'ok' if x > y else 'ng'}\"",
@@ -567,7 +507,6 @@
                   "end_lineno": 12,
                   "end_col": 53
                 },
-                "resolved_type": "str",
                 "repr": "mix:",
                 "value": "mix:"
               },
@@ -581,7 +520,6 @@
                     "end_lineno": 12,
                     "end_col": 23
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "name",
@@ -596,7 +534,6 @@
                   "end_lineno": 12,
                   "end_col": 53
                 },
-                "resolved_type": "str",
                 "repr": ":",
                 "value": ":"
               },
@@ -610,7 +547,6 @@
                     "end_lineno": 12,
                     "end_col": 49
                   },
-                  "resolved_type": "str",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "'ok' if x > y else 'ng'",
@@ -622,7 +558,6 @@
                       "end_lineno": 12,
                       "end_col": 39
                     },
-                    "resolved_type": "bool",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "x > y",
@@ -634,7 +569,6 @@
                         "end_lineno": 12,
                         "end_col": 35
                       },
-                      "resolved_type": "int64",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "x",
@@ -652,7 +586,6 @@
                           "end_lineno": 12,
                           "end_col": 39
                         },
-                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "readonly_ref",
                         "repr": "y",
@@ -668,7 +601,6 @@
                       "end_lineno": 12,
                       "end_col": 30
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "'ok'",
@@ -682,7 +614,6 @@
                       "end_lineno": 12,
                       "end_col": 49
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "'ng'",
@@ -693,7 +624,6 @@
             ]
           },
           "declare": true,
-          "decl_type": "str",
           "annotation_type_expr": {
             "kind": "NamedType",
             "name": "str"
@@ -719,21 +649,10 @@
               "end_lineno": 13,
               "end_col": 10
             },
-            "resolved_type": "list[bool]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "checks",
-            "id": "checks",
-            "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "bool"
-                }
-              ]
-            }
+            "id": "checks"
           },
           "annotation": "list[bool]",
           "value": {
@@ -744,14 +663,12 @@
               "end_lineno": 13,
               "end_col": 27
             },
-            "resolved_type": "list[unknown]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "[]",
             "elements": []
           },
           "declare": true,
-          "decl_type": "list[bool]",
           "annotation_type_expr": {
             "kind": "GenericType",
             "base": "list",
@@ -789,7 +706,6 @@
               "end_lineno": 14,
               "end_col": 60
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "checks.append(py_assert_eq(s1, \"name=Pytra, x=7\", \"s1\"))",
@@ -801,7 +717,6 @@
                 "end_lineno": 14,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -813,7 +728,6 @@
                   "end_lineno": 14,
                   "end_col": 10
                 },
-                "resolved_type": "list[bool]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "checks",
@@ -830,7 +744,6 @@
                   "end_lineno": 14,
                   "end_col": 59
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "py_assert_eq(s1, \"name=Pytra, x=7\", \"s1\")",
@@ -842,7 +755,6 @@
                     "end_lineno": 14,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -857,7 +769,6 @@
                       "end_lineno": 14,
                       "end_col": 33
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "s1",
@@ -871,7 +782,6 @@
                       "end_lineno": 14,
                       "end_col": 52
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"name=Pytra, x=7\"",
@@ -885,29 +795,16 @@
                       "end_lineno": 14,
                       "end_col": 58
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"s1\"",
                     "value": "s1"
                   }
                 ],
-                "keywords": [],
-                "resolved_runtime_call": "py_assert_eq",
-                "resolved_runtime_source": "import_symbol",
-                "runtime_module_id": "pytra.utils.assertions",
-                "runtime_symbol": "py_assert_eq",
-                "runtime_call_adapter_kind": "extern_delegate"
+                "keywords": []
               }
             ],
             "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "append",
-            "runtime_call": "list.append",
-            "runtime_module_id": "pytra.core.list",
-            "runtime_symbol": "list.append",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "stdlib.method.append",
             "runtime_owner": {
               "kind": "Name",
               "source_span": {
@@ -916,7 +813,6 @@
                 "end_lineno": 14,
                 "end_col": 10
               },
-              "resolved_type": "list[bool]",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "checks",
@@ -940,7 +836,6 @@
               "end_lineno": 15,
               "end_col": 57
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "checks.append(py_assert_eq(s2, \"{escaped}:12\", \"s2\"))",
@@ -952,7 +847,6 @@
                 "end_lineno": 15,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -964,7 +858,6 @@
                   "end_lineno": 15,
                   "end_col": 10
                 },
-                "resolved_type": "list[bool]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "checks",
@@ -981,7 +874,6 @@
                   "end_lineno": 15,
                   "end_col": 56
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "py_assert_eq(s2, \"{escaped}:12\", \"s2\")",
@@ -993,7 +885,6 @@
                     "end_lineno": 15,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1008,7 +899,6 @@
                       "end_lineno": 15,
                       "end_col": 33
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "s2",
@@ -1022,7 +912,6 @@
                       "end_lineno": 15,
                       "end_col": 49
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"{escaped}:12\"",
@@ -1036,29 +925,16 @@
                       "end_lineno": 15,
                       "end_col": 55
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"s2\"",
                     "value": "s2"
                   }
                 ],
-                "keywords": [],
-                "resolved_runtime_call": "py_assert_eq",
-                "resolved_runtime_source": "import_symbol",
-                "runtime_module_id": "pytra.utils.assertions",
-                "runtime_symbol": "py_assert_eq",
-                "runtime_call_adapter_kind": "extern_delegate"
+                "keywords": []
               }
             ],
             "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "append",
-            "runtime_call": "list.append",
-            "runtime_module_id": "pytra.core.list",
-            "runtime_symbol": "list.append",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "stdlib.method.append",
             "runtime_owner": {
               "kind": "Name",
               "source_span": {
@@ -1067,7 +943,6 @@
                 "end_lineno": 15,
                 "end_col": 10
               },
-              "resolved_type": "list[bool]",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "checks",
@@ -1091,7 +966,6 @@
               "end_lineno": 16,
               "end_col": 65
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "checks.append(py_assert_eq(s3, \"raw\\\\\\\\path\\\\\\\\Pytra\", \"s3\"))",
@@ -1103,7 +977,6 @@
                 "end_lineno": 16,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1115,7 +988,6 @@
                   "end_lineno": 16,
                   "end_col": 10
                 },
-                "resolved_type": "list[bool]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "checks",
@@ -1132,7 +1004,6 @@
                   "end_lineno": 16,
                   "end_col": 64
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "py_assert_eq(s3, \"raw\\\\\\\\path\\\\\\\\Pytra\", \"s3\")",
@@ -1144,7 +1015,6 @@
                     "end_lineno": 16,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1159,7 +1029,6 @@
                       "end_lineno": 16,
                       "end_col": 33
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "s3",
@@ -1173,7 +1042,6 @@
                       "end_lineno": 16,
                       "end_col": 57
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"raw\\\\\\\\path\\\\\\\\Pytra\"",
@@ -1187,29 +1055,16 @@
                       "end_lineno": 16,
                       "end_col": 63
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"s3\"",
                     "value": "s3"
                   }
                 ],
-                "keywords": [],
-                "resolved_runtime_call": "py_assert_eq",
-                "resolved_runtime_source": "import_symbol",
-                "runtime_module_id": "pytra.utils.assertions",
-                "runtime_symbol": "py_assert_eq",
-                "runtime_call_adapter_kind": "extern_delegate"
+                "keywords": []
               }
             ],
             "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "append",
-            "runtime_call": "list.append",
-            "runtime_module_id": "pytra.core.list",
-            "runtime_symbol": "list.append",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "stdlib.method.append",
             "runtime_owner": {
               "kind": "Name",
               "source_span": {
@@ -1218,7 +1073,6 @@
                 "end_lineno": 16,
                 "end_col": 10
               },
-              "resolved_type": "list[bool]",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "checks",
@@ -1242,7 +1096,6 @@
               "end_lineno": 17,
               "end_col": 57
             },
-            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "checks.append(py_assert_eq(s4, \"mix:Pytra:ok\", \"s4\"))",
@@ -1254,7 +1107,6 @@
                 "end_lineno": 17,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1266,7 +1118,6 @@
                   "end_lineno": 17,
                   "end_col": 10
                 },
-                "resolved_type": "list[bool]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "checks",
@@ -1283,7 +1134,6 @@
                   "end_lineno": 17,
                   "end_col": 56
                 },
-                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "py_assert_eq(s4, \"mix:Pytra:ok\", \"s4\")",
@@ -1295,7 +1145,6 @@
                     "end_lineno": 17,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1310,7 +1159,6 @@
                       "end_lineno": 17,
                       "end_col": 33
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "s4",
@@ -1324,7 +1172,6 @@
                       "end_lineno": 17,
                       "end_col": 49
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"mix:Pytra:ok\"",
@@ -1338,29 +1185,16 @@
                       "end_lineno": 17,
                       "end_col": 55
                     },
-                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "\"s4\"",
                     "value": "s4"
                   }
                 ],
-                "keywords": [],
-                "resolved_runtime_call": "py_assert_eq",
-                "resolved_runtime_source": "import_symbol",
-                "runtime_module_id": "pytra.utils.assertions",
-                "runtime_symbol": "py_assert_eq",
-                "runtime_call_adapter_kind": "extern_delegate"
+                "keywords": []
               }
             ],
             "keywords": [],
-            "lowered_kind": "BuiltinCall",
-            "builtin_name": "append",
-            "runtime_call": "list.append",
-            "runtime_module_id": "pytra.core.list",
-            "runtime_symbol": "list.append",
-            "runtime_call_adapter_kind": "builtin",
-            "semantic_tag": "stdlib.method.append",
             "runtime_owner": {
               "kind": "Name",
               "source_span": {
@@ -1369,7 +1203,6 @@
                 "end_lineno": 17,
                 "end_col": 10
               },
-              "resolved_type": "list[bool]",
               "casts": [],
               "borrow_kind": "readonly_ref",
               "repr": "checks",
@@ -1393,7 +1226,6 @@
               "end_lineno": 18,
               "end_col": 42
             },
-            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "py_assert_all(checks, \"case37\")",
@@ -1405,7 +1237,6 @@
                 "end_lineno": 18,
                 "end_col": 24
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_all",
@@ -1420,7 +1251,6 @@
                   "end_lineno": 18,
                   "end_col": 31
                 },
-                "resolved_type": "list[bool]",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "checks",
@@ -1434,29 +1264,18 @@
                   "end_lineno": 18,
                   "end_col": 41
                 },
-                "resolved_type": "str",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "\"case37\"",
                 "value": "case37"
               }
             ],
-            "keywords": [],
-            "resolved_runtime_call": "py_assert_all",
-            "resolved_runtime_source": "import_symbol",
-            "runtime_module_id": "pytra.utils.assertions",
-            "runtime_symbol": "py_assert_all",
-            "runtime_call_adapter_kind": "extern_delegate"
+            "keywords": []
           }
         }
       ],
       "is_generator": 0,
       "yield_value_type": "unknown",
-      "arg_type_exprs": {},
-      "return_type_expr": {
-        "kind": "NamedType",
-        "name": "bool"
-      },
       "leading_comments": [
         "This file contains test/implementation code for `test/fixtures/fstring_prefix.py`."
       ],
@@ -1493,7 +1312,6 @@
           "end_lineno": 22,
           "end_col": 31
         },
-        "resolved_type": "None",
         "casts": [],
         "borrow_kind": "value",
         "repr": "print(run_fstring_prefix())",
@@ -1505,7 +1323,6 @@
             "end_lineno": 22,
             "end_col": 9
           },
-          "resolved_type": "unknown",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -1520,7 +1337,6 @@
               "end_lineno": 22,
               "end_col": 30
             },
-            "resolved_type": "bool",
             "casts": [],
             "borrow_kind": "value",
             "repr": "run_fstring_prefix()",
@@ -1532,7 +1348,6 @@
                 "end_lineno": 22,
                 "end_col": 28
               },
-              "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_fstring_prefix",
@@ -1542,22 +1357,13 @@
             "keywords": []
           }
         ],
-        "keywords": [],
-        "lowered_kind": "BuiltinCall",
-        "builtin_name": "print",
-        "runtime_call": "py_print",
-        "runtime_module_id": "pytra.built_in.io_ops",
-        "runtime_symbol": "py_print",
-        "runtime_call_adapter_kind": "builtin",
-        "semantic_tag": "core.print"
+        "keywords": []
       }
     }
   ],
   "renamed_symbols": {},
   "meta": {
-    "parser_backend": "self_hosted",
     "import_resolution": {
-      "schema_version": 1,
       "bindings": [
         {
           "module_id": "pytra.utils.assertions",
@@ -1569,10 +1375,8 @@
           "source_module_id": "pytra.utils.assertions",
           "source_export_name": "py_assert_all",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils.assertions",
           "runtime_group": "utils",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "py_assert_all",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.py_assert_all"
@@ -1587,10 +1391,8 @@
           "source_module_id": "pytra.utils.assertions",
           "source_export_name": "py_assert_eq",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils.assertions",
           "runtime_group": "utils",
           "resolved_binding_kind": "symbol",
-          "runtime_symbol": "py_assert_eq",
           "runtime_symbol_kind": "function",
           "runtime_symbol_dispatch": "function",
           "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
@@ -1604,7 +1406,6 @@
           "source_line": 0,
           "source_module_id": "pytra.built_in.io_ops",
           "source_binding_kind": "implicit_builtin",
-          "runtime_module_id": "pytra.built_in.io_ops",
           "runtime_group": "built_in"
         }
       ],
