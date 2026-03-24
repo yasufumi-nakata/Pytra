@@ -2,7 +2,7 @@
 """Python built-in 関数の宣言。
 
 resolve がシグネチャを参照して型解決する。emit 対象外。
-body は pass（runtime が各言語で実装）。
+body は ... (Ellipsis) — Pylance がスタブとして認識する。
 
 spec: docs/ja/spec/spec-builtin-functions.md
 """
@@ -19,28 +19,22 @@ from pytra.types import Obj
 # ---------------------------------------------------------------------------
 
 @extern
-def len(x: Obj) -> int:
-    return x.__len__()
+def len(x: Obj) -> int: ...
 
 @extern
-def str(x: Obj) -> str:
-    return x.__str__()
+def str(x: Obj) -> str: ...
 
 @extern
-def bool(x: Obj) -> bool:
-    return x.__bool__()
+def bool(x: Obj) -> bool: ...
 
 @extern
-def int(x: Obj) -> int:
-    return x.__int__()
+def int(x: Obj) -> int: ...
 
 @extern
-def float(x: Obj) -> float:
-    return x.__float__()
+def float(x: Obj) -> float: ...
 
 @extern
-def repr(x: Obj) -> str:
-    return x.__repr__()
+def repr(x: Obj) -> str: ...
 
 
 # ---------------------------------------------------------------------------
@@ -49,32 +43,25 @@ def repr(x: Obj) -> str:
 # ---------------------------------------------------------------------------
 
 @extern
-def print(*args: Obj) -> None:
-    pass
+def print(*args: Obj) -> None: ...
 
 @extern
-def isinstance(x: Obj, t: type) -> bool:
-    pass
+def isinstance(x: Obj, t: type) -> bool: ...
 
 @extern
-def issubclass(cls: type, parent: type) -> bool:
-    pass
+def issubclass(cls: type, parent: type) -> bool: ...
 
 @extern
-def round(x: float, ndigits: int = 0) -> int:
-    pass
+def round(x: float, ndigits: int = 0) -> int: ...
 
 @extern
-def abs(x: int) -> int:
-    pass
+def abs(x: int) -> int: ...
 
 @extern
-def ord(c: str) -> int:
-    pass
+def ord(c: str) -> int: ...
 
 @extern
-def chr(i: int) -> str:
-    pass
+def chr(i: int) -> str: ...
 
 
 # ---------------------------------------------------------------------------
@@ -84,33 +71,27 @@ def chr(i: int) -> str:
 
 @template("T")
 @extern
-def min(*args: T) -> T:
-    pass
+def min(*args: T) -> T: ...
 
 @template("T")
 @extern
-def max(*args: T) -> T:
-    pass
+def max(*args: T) -> T: ...
 
 @template("T")
 @extern
-def sorted(x: list[T]) -> list[T]:
-    pass
+def sorted(x: list[T]) -> list[T]: ...
 
 @template("T")
 @extern
-def reversed(x: list[T]) -> list[T]:
-    pass
+def reversed(x: list[T]) -> list[T]: ...
 
 @template("T")
 @extern
-def enumerate(x: list[T], start: int = 0) -> list[tuple[int, T]]:
-    pass
+def enumerate(x: list[T], start: int = 0) -> list[tuple[int, T]]: ...
 
 @template("T", "U")
 @extern
-def zip(a: list[T], b: list[U]) -> list[tuple[T, U]]:
-    pass
+def zip(a: list[T], b: list[U]) -> list[tuple[T, U]]: ...
 
 
 # ---------------------------------------------------------------------------
@@ -118,13 +99,10 @@ def zip(a: list[T], b: list[U]) -> list[tuple[T, U]]:
 # ---------------------------------------------------------------------------
 
 @extern
-def range(stop: int) -> list[int]:
-    pass
+def range(stop: int) -> list[int]: ...
 
 @extern
-def range(start: int, stop: int) -> list[int]:
-    pass
+def range(start: int, stop: int) -> list[int]: ...
 
 @extern
-def range(start: int, stop: int, step: int) -> list[int]:
-    pass
+def range(start: int, stop: int, step: int) -> list[int]: ...
