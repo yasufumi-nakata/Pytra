@@ -1163,8 +1163,6 @@ def _parse_module_body(
             # Skip typing / __future__ / dataclasses imports
             if mod == "typing" or mod == "__future__" or mod == "dataclasses":
                 ln_no += 1
-                pending_trivia = []
-                pending_comments = []
                 continue
             span = make_span(ln_no + 1, 0, ln_no + 1, len(ln.rstrip()))
             stmt = ImportFrom(source_span=span, module=mod, names=aliases, level=0)
@@ -1190,8 +1188,7 @@ def _parse_module_body(
                     "local_name": local,
                 })
             ln_no += 1
-            pending_trivia = []
-            pending_comments = []
+            # import は leading_trivia を消費しない（次の非import文に渡す）
             continue
 
         # Main guard: if __name__ == "__main__":
@@ -1601,7 +1598,8 @@ def _parse_block_lines(
                 value = _parse_expr_text(ctx, value_text, abs_ln, indent + len(target_text) + 3, name_types)
                 # Infer type from value
                 val_type = _get_resolved_type(value)
-                is_declare = isinstance(target, Name) and target.id not in name_types
+                # declare: True if this is a simple Name target (not subscript/attr)
+                is_declare = isinstance(target, Name)
                 if isinstance(target, Name) and val_type != "unknown":
                     name_types[target.id] = val_type
                 span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
@@ -1712,6 +1710,11 @@ def _parse_for_stmt(
         dummy = _parse_expr_text(ctx, "None", abs_ln, indent, name_types)
         return ExprStmt(source_span=span, value=dummy), start_i + 1
 
+    # Check if it's range() — must determine BEFORE body parsing to set name_types
+    range_args_text = _parse_range_call(iter_text)
+    if range_args_text is not None:
+        name_types[target_name] = "int64"
+
     # Collect body
     sub_lines, end_i = _collect_sub_block(block_lines, start_i + 1, indent)
     body_stmts = _parse_block_lines(ctx, sub_lines, name_types, "for")
@@ -1726,13 +1729,11 @@ def _parse_for_stmt(
                 end_col = len(bl.rstrip())
                 break
 
-    span = make_span(abs_ln, indent, end_ln, end_col)
+    # ForRange span: col=0 (always), end from body
+    span = make_span(abs_ln, 0, end_ln, end_col)
 
-    # Check if it's range()
-    range_args_text = _parse_range_call(iter_text)
     if range_args_text is not None:
         range_args = _split_type_args_outer(range_args_text)
-        name_types[target_name] = "int64"
         # ForRange target: resolved_type="unknown" (型は target_type で別途指定)
         target = _make_name_expr(target_name, "unknown", abs_ln, indent + 4, ctx)
         # target は type_expr を持たない
