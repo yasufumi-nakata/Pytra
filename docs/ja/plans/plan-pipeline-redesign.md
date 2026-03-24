@@ -487,7 +487,7 @@ diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
 
 ### 2026-03-24: [ID: P0-PARSE-S1] fixture golden 一致 進捗
 
-- fixture 132件中: exact_match=41, parse_err=0 (全件パース成功), diff=91, 合計diff行=7879
+- fixture 132件中: exact_match=42, parse_err=0 (全件パース成功), diff=90
 - 完了した修正: キー順序、trivia/leading_comments、main リネーム、ClassDef 構造、
   ForRange target/span、numeric promotion casts、listcomp/slice/decorator 構文対応、
   set リテラル、論理行マージ、import symbol runtime 情報、OOP self パラメータ、
@@ -498,8 +498,9 @@ diff test/east1/py/01_mandelbrot.py.east1 work/tmp/01_mandelbrot.py.east1
   annotation-only AnnAssign, decorator 蓄積, yields_dynamic, raw string,
   AugAssign decl_type null, ClassDef leading 条件, stdlib module resolution。
 - pytra.std.re / pytra.std.json / pytra.std.pathlib を使用 (§5.2 準拠)。
-- 残り diff 91件の主要原因: span 計算 (listcomp内部等), セマンティクス (runtime info詳細),
-  OOP (__init__フィールド, 継承), lambda callable 型。
+- 追加: Slice→Subscript.lower/upper、Attribute call 型推論分離、toolchain2/common/ 統合
+- 残り diff 90件の主要原因: span 計算 (listcomp内部等), セマンティクス (runtime info詳細),
+  OOP (__init__フィールド, 継承), f-string JoinedStr/FormattedValue, lambda callable 型。
 
 ### 2026-03-24: [ID: P0-RESOLVE-S1/S2/S3] resolve 実装完了
 
