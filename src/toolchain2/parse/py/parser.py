@@ -28,7 +28,7 @@ from toolchain2.parse.py.nodes import (
     # Expressions
     ExprBase, Name, Constant, BinOp, UnaryOp, BoolOp, Compare,
     Call, Attribute, Subscript, SliceExpr, IfExp, ListExpr, TupleExpr,
-    DictExpr, ListComp, LambdaExpr, LambdaArg, Expr, expr_to_jv,
+    SetExpr, DictExpr, ListComp, LambdaExpr, LambdaArg, Expr, expr_to_jv,
     # Statements
     Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass, Try, ExceptHandler,
     If, For, While, FunctionDef, ClassDef, Stmt,
@@ -984,7 +984,7 @@ class ExprParser:
             self.expect("OP", "}")
             end_tok = self.tokens[self.pos - 1]
             base = self._base(open_tok.start, end_tok.end)
-            return ListExpr(base=base, elements=[first])  # TODO: SetExpr
+            return SetExpr(base=base, elements=[first])
         # Set literal: {a, b, c}
         elements: list[Expr] = [first]
         while self.peek().value == ",":
@@ -995,7 +995,7 @@ class ExprParser:
         self.expect("OP", "}")
         end_tok = self.tokens[self.pos - 1]
         base = self._base(open_tok.start, end_tok.end)
-        return ListExpr(base=base, elements=elements)  # TODO: SetExpr
+        return SetExpr(base=base, elements=elements)
 
 
 # ---------------------------------------------------------------------------

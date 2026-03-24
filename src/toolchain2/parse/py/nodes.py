@@ -289,6 +289,16 @@ class TupleExpr:
         return d
 
 @dataclass
+class SetExpr:
+    base: ExprBase
+    elements: list[Expr]
+    def to_jv(self) -> dict[str, JsonVal]:
+        d: dict[str, JsonVal] = {"kind": K.SET}
+        d.update(_expr_base_jv(self.base))
+        d["elements"] = [expr_to_jv(e) for e in self.elements]
+        return d
+
+@dataclass
 class DictExpr:
     base: ExprBase
     keys: list[Expr]
@@ -360,7 +370,7 @@ class RangeExpr:
 
 Expr = Union[
     Name, Constant, BinOp, UnaryOp, BoolOp, Compare, Call, Attribute,
-    Subscript, SliceExpr, IfExp, ListExpr, TupleExpr, DictExpr, ListComp,
+    Subscript, SliceExpr, IfExp, ListExpr, SetExpr, TupleExpr, DictExpr, ListComp,
     RangeExpr, LambdaExpr,
 ]
 
