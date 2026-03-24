@@ -1281,9 +1281,6 @@ def _parse_module_body(
                     "source_file": ctx.filename,
                     "source_line": ln_no + 1,
                 }
-                # host_only for pathlib etc.
-                if mod == "pathlib" or mod == "os" or mod == "sys":
-                    binding["host_only"] = True
                 ctx.import_bindings.append(binding)
                 ctx.qualified_refs.append({
                     "module_id": mod,
@@ -1565,7 +1562,6 @@ def _parse_class_def(
         body=body_stmts,
         dataclass_flag=is_dataclass,
         field_types=field_types,
-        class_storage_hint="ref" if (base_name is not None and base_name != "") else "value",
     )
     # ClassDef: 最初の body item は常に出力、2番目以降は trivia がある場合のみ
     if force_leading or len(comments) > 0 or len(trivia) > 0:
@@ -2038,7 +2034,6 @@ def _parse_block_lines(
                     value=value,
                     
                     declare=is_declare,
-                    declare_init=True if is_declare else None,
                 )
                 if len(pending_trivia) > 0:
                     assign_stmt.leading_trivia = list(pending_trivia)

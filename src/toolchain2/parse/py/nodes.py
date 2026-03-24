@@ -409,7 +409,6 @@ class Assign:
     target: Expr
     value: Expr
     declare: bool
-    declare_init: Optional[bool] = None
     leading_trivia: Optional[list[TriviaNode]] = None
     leading_comments: Optional[list[str]] = None
     def to_jv(self) -> dict[str, JsonVal]:
@@ -418,8 +417,6 @@ class Assign:
             "target": expr_to_jv(self.target), "value": expr_to_jv(self.value),
             "declare": self.declare,
         }
-        if self.declare_init is not None:
-            d["declare_init"] = self.declare_init
         if self.leading_trivia is not None:
             d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
         if self.leading_comments is not None:
@@ -610,7 +607,6 @@ class ClassDef:
     body: list[Stmt]
     dataclass_flag: bool
     field_types: dict[str, str]
-    class_storage_hint: str
     leading_trivia: Optional[list[TriviaNode]] = None
     leading_comments: Optional[list[str]] = None
     def to_jv(self) -> dict[str, JsonVal]:
@@ -620,7 +616,6 @@ class ClassDef:
             "base": self.base, "dataclass": self.dataclass_flag,
             "field_types": dict(self.field_types),
             "body": [stmt_to_jv(s) for s in self.body],
-            "class_storage_hint": self.class_storage_hint,
         }
         if self.leading_comments is not None:
             d["leading_comments"] = list(self.leading_comments)
