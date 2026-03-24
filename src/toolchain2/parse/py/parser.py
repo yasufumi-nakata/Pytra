@@ -1411,6 +1411,7 @@ def _parse_module_body(
     pending_trivia: list[TriviaNode] = []
     pending_comments: list[str] = []
     leading_file_trivia_done = False
+    pending_dataclass = False
 
     while ln_no < total:
         ln = lines[ln_no]
@@ -1442,8 +1443,10 @@ def _parse_module_body(
 
         s_clean = _strip_inline_comment(s)
 
-        # Decorator at module level: skip
+        # Decorator at module level
         if s_clean.startswith("@"):
+            if s_clean == "@dataclass" or s_clean.startswith("@dataclass("):
+                pending_dataclass = True
             ln_no += 1
             continue
 
@@ -1538,7 +1541,8 @@ def _parse_module_body(
         # Class def
         cls_name = _parse_class_name(s_clean)
         if cls_name != "":
-            cls_stmt, ln_no = _parse_class_def(ctx, lines, ln_no, cls_name, pending_trivia, pending_comments)
+            cls_stmt, ln_no = _parse_class_def(ctx, lines, ln_no, cls_name, pending_trivia, pending_comments, is_dataclass=pending_dataclass)
+            pending_dataclass = False
             body_items.append(cls_stmt)
             pending_trivia = []
             pending_comments = []
@@ -1701,8 +1705,19 @@ def _parse_class_def(
     cls_name: str,
     trivia: list[TriviaNode],
     comments: list[str],
+    is_dataclass: bool = False,
 ) -> tuple[ClassDef, int]:
     """クラス定義をパースする。"""
+    # Check for base class: class Name(Base):
+    header = _strip_inline_comment(lines[start_ln].strip())
+    base_name: Optional[str] = None
+    paren_pos = header.find("(")
+    if paren_pos > 0:
+        paren_end = header.find(")")
+        if paren_end > paren_pos:
+            base_name = header[paren_pos + 1:paren_end].strip()
+            if base_name == "":
+                base_name = None
     block_lines, end_ln = _collect_block(lines, start_ln + 1, 0)
     name_types: dict[str, str] = {}
     body_stmts = _parse_block_lines(ctx, block_lines, name_types, cls_name)
@@ -1721,9 +1736,9 @@ def _parse_class_def(
         source_span=span,
         name=cls_name,
         original_name=cls_name,
-        base=None,
+        base=base_name,
         body=body_stmts,
-        dataclass_flag=False,
+        dataclass_flag=is_dataclass,
         field_types=field_types,
         class_storage_hint="value",
     )
@@ -2103,6 +2118,7 @@ def _find_expr_col(ctx: ParseContext, expr_text: str, abs_ln: int, fallback: int
     """元の行テキスト内で式テキストの位置を検索する (golden 準拠)。
 
     現行パーサーは ln_txt.find(expr_txt) で最初の出現を使う。
+    短い式テキスト (1-2文字) は誤マッチしやすいので fallback を優先。
     """
     if expr_text == "" or abs_ln < 1 or abs_ln > len(ctx.lines):
         return fallback
