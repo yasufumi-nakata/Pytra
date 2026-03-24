@@ -290,7 +290,44 @@ class set:
 | `x.__bool__()` | `py_to_bool(x)` | `len(x) > 0` | `!x.is_empty()` | `!x.isEmpty()` |
 | `x.__int__()` | `static_cast<int64_t>(x)` | `int64(x)` | `x as i64` | `(long)x` |
 
-## 7. ファイル配置
+## 7. `pytra: builtin-declarations` ディレクティブ
+
+ファイル先頭のコメントに `pytra: builtin-declarations` と記述すると、そのファイルは「宣言のみ（emit 対象外）」として扱われる。
+
+```python
+# pytra: builtin-declarations
+
+@extern
+def len(x: Obj) -> int:
+    return x.__len__()
+```
+
+各言語のコメント記法で書くが、ディレクティブ文字列は共通:
+
+| 言語 | 記法 |
+|---|---|
+| Python | `# pytra: builtin-declarations` |
+| C++ | `// pytra: builtin-declarations` |
+| Go | `// pytra: builtin-declarations` |
+| Rust | `// pytra: builtin-declarations` |
+
+処理の流れ:
+
+1. **parse**: 先頭行のコメントから `pytra: builtin-declarations` を検出し、EAST1 の `meta.declaration_only: true` を付与
+2. **resolve**: EAST1 の `FunctionDef` / `ClassDef` からシグネチャを抽出し、型解決に使用
+3. **emit**: `meta.declaration_only == true` のモジュールをスキップ（コード生成しない）
+
+ユーザーも同じ仕組みで独自の built-in を定義できる:
+
+```python
+# pytra: builtin-declarations
+
+@extern
+def my_native_sqrt(x: float) -> float:
+    pass  # 実装は各言語の runtime に手書き
+```
+
+## 8. ファイル配置
 
 ```
 src/pytra/built_in/
@@ -303,7 +340,7 @@ src/pytra/built_in/
 
 `builtins.py` と `containers.py` は宣言のみ（関数本体は `pass` または Python fallback）。resolve はシグネチャのみ参照する。ランタイムヘルパー（`py_print` 等）は既存ファイルに維持。
 
-## 8. varargs の変換ルール
+## 9. varargs の変換ルール
 
 `*args: T` は resolve が以下のように変換する:
 
@@ -324,7 +361,7 @@ print([1, "hello", 3.14])    # 型: list[Obj]
 print([ObjBox(1), "hello", ObjBox(3.14)])  # POD を boxing
 ```
 
-## 9. 未決事項
+## 10. 未決事項
 
 - ~~`object` を引数型にしてよいか~~ → `Obj` 型で解決。`object` は使わない。
 - ~~ジェネリック型パラメータ `T` の表現~~ → `@template` をクラスにも適用。
@@ -333,4 +370,4 @@ print([ObjBox(1), "hello", ObjBox(3.14)])  # POD を boxing
 - ~~dunder 展開のタイミング~~ → resolve が `len(x)` → `py_len(x)` 等のノードに変換。dunder 展開はしない（型チェックのみ）。emitter は `py_len` を各言語 runtime に写像。
 - ~~`min`/`max` の引数が 2 個以上の場合~~ → varargs（`*args: T` → `list[T]`）。optimize が要素数 2 を特殊化してもよい。
 - ~~`int(x, base=16)` の base 引数~~ → 当面サポートしない。必要になったら別関数として追加。
-- コンテナ型の宣言が `src/pytra/built_in/` にあるべきか、`src/pytra/std/` にあるべきか
+- ~~コンテナ型の宣言の配置場所~~ → `src/pytra/built_in/` に配置。`pytra: builtin-declarations` ディレクティブ付き。
