@@ -361,7 +361,43 @@ print([1, "hello", 3.14])    # 型: list[Obj]
 print([ObjBox(1), "hello", ObjBox(3.14)])  # POD を boxing
 ```
 
-## 10. 未決事項
+## 10. `@extern` decorator への runtime 情報集約（将来）
+
+現状は `builtin_registry.py` にハードコードテーブル（`_BUILTIN_SEMANTIC_TAGS`, `_BUILTIN_RUNTIME_MODULES`, `_BUILTIN_RUNTIME_SYMBOLS`, `_BUILTIN_RUNTIME_CALLS`）で runtime 情報を管理している。
+
+将来、これらを `@extern` decorator の引数として宣言ファイルに集約し、ハードコードテーブルをゼロにする。
+
+```python
+# pytra: builtin-declarations
+
+@extern(module="pytra.built_in.io_ops", symbol="py_print", tag="core.print")
+def print(*args: Obj) -> None: ...
+
+@extern(module="pytra.core.py_runtime", symbol="len", tag="core.len")
+def len(x: Obj) -> int: ...
+
+@extern(module="pytra.std.math", symbol="sqrt", tag="stdlib.method.sqrt")
+def sqrt(x: float) -> float: ...
+```
+
+| 引数 | 意味 |
+|---|---|
+| `module` | この関数の実装がある runtime モジュール（言語非依存） |
+| `symbol` | runtime モジュール内での実際の関数名 |
+| `tag` | resolve が EAST2 に付与する semantic_tag（emitter が意味を識別するキー） |
+
+処理の流れ:
+1. **parse**: `@extern(module=..., symbol=..., tag=...)` を読み、EAST1 の FunctionDef.meta に格納
+2. **resolve**: meta から tag/module/symbol を取り、EAST2 ノードに `semantic_tag` / `runtime_module_id` / `runtime_symbol` を付与
+3. **emitter**: 解決済み属性を見て各言語に写像するだけ
+
+メリット:
+- ハードコードテーブルが不要になる
+- built-in の追加・変更が宣言ファイルの編集だけで完結
+- ユーザー定義の `@extern` も同じ仕組みで runtime 情報を指定可能
+- runtime 情報が宣言ファイルに 1 箇所で集約され、全 emitter で共有される
+
+## 11. 未決事項
 
 - ~~`object` を引数型にしてよいか~~ → `Obj` 型で解決。`object` は使わない。
 - ~~ジェネリック型パラメータ `T` の表現~~ → `@template` をクラスにも適用。
