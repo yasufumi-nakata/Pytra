@@ -30,9 +30,9 @@ from toolchain2.parse.py.nodes import (
     # Expressions
     ExprBase, Name, Constant, BinOp, UnaryOp, BoolOp, Compare,
     Call, Attribute, Subscript, SliceExpr, IfExp, ListExpr, TupleExpr,
-    DictExpr, ListComp, RangeExpr, Expr, expr_to_jv,
+    DictExpr, ListComp, RangeExpr, LambdaExpr, Expr, expr_to_jv,
     # Statements
-    ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass,
+    ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass, Try, ExceptHandler,
     If, ForRange, For, While, FunctionDef, ClassDef, Stmt,
     # Module
     Module,
@@ -427,31 +427,41 @@ class ExprParser:
             return self._parse_lambda()
         return self._parse_ternary()
 
-    def _parse_lambda(self) -> Expr:
+    def _parse_lambda(self) -> LambdaExpr:
         """lambda args: body"""
         tok = self.advance()  # consume 'lambda'
         start = tok.start
         # Parse parameter list until ':'
         params: list[str] = []
-        while self.peek().value != ":":
+        arg_types: dict[str, str] = {}
+        while self.peek().value != ":" and self.peek().kind != "EOF":
             if self.peek().kind == "NAME":
-                params.append(self.advance().value)
+                pname = self.advance().value
+                arg_types[pname] = "unknown"
+                params.append(pname)
             elif self.peek().value == ",":
                 self.advance()
             elif self.peek().value == "=":
                 # default value — skip until , or :
                 self.advance()
-                self._parse_or()  # consume default value
+                # Consume default value expression (stop at , or :)
+                depth = 0
+                while self.peek().kind != "EOF":
+                    if self.peek().value in (",", ":") and depth == 0:
+                        break
+                    if self.peek().value in ("(", "[", "{"):
+                        depth += 1
+                    elif self.peek().value in (")", "]", "}"):
+                        depth -= 1
+                    self.advance()
             else:
                 break
         self.expect("OP", ":")
         body = self._parse_ternary()
         end = self._child_local_end(body)
+        ret_type = _get_resolved_type(body)
         base = self._base(start, end, "unknown", "value")
-        # Lambda は Call ノードではなく、golden では特殊な FunctionDef-like 構造
-        # 簡易実装: Name("lambda") として返す
-        # TODO: proper Lambda node
-        return body  # 暫定: lambda body をそのまま返す
+        return LambdaExpr(base=base, args=params, arg_types=arg_types, body=body, return_type=ret_type)
 
     def _parse_ternary(self) -> Expr:
         """a if cond else b"""
@@ -1820,6 +1830,99 @@ def _parse_class_def(
     return cd, end_ln
 
 
+def _parse_try_stmt(
+    ctx: ParseContext,
+    block_lines: list[str],
+    start_i: int,
+    parent_indent: int,
+    name_types: dict[str, str],
+    abs_ln: int,
+    indent: int,
+) -> tuple[Try, int]:
+    """try/except/finally 文をパースする。"""
+    # Collect try body
+    try_lines, next_i = _collect_sub_block(block_lines, start_i + 1, indent)
+    try_body = _parse_block_lines(ctx, try_lines, name_types, "try")
+
+    handlers: list[ExceptHandler] = []
+    orelse: list[Stmt] = []
+    finalbody: list[Stmt] = []
+
+    # Parse except/else/finally clauses
+    while next_i < len(block_lines):
+        ln = block_lines[next_i]
+        s = ln.strip()
+        ln_indent = len(ln) - len(ln.lstrip(" ")) if s != "" else 0
+        if s == "" or s.startswith("#"):
+            next_i += 1
+            continue
+        if ln_indent != indent:
+            break
+
+        handler_abs_ln = _find_abs_line(ctx.lines, ln, abs_ln)
+
+        if s.startswith("except"):
+            # Parse except clause
+            m_exc_as = re.match(r"^except\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)\s*:\s*$", s)
+            m_exc = re.match(r"^except\s+(.+?)\s*:\s*$", s)
+            exc_type: Optional[str] = None
+            exc_name: Optional[str] = None
+            if m_exc_as is not None:
+                exc_type = re.strip_group(m_exc_as, 1)
+                exc_name = re.strip_group(m_exc_as, 2)
+            elif m_exc is not None:
+                exc_type = re.strip_group(m_exc, 1)
+            elif s == "except:" or s.startswith("except:"):
+                pass  # bare except
+            handler_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
+            handler_body = _parse_block_lines(ctx, handler_lines, name_types, "except")
+            span = make_span(handler_abs_ln, indent, handler_abs_ln, indent + len(s))
+            handlers.append(ExceptHandler(
+                exc_type=exc_type,
+                name=exc_name,
+                body=handler_body,
+                source_span=span,
+            ))
+            continue
+
+        if s.startswith("else:") or s == "else:":
+            else_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
+            orelse = _parse_block_lines(ctx, else_lines, name_types, "else")
+            continue
+
+        if s.startswith("finally:") or s == "finally:":
+            finally_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
+            finalbody = _parse_block_lines(ctx, finally_lines, name_types, "finally")
+            continue
+
+        break
+
+    # Determine end span
+    end_ln = abs_ln
+    end_col = indent + 4
+    if len(finalbody) > 0:
+        last = finalbody[-1]
+        if hasattr(last, 'source_span') and last.source_span.end_lineno is not None:
+            end_ln = last.source_span.end_lineno
+            end_col = last.source_span.end_col if last.source_span.end_col is not None else 0
+    elif len(handlers) > 0:
+        last_h = handlers[-1]
+        if len(last_h.body) > 0:
+            last = last_h.body[-1]
+            if hasattr(last, 'source_span') and last.source_span.end_lineno is not None:
+                end_ln = last.source_span.end_lineno
+                end_col = last.source_span.end_col if last.source_span.end_col is not None else 0
+
+    span = make_span(abs_ln, indent, end_ln, end_col)
+    return Try(
+        source_span=span,
+        body=try_body,
+        handlers=handlers,
+        orelse=orelse,
+        finalbody=finalbody,
+    ), next_i
+
+
 def _infer_class_storage_hint(is_dataclass: bool, base: Optional[str], field_types: dict[str, str], body: list[Stmt]) -> str:
     """class_storage_hint を推論する (golden 準拠)。"""
     # base がある → ref
@@ -2012,6 +2115,14 @@ def _parse_block_lines(
             span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
             stmts.append(Raise(source_span=span, exc=expr, cause=None))
             i += 1
+            pending_trivia = []
+            pending_comments = []
+            continue
+
+        # try/except/finally
+        if s_clean == "try:" or s_clean.startswith("try:"):
+            try_stmt, i = _parse_try_stmt(ctx, block_lines, i, base_indent, name_types, abs_ln, indent)
+            stmts.append(try_stmt)
             pending_trivia = []
             pending_comments = []
             continue
@@ -2604,6 +2715,11 @@ def _collect_reassigned(stmts: list[Stmt], out: set[str]) -> None:
             _collect_reassigned(s.body, out)
         elif isinstance(s, While):
             _collect_reassigned(s.body, out)
+        elif isinstance(s, Try):
+            _collect_reassigned(s.body, out)
+            for h in s.handlers:
+                _collect_reassigned(h.body, out)
+            _collect_reassigned(s.finalbody, out)
 
 
 # ---------------------------------------------------------------------------

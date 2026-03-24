@@ -480,6 +480,24 @@ class ListComp:
 
 
 @dataclass
+class LambdaExpr:
+    base: ExprBase
+    args: list[str]
+    arg_types: dict[str, str]
+    body: Expr
+    return_type: str
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        d: dict[str, JsonVal] = {"kind": "Lambda"}
+        d.update(_expr_base_jv(self.base))
+        d["args"] = list(self.args)
+        d["arg_types"] = dict(self.arg_types)
+        d["body"] = expr_to_jv(self.body)
+        d["return_type"] = self.return_type
+        return d
+
+
+@dataclass
 class RangeExpr:
     base: ExprBase
     start: Expr
@@ -501,7 +519,7 @@ class RangeExpr:
 Expr = Union[
     Name, Constant, BinOp, UnaryOp, BoolOp, Compare, Call, Attribute,
     Subscript, SliceExpr, IfExp, ListExpr, TupleExpr, DictExpr, ListComp,
-    RangeExpr,
+    RangeExpr, LambdaExpr,
 ]
 
 
@@ -677,6 +695,45 @@ class Raise:
             "exc": expr_to_jv(self.exc),
             "cause": expr_to_jv(self.cause) if self.cause is not None else None,
         }
+
+
+@dataclass
+class ExceptHandler:
+    """except 節。"""
+    exc_type: Optional[str]
+    name: Optional[str]
+    body: list[Stmt]
+    source_span: SourceSpan
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        d: dict[str, JsonVal] = {
+            "kind": "ExceptHandler",
+            "source_span": self.source_span.to_jv(),
+            "exc_type": self.exc_type,
+            "name": self.name,
+            "body": [stmt_to_jv(s) for s in self.body],
+        }
+        return d
+
+
+@dataclass
+class Try:
+    source_span: SourceSpan
+    body: list[Stmt]
+    handlers: list[ExceptHandler]
+    orelse: list[Stmt]
+    finalbody: list[Stmt]
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        d: dict[str, JsonVal] = {
+            "kind": "Try",
+            "source_span": self.source_span.to_jv(),
+            "body": [stmt_to_jv(s) for s in self.body],
+            "handlers": [h.to_jv() for h in self.handlers],
+            "orelse": [stmt_to_jv(s) for s in self.orelse],
+            "finalbody": [stmt_to_jv(s) for s in self.finalbody],
+        }
+        return d
 
 
 @dataclass
@@ -884,7 +941,7 @@ class ClassDef:
 # Stmt union type
 Stmt = Union[
     ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Raise, Pass,
-    If, ForRange, For, While, FunctionDef, ClassDef,
+    If, ForRange, For, While, Try, FunctionDef, ClassDef,
 ]
 
 
