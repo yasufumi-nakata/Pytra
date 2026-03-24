@@ -536,8 +536,11 @@ class ExprParser:
             op_name = "Add" if op_tok.value == "+" else "Sub"
             start = self._child_local_start(left)
             end = self._child_local_end(right)
-            res_type = _binop_result_type(_get_resolved_type(left), _get_resolved_type(right), op_name)
+            left_type = _get_resolved_type(left)
+            right_type = _get_resolved_type(right)
+            res_type = _binop_result_type(left_type, right_type, op_name)
             base = self._base(start, end, res_type, "value")
+            base.casts = _compute_binop_casts(left_type, right_type, op_name)
             left = BinOp(base=base, left=left, op=op_name, right=right)
         return left
 
@@ -550,8 +553,13 @@ class ExprParser:
             op_name = op_map.get(op_tok.value, op_tok.value)
             start = self._child_local_start(left)
             end = self._child_local_end(right)
-            res_type = _binop_result_type(_get_resolved_type(left), _get_resolved_type(right), op_name)
+            left_type = _get_resolved_type(left)
+            right_type = _get_resolved_type(right)
+            res_type = _binop_result_type(left_type, right_type, op_name)
             base = self._base(start, end, res_type, "value")
+            # Numeric promotion casts
+            casts = _compute_binop_casts(left_type, right_type, op_name)
+            base.casts = casts
             left = BinOp(base=base, left=left, op=op_name, right=right)
         return left
 
@@ -1045,6 +1053,29 @@ def _get_func_name(func: Expr) -> str:
     if isinstance(func, Attribute):
         return func.attr
     return ""
+
+
+def _compute_binop_casts(left_type: str, right_type: str, op: str) -> list[Cast]:
+    """二項演算の数値プロモーションキャストを計算する。"""
+    casts: list[Cast] = []
+    # Div: int64/int64 → float64 (両辺をプロモーション)
+    if op == "Div":
+        if left_type == "int64":
+            casts.append(Cast(operand="left", from_type="int64", to_type="float64", reason="numeric_promotion"))
+        if right_type == "int64":
+            casts.append(Cast(operand="right", from_type="int64", to_type="float64", reason="numeric_promotion"))
+    # Pow: int64 → float64
+    elif op == "Pow":
+        if left_type == "int64":
+            casts.append(Cast(operand="left", from_type="int64", to_type="float64", reason="numeric_promotion"))
+        if right_type == "int64":
+            casts.append(Cast(operand="right", from_type="int64", to_type="float64", reason="numeric_promotion"))
+    # Mixed int64/float64: promote int64 side
+    elif left_type == "int64" and right_type == "float64":
+        casts.append(Cast(operand="left", from_type="int64", to_type="float64", reason="numeric_promotion"))
+    elif left_type == "float64" and right_type == "int64":
+        casts.append(Cast(operand="right", from_type="int64", to_type="float64", reason="numeric_promotion"))
+    return casts
 
 
 def _binop_result_type(left_type: str, right_type: str, op: str) -> str:

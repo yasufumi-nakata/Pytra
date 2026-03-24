@@ -102,7 +102,7 @@ class Cast:
 
     def to_jv(self) -> dict[str, JsonVal]:
         return {
-            "operand": self.operand,
+            "on": self.operand,
             "from": self.from_type,
             "to": self.to_type,
             "reason": self.reason,
