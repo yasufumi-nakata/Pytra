@@ -110,13 +110,19 @@ def cmd_parse(args: list[str]) -> int:
 def _resolve_one(input_path: Path, output_path: Path | None, pretty: bool) -> int:
     """1 ファイルを resolve して .east2 を生成する。"""
     from toolchain2.resolve.py.resolver import resolve_file, east2_output_path_from_east1
+    from toolchain2.resolve.py.builtin_registry import load_builtin_registry
 
     if not input_path.exists():
         print("error: file not found: " + str(input_path))
         return 1
 
+    # Load builtin registry
+    builtins_path = Path("test/builtin/east1/py/builtins.py.east1")
+    containers_path = Path("test/builtin/east1/py/containers.py.east1")
+    registry = load_builtin_registry(builtins_path, containers_path)
+
     try:
-        result = resolve_file(input_path)
+        result = resolve_file(input_path, registry=registry)
     except Exception as e:
         print("error: resolve failed: " + str(input_path) + ": " + str(e))
         return 1
