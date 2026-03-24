@@ -280,6 +280,10 @@ def _resolve_name(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     name_val = expr.get("id")
     name: str = str(name_val) if isinstance(name_val, str) else ""
     t: str = ctx.scope.lookup(name)
+    # Class names resolve to "unknown" (they're types, not values)
+    if ctx.lookup_class(name) is not None:
+        expr["resolved_type"] = "unknown"
+        return "unknown"
     expr["resolved_type"] = t
     # Borrow kind: readonly_ref for typed names (references to known variables)
     # value for untyped (function names, unknown)
@@ -650,7 +654,7 @@ def _resolve_imported_call(
 
     runtime_module: str = ctx.canonical_module_id(module_id)
 
-    # Only annotate with runtime call info if the symbol exists in the runtime index
+    # Annotate with runtime call info if symbol exists in runtime index
     sym_doc: dict[str, JsonVal] = ctx.lookup_runtime_symbol_doc(runtime_module, export_name)
     has_runtime_entry: bool = len(sym_doc) > 0
 
@@ -1307,7 +1311,6 @@ def _resolve_dictcomp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 def _resolve_lambda(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     """Resolve a Lambda expression."""
-    # Build callable type string from arg types and return type
     arg_types_raw = expr.get("arg_types")
     ret_raw = expr.get("return_type")
     arg_type_strs: list[str] = []
@@ -1319,6 +1322,13 @@ def _resolve_lambda(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
                     at = arg_types_raw.get(a)
                     arg_type_strs.append(normalize_type(str(at)) if isinstance(at, str) else "unknown")
     ret: str = normalize_type(str(ret_raw)) if isinstance(ret_raw, str) else "unknown"
+
+    # Add resolved_type to args entries
+    args_list = expr.get("args")
+    if isinstance(args_list, list):
+        for arg in args_list:
+            if isinstance(arg, dict) and "resolved_type" not in arg:
+                arg["resolved_type"] = "unknown"
 
     # Resolve body in lambda scope
     lam_scope: Scope = ctx.scope.child()
