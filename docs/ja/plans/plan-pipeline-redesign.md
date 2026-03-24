@@ -303,6 +303,43 @@ test/sample/east3/*.east3        → optimize → test/sample/east3-opt/*.east3
 test/sample/east3-opt/*.east3    → emit     → compile → run → sample/golden/manifest.json と一致
 ```
 
+#### stdlib 系（pytra.std.* のパイプライン golden）
+
+```
+test/
+  stdlib/
+    east1/py/                      ← parse の期待出力
+      math.py.east1
+      json.py.east1
+      pathlib.py.east1
+      time.py.east1
+    east2/                         ← resolve の期待出力
+      math.east2
+      json.east2
+    east3/                         ← compile の期待出力
+      math.east3
+    east3-opt/                     ← optimize の期待出力
+      math.east3
+```
+
+- ソースは `src/include/py/pytra/std/`（将来は `include/py/pytra/std/`）を直接参照
+- fixture/sample と同じ内部構造（east1/py → east2 → east3 → east3-opt）
+- stdlib はユーザーコードと同じパイプラインを通るため全段の golden が必要
+
+#### builtin 系（宣言のみ、east1 のみ）
+
+```
+test/
+  builtin/
+    east1/py/                      ← parse の期待出力（east1 のみ）
+      builtins.py.east1
+      containers.py.east1
+```
+
+- ソースは `src/include/py/pytra/built_in/`（将来は `include/py/pytra/built_in/`）を直接参照
+- `# pytra: builtin-declarations` ディレクティブ付きファイルは emit 対象外
+- resolve がシグネチャ参照するための EAST1 のみ。east2 以降は不要
+
 #### 設計原則
 
 - fixture と sample は独立に実行できる（CI で分けられる）
