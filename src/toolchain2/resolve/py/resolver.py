@@ -354,7 +354,9 @@ def _binop_result_type(lt: str, rt: str, op: str) -> str:
     if is_float_type(lt) or is_float_type(rt):
         return "float64"
     if is_int_type(lt) and is_int_type(rt):
-        return lt  # Same int type
+        if lt == rt:
+            return lt  # Same int type
+        return "unknown"  # Mixed int sizes
 
     # Bitwise operations on ints
     if op == "BitAnd" or op == "BitOr" or op == "BitXor" or op == "LShift" or op == "RShift":
