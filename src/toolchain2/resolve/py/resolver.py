@@ -1978,9 +1978,7 @@ def _convert_call_to_range_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -
                 range_mode = "descending"
             elif sv != 1:
                 range_mode = "dynamic"
-    elif isinstance(step, dict) and step.get("kind") == "UnaryOp" and step.get("op") == "USub":
-        range_mode = "descending"
-    else:
+    elif isinstance(step, dict) and step.get("kind") != "Constant":
         range_mode = "dynamic"
 
     # Replace the Call node in-place with RangeExpr
@@ -2078,13 +2076,7 @@ def _convert_for_to_forrange(
                 range_mode = "ascending"
             else:
                 range_mode = "dynamic"
-    elif isinstance(step_node, dict) and step_node.get("kind") == "UnaryOp":
-        op = step_node.get("op")
-        if op == "USub":
-            range_mode = "descending"
-        else:
-            range_mode = "dynamic"
-    else:
+    elif isinstance(step_node, dict) and step_node.get("kind") != "Constant":
         range_mode = "dynamic"
 
     # Convert the For node to ForRange
