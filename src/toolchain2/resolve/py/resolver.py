@@ -2221,6 +2221,14 @@ def _build_import_resolution_meta(
                 ib_list.append(ib_compat)
 
 
+    # Add host_only to import_bindings for module-kind entries
+    ib_raw2 = east1_meta.get("import_bindings")
+    if isinstance(ib_raw2, list):
+        for ib2 in ib_raw2:
+            if isinstance(ib2, dict) and ib2.get("binding_kind") == "module":
+                ib2["host_only"] = True
+
+
 def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[str, JsonVal]:
     """Enhance a single import binding with runtime resolution info."""
     module_id_val = binding.get("module_id")
@@ -2241,6 +2249,7 @@ def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[s
 
     if binding_kind == "module":
         binding["resolved_binding_kind"] = "module"
+        binding["host_only"] = True
         return binding
 
     if binding_kind == "implicit_builtin":
