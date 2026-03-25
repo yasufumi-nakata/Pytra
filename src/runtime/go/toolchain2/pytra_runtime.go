@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -144,6 +145,147 @@ func __pytra_contains(haystack interface{}, needle interface{}) bool {
 				}
 			}
 		}
+	case map[string]int64:
+		n, ok := needle.(string)
+		if ok {
+			_, exists := h[n]
+			return exists
+		}
 	}
 	return false
+}
+
+// ---------------------------------------------------------------------------
+// string methods
+// ---------------------------------------------------------------------------
+
+// __pytra_isdigit checks if a byte/string is a digit character.
+func __pytra_isdigit(v interface{}) bool {
+	switch t := v.(type) {
+	case byte:
+		return t >= '0' && t <= '9'
+	case string:
+		if len(t) == 0 {
+			return false
+		}
+		for _, c := range t {
+			if c < '0' || c > '9' {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
+// __pytra_isalpha checks if a byte/string is alphabetic.
+func __pytra_isalpha(v interface{}) bool {
+	switch t := v.(type) {
+	case byte:
+		return (t >= 'a' && t <= 'z') || (t >= 'A' && t <= 'Z')
+	case string:
+		if len(t) == 0 {
+			return false
+		}
+		for _, c := range t {
+			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
+// __pytra_strip removes leading/trailing whitespace.
+func __pytra_strip(s string) string {
+	return strings.TrimSpace(s)
+}
+
+// __pytra_join joins strings with separator (Python str.join).
+func __pytra_join(sep string, items []string) string {
+	return strings.Join(items, sep)
+}
+
+// __pytra_replace replaces occurrences in a string.
+func __pytra_replace(s string, old string, new_ string) string {
+	return strings.ReplaceAll(s, old, new_)
+}
+
+// __pytra_split splits a string by separator.
+func __pytra_split(s string, sep string) []string {
+	return strings.Split(s, sep)
+}
+
+// __pytra_startswith checks string prefix.
+func __pytra_startswith(s string, prefix string) bool {
+	return strings.HasPrefix(s, prefix)
+}
+
+// __pytra_endswith checks string suffix.
+func __pytra_endswith(s string, suffix string) bool {
+	return strings.HasSuffix(s, suffix)
+}
+
+// __pytra_upper converts string to uppercase.
+func __pytra_upper(s string) string {
+	return strings.ToUpper(s)
+}
+
+// __pytra_lower converts string to lowercase.
+func __pytra_lower(s string) string {
+	return strings.ToLower(s)
+}
+
+// __pytra_find finds substring index (-1 if not found).
+func __pytra_find(s string, sub string) int64 {
+	return int64(strings.Index(s, sub))
+}
+
+// ---------------------------------------------------------------------------
+// dict helpers
+// ---------------------------------------------------------------------------
+
+// __pytra_dict_get gets a value from map with default (for map[string]int64).
+func __pytra_dict_get(m map[string]int64, key string, def_ int64) int64 {
+	if v, ok := m[key]; ok {
+		return v
+	}
+	return def_
+}
+
+// ---------------------------------------------------------------------------
+// string/byte helpers
+// ---------------------------------------------------------------------------
+
+// __pytra_byte_eq compares a byte to a string character.
+func __pytra_byte_eq(b byte, s string) bool {
+	return len(s) == 1 && b == s[0]
+}
+
+// __pytra_byte_to_string converts a byte to a single-char string.
+func __pytra_byte_to_string(b byte) string {
+	return string([]byte{b})
+}
+
+// __pytra_str_to_int64 converts a string to int64 (Python int(str)).
+func __pytra_str_to_int64(s string) int64 {
+	v, _ := strconv.ParseInt(s, 10, 64)
+	return v
+}
+
+// __pytra_int64 converts various types to int64.
+func __pytra_int64(v interface{}) int64 {
+	switch t := v.(type) {
+	case int:
+		return int64(t)
+	case int64:
+		return t
+	case float64:
+		return int64(t)
+	case string:
+		r, _ := strconv.ParseInt(t, 10, 64)
+		return r
+	}
+	return 0
 }

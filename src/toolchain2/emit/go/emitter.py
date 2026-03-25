@@ -219,6 +219,11 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "nil"
     if name == "self" and ctx.current_receiver != "":
         return ctx.current_receiver
+    # Go control flow keywords used as statements
+    if name == "continue":
+        return "continue"
+    if name == "break":
+        return "break"
     return _safe_go_ident(name)
 
 
@@ -294,6 +299,27 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return "(" + " && ".join(parts) + ")"
 
 
+# str methods that map to runtime helper functions
+_STR_METHOD_HELPERS: dict[str, str] = {
+    "isdigit": "__pytra_isdigit",
+    "isalpha": "__pytra_isalpha",
+    "isalnum": "__pytra_isalnum",
+    "isspace": "__pytra_isspace",
+    "strip": "__pytra_strip",
+    "lstrip": "__pytra_lstrip",
+    "rstrip": "__pytra_rstrip",
+    "startswith": "__pytra_startswith",
+    "endswith": "__pytra_endswith",
+    "replace": "__pytra_replace",
+    "find": "__pytra_find",
+    "rfind": "__pytra_rfind",
+    "split": "__pytra_split",
+    "join": "__pytra_join",
+    "upper": "__pytra_upper",
+    "lower": "__pytra_lower",
+    "append": "append",  # handled separately via list
+}
+
 _COMPARE_MAP: dict[str, str] = {
     "Eq": "==", "NotEq": "!=", "Lt": "<", "LtE": "<=",
     "Gt": ">", "GtE": ">=",
@@ -322,11 +348,24 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if func_kind == "Attribute":
             owner = _emit_expr(ctx, func.get("value"))
             attr = _str(func, "attr")
+            # str methods → runtime helper functions
+            if attr in _STR_METHOD_HELPERS:
+                return _STR_METHOD_HELPERS[attr] + "(" + owner + ", " + ", ".join(arg_strs) + ")" if len(arg_strs) > 0 else _STR_METHOD_HELPERS[attr] + "(" + owner + ")"
+            # dict.get → __pytra_dict_get
+            if attr == "get" and len(arg_strs) >= 1:
+                owner_rt = _str(func.get("value", {}), "resolved_type") if isinstance(func.get("value"), dict) else ""
+                if owner_rt.startswith("dict[") or owner_rt.startswith("map["):
+                    if len(arg_strs) >= 2:
+                        return "__pytra_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
+                    return owner + "[" + arg_strs[0] + "]"
             return owner + "." + _safe_go_ident(attr) + "(" + ", ".join(arg_strs) + ")"
         if func_kind == "Name":
             fn_name = _str(func, "id")
             if fn_name == "":
                 fn_name = _str(func, "repr")
+            # Class constructor: ClassName(...) → NewClassName(...)
+            if fn_name in ctx.class_names:
+                return "New" + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
             return _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
 
     fn = _emit_expr(ctx, func)
@@ -343,6 +382,11 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if rc == "static_cast":
         rt = _str(node, "resolved_type")
         gt = go_type(rt)
+        # Check if source is string → int conversion (needs runtime helper)
+        if len(args) >= 1 and isinstance(args[0], dict):
+            src_type = _str(args[0], "resolved_type")
+            if src_type == "str" and gt in ("int64", "int32"):
+                return "__pytra_str_to_int64(" + arg_strs[0] + ")"
         if len(arg_strs) >= 1:
             return gt + "(" + arg_strs[0] + ")"
         return gt + "(0)"
@@ -429,11 +473,17 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
-    value = _emit_expr(ctx, node.get("value"))
+    value_node = node.get("value")
+    value = _emit_expr(ctx, value_node)
     slice_node = node.get("slice")
     if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Slice":
         return _emit_slice_access(ctx, value, slice_node)
     idx = _emit_expr(ctx, slice_node)
+    # String indexing: wrap with __pytra_byte_to_string for str[int] → string
+    if isinstance(value_node, dict):
+        vt = _str(value_node, "resolved_type")
+        if vt == "str":
+            return "__pytra_byte_to_string(" + value + "[" + idx + "])"
     return value + "[" + idx + "]"
 
 
@@ -781,8 +831,23 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             t_name = _str(target_plan, "id")
         t_name = _safe_go_ident(t_name) if t_name != "" else "_"
 
-        if ip_kind == "StaticRangeForPlan" or ip_kind == "RuntimeIterForPlan":
+        if ip_kind == "StaticRangeForPlan":
             _emit_range_for(ctx, t_name, iter_plan, body)
+            return
+        if ip_kind == "RuntimeIterForPlan":
+            # Check if this is a range (has start/stop) or a collection iter (has iter_expr)
+            if iter_plan.get("start") is not None or iter_plan.get("stop") is not None:
+                _emit_range_for(ctx, t_name, iter_plan, body)
+            else:
+                # Collection iterator: for _, item := range collection
+                iter_expr = iter_plan.get("iter_expr")
+                iter_code = _emit_expr(ctx, iter_expr) if iter_expr is not None else "nil"
+                _emit(ctx, "for _, " + t_name + " := range " + iter_code + " {")
+                ctx.indent_level += 1
+                ctx.var_types[t_name] = ""
+                _emit_body(ctx, body)
+                ctx.indent_level -= 1
+                _emit(ctx, "}")
             return
 
     # Fallback: legacy target/iter form
@@ -903,25 +968,53 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     base = _str(node, "base")
     body = _list(node, "body")
     gn = _safe_go_ident(name)
+    is_dataclass = _bool(node, "dataclass")
 
     ctx.class_names.add(name)
     if base != "":
         ctx.class_bases[name] = base
 
-    # Collect fields from __init__
+    # Collect fields: prefer field_types (dataclass), else scan __init__
     fields: list[tuple[str, str]] = []
-    for stmt in body:
-        if not isinstance(stmt, dict):
-            continue
-        if _str(stmt, "kind") == "FunctionDef" and _str(stmt, "name") == "__init__":
-            for init_stmt in _list(stmt, "body"):
-                if isinstance(init_stmt, dict) and _str(init_stmt, "kind") == "AnnAssign":
-                    ft = _str(init_stmt, "target")
-                    frt = _str(init_stmt, "resolved_type")
-                    if ft.startswith("self."):
-                        ft = ft[5:]
-                    if ft != "":
-                        fields.append((ft, frt))
+    field_types = _dict(node, "field_types")
+    if len(field_types) > 0:
+        for fname_key, ftype_val in field_types.items():
+            ft = ftype_val if isinstance(ftype_val, str) else ""
+            fields.append((fname_key, ft))
+    else:
+        # Scan body AnnAssign (dataclass fields) or __init__
+        for stmt in body:
+            if not isinstance(stmt, dict):
+                continue
+            sk = _str(stmt, "kind")
+            if sk == "AnnAssign" and is_dataclass:
+                target_val = stmt.get("target")
+                ft_name = ""
+                if isinstance(target_val, dict):
+                    ft_name = _str(target_val, "id")
+                elif isinstance(target_val, str):
+                    ft_name = target_val
+                frt = _str(stmt, "decl_type")
+                if frt == "":
+                    frt = _str(stmt, "resolved_type")
+                if ft_name != "":
+                    fields.append((ft_name, frt))
+            elif sk == "FunctionDef" and _str(stmt, "name") == "__init__":
+                for init_stmt in _list(stmt, "body"):
+                    if isinstance(init_stmt, dict) and _str(init_stmt, "kind") == "AnnAssign":
+                        t_val = init_stmt.get("target")
+                        ft = ""
+                        if isinstance(t_val, dict):
+                            ft = _str(t_val, "id")
+                        elif isinstance(t_val, str):
+                            ft = t_val
+                        frt = _str(init_stmt, "decl_type")
+                        if frt == "":
+                            frt = _str(init_stmt, "resolved_type")
+                        if ft.startswith("self."):
+                            ft = ft[5:]
+                        if ft != "":
+                            fields.append((ft, frt))
 
     # Struct definition
     _emit(ctx, "type " + gn + " struct {")
