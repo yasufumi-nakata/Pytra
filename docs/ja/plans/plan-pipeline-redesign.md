@@ -450,6 +450,23 @@ test/
 - fixture の emit 正解は `test/fixture/emit/*.txt`、sample は `sample/golden/manifest.json`
 - `source/py/` は将来 `source/rb/` 等に対応可能
 
+#### パフォーマンスノウハウ: インメモリパイプライン
+
+toolchain2 の各段は dict in / dict out の API を持つ:
+
+```python
+# link
+result = link_modules(["input.east3"])   # → LinkResult (dict)
+
+# emit
+for mod in result.linked_modules:
+    go_code = emit_go_module(mod.east_doc)  # → str (Go source)
+```
+
+CLI（`pytra-cli2`）はファイル経由で各段を実行するが、テストスクリプトや parity check では API を直接呼んでファイル I/O をスキップできる。132 fixture × disk I/O で数分かかる処理がインメモリで大幅に高速化される。
+
+テストを書くときは **CLI のサブプロセス呼び出しではなく Python API の直接呼び出し** を推奨する。
+
 ## 4. 除去されるもの
 
 - `src/toolchain/frontends/signature_registry.py` のハードコードテーブル全体
