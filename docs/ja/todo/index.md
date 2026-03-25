@@ -16,16 +16,26 @@
 - 進捗メモとコミットメッセージは同一 `ID` を必ず含める。
 - **タスク完了時は `[ ]` を `[x]` に変更し、完了メモ（件数等）を追記してコミットすること。**
 - 完了済みタスクは定期的に `docs/ja/todo/archive/` へ移動する。
+- **emitter の parity テストは「emit 成功」ではなく「emit + compile + run + stdout 一致」を完了条件とする。** emit だけ成功してもプレースホルダーコードが混入している可能性がある。
 
 ## 未完了タスク
+
+### P1-EMIT-GO-PARITY: Go emitter の compile + run parity 修正
+
+Go emitter が fixture/sample の全件で `go run` + stdout 一致を達成すること。
+現状 emit は成功するが list/dict comprehension 等がプレースホルダーになっており `go run` が通らない。
+
+1. [ ] [ID: P1-GO-PARITY-S1] list/dict comprehension の Go 変換を実装
+2. [ ] [ID: P1-GO-PARITY-S2] fixture 132 件で `go run` + stdout 一致
+3. [ ] [ID: P1-GO-PARITY-S3] sample 18 件で `go run` + stdout 一致
 
 ### P1-EMIT-CPP: C++ emitter
 
 作業ディレクトリ: `toolchain2/emit/cpp/`
 必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md)
 
-1. [x] [ID: P1-EMIT-CPP-S1] C++ emitter を `toolchain2/emit/cpp/` に新規実装し、fixture parity が通る — fixture 132/132, sample 18/18 emit 成功
-2. [x] [ID: P1-EMIT-CPP-S2] sample 18 件の parity テストが通る — emit 18/18 成功（compile/run は C++ runtime 整備後）
+1. [x] [ID: P1-EMIT-CPP-S1] C++ emitter を `toolchain2/emit/cpp/` に新規実装し、emit 成功 — fixture 132/132, sample 18/18 emit 成功
+2. [ ] [ID: P1-EMIT-CPP-S2] sample 18 件の parity テストが通る — **emit + g++ compile + run + stdout 一致** が完了条件。emit のみ成功では不可。
 3. [x] [ID: P1-EMIT-CPP-S3] `pytra-cli2 -emit --target=cpp` を toolchain2 emitter に切り替える — 完了
 4. [x] [ID: P1-EMIT-CPP-S4] `toolchain/` への依存をゼロにし、`toolchain/` を除去する — pytra-cli2.py から toolchain/ import ゼロ達成
 
