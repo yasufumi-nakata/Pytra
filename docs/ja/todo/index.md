@@ -245,6 +245,16 @@ Go が新パイプライン移行のパイロットケース。
 3. [ ] [ID: P1-GO-MIGRATE-S3] 旧 Go runtime（`src/runtime/go/built_in/`）を削除
 4. [ ] [ID: P1-GO-MIGRATE-S4] `runtime_parity_check.py --targets go` で全 18 sample PASS
 
+#### P1-CODE-EMITTER: CodeEmitter 基底クラス + runtime mapping
+
+設計文書: `docs/ja/plans/plan-pipeline-redesign.md` §3.4
+
+1. [ ] [ID: P1-CODE-EMITTER-S1] `toolchain2/emit/common/code_emitter.py` に CodeEmitter 基底クラスを実装（mapping 読み込み + style 別呼び出し生成）
+2. [ ] [ID: P1-CODE-EMITTER-S2] Go runtime mapping（`src/runtime/go/toolchain2/mapping.json`）を作成
+3. [ ] [ID: P1-CODE-EMITTER-S3] Go emitter を CodeEmitter 継承に切り替え、ハードコード写像を除去
+4. [ ] [ID: P1-CODE-EMITTER-S4] resolve の `py_strip` 等への変換を除去し、EAST は `str.strip` のまま持ち運ぶように修正
+5. [ ] [ID: P1-CODE-EMITTER-S5] golden 再生成 + parity 維持確認
+
 #### P1-EMIT-CPP: C++ emitter
 
 作業ディレクトリ: `toolchain2/emit/cpp/`

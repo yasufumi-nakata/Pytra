@@ -217,7 +217,84 @@ src/runtime/
 - 旧 runtime（`built_in/py_runtime.*`）は旧パイプラインが使うので変更しない
 - 関数名は emitter が生成するコードと一致させる（Go は `__pytra_` prefix）
 
-### 3.4 共有ユーティリティ (`toolchain2/common/`)
+### 3.4 CodeEmitter 基底クラスと runtime mapping
+
+`toolchain2/emit/common/` に `CodeEmitter` 基底クラスを作り、全言語 emitter が共有するメソッド呼び出しの写像ロジックを集約する。
+
+#### 設計
+
+EAST は `runtime_symbol: "str.strip"` のまま持ち運び、emitter が各言語に写像する。
+写像には「何を呼ぶか」と「どう呼ぶか」の 2 つの情報が必要:
+
+- **何を呼ぶか** (`call`): `str.strip` → `py_strip` (Go), `pytra::strip` (C++) 等
+- **どう呼ぶか** (`style`): function / method / builtin
+
+style の種類:
+
+| style | 変換例 | 説明 |
+|---|---|---|
+| `function` | `x.strip()` → `py_strip(x)` | レシーバーを第1引数にした自由関数呼び出し |
+| `method` | `x.append(v)` → `x.Append(v)` | メソッド呼び出し（メソッド名のみ変換） |
+| `builtin` | `x.append(v)` → `append(x, v)` | 言語組み込み関数（Go の append 等） |
+
+#### runtime mapping ファイル
+
+各言語の runtime に mapping を配置する:
+
+```json
+// src/runtime/go/toolchain2/mapping.json
+{
+  "str.strip": {"call": "py_strip", "style": "function"},
+  "str.upper": {"call": "strings.ToUpper", "style": "function"},
+  "str.join": {"call": "strings.Join", "style": "function"},
+  "list.append": {"call": "append", "style": "builtin"},
+  "list.len": {"call": "len", "style": "builtin"},
+  "dict.keys": {"call": "Keys", "style": "method"}
+}
+```
+
+#### CodeEmitter 基底クラス
+
+```
+toolchain2/emit/common/
+  code_emitter.py    ← CodeEmitter 基底クラス（mapping 読み込み + 呼び出し生成）
+```
+
+```python
+class CodeEmitter:
+    method_map: dict[str, MethodMapping]
+
+    def emit_method_call(self, receiver: str, method: str, args: list[str]) -> str:
+        mapping = self.method_map.get(method)
+        if mapping is None:
+            return receiver + "." + method + "(" + ", ".join(args) + ")"
+        if mapping.style == "function":
+            all_args = [receiver] + args
+            return mapping.call + "(" + ", ".join(all_args) + ")"
+        if mapping.style == "method":
+            return receiver + "." + mapping.call + "(" + ", ".join(args) + ")"
+        if mapping.style == "builtin":
+            all_args = [receiver] + args
+            return mapping.call + "(" + ", ".join(all_args) + ")"
+        return receiver + "." + method + "(" + ", ".join(args) + ")"
+```
+
+各言語 emitter は `CodeEmitter` を継承し、mapping ファイルを指定するだけ:
+
+```python
+class GoEmitter(CodeEmitter):
+    def __init__(self):
+        self.method_map = load_mapping("src/runtime/go/toolchain2/mapping.json")
+```
+
+#### ルール
+
+- EAST（resolve/compile/optimize/link）は `runtime_symbol` を宣言ファイルの `symbol` のまま持ち運ぶ。`py_strip` 等への変換はしない。
+- emitter が `runtime_symbol` を runtime mapping で各言語に写像する。
+- mapping ファイルは runtime の近くに配置（`src/runtime/<lang>/toolchain2/mapping.json`）。
+- mapping にないメソッドはデフォルトでメソッド呼び出し形式。
+
+### 3.5 共有ユーティリティ (`toolchain2/common/`)
 
 全層で使う共有ユーティリティは `toolchain2/common/` に集約し、各層での重複実装を禁止する。
 
