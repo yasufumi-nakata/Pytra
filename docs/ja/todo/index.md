@@ -22,12 +22,13 @@
 
 ### P1-EMIT-GO-PARITY: Go emitter の compile + run parity 修正
 
-Go emitter が fixture/sample の全件で `go run` + stdout 一致を達成すること。
-現状 emit は成功するが list/dict comprehension 等がプレースホルダーになっており `go run` が通らない。
+文脈: [docs/ja/plans/p1-emit-go-parity.md](../plans/p1-emit-go-parity.md)
+必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md)
 
 1. [ ] [ID: P1-GO-PARITY-S1] list/dict comprehension の Go 変換を実装
-2. [ ] [ID: P1-GO-PARITY-S2] fixture 132 件で `go run` + stdout 一致
-3. [ ] [ID: P1-GO-PARITY-S3] sample 18 件で `go run` + stdout 一致
+2. [ ] [ID: P1-GO-PARITY-S2] EAST 不足の修正: `write_text` 等を resolve で BuiltinCall に lowering、with 文 parser 対応、bytearray 型伝播
+3. [ ] [ID: P1-GO-PARITY-S3] fixture 132 件で `go run` + stdout 一致
+4. [ ] [ID: P1-GO-PARITY-S4] sample 18 件で `go run` + stdout 一致（PNG/GIF artifact CRC32 一致を含む）
 
 ### P1-SPEC-CONFORM2: 仕様整合 フェーズ2+3（Codex-review 追加指摘対応）
 
