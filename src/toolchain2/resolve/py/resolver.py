@@ -577,6 +577,10 @@ def _resolve_builtin_call(
         ret = "str"
     elif name == "bool":
         ret = "bool"
+    elif name == "bytearray":
+        ret = "bytearray"
+    elif name == "bytes":
+        ret = "bytes"
     elif name == "len":
         ret = "int64"
     elif name == "ord":

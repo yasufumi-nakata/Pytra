@@ -576,9 +576,19 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return "nil /* unknown builtin */"
 
 
+_MATH_CONSTANTS: dict[str, str] = {
+    "pi": "math.Pi", "e": "math.E", "inf": "math.Inf(1)", "nan": "math.NaN()",
+}
+
 def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
-    owner = _emit_expr(ctx, node.get("value"))
+    owner_node = node.get("value")
+    owner = _emit_expr(ctx, owner_node)
     attr = _str(node, "attr")
+    # Module attribute: math.pi → math.Pi, math.sqrt → __pytra_sqrt
+    owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
+    if owner_id == "math" and attr in _MATH_CONSTANTS:
+        ctx.imports_needed.add("math")
+        return _MATH_CONSTANTS[attr]
     return owner + "." + _safe_go_ident(attr)
 
 
@@ -899,10 +909,12 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     val_code = _coerce_to_type(val_code, declared_gt, value)
                 _emit(ctx, gn + " = " + val_code)
             else:
-                # Check for decl_type on the Assign node
+                # Check for decl_type on the Assign node, target, or value
                 decl_type = _str(node, "decl_type")
-                if decl_type == "":
+                if decl_type == "" or decl_type == "unknown":
                     decl_type = _str(target_node, "resolved_type")
+                if (decl_type == "" or decl_type == "unknown") and isinstance(value, dict):
+                    decl_type = _str(value, "resolved_type")
                 ctx.var_types[gn] = decl_type
                 gt = go_type(decl_type)
                 # Detect bytes assignment: make([]byte, ...) or []byte{...}
@@ -916,6 +928,11 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         elif t_kind == "Attribute":
             _emit(ctx, _emit_expr(ctx, target_node) + " = " + val_code)
         elif t_kind == "Subscript":
+            # Byte subscript assignment: p[i] = v → p[i] = byte(v)
+            sub_val = target_node.get("value")
+            sub_id = _str(sub_val, "id") if isinstance(sub_val, dict) else ""
+            if sub_id in ctx.var_types and ctx.var_types[sub_id] in ("bytes", "bytearray"):
+                val_code = "byte(" + val_code + ")"
             _emit(ctx, _emit_expr(ctx, target_node) + " = " + val_code)
         elif t_kind == "Tuple":
             # Tuple unpack: a, b = expr
@@ -1051,8 +1068,12 @@ def _emit_range_for(ctx: EmitContext, t_name: str, plan: dict[str, JsonVal], bod
 
     cmp_op = " > " if step_negative else " < "
     # Use = if variable already declared (VarDecl), else :=
-    assign_op = " = " if t_name in ctx.var_types else " := "
-    _emit(ctx, "for " + t_name + assign_op + "int64(" + s_code + "); " + t_name + cmp_op + e_code + "; " + t_name + " += " + step_code + " {")
+    # For blank identifier _, use a temp var name
+    loop_var = t_name
+    if loop_var == "_":
+        loop_var = "_loop_"
+    assign_op = " = " if loop_var in ctx.var_types else " := "
+    _emit(ctx, "for " + loop_var + assign_op + "int64(" + s_code + "); " + loop_var + cmp_op + e_code + "; " + loop_var + " += " + step_code + " {")
     ctx.indent_level += 1
     ctx.var_types[t_name] = "int64"
     _emit_body(ctx, body)
