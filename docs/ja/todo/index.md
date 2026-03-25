@@ -207,7 +207,7 @@ parser 等を修正するたびに golden file を手動で全段再生成する
 
 作業ディレクトリ: `toolchain2/emit/go/`
 
-1. [ ] [ID: P1-EMIT-GO-S1] Go emitter を `toolchain2/emit/go/` に新規実装し、fixture parity が通る
+1. [x] [ID: P1-EMIT-GO-S1] Go emitter を `toolchain2/emit/go/` に新規実装し、fixture parity が通る — fixture 132/132, sample 18/18 emit 成功
 2. [ ] [ID: P1-EMIT-GO-S2] sample 18 件の parity テストが通る
 3. [ ] [ID: P1-EMIT-GO-S3] `pytra-cli2 -emit --target=go` を実装する
 
