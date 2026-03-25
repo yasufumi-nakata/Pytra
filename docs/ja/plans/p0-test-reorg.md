@@ -80,4 +80,4 @@ resolve 等が `test/builtin/east1/py/` を参照している箇所を `test/inc
 2. `src/pytra/` の全 .py ファイルが parse 成功
 3. parse → resolve → compile → optimize の全段が通り、golden が `test/pytra/` に配置済み
 4. `regenerate_golden.py` が test/include/ と test/pytra/ に対応
-5. 既存の resolve/compile/optimize/link が新パスで動作（parity 維持）
+5. `pytra-cli2` の resolve/compile/optimize/link が test/include/ の新パスで動作（parity 維持）

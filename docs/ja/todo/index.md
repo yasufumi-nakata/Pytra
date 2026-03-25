@@ -31,7 +31,7 @@
 2. [ ] [ID: P0-TEST-REORG-S2] `src/pytra/` の全 .py を parse し、`test/pytra/east1/py/` に golden 配置
 3. [ ] [ID: P0-TEST-REORG-S3] resolve → compile → optimize を通して `test/pytra/east2/`, `east3/`, `east3-opt/` に golden 配置
 4. [ ] [ID: P0-TEST-REORG-S4] `regenerate_golden.py` を test/include/ と test/pytra/ に対応させる
-5. [ ] [ID: P0-TEST-REORG-S5] 既存の resolve/compile/optimize/link が test/include/ のパスで動作することを確認
+5. [ ] [ID: P0-TEST-REORG-S5] `pytra-cli2` の resolve/compile/optimize/link が test/include/ の新パスで動作することを確認（parity 維持）
 
 ### P1-GO-MIGRATE-S5: Go runtime 分解
 
