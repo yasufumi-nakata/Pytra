@@ -23,22 +23,6 @@
       "module_kind": "runtime"
     },
     {
-      "module_id": "pytra.built_in.scalar_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/scalar_ops.py",
-      "output": "east3/pytra/built_in/scalar_ops.east3.json",
-      "source_path": "/workspace/Pytra/src/pytra/built_in/scalar_ops.py",
-      "is_entry": false,
-      "module_kind": "runtime"
-    },
-    {
-      "module_id": "pytra.built_in.sequence",
-      "input": "/workspace/Pytra/src/pytra/built_in/sequence.py",
-      "output": "east3/pytra/built_in/sequence.east3.json",
-      "source_path": "/workspace/Pytra/src/pytra/built_in/sequence.py",
-      "is_entry": false,
-      "module_kind": "runtime"
-    },
-    {
       "module_id": "pytra.std.math",
       "input": "/workspace/Pytra/src/pytra/std/math.py",
       "output": "east3/pytra/std/math.east3.json",
@@ -56,9 +40,9 @@
     },
     {
       "module_id": "pytra.utils.gif",
-      "input": "/workspace/Pytra/src/pytra/utils/gif.py",
+      "input": "src/pytra/utils/gif.py",
       "output": "east3/pytra/utils/gif.east3.json",
-      "source_path": "/workspace/Pytra/src/pytra/utils/gif.py",
+      "source_path": "src/pytra/utils/gif.py",
       "is_entry": false,
       "module_kind": "runtime"
     }
@@ -76,11 +60,6 @@
         "pytra.utils.gif::save_gif"
       ],
       "pytra.built_in.io_ops::py_print": [],
-      "pytra.built_in.scalar_ops::py_chr": [],
-      "pytra.built_in.scalar_ops::py_ord": [],
-      "pytra.built_in.scalar_ops::py_to_int64_base": [],
-      "pytra.built_in.sequence::py_range": [],
-      "pytra.built_in.sequence::py_repeat": [],
       "pytra.std.math::ceil": [],
       "pytra.std.math::cos": [],
       "pytra.std.math::exp": [],
@@ -93,12 +72,12 @@
       "pytra.std.math::sqrt": [],
       "pytra.std.math::tan": [],
       "pytra.std.time::perf_counter": [],
-      "pytra.utils.gif::_gif_append_list": [],
+      "pytra.utils.gif::_gif_append": [],
       "pytra.utils.gif::_gif_u16le": [],
       "pytra.utils.gif::_lzw_encode": [],
       "pytra.utils.gif::grayscale_palette": [],
       "pytra.utils.gif::save_gif": [
-        "pytra.utils.gif::_gif_append_list",
+        "pytra.utils.gif::_gif_append",
         "pytra.utils.gif::_gif_u16le",
         "pytra.utils.gif::_lzw_encode"
       ]
@@ -111,7 +90,7 @@
         "pytra.utils.gif::grayscale_palette"
       ],
       [
-        "pytra.utils.gif::_gif_append_list"
+        "pytra.utils.gif::_gif_append"
       ],
       [
         "pytra.utils.gif::_gif_u16le"
@@ -130,21 +109,6 @@
       ],
       [
         "pytra.built_in.io_ops::py_print"
-      ],
-      [
-        "pytra.built_in.scalar_ops::py_chr"
-      ],
-      [
-        "pytra.built_in.scalar_ops::py_ord"
-      ],
-      [
-        "pytra.built_in.scalar_ops::py_to_int64_base"
-      ],
-      [
-        "pytra.built_in.sequence::py_range"
-      ],
-      [
-        "pytra.built_in.sequence::py_repeat"
       ],
       [
         "pytra.std.math::ceil"

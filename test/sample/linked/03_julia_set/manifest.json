@@ -23,22 +23,6 @@
       "module_kind": "runtime"
     },
     {
-      "module_id": "pytra.built_in.scalar_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/scalar_ops.py",
-      "output": "east3/pytra/built_in/scalar_ops.east3.json",
-      "source_path": "/workspace/Pytra/src/pytra/built_in/scalar_ops.py",
-      "is_entry": false,
-      "module_kind": "runtime"
-    },
-    {
-      "module_id": "pytra.built_in.sequence",
-      "input": "/workspace/Pytra/src/pytra/built_in/sequence.py",
-      "output": "east3/pytra/built_in/sequence.east3.json",
-      "source_path": "/workspace/Pytra/src/pytra/built_in/sequence.py",
-      "is_entry": false,
-      "module_kind": "runtime"
-    },
-    {
       "module_id": "pytra.std.time",
       "input": "/workspace/Pytra/src/pytra/std/time.py",
       "output": "east3/pytra/std/time.east3.json",
@@ -48,9 +32,9 @@
     },
     {
       "module_id": "pytra.utils.png",
-      "input": "/workspace/Pytra/src/pytra/utils/png.py",
+      "input": "src/pytra/utils/png.py",
       "output": "east3/pytra/utils/png.east3.json",
-      "source_path": "/workspace/Pytra/src/pytra/utils/png.py",
+      "source_path": "src/pytra/utils/png.py",
       "is_entry": false,
       "module_kind": "runtime"
     }
@@ -68,31 +52,26 @@
         "pytra.std.time::perf_counter"
       ],
       "pytra.built_in.io_ops::py_print": [],
-      "pytra.built_in.scalar_ops::py_chr": [],
-      "pytra.built_in.scalar_ops::py_ord": [],
-      "pytra.built_in.scalar_ops::py_to_int64_base": [],
-      "pytra.built_in.sequence::py_range": [],
-      "pytra.built_in.sequence::py_repeat": [],
       "pytra.std.time::perf_counter": [],
       "pytra.utils.png::_adler32": [],
       "pytra.utils.png::_chunk": [
         "pytra.utils.png::_crc32",
-        "pytra.utils.png::_png_append_list",
+        "pytra.utils.png::_png_append",
         "pytra.utils.png::_png_u32be"
       ],
       "pytra.utils.png::_crc32": [],
-      "pytra.utils.png::_png_append_list": [],
+      "pytra.utils.png::_png_append": [],
       "pytra.utils.png::_png_u16le": [],
       "pytra.utils.png::_png_u32be": [],
       "pytra.utils.png::_zlib_deflate_store": [
         "pytra.utils.png::_adler32",
-        "pytra.utils.png::_png_append_list",
+        "pytra.utils.png::_png_append",
         "pytra.utils.png::_png_u16le",
         "pytra.utils.png::_png_u32be"
       ],
       "pytra.utils.png::write_rgb_png": [
         "pytra.utils.png::_chunk",
-        "pytra.utils.png::_png_append_list",
+        "pytra.utils.png::_png_append",
         "pytra.utils.png::_png_u32be",
         "pytra.utils.png::_zlib_deflate_store"
       ]
@@ -114,28 +93,13 @@
         "pytra.built_in.io_ops::py_print"
       ],
       [
-        "pytra.built_in.scalar_ops::py_chr"
-      ],
-      [
-        "pytra.built_in.scalar_ops::py_ord"
-      ],
-      [
-        "pytra.built_in.scalar_ops::py_to_int64_base"
-      ],
-      [
-        "pytra.built_in.sequence::py_range"
-      ],
-      [
-        "pytra.built_in.sequence::py_repeat"
-      ],
-      [
         "pytra.utils.png::_adler32"
       ],
       [
         "pytra.utils.png::_crc32"
       ],
       [
-        "pytra.utils.png::_png_append_list"
+        "pytra.utils.png::_png_append"
       ],
       [
         "pytra.utils.png::_png_u32be"
