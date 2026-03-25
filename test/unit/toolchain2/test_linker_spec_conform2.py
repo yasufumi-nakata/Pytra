@@ -22,6 +22,7 @@ from toolchain2.link.runtime_discovery import discover_runtime_modules
 from toolchain2.link.type_id import build_type_id_table
 from toolchain2.emit.go.emitter import emit_go_module
 from toolchain2.emit.cpp.emitter import emit_cpp_module
+from toolchain2.emit.common.code_emitter import RuntimeMapping
 
 
 def _module_doc(
@@ -519,6 +520,74 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
         self.assertNotIn("py_int(Status.ERROR)", go_code)
         self.assertIn("static_cast<int64_t>(Status.ERROR)", cpp_code)
         self.assertNotIn("py_int(Status.ERROR)", cpp_code)
+
+    def test_go_emitter_runtime_symbol_prefix_uses_skip_modules_without_pytra_hardcode(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            meta_extra={
+                "import_bindings": [
+                    {
+                        "module_id": "runtime.custom",
+                        "local_name": "helper",
+                        "binding_kind": "symbol",
+                    }
+                ]
+            },
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "helper"},
+                        "args": [],
+                    },
+                }
+            ],
+        )
+
+        mapping = RuntimeMapping(
+            builtin_prefix="rt_",
+            calls={},
+            skip_module_prefixes=["runtime."],
+        )
+        with patch("toolchain2.emit.go.emitter.load_runtime_mapping", return_value=mapping):
+            go_code = emit_go_module(doc)
+
+        self.assertIn("rt_helper()", go_code)
+
+    def test_cpp_emitter_runtime_symbol_prefix_uses_skip_modules_without_pytra_hardcode(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            meta_extra={
+                "import_bindings": [
+                    {
+                        "module_id": "runtime.custom",
+                        "local_name": "helper",
+                        "binding_kind": "symbol",
+                    }
+                ]
+            },
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "helper"},
+                        "args": [],
+                    },
+                }
+            ],
+        )
+
+        mapping = RuntimeMapping(
+            builtin_prefix="rt_",
+            calls={},
+            skip_module_prefixes=["runtime."],
+        )
+        with patch("toolchain2.emit.cpp.emitter.load_runtime_mapping", return_value=mapping):
+            cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("rt_helper();", cpp_code)
 
 
 if __name__ == "__main__":

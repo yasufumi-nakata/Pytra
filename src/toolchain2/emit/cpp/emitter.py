@@ -757,8 +757,10 @@ def emit_cpp_module(east3_doc: dict[str, JsonVal]) -> str:
             mid = _str(b, "module_id")
             local = _str(b, "local_name")
             bk = _str(b, "binding_kind")
-            if bk == "symbol" and mid.startswith("pytra.") and local != "":
-                ctx.runtime_imports.add(local)
+            if bk == "symbol" and local != "":
+                full_mod = mid + "." + local
+                if should_skip_module(mid, mapping) or should_skip_module(full_mod, mapping):
+                    ctx.runtime_imports.add(local)
     for s in body:
         if isinstance(s, dict) and _str(s, "kind") == "ClassDef":
             ctx.class_names.add(_str(s, "name"))

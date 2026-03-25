@@ -502,7 +502,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if not gn.startswith(ctx.mapping.builtin_prefix):
                     gn = ctx.mapping.builtin_prefix + gn
                 return gn + "(" + ", ".join(arg_strs) + ")"
-            # Use _emit_name to handle main→py_main etc.
+            # Check mapping for known runtime function names (e.g., py_to_string → py_str)
+            if fn_name in ctx.mapping.calls:
+                return ctx.mapping.calls[fn_name] + "(" + ", ".join(arg_strs) + ")"
+            # Use _emit_name to handle main→__pytra_main etc.
             go_fn = _emit_name(ctx, func)
             return go_fn + "(" + ", ".join(arg_strs) + ")"
 
@@ -1732,7 +1735,7 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         mod_id = _str(binding, "module_id")
         local = _str(binding, "local_name")
         bk = _str(binding, "binding_kind")
-        if bk == "symbol" and mod_id.startswith("pytra.") and local != "":
+        if bk == "symbol" and local != "":
             # Check if this symbol's actual module is skipped (native runtime)
             # mod_id might be parent (pytra.std) with local being submodule name (math)
             full_mod = mod_id + "." + local
