@@ -3884,17 +3884,17 @@
         {
           "kind": "AnnAssign",
           "source_span": {
-            "lineno": 79,
+            "lineno": 80,
             "col_offset": 4,
-            "end_lineno": 79,
+            "end_lineno": 80,
             "end_col_offset": 91
           },
           "target": {
             "kind": "Name",
             "source_span": {
-              "lineno": 79,
+              "lineno": 80,
               "col_offset": 4,
-              "end_lineno": 79,
+              "end_lineno": 80,
               "end_col_offset": 10
             },
             "resolved_type": "bytearray",
@@ -3927,9 +3927,9 @@
           "value": {
             "kind": "Call",
             "source_span": {
-              "lineno": 79,
+              "lineno": 80,
               "col_offset": 24,
-              "end_lineno": 79,
+              "end_lineno": 80,
               "end_col_offset": 91
             },
             "resolved_type": "bytearray",
@@ -3939,9 +3939,9 @@
             "func": {
               "kind": "Name",
               "source_span": {
-                "lineno": 79,
+                "lineno": 80,
                 "col_offset": 24,
-                "end_lineno": 79,
+                "end_lineno": 80,
                 "end_col_offset": 41
               },
               "resolved_type": "unknown",
@@ -3954,9 +3954,9 @@
               {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col_offset": 43,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col_offset": 48
                 },
                 "resolved_type": "int64",
@@ -3968,9 +3968,9 @@
               {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col_offset": 50,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col_offset": 56
                 },
                 "resolved_type": "int64",
@@ -3982,9 +3982,9 @@
               {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col_offset": 58,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col_offset": 66
                 },
                 "resolved_type": "int64",
@@ -3996,9 +3996,9 @@
               {
                 "kind": "UnaryOp",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col_offset": 68,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col_offset": 72
                 },
                 "resolved_type": "float64",
@@ -4009,9 +4009,9 @@
                 "operand": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 79,
+                    "lineno": 80,
                     "col_offset": 69,
-                    "end_lineno": 79,
+                    "end_lineno": 80,
                     "end_col_offset": 72
                   },
                   "resolved_type": "float64",
@@ -4024,9 +4024,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col_offset": 74,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col_offset": 77
                 },
                 "resolved_type": "float64",
@@ -4038,9 +4038,9 @@
               {
                 "kind": "UnaryOp",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col_offset": 79,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col_offset": 83
                 },
                 "resolved_type": "float64",
@@ -4051,9 +4051,9 @@
                 "operand": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 79,
+                    "lineno": 80,
                     "col_offset": 80,
-                    "end_lineno": 79,
+                    "end_lineno": 80,
                     "end_col_offset": 83
                   },
                   "resolved_type": "float64",
@@ -4066,9 +4066,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col_offset": 85,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col_offset": 88
                 },
                 "resolved_type": "float64",
@@ -4207,7 +4207,41 @@
               "mirror": "unknown",
               "dynamic_name": "unknown"
             }
-          }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "AnnAssign",

@@ -1594,8 +1594,8 @@
       "source_span": {
         "lineno": 52,
         "col_offset": 0,
-        "end_lineno": 60,
-        "end_col_offset": 5
+        "end_lineno": 53,
+        "end_col_offset": 136
       },
       "name": "_build_float_constant",
       "original_name": "_build_float_constant",
@@ -1619,17 +1619,17 @@
         {
           "kind": "Return",
           "source_span": {
-            "lineno": 52,
+            "lineno": 53,
             "col_offset": 4,
-            "end_lineno": 52,
+            "end_lineno": 53,
             "end_col_offset": 136
           },
           "value": {
             "kind": "Dict",
             "source_span": {
-              "lineno": 52,
+              "lineno": 53,
               "col_offset": 11,
-              "end_lineno": 52,
+              "end_lineno": 53,
               "end_col_offset": 136
             },
             "resolved_type": "dict[str,str]",
@@ -1641,9 +1641,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 13,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 19
                   },
                   "resolved_type": "str",
@@ -1655,9 +1655,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 21,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 31
                   },
                   "resolved_type": "str",
@@ -1671,9 +1671,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 33,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 48
                   },
                   "resolved_type": "str",
@@ -1685,9 +1685,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 50,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 59
                   },
                   "resolved_type": "str",
@@ -1701,9 +1701,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 61,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 74
                   },
                   "resolved_type": "str",
@@ -1715,9 +1715,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 76,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 83
                   },
                   "resolved_type": "str",
@@ -1731,9 +1731,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 85,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 92
                   },
                   "resolved_type": "str",
@@ -1745,9 +1745,9 @@
                 "value": {
                   "kind": "List",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 94,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 96
                   },
                   "resolved_type": "list[unknown]",
@@ -1761,9 +1761,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 98,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 104
                   },
                   "resolved_type": "str",
@@ -1775,9 +1775,9 @@
                 "value": {
                   "kind": "Call",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 106,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 117
                   },
                   "resolved_type": "str",
@@ -1787,9 +1787,9 @@
                   "func": {
                     "kind": "Name",
                     "source_span": {
-                      "lineno": 52,
+                      "lineno": 53,
                       "col_offset": 106,
-                      "end_lineno": 52,
+                      "end_lineno": 53,
                       "end_col_offset": 110
                     },
                     "resolved_type": "unknown",
@@ -1802,9 +1802,9 @@
                     {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 52,
+                        "lineno": 53,
                         "col_offset": 111,
-                        "end_lineno": 52,
+                        "end_lineno": 53,
                         "end_col_offset": 116
                       },
                       "resolved_type": "float64",
@@ -1834,9 +1834,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 119,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 126
                   },
                   "resolved_type": "str",
@@ -1848,9 +1848,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 52,
+                    "lineno": 53,
                     "col_offset": 128,
-                    "end_lineno": 52,
+                    "end_lineno": 53,
                     "end_col_offset": 133
                   },
                   "resolved_type": "float64",

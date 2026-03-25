@@ -488,7 +488,45 @@
             "borrow_kind": "value",
             "repr": "\"\"\"",
             "value": ""
-          }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "AnnAssign",
@@ -2441,17 +2479,17 @@
         {
           "kind": "Return",
           "source_span": {
-            "lineno": 69,
+            "lineno": 73,
             "col": 4,
-            "end_lineno": 69,
+            "end_lineno": 73,
             "end_col": 95
           },
           "value": {
             "kind": "Call",
             "source_span": {
-              "lineno": 69,
+              "lineno": 73,
               "col": 11,
-              "end_lineno": 69,
+              "end_lineno": 73,
               "end_col": 95
             },
             "resolved_type": "RuntimeMapping",
@@ -2461,9 +2499,9 @@
             "func": {
               "kind": "Name",
               "source_span": {
-                "lineno": 69,
+                "lineno": 73,
                 "col": 11,
-                "end_lineno": 69,
+                "end_lineno": 73,
                 "end_col": 25
               },
               "resolved_type": "unknown",
@@ -2479,9 +2517,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 69,
+                    "lineno": 73,
                     "col": 42,
-                    "end_lineno": 69,
+                    "end_lineno": 73,
                     "end_col": 52
                   },
                   "resolved_type": "unknown",
@@ -2496,9 +2534,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 69,
+                    "lineno": 73,
                     "col": 60,
-                    "end_lineno": 69,
+                    "end_lineno": 73,
                     "end_col": 65
                   },
                   "resolved_type": "dict[str,str]",
@@ -2513,9 +2551,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 69,
+                    "lineno": 73,
                     "col": 88,
-                    "end_lineno": 69,
+                    "end_lineno": 73,
                     "end_col": 92
                   },
                   "resolved_type": "list[str]",
@@ -4107,7 +4145,29 @@
             "borrow_kind": "value",
             "repr": "\"\"\"Resolve a runtime_call to a target language function name.",
             "value": "Resolve a runtime_call to a target language function na"
-          }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "Expr",

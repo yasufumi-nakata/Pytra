@@ -238,8 +238,8 @@
       "source_span": {
         "lineno": 16,
         "col": 0,
-        "end_lineno": 25,
-        "end_col": 5
+        "end_lineno": 17,
+        "end_col": 146
       },
       "name": "_compare_expr_bool",
       "original_name": "_compare_expr_bool",
@@ -266,17 +266,17 @@
         {
           "kind": "Return",
           "source_span": {
-            "lineno": 16,
+            "lineno": 17,
             "col": 4,
-            "end_lineno": 16,
+            "end_lineno": 17,
             "end_col": 146
           },
           "value": {
             "kind": "Dict",
             "source_span": {
-              "lineno": 16,
+              "lineno": 17,
               "col": 11,
-              "end_lineno": 16,
+              "end_lineno": 17,
               "end_col": 146
             },
             "casts": [],
@@ -287,9 +287,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 13,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 19
                   },
                   "casts": [],
@@ -300,9 +300,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 21,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 30
                   },
                   "casts": [],
@@ -315,9 +315,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 32,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 38
                   },
                   "casts": [],
@@ -328,9 +328,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 40,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 44
                   },
                   "casts": [],
@@ -343,9 +343,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 46,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 51
                   },
                   "casts": [],
@@ -356,9 +356,9 @@
                 "value": {
                   "kind": "List",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 53,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 57
                   },
                   "casts": [],
@@ -368,9 +368,9 @@
                     {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 16,
+                        "lineno": 17,
                         "col": 54,
-                        "end_lineno": 16,
+                        "end_lineno": 17,
                         "end_col": 56
                       },
                       "casts": [],
@@ -385,9 +385,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 59,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 72
                   },
                   "casts": [],
@@ -398,9 +398,9 @@
                 "value": {
                   "kind": "List",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 74,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 81
                   },
                   "casts": [],
@@ -410,9 +410,9 @@
                     {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 16,
+                        "lineno": 17,
                         "col": 75,
-                        "end_lineno": 16,
+                        "end_lineno": 17,
                         "end_col": 80
                       },
                       "casts": [],
@@ -427,9 +427,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 83,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 98
                   },
                   "casts": [],
@@ -440,9 +440,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 100,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 106
                   },
                   "casts": [],
@@ -455,9 +455,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 108,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 121
                   },
                   "casts": [],
@@ -468,9 +468,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 123,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 130
                   },
                   "casts": [],
@@ -483,9 +483,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 132,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 139
                   },
                   "casts": [],
@@ -496,9 +496,9 @@
                 "value": {
                   "kind": "List",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 141,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 143
                   },
                   "casts": [],
@@ -530,8 +530,8 @@
       "source_span": {
         "lineno": 28,
         "col": 0,
-        "end_lineno": 37,
-        "end_col": 5
+        "end_lineno": 29,
+        "end_col": 139
       },
       "name": "_ifexp_expr_bool",
       "original_name": "_ifexp_expr_bool",
@@ -558,17 +558,17 @@
         {
           "kind": "Return",
           "source_span": {
-            "lineno": 28,
+            "lineno": 29,
             "col": 4,
-            "end_lineno": 28,
+            "end_lineno": 29,
             "end_col": 139
           },
           "value": {
             "kind": "Dict",
             "source_span": {
-              "lineno": 28,
+              "lineno": 29,
               "col": 11,
-              "end_lineno": 28,
+              "end_lineno": 29,
               "end_col": 139
             },
             "casts": [],
@@ -579,9 +579,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 13,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 19
                   },
                   "casts": [],
@@ -592,9 +592,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 21,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 28
                   },
                   "casts": [],
@@ -607,9 +607,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 30,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 36
                   },
                   "casts": [],
@@ -620,9 +620,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 38,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 42
                   },
                   "casts": [],
@@ -635,9 +635,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 44,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 50
                   },
                   "casts": [],
@@ -648,9 +648,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 52,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 56
                   },
                   "casts": [],
@@ -663,9 +663,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 58,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 66
                   },
                   "casts": [],
@@ -676,9 +676,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 68,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 74
                   },
                   "casts": [],
@@ -691,9 +691,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 76,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 91
                   },
                   "casts": [],
@@ -704,9 +704,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 93,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 99
                   },
                   "casts": [],
@@ -719,9 +719,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 101,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 114
                   },
                   "casts": [],
@@ -732,9 +732,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 116,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 123
                   },
                   "casts": [],
@@ -747,9 +747,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 125,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 132
                   },
                   "casts": [],
@@ -760,9 +760,9 @@
                 "value": {
                   "kind": "List",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 134,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 136
                   },
                   "casts": [],
@@ -5480,17 +5480,17 @@
             {
               "kind": "AnnAssign",
               "source_span": {
-                "lineno": 123,
+                "lineno": 124,
                 "col": 8,
-                "end_lineno": 123,
+                "end_lineno": 124,
                 "end_col": 164
               },
               "target": {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 123,
+                  "lineno": 124,
                   "col": 8,
-                  "end_lineno": 123,
+                  "end_lineno": 124,
                   "end_col": 19
                 },
                 "casts": [],
@@ -5502,9 +5502,9 @@
               "value": {
                 "kind": "Dict",
                 "source_span": {
-                  "lineno": 123,
+                  "lineno": 124,
                   "col": 42,
-                  "end_lineno": 123,
+                  "end_lineno": 124,
                   "end_col": 164
                 },
                 "casts": [],
@@ -5515,9 +5515,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 44,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 50
                       },
                       "casts": [],
@@ -5528,9 +5528,9 @@
                     "value": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 52,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 58
                       },
                       "casts": [],
@@ -5543,9 +5543,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 60,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 64
                       },
                       "casts": [],
@@ -5556,9 +5556,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 66,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 75
                       },
                       "casts": [],
@@ -5571,9 +5571,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 77,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 92
                       },
                       "casts": [],
@@ -5584,9 +5584,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 94,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 105
                       },
                       "casts": [],
@@ -5599,9 +5599,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 107,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 120
                       },
                       "casts": [],
@@ -5612,9 +5612,9 @@
                     "value": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 122,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 129
                       },
                       "casts": [],
@@ -5627,9 +5627,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 131,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 138
                       },
                       "casts": [],
@@ -5640,9 +5640,9 @@
                     "value": {
                       "kind": "List",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 140,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 142
                       },
                       "casts": [],
@@ -5655,9 +5655,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 144,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 150
                       },
                       "casts": [],
@@ -5668,9 +5668,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 152,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 161
                       },
                       "casts": [],
@@ -5745,7 +5745,37 @@
                 ],
                 "keywords": []
               },
-              "declare": true
+              "declare": true,
+              "leading_trivia": [
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                }
+              ]
             },
             {
               "kind": "If",

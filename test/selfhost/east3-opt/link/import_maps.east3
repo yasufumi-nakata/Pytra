@@ -114,6 +114,16 @@
             "repr": "\"\"\"Extract import_modules and import_symbols from EAST3 meta.",
             "value": "Extract import_modules and import_symbols from EAST3 me"
           },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "meta": {
             "lifetime_node_id": "n29",
             "lifetime_defs": [],

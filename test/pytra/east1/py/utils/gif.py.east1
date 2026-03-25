@@ -3239,9 +3239,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 82,
-            "col": 0,
+            "col": 103,
             "end_lineno": 82,
-            "end_col": 1
+            "end_col": 104
           },
           "casts": [],
           "borrow_kind": "value",
@@ -3252,9 +3252,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 82,
-            "col": 0,
+            "col": 118,
             "end_lineno": 82,
-            "end_col": 1
+            "end_col": 119
           },
           "casts": [],
           "borrow_kind": "value",
@@ -3433,7 +3433,41 @@
               "cause": null
             }
           ],
-          "orelse": []
+          "orelse": [],
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "AnnAssign",

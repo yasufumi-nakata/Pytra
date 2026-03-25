@@ -1318,17 +1318,17 @@
     {
       "kind": "AnnAssign",
       "source_span": {
-        "lineno": 1,
+        "lineno": 42,
         "col": 4,
-        "end_lineno": 1,
+        "end_lineno": 42,
         "end_col": 159
       },
       "target": {
         "kind": "Name",
         "source_span": {
-          "lineno": 1,
+          "lineno": 42,
           "col": 4,
-          "end_lineno": 1,
+          "end_lineno": 42,
           "end_col": 12
         },
         "casts": [],
@@ -1340,9 +1340,9 @@
       "value": {
         "kind": "List",
         "source_span": {
-          "lineno": 1,
+          "lineno": 42,
           "col": 26,
-          "end_lineno": 1,
+          "end_lineno": 42,
           "end_col": 159
         },
         "casts": [],
@@ -1352,9 +1352,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col": 28,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col": 39
             },
             "casts": [],
@@ -1365,9 +1365,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col": 41,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col": 73
             },
             "casts": [],
@@ -1378,9 +1378,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col": 75,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col": 90
             },
             "casts": [],
@@ -1391,9 +1391,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col": 92,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col": 105
             },
             "casts": [],
@@ -1404,9 +1404,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col": 107,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col": 120
             },
             "casts": [],
@@ -1417,9 +1417,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col": 122,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col": 132
             },
             "casts": [],
@@ -1430,9 +1430,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col": 134,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col": 147
             },
             "casts": [],
@@ -1443,9 +1443,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col": 149,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col": 156
             },
             "casts": [],
@@ -1546,7 +1546,45 @@
           }
         ],
         "keywords": []
-      }
+      },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
     }
   ],
   "renamed_symbols": {},

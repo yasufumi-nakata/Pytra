@@ -537,6 +537,28 @@
               "dynamic_name": "unknown"
             }
           },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "meta": {
             "lifetime_node_id": "n4",
             "lifetime_defs": [],

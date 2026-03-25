@@ -123,7 +123,21 @@
             "borrow_kind": "value",
             "repr": "\"\"\"Collect function symbols from a module's EAST3.",
             "value": "Collect function symbols from a module's EAS"
-          }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "AnnAssign",
@@ -6469,7 +6483,7 @@
                   "source_span": {
                     "lineno": 131,
                     "col": 12,
-                    "end_lineno": 1,
+                    "end_lineno": 135,
                     "end_col": 122
                   },
                   "test": {
@@ -6802,17 +6816,17 @@
                     {
                       "kind": "Expr",
                       "source_span": {
-                        "lineno": 134,
+                        "lineno": 135,
                         "col": 16,
-                        "end_lineno": 134,
+                        "end_lineno": 135,
                         "end_col": 122
                       },
                       "value": {
                         "kind": "Call",
                         "source_span": {
-                          "lineno": 134,
+                          "lineno": 135,
                           "col": 16,
-                          "end_lineno": 134,
+                          "end_lineno": 135,
                           "end_col": 122
                         },
                         "resolved_type": "None",
@@ -6822,9 +6836,9 @@
                         "func": {
                           "kind": "Name",
                           "source_span": {
-                            "lineno": 134,
+                            "lineno": 135,
                             "col": 16,
-                            "end_lineno": 134,
+                            "end_lineno": 135,
                             "end_col": 38
                           },
                           "resolved_type": "unknown",
@@ -6837,9 +6851,9 @@
                           {
                             "kind": "Call",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col": 40,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col": 60
                             },
                             "resolved_type": "unknown",
@@ -6849,9 +6863,9 @@
                             "func": {
                               "kind": "Attribute",
                               "source_span": {
-                                "lineno": 134,
+                                "lineno": 135,
                                 "col": 40,
-                                "end_lineno": 134,
+                                "end_lineno": 135,
                                 "end_col": 48
                               },
                               "resolved_type": "unknown",
@@ -6861,9 +6875,9 @@
                               "value": {
                                 "kind": "Name",
                                 "source_span": {
-                                  "lineno": 134,
+                                  "lineno": 135,
                                   "col": 40,
-                                  "end_lineno": 134,
+                                  "end_lineno": 135,
                                   "end_col": 44
                                 },
                                 "resolved_type": "unknown",
@@ -6878,9 +6892,9 @@
                               {
                                 "kind": "Constant",
                                 "source_span": {
-                                  "lineno": 134,
+                                  "lineno": 135,
                                   "col": 49,
-                                  "end_lineno": 134,
+                                  "end_lineno": 135,
                                   "end_col": 55
                                 },
                                 "resolved_type": "str",
@@ -6892,9 +6906,9 @@
                               {
                                 "kind": "List",
                                 "source_span": {
-                                  "lineno": 134,
+                                  "lineno": 135,
                                   "col": 57,
-                                  "end_lineno": 134,
+                                  "end_lineno": 135,
                                   "end_col": 59
                                 },
                                 "resolved_type": "list[unknown]",
@@ -6909,9 +6923,9 @@
                           {
                             "kind": "Name",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col": 62,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col": 75
                             },
                             "resolved_type": "set[str]",
@@ -6923,9 +6937,9 @@
                           {
                             "kind": "Name",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col": 77,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col": 86
                             },
                             "resolved_type": "str",
@@ -6937,9 +6951,9 @@
                           {
                             "kind": "Name",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col": 88,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col": 100
                             },
                             "resolved_type": "str",
@@ -6951,9 +6965,9 @@
                           {
                             "kind": "Name",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col": 102,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col": 107
                             },
                             "resolved_type": "dict[str,set[str]]",
@@ -6965,9 +6979,9 @@
                           {
                             "kind": "Name",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col": 109,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col": 119
                             },
                             "resolved_type": "dict[str,int64]",
@@ -8192,17 +8206,17 @@
                             {
                               "kind": "Expr",
                               "source_span": {
-                                "lineno": 153,
+                                "lineno": 154,
                                 "col": 20,
-                                "end_lineno": 153,
+                                "end_lineno": 154,
                                 "end_col": 128
                               },
                               "value": {
                                 "kind": "Call",
                                 "source_span": {
-                                  "lineno": 153,
+                                  "lineno": 154,
                                   "col": 20,
-                                  "end_lineno": 153,
+                                  "end_lineno": 154,
                                   "end_col": 128
                                 },
                                 "resolved_type": "None",
@@ -8212,9 +8226,9 @@
                                 "func": {
                                   "kind": "Name",
                                   "source_span": {
-                                    "lineno": 153,
+                                    "lineno": 154,
                                     "col": 20,
-                                    "end_lineno": 153,
+                                    "end_lineno": 154,
                                     "end_col": 42
                                   },
                                   "resolved_type": "unknown",
@@ -8227,9 +8241,9 @@
                                   {
                                     "kind": "Call",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col": 44,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col": 66
                                     },
                                     "resolved_type": "unknown",
@@ -8239,9 +8253,9 @@
                                     "func": {
                                       "kind": "Attribute",
                                       "source_span": {
-                                        "lineno": 153,
+                                        "lineno": 154,
                                         "col": 44,
-                                        "end_lineno": 153,
+                                        "end_lineno": 154,
                                         "end_col": 54
                                       },
                                       "resolved_type": "unknown",
@@ -8251,9 +8265,9 @@
                                       "value": {
                                         "kind": "Name",
                                         "source_span": {
-                                          "lineno": 153,
+                                          "lineno": 154,
                                           "col": 44,
-                                          "end_lineno": 153,
+                                          "end_lineno": 154,
                                           "end_col": 50
                                         },
                                         "resolved_type": "unknown",
@@ -8268,9 +8282,9 @@
                                       {
                                         "kind": "Constant",
                                         "source_span": {
-                                          "lineno": 153,
+                                          "lineno": 154,
                                           "col": 55,
-                                          "end_lineno": 153,
+                                          "end_lineno": 154,
                                           "end_col": 61
                                         },
                                         "resolved_type": "str",
@@ -8282,9 +8296,9 @@
                                       {
                                         "kind": "List",
                                         "source_span": {
-                                          "lineno": 153,
+                                          "lineno": 154,
                                           "col": 63,
-                                          "end_lineno": 153,
+                                          "end_lineno": 154,
                                           "end_col": 65
                                         },
                                         "resolved_type": "list[unknown]",
@@ -8299,9 +8313,9 @@
                                   {
                                     "kind": "Name",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col": 68,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col": 81
                                     },
                                     "resolved_type": "set[str]",
@@ -8313,9 +8327,9 @@
                                   {
                                     "kind": "Name",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col": 83,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col": 92
                                     },
                                     "resolved_type": "str",
@@ -8327,9 +8341,9 @@
                                   {
                                     "kind": "Name",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col": 94,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col": 106
                                     },
                                     "resolved_type": "str",
@@ -8341,9 +8355,9 @@
                                   {
                                     "kind": "Name",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col": 108,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col": 113
                                     },
                                     "resolved_type": "dict[str,set[str]]",
@@ -8355,9 +8369,9 @@
                                   {
                                     "kind": "Name",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col": 115,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col": 125
                                     },
                                     "resolved_type": "dict[str,int64]",
@@ -12030,7 +12044,17 @@
             "borrow_kind": "value",
             "repr": "\"\"\"Build program-wide call graph.",
             "value": "Build program-wide call gra"
-          }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "Expr",
@@ -13268,17 +13292,17 @@
             {
               "kind": "Assign",
               "source_span": {
-                "lineno": 239,
+                "lineno": 240,
                 "col": 8,
-                "end_lineno": 239,
+                "end_lineno": 240,
                 "end_col": 107
               },
               "target": {
                 "kind": "Tuple",
                 "source_span": {
-                  "lineno": 239,
+                  "lineno": 240,
                   "col": 8,
-                  "end_lineno": 239,
+                  "end_lineno": 240,
                   "end_col": 39
                 },
                 "resolved_type": "tuple[unknown, unknown]",
@@ -13289,9 +13313,9 @@
                   {
                     "kind": "Name",
                     "source_span": {
-                      "lineno": 239,
+                      "lineno": 240,
                       "col": 8,
-                      "end_lineno": 239,
+                      "end_lineno": 240,
                       "end_col": 20
                     },
                     "resolved_type": "dict[str,set[str]]",
@@ -13303,10 +13327,10 @@
                   {
                     "kind": "Name",
                     "source_span": {
-                      "lineno": 239,
-                      "col": 8,
-                      "end_lineno": 239,
-                      "end_col": 25
+                      "lineno": 240,
+                      "col": 22,
+                      "end_lineno": 240,
+                      "end_col": 39
                     },
                     "resolved_type": "dict[str,int64]",
                     "casts": [],
@@ -13319,9 +13343,9 @@
               "value": {
                 "kind": "Call",
                 "source_span": {
-                  "lineno": 239,
+                  "lineno": 240,
                   "col": 42,
-                  "end_lineno": 239,
+                  "end_lineno": 240,
                   "end_col": 107
                 },
                 "resolved_type": "tuple[dict[str,set[str]],dict[str,int64]]",
@@ -13331,9 +13355,9 @@
                 "func": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 239,
+                    "lineno": 240,
                     "col": 42,
-                    "end_lineno": 239,
+                    "end_lineno": 240,
                     "end_col": 66
                   },
                   "resolved_type": "unknown",
@@ -13346,9 +13370,9 @@
                   {
                     "kind": "Name",
                     "source_span": {
-                      "lineno": 239,
+                      "lineno": 240,
                       "col": 68,
-                      "end_lineno": 239,
+                      "end_lineno": 240,
                       "end_col": 71
                     },
                     "resolved_type": "unknown",
@@ -13360,9 +13384,9 @@
                   {
                     "kind": "Attribute",
                     "source_span": {
-                      "lineno": 239,
+                      "lineno": 240,
                       "col": 73,
-                      "end_lineno": 239,
+                      "end_lineno": 240,
                       "end_col": 89
                     },
                     "resolved_type": "unknown",
@@ -13372,9 +13396,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 239,
+                        "lineno": 240,
                         "col": 73,
-                        "end_lineno": 239,
+                        "end_lineno": 240,
                         "end_col": 79
                       },
                       "resolved_type": "LinkedModule",
@@ -13388,9 +13412,9 @@
                   {
                     "kind": "Name",
                     "source_span": {
-                      "lineno": 239,
+                      "lineno": 240,
                       "col": 91,
-                      "end_lineno": 239,
+                      "end_lineno": 240,
                       "end_col": 104
                     },
                     "resolved_type": "set[str]",
@@ -13881,7 +13905,17 @@
                   "declare_init": true
                 }
               ],
-              "orelse": []
+              "orelse": [],
+              "leading_trivia": [
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                }
+              ]
             }
           ],
           "orelse": [],

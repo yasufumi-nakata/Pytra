@@ -6449,6 +6449,16 @@
             "repr": "\"\"\"Build resolved_dependencies_v1 and user_module_dependencies_v1 for all modules.",
             "value": "Build resolved_dependencies_v1 and user_module_dependencies_v1 for all modul"
           },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "meta": {
             "lifetime_node_id": "n24",
             "lifetime_defs": [],

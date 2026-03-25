@@ -24,17 +24,17 @@
         {
           "kind": "AnnAssign",
           "source_span": {
-            "lineno": 1,
+            "lineno": 2,
             "col_offset": 4,
-            "end_lineno": 1,
+            "end_lineno": 2,
             "end_col_offset": 52
           },
           "target": {
             "kind": "Name",
             "source_span": {
-              "lineno": 1,
+              "lineno": 2,
               "col_offset": 4,
-              "end_lineno": 1,
+              "end_lineno": 2,
               "end_col_offset": 14
             },
             "resolved_type": "dict[str,int64]",
@@ -91,9 +91,9 @@
           "value": {
             "kind": "Dict",
             "source_span": {
-              "lineno": 1,
+              "lineno": 2,
               "col_offset": 33,
-              "end_lineno": 1,
+              "end_lineno": 2,
               "end_col_offset": 52
             },
             "resolved_type": "dict[str,int64]",
@@ -105,9 +105,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 1,
+                    "lineno": 2,
                     "col_offset": 35,
-                    "end_lineno": 1,
+                    "end_lineno": 2,
                     "end_col_offset": 38
                   },
                   "resolved_type": "str",
@@ -119,9 +119,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 1,
+                    "lineno": 2,
                     "col_offset": 40,
-                    "end_lineno": 1,
+                    "end_lineno": 2,
                     "end_col_offset": 41
                   },
                   "resolved_type": "int64",
@@ -135,9 +135,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 1,
+                    "lineno": 2,
                     "col_offset": 43,
-                    "end_lineno": 1,
+                    "end_lineno": 2,
                     "end_col_offset": 46
                   },
                   "resolved_type": "str",
@@ -149,9 +149,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 1,
+                    "lineno": 2,
                     "col_offset": 48,
-                    "end_lineno": 1,
+                    "end_lineno": 2,
                     "end_col_offset": 49
                   },
                   "resolved_type": "int64",
@@ -337,6 +337,20 @@
               "mirror": "None"
             }
           },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "meta": {
             "lifetime_node_id": "n0",
             "lifetime_defs": [],

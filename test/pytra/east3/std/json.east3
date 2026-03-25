@@ -29371,7 +29371,37 @@
               }
             }
           ],
-          "orelse": []
+          "orelse": [],
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "VarDecl",
@@ -31064,7 +31094,37 @@
               }
             }
           ],
-          "orelse": []
+          "orelse": [],
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "VarDecl",
@@ -33372,7 +33432,37 @@
               }
             }
           ],
-          "orelse": []
+          "orelse": [],
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "If",
@@ -34804,9 +34894,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 520,
-            "col_offset": 0,
+            "col_offset": 49,
             "end_lineno": 520,
-            "end_col_offset": 4
+            "end_col_offset": 53
           },
           "resolved_type": "bool",
           "casts": [],
@@ -34818,9 +34908,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 520,
-            "col_offset": 0,
+            "col_offset": 69,
             "end_lineno": 520,
-            "end_col_offset": 4
+            "end_col_offset": 73
           },
           "resolved_type": "None",
           "casts": [],
@@ -34832,9 +34922,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 520,
-            "col_offset": 0,
+            "col_offset": 69,
             "end_lineno": 520,
-            "end_col_offset": 4
+            "end_col_offset": 73
           },
           "resolved_type": "None",
           "casts": [],
@@ -34884,6 +34974,32 @@
           "declare": true,
           "decl_type": "str",
           "declare_init": true,
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "value": {
             "kind": "Constant",
             "source_span": {
@@ -35356,9 +35472,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 534,
-            "col_offset": 0,
+            "col_offset": 51,
             "end_lineno": 534,
-            "end_col_offset": 4
+            "end_col_offset": 55
           },
           "resolved_type": "bool",
           "casts": [],
@@ -35370,9 +35486,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 534,
-            "col_offset": 0,
+            "col_offset": 71,
             "end_lineno": 534,
-            "end_col_offset": 4
+            "end_col_offset": 75
           },
           "resolved_type": "None",
           "casts": [],
@@ -35384,9 +35500,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 534,
-            "col_offset": 0,
+            "col_offset": 71,
             "end_lineno": 534,
-            "end_col_offset": 4
+            "end_col_offset": 75
           },
           "resolved_type": "None",
           "casts": [],
@@ -35436,6 +35552,32 @@
           "declare": true,
           "decl_type": "str",
           "declare_init": true,
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "value": {
             "kind": "Constant",
             "source_span": {

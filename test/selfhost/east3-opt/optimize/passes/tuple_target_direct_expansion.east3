@@ -11469,17 +11469,17 @@
             {
               "kind": "AnnAssign",
               "source_span": {
-                "lineno": 103,
+                "lineno": 106,
                 "col_offset": 8,
-                "end_lineno": 103,
+                "end_lineno": 106,
                 "end_col_offset": 91
               },
               "target": {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 103,
+                  "lineno": 106,
                   "col_offset": 8,
-                  "end_lineno": 103,
+                  "end_lineno": 106,
                   "end_col_offset": 12
                 },
                 "resolved_type": "dict[str,JsonVal]",
@@ -11536,9 +11536,9 @@
               "value": {
                 "kind": "Dict",
                 "source_span": {
-                  "lineno": 103,
+                  "lineno": 106,
                   "col_offset": 35,
-                  "end_lineno": 103,
+                  "end_lineno": 106,
                   "end_col_offset": 91
                 },
                 "resolved_type": "dict[str,str]",
@@ -11550,9 +11550,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 103,
+                        "lineno": 106,
                         "col_offset": 37,
-                        "end_lineno": 103,
+                        "end_lineno": 106,
                         "end_col_offset": 46
                       },
                       "resolved_type": "str",
@@ -11564,9 +11564,9 @@
                     "value": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 103,
+                        "lineno": 106,
                         "col_offset": 48,
-                        "end_lineno": 103,
+                        "end_lineno": 106,
                         "end_col_offset": 51
                       },
                       "resolved_type": "str",
@@ -11580,9 +11580,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 103,
+                        "lineno": 106,
                         "col_offset": 53,
-                        "end_lineno": 103,
+                        "end_lineno": 106,
                         "end_col_offset": 60
                       },
                       "resolved_type": "str",
@@ -11594,9 +11594,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 103,
+                        "lineno": 106,
                         "col_offset": 62,
-                        "end_lineno": 103,
+                        "end_lineno": 106,
                         "end_col_offset": 67
                       },
                       "resolved_type": "list[str]",
@@ -11610,9 +11610,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 103,
+                        "lineno": 106,
                         "col_offset": 69,
-                        "end_lineno": 103,
+                        "end_lineno": 106,
                         "end_col_offset": 76
                       },
                       "resolved_type": "str",
@@ -11624,9 +11624,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 103,
+                        "lineno": 106,
                         "col_offset": 78,
-                        "end_lineno": 103,
+                        "end_lineno": 106,
                         "end_col_offset": 88
                       },
                       "resolved_type": "list[str]",
@@ -11756,6 +11756,24 @@
                   "mirror": "int64"
                 }
               },
+              "leading_trivia": [
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                }
+              ],
               "meta": {
                 "lifetime_node_id": "n0",
                 "lifetime_defs": [],

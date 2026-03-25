@@ -1715,17 +1715,17 @@
     {
       "kind": "AnnAssign",
       "source_span": {
-        "lineno": 1,
+        "lineno": 42,
         "col_offset": 4,
-        "end_lineno": 1,
+        "end_lineno": 42,
         "end_col_offset": 159
       },
       "target": {
         "kind": "Name",
         "source_span": {
-          "lineno": 1,
+          "lineno": 42,
           "col_offset": 4,
-          "end_lineno": 1,
+          "end_lineno": 42,
           "end_col_offset": 12
         },
         "resolved_type": "list[str]",
@@ -1770,9 +1770,9 @@
       "value": {
         "kind": "List",
         "source_span": {
-          "lineno": 1,
+          "lineno": 42,
           "col_offset": 26,
-          "end_lineno": 1,
+          "end_lineno": 42,
           "end_col_offset": 159
         },
         "resolved_type": "list[str]",
@@ -1783,9 +1783,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col_offset": 28,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col_offset": 39
             },
             "resolved_type": "str",
@@ -1797,9 +1797,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col_offset": 41,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col_offset": 73
             },
             "resolved_type": "str",
@@ -1811,9 +1811,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col_offset": 75,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col_offset": 90
             },
             "resolved_type": "str",
@@ -1825,9 +1825,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col_offset": 92,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col_offset": 105
             },
             "resolved_type": "str",
@@ -1839,9 +1839,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col_offset": 107,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col_offset": 120
             },
             "resolved_type": "str",
@@ -1853,9 +1853,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col_offset": 122,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col_offset": 132
             },
             "resolved_type": "str",
@@ -1867,9 +1867,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col_offset": 134,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col_offset": 147
             },
             "resolved_type": "str",
@@ -1881,9 +1881,9 @@
           {
             "kind": "Constant",
             "source_span": {
-              "lineno": 1,
+              "lineno": 42,
               "col_offset": 149,
-              "end_lineno": 1,
+              "end_lineno": 42,
               "end_col_offset": 156
             },
             "resolved_type": "str",
@@ -2022,6 +2022,44 @@
           "mirror": "None"
         }
       },
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ],
       "discard_result": true
     }
   ],

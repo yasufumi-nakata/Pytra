@@ -29,17 +29,17 @@
         {
           "kind": "AnnAssign",
           "source_span": {
-            "lineno": 1,
+            "lineno": 2,
             "col": 4,
-            "end_lineno": 1,
+            "end_lineno": 2,
             "end_col": 52
           },
           "target": {
             "kind": "Name",
             "source_span": {
-              "lineno": 1,
+              "lineno": 2,
               "col": 4,
-              "end_lineno": 1,
+              "end_lineno": 2,
               "end_col": 14
             },
             "casts": [],
@@ -51,9 +51,9 @@
           "value": {
             "kind": "Dict",
             "source_span": {
-              "lineno": 1,
+              "lineno": 2,
               "col": 33,
-              "end_lineno": 1,
+              "end_lineno": 2,
               "end_col": 52
             },
             "casts": [],
@@ -64,9 +64,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 1,
+                    "lineno": 2,
                     "col": 35,
-                    "end_lineno": 1,
+                    "end_lineno": 2,
                     "end_col": 38
                   },
                   "casts": [],
@@ -77,9 +77,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 1,
+                    "lineno": 2,
                     "col": 40,
-                    "end_lineno": 1,
+                    "end_lineno": 2,
                     "end_col": 41
                   },
                   "casts": [],
@@ -92,9 +92,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 1,
+                    "lineno": 2,
                     "col": 43,
-                    "end_lineno": 1,
+                    "end_lineno": 2,
                     "end_col": 46
                   },
                   "casts": [],
@@ -105,9 +105,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 1,
+                    "lineno": 2,
                     "col": 48,
-                    "end_lineno": 1,
+                    "end_lineno": 2,
                     "end_col": 49
                   },
                   "casts": [],
@@ -222,7 +222,21 @@
               }
             ],
             "keywords": []
-          }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         }
       ],
       "is_generator": 0,

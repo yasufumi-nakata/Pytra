@@ -7251,18 +7251,18 @@
             {
               "kind": "AnnAssign",
               "source_span": {
-                "lineno": 137,
+                "lineno": 138,
                 "col": 8,
-                "end_lineno": 137,
+                "end_lineno": 138,
                 "end_col": 104
               },
               "target": {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 137,
-                  "col": 29,
-                  "end_lineno": 137,
-                  "end_col": 33
+                  "lineno": 138,
+                  "col": 8,
+                  "end_lineno": 138,
+                  "end_col": 12
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -7273,9 +7273,9 @@
               "value": {
                 "kind": "Dict",
                 "source_span": {
-                  "lineno": 137,
+                  "lineno": 138,
                   "col": 35,
-                  "end_lineno": 137,
+                  "end_lineno": 138,
                   "end_col": 104
                 },
                 "casts": [],
@@ -7286,9 +7286,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 137,
+                        "lineno": 138,
                         "col": 37,
-                        "end_lineno": 137,
+                        "end_lineno": 138,
                         "end_col": 46
                       },
                       "casts": [],
@@ -7299,9 +7299,9 @@
                     "value": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 137,
+                        "lineno": 138,
                         "col": 48,
-                        "end_lineno": 137,
+                        "end_lineno": 138,
                         "end_col": 51
                       },
                       "casts": [],
@@ -7314,9 +7314,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 137,
+                        "lineno": 138,
                         "col": 53,
-                        "end_lineno": 137,
+                        "end_lineno": 138,
                         "end_col": 66
                       },
                       "casts": [],
@@ -7327,9 +7327,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 137,
+                        "lineno": 138,
                         "col": 68,
-                        "end_lineno": 137,
+                        "end_lineno": 138,
                         "end_col": 79
                       },
                       "casts": [],
@@ -7342,9 +7342,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 137,
+                        "lineno": 138,
                         "col": 81,
-                        "end_lineno": 137,
+                        "end_lineno": 138,
                         "end_col": 91
                       },
                       "casts": [],
@@ -7355,9 +7355,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 137,
+                        "lineno": 138,
                         "col": 93,
-                        "end_lineno": 137,
+                        "end_lineno": 138,
                         "end_col": 101
                       },
                       "casts": [],
@@ -7444,7 +7444,25 @@
                   }
                 ],
                 "keywords": []
-              }
+              },
+              "leading_trivia": [
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                }
+              ]
             }
           ],
           "is_generator": 0,

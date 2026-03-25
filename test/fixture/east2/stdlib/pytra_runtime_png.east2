@@ -458,7 +458,29 @@
             "runtime_module_id": "pytra.utils.png",
             "runtime_symbol": "write_rgb_png",
             "semantic_tag": "stdlib.method.write_rgb_png"
-          }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "AnnAssign",

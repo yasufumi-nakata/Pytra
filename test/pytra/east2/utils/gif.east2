@@ -3843,9 +3843,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 82,
-            "col": 0,
+            "col": 103,
             "end_lineno": 82,
-            "end_col": 1
+            "end_col": 104
           },
           "resolved_type": "int64",
           "casts": [],
@@ -3857,9 +3857,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 82,
-            "col": 0,
+            "col": 118,
             "end_lineno": 82,
-            "end_col": 1
+            "end_col": 119
           },
           "resolved_type": "int64",
           "casts": [],
@@ -4072,7 +4072,41 @@
               "cause": null
             }
           ],
-          "orelse": []
+          "orelse": [],
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "AnnAssign",

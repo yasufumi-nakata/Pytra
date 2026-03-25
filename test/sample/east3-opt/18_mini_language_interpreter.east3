@@ -753,17 +753,17 @@
         {
           "kind": "AnnAssign",
           "source_span": {
-            "lineno": 36,
+            "lineno": 37,
             "col_offset": 4,
-            "end_lineno": 36,
+            "end_lineno": 37,
             "end_col_offset": 104
           },
           "target": {
             "kind": "Name",
             "source_span": {
-              "lineno": 36,
+              "lineno": 37,
               "col_offset": 4,
-              "end_lineno": 36,
+              "end_lineno": 37,
               "end_col_offset": 26
             },
             "resolved_type": "dict[str,int64]",
@@ -820,9 +820,9 @@
           "value": {
             "kind": "Dict",
             "source_span": {
-              "lineno": 36,
+              "lineno": 37,
               "col_offset": 45,
-              "end_lineno": 36,
+              "end_lineno": 37,
               "end_col_offset": 104
             },
             "resolved_type": "dict[str,int64]",
@@ -834,9 +834,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 47,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 50
                   },
                   "resolved_type": "str",
@@ -848,9 +848,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 52,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 53
                   },
                   "resolved_type": "int64",
@@ -864,9 +864,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 55,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 58
                   },
                   "resolved_type": "str",
@@ -878,9 +878,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 60,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 61
                   },
                   "resolved_type": "int64",
@@ -894,9 +894,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 63,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 66
                   },
                   "resolved_type": "str",
@@ -908,9 +908,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 68,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 69
                   },
                   "resolved_type": "int64",
@@ -924,9 +924,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 71,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 74
                   },
                   "resolved_type": "str",
@@ -938,9 +938,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 76,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 77
                   },
                   "resolved_type": "int64",
@@ -954,9 +954,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 79,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 82
                   },
                   "resolved_type": "str",
@@ -968,9 +968,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 84,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 85
                   },
                   "resolved_type": "int64",
@@ -984,9 +984,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 87,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 90
                   },
                   "resolved_type": "str",
@@ -998,9 +998,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 92,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 93
                   },
                   "resolved_type": "int64",
@@ -1014,9 +1014,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 95,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 98
                   },
                   "resolved_type": "str",
@@ -1028,9 +1028,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 36,
+                    "lineno": 37,
                     "col_offset": 100,
-                    "end_lineno": 36,
+                    "end_lineno": 37,
                     "end_col_offset": 101
                   },
                   "resolved_type": "int64",
@@ -1079,17 +1079,17 @@
         {
           "kind": "AnnAssign",
           "source_span": {
-            "lineno": 37,
+            "lineno": 46,
             "col_offset": 4,
-            "end_lineno": 37,
+            "end_lineno": 46,
             "end_col_offset": 107
           },
           "target": {
             "kind": "Name",
             "source_span": {
-              "lineno": 37,
+              "lineno": 46,
               "col_offset": 4,
-              "end_lineno": 37,
+              "end_lineno": 46,
               "end_col_offset": 27
             },
             "resolved_type": "list[str]",
@@ -1131,12 +1131,46 @@
               }
             ]
           },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "value": {
             "kind": "List",
             "source_span": {
-              "lineno": 37,
+              "lineno": 46,
               "col_offset": 41,
-              "end_lineno": 37,
+              "end_lineno": 46,
               "end_col_offset": 107
             },
             "resolved_type": "list[str]",
@@ -1147,9 +1181,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 37,
+                  "lineno": 46,
                   "col_offset": 43,
-                  "end_lineno": 37,
+                  "end_lineno": 46,
                   "end_col_offset": 49
                 },
                 "resolved_type": "str",
@@ -1161,9 +1195,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 37,
+                  "lineno": 46,
                   "col_offset": 51,
-                  "end_lineno": 37,
+                  "end_lineno": 46,
                   "end_col_offset": 58
                 },
                 "resolved_type": "str",
@@ -1175,9 +1209,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 37,
+                  "lineno": 46,
                   "col_offset": 60,
-                  "end_lineno": 37,
+                  "end_lineno": 46,
                   "end_col_offset": 66
                 },
                 "resolved_type": "str",
@@ -1189,9 +1223,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 37,
+                  "lineno": 46,
                   "col_offset": 68,
-                  "end_lineno": 37,
+                  "end_lineno": 46,
                   "end_col_offset": 75
                 },
                 "resolved_type": "str",
@@ -1203,9 +1237,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 37,
+                  "lineno": 46,
                   "col_offset": 77,
-                  "end_lineno": 37,
+                  "end_lineno": 46,
                   "end_col_offset": 85
                 },
                 "resolved_type": "str",
@@ -1217,9 +1251,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 37,
+                  "lineno": 46,
                   "col_offset": 87,
-                  "end_lineno": 37,
+                  "end_lineno": 46,
                   "end_col_offset": 95
                 },
                 "resolved_type": "str",
@@ -1231,9 +1265,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 37,
+                  "lineno": 46,
                   "col_offset": 97,
-                  "end_lineno": 37,
+                  "end_lineno": 46,
                   "end_col_offset": 104
                 },
                 "resolved_type": "str",
@@ -1335,6 +1369,40 @@
               }
             ]
           },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "value": {
             "kind": "List",
             "source_span": {
@@ -38498,6 +38566,16 @@
                 }
               ],
               "orelse": [],
+              "leading_trivia": [
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                }
+              ],
               "meta": {
                 "lifetime_node_id": "n3",
                 "lifetime_defs": [],

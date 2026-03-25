@@ -279,8 +279,8 @@
       "source_span": {
         "lineno": 16,
         "col": 0,
-        "end_lineno": 25,
-        "end_col": 5
+        "end_lineno": 17,
+        "end_col": 146
       },
       "name": "_compare_expr_bool",
       "original_name": "_compare_expr_bool",
@@ -312,17 +312,17 @@
         {
           "kind": "Return",
           "source_span": {
-            "lineno": 16,
+            "lineno": 17,
             "col": 4,
-            "end_lineno": 16,
+            "end_lineno": 17,
             "end_col": 146
           },
           "value": {
             "kind": "Dict",
             "source_span": {
-              "lineno": 16,
+              "lineno": 17,
               "col": 11,
-              "end_lineno": 16,
+              "end_lineno": 17,
               "end_col": 146
             },
             "resolved_type": "dict[str,str]",
@@ -334,9 +334,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 13,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 19
                   },
                   "resolved_type": "str",
@@ -348,9 +348,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 21,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 30
                   },
                   "resolved_type": "str",
@@ -364,9 +364,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 32,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 38
                   },
                   "resolved_type": "str",
@@ -378,9 +378,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 40,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 44
                   },
                   "resolved_type": "dict[str,JsonVal]",
@@ -394,9 +394,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 46,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 51
                   },
                   "resolved_type": "str",
@@ -408,9 +408,9 @@
                 "value": {
                   "kind": "List",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 53,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 57
                   },
                   "resolved_type": "list[str]",
@@ -421,9 +421,9 @@
                     {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 16,
+                        "lineno": 17,
                         "col": 54,
-                        "end_lineno": 16,
+                        "end_lineno": 17,
                         "end_col": 56
                       },
                       "resolved_type": "str",
@@ -439,9 +439,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 59,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 72
                   },
                   "resolved_type": "str",
@@ -453,9 +453,9 @@
                 "value": {
                   "kind": "List",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 74,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 81
                   },
                   "resolved_type": "list[dict[str,JsonVal]]",
@@ -466,9 +466,9 @@
                     {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 16,
+                        "lineno": 17,
                         "col": 75,
-                        "end_lineno": 16,
+                        "end_lineno": 17,
                         "end_col": 80
                       },
                       "resolved_type": "dict[str,JsonVal]",
@@ -484,9 +484,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 83,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 98
                   },
                   "resolved_type": "str",
@@ -498,9 +498,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 100,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 106
                   },
                   "resolved_type": "str",
@@ -514,9 +514,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 108,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 121
                   },
                   "resolved_type": "str",
@@ -528,9 +528,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 123,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 130
                   },
                   "resolved_type": "str",
@@ -544,9 +544,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 132,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 139
                   },
                   "resolved_type": "str",
@@ -558,9 +558,9 @@
                 "value": {
                   "kind": "List",
                   "source_span": {
-                    "lineno": 16,
+                    "lineno": 17,
                     "col": 141,
-                    "end_lineno": 16,
+                    "end_lineno": 17,
                     "end_col": 143
                   },
                   "resolved_type": "list[unknown]",
@@ -641,8 +641,8 @@
       "source_span": {
         "lineno": 28,
         "col": 0,
-        "end_lineno": 37,
-        "end_col": 5
+        "end_lineno": 29,
+        "end_col": 139
       },
       "name": "_ifexp_expr_bool",
       "original_name": "_ifexp_expr_bool",
@@ -674,17 +674,17 @@
         {
           "kind": "Return",
           "source_span": {
-            "lineno": 28,
+            "lineno": 29,
             "col": 4,
-            "end_lineno": 28,
+            "end_lineno": 29,
             "end_col": 139
           },
           "value": {
             "kind": "Dict",
             "source_span": {
-              "lineno": 28,
+              "lineno": 29,
               "col": 11,
-              "end_lineno": 28,
+              "end_lineno": 29,
               "end_col": 139
             },
             "resolved_type": "dict[str,str]",
@@ -696,9 +696,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 13,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 19
                   },
                   "resolved_type": "str",
@@ -710,9 +710,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 21,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 28
                   },
                   "resolved_type": "str",
@@ -726,9 +726,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 30,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 36
                   },
                   "resolved_type": "str",
@@ -740,9 +740,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 38,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 42
                   },
                   "resolved_type": "dict[str,JsonVal]",
@@ -756,9 +756,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 44,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 50
                   },
                   "resolved_type": "str",
@@ -770,9 +770,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 52,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 56
                   },
                   "resolved_type": "dict[str,JsonVal]",
@@ -786,9 +786,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 58,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 66
                   },
                   "resolved_type": "str",
@@ -800,9 +800,9 @@
                 "value": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 68,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 74
                   },
                   "resolved_type": "dict[str,JsonVal]",
@@ -816,9 +816,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 76,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 91
                   },
                   "resolved_type": "str",
@@ -830,9 +830,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 93,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 99
                   },
                   "resolved_type": "str",
@@ -846,9 +846,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 101,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 114
                   },
                   "resolved_type": "str",
@@ -860,9 +860,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 116,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 123
                   },
                   "resolved_type": "str",
@@ -876,9 +876,9 @@
                 "key": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 125,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 132
                   },
                   "resolved_type": "str",
@@ -890,9 +890,9 @@
                 "value": {
                   "kind": "List",
                   "source_span": {
-                    "lineno": 28,
+                    "lineno": 29,
                     "col": 134,
-                    "end_lineno": 28,
+                    "end_lineno": 29,
                     "end_col": 136
                   },
                   "resolved_type": "list[unknown]",
@@ -6317,17 +6317,17 @@
             {
               "kind": "AnnAssign",
               "source_span": {
-                "lineno": 123,
+                "lineno": 124,
                 "col": 8,
-                "end_lineno": 123,
+                "end_lineno": 124,
                 "end_col": 164
               },
               "target": {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 123,
+                  "lineno": 124,
                   "col": 8,
-                  "end_lineno": 123,
+                  "end_lineno": 124,
                   "end_col": 19
                 },
                 "resolved_type": "dict[str,JsonVal]",
@@ -6354,9 +6354,9 @@
               "value": {
                 "kind": "Dict",
                 "source_span": {
-                  "lineno": 123,
+                  "lineno": 124,
                   "col": 42,
-                  "end_lineno": 123,
+                  "end_lineno": 124,
                   "end_col": 164
                 },
                 "resolved_type": "dict[str,str]",
@@ -6368,9 +6368,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 44,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 50
                       },
                       "resolved_type": "str",
@@ -6382,9 +6382,9 @@
                     "value": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 52,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 58
                       },
                       "resolved_type": "str",
@@ -6398,9 +6398,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 60,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 64
                       },
                       "resolved_type": "str",
@@ -6412,9 +6412,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 66,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 75
                       },
                       "resolved_type": "unknown",
@@ -6428,9 +6428,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 77,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 92
                       },
                       "resolved_type": "str",
@@ -6442,9 +6442,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 94,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 105
                       },
                       "resolved_type": "unknown",
@@ -6458,9 +6458,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 107,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 120
                       },
                       "resolved_type": "str",
@@ -6472,9 +6472,9 @@
                     "value": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 122,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 129
                       },
                       "resolved_type": "str",
@@ -6488,9 +6488,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 131,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 138
                       },
                       "resolved_type": "str",
@@ -6502,9 +6502,9 @@
                     "value": {
                       "kind": "List",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 140,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 142
                       },
                       "resolved_type": "list[unknown]",
@@ -6518,9 +6518,9 @@
                     "key": {
                       "kind": "Constant",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 144,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 150
                       },
                       "resolved_type": "str",
@@ -6532,9 +6532,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 123,
+                        "lineno": 124,
                         "col": 152,
-                        "end_lineno": 123,
+                        "end_lineno": 124,
                         "end_col": 161
                       },
                       "resolved_type": "unknown",
@@ -6645,7 +6645,37 @@
               },
               "declare": true,
               "decl_type": "str",
-              "declare_init": true
+              "declare_init": true,
+              "leading_trivia": [
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                }
+              ]
             },
             {
               "kind": "If",

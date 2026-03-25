@@ -118,6 +118,20 @@
             "repr": "\"\"\"Collect function symbols from a module's EAST3.",
             "value": "Collect function symbols from a module's EAS"
           },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "meta": {
             "lifetime_node_id": "n32",
             "lifetime_defs": [],
@@ -14512,7 +14526,7 @@
                   "source_span": {
                     "lineno": 131,
                     "col_offset": 12,
-                    "end_lineno": 1,
+                    "end_lineno": 135,
                     "end_col_offset": 122
                   },
                   "test": {
@@ -15198,17 +15212,17 @@
                     {
                       "kind": "Expr",
                       "source_span": {
-                        "lineno": 134,
+                        "lineno": 135,
                         "col_offset": 16,
-                        "end_lineno": 134,
+                        "end_lineno": 135,
                         "end_col_offset": 122
                       },
                       "value": {
                         "kind": "Call",
                         "source_span": {
-                          "lineno": 134,
+                          "lineno": 135,
                           "col_offset": 16,
-                          "end_lineno": 134,
+                          "end_lineno": 135,
                           "end_col_offset": 122
                         },
                         "resolved_type": "None",
@@ -15218,9 +15232,9 @@
                         "func": {
                           "kind": "Name",
                           "source_span": {
-                            "lineno": 134,
+                            "lineno": 135,
                             "col_offset": 16,
-                            "end_lineno": 134,
+                            "end_lineno": 135,
                             "end_col_offset": 38
                           },
                           "resolved_type": "unknown",
@@ -15233,9 +15247,9 @@
                           {
                             "kind": "Call",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col_offset": 40,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col_offset": 60
                             },
                             "resolved_type": "unknown",
@@ -15245,9 +15259,9 @@
                             "func": {
                               "kind": "Attribute",
                               "source_span": {
-                                "lineno": 134,
+                                "lineno": 135,
                                 "col_offset": 40,
-                                "end_lineno": 134,
+                                "end_lineno": 135,
                                 "end_col_offset": 48
                               },
                               "resolved_type": "unknown",
@@ -15257,9 +15271,9 @@
                               "value": {
                                 "kind": "Name",
                                 "source_span": {
-                                  "lineno": 134,
+                                  "lineno": 135,
                                   "col_offset": 40,
-                                  "end_lineno": 134,
+                                  "end_lineno": 135,
                                   "end_col_offset": 44
                                 },
                                 "resolved_type": "unknown",
@@ -15274,9 +15288,9 @@
                               {
                                 "kind": "Constant",
                                 "source_span": {
-                                  "lineno": 134,
+                                  "lineno": 135,
                                   "col_offset": 49,
-                                  "end_lineno": 134,
+                                  "end_lineno": 135,
                                   "end_col_offset": 55
                                 },
                                 "resolved_type": "str",
@@ -15288,9 +15302,9 @@
                               {
                                 "kind": "List",
                                 "source_span": {
-                                  "lineno": 134,
+                                  "lineno": 135,
                                   "col_offset": 57,
-                                  "end_lineno": 134,
+                                  "end_lineno": 135,
                                   "end_col_offset": 59
                                 },
                                 "resolved_type": "list[unknown]",
@@ -15312,9 +15326,9 @@
                           {
                             "kind": "Name",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col_offset": 62,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col_offset": 75
                             },
                             "resolved_type": "set[str]",
@@ -15326,9 +15340,9 @@
                           {
                             "kind": "Name",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col_offset": 77,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col_offset": 86
                             },
                             "resolved_type": "str",
@@ -15340,9 +15354,9 @@
                           {
                             "kind": "Name",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col_offset": 88,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col_offset": 100
                             },
                             "resolved_type": "str",
@@ -15354,9 +15368,9 @@
                           {
                             "kind": "Name",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col_offset": 102,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col_offset": 107
                             },
                             "resolved_type": "dict[str,set[str]]",
@@ -15368,9 +15382,9 @@
                           {
                             "kind": "Name",
                             "source_span": {
-                              "lineno": 134,
+                              "lineno": 135,
                               "col_offset": 109,
-                              "end_lineno": 134,
+                              "end_lineno": 135,
                               "end_col_offset": 119
                             },
                             "resolved_type": "dict[str,int64]",
@@ -17967,17 +17981,17 @@
                             {
                               "kind": "Expr",
                               "source_span": {
-                                "lineno": 153,
+                                "lineno": 154,
                                 "col_offset": 20,
-                                "end_lineno": 153,
+                                "end_lineno": 154,
                                 "end_col_offset": 128
                               },
                               "value": {
                                 "kind": "Call",
                                 "source_span": {
-                                  "lineno": 153,
+                                  "lineno": 154,
                                   "col_offset": 20,
-                                  "end_lineno": 153,
+                                  "end_lineno": 154,
                                   "end_col_offset": 128
                                 },
                                 "resolved_type": "None",
@@ -17987,9 +18001,9 @@
                                 "func": {
                                   "kind": "Name",
                                   "source_span": {
-                                    "lineno": 153,
+                                    "lineno": 154,
                                     "col_offset": 20,
-                                    "end_lineno": 153,
+                                    "end_lineno": 154,
                                     "end_col_offset": 42
                                   },
                                   "resolved_type": "unknown",
@@ -18002,9 +18016,9 @@
                                   {
                                     "kind": "Call",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col_offset": 44,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col_offset": 66
                                     },
                                     "resolved_type": "unknown",
@@ -18014,9 +18028,9 @@
                                     "func": {
                                       "kind": "Attribute",
                                       "source_span": {
-                                        "lineno": 153,
+                                        "lineno": 154,
                                         "col_offset": 44,
-                                        "end_lineno": 153,
+                                        "end_lineno": 154,
                                         "end_col_offset": 54
                                       },
                                       "resolved_type": "unknown",
@@ -18026,9 +18040,9 @@
                                       "value": {
                                         "kind": "Name",
                                         "source_span": {
-                                          "lineno": 153,
+                                          "lineno": 154,
                                           "col_offset": 44,
-                                          "end_lineno": 153,
+                                          "end_lineno": 154,
                                           "end_col_offset": 50
                                         },
                                         "resolved_type": "unknown",
@@ -18043,9 +18057,9 @@
                                       {
                                         "kind": "Constant",
                                         "source_span": {
-                                          "lineno": 153,
+                                          "lineno": 154,
                                           "col_offset": 55,
-                                          "end_lineno": 153,
+                                          "end_lineno": 154,
                                           "end_col_offset": 61
                                         },
                                         "resolved_type": "str",
@@ -18057,9 +18071,9 @@
                                       {
                                         "kind": "List",
                                         "source_span": {
-                                          "lineno": 153,
+                                          "lineno": 154,
                                           "col_offset": 63,
-                                          "end_lineno": 153,
+                                          "end_lineno": 154,
                                           "end_col_offset": 65
                                         },
                                         "resolved_type": "list[unknown]",
@@ -18081,9 +18095,9 @@
                                   {
                                     "kind": "Name",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col_offset": 68,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col_offset": 81
                                     },
                                     "resolved_type": "set[str]",
@@ -18095,9 +18109,9 @@
                                   {
                                     "kind": "Name",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col_offset": 83,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col_offset": 92
                                     },
                                     "resolved_type": "str",
@@ -18109,9 +18123,9 @@
                                   {
                                     "kind": "Name",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col_offset": 94,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col_offset": 106
                                     },
                                     "resolved_type": "str",
@@ -18123,9 +18137,9 @@
                                   {
                                     "kind": "Name",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col_offset": 108,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col_offset": 113
                                     },
                                     "resolved_type": "dict[str,set[str]]",
@@ -18137,9 +18151,9 @@
                                   {
                                     "kind": "Name",
                                     "source_span": {
-                                      "lineno": 153,
+                                      "lineno": 154,
                                       "col_offset": 115,
-                                      "end_lineno": 153,
+                                      "end_lineno": 154,
                                       "end_col_offset": 125
                                     },
                                     "resolved_type": "dict[str,int64]",
@@ -26124,6 +26138,16 @@
             "repr": "\"\"\"Build program-wide call graph.",
             "value": "Build program-wide call gra"
           },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "meta": {
             "lifetime_node_id": "n31",
             "lifetime_defs": [],
@@ -28176,9 +28200,9 @@
               "value": {
                 "kind": "Call",
                 "source_span": {
-                  "lineno": 239,
+                  "lineno": 240,
                   "col_offset": 42,
-                  "end_lineno": 239,
+                  "end_lineno": 240,
                   "end_col_offset": 107
                 },
                 "resolved_type": "tuple[dict[str,set[str]],dict[str,int64]]",
@@ -28188,9 +28212,9 @@
                 "func": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 239,
+                    "lineno": 240,
                     "col_offset": 42,
-                    "end_lineno": 239,
+                    "end_lineno": 240,
                     "end_col_offset": 66
                   },
                   "resolved_type": "unknown",
@@ -28203,9 +28227,9 @@
                   {
                     "kind": "Name",
                     "source_span": {
-                      "lineno": 239,
+                      "lineno": 240,
                       "col_offset": 68,
-                      "end_lineno": 239,
+                      "end_lineno": 240,
                       "end_col_offset": 71
                     },
                     "resolved_type": "unknown",
@@ -28217,9 +28241,9 @@
                   {
                     "kind": "Attribute",
                     "source_span": {
-                      "lineno": 239,
+                      "lineno": 240,
                       "col_offset": 73,
-                      "end_lineno": 239,
+                      "end_lineno": 240,
                       "end_col_offset": 89
                     },
                     "resolved_type": "unknown",
@@ -28229,9 +28253,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 239,
+                        "lineno": 240,
                         "col_offset": 73,
-                        "end_lineno": 239,
+                        "end_lineno": 240,
                         "end_col_offset": 79
                       },
                       "resolved_type": "LinkedModule",
@@ -28245,9 +28269,9 @@
                   {
                     "kind": "Name",
                     "source_span": {
-                      "lineno": 239,
+                      "lineno": 240,
                       "col_offset": 91,
-                      "end_lineno": 239,
+                      "end_lineno": 240,
                       "end_col_offset": 104
                     },
                     "resolved_type": "set[str]",
@@ -29008,6 +29032,16 @@
                 "end_lineno": 247,
                 "end_col_offset": 18
               },
+              "leading_trivia": [
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                }
+              ],
               "meta": {
                 "lifetime_node_id": "n6",
                 "lifetime_defs": [

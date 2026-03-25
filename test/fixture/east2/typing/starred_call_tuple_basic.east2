@@ -746,7 +746,21 @@
             "runtime_module_id": "pytra.utils.assertions",
             "runtime_symbol": "py_assert_all",
             "runtime_call_adapter_kind": "extern_delegate"
-          }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         }
       ],
       "is_generator": 0,

@@ -70,8 +70,8 @@
       "source_span": {
         "lineno": 12,
         "col_offset": 0,
-        "end_lineno": 21,
-        "end_col_offset": 5
+        "end_lineno": 14,
+        "end_col_offset": 133
       },
       "name": "const_int_node",
       "original_name": "const_int_node",
@@ -1585,8 +1585,8 @@
       "source_span": {
         "lineno": 36,
         "col_offset": 0,
-        "end_lineno": 46,
-        "end_col_offset": 5
+        "end_lineno": 38,
+        "end_col_offset": 134
       },
       "name": "binop_expr",
       "original_name": "binop_expr",
@@ -2022,8 +2022,8 @@
       "source_span": {
         "lineno": 49,
         "col_offset": 0,
-        "end_lineno": 59,
-        "end_col_offset": 5
+        "end_lineno": 51,
+        "end_col_offset": 146
       },
       "name": "compare_expr",
       "original_name": "compare_expr",
@@ -2489,8 +2489,8 @@
       "source_span": {
         "lineno": 62,
         "col_offset": 0,
-        "end_lineno": 72,
-        "end_col_offset": 5
+        "end_lineno": 64,
+        "end_col_offset": 140
       },
       "name": "ifexp_expr",
       "original_name": "ifexp_expr",

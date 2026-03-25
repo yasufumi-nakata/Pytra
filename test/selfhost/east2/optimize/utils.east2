@@ -1,0 +1,738 @@
+{
+  "kind": "Module",
+  "source_path": "src/toolchain2/optimize/utils.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 1,
+        "end_col": 61
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col": 0,
+          "end_lineno": 1,
+          "end_col": 61
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"Re-export shared utilities from toolchain2/common/ (互換維持).",
+        "value": "Re-export shared utilities from toolchain2/common/ (互換維"
+      }
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 5,
+        "col": 0,
+        "end_lineno": 5,
+        "end_col": 3
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 5,
+          "col": 0,
+          "end_lineno": 5,
+          "end_col": 3
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"",
+        "value": ""
+      }
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 10,
+        "col": 0,
+        "end_lineno": 10,
+        "end_col": 47
+      },
+      "module": "toolchain2.common.jv",
+      "names": [
+        {
+          "name": "deep_copy_json",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 13,
+        "col": 0,
+        "end_lineno": 13,
+        "end_col": 55
+      },
+      "module": "toolchain2.common.types",
+      "names": [
+        {
+          "name": "normalize_type_name",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 14,
+        "col": 0,
+        "end_lineno": 14,
+        "end_col": 52
+      },
+      "module": "toolchain2.common.types",
+      "names": [
+        {
+          "name": "is_any_like_type",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 15,
+        "col": 0,
+        "end_lineno": 15,
+        "end_col": 55
+      },
+      "module": "toolchain2.common.types",
+      "names": [
+        {
+          "name": "split_generic_types",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 18,
+        "col": 0,
+        "end_lineno": 18,
+        "end_col": 50
+      },
+      "module": "toolchain2.common.nodes",
+      "names": [
+        {
+          "name": "const_int_node",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 19,
+        "col": 0,
+        "end_lineno": 19,
+        "end_col": 51
+      },
+      "module": "toolchain2.common.nodes",
+      "names": [
+        {
+          "name": "const_int_value",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 20,
+        "col": 0,
+        "end_lineno": 20,
+        "end_col": 46
+      },
+      "module": "toolchain2.common.nodes",
+      "names": [
+        {
+          "name": "binop_expr",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 21,
+        "col": 0,
+        "end_lineno": 21,
+        "end_col": 48
+      },
+      "module": "toolchain2.common.nodes",
+      "names": [
+        {
+          "name": "compare_expr",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 22,
+        "col": 0,
+        "end_lineno": 22,
+        "end_col": 46
+      },
+      "module": "toolchain2.common.nodes",
+      "names": [
+        {
+          "name": "ifexp_expr",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "Assign",
+      "source_span": {
+        "lineno": 24,
+        "col": 0,
+        "end_lineno": 24,
+        "end_col": 178
+      },
+      "target": {
+        "kind": "Name",
+        "source_span": {
+          "lineno": 24,
+          "col": 0,
+          "end_lineno": 24,
+          "end_col": 7
+        },
+        "resolved_type": "unknown",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "__all__",
+        "id": "__all__"
+      },
+      "value": {
+        "kind": "List",
+        "source_span": {
+          "lineno": 24,
+          "col": 10,
+          "end_lineno": 24,
+          "end_col": 178
+        },
+        "resolved_type": "list[str]",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "[ \"deep_copy_json\", \"normalize_type_name\", \"is_any_like_type\", \"split_generic_types\", \"const_int_node\", \"const_int_value\", \"binop_expr\", \"compare_expr\", \"ifexp_expr\", ]",
+        "elements": [
+          {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 24,
+              "col": 12,
+              "end_lineno": 24,
+              "end_col": 28
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"deep_copy_json\"",
+            "value": "deep_copy_json"
+          },
+          {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 24,
+              "col": 30,
+              "end_lineno": 24,
+              "end_col": 51
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"normalize_type_name\"",
+            "value": "normalize_type_name"
+          },
+          {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 24,
+              "col": 53,
+              "end_lineno": 24,
+              "end_col": 71
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"is_any_like_type\"",
+            "value": "is_any_like_type"
+          },
+          {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 24,
+              "col": 73,
+              "end_lineno": 24,
+              "end_col": 94
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"split_generic_types\"",
+            "value": "split_generic_types"
+          },
+          {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 24,
+              "col": 96,
+              "end_lineno": 24,
+              "end_col": 112
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"const_int_node\"",
+            "value": "const_int_node"
+          },
+          {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 24,
+              "col": 114,
+              "end_lineno": 24,
+              "end_col": 131
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"const_int_value\"",
+            "value": "const_int_value"
+          },
+          {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 24,
+              "col": 133,
+              "end_lineno": 24,
+              "end_col": 145
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"binop_expr\"",
+            "value": "binop_expr"
+          },
+          {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 24,
+              "col": 147,
+              "end_lineno": 24,
+              "end_col": 161
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"compare_expr\"",
+            "value": "compare_expr"
+          },
+          {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 24,
+              "col": 163,
+              "end_lineno": 24,
+              "end_col": 175
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"ifexp_expr\"",
+            "value": "ifexp_expr"
+          }
+        ]
+      },
+      "declare": true,
+      "decl_type": "list[str]",
+      "declare_init": true,
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        },
+        {
+          "kind": "comment",
+          "text": "jv"
+        },
+        {
+          "kind": "comment",
+          "text": "types"
+        },
+        {
+          "kind": "comment",
+          "text": "nodes"
+        }
+      ],
+      "leading_comments": [
+        "jv",
+        "types",
+        "nodes"
+      ]
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "toolchain2.common.jv",
+          "export_name": "deep_copy_json",
+          "local_name": "deep_copy_json",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/utils.py",
+          "source_line": 10,
+          "source_module_id": "toolchain2.common.jv",
+          "source_export_name": "deep_copy_json",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "toolchain2.common.jv",
+          "runtime_group": ""
+        },
+        {
+          "module_id": "toolchain2.common.types",
+          "export_name": "normalize_type_name",
+          "local_name": "normalize_type_name",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/utils.py",
+          "source_line": 13,
+          "source_module_id": "toolchain2.common.types",
+          "source_export_name": "normalize_type_name",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "toolchain2.common.types",
+          "runtime_group": ""
+        },
+        {
+          "module_id": "toolchain2.common.types",
+          "export_name": "is_any_like_type",
+          "local_name": "is_any_like_type",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/utils.py",
+          "source_line": 14,
+          "source_module_id": "toolchain2.common.types",
+          "source_export_name": "is_any_like_type",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "toolchain2.common.types",
+          "runtime_group": ""
+        },
+        {
+          "module_id": "toolchain2.common.types",
+          "export_name": "split_generic_types",
+          "local_name": "split_generic_types",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/utils.py",
+          "source_line": 15,
+          "source_module_id": "toolchain2.common.types",
+          "source_export_name": "split_generic_types",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "toolchain2.common.types",
+          "runtime_group": ""
+        },
+        {
+          "module_id": "toolchain2.common.nodes",
+          "export_name": "const_int_node",
+          "local_name": "const_int_node",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/utils.py",
+          "source_line": 18,
+          "source_module_id": "toolchain2.common.nodes",
+          "source_export_name": "const_int_node",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "toolchain2.common.nodes",
+          "runtime_group": ""
+        },
+        {
+          "module_id": "toolchain2.common.nodes",
+          "export_name": "const_int_value",
+          "local_name": "const_int_value",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/utils.py",
+          "source_line": 19,
+          "source_module_id": "toolchain2.common.nodes",
+          "source_export_name": "const_int_value",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "toolchain2.common.nodes",
+          "runtime_group": ""
+        },
+        {
+          "module_id": "toolchain2.common.nodes",
+          "export_name": "binop_expr",
+          "local_name": "binop_expr",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/utils.py",
+          "source_line": 20,
+          "source_module_id": "toolchain2.common.nodes",
+          "source_export_name": "binop_expr",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "toolchain2.common.nodes",
+          "runtime_group": ""
+        },
+        {
+          "module_id": "toolchain2.common.nodes",
+          "export_name": "compare_expr",
+          "local_name": "compare_expr",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/utils.py",
+          "source_line": 21,
+          "source_module_id": "toolchain2.common.nodes",
+          "source_export_name": "compare_expr",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "toolchain2.common.nodes",
+          "runtime_group": ""
+        },
+        {
+          "module_id": "toolchain2.common.nodes",
+          "export_name": "ifexp_expr",
+          "local_name": "ifexp_expr",
+          "binding_kind": "symbol",
+          "source_file": "src/toolchain2/optimize/utils.py",
+          "source_line": 22,
+          "source_module_id": "toolchain2.common.nodes",
+          "source_export_name": "ifexp_expr",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "toolchain2.common.nodes",
+          "runtime_group": ""
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "toolchain2.common.jv",
+          "symbol": "deep_copy_json",
+          "local_name": "deep_copy_json"
+        },
+        {
+          "module_id": "toolchain2.common.types",
+          "symbol": "normalize_type_name",
+          "local_name": "normalize_type_name"
+        },
+        {
+          "module_id": "toolchain2.common.types",
+          "symbol": "is_any_like_type",
+          "local_name": "is_any_like_type"
+        },
+        {
+          "module_id": "toolchain2.common.types",
+          "symbol": "split_generic_types",
+          "local_name": "split_generic_types"
+        },
+        {
+          "module_id": "toolchain2.common.nodes",
+          "symbol": "const_int_node",
+          "local_name": "const_int_node"
+        },
+        {
+          "module_id": "toolchain2.common.nodes",
+          "symbol": "const_int_value",
+          "local_name": "const_int_value"
+        },
+        {
+          "module_id": "toolchain2.common.nodes",
+          "symbol": "binop_expr",
+          "local_name": "binop_expr"
+        },
+        {
+          "module_id": "toolchain2.common.nodes",
+          "symbol": "compare_expr",
+          "local_name": "compare_expr"
+        },
+        {
+          "module_id": "toolchain2.common.nodes",
+          "symbol": "ifexp_expr",
+          "local_name": "ifexp_expr"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "toolchain2.common.jv",
+        "export_name": "deep_copy_json",
+        "local_name": "deep_copy_json",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/utils.py",
+        "source_line": 10
+      },
+      {
+        "module_id": "toolchain2.common.types",
+        "export_name": "normalize_type_name",
+        "local_name": "normalize_type_name",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/utils.py",
+        "source_line": 13
+      },
+      {
+        "module_id": "toolchain2.common.types",
+        "export_name": "is_any_like_type",
+        "local_name": "is_any_like_type",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/utils.py",
+        "source_line": 14
+      },
+      {
+        "module_id": "toolchain2.common.types",
+        "export_name": "split_generic_types",
+        "local_name": "split_generic_types",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/utils.py",
+        "source_line": 15
+      },
+      {
+        "module_id": "toolchain2.common.nodes",
+        "export_name": "const_int_node",
+        "local_name": "const_int_node",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/utils.py",
+        "source_line": 18
+      },
+      {
+        "module_id": "toolchain2.common.nodes",
+        "export_name": "const_int_value",
+        "local_name": "const_int_value",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/utils.py",
+        "source_line": 19
+      },
+      {
+        "module_id": "toolchain2.common.nodes",
+        "export_name": "binop_expr",
+        "local_name": "binop_expr",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/utils.py",
+        "source_line": 20
+      },
+      {
+        "module_id": "toolchain2.common.nodes",
+        "export_name": "compare_expr",
+        "local_name": "compare_expr",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/utils.py",
+        "source_line": 21
+      },
+      {
+        "module_id": "toolchain2.common.nodes",
+        "export_name": "ifexp_expr",
+        "local_name": "ifexp_expr",
+        "binding_kind": "symbol",
+        "source_file": "src/toolchain2/optimize/utils.py",
+        "source_line": 22
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "toolchain2.common.jv",
+        "symbol": "deep_copy_json",
+        "local_name": "deep_copy_json"
+      },
+      {
+        "module_id": "toolchain2.common.types",
+        "symbol": "normalize_type_name",
+        "local_name": "normalize_type_name"
+      },
+      {
+        "module_id": "toolchain2.common.types",
+        "symbol": "is_any_like_type",
+        "local_name": "is_any_like_type"
+      },
+      {
+        "module_id": "toolchain2.common.types",
+        "symbol": "split_generic_types",
+        "local_name": "split_generic_types"
+      },
+      {
+        "module_id": "toolchain2.common.nodes",
+        "symbol": "const_int_node",
+        "local_name": "const_int_node"
+      },
+      {
+        "module_id": "toolchain2.common.nodes",
+        "symbol": "const_int_value",
+        "local_name": "const_int_value"
+      },
+      {
+        "module_id": "toolchain2.common.nodes",
+        "symbol": "binop_expr",
+        "local_name": "binop_expr"
+      },
+      {
+        "module_id": "toolchain2.common.nodes",
+        "symbol": "compare_expr",
+        "local_name": "compare_expr"
+      },
+      {
+        "module_id": "toolchain2.common.nodes",
+        "symbol": "ifexp_expr",
+        "local_name": "ifexp_expr"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "deep_copy_json": {
+        "module": "toolchain2.common.jv",
+        "name": "deep_copy_json"
+      },
+      "normalize_type_name": {
+        "module": "toolchain2.common.types",
+        "name": "normalize_type_name"
+      },
+      "is_any_like_type": {
+        "module": "toolchain2.common.types",
+        "name": "is_any_like_type"
+      },
+      "split_generic_types": {
+        "module": "toolchain2.common.types",
+        "name": "split_generic_types"
+      },
+      "const_int_node": {
+        "module": "toolchain2.common.nodes",
+        "name": "const_int_node"
+      },
+      "const_int_value": {
+        "module": "toolchain2.common.nodes",
+        "name": "const_int_value"
+      },
+      "binop_expr": {
+        "module": "toolchain2.common.nodes",
+        "name": "binop_expr"
+      },
+      "compare_expr": {
+        "module": "toolchain2.common.nodes",
+        "name": "compare_expr"
+      },
+      "ifexp_expr": {
+        "module": "toolchain2.common.nodes",
+        "name": "ifexp_expr"
+      }
+    },
+    "dispatch_mode": "native"
+  },
+  "east_stage": 2,
+  "schema_version": 1
+}

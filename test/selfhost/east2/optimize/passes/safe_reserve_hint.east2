@@ -5145,7 +5145,33 @@
               }
             }
           ],
-          "orelse": []
+          "orelse": [],
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "Assign",
@@ -16526,17 +16552,17 @@
             {
               "kind": "Assign",
               "source_span": {
-                "lineno": 257,
+                "lineno": 258,
                 "col": 8,
-                "end_lineno": 257,
+                "end_lineno": 258,
                 "end_col": 152
               },
               "target": {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 257,
+                  "lineno": 258,
                   "col": 8,
-                  "end_lineno": 257,
+                  "end_lineno": 258,
                   "end_col": 18
                 },
                 "resolved_type": "unknown",
@@ -16548,9 +16574,9 @@
               "value": {
                 "kind": "Call",
                 "source_span": {
-                  "lineno": 257,
+                  "lineno": 258,
                   "col": 21,
-                  "end_lineno": 257,
+                  "end_lineno": 258,
                   "end_col": 152
                 },
                 "resolved_type": "dict[str,JsonVal] | None",
@@ -16560,9 +16586,9 @@
                 "func": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 257,
+                    "lineno": 258,
                     "col": 21,
-                    "end_lineno": 257,
+                    "end_lineno": 258,
                     "end_col": 56
                   },
                   "resolved_type": "unknown",
@@ -16578,9 +16604,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 257,
+                        "lineno": 258,
                         "col": 69,
-                        "end_lineno": 257,
+                        "end_lineno": 258,
                         "end_col": 79
                       },
                       "resolved_type": "unknown",
@@ -16595,9 +16621,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 257,
+                        "lineno": 258,
                         "col": 91,
-                        "end_lineno": 257,
+                        "end_lineno": 258,
                         "end_col": 100
                       },
                       "resolved_type": "unknown",
@@ -16612,9 +16638,9 @@
                     "value": {
                       "kind": "Call",
                       "source_span": {
-                        "lineno": 257,
+                        "lineno": 258,
                         "col": 113,
-                        "end_lineno": 257,
+                        "end_lineno": 258,
                         "end_col": 126
                       },
                       "resolved_type": "int64",
@@ -16624,9 +16650,9 @@
                       "func": {
                         "kind": "Name",
                         "source_span": {
-                          "lineno": 257,
+                          "lineno": 258,
                           "col": 113,
-                          "end_lineno": 257,
+                          "end_lineno": 258,
                           "end_col": 116
                         },
                         "resolved_type": "unknown",
@@ -16639,9 +16665,9 @@
                         {
                           "kind": "Name",
                           "source_span": {
-                            "lineno": 257,
+                            "lineno": 258,
                             "col": 117,
-                            "end_lineno": 257,
+                            "end_lineno": 258,
                             "end_col": 125
                           },
                           "resolved_type": "unknown",
@@ -16666,9 +16692,9 @@
                     "value": {
                       "kind": "Name",
                       "source_span": {
-                        "lineno": 257,
+                        "lineno": 258,
                         "col": 139,
-                        "end_lineno": 257,
+                        "end_lineno": 258,
                         "end_col": 149
                       },
                       "resolved_type": "str",
@@ -16850,23 +16876,45 @@
                   }
                 }
               ],
-              "orelse": []
+              "orelse": [],
+              "leading_trivia": [
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                }
+              ]
             },
             {
               "kind": "AnnAssign",
               "source_span": {
-                "lineno": 265,
+                "lineno": 267,
                 "col": 8,
-                "end_lineno": 265,
+                "end_lineno": 267,
                 "end_col": 260
               },
               "target": {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 265,
-                  "col": 29,
-                  "end_lineno": 265,
-                  "end_col": 34
+                  "lineno": 267,
+                  "col": 8,
+                  "end_lineno": 267,
+                  "end_col": 13
                 },
                 "resolved_type": "list[dict[str,JsonVal]]",
                 "casts": [],
@@ -16898,9 +16946,9 @@
               "value": {
                 "kind": "List",
                 "source_span": {
-                  "lineno": 265,
+                  "lineno": 267,
                   "col": 42,
-                  "end_lineno": 265,
+                  "end_lineno": 267,
                   "end_col": 260
                 },
                 "resolved_type": "list[dict[str,str]]",
@@ -16911,9 +16959,9 @@
                   {
                     "kind": "Dict",
                     "source_span": {
-                      "lineno": 265,
+                      "lineno": 267,
                       "col": 44,
-                      "end_lineno": 265,
+                      "end_lineno": 267,
                       "end_col": 258
                     },
                     "resolved_type": "dict[str,str]",
@@ -16925,9 +16973,9 @@
                         "key": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 46,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 52
                           },
                           "resolved_type": "str",
@@ -16939,9 +16987,9 @@
                         "value": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 54,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 78
                           },
                           "resolved_type": "str",
@@ -16955,9 +17003,9 @@
                         "key": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 80,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 87
                           },
                           "resolved_type": "str",
@@ -16969,9 +17017,9 @@
                         "value": {
                           "kind": "Name",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 89,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 94
                           },
                           "resolved_type": "str",
@@ -16985,9 +17033,9 @@
                         "key": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 96,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 108
                           },
                           "resolved_type": "str",
@@ -16999,9 +17047,9 @@
                         "value": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 110,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 135
                           },
                           "resolved_type": "str",
@@ -17015,9 +17063,9 @@
                         "key": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 137,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 157
                           },
                           "resolved_type": "str",
@@ -17029,9 +17077,9 @@
                         "value": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 159,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 174
                           },
                           "resolved_type": "str",
@@ -17045,9 +17093,9 @@
                         "key": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 176,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 188
                           },
                           "resolved_type": "str",
@@ -17059,9 +17107,9 @@
                         "value": {
                           "kind": "Name",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 190,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 200
                           },
                           "resolved_type": "dict[str,JsonVal] | None",
@@ -17075,9 +17123,9 @@
                         "key": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 202,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 208
                           },
                           "resolved_type": "str",
@@ -17089,9 +17137,9 @@
                         "value": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 210,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 214
                           },
                           "resolved_type": "bool",
@@ -17105,9 +17153,9 @@
                         "key": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 216,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 224
                           },
                           "resolved_type": "str",
@@ -17119,9 +17167,9 @@
                         "value": {
                           "kind": "Constant",
                           "source_span": {
-                            "lineno": 265,
+                            "lineno": 267,
                             "col": 226,
-                            "end_lineno": 265,
+                            "end_lineno": 267,
                             "end_col": 255
                           },
                           "resolved_type": "str",
@@ -17257,7 +17305,49 @@
                   }
                 ],
                 "keywords": []
-              }
+              },
+              "leading_trivia": [
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                },
+                {
+                  "kind": "blank",
+                  "count": 1
+                }
+              ]
             }
           ],
           "is_generator": 0,

@@ -8757,9 +8757,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 82,
-            "col_offset": 0,
+            "col_offset": 103,
             "end_lineno": 82,
-            "end_col_offset": 1
+            "end_col_offset": 104
           },
           "resolved_type": "int64",
           "casts": [],
@@ -8771,9 +8771,9 @@
           "kind": "Constant",
           "source_span": {
             "lineno": 82,
-            "col_offset": 0,
+            "col_offset": 118,
             "end_lineno": 82,
-            "end_col_offset": 1
+            "end_col_offset": 119
           },
           "resolved_type": "int64",
           "casts": [],
@@ -9202,6 +9202,40 @@
             }
           ],
           "orelse": [],
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
           "meta": {
             "lifetime_node_id": "n50",
             "lifetime_defs": [],

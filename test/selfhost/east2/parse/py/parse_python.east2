@@ -127,7 +127,4366 @@
       "source_span": {
         "lineno": 16,
         "col": 0,
-        "end_lineno": 19,
+        "end_lineno": 48,
+        "end_col": 16
+      },
+      "name": "_bracket_depth_str_aware",
+      "original_name": "_bracket_depth_str_aware",
+      "arg_types": {
+        "text": "str"
+      },
+      "arg_order": [
+        "text"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "text": 0
+      },
+      "return_type": "int64",
+      "arg_usage": {
+        "text": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": "Count net bracket depth, ignoring strings and comments.",
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 18,
+            "col": 4,
+            "end_lineno": 18,
+            "end_col": 18
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 18,
+              "col": 4,
+              "end_lineno": 18,
+              "end_col": 9
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "depth",
+            "id": "depth",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 18,
+              "col": 17,
+              "end_lineno": 18,
+              "end_col": 18
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "0",
+            "value": 0
+          },
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 19,
+            "col": 4,
+            "end_lineno": 19,
+            "end_col": 20
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 19,
+              "col": 4,
+              "end_lineno": 19,
+              "end_col": 10
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "in_str",
+            "id": "in_str",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          },
+          "annotation": "str",
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 19,
+              "col": 18,
+              "end_lineno": 19,
+              "end_col": 20
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"",
+            "value": ""
+          },
+          "declare": true,
+          "decl_type": "str",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "str"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "str"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 20,
+            "col": 4,
+            "end_lineno": 20,
+            "end_col": 14
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 20,
+              "col": 4,
+              "end_lineno": 20,
+              "end_col": 5
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "i",
+            "id": "i",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 20,
+              "col": 13,
+              "end_lineno": 20,
+              "end_col": 14
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "0",
+            "value": 0
+          },
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 21,
+            "col": 4,
+            "end_lineno": 21,
+            "end_col": 22
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 21,
+              "col": 4,
+              "end_lineno": 21,
+              "end_col": 5
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "n",
+            "id": "n",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 21,
+              "col": 13,
+              "end_lineno": 21,
+              "end_col": 22
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "len(text)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 21,
+                "col": 13,
+                "end_lineno": 21,
+                "end_col": 16
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "len",
+              "id": "len"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 21,
+                  "col": 17,
+                  "end_lineno": 21,
+                  "end_col": 21
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "text",
+                "id": "text"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "len",
+            "runtime_call": "len",
+            "runtime_module_id": "pytra.core.py_runtime",
+            "runtime_symbol": "len",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.len"
+          },
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          }
+        },
+        {
+          "kind": "While",
+          "source_span": {
+            "lineno": 22,
+            "col": 4,
+            "end_lineno": 47,
+            "end_col": 14
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 22,
+              "col": 10,
+              "end_lineno": 22,
+              "end_col": 15
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "i < n",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 22,
+                "col": 10,
+                "end_lineno": 22,
+                "end_col": 11
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "i",
+              "id": "i"
+            },
+            "ops": [
+              "Lt"
+            ],
+            "comparators": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 22,
+                  "col": 14,
+                  "end_lineno": 22,
+                  "end_col": 15
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "n",
+                "id": "n"
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "AnnAssign",
+              "source_span": {
+                "lineno": 23,
+                "col": 8,
+                "end_lineno": 23,
+                "end_col": 25
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 8,
+                  "end_lineno": 23,
+                  "end_col": 10
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "ch",
+                "id": "ch",
+                "type_expr": {
+                  "kind": "NamedType",
+                  "name": "str"
+                }
+              },
+              "annotation": "str",
+              "value": {
+                "kind": "Subscript",
+                "source_span": {
+                  "lineno": 23,
+                  "col": 18,
+                  "end_lineno": 23,
+                  "end_col": 25
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "text[i]",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 23,
+                    "col": 18,
+                    "end_lineno": 23,
+                    "end_col": 22
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "text",
+                  "id": "text"
+                },
+                "slice": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 23,
+                    "col": 23,
+                    "end_lineno": 23,
+                    "end_col": 24
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "i",
+                  "id": "i"
+                }
+              },
+              "declare": true,
+              "decl_type": "str",
+              "annotation_type_expr": {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              "decl_type_expr": {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 24,
+                "col": 8,
+                "end_lineno": 31,
+                "end_col": 20
+              },
+              "test": {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 24,
+                  "col": 11,
+                  "end_lineno": 24,
+                  "end_col": 23
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "in_str != \"\"",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 24,
+                    "col": 11,
+                    "end_lineno": 24,
+                    "end_col": 17
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "in_str",
+                  "id": "in_str"
+                },
+                "ops": [
+                  "NotEq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 24,
+                      "col": 21,
+                      "end_lineno": 24,
+                      "end_col": 23
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"\"",
+                    "value": ""
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "If",
+                  "source_span": {
+                    "lineno": 25,
+                    "col": 12,
+                    "end_lineno": 27,
+                    "end_col": 24
+                  },
+                  "test": {
+                    "kind": "BoolOp",
+                    "source_span": {
+                      "lineno": 25,
+                      "col": 15,
+                      "end_lineno": 25,
+                      "end_col": 39
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ch == \"\\\\\" and i + 1 < n",
+                    "op": "And",
+                    "values": [
+                      {
+                        "kind": "Compare",
+                        "source_span": {
+                          "lineno": 25,
+                          "col": 15,
+                          "end_lineno": 25,
+                          "end_col": 25
+                        },
+                        "resolved_type": "bool",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "ch == \"\\\\\"",
+                        "left": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 25,
+                            "col": 15,
+                            "end_lineno": 25,
+                            "end_col": 17
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "ch",
+                          "id": "ch"
+                        },
+                        "ops": [
+                          "Eq"
+                        ],
+                        "comparators": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 25,
+                              "col": 21,
+                              "end_lineno": 25,
+                              "end_col": 25
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "\"\\\\\"",
+                            "value": "\\"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "Compare",
+                        "source_span": {
+                          "lineno": 25,
+                          "col": 30,
+                          "end_lineno": 25,
+                          "end_col": 39
+                        },
+                        "resolved_type": "bool",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "i + 1 < n",
+                        "left": {
+                          "kind": "BinOp",
+                          "source_span": {
+                            "lineno": 25,
+                            "col": 30,
+                            "end_lineno": 25,
+                            "end_col": 35
+                          },
+                          "resolved_type": "int64",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "i + 1",
+                          "left": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 25,
+                              "col": 30,
+                              "end_lineno": 25,
+                              "end_col": 31
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "i",
+                            "id": "i"
+                          },
+                          "op": "Add",
+                          "right": {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 25,
+                              "col": 34,
+                              "end_lineno": 25,
+                              "end_col": 35
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "1",
+                            "value": 1
+                          }
+                        },
+                        "ops": [
+                          "Lt"
+                        ],
+                        "comparators": [
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 25,
+                              "col": 38,
+                              "end_lineno": 25,
+                              "end_col": 39
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "n",
+                            "id": "n"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "body": [
+                    {
+                      "kind": "AugAssign",
+                      "source_span": {
+                        "lineno": 26,
+                        "col": 16,
+                        "end_lineno": 26,
+                        "end_col": 22
+                      },
+                      "target": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 26,
+                          "col": 16,
+                          "end_lineno": 26,
+                          "end_col": 17
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "i",
+                        "id": "i"
+                      },
+                      "op": "Add",
+                      "value": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 26,
+                          "col": 21,
+                          "end_lineno": 26,
+                          "end_col": 22
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "2",
+                        "value": 2
+                      },
+                      "declare": false,
+                      "decl_type": "int64"
+                    },
+                    {
+                      "kind": "Expr",
+                      "source_span": {
+                        "lineno": 27,
+                        "col": 16,
+                        "end_lineno": 27,
+                        "end_col": 24
+                      },
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 27,
+                          "col": 16,
+                          "end_lineno": 27,
+                          "end_col": 24
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "continue",
+                        "id": "continue"
+                      }
+                    }
+                  ],
+                  "orelse": []
+                },
+                {
+                  "kind": "If",
+                  "source_span": {
+                    "lineno": 28,
+                    "col": 12,
+                    "end_lineno": 29,
+                    "end_col": 27
+                  },
+                  "test": {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 28,
+                      "col": 15,
+                      "end_lineno": 28,
+                      "end_col": 27
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ch == in_str",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 28,
+                        "col": 15,
+                        "end_lineno": 28,
+                        "end_col": 17
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ch",
+                      "id": "ch"
+                    },
+                    "ops": [
+                      "Eq"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 28,
+                          "col": 21,
+                          "end_lineno": 28,
+                          "end_col": 27
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "in_str",
+                        "id": "in_str"
+                      }
+                    ]
+                  },
+                  "body": [
+                    {
+                      "kind": "Assign",
+                      "source_span": {
+                        "lineno": 29,
+                        "col": 16,
+                        "end_lineno": 29,
+                        "end_col": 27
+                      },
+                      "target": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 29,
+                          "col": 16,
+                          "end_lineno": 29,
+                          "end_col": 22
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "in_str",
+                        "id": "in_str"
+                      },
+                      "value": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 29,
+                          "col": 25,
+                          "end_lineno": 29,
+                          "end_col": 27
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"\"",
+                        "value": ""
+                      },
+                      "declare": true,
+                      "decl_type": "str",
+                      "declare_init": true
+                    }
+                  ],
+                  "orelse": []
+                },
+                {
+                  "kind": "AugAssign",
+                  "source_span": {
+                    "lineno": 30,
+                    "col": 12,
+                    "end_lineno": 30,
+                    "end_col": 18
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 30,
+                      "col": 12,
+                      "end_lineno": 30,
+                      "end_col": 13
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "i",
+                    "id": "i"
+                  },
+                  "op": "Add",
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 30,
+                      "col": 17,
+                      "end_lineno": 30,
+                      "end_col": 18
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "1",
+                    "value": 1
+                  },
+                  "declare": false,
+                  "decl_type": "int64"
+                },
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 31,
+                    "col": 12,
+                    "end_lineno": 31,
+                    "end_col": 20
+                  },
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 31,
+                      "col": 12,
+                      "end_lineno": 31,
+                      "end_col": 20
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "continue",
+                    "id": "continue"
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 32,
+                "col": 8,
+                "end_lineno": 33,
+                "end_col": 17
+              },
+              "test": {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 32,
+                  "col": 11,
+                  "end_lineno": 32,
+                  "end_col": 20
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "ch == \"#\"",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 32,
+                    "col": 11,
+                    "end_lineno": 32,
+                    "end_col": 13
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "ch",
+                  "id": "ch"
+                },
+                "ops": [
+                  "Eq"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 32,
+                      "col": 17,
+                      "end_lineno": 32,
+                      "end_col": 20
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\"#\"",
+                    "value": "#"
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 33,
+                    "col": 12,
+                    "end_lineno": 33,
+                    "end_col": 17
+                  },
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 33,
+                      "col": 12,
+                      "end_lineno": 33,
+                      "end_col": 17
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "break",
+                    "id": "break"
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 34,
+                "col": 8,
+                "end_lineno": 31,
+                "end_col": 20
+              },
+              "test": {
+                "kind": "BoolOp",
+                "source_span": {
+                  "lineno": 34,
+                  "col": 11,
+                  "end_lineno": 34,
+                  "end_col": 33
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "ch == '\"' or ch == \"'\"",
+                "op": "Or",
+                "values": [
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 34,
+                      "col": 11,
+                      "end_lineno": 34,
+                      "end_col": 20
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ch == '\"'",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 34,
+                        "col": 11,
+                        "end_lineno": 34,
+                        "end_col": 13
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ch",
+                      "id": "ch"
+                    },
+                    "ops": [
+                      "Eq"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 34,
+                          "col": 17,
+                          "end_lineno": 34,
+                          "end_col": 20
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "'\"'",
+                        "value": "\""
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 34,
+                      "col": 24,
+                      "end_lineno": 34,
+                      "end_col": 33
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ch == \"'\"",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 34,
+                        "col": 24,
+                        "end_lineno": 34,
+                        "end_col": 26
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ch",
+                      "id": "ch"
+                    },
+                    "ops": [
+                      "Eq"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 34,
+                          "col": 30,
+                          "end_lineno": 34,
+                          "end_col": 33
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"'\"",
+                        "value": "'"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "If",
+                  "source_span": {
+                    "lineno": 35,
+                    "col": 12,
+                    "end_lineno": 27,
+                    "end_col": 24
+                  },
+                  "test": {
+                    "kind": "BoolOp",
+                    "source_span": {
+                      "lineno": 35,
+                      "col": 15,
+                      "end_lineno": 35,
+                      "end_col": 68
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "i + 2 < n and text[i + 1] == ch and text[i + 2] == ch",
+                    "op": "And",
+                    "values": [
+                      {
+                        "kind": "Compare",
+                        "source_span": {
+                          "lineno": 35,
+                          "col": 15,
+                          "end_lineno": 35,
+                          "end_col": 24
+                        },
+                        "resolved_type": "bool",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "i + 2 < n",
+                        "left": {
+                          "kind": "BinOp",
+                          "source_span": {
+                            "lineno": 35,
+                            "col": 15,
+                            "end_lineno": 35,
+                            "end_col": 20
+                          },
+                          "resolved_type": "int64",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "i + 2",
+                          "left": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 35,
+                              "col": 15,
+                              "end_lineno": 35,
+                              "end_col": 16
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "i",
+                            "id": "i"
+                          },
+                          "op": "Add",
+                          "right": {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 35,
+                              "col": 19,
+                              "end_lineno": 35,
+                              "end_col": 20
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "2",
+                            "value": 2
+                          }
+                        },
+                        "ops": [
+                          "Lt"
+                        ],
+                        "comparators": [
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 35,
+                              "col": 23,
+                              "end_lineno": 35,
+                              "end_col": 24
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "n",
+                            "id": "n"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "Compare",
+                        "source_span": {
+                          "lineno": 35,
+                          "col": 29,
+                          "end_lineno": 35,
+                          "end_col": 46
+                        },
+                        "resolved_type": "bool",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "text[i + 1] == ch",
+                        "left": {
+                          "kind": "Subscript",
+                          "source_span": {
+                            "lineno": 35,
+                            "col": 29,
+                            "end_lineno": 35,
+                            "end_col": 40
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "text[i + 1]",
+                          "value": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 35,
+                              "col": 29,
+                              "end_lineno": 35,
+                              "end_col": 33
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "text",
+                            "id": "text"
+                          },
+                          "slice": {
+                            "kind": "BinOp",
+                            "source_span": {
+                              "lineno": 35,
+                              "col": 34,
+                              "end_lineno": 35,
+                              "end_col": 39
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "i + 1",
+                            "left": {
+                              "kind": "Name",
+                              "source_span": {
+                                "lineno": 35,
+                                "col": 34,
+                                "end_lineno": 35,
+                                "end_col": 35
+                              },
+                              "resolved_type": "int64",
+                              "casts": [],
+                              "borrow_kind": "readonly_ref",
+                              "repr": "i",
+                              "id": "i"
+                            },
+                            "op": "Add",
+                            "right": {
+                              "kind": "Constant",
+                              "source_span": {
+                                "lineno": 35,
+                                "col": 38,
+                                "end_lineno": 35,
+                                "end_col": 39
+                              },
+                              "resolved_type": "int64",
+                              "casts": [],
+                              "borrow_kind": "value",
+                              "repr": "1",
+                              "value": 1
+                            }
+                          }
+                        },
+                        "ops": [
+                          "Eq"
+                        ],
+                        "comparators": [
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 35,
+                              "col": 44,
+                              "end_lineno": 35,
+                              "end_col": 46
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "ch",
+                            "id": "ch"
+                          }
+                        ]
+                      },
+                      {
+                        "kind": "Compare",
+                        "source_span": {
+                          "lineno": 35,
+                          "col": 51,
+                          "end_lineno": 35,
+                          "end_col": 68
+                        },
+                        "resolved_type": "bool",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "text[i + 2] == ch",
+                        "left": {
+                          "kind": "Subscript",
+                          "source_span": {
+                            "lineno": 35,
+                            "col": 51,
+                            "end_lineno": 35,
+                            "end_col": 62
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "text[i + 2]",
+                          "value": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 35,
+                              "col": 51,
+                              "end_lineno": 35,
+                              "end_col": 55
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "text",
+                            "id": "text"
+                          },
+                          "slice": {
+                            "kind": "BinOp",
+                            "source_span": {
+                              "lineno": 35,
+                              "col": 56,
+                              "end_lineno": 35,
+                              "end_col": 61
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "i + 2",
+                            "left": {
+                              "kind": "Name",
+                              "source_span": {
+                                "lineno": 35,
+                                "col": 56,
+                                "end_lineno": 35,
+                                "end_col": 57
+                              },
+                              "resolved_type": "int64",
+                              "casts": [],
+                              "borrow_kind": "readonly_ref",
+                              "repr": "i",
+                              "id": "i"
+                            },
+                            "op": "Add",
+                            "right": {
+                              "kind": "Constant",
+                              "source_span": {
+                                "lineno": 35,
+                                "col": 60,
+                                "end_lineno": 35,
+                                "end_col": 61
+                              },
+                              "resolved_type": "int64",
+                              "casts": [],
+                              "borrow_kind": "value",
+                              "repr": "2",
+                              "value": 2
+                            }
+                          }
+                        },
+                        "ops": [
+                          "Eq"
+                        ],
+                        "comparators": [
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 35,
+                              "col": 66,
+                              "end_lineno": 35,
+                              "end_col": 68
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "ch",
+                            "id": "ch"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "body": [
+                    {
+                      "kind": "AnnAssign",
+                      "source_span": {
+                        "lineno": 36,
+                        "col": 16,
+                        "end_lineno": 36,
+                        "end_col": 41
+                      },
+                      "target": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 36,
+                          "col": 16,
+                          "end_lineno": 36,
+                          "end_col": 21
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "close",
+                        "id": "close",
+                        "type_expr": {
+                          "kind": "NamedType",
+                          "name": "str"
+                        }
+                      },
+                      "annotation": "str",
+                      "value": {
+                        "kind": "BinOp",
+                        "source_span": {
+                          "lineno": 36,
+                          "col": 29,
+                          "end_lineno": 36,
+                          "end_col": 41
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "ch + ch + ch",
+                        "left": {
+                          "kind": "BinOp",
+                          "source_span": {
+                            "lineno": 36,
+                            "col": 29,
+                            "end_lineno": 36,
+                            "end_col": 36
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "ch + ch",
+                          "left": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 36,
+                              "col": 29,
+                              "end_lineno": 36,
+                              "end_col": 31
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "ch",
+                            "id": "ch"
+                          },
+                          "op": "Add",
+                          "right": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 36,
+                              "col": 34,
+                              "end_lineno": 36,
+                              "end_col": 36
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "ch",
+                            "id": "ch"
+                          }
+                        },
+                        "op": "Add",
+                        "right": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 36,
+                            "col": 39,
+                            "end_lineno": 36,
+                            "end_col": 41
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "ch",
+                          "id": "ch"
+                        }
+                      },
+                      "declare": true,
+                      "decl_type": "str",
+                      "annotation_type_expr": {
+                        "kind": "NamedType",
+                        "name": "str"
+                      },
+                      "decl_type_expr": {
+                        "kind": "NamedType",
+                        "name": "str"
+                      }
+                    },
+                    {
+                      "kind": "AnnAssign",
+                      "source_span": {
+                        "lineno": 37,
+                        "col": 16,
+                        "end_lineno": 37,
+                        "end_col": 50
+                      },
+                      "target": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 37,
+                          "col": 16,
+                          "end_lineno": 37,
+                          "end_col": 19
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "end",
+                        "id": "end",
+                        "type_expr": {
+                          "kind": "NamedType",
+                          "name": "int64"
+                        }
+                      },
+                      "annotation": "int64",
+                      "value": {
+                        "kind": "Call",
+                        "source_span": {
+                          "lineno": 37,
+                          "col": 27,
+                          "end_lineno": 37,
+                          "end_col": 50
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "text.find(close, i + 3)",
+                        "func": {
+                          "kind": "Attribute",
+                          "source_span": {
+                            "lineno": 37,
+                            "col": 27,
+                            "end_lineno": 37,
+                            "end_col": 36
+                          },
+                          "resolved_type": "unknown",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "text.find",
+                          "value": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 37,
+                              "col": 27,
+                              "end_lineno": 37,
+                              "end_col": 31
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "text",
+                            "id": "text"
+                          },
+                          "attr": "find"
+                        },
+                        "args": [
+                          {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 37,
+                              "col": 37,
+                              "end_lineno": 37,
+                              "end_col": 42
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "close",
+                            "id": "close"
+                          },
+                          {
+                            "kind": "BinOp",
+                            "source_span": {
+                              "lineno": 37,
+                              "col": 44,
+                              "end_lineno": 37,
+                              "end_col": 49
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "i + 3",
+                            "left": {
+                              "kind": "Name",
+                              "source_span": {
+                                "lineno": 37,
+                                "col": 44,
+                                "end_lineno": 37,
+                                "end_col": 45
+                              },
+                              "resolved_type": "int64",
+                              "casts": [],
+                              "borrow_kind": "readonly_ref",
+                              "repr": "i",
+                              "id": "i"
+                            },
+                            "op": "Add",
+                            "right": {
+                              "kind": "Constant",
+                              "source_span": {
+                                "lineno": 37,
+                                "col": 48,
+                                "end_lineno": 37,
+                                "end_col": 49
+                              },
+                              "resolved_type": "int64",
+                              "casts": [],
+                              "borrow_kind": "value",
+                              "repr": "3",
+                              "value": 3
+                            }
+                          }
+                        ],
+                        "keywords": [],
+                        "lowered_kind": "BuiltinCall",
+                        "builtin_name": "find",
+                        "runtime_call": "str.find",
+                        "runtime_module_id": "pytra.core.str",
+                        "runtime_symbol": "str.find",
+                        "runtime_call_adapter_kind": "builtin",
+                        "semantic_tag": "stdlib.method.find",
+                        "runtime_owner": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 37,
+                            "col": 27,
+                            "end_lineno": 37,
+                            "end_col": 31
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "text",
+                          "id": "text"
+                        }
+                      },
+                      "declare": true,
+                      "decl_type": "int64",
+                      "annotation_type_expr": {
+                        "kind": "NamedType",
+                        "name": "int64"
+                      },
+                      "decl_type_expr": {
+                        "kind": "NamedType",
+                        "name": "int64"
+                      }
+                    },
+                    {
+                      "kind": "Assign",
+                      "source_span": {
+                        "lineno": 38,
+                        "col": 16,
+                        "end_lineno": 38,
+                        "end_col": 46
+                      },
+                      "target": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 38,
+                          "col": 16,
+                          "end_lineno": 38,
+                          "end_col": 17
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "i",
+                        "id": "i"
+                      },
+                      "value": {
+                        "kind": "IfExp",
+                        "source_span": {
+                          "lineno": 38,
+                          "col": 20,
+                          "end_lineno": 38,
+                          "end_col": 46
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "end + 3 if end >= 0 else n",
+                        "test": {
+                          "kind": "Compare",
+                          "source_span": {
+                            "lineno": 38,
+                            "col": 31,
+                            "end_lineno": 38,
+                            "end_col": 39
+                          },
+                          "resolved_type": "bool",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "end >= 0",
+                          "left": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 38,
+                              "col": 31,
+                              "end_lineno": 38,
+                              "end_col": 34
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "end",
+                            "id": "end"
+                          },
+                          "ops": [
+                            "GtE"
+                          ],
+                          "comparators": [
+                            {
+                              "kind": "Constant",
+                              "source_span": {
+                                "lineno": 38,
+                                "col": 38,
+                                "end_lineno": 38,
+                                "end_col": 39
+                              },
+                              "resolved_type": "int64",
+                              "casts": [],
+                              "borrow_kind": "value",
+                              "repr": "0",
+                              "value": 0
+                            }
+                          ]
+                        },
+                        "body": {
+                          "kind": "BinOp",
+                          "source_span": {
+                            "lineno": 38,
+                            "col": 20,
+                            "end_lineno": 38,
+                            "end_col": 27
+                          },
+                          "resolved_type": "int64",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "end + 3",
+                          "left": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 38,
+                              "col": 20,
+                              "end_lineno": 38,
+                              "end_col": 23
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "end",
+                            "id": "end"
+                          },
+                          "op": "Add",
+                          "right": {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 38,
+                              "col": 26,
+                              "end_lineno": 38,
+                              "end_col": 27
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "3",
+                            "value": 3
+                          }
+                        },
+                        "orelse": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 38,
+                            "col": 45,
+                            "end_lineno": 38,
+                            "end_col": 46
+                          },
+                          "resolved_type": "int64",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "n",
+                          "id": "n"
+                        }
+                      },
+                      "declare": true,
+                      "decl_type": "int64",
+                      "declare_init": true
+                    },
+                    {
+                      "kind": "Expr",
+                      "source_span": {
+                        "lineno": 39,
+                        "col": 16,
+                        "end_lineno": 39,
+                        "end_col": 24
+                      },
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 39,
+                          "col": 16,
+                          "end_lineno": 39,
+                          "end_col": 24
+                        },
+                        "resolved_type": "unknown",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "continue",
+                        "id": "continue"
+                      }
+                    }
+                  ],
+                  "orelse": []
+                },
+                {
+                  "kind": "Assign",
+                  "source_span": {
+                    "lineno": 40,
+                    "col": 12,
+                    "end_lineno": 40,
+                    "end_col": 23
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 40,
+                      "col": 12,
+                      "end_lineno": 40,
+                      "end_col": 18
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "in_str",
+                    "id": "in_str"
+                  },
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 40,
+                      "col": 21,
+                      "end_lineno": 40,
+                      "end_col": 23
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "ch",
+                    "id": "ch"
+                  },
+                  "declare": true,
+                  "decl_type": "str",
+                  "declare_init": true
+                },
+                {
+                  "kind": "AugAssign",
+                  "source_span": {
+                    "lineno": 41,
+                    "col": 12,
+                    "end_lineno": 41,
+                    "end_col": 18
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 41,
+                      "col": 12,
+                      "end_lineno": 41,
+                      "end_col": 13
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "i",
+                    "id": "i"
+                  },
+                  "op": "Add",
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 41,
+                      "col": 17,
+                      "end_lineno": 41,
+                      "end_col": 18
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "1",
+                    "value": 1
+                  },
+                  "declare": false,
+                  "decl_type": "int64"
+                },
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 42,
+                    "col": 12,
+                    "end_lineno": 42,
+                    "end_col": 20
+                  },
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 42,
+                      "col": 12,
+                      "end_lineno": 42,
+                      "end_col": 20
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "continue",
+                    "id": "continue"
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 43,
+                "col": 8,
+                "end_lineno": 45,
+                "end_col": 35
+              },
+              "test": {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 43,
+                  "col": 11,
+                  "end_lineno": 43,
+                  "end_col": 32
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "ch in (\"(\", \"[\", \"{\")",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 43,
+                    "col": 11,
+                    "end_lineno": 43,
+                    "end_col": 13
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "ch",
+                  "id": "ch"
+                },
+                "ops": [
+                  "In"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Tuple",
+                    "source_span": {
+                      "lineno": 43,
+                      "col": 17,
+                      "end_lineno": 43,
+                      "end_col": 32
+                    },
+                    "resolved_type": "tuple[str, str, str]",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "(\"(\", \"[\", \"{\")",
+                    "elements": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 43,
+                          "col": 18,
+                          "end_lineno": 43,
+                          "end_col": 21
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"(\"",
+                        "value": "("
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 43,
+                          "col": 23,
+                          "end_lineno": 43,
+                          "end_col": 26
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"[\"",
+                        "value": "["
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 43,
+                          "col": 28,
+                          "end_lineno": 43,
+                          "end_col": 31
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"{\"",
+                        "value": "{"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "AugAssign",
+                  "source_span": {
+                    "lineno": 44,
+                    "col": 12,
+                    "end_lineno": 44,
+                    "end_col": 22
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 44,
+                      "col": 12,
+                      "end_lineno": 44,
+                      "end_col": 17
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "depth",
+                    "id": "depth"
+                  },
+                  "op": "Add",
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 44,
+                      "col": 21,
+                      "end_lineno": 44,
+                      "end_col": 22
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "1",
+                    "value": 1
+                  },
+                  "declare": false,
+                  "decl_type": "int64"
+                }
+              ],
+              "orelse": [
+                {
+                  "kind": "If",
+                  "source_span": {
+                    "lineno": 45,
+                    "col": 8,
+                    "end_lineno": 45,
+                    "end_col": 35
+                  },
+                  "test": {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 45,
+                      "col": 13,
+                      "end_lineno": 45,
+                      "end_col": 34
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "ch in (\")\", \"]\", \"}\")",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 45,
+                        "col": 13,
+                        "end_lineno": 45,
+                        "end_col": 15
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "ch",
+                      "id": "ch"
+                    },
+                    "ops": [
+                      "In"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Tuple",
+                        "source_span": {
+                          "lineno": 45,
+                          "col": 19,
+                          "end_lineno": 45,
+                          "end_col": 34
+                        },
+                        "resolved_type": "tuple[str, str, str]",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "(\")\", \"]\", \"}\")",
+                        "elements": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 45,
+                              "col": 20,
+                              "end_lineno": 45,
+                              "end_col": 23
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "\")\"",
+                            "value": ")"
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 45,
+                              "col": 25,
+                              "end_lineno": 45,
+                              "end_col": 28
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "\"]\"",
+                            "value": "]"
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 45,
+                              "col": 30,
+                              "end_lineno": 45,
+                              "end_col": 33
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "\"}\"",
+                            "value": "}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "body": [
+                    {
+                      "kind": "AugAssign",
+                      "source_span": {
+                        "lineno": 46,
+                        "col": 12,
+                        "end_lineno": 46,
+                        "end_col": 22
+                      },
+                      "target": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 46,
+                          "col": 12,
+                          "end_lineno": 46,
+                          "end_col": 17
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "depth",
+                        "id": "depth"
+                      },
+                      "op": "Sub",
+                      "value": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 46,
+                          "col": 21,
+                          "end_lineno": 46,
+                          "end_col": 22
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "1",
+                        "value": 1
+                      },
+                      "declare": false,
+                      "decl_type": "int64"
+                    }
+                  ],
+                  "orelse": []
+                }
+              ]
+            },
+            {
+              "kind": "AugAssign",
+              "source_span": {
+                "lineno": 47,
+                "col": 8,
+                "end_lineno": 47,
+                "end_col": 14
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 47,
+                  "col": 8,
+                  "end_lineno": 47,
+                  "end_col": 9
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "i",
+                "id": "i"
+              },
+              "op": "Add",
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 47,
+                  "col": 13,
+                  "end_lineno": 47,
+                  "end_col": 14
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              },
+              "declare": false,
+              "decl_type": "int64"
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 48,
+            "col": 4,
+            "end_lineno": 48,
+            "end_col": 16
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 48,
+              "col": 11,
+              "end_lineno": 48,
+              "end_col": 16
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "depth",
+            "id": "depth"
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "text": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "int64"
+      },
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 51,
+        "col": 0,
+        "end_lineno": 83,
+        "end_col": 28
+      },
+      "name": "_join_continuation_lines",
+      "original_name": "_join_continuation_lines",
+      "arg_types": {
+        "source": "str"
+      },
+      "arg_order": [
+        "source"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "source": 0
+      },
+      "return_type": "str",
+      "arg_usage": {
+        "source": "readonly"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 52,
+            "col": 4,
+            "end_lineno": 52,
+            "end_col": 67
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 52,
+              "col": 4,
+              "end_lineno": 52,
+              "end_col": 67
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"\"Join lines with unclosed brackets into single logical lines.",
+            "value": "Join lines with unclosed brackets into single logical lin"
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 54,
+            "col": 4,
+            "end_lineno": 54,
+            "end_col": 58
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 54,
+              "col": 4,
+              "end_lineno": 54,
+              "end_col": 10
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "Python",
+            "id": "Python"
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 55,
+            "col": 4,
+            "end_lineno": 55,
+            "end_col": 73
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 55,
+              "col": 4,
+              "end_lineno": 55,
+              "end_col": 9
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "Blank",
+            "id": "Blank"
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 56,
+            "col": 4,
+            "end_lineno": 56,
+            "end_col": 7
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 56,
+              "col": 4,
+              "end_lineno": 56,
+              "end_col": 7
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"\"",
+            "value": ""
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 57,
+            "col": 4,
+            "end_lineno": 57,
+            "end_col": 41
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 57,
+              "col": 4,
+              "end_lineno": 57,
+              "end_col": 9
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "lines",
+            "id": "lines",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "str"
+                }
+              ]
+            }
+          },
+          "annotation": "list[str]",
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 57,
+              "col": 23,
+              "end_lineno": 57,
+              "end_col": 41
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "source.split(\"\\n\")",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 57,
+                "col": 23,
+                "end_lineno": 57,
+                "end_col": 35
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "source.split",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 57,
+                  "col": 23,
+                  "end_lineno": 57,
+                  "end_col": 29
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "source",
+                "id": "source"
+              },
+              "attr": "split"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 57,
+                  "col": 36,
+                  "end_lineno": 57,
+                  "end_col": 40
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"\\n\"",
+                "value": "\n"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "split",
+            "runtime_call": "str.split",
+            "runtime_module_id": "pytra.core.str",
+            "runtime_symbol": "str.split",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.split",
+            "runtime_owner": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 57,
+                "col": 23,
+                "end_lineno": 57,
+                "end_col": 29
+              },
+              "resolved_type": "str",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "source",
+              "id": "source"
+            }
+          },
+          "declare": true,
+          "decl_type": "list[str]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 58,
+            "col": 4,
+            "end_lineno": 58,
+            "end_col": 26
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 58,
+              "col": 4,
+              "end_lineno": 58,
+              "end_col": 10
+            },
+            "resolved_type": "list[str]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "result",
+            "id": "result",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "list",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "str"
+                }
+              ]
+            }
+          },
+          "annotation": "list[str]",
+          "value": {
+            "kind": "List",
+            "source_span": {
+              "lineno": 58,
+              "col": 24,
+              "end_lineno": 58,
+              "end_col": 26
+            },
+            "resolved_type": "list[unknown]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "[]",
+            "elements": []
+          },
+          "declare": true,
+          "decl_type": "list[str]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "list",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 59,
+            "col": 4,
+            "end_lineno": 59,
+            "end_col": 14
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 59,
+              "col": 4,
+              "end_lineno": 59,
+              "end_col": 5
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "i",
+            "id": "i",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 59,
+              "col": 13,
+              "end_lineno": 59,
+              "end_col": 14
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "0",
+            "value": 0
+          },
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 60,
+            "col": 4,
+            "end_lineno": 60,
+            "end_col": 23
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 60,
+              "col": 4,
+              "end_lineno": 60,
+              "end_col": 5
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "n",
+            "id": "n",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 60,
+              "col": 13,
+              "end_lineno": 60,
+              "end_col": 23
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "len(lines)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 60,
+                "col": 13,
+                "end_lineno": 60,
+                "end_col": 16
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "len",
+              "id": "len"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 60,
+                  "col": 17,
+                  "end_lineno": 60,
+                  "end_col": 22
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "lines",
+                "id": "lines"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "len",
+            "runtime_call": "len",
+            "runtime_module_id": "pytra.core.py_runtime",
+            "runtime_symbol": "len",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.len"
+          },
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          }
+        },
+        {
+          "kind": "While",
+          "source_span": {
+            "lineno": 22,
+            "col": 4,
+            "end_lineno": 82,
+            "end_col": 29
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 22,
+              "col": 10,
+              "end_lineno": 22,
+              "end_col": 15
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "i < n",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 22,
+                "col": 10,
+                "end_lineno": 22,
+                "end_col": 11
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "i",
+              "id": "i"
+            },
+            "ops": [
+              "Lt"
+            ],
+            "comparators": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 22,
+                  "col": 14,
+                  "end_lineno": 22,
+                  "end_col": 15
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "n",
+                "id": "n"
+              }
+            ]
+          },
+          "body": [
+            {
+              "kind": "AnnAssign",
+              "source_span": {
+                "lineno": 62,
+                "col": 8,
+                "end_lineno": 62,
+                "end_col": 28
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 62,
+                  "col": 8,
+                  "end_lineno": 62,
+                  "end_col": 12
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "line",
+                "id": "line",
+                "type_expr": {
+                  "kind": "NamedType",
+                  "name": "str"
+                }
+              },
+              "annotation": "str",
+              "value": {
+                "kind": "Subscript",
+                "source_span": {
+                  "lineno": 62,
+                  "col": 20,
+                  "end_lineno": 62,
+                  "end_col": 28
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "lines[i]",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 62,
+                    "col": 20,
+                    "end_lineno": 62,
+                    "end_col": 25
+                  },
+                  "resolved_type": "list[str]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "lines",
+                  "id": "lines"
+                },
+                "slice": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 62,
+                    "col": 26,
+                    "end_lineno": 62,
+                    "end_col": 27
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "i",
+                  "id": "i"
+                }
+              },
+              "declare": true,
+              "decl_type": "str",
+              "annotation_type_expr": {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              "decl_type_expr": {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            },
+            {
+              "kind": "AnnAssign",
+              "source_span": {
+                "lineno": 63,
+                "col": 8,
+                "end_lineno": 63,
+                "end_col": 51
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 63,
+                  "col": 8,
+                  "end_lineno": 63,
+                  "end_col": 13
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "depth",
+                "id": "depth",
+                "type_expr": {
+                  "kind": "NamedType",
+                  "name": "int64"
+                }
+              },
+              "annotation": "int64",
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 63,
+                  "col": 21,
+                  "end_lineno": 63,
+                  "end_col": 51
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "_bracket_depth_str_aware(line)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 63,
+                    "col": 21,
+                    "end_lineno": 63,
+                    "end_col": 45
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "_bracket_depth_str_aware",
+                  "id": "_bracket_depth_str_aware"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 63,
+                      "col": 46,
+                      "end_lineno": 63,
+                      "end_col": 50
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "line",
+                    "id": "line"
+                  }
+                ],
+                "keywords": []
+              },
+              "declare": true,
+              "decl_type": "int64",
+              "annotation_type_expr": {
+                "kind": "NamedType",
+                "name": "int64"
+              },
+              "decl_type_expr": {
+                "kind": "NamedType",
+                "name": "int64"
+              }
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 64,
+                "col": 8,
+                "end_lineno": 68,
+                "end_col": 77
+              },
+              "test": {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 64,
+                  "col": 11,
+                  "end_lineno": 64,
+                  "end_col": 21
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "depth <= 0",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 64,
+                    "col": 11,
+                    "end_lineno": 64,
+                    "end_col": 16
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "depth",
+                  "id": "depth"
+                },
+                "ops": [
+                  "LtE"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 64,
+                      "col": 20,
+                      "end_lineno": 64,
+                      "end_col": 21
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 65,
+                    "col": 12,
+                    "end_lineno": 65,
+                    "end_col": 31
+                  },
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 65,
+                      "col": 12,
+                      "end_lineno": 65,
+                      "end_col": 31
+                    },
+                    "resolved_type": "None",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "result.append(line)",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 65,
+                        "col": 12,
+                        "end_lineno": 65,
+                        "end_col": 25
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "result.append",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 65,
+                          "col": 12,
+                          "end_lineno": 65,
+                          "end_col": 18
+                        },
+                        "resolved_type": "list[str]",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "result",
+                        "id": "result"
+                      },
+                      "attr": "append"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 65,
+                          "col": 26,
+                          "end_lineno": 65,
+                          "end_col": 30
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "line",
+                        "id": "line"
+                      }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "append",
+                    "runtime_call": "list.append",
+                    "runtime_module_id": "pytra.core.list",
+                    "runtime_symbol": "list.append",
+                    "runtime_call_adapter_kind": "builtin",
+                    "semantic_tag": "stdlib.method.append",
+                    "runtime_owner": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 65,
+                        "col": 12,
+                        "end_lineno": 65,
+                        "end_col": 18
+                      },
+                      "resolved_type": "list[str]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "result",
+                      "id": "result"
+                    }
+                  }
+                },
+                {
+                  "kind": "AugAssign",
+                  "source_span": {
+                    "lineno": 66,
+                    "col": 12,
+                    "end_lineno": 66,
+                    "end_col": 18
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 66,
+                      "col": 12,
+                      "end_lineno": 66,
+                      "end_col": 13
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "i",
+                    "id": "i"
+                  },
+                  "op": "Add",
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 66,
+                      "col": 17,
+                      "end_lineno": 66,
+                      "end_col": 18
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "1",
+                    "value": 1
+                  },
+                  "declare": false,
+                  "decl_type": "int64"
+                },
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 67,
+                    "col": 12,
+                    "end_lineno": 67,
+                    "end_col": 20
+                  },
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 67,
+                      "col": 12,
+                      "end_lineno": 67,
+                      "end_col": 20
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "continue",
+                    "id": "continue"
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "AnnAssign",
+              "source_span": {
+                "lineno": 69,
+                "col": 8,
+                "end_lineno": 69,
+                "end_col": 42
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 69,
+                  "col": 8,
+                  "end_lineno": 69,
+                  "end_col": 13
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "parts",
+                "id": "parts",
+                "type_expr": {
+                  "kind": "GenericType",
+                  "base": "list",
+                  "args": [
+                    {
+                      "kind": "NamedType",
+                      "name": "str"
+                    }
+                  ]
+                }
+              },
+              "annotation": "list[str]",
+              "value": {
+                "kind": "List",
+                "source_span": {
+                  "lineno": 69,
+                  "col": 27,
+                  "end_lineno": 69,
+                  "end_col": 42
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "[line.rstrip()]",
+                "elements": [
+                  {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 69,
+                      "col": 28,
+                      "end_lineno": 69,
+                      "end_col": 41
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "line.rstrip()",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 69,
+                        "col": 28,
+                        "end_lineno": 69,
+                        "end_col": 39
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "line.rstrip",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 69,
+                          "col": 28,
+                          "end_lineno": 69,
+                          "end_col": 32
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "line",
+                        "id": "line"
+                      },
+                      "attr": "rstrip"
+                    },
+                    "args": [],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "rstrip",
+                    "runtime_call": "str.rstrip",
+                    "runtime_module_id": "pytra.core.str",
+                    "runtime_symbol": "str.rstrip",
+                    "runtime_call_adapter_kind": "builtin",
+                    "semantic_tag": "stdlib.method.rstrip",
+                    "runtime_owner": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 69,
+                        "col": 28,
+                        "end_lineno": 69,
+                        "end_col": 32
+                      },
+                      "resolved_type": "str",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "line",
+                      "id": "line"
+                    }
+                  }
+                ]
+              },
+              "declare": true,
+              "decl_type": "list[str]",
+              "annotation_type_expr": {
+                "kind": "GenericType",
+                "base": "list",
+                "args": [
+                  {
+                    "kind": "NamedType",
+                    "name": "str"
+                  }
+                ]
+              },
+              "decl_type_expr": {
+                "kind": "GenericType",
+                "base": "list",
+                "args": [
+                  {
+                    "kind": "NamedType",
+                    "name": "str"
+                  }
+                ]
+              }
+            },
+            {
+              "kind": "AugAssign",
+              "source_span": {
+                "lineno": 70,
+                "col": 8,
+                "end_lineno": 70,
+                "end_col": 14
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 70,
+                  "col": 8,
+                  "end_lineno": 70,
+                  "end_col": 9
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "i",
+                "id": "i"
+              },
+              "op": "Add",
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 70,
+                  "col": 13,
+                  "end_lineno": 70,
+                  "end_col": 14
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              },
+              "declare": false,
+              "decl_type": "int64"
+            },
+            {
+              "kind": "While",
+              "source_span": {
+                "lineno": 71,
+                "col": 8,
+                "end_lineno": 76,
+                "end_col": 79
+              },
+              "test": {
+                "kind": "BoolOp",
+                "source_span": {
+                  "lineno": 71,
+                  "col": 14,
+                  "end_lineno": 71,
+                  "end_col": 33
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "i < n and depth > 0",
+                "op": "And",
+                "values": [
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 71,
+                      "col": 14,
+                      "end_lineno": 71,
+                      "end_col": 19
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "i < n",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 71,
+                        "col": 14,
+                        "end_lineno": 71,
+                        "end_col": 15
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "i",
+                      "id": "i"
+                    },
+                    "ops": [
+                      "Lt"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 71,
+                          "col": 18,
+                          "end_lineno": 71,
+                          "end_col": 19
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "n",
+                        "id": "n"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "Compare",
+                    "source_span": {
+                      "lineno": 71,
+                      "col": 24,
+                      "end_lineno": 71,
+                      "end_col": 33
+                    },
+                    "resolved_type": "bool",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "depth > 0",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 71,
+                        "col": 24,
+                        "end_lineno": 71,
+                        "end_col": 29
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "depth",
+                      "id": "depth"
+                    },
+                    "ops": [
+                      "Gt"
+                    ],
+                    "comparators": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 71,
+                          "col": 32,
+                          "end_lineno": 71,
+                          "end_col": 33
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "AnnAssign",
+                  "source_span": {
+                    "lineno": 72,
+                    "col": 12,
+                    "end_lineno": 72,
+                    "end_col": 31
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 72,
+                      "col": 12,
+                      "end_lineno": 72,
+                      "end_col": 15
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "nxt",
+                    "id": "nxt",
+                    "type_expr": {
+                      "kind": "NamedType",
+                      "name": "str"
+                    }
+                  },
+                  "annotation": "str",
+                  "value": {
+                    "kind": "Subscript",
+                    "source_span": {
+                      "lineno": 72,
+                      "col": 23,
+                      "end_lineno": 72,
+                      "end_col": 31
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "lines[i]",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 72,
+                        "col": 23,
+                        "end_lineno": 72,
+                        "end_col": 28
+                      },
+                      "resolved_type": "list[str]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "lines",
+                      "id": "lines"
+                    },
+                    "slice": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 72,
+                        "col": 29,
+                        "end_lineno": 72,
+                        "end_col": 30
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "i",
+                      "id": "i"
+                    }
+                  },
+                  "declare": true,
+                  "decl_type": "str",
+                  "annotation_type_expr": {
+                    "kind": "NamedType",
+                    "name": "str"
+                  },
+                  "decl_type_expr": {
+                    "kind": "NamedType",
+                    "name": "str"
+                  }
+                },
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 73,
+                    "col": 12,
+                    "end_lineno": 73,
+                    "end_col": 37
+                  },
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 73,
+                      "col": 12,
+                      "end_lineno": 73,
+                      "end_col": 37
+                    },
+                    "resolved_type": "None",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "parts.append(nxt.strip())",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 73,
+                        "col": 12,
+                        "end_lineno": 73,
+                        "end_col": 24
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "parts.append",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 73,
+                          "col": 12,
+                          "end_lineno": 73,
+                          "end_col": 17
+                        },
+                        "resolved_type": "list[str]",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "parts",
+                        "id": "parts"
+                      },
+                      "attr": "append"
+                    },
+                    "args": [
+                      {
+                        "kind": "Call",
+                        "source_span": {
+                          "lineno": 73,
+                          "col": 25,
+                          "end_lineno": 73,
+                          "end_col": 36
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "nxt.strip()",
+                        "func": {
+                          "kind": "Attribute",
+                          "source_span": {
+                            "lineno": 73,
+                            "col": 25,
+                            "end_lineno": 73,
+                            "end_col": 34
+                          },
+                          "resolved_type": "unknown",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "nxt.strip",
+                          "value": {
+                            "kind": "Name",
+                            "source_span": {
+                              "lineno": 73,
+                              "col": 25,
+                              "end_lineno": 73,
+                              "end_col": 28
+                            },
+                            "resolved_type": "str",
+                            "casts": [],
+                            "borrow_kind": "readonly_ref",
+                            "repr": "nxt",
+                            "id": "nxt"
+                          },
+                          "attr": "strip"
+                        },
+                        "args": [],
+                        "keywords": [],
+                        "lowered_kind": "BuiltinCall",
+                        "builtin_name": "strip",
+                        "runtime_call": "str.strip",
+                        "runtime_module_id": "pytra.core.str",
+                        "runtime_symbol": "str.strip",
+                        "runtime_call_adapter_kind": "builtin",
+                        "semantic_tag": "stdlib.method.strip",
+                        "runtime_owner": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 73,
+                            "col": 25,
+                            "end_lineno": 73,
+                            "end_col": 28
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "readonly_ref",
+                          "repr": "nxt",
+                          "id": "nxt"
+                        }
+                      }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "append",
+                    "runtime_call": "list.append",
+                    "runtime_module_id": "pytra.core.list",
+                    "runtime_symbol": "list.append",
+                    "runtime_call_adapter_kind": "builtin",
+                    "semantic_tag": "stdlib.method.append",
+                    "runtime_owner": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 73,
+                        "col": 12,
+                        "end_lineno": 73,
+                        "end_col": 17
+                      },
+                      "resolved_type": "list[str]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "parts",
+                      "id": "parts"
+                    }
+                  }
+                },
+                {
+                  "kind": "AugAssign",
+                  "source_span": {
+                    "lineno": 74,
+                    "col": 12,
+                    "end_lineno": 74,
+                    "end_col": 50
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 74,
+                      "col": 12,
+                      "end_lineno": 74,
+                      "end_col": 17
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "depth",
+                    "id": "depth"
+                  },
+                  "op": "Add",
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 74,
+                      "col": 21,
+                      "end_lineno": 74,
+                      "end_col": 50
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "_bracket_depth_str_aware(nxt)",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 74,
+                        "col": 21,
+                        "end_lineno": 74,
+                        "end_col": 45
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "_bracket_depth_str_aware",
+                      "id": "_bracket_depth_str_aware"
+                    },
+                    "args": [
+                      {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 74,
+                          "col": 46,
+                          "end_lineno": 74,
+                          "end_col": 49
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "nxt",
+                        "id": "nxt"
+                      }
+                    ],
+                    "keywords": []
+                  },
+                  "declare": false,
+                  "decl_type": "int64"
+                },
+                {
+                  "kind": "AugAssign",
+                  "source_span": {
+                    "lineno": 75,
+                    "col": 12,
+                    "end_lineno": 75,
+                    "end_col": 18
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 75,
+                      "col": 12,
+                      "end_lineno": 75,
+                      "end_col": 13
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "i",
+                    "id": "i"
+                  },
+                  "op": "Add",
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 75,
+                      "col": 17,
+                      "end_lineno": 75,
+                      "end_col": 18
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "1",
+                    "value": 1
+                  },
+                  "declare": false,
+                  "decl_type": "int64"
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "AnnAssign",
+              "source_span": {
+                "lineno": 77,
+                "col": 8,
+                "end_lineno": 77,
+                "end_col": 37
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 77,
+                  "col": 8,
+                  "end_lineno": 77,
+                  "end_col": 14
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "joined",
+                "id": "joined",
+                "type_expr": {
+                  "kind": "NamedType",
+                  "name": "str"
+                }
+              },
+              "annotation": "str",
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 77,
+                  "col": 22,
+                  "end_lineno": 77,
+                  "end_col": 37
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\" \".join(parts)",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 77,
+                    "col": 22,
+                    "end_lineno": 77,
+                    "end_col": 30
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\" \".join",
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 77,
+                      "col": 22,
+                      "end_lineno": 77,
+                      "end_col": 25
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "\" \"",
+                    "value": " "
+                  },
+                  "attr": "join"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 77,
+                      "col": 31,
+                      "end_lineno": 77,
+                      "end_col": 36
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "parts",
+                    "id": "parts"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "join",
+                "runtime_call": "str.join",
+                "runtime_module_id": "pytra.core.str",
+                "runtime_symbol": "str.join",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.join",
+                "runtime_owner": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 77,
+                    "col": 22,
+                    "end_lineno": 77,
+                    "end_col": 25
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\" \"",
+                  "value": " "
+                }
+              },
+              "declare": true,
+              "decl_type": "str",
+              "annotation_type_expr": {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              "decl_type_expr": {
+                "kind": "NamedType",
+                "name": "str"
+              }
+            },
+            {
+              "kind": "Expr",
+              "source_span": {
+                "lineno": 78,
+                "col": 8,
+                "end_lineno": 78,
+                "end_col": 29
+              },
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 78,
+                  "col": 8,
+                  "end_lineno": 78,
+                  "end_col": 29
+                },
+                "resolved_type": "None",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "result.append(joined)",
+                "func": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 78,
+                    "col": 8,
+                    "end_lineno": 78,
+                    "end_col": 21
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "result.append",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 78,
+                      "col": 8,
+                      "end_lineno": 78,
+                      "end_col": 14
+                    },
+                    "resolved_type": "list[str]",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "result",
+                    "id": "result"
+                  },
+                  "attr": "append"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 78,
+                      "col": 22,
+                      "end_lineno": 78,
+                      "end_col": 28
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "joined",
+                    "id": "joined"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "append",
+                "runtime_call": "list.append",
+                "runtime_module_id": "pytra.core.list",
+                "runtime_symbol": "list.append",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "stdlib.method.append",
+                "runtime_owner": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 78,
+                    "col": 8,
+                    "end_lineno": 78,
+                    "end_col": 14
+                  },
+                  "resolved_type": "list[str]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "result",
+                  "id": "result"
+                }
+              }
+            },
+            {
+              "kind": "AnnAssign",
+              "source_span": {
+                "lineno": 80,
+                "col": 8,
+                "end_lineno": 80,
+                "end_col": 37
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 80,
+                  "col": 8,
+                  "end_lineno": 80,
+                  "end_col": 15
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "skipped",
+                "id": "skipped",
+                "type_expr": {
+                  "kind": "NamedType",
+                  "name": "int64"
+                }
+              },
+              "annotation": "int64",
+              "value": {
+                "kind": "BinOp",
+                "source_span": {
+                  "lineno": 80,
+                  "col": 23,
+                  "end_lineno": 80,
+                  "end_col": 37
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "len(parts) - 1",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 80,
+                    "col": 23,
+                    "end_lineno": 80,
+                    "end_col": 33
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "len(parts)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 80,
+                      "col": 23,
+                      "end_lineno": 80,
+                      "end_col": 26
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "len",
+                    "id": "len"
+                  },
+                  "args": [
+                    {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 80,
+                        "col": 27,
+                        "end_lineno": 80,
+                        "end_col": 32
+                      },
+                      "resolved_type": "list[str]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "parts",
+                      "id": "parts"
+                    }
+                  ],
+                  "keywords": [],
+                  "lowered_kind": "BuiltinCall",
+                  "builtin_name": "len",
+                  "runtime_call": "len",
+                  "runtime_module_id": "pytra.core.py_runtime",
+                  "runtime_symbol": "len",
+                  "runtime_call_adapter_kind": "builtin",
+                  "semantic_tag": "core.len"
+                },
+                "op": "Sub",
+                "right": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 80,
+                    "col": 36,
+                    "end_lineno": 80,
+                    "end_col": 37
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "1",
+                  "value": 1
+                }
+              },
+              "declare": true,
+              "decl_type": "int64",
+              "annotation_type_expr": {
+                "kind": "NamedType",
+                "name": "int64"
+              },
+              "decl_type_expr": {
+                "kind": "NamedType",
+                "name": "int64"
+              },
+              "leading_trivia": [
+                {
+                  "kind": "comment",
+                  "text": "Pad with empty lines to keep line count"
+                }
+              ],
+              "leading_comments": [
+                "Pad with empty lines to keep line count"
+              ]
+            },
+            {
+              "kind": "ForRange",
+              "source_span": {
+                "lineno": 81,
+                "col": 0,
+                "end_lineno": 82,
+                "end_col": 29
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 81,
+                  "col": 12,
+                  "end_lineno": 81,
+                  "end_col": 13
+                },
+                "resolved_type": "unknown",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "_",
+                "id": "_"
+              },
+              "target_type": "int64",
+              "start": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 81,
+                  "col": 17,
+                  "end_lineno": 81,
+                  "end_col": 22
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "0",
+                "value": 0
+              },
+              "stop": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 81,
+                  "col": 23,
+                  "end_lineno": 81,
+                  "end_col": 30
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "skipped",
+                "id": "skipped"
+              },
+              "step": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 81,
+                  "col": 17,
+                  "end_lineno": 81,
+                  "end_col": 22
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              },
+              "range_mode": "ascending",
+              "body": [
+                {
+                  "kind": "Expr",
+                  "source_span": {
+                    "lineno": 82,
+                    "col": 12,
+                    "end_lineno": 82,
+                    "end_col": 29
+                  },
+                  "value": {
+                    "kind": "Call",
+                    "source_span": {
+                      "lineno": 82,
+                      "col": 12,
+                      "end_lineno": 82,
+                      "end_col": 29
+                    },
+                    "resolved_type": "None",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "result.append(\"\")",
+                    "func": {
+                      "kind": "Attribute",
+                      "source_span": {
+                        "lineno": 82,
+                        "col": 12,
+                        "end_lineno": 82,
+                        "end_col": 25
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "result.append",
+                      "value": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 82,
+                          "col": 12,
+                          "end_lineno": 82,
+                          "end_col": 18
+                        },
+                        "resolved_type": "list[str]",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "result",
+                        "id": "result"
+                      },
+                      "attr": "append"
+                    },
+                    "args": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 82,
+                          "col": 26,
+                          "end_lineno": 82,
+                          "end_col": 28
+                        },
+                        "resolved_type": "str",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "\"\"",
+                        "value": ""
+                      }
+                    ],
+                    "keywords": [],
+                    "lowered_kind": "BuiltinCall",
+                    "builtin_name": "append",
+                    "runtime_call": "list.append",
+                    "runtime_module_id": "pytra.core.list",
+                    "runtime_symbol": "list.append",
+                    "runtime_call_adapter_kind": "builtin",
+                    "semantic_tag": "stdlib.method.append",
+                    "runtime_owner": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 82,
+                        "col": 12,
+                        "end_lineno": 82,
+                        "end_col": 18
+                      },
+                      "resolved_type": "list[str]",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "result",
+                      "id": "result"
+                    }
+                  }
+                }
+              ],
+              "orelse": []
+            }
+          ],
+          "orelse": []
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 83,
+            "col": 4,
+            "end_lineno": 83,
+            "end_col": 28
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 83,
+              "col": 11,
+              "end_lineno": 83,
+              "end_col": 28
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\\n\".join(result)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 83,
+                "col": 11,
+                "end_lineno": 83,
+                "end_col": 20
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"\\n\".join",
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 83,
+                  "col": 11,
+                  "end_lineno": 83,
+                  "end_col": 15
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"\\n\"",
+                "value": "\n"
+              },
+              "attr": "join"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 83,
+                  "col": 21,
+                  "end_lineno": 83,
+                  "end_col": 27
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "result",
+                "id": "result"
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "join",
+            "runtime_call": "str.join",
+            "runtime_module_id": "pytra.core.str",
+            "runtime_symbol": "str.join",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "stdlib.method.join",
+            "runtime_owner": {
+              "kind": "Constant",
+              "source_span": {
+                "lineno": 83,
+                "col": 11,
+                "end_lineno": 83,
+                "end_col": 15
+              },
+              "resolved_type": "str",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "\"\\n\"",
+              "value": "\n"
+            }
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "source": {
+          "kind": "NamedType",
+          "name": "str"
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "str"
+      },
+      "leading_comments": [],
+      "leading_trivia": []
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 86,
+        "col": 0,
+        "end_lineno": 90,
         "end_col": 50
       },
       "name": "parse_python_file_to_module",
@@ -152,17 +4511,17 @@
         {
           "kind": "AnnAssign",
           "source_span": {
-            "lineno": 18,
+            "lineno": 88,
             "col": 4,
-            "end_lineno": 18,
+            "end_lineno": 88,
             "end_col": 62
           },
           "target": {
             "kind": "Name",
             "source_span": {
-              "lineno": 18,
+              "lineno": 88,
               "col": 4,
-              "end_lineno": 18,
+              "end_lineno": 88,
               "end_col": 10
             },
             "resolved_type": "str",
@@ -179,9 +4538,9 @@
           "value": {
             "kind": "Call",
             "source_span": {
-              "lineno": 18,
+              "lineno": 88,
               "col": 18,
-              "end_lineno": 18,
+              "end_lineno": 88,
               "end_col": 62
             },
             "resolved_type": "unknown",
@@ -191,9 +4550,9 @@
             "func": {
               "kind": "Attribute",
               "source_span": {
-                "lineno": 18,
+                "lineno": 88,
                 "col": 18,
-                "end_lineno": 18,
+                "end_lineno": 88,
                 "end_col": 44
               },
               "resolved_type": "unknown",
@@ -203,9 +4562,9 @@
               "value": {
                 "kind": "Call",
                 "source_span": {
-                  "lineno": 18,
+                  "lineno": 88,
                   "col": 18,
-                  "end_lineno": 18,
+                  "end_lineno": 88,
                   "end_col": 34
                 },
                 "resolved_type": "unknown",
@@ -215,9 +4574,9 @@
                 "func": {
                   "kind": "Name",
                   "source_span": {
-                    "lineno": 18,
+                    "lineno": 88,
                     "col": 18,
-                    "end_lineno": 18,
+                    "end_lineno": 88,
                     "end_col": 22
                   },
                   "resolved_type": "unknown",
@@ -230,9 +4589,9 @@
                   {
                     "kind": "Name",
                     "source_span": {
-                      "lineno": 18,
+                      "lineno": 88,
                       "col": 23,
-                      "end_lineno": 18,
+                      "end_lineno": 88,
                       "end_col": 33
                     },
                     "resolved_type": "str",
@@ -258,9 +4617,9 @@
                 "value": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 18,
+                    "lineno": 88,
                     "col": 54,
-                    "end_lineno": 18,
+                    "end_lineno": 88,
                     "end_col": 61
                   },
                   "resolved_type": "str",
@@ -284,19 +4643,89 @@
           }
         },
         {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 89,
+            "col": 4,
+            "end_lineno": 89,
+            "end_col": 45
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 89,
+              "col": 4,
+              "end_lineno": 89,
+              "end_col": 10
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "source",
+            "id": "source"
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 89,
+              "col": 13,
+              "end_lineno": 89,
+              "end_col": 45
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "_join_continuation_lines(source)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 89,
+                "col": 13,
+                "end_lineno": 89,
+                "end_col": 37
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "_join_continuation_lines",
+              "id": "_join_continuation_lines"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 89,
+                  "col": 38,
+                  "end_lineno": 89,
+                  "end_col": 44
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "source",
+                "id": "source"
+              }
+            ],
+            "keywords": []
+          },
+          "declare": true,
+          "decl_type": "str",
+          "declare_init": true
+        },
+        {
           "kind": "Return",
           "source_span": {
-            "lineno": 19,
+            "lineno": 90,
             "col": 4,
-            "end_lineno": 19,
+            "end_lineno": 90,
             "end_col": 50
           },
           "value": {
             "kind": "Call",
             "source_span": {
-              "lineno": 19,
+              "lineno": 90,
               "col": 11,
-              "end_lineno": 19,
+              "end_lineno": 90,
               "end_col": 50
             },
             "resolved_type": "unknown",
@@ -306,9 +4735,9 @@
             "func": {
               "kind": "Name",
               "source_span": {
-                "lineno": 19,
+                "lineno": 90,
                 "col": 11,
-                "end_lineno": 19,
+                "end_lineno": 90,
                 "end_col": 30
               },
               "resolved_type": "unknown",
@@ -321,9 +4750,9 @@
               {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 19,
+                  "lineno": 90,
                   "col": 31,
-                  "end_lineno": 19,
+                  "end_lineno": 90,
                   "end_col": 37
                 },
                 "resolved_type": "str",
@@ -335,9 +4764,9 @@
               {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 19,
+                  "lineno": 90,
                   "col": 39,
-                  "end_lineno": 19,
+                  "end_lineno": 90,
                   "end_col": 49
                 },
                 "resolved_type": "str",
@@ -364,19 +4793,14 @@
         "name": "Module"
       },
       "leading_comments": [],
-      "leading_trivia": [
-        {
-          "kind": "blank",
-          "count": 1
-        }
-      ]
+      "leading_trivia": []
     },
     {
       "kind": "FunctionDef",
       "source_span": {
-        "lineno": 22,
+        "lineno": 93,
         "col": 0,
-        "end_lineno": 25,
+        "end_lineno": 96,
         "end_col": 25
       },
       "name": "parse_python_file",
@@ -401,17 +4825,17 @@
         {
           "kind": "AnnAssign",
           "source_span": {
-            "lineno": 24,
+            "lineno": 95,
             "col": 4,
-            "end_lineno": 24,
+            "end_lineno": 95,
             "end_col": 60
           },
           "target": {
             "kind": "Name",
             "source_span": {
-              "lineno": 24,
+              "lineno": 95,
               "col": 4,
-              "end_lineno": 24,
+              "end_lineno": 95,
               "end_col": 10
             },
             "resolved_type": "Module",
@@ -428,9 +4852,9 @@
           "value": {
             "kind": "Call",
             "source_span": {
-              "lineno": 24,
+              "lineno": 95,
               "col": 21,
-              "end_lineno": 24,
+              "end_lineno": 95,
               "end_col": 60
             },
             "resolved_type": "Module",
@@ -440,9 +4864,9 @@
             "func": {
               "kind": "Name",
               "source_span": {
-                "lineno": 24,
+                "lineno": 95,
                 "col": 21,
-                "end_lineno": 24,
+                "end_lineno": 95,
                 "end_col": 48
               },
               "resolved_type": "unknown",
@@ -455,9 +4879,9 @@
               {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 24,
+                  "lineno": 95,
                   "col": 49,
-                  "end_lineno": 24,
+                  "end_lineno": 95,
                   "end_col": 59
                 },
                 "resolved_type": "str",
@@ -483,17 +4907,17 @@
         {
           "kind": "Return",
           "source_span": {
-            "lineno": 25,
+            "lineno": 96,
             "col": 4,
-            "end_lineno": 25,
+            "end_lineno": 96,
             "end_col": 25
           },
           "value": {
             "kind": "Call",
             "source_span": {
-              "lineno": 25,
+              "lineno": 96,
               "col": 11,
-              "end_lineno": 25,
+              "end_lineno": 96,
               "end_col": 25
             },
             "resolved_type": "unknown",
@@ -503,9 +4927,9 @@
             "func": {
               "kind": "Attribute",
               "source_span": {
-                "lineno": 25,
+                "lineno": 96,
                 "col": 11,
-                "end_lineno": 25,
+                "end_lineno": 96,
                 "end_col": 23
               },
               "resolved_type": "unknown",
@@ -515,9 +4939,9 @@
               "value": {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 25,
+                  "lineno": 96,
                   "col": 11,
-                  "end_lineno": 25,
+                  "end_lineno": 96,
                   "end_col": 17
                 },
                 "resolved_type": "Module",
@@ -622,6 +5046,18 @@
           "source_binding_kind": "symbol",
           "runtime_module_id": "toolchain2.parse.py.parser",
           "runtime_group": ""
+        },
+        {
+          "module_id": "pytra.core.py_runtime",
+          "export_name": "",
+          "local_name": "pytra.core.py_runtime",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/toolchain2/parse/py/parse_python.py",
+          "source_line": 0,
+          "source_module_id": "pytra.core.py_runtime",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.core.py_runtime",
+          "runtime_group": "core"
         }
       ],
       "qualified_refs": [
@@ -679,6 +5115,14 @@
         "binding_kind": "symbol",
         "source_file": "src/toolchain2/parse/py/parse_python.py",
         "source_line": 13
+      },
+      {
+        "module_id": "pytra.core.py_runtime",
+        "export_name": "",
+        "local_name": "pytra.core.py_runtime",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/toolchain2/parse/py/parse_python.py",
+        "source_line": 0
       }
     ],
     "qualified_symbol_refs": [

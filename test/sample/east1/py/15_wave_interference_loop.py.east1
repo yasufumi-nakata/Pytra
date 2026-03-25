@@ -1694,7 +1694,29 @@
                         ],
                         "keywords": []
                       },
-                      "declare": true
+                      "declare": true,
+                      "leading_trivia": [
+                        {
+                          "kind": "blank",
+                          "count": 1
+                        },
+                        {
+                          "kind": "blank",
+                          "count": 1
+                        },
+                        {
+                          "kind": "blank",
+                          "count": 1
+                        },
+                        {
+                          "kind": "blank",
+                          "count": 1
+                        },
+                        {
+                          "kind": "blank",
+                          "count": 1
+                        }
+                      ]
                     },
                     {
                       "kind": "If",

@@ -3016,17 +3016,17 @@
         {
           "kind": "AnnAssign",
           "source_span": {
-            "lineno": 79,
+            "lineno": 80,
             "col": 4,
-            "end_lineno": 79,
+            "end_lineno": 80,
             "end_col": 91
           },
           "target": {
             "kind": "Name",
             "source_span": {
-              "lineno": 79,
+              "lineno": 80,
               "col": 4,
-              "end_lineno": 79,
+              "end_lineno": 80,
               "end_col": 10
             },
             "casts": [],
@@ -3038,9 +3038,9 @@
           "value": {
             "kind": "Call",
             "source_span": {
-              "lineno": 79,
+              "lineno": 80,
               "col": 24,
-              "end_lineno": 79,
+              "end_lineno": 80,
               "end_col": 91
             },
             "casts": [],
@@ -3049,9 +3049,9 @@
             "func": {
               "kind": "Name",
               "source_span": {
-                "lineno": 79,
+                "lineno": 80,
                 "col": 24,
-                "end_lineno": 79,
+                "end_lineno": 80,
                 "end_col": 41
               },
               "casts": [],
@@ -3063,9 +3063,9 @@
               {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col": 43,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col": 48
                 },
                 "casts": [],
@@ -3076,9 +3076,9 @@
               {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col": 50,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col": 56
                 },
                 "casts": [],
@@ -3089,9 +3089,9 @@
               {
                 "kind": "Name",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col": 58,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col": 66
                 },
                 "casts": [],
@@ -3102,9 +3102,9 @@
               {
                 "kind": "UnaryOp",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col": 68,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col": 72
                 },
                 "casts": [],
@@ -3114,9 +3114,9 @@
                 "operand": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 79,
+                    "lineno": 80,
                     "col": 69,
-                    "end_lineno": 79,
+                    "end_lineno": 80,
                     "end_col": 72
                   },
                   "casts": [],
@@ -3128,9 +3128,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col": 74,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col": 77
                 },
                 "casts": [],
@@ -3141,9 +3141,9 @@
               {
                 "kind": "UnaryOp",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col": 79,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col": 83
                 },
                 "casts": [],
@@ -3153,9 +3153,9 @@
                 "operand": {
                   "kind": "Constant",
                   "source_span": {
-                    "lineno": 79,
+                    "lineno": 80,
                     "col": 80,
-                    "end_lineno": 79,
+                    "end_lineno": 80,
                     "end_col": 83
                   },
                   "casts": [],
@@ -3167,9 +3167,9 @@
               {
                 "kind": "Constant",
                 "source_span": {
-                  "lineno": 79,
+                  "lineno": 80,
                   "col": 85,
-                  "end_lineno": 79,
+                  "end_lineno": 80,
                   "end_col": 88
                 },
                 "casts": [],
@@ -3288,7 +3288,41 @@
               }
             ],
             "keywords": []
-          }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
         },
         {
           "kind": "AnnAssign",
