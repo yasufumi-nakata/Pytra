@@ -469,6 +469,35 @@ test/
 - `# pytra: builtin-declarations` ディレクティブ付きファイルは emit 対象外
 - resolve がシグネチャ参照するための EAST1 のみ。east2 以降は不要
 
+#### selfhost 系（toolchain2 自身の変換テスト）
+
+```
+test/
+  selfhost/
+    east1/py/
+      parse/py/
+        parser.py.east1
+        nodes.py.east1
+      resolve/py/
+        resolver.py.east1
+      compile/
+        lower.py.east1
+      ...
+    east2/
+    east3/
+    east3-opt/
+    linked/
+```
+
+- ソースは `src/toolchain2/` を直接参照
+- fixture/sample と同じ内部構造（east1 → east2 → east3 → east3-opt → linked）
+- selfhost の目的:
+  1. トランスパイラ自身が変換可能かの検証（§5 規約で書かれたコードが実際に変換できるか）
+  2. 実用的な中規模 Python コード（dataclass、再帰、dict/list 操作、文字列処理）の回帰テスト
+  3. toolchain2 を変更したとき、自身の変換が壊れないか自動検出
+- fixture（小さい構文テスト）と sample（大きいベンチマーク）の間を埋める存在
+- 変換できない構文が見つかった場合は、parse/resolve を修正して対応する（発見→修正のサイクル）
+
 #### 設計原則
 
 - fixture と sample は独立に実行できる（CI で分けられる）

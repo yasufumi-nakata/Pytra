@@ -264,5 +264,14 @@ Go が新パイプライン移行のパイロットケース。
 3. [ ] [ID: P1-EMIT-CPP-S3] `pytra-cli2 -emit --target=cpp` を toolchain2 emitter に切り替える
 4. [ ] [ID: P1-EMIT-CPP-S4] `toolchain/` への依存をゼロにし、`toolchain/` を除去する
 
+#### P2-SELFHOST: toolchain2 自身の変換テスト
+
+設計文書: `docs/ja/plans/plan-pipeline-redesign.md` §3.5 selfhost 系
+
+1. [ ] [ID: P2-SELFHOST-S1] `src/toolchain2/` の全 .py ファイルが `pytra-cli2 -parse` で parse 成功する
+2. [ ] [ID: P2-SELFHOST-S2] parse 結果を resolve → compile → optimize → link まで通す
+3. [ ] [ID: P2-SELFHOST-S3] golden を `test/selfhost/` に配置し、回帰テストとして維持
+4. [ ] [ID: P2-SELFHOST-S4] Go emitter で toolchain2 を Go に変換し、`go build` が通る
+
 注: 旧 TODO は [2026-03-24 アーカイブ](archive/20260324.md) に移動済み。
 
