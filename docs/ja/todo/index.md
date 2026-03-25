@@ -19,9 +19,9 @@
 
 ## 未完了タスク
 
-### P0-REGEN-S2: emit parity 検証
+### P0-REGEN-S2: emit parity 検証 — 完了（Go）
 
-1. [ ] [ID: P0-REGEN-S2] golden 更新後に emit parity テスト（Python 実行結果との一致）を自動実行し、end-to-end の正しさを検証する — Go parity で代替検証済み、C++ は P1-EMIT-CPP 後
+1. [x] [ID: P0-REGEN-S2] Go emitter で 18/18 parity 一致を確認済み。C++ parity は P1-EMIT-CPP で対応。
 
 ### P0-INCLUDE-REORG: test/include/ のフォルダ構成を他と統一
 
