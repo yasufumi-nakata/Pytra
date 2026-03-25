@@ -35,6 +35,23 @@ def resolve_runtime_east_path(module_id: str) -> str:
     return ""
 
 
+def _is_explicit_runtime_module(module_id: str) -> bool:
+    for prefix in _RUNTIME_MODULE_BUCKETS.keys():
+        if module_id.startswith(prefix):
+            return True
+    return False
+
+
+def _resolve_runtime_dep_or_fail(module_id: str, *, required: bool = True) -> str:
+    """Resolve a runtime dependency path and fail closed for required runtime IDs."""
+    east_path = resolve_runtime_east_path(module_id)
+    if east_path != "":
+        return east_path
+    if required and _is_explicit_runtime_module(module_id):
+        raise RuntimeError("input_invalid: runtime EAST module not found: " + module_id)
+    return ""
+
+
 def _has_format_spec(node: JsonVal) -> bool:
     """EAST ノードツリーに format_spec を持つ FormattedValue が含まれるか再帰検査。"""
     if isinstance(node, dict):
@@ -54,11 +71,30 @@ def _has_format_spec(node: JsonVal) -> bool:
 
 def _load_east_file(path_str: str) -> dict[str, JsonVal]:
     """Load a .east file as a JSON dict."""
-    text = Path(path_str).read_text(encoding="utf-8")
-    obj = json.loads(text).raw
+    try:
+        text = Path(path_str).read_text(encoding="utf-8")
+    except Exception as exc:
+        raise RuntimeError("failed to read runtime EAST: " + path_str + ": " + str(exc)) from exc
+    try:
+        obj = json.loads(text).raw
+    except Exception as exc:
+        raise RuntimeError("failed to parse runtime EAST: " + path_str + ": " + str(exc)) from exc
     if not isinstance(obj, dict):
-        raise RuntimeError("invalid east document: " + path_str)
+        raise RuntimeError("invalid runtime EAST document: " + path_str)
     return obj
+
+
+def _append_runtime_dep(
+    new_deps: list[tuple[str, str]],
+    seen_paths: set[str],
+    module_id: str,
+    *,
+    required: bool = True,
+) -> None:
+    """Resolve and queue a runtime dependency if needed."""
+    east_path = _resolve_runtime_dep_or_fail(module_id, required=required)
+    if east_path != "" and east_path not in seen_paths:
+        new_deps.append((east_path, east_path))
 
 
 def discover_runtime_modules(
@@ -90,9 +126,7 @@ def discover_runtime_modules(
                             continue
                         mod_id = binding.get("module_id")
                         if isinstance(mod_id, str) and mod_id != "":
-                            ep = resolve_runtime_east_path(mod_id)
-                            if ep != "" and ep not in seen_paths:
-                                new_deps.append((ep, ep))
+                            _append_runtime_dep(new_deps, seen_paths, mod_id, required=True)
 
             # Scan body for Import/ImportFrom
             body_val = east_doc.get("body")
@@ -104,9 +138,7 @@ def discover_runtime_modules(
                     if kind == "ImportFrom":
                         mod = stmt.get("module")
                         if isinstance(mod, str) and mod != "":
-                            ep = resolve_runtime_east_path(mod)
-                            if ep != "" and ep not in seen_paths:
-                                new_deps.append((ep, ep))
+                            _append_runtime_dep(new_deps, seen_paths, mod, required=True)
                             # Sub-module imports: from pytra.utils import png → pytra.utils.png
                             names_val = stmt.get("names")
                             if isinstance(names_val, list):
@@ -115,9 +147,7 @@ def discover_runtime_modules(
                                         sym = ent.get("name")
                                         if isinstance(sym, str) and sym != "":
                                             sub_mod = mod + "." + sym
-                                            sub_path = resolve_runtime_east_path(sub_mod)
-                                            if sub_path != "" and sub_path not in seen_paths:
-                                                new_deps.append((sub_path, sub_path))
+                                            _append_runtime_dep(new_deps, seen_paths, sub_mod, required=False)
                     elif kind == "Import":
                         names_val = stmt.get("names")
                         if isinstance(names_val, list):
@@ -125,25 +155,18 @@ def discover_runtime_modules(
                                 if isinstance(ent, dict):
                                     name_val = ent.get("name")
                                     if isinstance(name_val, str):
-                                        ep = resolve_runtime_east_path(name_val)
-                                        if ep != "" and ep not in seen_paths:
-                                            new_deps.append((ep, ep))
+                                        _append_runtime_dep(new_deps, seen_paths, name_val, required=True)
 
             # Detect implicit format_value dependency from f-string
             if _has_format_spec(east_doc):
-                ep = resolve_runtime_east_path("pytra.built_in.format_value")
-                if ep != "" and ep not in seen_paths:
-                    new_deps.append((ep, ep))
+                _append_runtime_dep(new_deps, seen_paths, "pytra.built_in.format_value", required=True)
 
         for path_str, _ in new_deps:
             if path_str in seen_paths:
                 continue
             seen_paths.add(path_str)
-            try:
-                doc = _load_east_file(path_str)
-                result[path_str] = doc
-                changed = True
-            except Exception:
-                pass
+            doc = _load_east_file(path_str)
+            result[path_str] = doc
+            changed = True
 
     return result

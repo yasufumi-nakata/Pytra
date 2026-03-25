@@ -11,26 +11,37 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 
 from toolchain2.common.jv import deep_copy_json
+from toolchain2.link.import_maps import collect_import_maps
+
+
+def _module_id_from_doc(doc: dict[str, JsonVal]) -> str:
+    """Extract module_id from linked metadata or raw EAST meta."""
+    meta = doc.get("meta")
+    if not isinstance(meta, dict):
+        return ""
+    lp = meta.get("linked_program_v1")
+    if isinstance(lp, dict):
+        mid = lp.get("module_id")
+        if isinstance(mid, str) and mid != "":
+            return mid
+    mid2 = meta.get("module_id")
+    if isinstance(mid2, str):
+        return mid2
+    return ""
 
 
 def _collect_all_fn_sigs(modules: list[dict[str, JsonVal]]) -> dict[str, dict[str, JsonVal]]:
     """Collect function signatures from all modules.
 
-    Returns: {fn_name: {"arg_order": [...], "arg_defaults": {...}}}
-    Also keyed by qualified name: module_id::fn_name
+    Returns: {"<module_id>::<fn_name>": {"arg_order": [...], "arg_defaults": {...}}}
     """
     sigs: dict[str, dict[str, JsonVal]] = {}
     for doc in modules:
         if not isinstance(doc, dict):
             continue
-        module_id = ""
-        meta = doc.get("meta")
-        if isinstance(meta, dict):
-            lp = meta.get("linked_program_v1")
-            if isinstance(lp, dict):
-                mid = lp.get("module_id")
-                if isinstance(mid, str):
-                    module_id = mid
+        module_id = _module_id_from_doc(doc)
+        if module_id == "":
+            continue
 
         body = doc.get("body")
         if not isinstance(body, list):
@@ -54,6 +65,8 @@ def _collect_sig(
         name = node.get("name")
         if not isinstance(name, str) or name == "":
             return
+        if module_id == "":
+            return
         ao = node.get("arg_order")
         ad = node.get("arg_defaults")
         if not isinstance(ao, list):
@@ -62,15 +75,8 @@ def _collect_sig(
             "arg_order": ao,
             "arg_defaults": ad if isinstance(ad, dict) else {},
         }
-        # Register by bare name and qualified name
         full = class_name + "." + name if class_name != "" else name
-        sigs[name] = sig
-        if full != name:
-            sigs[full] = sig
-        if module_id != "":
-            sigs[module_id + "::" + name] = sig
-            if full != name:
-                sigs[module_id + "::" + full] = sig
+        sigs[module_id + "::" + full] = sig
 
         # Recurse into nested functions
         body = node.get("body")
@@ -90,31 +96,84 @@ def _collect_sig(
                     _collect_sig(s, sigs, module_id, cn)
 
 
-def _expand_walk(node: JsonVal, sigs: dict[str, dict[str, JsonVal]]) -> None:
+def _resolve_call_sig_key(
+    node: dict[str, JsonVal],
+    *,
+    current_module_id: str,
+    import_modules: dict[str, str],
+    import_symbols: dict[str, str],
+) -> str:
+    """Resolve a Call node to a qualified signature key.
+
+    Cross-module default expansion is intentionally conservative:
+    only direct same-module calls, imported-symbol calls, and explicit
+    module-alias calls are resolved. Method calls on arbitrary receivers
+    are left untouched to avoid ambiguous expansion.
+    """
+    func = node.get("func")
+    if not isinstance(func, dict):
+        return ""
+
+    fk = func.get("kind")
+    if fk == "Name":
+        fn_id = func.get("id")
+        if isinstance(fn_id, str) and fn_id != "":
+            imported = import_symbols.get(fn_id)
+            if isinstance(imported, str) and imported != "":
+                return imported
+            if current_module_id != "":
+                return current_module_id + "::" + fn_id
+        return ""
+
+    if fk == "Attribute":
+        attr = func.get("attr")
+        owner = func.get("value")
+        if not isinstance(attr, str) or attr == "" or not isinstance(owner, dict):
+            return ""
+        if owner.get("kind") != "Name":
+            return ""
+        owner_id = owner.get("id")
+        if not isinstance(owner_id, str) or owner_id == "":
+            return ""
+        module_id = import_modules.get(owner_id, "")
+        if module_id == "":
+            return ""
+        return module_id + "::" + attr
+
+    return ""
+
+
+def _expand_walk(
+    node: JsonVal,
+    sigs: dict[str, dict[str, JsonVal]],
+    *,
+    current_module_id: str,
+    import_modules: dict[str, str],
+    import_symbols: dict[str, str],
+) -> None:
     """Recursively walk the AST and expand default arguments in Call nodes."""
     if isinstance(node, list):
         for item in node:
-            _expand_walk(item, sigs)
+            _expand_walk(
+                item,
+                sigs,
+                current_module_id=current_module_id,
+                import_modules=import_modules,
+                import_symbols=import_symbols,
+            )
         return
     if not isinstance(node, dict):
         return
 
     if node.get("kind") == "Call":
-        func = node.get("func")
-        call_name = ""
-        if isinstance(func, dict):
-            fk = func.get("kind")
-            if fk == "Name":
-                fn_id = func.get("id")
-                if isinstance(fn_id, str):
-                    call_name = fn_id
-            elif fk == "Attribute":
-                attr = func.get("attr")
-                if isinstance(attr, str):
-                    call_name = attr
-
-        if call_name != "" and call_name in sigs:
-            sig = sigs[call_name]
+        sig_key = _resolve_call_sig_key(
+            node,
+            current_module_id=current_module_id,
+            import_modules=import_modules,
+            import_symbols=import_symbols,
+        )
+        if sig_key != "" and sig_key in sigs:
+            sig = sigs[sig_key]
             ao = sig.get("arg_order")
             ad = sig.get("arg_defaults")
             args = node.get("args")
@@ -153,7 +212,13 @@ def _expand_walk(node: JsonVal, sigs: dict[str, dict[str, JsonVal]]) -> None:
 
     for v in node.values():
         if isinstance(v, (dict, list)):
-            _expand_walk(v, sigs)
+            _expand_walk(
+                v,
+                sigs,
+                current_module_id=current_module_id,
+                import_modules=import_modules,
+                import_symbols=import_symbols,
+            )
 
 
 def expand_cross_module_defaults(linked_modules: list[dict[str, JsonVal]]) -> None:
@@ -169,4 +234,12 @@ def expand_cross_module_defaults(linked_modules: list[dict[str, JsonVal]]) -> No
     # Expand defaults in all modules
     for doc in linked_modules:
         if isinstance(doc, dict):
-            _expand_walk(doc, sigs)
+            module_id = _module_id_from_doc(doc)
+            import_modules, import_symbols = collect_import_maps(doc)
+            _expand_walk(
+                doc,
+                sigs,
+                current_module_id=module_id,
+                import_modules=import_modules,
+                import_symbols=import_symbols,
+            )

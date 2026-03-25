@@ -38,6 +38,7 @@ LINK_OUTPUT_SCHEMA = "pytra.link_output.v1"
 class LinkedModule:
     """1 module の linked 結果。"""
     module_id: str
+    input_path: str
     source_path: str
     is_entry: bool
     east_doc: dict[str, JsonVal]
@@ -214,6 +215,7 @@ def link_modules(
 
         modules.append(LinkedModule(
             module_id=module_id,
+            input_path=path_str,
             source_path=source_path,
             is_entry=is_entry,
             east_doc=doc,
@@ -276,6 +278,7 @@ def link_modules(
 
         linked_modules.append(LinkedModule(
             module_id=module.module_id,
+            input_path=module.input_path,
             source_path=module.source_path,
             is_entry=module.is_entry,
             east_doc=doc,
@@ -284,7 +287,7 @@ def link_modules(
 
         me: dict[str, JsonVal] = {
             "module_id": module.module_id,
-            "input": module.source_path if module.source_path != "" else module.module_id,
+            "input": module.input_path,
             "output": _linked_output_path(module.module_id),
             "source_path": module.source_path,
             "is_entry": module.is_entry,

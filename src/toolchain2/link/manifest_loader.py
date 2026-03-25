@@ -19,6 +19,7 @@ from pytra.std.pathlib import Path
 class LinkedModuleEntry:
     """A module loaded from a linked output bundle."""
     module_id: str
+    input_path: str
     source_path: str
     is_entry: bool
     east_doc: dict[str, JsonVal]
@@ -30,8 +31,14 @@ def load_linked_output(manifest_path: Path) -> tuple[dict[str, JsonVal], list[Li
 
     Returns (manifest_doc, list of LinkedModuleEntry).
     """
-    text = manifest_path.read_text(encoding="utf-8")
-    raw = json.loads(text).raw
+    try:
+        text = manifest_path.read_text(encoding="utf-8")
+    except Exception as exc:
+        raise RuntimeError("failed to read manifest: " + str(manifest_path) + ": " + str(exc)) from exc
+    try:
+        raw = json.loads(text).raw
+    except Exception as exc:
+        raise RuntimeError("failed to parse manifest: " + str(manifest_path) + ": " + str(exc)) from exc
     if not isinstance(raw, dict):
         raise RuntimeError("manifest root must be object: " + str(manifest_path))
 
@@ -41,32 +48,48 @@ def load_linked_output(manifest_path: Path) -> tuple[dict[str, JsonVal], list[Li
         raise RuntimeError("manifest.modules must be list")
 
     modules: list[LinkedModuleEntry] = []
-    for entry in modules_raw:
+    for index, entry in enumerate(modules_raw):
         if not isinstance(entry, dict):
-            continue
+            raise RuntimeError("manifest.modules[" + str(index) + "] must be object")
         mid = entry.get("module_id")
         if not isinstance(mid, str) or mid == "":
-            continue
+            raise RuntimeError("manifest.modules[" + str(index) + "].module_id must be non-empty string")
+        input_path_val = entry.get("input")
+        if not isinstance(input_path_val, str) or input_path_val == "":
+            raise RuntimeError("manifest.modules[" + str(index) + "].input must be non-empty string")
         output = entry.get("output")
         if not isinstance(output, str) or output == "":
-            continue
+            raise RuntimeError("manifest.modules[" + str(index) + "].output must be non-empty string")
         sp = entry.get("source_path")
-        source_path = sp if isinstance(sp, str) else ""
+        if not isinstance(sp, str):
+            raise RuntimeError("manifest.modules[" + str(index) + "].source_path must be string")
+        source_path = sp
         ie = entry.get("is_entry")
-        is_entry = ie if isinstance(ie, bool) else False
+        if not isinstance(ie, bool):
+            raise RuntimeError("manifest.modules[" + str(index) + "].is_entry must be bool")
+        is_entry = ie
         mk = entry.get("module_kind")
-        module_kind = mk if isinstance(mk, str) else "user"
+        if not isinstance(mk, str) or mk == "":
+            raise RuntimeError("manifest.modules[" + str(index) + "].module_kind must be non-empty string")
+        module_kind = mk
 
         east_path = manifest_dir / output
         if not east_path.exists():
-            continue
-        east_text = east_path.read_text(encoding="utf-8")
-        east_raw = json.loads(east_text).raw
+            raise RuntimeError("linked EAST file not found: " + str(east_path))
+        try:
+            east_text = east_path.read_text(encoding="utf-8")
+        except Exception as exc:
+            raise RuntimeError("failed to read linked EAST file: " + str(east_path) + ": " + str(exc)) from exc
+        try:
+            east_raw = json.loads(east_text).raw
+        except Exception as exc:
+            raise RuntimeError("failed to parse linked EAST file: " + str(east_path) + ": " + str(exc)) from exc
         if not isinstance(east_raw, dict):
-            continue
+            raise RuntimeError("linked EAST root must be object: " + str(east_path))
 
         modules.append(LinkedModuleEntry(
             module_id=mid,
+            input_path=input_path_val,
             source_path=source_path,
             is_entry=is_entry,
             east_doc=east_raw,

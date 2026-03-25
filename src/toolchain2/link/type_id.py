@@ -70,19 +70,47 @@ def _iter_class_defs(east_doc: dict[str, JsonVal]) -> list[dict[str, JsonVal]]:
     return out
 
 
-def _resolve_class_base_fqcn(
+def _input_invalid(message: str) -> RuntimeError:
+    return RuntimeError("input_invalid: " + message)
+
+
+def _iter_class_base_names(class_def: dict[str, JsonVal]) -> list[str]:
+    """Extract declared base names from a ClassDef.
+
+    EAST1 historically used ``base`` while spec-east uses ``bases``.
+    The linker accepts both forms, but multiple inheritance is rejected.
+    """
+    bases: list[str] = []
+    bases_raw = class_def.get("bases")
+    if isinstance(bases_raw, list):
+        for item in bases_raw:
+            name = _safe_name(item)
+            if name != "":
+                bases.append(name)
+    if len(bases) == 0:
+        base_name = _safe_name(class_def.get("base"))
+        if base_name != "":
+            bases.append(base_name)
+    return bases
+
+
+def _resolve_declared_class_base_fqcn(
     base_name: str,
     *,
+    fqcn: str,
     module_id: str,
+    all_classes: set[str],
     local_classes: dict[str, str],
     import_modules: dict[str, str],
     import_symbols: dict[str, str],
 ) -> str:
-    """Resolve a base class name to a fully-qualified class name (FQCN)."""
+    """Resolve a declared base class name to a fully-qualified class name (FQCN)."""
     name = base_name.strip()
     if name == "":
         return "object"
     if name in _ROOT_BASE_NAMES:
+        return name
+    if name in all_classes:
         return name
     if name in local_classes:
         return local_classes[name]
@@ -95,15 +123,15 @@ def _resolve_class_base_fqcn(
             return dep_module_id.strip() + "." + export_name
     # Check dotted name (e.g. module.ClassName)
     if "." in name:
-        owner_name, attr_name = name.split(".", 1)
+        owner_name, attr_name = name.rsplit(".", 1)
         imported_module = import_modules.get(owner_name, "").strip()
         if imported_module != "" and attr_name.strip() != "":
             return imported_module + "." + attr_name.strip()
     # Fallback: assume local
     fqcn_candidate = module_id + "." + name
-    if fqcn_candidate in local_classes.values():
+    if fqcn_candidate in all_classes:
         return fqcn_candidate
-    return "object"
+    raise _input_invalid("undefined base class: " + fqcn + " -> " + name)
 
 
 def build_type_id_table(
@@ -119,6 +147,10 @@ def build_type_id_table(
     """
     class_bases: dict[str, str] = {}
     children: dict[str, list[str]] = {}
+    all_classes: set[str] = set()
+    module_local_classes: dict[str, dict[str, str]] = {}
+    module_import_maps: dict[str, tuple[dict[str, str], dict[str, str]]] = {}
+    module_class_defs: dict[str, list[dict[str, JsonVal]]] = {}
 
     for module in sorted(modules, key=lambda m: m.module_id):
         doc = module.east_doc
@@ -126,33 +158,81 @@ def build_type_id_table(
             continue
 
         import_modules, import_symbols = collect_import_maps(doc)
+        module_import_maps[module.module_id] = (import_modules, import_symbols)
 
         # First pass: collect local class names → FQCN
         local_classes: dict[str, str] = {}
         class_defs = _iter_class_defs(doc)
+        module_class_defs[module.module_id] = class_defs
         for class_def in class_defs:
             class_name = _safe_name(class_def.get("name"))
             if class_name == "":
                 continue
             fqcn = module.module_id + "." + class_name
+            if fqcn in all_classes:
+                raise _input_invalid("duplicate class definition: " + fqcn)
             local_classes[class_name] = fqcn
+            all_classes.add(fqcn)
+        module_local_classes[module.module_id] = local_classes
 
-        # Second pass: resolve base classes
+    for module in sorted(modules, key=lambda m: m.module_id):
+        class_defs = module_class_defs.get(module.module_id, [])
+        local_classes = module_local_classes.get(module.module_id, {})
+        import_modules, import_symbols = module_import_maps.get(module.module_id, ({}, {}))
+
         for class_def in class_defs:
             class_name = _safe_name(class_def.get("name"))
             if class_name == "":
                 continue
             fqcn = module.module_id + "." + class_name
-            base_fqcn = _resolve_class_base_fqcn(
-                _safe_name(class_def.get("base")),
-                module_id=module.module_id,
-                local_classes=local_classes,
-                import_modules=import_modules,
-                import_symbols=import_symbols,
-            )
+            base_names = _iter_class_base_names(class_def)
+            if len(base_names) > 1:
+                raise _input_invalid(
+                    "multiple inheritance is not supported: "
+                    + fqcn
+                    + " -> "
+                    + ", ".join(base_names)
+                )
+            base_fqcn = "object"
+            if len(base_names) == 1:
+                base_fqcn = _resolve_declared_class_base_fqcn(
+                    base_names[0],
+                    fqcn=fqcn,
+                    module_id=module.module_id,
+                    all_classes=all_classes,
+                    local_classes=local_classes,
+                    import_modules=import_modules,
+                    import_symbols=import_symbols,
+                )
             class_bases[fqcn] = base_fqcn
             if fqcn not in children:
                 children[fqcn] = []
+
+    visit_state: dict[str, int] = {}
+
+    def _visit(fqcn: str, stack: list[str]) -> None:
+        state = visit_state.get(fqcn, 0)
+        if state == 2:
+            return
+        if state == 1:
+            cycle_start = 0
+            i = 0
+            while i < len(stack):
+                if stack[i] == fqcn:
+                    cycle_start = i
+                    break
+                i += 1
+            cycle = stack[cycle_start:] + [fqcn]
+            raise _input_invalid("inheritance cycle: " + " -> ".join(cycle))
+
+        visit_state[fqcn] = 1
+        base_fqcn = class_bases.get(fqcn, "")
+        if base_fqcn in class_bases:
+            _visit(base_fqcn, stack + [fqcn])
+        visit_state[fqcn] = 2
+
+    for fqcn in sorted(class_bases.keys()):
+        _visit(fqcn, [])
 
     # Build children map
     for fqcn, base_fqcn in sorted(class_bases.items()):
@@ -187,6 +267,14 @@ def build_type_id_table(
 
     for fqcn in sorted(roots):
         _assign(fqcn)
+
+    if len(type_id_table) != len(class_bases):
+        raise _input_invalid(
+            "failed to assign type_id to all classes: "
+            + str(len(type_id_table))
+            + "/"
+            + str(len(class_bases))
+        )
 
     # Build base type_id map
     type_id_base_map: dict[str, int] = {}
