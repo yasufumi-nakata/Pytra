@@ -244,7 +244,7 @@ Go が新パイプライン移行のパイロットケース。
 2. [x] [ID: P1-GO-MIGRATE-S2] 旧 Go emitter（`src/toolchain/emit/go/`）を削除 — 完了
 3. [x] [ID: P1-GO-MIGRATE-S3] 旧 Go runtime（`src/runtime/go/built_in/`）を削除 — 完了
 4. [x] [ID: P1-GO-MIGRATE-S4] `runtime_parity_check.py --targets go` で全 18 sample PASS — `pytra-cli.py build --target go --run` で 18/18 PASS
-5. [ ] [ID: P1-GO-MIGRATE-S5] `runtime/go/toolchain2/pytra_runtime.go` を分解して `runtime/go/built_in/`, `runtime/go/std/` に棚卸し。PNG/GIF は `pytra/utils/{png,gif}.py` のトランスパイル結果に置き換え
+5. [x] [ID: P1-GO-MIGRATE-S5] `runtime/go/toolchain2/pytra_runtime.go` を `runtime/go/pytra_runtime.go` に正式配置。旧サブディレクトリ削除 — 完了
 
 #### P1-CODE-EMITTER: CodeEmitter 基底クラス + runtime mapping
 

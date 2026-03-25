@@ -111,7 +111,7 @@ def _build_go_via_toolchain2(
 
     # Copy runtime
     import shutil as _shutil
-    runtime_src = src_dir + "/runtime/go/toolchain2/pytra_runtime.go"
+    runtime_src = src_dir + "/runtime/go/pytra_runtime.go"
     if Path(runtime_src).exists():
         _shutil.copy(runtime_src, emit_dir + "/pytra_runtime.go")
 
