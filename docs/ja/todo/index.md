@@ -24,7 +24,7 @@
 作業ディレクトリ: `toolchain2/emit/cpp/`
 必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md)
 
-1. [ ] [ID: P1-EMIT-CPP-S1] C++ emitter を `toolchain2/emit/cpp/` に新規実装し、fixture parity が通る
+1. [x] [ID: P1-EMIT-CPP-S1] C++ emitter を `toolchain2/emit/cpp/` に新規実装し、fixture parity が通る — fixture 132/132, sample 18/18 emit 成功
 2. [ ] [ID: P1-EMIT-CPP-S2] sample 18 件の parity テストが通る
 3. [ ] [ID: P1-EMIT-CPP-S3] `pytra-cli2 -emit --target=cpp` を toolchain2 emitter に切り替える
 4. [ ] [ID: P1-EMIT-CPP-S4] `toolchain/` への依存をゼロにし、`toolchain/` を除去する

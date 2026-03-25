@@ -1,0 +1,39 @@
+{
+  "builtin_prefix": "py_",
+  "calls": {
+    "py_print": "py_print",
+    "py_len": "py_len",
+    "py_to_string": "py_str",
+    "static_cast": "__CAST__",
+    "py_int_from_str": "py_int_from_str",
+    "py_float_from_str": "py_float_from_str",
+    "std::runtime_error": "__THROW__",
+    "bytearray_ctor": "__MAKE_BYTES__",
+    "bytes_ctor": "__MAKE_BYTES__",
+    "list.append": "__LIST_APPEND__",
+    "list.pop": "__LIST_POP__",
+    "dict.get": "__DICT_GET__",
+    "set.add": "__SET_ADD__",
+    "str.strip": "py_str_strip",
+    "str.lstrip": "py_str_lstrip",
+    "str.rstrip": "py_str_rstrip",
+    "str.startswith": "py_str_startswith",
+    "str.endswith": "py_str_endswith",
+    "str.replace": "py_str_replace",
+    "str.find": "py_str_find",
+    "str.split": "py_str_split",
+    "str.join": "py_str_join",
+    "str.upper": "py_str_upper",
+    "str.lower": "py_str_lower",
+    "str.isdigit": "py_str_isdigit",
+    "str.isalpha": "py_str_isalpha",
+    "py_write_text": "py_pathlib_write_text",
+    "py_floordiv": "py_floordiv"
+  },
+  "skip_modules": [
+    "pytra.built_in.",
+    "pytra.std.",
+    "pytra.utils.",
+    "pytra.core."
+  ]
+}
