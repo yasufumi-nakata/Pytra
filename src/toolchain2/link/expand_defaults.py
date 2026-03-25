@@ -221,20 +221,32 @@ def _expand_walk(
             )
 
 
-def expand_cross_module_defaults(linked_modules: list[dict[str, JsonVal]]) -> None:
+def expand_cross_module_defaults(modules_with_ids: list[tuple[str, dict[str, JsonVal]]]) -> None:
     """Expand default arguments in Call nodes across all linked modules.
+
+    Args:
+        modules_with_ids: list of (module_id, east_doc) tuples.
 
     Mutates the east_doc of each module in-place.
     """
-    # Collect signatures from all modules
-    sigs = _collect_all_fn_sigs(linked_modules)
+    # Collect signatures from all modules (using explicit module_id)
+    sigs: dict[str, dict[str, JsonVal]] = {}
+    for module_id, doc in modules_with_ids:
+        if not isinstance(doc, dict) or module_id == "":
+            continue
+        body = doc.get("body")
+        if not isinstance(body, list):
+            continue
+        for stmt in body:
+            if isinstance(stmt, dict):
+                _collect_sig(stmt, sigs, module_id, "")
+
     if len(sigs) == 0:
         return
 
     # Expand defaults in all modules
-    for doc in linked_modules:
+    for module_id, doc in modules_with_ids:
         if isinstance(doc, dict):
-            module_id = _module_id_from_doc(doc)
             import_modules, import_symbols = collect_import_maps(doc)
             _expand_walk(
                 doc,

@@ -10,22 +10,22 @@ import (
 	"strings"
 )
 
-func py_print(args ...interface{}) {
+func py_print(args ...any) {
 	parts := make([]string, len(args))
 	for i, a := range args { parts[i] = fmt.Sprint(a) }
 	fmt.Println(strings.Join(parts, " "))
 }
 
-func py_str(v interface{}) string { return fmt.Sprint(v) }
+func py_str(v any) string { return fmt.Sprint(v) }
 
-func py_len(v interface{}) int64 {
+func py_len(v any) int64 {
 	switch t := v.(type) {
 	case string: return int64(len(t))
 	case []int64: return int64(len(t))
 	case []float64: return int64(len(t))
 	case []string: return int64(len(t))
 	case []byte: return int64(len(t))
-	case []interface{}: return int64(len(t))
+	case []any: return int64(len(t))
 	default: return 0
 	}
 }
@@ -43,7 +43,7 @@ func py_floordiv(a, b int64) int64 {
 	return q
 }
 
-func py_contains(haystack interface{}, needle interface{}) bool {
+func py_contains(haystack any, needle any) bool {
 	switch h := haystack.(type) {
 	case string:
 		n, ok := needle.(string); if ok { return strings.Contains(h, n) }
@@ -58,7 +58,7 @@ func py_contains(haystack interface{}, needle interface{}) bool {
 func py_ternary_int(cond bool, a, b int64) int64 { if cond { return a }; return b }
 func py_ternary_float(cond bool, a, b float64) float64 { if cond { return a }; return b }
 func py_ternary_str(cond bool, a, b string) string { if cond { return a }; return b }
-func py_append_byte(s []byte, v interface{}) []byte {
+func py_append_byte(s []byte, v any) []byte {
 	switch t := v.(type) {
 	case byte: return append(s, t)
 	case int64: return append(s, byte(t))
@@ -67,7 +67,7 @@ func py_append_byte(s []byte, v interface{}) []byte {
 	}
 }
 
-func py_list_pop(s *[]interface{}, args ...int64) interface{} {
+func py_list_pop(s *[]any, args ...int64) any {
 	sl := *s; n := len(sl); idx := n - 1
 	if len(args) > 0 { idx = int(args[0]); if idx < 0 { idx += n } }
 	val := sl[idx]; *s = append(sl[:idx], sl[idx+1:]...); return val
@@ -80,7 +80,7 @@ func py_repeat_int64(val, count int64) []int64 {
 }
 
 // String methods
-func py_str_isdigit(v interface{}) bool {
+func py_str_isdigit(v any) bool {
 	switch t := v.(type) {
 	case byte: return t >= '0' && t <= '9'
 	case string:
@@ -90,7 +90,7 @@ func py_str_isdigit(v interface{}) bool {
 	}
 	return false
 }
-func py_str_isalpha(v interface{}) bool {
+func py_str_isalpha(v any) bool {
 	switch t := v.(type) {
 	case byte: return (t >= 'a' && t <= 'z') || (t >= 'A' && t <= 'Z')
 	case string:
@@ -121,7 +121,7 @@ func py_byte_to_string(b byte) string { return string([]byte{b}) }
 func py_str_to_int64(s string) int64 { v, _ := strconv.ParseInt(s, 10, 64); return v }
 func py_str_to_float64(s string) float64 { v, _ := strconv.ParseFloat(s, 64); return v }
 
-func _toF64(v interface{}) float64 {
+func _toF64(v any) float64 {
 	switch t := v.(type) {
 	case float64: return t
 	case int64: return float64(t)
@@ -130,13 +130,13 @@ func _toF64(v interface{}) float64 {
 	default: return 0
 	}
 }
-func py_to_int64(v interface{}) int64 {
+func py_to_int64(v any) int64 {
 	switch t := v.(type) {
 	case int64: return t; case int: return int64(t); case float64: return int64(t); default: return 0
 	}
 }
-func py_to_float64(v interface{}) float64 { return _toF64(v) }
-func py_int64(v interface{}) int64 {
+func py_to_float64(v any) float64 { return _toF64(v) }
+func py_int64(v any) int64 {
 	switch t := v.(type) {
 	case int: return int64(t); case int64: return t; case float64: return int64(t)
 	case string: r, _ := strconv.ParseInt(t, 10, 64); return r

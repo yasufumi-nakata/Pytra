@@ -454,6 +454,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return ctx.mapping.builtin_prefix + _safe_go_ident(attr) + "(" + ", ".join(arg_strs) + ")"
                 else:
                     return _safe_go_ident(attr) + "(" + ", ".join(arg_strs) + ")"
+            # Path.write_text(content) → os.WriteFile(path, []byte(content), 0644)
+            if attr == "write_text" and len(arg_strs) >= 1:
+                ctx.imports_needed.add("os")
+                return "os.WriteFile(" + owner + ", []byte(" + arg_strs[0] + "), 0644)"
             # .append() on non-BuiltinCall (plain method call)
             if attr == "append" and len(arg_strs) >= 1:
                 # If owner is bytes/bytearray or unknown bytes-like, use append_byte
@@ -713,12 +717,12 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return _emit_slice_access(ctx, value, slice_node)
     idx = _emit_expr(ctx, slice_node)
 
-    # Tuple subscript: __tup_N[i] → safe type conversion from interface{}
+    # Tuple subscript: __tup_N[i] → safe type conversion from any
     if isinstance(value_node, dict):
         vt = _str(value_node, "resolved_type")
         if vt.startswith("tuple["):
             elem_rt = _str(node, "resolved_type")
-            base = value + ".([]interface{})[" + idx + "]"
+            base = value + ".([]any)[" + idx + "]"
             if elem_rt in ("int64", "int32", "int", "uint8"):
                 return "py_to_int64(" + base + ")"
             if elem_rt in ("float64", "float32"):
@@ -808,7 +812,7 @@ def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_tuple_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     elements = _list(node, "elements")
     parts = [_emit_expr(ctx, e) for e in elements]
-    return "[]interface{}{" + ", ".join(parts) + "}"
+    return "[]any{" + ", ".join(parts) + "}"
 
 
 def _emit_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -1152,7 +1156,7 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             gn = _safe_go_ident(name)
             if gn in ctx.var_types:
                 declared_rt = ctx.var_types.get(gn, "")
-                # If var was declared as unknown (interface{}), upgrade type
+                # If var was declared as unknown (any), upgrade type
                 if declared_rt == "unknown" and isinstance(value, dict):
                     new_rt = _str(value, "resolved_type")
                     new_dt = _str(node, "decl_type")
@@ -1567,10 +1571,10 @@ def _emit_var_decl(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if rt == "":
         rt = _str(node, "resolved_type")
     gn = _safe_go_ident(name)
-    # VarDecl with unknown type: emit as interface{} but track for later upgrade
+    # VarDecl with unknown type: emit as any but track for later upgrade
     if rt == "" or rt == "unknown":
         ctx.var_types[gn] = "unknown"
-        _emit(ctx, "var " + gn + " interface{}")
+        _emit(ctx, "var " + gn + " any")
         _emit(ctx, "_ = " + gn)
         return
     gt = go_type(rt)

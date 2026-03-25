@@ -26,13 +26,16 @@ _TYPE_MAP: dict[str, str] = {
     "none": "",
     "bytes": "[]byte",
     "bytearray": "[]byte",
+    "object": "any",
+    "Obj": "any",
+    "Any": "any",
 }
 
 
 def go_type(resolved_type: str) -> str:
     """Convert an EAST3 resolved_type to a Go type string."""
     if resolved_type == "" or resolved_type == "unknown":
-        return "interface{}"
+        return "any"
 
     # Direct mapping
     mapped = _TYPE_MAP.get(resolved_type, "")

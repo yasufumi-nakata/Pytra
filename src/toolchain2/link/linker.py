@@ -250,8 +250,8 @@ def link_modules(
         copied_docs.append((module, doc))
 
     # 9. Cross-module default argument expansion
-    all_docs = [doc for _, doc in copied_docs]
-    expand_cross_module_defaults(all_docs)
+    all_docs_with_ids = [(module.module_id, doc) for module, doc in copied_docs]
+    expand_cross_module_defaults(all_docs_with_ids)
 
     # 10. 各 module に linked_program_v1 を注入
     linked_modules: list[LinkedModule] = []
