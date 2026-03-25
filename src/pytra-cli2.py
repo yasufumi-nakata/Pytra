@@ -478,8 +478,33 @@ def cmd_link(args: list[str]) -> int:
 
 
 # ---------------------------------------------------------------------------
-# emit: *.east3 → target (未実装)
+# emit: linked → target
 # ---------------------------------------------------------------------------
+
+def _emit_go(manifest_path: Path, output_dir: Path) -> int:
+    """Go emit: linked output → Go source files."""
+    from toolchain2.link.linker import link_modules as _lm
+    from toolchain2.emit.go.emitter import emit_go_module
+    from toolchain.link import load_linked_output_bundle
+
+    manifest_doc, linked_modules = load_linked_output_bundle(manifest_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    written = 0
+    for module in linked_modules:
+        code = emit_go_module(module.east_doc)
+        if code.strip() == "":
+            continue
+        # Flat layout: module_id → filename.go
+        mid = module.module_id
+        fname = mid.replace(".", "_") + ".go"
+        out_path = output_dir / fname
+        out_path.write_text(code, encoding="utf-8")
+        written += 1
+
+    print("emitted: " + str(output_dir) + " (" + str(written) + " Go files)")
+    return 0
+
 
 def cmd_emit(args: list[str]) -> int:
     """emit サブコマンド: linked output → target code (暫定: 現行 toolchain/emit/ への橋渡し)"""
@@ -498,12 +523,16 @@ def cmd_emit(args: list[str]) -> int:
             output_dir_text = args[i + 1]
             i += 2
             continue
-        if tok == "--target":
-            if i + 1 >= len(args):
-                print("error: missing value for --target")
-                return 1
-            target = args[i + 1]
-            i += 2
+        if tok == "--target" or tok.startswith("--target="):
+            if "=" in tok:
+                target = tok.split("=", 1)[1]
+                i += 1
+            else:
+                if i + 1 >= len(args):
+                    print("error: missing value for --target")
+                    return 1
+                target = args[i + 1]
+                i += 2
             continue
         if tok == "--emitter-option":
             if i + 1 >= len(args):
@@ -538,8 +567,11 @@ def cmd_emit(args: list[str]) -> int:
     if output_dir_text == "":
         output_dir_text = "work/tmp/emit/" + target
 
+    if target == "go":
+        return _emit_go(manifest_path, Path(output_dir_text))
+
     if target != "cpp":
-        print("error: only --target=cpp is currently supported")
+        print("error: unsupported target: " + target + " (available: cpp, go)")
         return 1
 
     try:
