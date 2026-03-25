@@ -48,6 +48,23 @@ def _bracket_depth_str_aware(text: str) -> int:
     return depth
 
 
+def _unclosed_triple_quote(line: str) -> str:
+    """Return the triple-quote delimiter if line opens but doesn't close one, else ""."""
+    for tq in ('"""', "'''"):
+        # Count occurrences outside of the other quote type
+        count: int = 0
+        i: int = 0
+        while i < len(line):
+            if line[i:i+3] == tq:
+                count += 1
+                i += 3
+            else:
+                i += 1
+        if count % 2 == 1:
+            return tq
+    return ""
+
+
 def _join_continuation_lines(source: str) -> str:
     """Join lines with unclosed brackets into single logical lines.
 
@@ -60,24 +77,38 @@ def _join_continuation_lines(source: str) -> str:
     n: int = len(lines)
     while i < n:
         line: str = lines[i]
+
+        # Check for unclosed triple-quote string
+        tq: str = _unclosed_triple_quote(line)
+        if tq != "":
+            parts: list[str] = [line.rstrip()]
+            i += 1
+            while i < n:
+                nxt: str = lines[i]
+                parts.append(nxt.rstrip())
+                i += 1
+                if tq in nxt:
+                    break
+            joined_tq: str = "\n".join(parts)
+            result.append(joined_tq)
+            continue
+
         depth: int = _bracket_depth_str_aware(line)
         if depth <= 0:
             result.append(line)
             i += 1
             continue
         # Unclosed bracket: join subsequent lines, preserve first line indent
-        parts: list[str] = [line.rstrip()]
+        parts2: list[str] = [line.rstrip()]
         i += 1
         while i < n and depth > 0:
-            nxt: str = lines[i]
-            parts.append(nxt.strip())
-            depth += _bracket_depth_str_aware(nxt)
+            nxt2: str = lines[i]
+            parts2.append(nxt2.strip())
+            depth += _bracket_depth_str_aware(nxt2)
             i += 1
-        # The joined line replaces the first line; add blanks for skipped lines
-        joined: str = " ".join(parts)
-        result.append(joined)
-        # Pad with empty lines to keep line count
-        skipped: int = len(parts) - 1
+        joined2: str = " ".join(parts2)
+        result.append(joined2)
+        skipped: int = len(parts2) - 1
         for _ in range(skipped):
             result.append("")
     return "\n".join(result)
