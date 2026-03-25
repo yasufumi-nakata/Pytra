@@ -322,7 +322,12 @@ def _emit_unaryop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
-    left = _emit_expr(ctx, node.get("left"))
+    left_node = node.get("left")
+    left = _emit_expr(ctx, left_node)
+    # If left is byte-indexed (Subscript on bytes), cast to int64 for comparison
+    left_rt = _str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
+    if left_rt == "uint8":
+        left = "int64(" + left + ")"
     ops = _list(node, "ops")
     comparators = _list(node, "comparators")
     if len(ops) == 0 or len(comparators) == 0:
@@ -334,6 +339,10 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         op_str = ops[i] if isinstance(ops[i], str) else ""
         comp_node = comparators[i] if i < len(comparators) else None
         right = _emit_expr(ctx, comp_node)
+        # Type coerce byte to int64 for comparison
+        comp_rt = _str(comp_node, "resolved_type") if isinstance(comp_node, dict) else ""
+        if comp_rt == "uint8" and left_rt != "uint8":
+            right = "int64(" + right + ")"
 
         if op_str == "In":
             parts.append("__pytra_contains(" + right + ", " + prev + ")")
