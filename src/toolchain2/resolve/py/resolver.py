@@ -923,44 +923,8 @@ def _infer_stdlib_return_type(canonical: str, attr: str, expr: dict[str, JsonVal
     return "unknown"
 
 
-# str method runtime_call normalization: "str.X" → "py_X"
-_STR_METHOD_NORMALIZED: dict[str, str] = {
-    "str.strip": "py_strip",
-    "str.lstrip": "py_lstrip",
-    "str.rstrip": "py_rstrip",
-    "str.startswith": "py_startswith",
-    "str.endswith": "py_endswith",
-    "str.replace": "py_replace",
-    "str.find": "py_find",
-    "str.rfind": "py_rfind",
-    "str.split": "py_split",
-    "str.join": "py_join",
-    "str.upper": "py_upper",
-    "str.lower": "py_lower",
-    "str.count": "py_count",
-    "str.index": "py_index",
-    "str.isdigit": "py_isdigit",
-    "str.isalpha": "py_isalpha",
-    "str.isalnum": "py_isalnum",
-    "str.isspace": "py_isspace",
-    "str.isupper": "py_isupper",
-    "str.islower": "py_islower",
-    "str.title": "py_title",
-    "str.capitalize": "py_capitalize",
-    "str.zfill": "py_zfill",
-    "str.ljust": "py_ljust",
-    "str.rjust": "py_rjust",
-    "str.center": "py_center",
-    "str.encode": "py_encode",
-    "str.format": "py_format",
-}
-
-
 def _normalize_method_runtime_call(owner_base: str, method: str, raw: str) -> str:
-    """Normalize container method runtime_call to canonical py_* form."""
-    if raw in _STR_METHOD_NORMALIZED:
-        return _STR_METHOD_NORMALIZED[raw]
-    # Other patterns: list.append stays as-is (emitters handle directly)
+    """Pass through runtime_call as-is. Emitters resolve via mapping.json."""
     return raw
 
 

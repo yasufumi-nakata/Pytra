@@ -32,17 +32,17 @@ _RUNTIME_CALL_MAP: dict[str, str] = {
 }
 
 # str method runtime_calls that should be de-lowered for the old C++ emitter.
-# resolve now outputs py_* form (e.g. py_strip, py_join).
+# resolve now outputs str.X form (e.g. str.strip, str.join).
 # The old C++ emitter's selfhost fallback handles these better as plain Attribute calls.
 _STR_METHOD_RUNTIME_CALLS: set[str] = {
-    "py_join", "py_strip", "py_lstrip", "py_rstrip",
-    "py_startswith", "py_endswith", "py_replace",
-    "py_find", "py_rfind", "py_upper", "py_lower",
-    "py_split", "py_count", "py_index",
-    "py_isdigit", "py_isalpha", "py_isalnum", "py_isspace",
-    "py_isupper", "py_islower", "py_title", "py_capitalize",
-    "py_zfill", "py_ljust", "py_rjust", "py_center", "py_encode",
-    "py_format",
+    "str.join", "str.strip", "str.lstrip", "str.rstrip",
+    "str.startswith", "str.endswith", "str.replace",
+    "str.find", "str.rfind", "str.upper", "str.lower",
+    "str.split", "str.count", "str.index",
+    "str.isdigit", "str.isalpha", "str.isalnum", "str.isspace",
+    "str.isupper", "str.islower", "str.title", "str.capitalize",
+    "str.zfill", "str.ljust", "str.rjust", "str.center", "str.encode",
+    "str.format",
 }
 
 # builtin_name ベースのコンストラクタ正規化

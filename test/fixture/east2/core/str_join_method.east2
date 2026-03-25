@@ -276,7 +276,7 @@
             "keywords": [],
             "lowered_kind": "BuiltinCall",
             "builtin_name": "join",
-            "runtime_call": "py_join",
+            "runtime_call": "str.join",
             "runtime_module_id": "pytra.core.str",
             "runtime_symbol": "str.join",
             "runtime_call_adapter_kind": "builtin",

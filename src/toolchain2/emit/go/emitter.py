@@ -12,8 +12,13 @@ from dataclasses import dataclass
 from dataclasses import field
 
 from pytra.std.json import JsonVal
+from pytra.std.pathlib import Path
 
 from toolchain2.emit.go.types import go_type, go_zero_value, _safe_go_ident
+from toolchain2.emit.common.code_emitter import (
+    RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
+    should_skip_module, build_import_alias_map,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -34,6 +39,8 @@ class EmitContext:
     current_return_type: str = ""
     # Imported runtime symbols (need __pytra_ prefix)
     runtime_imports: set[str] = field(default_factory=set)
+    # Runtime mapping (from mapping.json)
+    mapping: RuntimeMapping = field(default_factory=RuntimeMapping)
     # Class info
     class_names: set[str] = field(default_factory=set)
     class_bases: dict[str, str] = field(default_factory=dict)
@@ -462,9 +469,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             # Class constructor: ClassName(...) → NewClassName(...)
             if fn_name in ctx.class_names:
                 return "New" + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
-            # Imported runtime function: add __pytra_ prefix
+            # Imported runtime function: use mapping prefix
             if fn_name in ctx.runtime_imports:
-                return "__pytra_" + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
+                return ctx.mapping.builtin_prefix + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
             # Use _emit_name to handle main→__pytra_main etc.
             go_fn = _emit_name(ctx, func)
             return go_fn + "(" + ", ".join(arg_strs) + ")"
@@ -628,10 +635,16 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "__pytra_str(" + arg_strs[0] + ")"
         return "\"\""
 
-    # Generic: prefix with __pytra_
+    # Use runtime mapping for generic resolution
+    adapter = _str(node, "runtime_call_adapter_kind")
+    resolved = resolve_runtime_call(rc, bn, adapter, ctx.mapping)
+    if resolved != "":
+        return _safe_go_ident(resolved) + "(" + ", ".join(arg_strs) + ")"
+
+    # Final fallback: prefix with __pytra_
     fn_name = rc if rc != "" else bn
     if fn_name != "":
-        return "__pytra_" + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
+        return ctx.mapping.builtin_prefix + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
 
     return "nil /* unknown builtin */"
 
@@ -1500,15 +1513,18 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
     if module_id == "" and lp:
         module_id = _str(lp, "module_id")
 
-    # Skip runtime modules provided by hand-written native files.
-    # pytra.utils.* is skipped for now (hand-written native in utils/).
-    # TODO: When emitter handles bytes ops, switch to pipeline-generated code.
-    if module_id.startswith("pytra.built_in.") or module_id.startswith("pytra.std.") or module_id.startswith("pytra.utils.") or module_id.startswith("pytra.core."):
+    # Load runtime mapping
+    mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "go" / "mapping.json"
+    mapping = load_runtime_mapping(mapping_path)
+
+    # Skip runtime modules (provided by hand-written native files)
+    if should_skip_module(module_id, mapping):
         return ""
 
     ctx = EmitContext(
         module_id=module_id,
         is_entry=_bool(emit_ctx_meta, "is_entry") if emit_ctx_meta else False,
+        mapping=mapping,
     )
 
     body = _list(east3_doc, "body")
