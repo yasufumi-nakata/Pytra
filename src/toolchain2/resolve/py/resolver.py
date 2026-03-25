@@ -653,9 +653,22 @@ def _resolve_builtin_call(
 
     expr["lowered_kind"] = "BuiltinCall"
     expr["builtin_name"] = name
+
+    # Specialize int(str)/float(str)/str(non-str) for emitter clarity
+    specialized_rc: str = ""
+    if name == "int" and len(arg_types) > 0 and arg_types[0] == "str":
+        specialized_rc = "py_int_from_str"
+    elif name == "float" and len(arg_types) > 0 and arg_types[0] == "str":
+        specialized_rc = "py_float_from_str"
+    elif name == "str" and len(arg_types) > 0 and arg_types[0] != "str":
+        specialized_rc = "py_to_string"
+    elif name in ("int", "float", "bool") and len(arg_types) > 0 and arg_types[0] not in ("str", "unknown"):
+        specialized_rc = "static_cast"
+
     if extern is not None:
-        # runtime_call = extern.symbol (e.g., "py_print", "len")
-        expr["runtime_call"] = extern.symbol
+        # runtime_call: prefer specialization, else extern.symbol
+        rc: str = specialized_rc if specialized_rc != "" else extern.symbol
+        expr["runtime_call"] = rc
         expr["runtime_module_id"] = extern.module
         expr["runtime_symbol"] = extern.symbol
         # Adapter kind from runtime index
@@ -667,6 +680,8 @@ def _resolve_builtin_call(
             expr["semantic_tag"] = extern.tag
         # Track implicit builtin module
         ctx.used_builtin_modules.add(extern.module)
+    elif specialized_rc != "":
+        expr["runtime_call"] = specialized_rc
 
     return ret
 
@@ -895,6 +910,47 @@ def _infer_stdlib_return_type(canonical: str, attr: str, expr: dict[str, JsonVal
     return "unknown"
 
 
+# str method runtime_call normalization: "str.X" → "py_X"
+_STR_METHOD_NORMALIZED: dict[str, str] = {
+    "str.strip": "py_strip",
+    "str.lstrip": "py_lstrip",
+    "str.rstrip": "py_rstrip",
+    "str.startswith": "py_startswith",
+    "str.endswith": "py_endswith",
+    "str.replace": "py_replace",
+    "str.find": "py_find",
+    "str.rfind": "py_rfind",
+    "str.split": "py_split",
+    "str.join": "py_join",
+    "str.upper": "py_upper",
+    "str.lower": "py_lower",
+    "str.count": "py_count",
+    "str.index": "py_index",
+    "str.isdigit": "py_isdigit",
+    "str.isalpha": "py_isalpha",
+    "str.isalnum": "py_isalnum",
+    "str.isspace": "py_isspace",
+    "str.isupper": "py_isupper",
+    "str.islower": "py_islower",
+    "str.title": "py_title",
+    "str.capitalize": "py_capitalize",
+    "str.zfill": "py_zfill",
+    "str.ljust": "py_ljust",
+    "str.rjust": "py_rjust",
+    "str.center": "py_center",
+    "str.encode": "py_encode",
+    "str.format": "py_format",
+}
+
+
+def _normalize_method_runtime_call(owner_base: str, method: str, raw: str) -> str:
+    """Normalize container method runtime_call to canonical py_* form."""
+    if raw in _STR_METHOD_NORMALIZED:
+        return _STR_METHOD_NORMALIZED[raw]
+    # Other patterns: list.append stays as-is (emitters handle directly)
+    return raw
+
+
 def _resolve_container_method_call(
     expr: dict[str, JsonVal],
     func: dict[str, JsonVal],
@@ -931,9 +987,11 @@ def _resolve_container_method_call(
         mod = _default_container_module(owner_base)
         runtime_call_name = owner_base + "." + method
     sym: str = runtime_call_name  # e.g., "list.append" or "str.join"
+    # Normalize runtime_call: str.strip → py_strip, str.join → py_join etc.
+    normalized_rc: str = _normalize_method_runtime_call(owner_base, method, runtime_call_name)
     expr["lowered_kind"] = "BuiltinCall"
     expr["builtin_name"] = method
-    expr["runtime_call"] = runtime_call_name
+    expr["runtime_call"] = normalized_rc
     if mod != "":
         expr["runtime_module_id"] = mod
     expr["runtime_symbol"] = sym

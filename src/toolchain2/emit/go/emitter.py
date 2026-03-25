@@ -1055,7 +1055,10 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 def _emit_var_decl(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     name = _str(node, "name")
-    rt = _str(node, "resolved_type")
+    # VarDecl uses "type" field, not "resolved_type"
+    rt = _str(node, "type")
+    if rt == "":
+        rt = _str(node, "resolved_type")
     gt = go_type(rt)
     gn = _safe_go_ident(name)
     ctx.var_types[gn] = rt

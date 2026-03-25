@@ -17,28 +17,32 @@ from pytra.std.json import JsonVal
 # runtime_call の正規化マップ
 # key: toolchain2 が生成する値, value: 旧 emitter が期待する値
 _RUNTIME_CALL_MAP: dict[str, str] = {
+    # Fallback mappings for cases resolve didn't specialize
     "int": "static_cast",
     "float": "static_cast",
     "str": "py_to_string",
     "bool": "static_cast",
     "len": "py_len",
-    # Note: py_enumerate_object/py_reversed_object are handled by de-lowering below
+    # resolve now specializes these, but old C++ emitter needs static_cast
+    "py_int_from_str": "static_cast",
+    "py_float_from_str": "static_cast",
     "list.index": "py_list_index",
     "pathlib.write_text": "py_write_text",
     "pathlib.read_text": "py_read_text",
 }
 
-# str method runtime_call prefixes that should be de-lowered (removed from BuiltinCall)
-# so the emitter's selfhost fallback handles them as plain Attribute calls.
+# str method runtime_calls that should be de-lowered for the old C++ emitter.
+# resolve now outputs py_* form (e.g. py_strip, py_join).
+# The old C++ emitter's selfhost fallback handles these better as plain Attribute calls.
 _STR_METHOD_RUNTIME_CALLS: set[str] = {
-    "str.join", "str.strip", "str.lstrip", "str.rstrip",
-    "str.startswith", "str.endswith", "str.replace",
-    "str.find", "str.rfind", "str.upper", "str.lower",
-    "str.split", "str.count", "str.index",
-    "str.isdigit", "str.isalpha", "str.isalnum", "str.isspace",
-    "str.isupper", "str.islower", "str.title", "str.capitalize",
-    "str.zfill", "str.ljust", "str.rjust", "str.center", "str.encode",
-    "str.format",
+    "py_join", "py_strip", "py_lstrip", "py_rstrip",
+    "py_startswith", "py_endswith", "py_replace",
+    "py_find", "py_rfind", "py_upper", "py_lower",
+    "py_split", "py_count", "py_index",
+    "py_isdigit", "py_isalpha", "py_isalnum", "py_isspace",
+    "py_isupper", "py_islower", "py_title", "py_capitalize",
+    "py_zfill", "py_ljust", "py_rjust", "py_center", "py_encode",
+    "py_format",
 }
 
 # builtin_name ベースのコンストラクタ正規化
