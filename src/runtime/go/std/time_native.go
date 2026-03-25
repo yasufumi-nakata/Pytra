@@ -9,4 +9,4 @@ var _pytra_perf_counter_start = time.Now()
 func perf_counter() float64 {
 	return float64(time.Since(_pytra_perf_counter_start).Nanoseconds()) / 1e9
 }
-func __pytra_perf_counter() float64 { return perf_counter() }
+func py_perf_counter() float64 { return perf_counter() }

@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 )
 
-func __pytra_write_rgb_png(path string, width int64, height int64, pixels []byte) {
+func py_write_rgb_png(path string, width int64, height int64, pixels []byte) {
 	dir := filepath.Dir(path)
 	if dir != "" && dir != "." { os.MkdirAll(dir, 0755) }
 	w := int(width); h := int(height)

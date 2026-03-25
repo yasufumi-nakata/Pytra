@@ -37,7 +37,7 @@ class EmitContext:
     var_types: dict[str, str] = field(default_factory=dict)
     # Current function return type (for empty list literal type inference)
     current_return_type: str = ""
-    # Imported runtime symbols (need __pytra_ prefix)
+    # Imported runtime symbols (need py_ prefix)
     runtime_imports: set[str] = field(default_factory=set)
     # Runtime mapping (from mapping.json)
     mapping: RuntimeMapping = field(default_factory=RuntimeMapping)
@@ -153,13 +153,13 @@ def _emit_expr(ctx: EmitContext, node: JsonVal) -> str:
         return _emit_expr(ctx, node.get("value"))
     if kind == "ObjStr":
         arg = node.get("value")
-        return "__pytra_str(" + _emit_expr(ctx, arg) + ")"
+        return "py_str(" + _emit_expr(ctx, arg) + ")"
     if kind == "ObjLen":
         arg = node.get("value")
-        return "__pytra_len(" + _emit_expr(ctx, arg) + ")"
+        return "py_len(" + _emit_expr(ctx, arg) + ")"
     if kind == "ObjBool":
         arg = node.get("value")
-        return "__pytra_bool(" + _emit_expr(ctx, arg) + ")"
+        return "py_bool(" + _emit_expr(ctx, arg) + ")"
     if kind == "ListComp":
         return _emit_list_comp(ctx, node)
     if kind == "SetComp":
@@ -286,10 +286,10 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 all_zero = False
             if all_zero:
                 return "make(" + gt_list + ", " + count_code + ")"
-            # Non-zero fill: __pytra_repeat_int64(value, count) etc.
+            # Non-zero fill: py_repeat_int64(value, count) etc.
             if len(elems) == 1:
                 fill_val = _emit_expr(ctx, elems[0])
-                return "__pytra_repeat_int64(" + fill_val + ", " + count_code + ")"
+                return "py_repeat_int64(" + fill_val + ", " + count_code + ")"
             return "make(" + gt_list + ", " + count_code + ")"
 
     # Integer division
@@ -297,7 +297,7 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "(" + left_code + " / " + right_code + ")"
     # Floor division
     if op == "FloorDiv":
-        return "__pytra_floordiv(" + left_code + ", " + right_code + ")"
+        return "py_floordiv(" + left_code + ", " + right_code + ")"
     # Power
     if op == "Pow":
         ctx.imports_needed.add("math")
@@ -372,9 +372,9 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             right = "int64(" + right + ")"
 
         if op_str == "In":
-            parts.append("__pytra_contains(" + right + ", " + prev + ")")
+            parts.append("py_contains(" + right + ", " + prev + ")")
         elif op_str == "NotIn":
-            parts.append("!__pytra_contains(" + right + ", " + prev + ")")
+            parts.append("!py_contains(" + right + ", " + prev + ")")
         elif op_str == "Is":
             parts.append("(" + prev + " == " + right + ")")
         elif op_str == "IsNot":
@@ -391,22 +391,22 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 # str methods that map to runtime helper functions
 _STR_METHOD_HELPERS: dict[str, str] = {
-    "isdigit": "__pytra_isdigit",
-    "isalpha": "__pytra_isalpha",
-    "isalnum": "__pytra_isalnum",
-    "isspace": "__pytra_isspace",
-    "strip": "__pytra_strip",
-    "lstrip": "__pytra_lstrip",
-    "rstrip": "__pytra_rstrip",
-    "startswith": "__pytra_startswith",
-    "endswith": "__pytra_endswith",
-    "replace": "__pytra_replace",
-    "find": "__pytra_find",
-    "rfind": "__pytra_rfind",
-    "split": "__pytra_split",
-    "join": "__pytra_join",
-    "upper": "__pytra_upper",
-    "lower": "__pytra_lower",
+    "isdigit": "py_str_isdigit",
+    "isalpha": "py_str_isalpha",
+    "isalnum": "py_str_isalnum",
+    "isspace": "py_str_isspace",
+    "strip": "py_str_strip",
+    "lstrip": "py_str_lstrip",
+    "rstrip": "py_str_rstrip",
+    "startswith": "py_str_startswith",
+    "endswith": "py_str_endswith",
+    "replace": "py_str_replace",
+    "find": "py_str_find",
+    "rfind": "py_str_rfind",
+    "split": "py_str_split",
+    "join": "py_str_join",
+    "upper": "py_str_upper",
+    "lower": "py_str_lower",
     "append": "append",  # handled separately via list
 }
 
@@ -439,27 +439,27 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             owner_node = func.get("value")
             owner = _emit_expr(ctx, owner_node)
             attr = _str(func, "attr")
-            # Module function call: png.write_rgb_png → __pytra_write_rgb_png
+            # Module function call: png.write_rgb_png → py_write_rgb_png
             owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
             if owner_rt == "module" or owner_id in ("png", "gif", "math", "time", "random", "json", "os", "sys", "re"):
-                fn_go = "__pytra_" + _safe_go_ident(attr)
+                fn_go = "py_" + _safe_go_ident(attr)
                 return fn_go + "(" + ", ".join(arg_strs) + ")"
             # .append() on non-BuiltinCall (plain method call)
             if attr == "append" and len(arg_strs) >= 1:
                 # If owner is bytes/bytearray or unknown bytes-like, use append_byte
                 if owner_rt in ("bytes", "bytearray", "list[uint8]", "unknown"):
-                    return owner + " = __pytra_append_byte(" + owner + ", " + arg_strs[0] + ")"
+                    return owner + " = py_append_byte(" + owner + ", " + arg_strs[0] + ")"
                 return owner + " = append(" + owner + ", " + arg_strs[0] + ")"
             # str methods → runtime helper functions
             if attr in _STR_METHOD_HELPERS:
                 return _STR_METHOD_HELPERS[attr] + "(" + owner + ", " + ", ".join(arg_strs) + ")" if len(arg_strs) > 0 else _STR_METHOD_HELPERS[attr] + "(" + owner + ")"
-            # dict.get → __pytra_dict_get
+            # dict.get → py_dict_get
             if attr == "get" and len(arg_strs) >= 1:
                 owner_rt = _str(func.get("value", {}), "resolved_type") if isinstance(func.get("value"), dict) else ""
                 if owner_rt.startswith("dict[") or owner_rt.startswith("map["):
                     if len(arg_strs) >= 2:
-                        return "__pytra_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
+                        return "py_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
                     return owner + "[" + arg_strs[0] + "]"
             return owner + "." + _safe_go_ident(attr) + "(" + ", ".join(arg_strs) + ")"
         if func_kind == "Name":
@@ -472,7 +472,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             # Imported runtime function: use mapping prefix
             if fn_name in ctx.runtime_imports:
                 return ctx.mapping.builtin_prefix + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
-            # Use _emit_name to handle main→__pytra_main etc.
+            # Use _emit_name to handle main→py_main etc.
             go_fn = _emit_name(ctx, func)
             return go_fn + "(" + ", ".join(arg_strs) + ")"
 
@@ -494,7 +494,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if len(args) >= 1 and isinstance(args[0], dict):
             src_type = _str(args[0], "resolved_type")
             if src_type == "str" and gt in ("int64", "int32"):
-                return "__pytra_str_to_int64(" + arg_strs[0] + ")"
+                return "py_str_to_int64(" + arg_strs[0] + ")"
         if len(arg_strs) >= 1:
             return gt + "(" + arg_strs[0] + ")"
         return gt + "(0)"
@@ -502,12 +502,12 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # py_to_string
     if rc == "py_to_string":
         if len(arg_strs) >= 1:
-            return "__pytra_str(" + arg_strs[0] + ")"
+            return "py_str(" + arg_strs[0] + ")"
         return "\"\""
 
     # print
     if rc == "py_print" or bn == "print":
-        return "__pytra_print(" + ", ".join(arg_strs) + ")"
+        return "py_print(" + ", ".join(arg_strs) + ")"
 
     # len — use Go native len() for type safety
     if rc == "py_len" or bn == "len":
@@ -526,7 +526,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "[]byte{}"
 
     if rc == "set_ctor":
-        return "__pytra_set(" + ", ".join(arg_strs) + ")"
+        return "py_set(" + ", ".join(arg_strs) + ")"
 
     # Container methods
     if rc == "list.append":
@@ -561,8 +561,8 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
             if len(arg_strs) >= 1:
-                return "__pytra_list_pop(&" + owner + ", " + arg_strs[0] + ")"
-            return "__pytra_list_pop(&" + owner + ")"
+                return "py_list_pop(&" + owner + ", " + arg_strs[0] + ")"
+            return "py_list_pop(&" + owner + ")"
 
     # dict.get
     if rc == "dict.get":
@@ -570,21 +570,21 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
             if len(arg_strs) >= 2:
-                return "__pytra_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
+                return "py_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
             if len(arg_strs) >= 1:
                 return owner + "[" + arg_strs[0] + "]"
 
     # enumerate / reversed
     if rc == "py_enumerate" or bn == "enumerate":
-        return "__pytra_enumerate(" + ", ".join(arg_strs) + ")"
+        return "py_enumerate(" + ", ".join(arg_strs) + ")"
     if rc == "py_reversed" or bn == "reversed":
-        return "__pytra_reversed(" + ", ".join(arg_strs) + ")"
+        return "py_reversed(" + ", ".join(arg_strs) + ")"
 
     # abs / min / max / sum
     if bn == "abs" and len(arg_strs) >= 1:
-        return "__pytra_abs(" + arg_strs[0] + ")"
+        return "py_abs(" + arg_strs[0] + ")"
     if bn == "min" or bn == "max":
-        fn_base = "__pytra_min" if bn == "min" else "__pytra_max"
+        fn_base = "py_min" if bn == "min" else "py_max"
         rt_node = _str(node, "resolved_type")
         # Infer float if any arg is float
         is_float = rt_node in ("float64", "float32")
@@ -599,19 +599,19 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return fn_base + "_float(" + ", ".join(float_args) + ")"
         return fn_base + "_int(" + ", ".join(arg_strs) + ")"
     if bn == "sum" and len(arg_strs) >= 1:
-        return "__pytra_sum(" + arg_strs[0] + ")"
+        return "py_sum(" + arg_strs[0] + ")"
 
     # range — handled by ForCore/RuntimeIterForPlan
     if bn == "range":
-        return "__pytra_range(" + ", ".join(arg_strs) + ")"
+        return "py_range(" + ", ".join(arg_strs) + ")"
 
     # Pathlib
-    if rc == "py_write_text":
+    if rc in ("py_write_text", "pathlib.write_text", "py_pathlib_write_text"):
         func = node.get("func")
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
             if len(arg_strs) >= 1:
-                return "__pytra_write_text(" + owner + ", " + arg_strs[0] + ")"
+                return "py_pathlib_write_text(" + owner + ", " + arg_strs[0] + ")"
 
     # RuntimeError / exceptions → panic
     if bn in ("RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"):
@@ -625,14 +625,14 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
     # py_int_from_str / py_float_from_str
     if rc == "py_int_from_str" and len(arg_strs) >= 1:
-        return "__pytra_str_to_int64(" + arg_strs[0] + ")"
+        return "py_str_to_int64(" + arg_strs[0] + ")"
     if rc == "py_float_from_str" and len(arg_strs) >= 1:
-        return "__pytra_str_to_float64(" + arg_strs[0] + ")"
+        return "py_str_to_float64(" + arg_strs[0] + ")"
 
     # py_to_string
     if rc == "py_to_string":
         if len(arg_strs) >= 1:
-            return "__pytra_str(" + arg_strs[0] + ")"
+            return "py_str(" + arg_strs[0] + ")"
         return "\"\""
 
     # Use runtime mapping for generic resolution
@@ -641,7 +641,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if resolved != "":
         return _safe_go_ident(resolved) + "(" + ", ".join(arg_strs) + ")"
 
-    # Final fallback: prefix with __pytra_
+    # Final fallback: prefix with py_
     fn_name = rc if rc != "" else bn
     if fn_name != "":
         return ctx.mapping.builtin_prefix + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
@@ -657,7 +657,7 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     owner_node = node.get("value")
     owner = _emit_expr(ctx, owner_node)
     attr = _str(node, "attr")
-    # Module attribute: math.pi → math.Pi, math.sqrt → __pytra_sqrt
+    # Module attribute: math.pi → math.Pi, math.sqrt → py_sqrt
     owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
     if owner_id == "math" and attr in _MATH_CONSTANTS:
         ctx.imports_needed.add("math")
@@ -680,9 +680,9 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             elem_rt = _str(node, "resolved_type")
             base = value + ".([]interface{})[" + idx + "]"
             if elem_rt in ("int64", "int32", "int", "uint8"):
-                return "__pytra_to_int64(" + base + ")"
+                return "py_to_int64(" + base + ")"
             if elem_rt in ("float64", "float32"):
-                return "__pytra_to_float64(" + base + ")"
+                return "py_to_float64(" + base + ")"
             if elem_rt == "str":
                 return base + ".(string)"
             return base
@@ -697,11 +697,11 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         operand = _emit_expr(ctx, slice_node.get("operand"))
         idx = "len(" + value + ")-" + operand
 
-    # String indexing: wrap with __pytra_byte_to_string for str[int] → string
+    # String indexing: wrap with py_byte_to_string for str[int] → string
     if isinstance(value_node, dict):
         vt = _str(value_node, "resolved_type")
         if vt == "str":
-            return "__pytra_byte_to_string(" + value + "[" + idx + "])"
+            return "py_byte_to_string(" + value + "[" + idx + "])"
     return value + "[" + idx + "]"
 
 
@@ -782,11 +782,11 @@ def _emit_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         test_rt = _str(test_node, "resolved_type") if isinstance(test_node, dict) else ""
         if test_rt in ("int64", "int32", "int", "uint8"):
             test = "(" + test + " != 0)"
-        return "__pytra_ternary_int(" + test + ", " + body + ", " + orelse + ")"
+        return "py_ternary_int(" + test + ", " + body + ", " + orelse + ")"
     if rt in ("float64", "float32"):
-        return "__pytra_ternary_float(" + test + ", " + body + ", " + orelse + ")"
+        return "py_ternary_float(" + test + ", " + body + ", " + orelse + ")"
     if rt == "str":
-        return "__pytra_ternary_str(" + test + ", " + body + ", " + orelse + ")"
+        return "py_ternary_str(" + test + ", " + body + ", " + orelse + ")"
     # Fallback: use func literal
     return "func() " + go_type(rt) + " { if " + test + " { return " + body + " }; return " + orelse + " }()"
 
@@ -1530,7 +1530,7 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")
 
-    # Collect imported runtime symbols for __pytra_ prefixing
+    # Collect imported runtime symbols for py_ prefixing
     import_bindings = _list(meta, "import_bindings")
     runtime_imports: set[str] = set()
     for binding in import_bindings:

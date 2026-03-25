@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 )
 
-func __pytra_grayscale_palette() []byte {
+func py_grayscale_palette() []byte {
 	pal := make([]byte, 256*3)
 	for i := 0; i < 256; i++ { pal[i*3] = byte(i); pal[i*3+1] = byte(i); pal[i*3+2] = byte(i) }
 	return pal
 }
 
-func __pytra_save_gif(path string, width int64, height int64, frames [][]byte, palette []byte, args ...int64) {
+func py_save_gif(path string, width int64, height int64, frames [][]byte, palette []byte, args ...int64) {
 	delay_cs := int64(4)
 	if len(args) > 0 { delay_cs = args[0] }
 	dir := filepath.Dir(path)
