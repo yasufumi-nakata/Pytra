@@ -19,41 +19,13 @@
 
 ## 未完了タスク
 
-### P0-REGEN-S2: emit parity 検証 — 完了（Go）
-
-1. [x] [ID: P0-REGEN-S2] Go emitter で 18/18 parity 一致を確認済み。C++ parity は P1-EMIT-CPP で対応。
-
-### P0-INCLUDE-REORG: test/include/ のフォルダ構成を他と統一 — 完了
-
-1. [x] [ID: P0-INCLUDE-REORG-S1] — 完了
-2. [x] [ID: P0-INCLUDE-REORG-S2] — 完了
-3. [x] [ID: P0-INCLUDE-REORG-S3] — 完了
-4. [x] [ID: P0-INCLUDE-REORG-S4] — 完了
-5. [x] [ID: P0-INCLUDE-REORG-S5] — 完了
-
-### P0-TEST-REORG: test/ ディレクトリ再編 + pytra 実装本体の golden 生成 — 完了
-
-文脈: [docs/ja/plans/p0-test-reorg.md](../plans/p0-test-reorg.md)
-
-1. [x] [ID: P0-TEST-REORG-S1] — 完了
-2. [x] [ID: P0-TEST-REORG-S2] — 完了（31/33、残り 2 件は parser 未対応: argparse.py 再帰, subprocess.py **kwargs）
-3. [x] [ID: P0-TEST-REORG-S3] — 完了（31/33）
-4. [x] [ID: P0-TEST-REORG-S4] — 完了
-5. [x] [ID: P0-TEST-REORG-S5] — 完了（C++ 18/18, golden 750/750）
-
-### P1-GO-MIGRATE-S5: Go runtime 分解
-
-必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md)
-
-1. [x] [ID: P1-GO-MIGRATE-S5] runtime 分解: `built_in/py_runtime.go` + `std/{time,math,pathlib}_native.go` + `utils/{png,gif}_native.go` — 完了（18/18 維持）。PNG/GIF パイプライン自動変換は emitter の bytes 型対応後
-
 ### P1-CODE-EMITTER: CodeEmitter 基底クラス + runtime mapping
 
 文脈: `docs/ja/plans/plan-pipeline-redesign.md` §3.4
 必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md)
 
 1. [ ] [ID: P1-CODE-EMITTER-S1] `toolchain2/emit/common/code_emitter.py` に CodeEmitter 基底クラスを実装
-2. [ ] [ID: P1-CODE-EMITTER-S2] Go runtime mapping（`src/runtime/go/toolchain2/mapping.json`）を作成
+2. [ ] [ID: P1-CODE-EMITTER-S2] Go runtime mapping（`src/runtime/go/mapping.json`）を作成
 3. [ ] [ID: P1-CODE-EMITTER-S3] Go emitter を CodeEmitter 継承に切り替え、ハードコード写像を除去
 4. [ ] [ID: P1-CODE-EMITTER-S4] resolve の `py_strip` 等への変換を除去し、EAST は `str.strip` のまま持ち運ぶように修正
 5. [ ] [ID: P1-CODE-EMITTER-S5] golden 再生成 + parity 維持確認
