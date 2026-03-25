@@ -60,11 +60,11 @@
         "end_lineno": 14,
         "end_col": 14
       },
-      "name": "_png_append_list",
-      "original_name": "_png_append_list",
+      "name": "_png_append",
+      "original_name": "_png_append",
       "arg_types": {
-        "dst": "list[int]",
-        "src": "list[int]"
+        "dst": "bytearray",
+        "src": "bytearray"
       },
       "arg_order": [
         "dst",
@@ -389,7 +389,7 @@
       "name": "_crc32",
       "original_name": "_crc32",
       "arg_types": {
-        "data": "list[int]"
+        "data": "bytearray"
       },
       "arg_order": [
         "data"
@@ -1035,7 +1035,7 @@
       "name": "_adler32",
       "original_name": "_adler32",
       "arg_types": {
-        "data": "list[int]"
+        "data": "bytearray"
       },
       "arg_order": [
         "data"
@@ -1534,7 +1534,7 @@
         "lineno": 46,
         "col": 0,
         "end_lineno": 47,
-        "end_col": 38
+        "end_col": 49
       },
       "name": "_png_u16le",
       "original_name": "_png_u16le",
@@ -1548,7 +1548,7 @@
       "arg_index": {
         "v": 0
       },
-      "return_type": "list[int]",
+      "return_type": "bytearray",
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -1558,125 +1558,153 @@
             "lineno": 47,
             "col": 4,
             "end_lineno": 47,
-            "end_col": 38
+            "end_col": 49
           },
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 47,
               "col": 11,
               "end_lineno": 47,
-              "end_col": 38
+              "end_col": 49
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[v & 0xFF, (v >> 8) & 0xFF]",
-            "elements": [
-              {
-                "kind": "BinOp",
-                "source_span": {
-                  "lineno": 47,
-                  "col": 12,
-                  "end_lineno": 47,
-                  "end_col": 20
-                },
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "v & 0xFF",
-                "left": {
-                  "kind": "Name",
-                  "source_span": {
-                    "lineno": 47,
-                    "col": 12,
-                    "end_lineno": 47,
-                    "end_col": 13
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "v",
-                  "id": "v"
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 47,
-                    "col": 16,
-                    "end_lineno": 47,
-                    "end_col": 20
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
+            "repr": "bytearray([v & 0xFF, (v >> 8) & 0xFF])",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 47,
+                "col": 11,
+                "end_lineno": 47,
+                "end_col": 20
               },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [
               {
-                "kind": "BinOp",
+                "kind": "List",
                 "source_span": {
                   "lineno": 47,
-                  "col": 22,
+                  "col": 21,
                   "end_lineno": 47,
-                  "end_col": 37
+                  "end_col": 48
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "(v >> 8) & 0xFF",
-                "left": {
-                  "kind": "BinOp",
-                  "source_span": {
-                    "lineno": 47,
-                    "col": 22,
-                    "end_lineno": 47,
-                    "end_col": 30
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "(v >> 8)",
-                  "left": {
-                    "kind": "Name",
+                "repr": "[v & 0xFF, (v >> 8) & 0xFF]",
+                "elements": [
+                  {
+                    "kind": "BinOp",
                     "source_span": {
                       "lineno": 47,
-                      "col": 23,
+                      "col": 22,
                       "end_lineno": 47,
-                      "end_col": 24
+                      "end_col": 30
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "v",
-                    "id": "v"
+                    "repr": "v & 0xFF",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 47,
+                        "col": 22,
+                        "end_lineno": 47,
+                        "end_col": 23
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "v",
+                      "id": "v"
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 47,
+                        "col": 26,
+                        "end_lineno": 47,
+                        "end_col": 30
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
                   },
-                  "op": "RShift",
-                  "right": {
-                    "kind": "Constant",
+                  {
+                    "kind": "BinOp",
                     "source_span": {
                       "lineno": 47,
-                      "col": 28,
+                      "col": 32,
                       "end_lineno": 47,
-                      "end_col": 29
+                      "end_col": 47
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "8",
-                    "value": 8
+                    "repr": "(v >> 8) & 0xFF",
+                    "left": {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 47,
+                        "col": 32,
+                        "end_lineno": 47,
+                        "end_col": 40
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "(v >> 8)",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 47,
+                          "col": 33,
+                          "end_lineno": 47,
+                          "end_col": 34
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "v",
+                        "id": "v"
+                      },
+                      "op": "RShift",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 47,
+                          "col": 38,
+                          "end_lineno": 47,
+                          "end_col": 39
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "8",
+                        "value": 8
+                      }
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 47,
+                        "col": 43,
+                        "end_lineno": 47,
+                        "end_col": 47
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
                   }
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 47,
-                    "col": 33,
-                    "end_lineno": 47,
-                    "end_col": 37
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
+                ]
               }
-            ]
+            ],
+            "keywords": []
           }
         }
       ],
@@ -1691,7 +1719,7 @@
         "lineno": 50,
         "col": 0,
         "end_lineno": 51,
-        "end_col": 74
+        "end_col": 85
       },
       "name": "_png_u32be",
       "original_name": "_png_u32be",
@@ -1705,7 +1733,7 @@
       "arg_index": {
         "v": 0
       },
-      "return_type": "list[int]",
+      "return_type": "bytearray",
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -1715,255 +1743,283 @@
             "lineno": 51,
             "col": 4,
             "end_lineno": 51,
-            "end_col": 74
+            "end_col": 85
           },
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 51,
               "col": 11,
               "end_lineno": 51,
-              "end_col": 74
+              "end_col": 85
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[(v >> 24) & 0xFF, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF]",
-            "elements": [
-              {
-                "kind": "BinOp",
-                "source_span": {
-                  "lineno": 51,
-                  "col": 12,
-                  "end_lineno": 51,
-                  "end_col": 28
-                },
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "(v >> 24) & 0xFF",
-                "left": {
-                  "kind": "BinOp",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 12,
-                    "end_lineno": 51,
-                    "end_col": 21
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "(v >> 24)",
-                  "left": {
-                    "kind": "Name",
-                    "source_span": {
-                      "lineno": 51,
-                      "col": 13,
-                      "end_lineno": 51,
-                      "end_col": 14
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "v",
-                    "id": "v"
-                  },
-                  "op": "RShift",
-                  "right": {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 51,
-                      "col": 18,
-                      "end_lineno": 51,
-                      "end_col": 20
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "24",
-                    "value": 24
-                  }
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 24,
-                    "end_lineno": 51,
-                    "end_col": 28
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
+            "repr": "bytearray([(v >> 24) & 0xFF, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF])",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 51,
+                "col": 11,
+                "end_lineno": 51,
+                "end_col": 20
               },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [
               {
-                "kind": "BinOp",
+                "kind": "List",
                 "source_span": {
                   "lineno": 51,
-                  "col": 30,
+                  "col": 21,
                   "end_lineno": 51,
-                  "end_col": 46
+                  "end_col": 84
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "(v >> 16) & 0xFF",
-                "left": {
-                  "kind": "BinOp",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 30,
-                    "end_lineno": 51,
-                    "end_col": 39
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "(v >> 16)",
-                  "left": {
-                    "kind": "Name",
+                "repr": "[(v >> 24) & 0xFF, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF]",
+                "elements": [
+                  {
+                    "kind": "BinOp",
                     "source_span": {
                       "lineno": 51,
-                      "col": 31,
-                      "end_lineno": 51,
-                      "end_col": 32
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "v",
-                    "id": "v"
-                  },
-                  "op": "RShift",
-                  "right": {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 51,
-                      "col": 36,
+                      "col": 22,
                       "end_lineno": 51,
                       "end_col": 38
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "16",
-                    "value": 16
-                  }
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 42,
-                    "end_lineno": 51,
-                    "end_col": 46
+                    "repr": "(v >> 24) & 0xFF",
+                    "left": {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 22,
+                        "end_lineno": 51,
+                        "end_col": 31
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "(v >> 24)",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 23,
+                          "end_lineno": 51,
+                          "end_col": 24
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "v",
+                        "id": "v"
+                      },
+                      "op": "RShift",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 28,
+                          "end_lineno": 51,
+                          "end_col": 30
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "24",
+                        "value": 24
+                      }
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 34,
+                        "end_lineno": 51,
+                        "end_col": 38
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
                   },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
-              },
-              {
-                "kind": "BinOp",
-                "source_span": {
-                  "lineno": 51,
-                  "col": 48,
-                  "end_lineno": 51,
-                  "end_col": 63
-                },
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "(v >> 8) & 0xFF",
-                "left": {
-                  "kind": "BinOp",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 48,
-                    "end_lineno": 51,
-                    "end_col": 56
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "(v >> 8)",
-                  "left": {
-                    "kind": "Name",
+                  {
+                    "kind": "BinOp",
                     "source_span": {
                       "lineno": 51,
-                      "col": 49,
+                      "col": 40,
                       "end_lineno": 51,
-                      "end_col": 50
+                      "end_col": 56
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "v",
-                    "id": "v"
+                    "repr": "(v >> 16) & 0xFF",
+                    "left": {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 40,
+                        "end_lineno": 51,
+                        "end_col": 49
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "(v >> 16)",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 41,
+                          "end_lineno": 51,
+                          "end_col": 42
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "v",
+                        "id": "v"
+                      },
+                      "op": "RShift",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 46,
+                          "end_lineno": 51,
+                          "end_col": 48
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "16",
+                        "value": 16
+                      }
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 52,
+                        "end_lineno": 51,
+                        "end_col": 56
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
                   },
-                  "op": "RShift",
-                  "right": {
-                    "kind": "Constant",
+                  {
+                    "kind": "BinOp",
                     "source_span": {
                       "lineno": 51,
-                      "col": 54,
+                      "col": 58,
                       "end_lineno": 51,
-                      "end_col": 55
+                      "end_col": 73
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "8",
-                    "value": 8
+                    "repr": "(v >> 8) & 0xFF",
+                    "left": {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 58,
+                        "end_lineno": 51,
+                        "end_col": 66
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "(v >> 8)",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 59,
+                          "end_lineno": 51,
+                          "end_col": 60
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "v",
+                        "id": "v"
+                      },
+                      "op": "RShift",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 64,
+                          "end_lineno": 51,
+                          "end_col": 65
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "8",
+                        "value": 8
+                      }
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 69,
+                        "end_lineno": 51,
+                        "end_col": 73
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
+                  },
+                  {
+                    "kind": "BinOp",
+                    "source_span": {
+                      "lineno": 51,
+                      "col": 75,
+                      "end_lineno": 51,
+                      "end_col": 83
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "v & 0xFF",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 75,
+                        "end_lineno": 51,
+                        "end_col": 76
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "v",
+                      "id": "v"
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 79,
+                        "end_lineno": 51,
+                        "end_col": 83
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
                   }
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 59,
-                    "end_lineno": 51,
-                    "end_col": 63
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
-              },
-              {
-                "kind": "BinOp",
-                "source_span": {
-                  "lineno": 51,
-                  "col": 65,
-                  "end_lineno": 51,
-                  "end_col": 73
-                },
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "v & 0xFF",
-                "left": {
-                  "kind": "Name",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 65,
-                    "end_lineno": 51,
-                    "end_col": 66
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "v",
-                  "id": "v"
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 69,
-                    "end_lineno": 51,
-                    "end_col": 73
-                  },
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
+                ]
               }
-            ]
+            ],
+            "keywords": []
           }
         }
       ],
@@ -1983,7 +2039,7 @@
       "name": "_zlib_deflate_store",
       "original_name": "_zlib_deflate_store",
       "arg_types": {
-        "data": "list[int]"
+        "data": "bytearray"
       },
       "arg_order": [
         "data"
@@ -1992,7 +2048,7 @@
       "arg_index": {
         "data": 0
       },
-      "return_type": "list[int]",
+      "return_type": "bytearray",
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -2002,7 +2058,7 @@
             "lineno": 55,
             "col": 4,
             "end_lineno": 55,
-            "end_col": 23
+            "end_col": 32
           },
           "target": {
             "kind": "Name",
@@ -2017,19 +2073,33 @@
             "repr": "out",
             "id": "out"
           },
-          "annotation": "list[int]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 55,
               "col": 21,
               "end_lineno": 55,
-              "end_col": 23
+              "end_col": 32
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 55,
+                "col": 21,
+                "end_lineno": 55,
+                "end_col": 30
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true
         },
@@ -2039,7 +2109,7 @@
             "lineno": 56,
             "col": 4,
             "end_lineno": 56,
-            "end_col": 39
+            "end_col": 45
           },
           "value": {
             "kind": "Call",
@@ -2047,32 +2117,32 @@
               "lineno": 56,
               "col": 4,
               "end_lineno": 56,
-              "end_col": 39
+              "end_col": 45
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, [0x78, 0x01])",
+            "repr": "_png_append(out, bytearray([0x78, 0x01]))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 56,
                 "col": 4,
                 "end_lineno": 56,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 56,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 56,
-                  "end_col": 24
+                  "end_col": 19
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -2080,44 +2150,72 @@
                 "id": "out"
               },
               {
-                "kind": "List",
+                "kind": "Call",
                 "source_span": {
                   "lineno": 56,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 56,
-                  "end_col": 38
+                  "end_col": 44
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "[0x78, 0x01]",
-                "elements": [
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 56,
-                      "col": 27,
-                      "end_lineno": 56,
-                      "end_col": 31
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0x78",
-                    "value": 120
+                "repr": "bytearray([0x78, 0x01])",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 56,
+                    "col": 21,
+                    "end_lineno": 56,
+                    "end_col": 30
                   },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "bytearray",
+                  "id": "bytearray"
+                },
+                "args": [
                   {
-                    "kind": "Constant",
+                    "kind": "List",
                     "source_span": {
                       "lineno": 56,
-                      "col": 33,
+                      "col": 31,
                       "end_lineno": 56,
-                      "end_col": 37
+                      "end_col": 43
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "0x01",
-                    "value": 1
+                    "repr": "[0x78, 0x01]",
+                    "elements": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 56,
+                          "col": 32,
+                          "end_lineno": 56,
+                          "end_col": 36
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0x78",
+                        "value": 120
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 56,
+                          "col": 38,
+                          "end_lineno": 56,
+                          "end_col": 42
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0x01",
+                        "value": 1
+                      }
+                    ]
                   }
-                ]
+                ],
+                "keywords": []
               }
             ],
             "keywords": []
@@ -2640,7 +2738,7 @@
                 "lineno": 64,
                 "col": 8,
                 "end_lineno": 64,
-                "end_col": 52
+                "end_col": 47
               },
               "value": {
                 "kind": "Call",
@@ -2648,32 +2746,32 @@
                   "lineno": 64,
                   "col": 8,
                   "end_lineno": 64,
-                  "end_col": 52
+                  "end_col": 47
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "_png_append_list(out, _png_u16le(chunk_len))",
+                "repr": "_png_append(out, _png_u16le(chunk_len))",
                 "func": {
                   "kind": "Name",
                   "source_span": {
                     "lineno": 64,
                     "col": 8,
                     "end_lineno": 64,
-                    "end_col": 24
+                    "end_col": 19
                   },
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "_png_append_list",
-                  "id": "_png_append_list"
+                  "repr": "_png_append",
+                  "id": "_png_append"
                 },
                 "args": [
                   {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 64,
-                      "col": 25,
+                      "col": 20,
                       "end_lineno": 64,
-                      "end_col": 28
+                      "end_col": 23
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -2684,9 +2782,9 @@
                     "kind": "Call",
                     "source_span": {
                       "lineno": 64,
-                      "col": 30,
+                      "col": 25,
                       "end_lineno": 64,
-                      "end_col": 51
+                      "end_col": 46
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -2695,9 +2793,9 @@
                       "kind": "Name",
                       "source_span": {
                         "lineno": 64,
-                        "col": 30,
+                        "col": 25,
                         "end_lineno": 64,
-                        "end_col": 40
+                        "end_col": 35
                       },
                       "casts": [],
                       "borrow_kind": "value",
@@ -2709,9 +2807,9 @@
                         "kind": "Name",
                         "source_span": {
                           "lineno": 64,
-                          "col": 41,
+                          "col": 36,
                           "end_lineno": 64,
-                          "end_col": 50
+                          "end_col": 45
                         },
                         "casts": [],
                         "borrow_kind": "value",
@@ -2731,7 +2829,7 @@
                 "lineno": 65,
                 "col": 8,
                 "end_lineno": 65,
-                "end_col": 61
+                "end_col": 56
               },
               "value": {
                 "kind": "Call",
@@ -2739,32 +2837,32 @@
                   "lineno": 65,
                   "col": 8,
                   "end_lineno": 65,
-                  "end_col": 61
+                  "end_col": 56
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "_png_append_list(out, _png_u16le(0xFFFF ^ chunk_len))",
+                "repr": "_png_append(out, _png_u16le(0xFFFF ^ chunk_len))",
                 "func": {
                   "kind": "Name",
                   "source_span": {
                     "lineno": 65,
                     "col": 8,
                     "end_lineno": 65,
-                    "end_col": 24
+                    "end_col": 19
                   },
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "_png_append_list",
-                  "id": "_png_append_list"
+                  "repr": "_png_append",
+                  "id": "_png_append"
                 },
                 "args": [
                   {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 65,
-                      "col": 25,
+                      "col": 20,
                       "end_lineno": 65,
-                      "end_col": 28
+                      "end_col": 23
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -2775,9 +2873,9 @@
                     "kind": "Call",
                     "source_span": {
                       "lineno": 65,
-                      "col": 30,
+                      "col": 25,
                       "end_lineno": 65,
-                      "end_col": 60
+                      "end_col": 55
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -2786,9 +2884,9 @@
                       "kind": "Name",
                       "source_span": {
                         "lineno": 65,
-                        "col": 30,
+                        "col": 25,
                         "end_lineno": 65,
-                        "end_col": 40
+                        "end_col": 35
                       },
                       "casts": [],
                       "borrow_kind": "value",
@@ -2800,9 +2898,9 @@
                         "kind": "BinOp",
                         "source_span": {
                           "lineno": 65,
-                          "col": 41,
+                          "col": 36,
                           "end_lineno": 65,
-                          "end_col": 59
+                          "end_col": 54
                         },
                         "casts": [],
                         "borrow_kind": "value",
@@ -2811,9 +2909,9 @@
                           "kind": "Constant",
                           "source_span": {
                             "lineno": 65,
-                            "col": 41,
+                            "col": 36,
                             "end_lineno": 65,
-                            "end_col": 47
+                            "end_col": 42
                           },
                           "casts": [],
                           "borrow_kind": "value",
@@ -2825,9 +2923,9 @@
                           "kind": "Name",
                           "source_span": {
                             "lineno": 65,
-                            "col": 50,
+                            "col": 45,
                             "end_lineno": 65,
-                            "end_col": 59
+                            "end_col": 54
                           },
                           "casts": [],
                           "borrow_kind": "value",
@@ -3166,7 +3264,7 @@
             "lineno": 72,
             "col": 4,
             "end_lineno": 72,
-            "end_col": 53
+            "end_col": 48
           },
           "value": {
             "kind": "Call",
@@ -3174,32 +3272,32 @@
               "lineno": 72,
               "col": 4,
               "end_lineno": 72,
-              "end_col": 53
+              "end_col": 48
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, _png_u32be(_adler32(data)))",
+            "repr": "_png_append(out, _png_u32be(_adler32(data)))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 72,
                 "col": 4,
                 "end_lineno": 72,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 72,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 72,
-                  "end_col": 24
+                  "end_col": 19
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3210,9 +3308,9 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 72,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 72,
-                  "end_col": 52
+                  "end_col": 47
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3221,9 +3319,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 72,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 72,
-                    "end_col": 36
+                    "end_col": 31
                   },
                   "casts": [],
                   "borrow_kind": "value",
@@ -3235,9 +3333,9 @@
                     "kind": "Call",
                     "source_span": {
                       "lineno": 72,
-                      "col": 37,
+                      "col": 32,
                       "end_lineno": 72,
-                      "end_col": 51
+                      "end_col": 46
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -3246,9 +3344,9 @@
                       "kind": "Name",
                       "source_span": {
                         "lineno": 72,
-                        "col": 37,
+                        "col": 32,
                         "end_lineno": 72,
-                        "end_col": 45
+                        "end_col": 40
                       },
                       "casts": [],
                       "borrow_kind": "value",
@@ -3260,9 +3358,9 @@
                         "kind": "Name",
                         "source_span": {
                           "lineno": 72,
-                          "col": 46,
+                          "col": 41,
                           "end_lineno": 72,
-                          "end_col": 50
+                          "end_col": 45
                         },
                         "casts": [],
                         "borrow_kind": "value",
@@ -3318,8 +3416,8 @@
       "name": "_chunk",
       "original_name": "_chunk",
       "arg_types": {
-        "chunk_type": "list[int]",
-        "data": "list[int]"
+        "chunk_type": "bytearray",
+        "data": "bytearray"
       },
       "arg_order": [
         "chunk_type",
@@ -3330,7 +3428,7 @@
         "chunk_type": 0,
         "data": 1
       },
-      "return_type": "list[int]",
+      "return_type": "bytearray",
       "renamed_symbols": {},
       "docstring": null,
       "body": [
@@ -3340,7 +3438,7 @@
             "lineno": 77,
             "col": 4,
             "end_lineno": 77,
-            "end_col": 29
+            "end_col": 38
           },
           "target": {
             "kind": "Name",
@@ -3355,19 +3453,33 @@
             "repr": "crc_input",
             "id": "crc_input"
           },
-          "annotation": "list[int]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 77,
               "col": 27,
               "end_lineno": 77,
-              "end_col": 29
+              "end_col": 38
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 77,
+                "col": 27,
+                "end_lineno": 77,
+                "end_col": 36
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true
         },
@@ -3377,7 +3489,7 @@
             "lineno": 78,
             "col": 4,
             "end_lineno": 78,
-            "end_col": 43
+            "end_col": 38
           },
           "value": {
             "kind": "Call",
@@ -3385,32 +3497,32 @@
               "lineno": 78,
               "col": 4,
               "end_lineno": 78,
-              "end_col": 43
+              "end_col": 38
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(crc_input, chunk_type)",
+            "repr": "_png_append(crc_input, chunk_type)",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 78,
                 "col": 4,
                 "end_lineno": 78,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 78,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 78,
-                  "end_col": 30
+                  "end_col": 25
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3421,9 +3533,9 @@
                 "kind": "Name",
                 "source_span": {
                   "lineno": 78,
-                  "col": 32,
+                  "col": 27,
                   "end_lineno": 78,
-                  "end_col": 42
+                  "end_col": 37
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3440,7 +3552,7 @@
             "lineno": 79,
             "col": 4,
             "end_lineno": 79,
-            "end_col": 37
+            "end_col": 32
           },
           "value": {
             "kind": "Call",
@@ -3448,32 +3560,32 @@
               "lineno": 79,
               "col": 4,
               "end_lineno": 79,
-              "end_col": 37
+              "end_col": 32
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(crc_input, data)",
+            "repr": "_png_append(crc_input, data)",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 79,
                 "col": 4,
                 "end_lineno": 79,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 79,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 79,
-                  "end_col": 30
+                  "end_col": 25
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3484,9 +3596,9 @@
                 "kind": "Name",
                 "source_span": {
                   "lineno": 79,
-                  "col": 32,
+                  "col": 27,
                   "end_lineno": 79,
-                  "end_col": 36
+                  "end_col": 31
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3593,7 +3705,7 @@
             "lineno": 81,
             "col": 4,
             "end_lineno": 81,
-            "end_col": 23
+            "end_col": 32
           },
           "target": {
             "kind": "Name",
@@ -3608,19 +3720,33 @@
             "repr": "out",
             "id": "out"
           },
-          "annotation": "list[int]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 81,
               "col": 21,
               "end_lineno": 81,
-              "end_col": 23
+              "end_col": 32
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 81,
+                "col": 21,
+                "end_lineno": 81,
+                "end_col": 30
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true
         },
@@ -3630,7 +3756,7 @@
             "lineno": 82,
             "col": 4,
             "end_lineno": 82,
-            "end_col": 48
+            "end_col": 43
           },
           "value": {
             "kind": "Call",
@@ -3638,32 +3764,32 @@
               "lineno": 82,
               "col": 4,
               "end_lineno": 82,
-              "end_col": 48
+              "end_col": 43
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, _png_u32be(len(data)))",
+            "repr": "_png_append(out, _png_u32be(len(data)))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 82,
                 "col": 4,
                 "end_lineno": 82,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 82,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 82,
-                  "end_col": 24
+                  "end_col": 19
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3674,9 +3800,9 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 82,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 82,
-                  "end_col": 47
+                  "end_col": 42
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3685,9 +3811,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 82,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 82,
-                    "end_col": 36
+                    "end_col": 31
                   },
                   "casts": [],
                   "borrow_kind": "value",
@@ -3699,9 +3825,9 @@
                     "kind": "Call",
                     "source_span": {
                       "lineno": 82,
-                      "col": 37,
+                      "col": 32,
                       "end_lineno": 82,
-                      "end_col": 46
+                      "end_col": 41
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -3710,9 +3836,9 @@
                       "kind": "Name",
                       "source_span": {
                         "lineno": 82,
-                        "col": 37,
+                        "col": 32,
                         "end_lineno": 82,
-                        "end_col": 40
+                        "end_col": 35
                       },
                       "casts": [],
                       "borrow_kind": "value",
@@ -3724,9 +3850,9 @@
                         "kind": "Name",
                         "source_span": {
                           "lineno": 82,
-                          "col": 41,
+                          "col": 36,
                           "end_lineno": 82,
-                          "end_col": 45
+                          "end_col": 40
                         },
                         "casts": [],
                         "borrow_kind": "value",
@@ -3749,7 +3875,7 @@
             "lineno": 83,
             "col": 4,
             "end_lineno": 83,
-            "end_col": 37
+            "end_col": 32
           },
           "value": {
             "kind": "Call",
@@ -3757,32 +3883,32 @@
               "lineno": 83,
               "col": 4,
               "end_lineno": 83,
-              "end_col": 37
+              "end_col": 32
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, chunk_type)",
+            "repr": "_png_append(out, chunk_type)",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 83,
                 "col": 4,
                 "end_lineno": 83,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 83,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 83,
-                  "end_col": 24
+                  "end_col": 19
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3793,9 +3919,9 @@
                 "kind": "Name",
                 "source_span": {
                   "lineno": 83,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 83,
-                  "end_col": 36
+                  "end_col": 31
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3812,7 +3938,7 @@
             "lineno": 84,
             "col": 4,
             "end_lineno": 84,
-            "end_col": 31
+            "end_col": 26
           },
           "value": {
             "kind": "Call",
@@ -3820,32 +3946,32 @@
               "lineno": 84,
               "col": 4,
               "end_lineno": 84,
-              "end_col": 31
+              "end_col": 26
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, data)",
+            "repr": "_png_append(out, data)",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 84,
                 "col": 4,
                 "end_lineno": 84,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 84,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 84,
-                  "end_col": 24
+                  "end_col": 19
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3856,9 +3982,9 @@
                 "kind": "Name",
                 "source_span": {
                   "lineno": 84,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 84,
-                  "end_col": 30
+                  "end_col": 25
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3875,7 +4001,7 @@
             "lineno": 85,
             "col": 4,
             "end_lineno": 85,
-            "end_col": 42
+            "end_col": 37
           },
           "value": {
             "kind": "Call",
@@ -3883,32 +4009,32 @@
               "lineno": 85,
               "col": 4,
               "end_lineno": 85,
-              "end_col": 42
+              "end_col": 37
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, _png_u32be(crc))",
+            "repr": "_png_append(out, _png_u32be(crc))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 85,
                 "col": 4,
                 "end_lineno": 85,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 85,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 85,
-                  "end_col": 24
+                  "end_col": 19
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3919,9 +4045,9 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 85,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 85,
-                  "end_col": 41
+                  "end_col": 36
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -3930,9 +4056,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 85,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 85,
-                    "end_col": 36
+                    "end_col": 31
                   },
                   "casts": [],
                   "borrow_kind": "value",
@@ -3944,9 +4070,9 @@
                     "kind": "Name",
                     "source_span": {
                       "lineno": 85,
-                      "col": 37,
+                      "col": 32,
                       "end_lineno": 85,
-                      "end_col": 40
+                      "end_col": 35
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -4027,7 +4153,7 @@
             "lineno": 90,
             "col": 4,
             "end_lineno": 90,
-            "end_col": 23
+            "end_col": 32
           },
           "target": {
             "kind": "Name",
@@ -4042,19 +4168,33 @@
             "repr": "raw",
             "id": "raw"
           },
-          "annotation": "list[int]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 90,
               "col": 21,
               "end_lineno": 90,
-              "end_col": 23
+              "end_col": 32
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 90,
+                "col": 21,
+                "end_lineno": 90,
+                "end_col": 30
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true
         },
@@ -4577,7 +4717,7 @@
             "lineno": 97,
             "col": 4,
             "end_lineno": 97,
-            "end_col": 29
+            "end_col": 38
           },
           "target": {
             "kind": "Name",
@@ -4592,19 +4732,33 @@
             "repr": "scanlines",
             "id": "scanlines"
           },
-          "annotation": "list[int]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 97,
               "col": 27,
               "end_lineno": 97,
-              "end_col": 29
+              "end_col": 38
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 97,
+                "col": 27,
+                "end_lineno": 97,
+                "end_col": 36
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true
         },
@@ -5207,7 +5361,7 @@
             "lineno": 110,
             "col": 4,
             "end_lineno": 110,
-            "end_col": 24
+            "end_col": 33
           },
           "target": {
             "kind": "Name",
@@ -5222,19 +5376,33 @@
             "repr": "ihdr",
             "id": "ihdr"
           },
-          "annotation": "list[int]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 110,
               "col": 22,
               "end_lineno": 110,
-              "end_col": 24
+              "end_col": 33
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 110,
+                "col": 22,
+                "end_lineno": 110,
+                "end_col": 31
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true
         },
@@ -5244,7 +5412,7 @@
             "lineno": 111,
             "col": 4,
             "end_lineno": 111,
-            "end_col": 45
+            "end_col": 40
           },
           "value": {
             "kind": "Call",
@@ -5252,32 +5420,32 @@
               "lineno": 111,
               "col": 4,
               "end_lineno": 111,
-              "end_col": 45
+              "end_col": 40
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(ihdr, _png_u32be(width))",
+            "repr": "_png_append(ihdr, _png_u32be(width))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 111,
                 "col": 4,
                 "end_lineno": 111,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 111,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 111,
-                  "end_col": 25
+                  "end_col": 20
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -5288,9 +5456,9 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 111,
-                  "col": 27,
+                  "col": 22,
                   "end_lineno": 111,
-                  "end_col": 44
+                  "end_col": 39
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -5299,9 +5467,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 111,
-                    "col": 27,
+                    "col": 22,
                     "end_lineno": 111,
-                    "end_col": 37
+                    "end_col": 32
                   },
                   "casts": [],
                   "borrow_kind": "value",
@@ -5313,9 +5481,9 @@
                     "kind": "Name",
                     "source_span": {
                       "lineno": 111,
-                      "col": 38,
+                      "col": 33,
                       "end_lineno": 111,
-                      "end_col": 43
+                      "end_col": 38
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -5335,7 +5503,7 @@
             "lineno": 112,
             "col": 4,
             "end_lineno": 112,
-            "end_col": 46
+            "end_col": 41
           },
           "value": {
             "kind": "Call",
@@ -5343,32 +5511,32 @@
               "lineno": 112,
               "col": 4,
               "end_lineno": 112,
-              "end_col": 46
+              "end_col": 41
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(ihdr, _png_u32be(height))",
+            "repr": "_png_append(ihdr, _png_u32be(height))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 112,
                 "col": 4,
                 "end_lineno": 112,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 112,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 112,
-                  "end_col": 25
+                  "end_col": 20
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -5379,9 +5547,9 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 112,
-                  "col": 27,
+                  "col": 22,
                   "end_lineno": 112,
-                  "end_col": 45
+                  "end_col": 40
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -5390,9 +5558,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 112,
-                    "col": 27,
+                    "col": 22,
                     "end_lineno": 112,
-                    "end_col": 37
+                    "end_col": 32
                   },
                   "casts": [],
                   "borrow_kind": "value",
@@ -5404,9 +5572,9 @@
                     "kind": "Name",
                     "source_span": {
                       "lineno": 112,
-                      "col": 38,
+                      "col": 33,
                       "end_lineno": 112,
-                      "end_col": 44
+                      "end_col": 39
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -5426,7 +5594,7 @@
             "lineno": 113,
             "col": 4,
             "end_lineno": 113,
-            "end_col": 43
+            "end_col": 49
           },
           "value": {
             "kind": "Call",
@@ -5434,32 +5602,32 @@
               "lineno": 113,
               "col": 4,
               "end_lineno": 113,
-              "end_col": 43
+              "end_col": 49
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(ihdr, [8, 2, 0, 0, 0])",
+            "repr": "_png_append(ihdr, bytearray([8, 2, 0, 0, 0]))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 113,
                 "col": 4,
                 "end_lineno": 113,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 113,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 113,
-                  "end_col": 25
+                  "end_col": 20
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -5467,83 +5635,111 @@
                 "id": "ihdr"
               },
               {
-                "kind": "List",
+                "kind": "Call",
                 "source_span": {
                   "lineno": 113,
-                  "col": 27,
+                  "col": 22,
                   "end_lineno": 113,
-                  "end_col": 42
+                  "end_col": 48
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "[8, 2, 0, 0, 0]",
-                "elements": [
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 113,
-                      "col": 28,
-                      "end_lineno": 113,
-                      "end_col": 29
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "8",
-                    "value": 8
+                "repr": "bytearray([8, 2, 0, 0, 0])",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 113,
+                    "col": 22,
+                    "end_lineno": 113,
+                    "end_col": 31
                   },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "bytearray",
+                  "id": "bytearray"
+                },
+                "args": [
                   {
-                    "kind": "Constant",
+                    "kind": "List",
                     "source_span": {
                       "lineno": 113,
-                      "col": 31,
+                      "col": 32,
                       "end_lineno": 113,
-                      "end_col": 32
+                      "end_col": 47
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "2",
-                    "value": 2
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 113,
-                      "col": 34,
-                      "end_lineno": 113,
-                      "end_col": 35
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0",
-                    "value": 0
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 113,
-                      "col": 37,
-                      "end_lineno": 113,
-                      "end_col": 38
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0",
-                    "value": 0
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 113,
-                      "col": 40,
-                      "end_lineno": 113,
-                      "end_col": 41
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0",
-                    "value": 0
+                    "repr": "[8, 2, 0, 0, 0]",
+                    "elements": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 113,
+                          "col": 33,
+                          "end_lineno": 113,
+                          "end_col": 34
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "8",
+                        "value": 8
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 113,
+                          "col": 36,
+                          "end_lineno": 113,
+                          "end_col": 37
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "2",
+                        "value": 2
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 113,
+                          "col": 39,
+                          "end_lineno": 113,
+                          "end_col": 40
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0",
+                        "value": 0
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 113,
+                          "col": 42,
+                          "end_lineno": 113,
+                          "end_col": 43
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0",
+                        "value": 0
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 113,
+                          "col": 45,
+                          "end_lineno": 113,
+                          "end_col": 46
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0",
+                        "value": 0
+                      }
+                    ]
                   }
-                ]
+                ],
+                "keywords": []
               }
             ],
             "keywords": []
@@ -5619,7 +5815,7 @@
             "lineno": 116,
             "col": 4,
             "end_lineno": 116,
-            "end_col": 23
+            "end_col": 32
           },
           "target": {
             "kind": "Name",
@@ -5634,19 +5830,33 @@
             "repr": "png",
             "id": "png"
           },
-          "annotation": "list[int]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 116,
               "col": 21,
               "end_lineno": 116,
-              "end_col": 23
+              "end_col": 32
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 116,
+                "col": 21,
+                "end_lineno": 116,
+                "end_col": 30
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true,
           "leading_trivia": [
@@ -5662,7 +5872,7 @@
             "lineno": 117,
             "col": 4,
             "end_lineno": 117,
-            "end_col": 60
+            "end_col": 66
           },
           "value": {
             "kind": "Call",
@@ -5670,32 +5880,32 @@
               "lineno": 117,
               "col": 4,
               "end_lineno": 117,
-              "end_col": 60
+              "end_col": 66
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(png, [137, 80, 78, 71, 13, 10, 26, 10])",
+            "repr": "_png_append(png, bytearray([137, 80, 78, 71, 13, 10, 26, 10]))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 117,
                 "col": 4,
                 "end_lineno": 117,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 117,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 117,
-                  "end_col": 24
+                  "end_col": 19
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -5703,122 +5913,150 @@
                 "id": "png"
               },
               {
-                "kind": "List",
+                "kind": "Call",
                 "source_span": {
                   "lineno": 117,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 117,
-                  "end_col": 59
+                  "end_col": 65
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "[137, 80, 78, 71, 13, 10, 26, 10]",
-                "elements": [
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 27,
-                      "end_lineno": 117,
-                      "end_col": 30
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "137",
-                    "value": 137
+                "repr": "bytearray([137, 80, 78, 71, 13, 10, 26, 10])",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 117,
+                    "col": 21,
+                    "end_lineno": 117,
+                    "end_col": 30
                   },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "bytearray",
+                  "id": "bytearray"
+                },
+                "args": [
                   {
-                    "kind": "Constant",
+                    "kind": "List",
                     "source_span": {
                       "lineno": 117,
-                      "col": 32,
+                      "col": 31,
                       "end_lineno": 117,
-                      "end_col": 34
+                      "end_col": 64
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "80",
-                    "value": 80
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 36,
-                      "end_lineno": 117,
-                      "end_col": 38
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "78",
-                    "value": 78
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 40,
-                      "end_lineno": 117,
-                      "end_col": 42
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "71",
-                    "value": 71
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 44,
-                      "end_lineno": 117,
-                      "end_col": 46
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "13",
-                    "value": 13
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 48,
-                      "end_lineno": 117,
-                      "end_col": 50
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "10",
-                    "value": 10
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 52,
-                      "end_lineno": 117,
-                      "end_col": 54
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "26",
-                    "value": 26
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 56,
-                      "end_lineno": 117,
-                      "end_col": 58
-                    },
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "10",
-                    "value": 10
+                    "repr": "[137, 80, 78, 71, 13, 10, 26, 10]",
+                    "elements": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 32,
+                          "end_lineno": 117,
+                          "end_col": 35
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "137",
+                        "value": 137
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 37,
+                          "end_lineno": 117,
+                          "end_col": 39
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "80",
+                        "value": 80
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 41,
+                          "end_lineno": 117,
+                          "end_col": 43
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "78",
+                        "value": 78
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 45,
+                          "end_lineno": 117,
+                          "end_col": 47
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "71",
+                        "value": 71
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 49,
+                          "end_lineno": 117,
+                          "end_col": 51
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "13",
+                        "value": 13
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 53,
+                          "end_lineno": 117,
+                          "end_col": 55
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "10",
+                        "value": 10
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 57,
+                          "end_lineno": 117,
+                          "end_col": 59
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "26",
+                        "value": 26
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 61,
+                          "end_lineno": 117,
+                          "end_col": 63
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "10",
+                        "value": 10
+                      }
+                    ]
                   }
-                ]
+                ],
+                "keywords": []
               }
             ],
             "keywords": []
@@ -5830,7 +6068,7 @@
             "lineno": 118,
             "col": 4,
             "end_lineno": 118,
-            "end_col": 57
+            "end_col": 63
           },
           "value": {
             "kind": "Call",
@@ -5838,32 +6076,32 @@
               "lineno": 118,
               "col": 4,
               "end_lineno": 118,
-              "end_col": 57
+              "end_col": 63
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(png, _chunk([73, 72, 68, 82], ihdr))",
+            "repr": "_png_append(png, _chunk(bytearray([73, 72, 68, 82]), ihdr))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 118,
                 "col": 4,
                 "end_lineno": 118,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 118,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 118,
-                  "end_col": 24
+                  "end_col": 19
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -5874,20 +6112,20 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 118,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 118,
-                  "end_col": 56
+                  "end_col": 62
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "_chunk([73, 72, 68, 82], ihdr)",
+                "repr": "_chunk(bytearray([73, 72, 68, 82]), ihdr)",
                 "func": {
                   "kind": "Name",
                   "source_span": {
                     "lineno": 118,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 118,
-                    "end_col": 32
+                    "end_col": 27
                   },
                   "casts": [],
                   "borrow_kind": "value",
@@ -5896,78 +6134,106 @@
                 },
                 "args": [
                   {
-                    "kind": "List",
+                    "kind": "Call",
                     "source_span": {
                       "lineno": 118,
-                      "col": 33,
+                      "col": 28,
                       "end_lineno": 118,
-                      "end_col": 49
+                      "end_col": 55
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "[73, 72, 68, 82]",
-                    "elements": [
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 118,
-                          "col": 34,
-                          "end_lineno": 118,
-                          "end_col": 36
-                        },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "73",
-                        "value": 73
+                    "repr": "bytearray([73, 72, 68, 82])",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 118,
+                        "col": 28,
+                        "end_lineno": 118,
+                        "end_col": 37
                       },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "bytearray",
+                      "id": "bytearray"
+                    },
+                    "args": [
                       {
-                        "kind": "Constant",
+                        "kind": "List",
                         "source_span": {
                           "lineno": 118,
                           "col": 38,
                           "end_lineno": 118,
-                          "end_col": 40
+                          "end_col": 54
                         },
                         "casts": [],
                         "borrow_kind": "value",
-                        "repr": "72",
-                        "value": 72
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 118,
-                          "col": 42,
-                          "end_lineno": 118,
-                          "end_col": 44
-                        },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "68",
-                        "value": 68
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 118,
-                          "col": 46,
-                          "end_lineno": 118,
-                          "end_col": 48
-                        },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "82",
-                        "value": 82
+                        "repr": "[73, 72, 68, 82]",
+                        "elements": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 118,
+                              "col": 39,
+                              "end_lineno": 118,
+                              "end_col": 41
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "73",
+                            "value": 73
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 118,
+                              "col": 43,
+                              "end_lineno": 118,
+                              "end_col": 45
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "72",
+                            "value": 72
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 118,
+                              "col": 47,
+                              "end_lineno": 118,
+                              "end_col": 49
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "68",
+                            "value": 68
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 118,
+                              "col": 51,
+                              "end_lineno": 118,
+                              "end_col": 53
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "82",
+                            "value": 82
+                          }
+                        ]
                       }
-                    ]
+                    ],
+                    "keywords": []
                   },
                   {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 118,
-                      "col": 51,
+                      "col": 57,
                       "end_lineno": 118,
-                      "end_col": 55
+                      "end_col": 61
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -5987,7 +6253,7 @@
             "lineno": 119,
             "col": 4,
             "end_lineno": 119,
-            "end_col": 57
+            "end_col": 63
           },
           "value": {
             "kind": "Call",
@@ -5995,32 +6261,32 @@
               "lineno": 119,
               "col": 4,
               "end_lineno": 119,
-              "end_col": 57
+              "end_col": 63
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(png, _chunk([73, 68, 65, 84], idat))",
+            "repr": "_png_append(png, _chunk(bytearray([73, 68, 65, 84]), idat))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 119,
                 "col": 4,
                 "end_lineno": 119,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 119,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 119,
-                  "end_col": 24
+                  "end_col": 19
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -6031,20 +6297,20 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 119,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 119,
-                  "end_col": 56
+                  "end_col": 62
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "_chunk([73, 68, 65, 84], idat)",
+                "repr": "_chunk(bytearray([73, 68, 65, 84]), idat)",
                 "func": {
                   "kind": "Name",
                   "source_span": {
                     "lineno": 119,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 119,
-                    "end_col": 32
+                    "end_col": 27
                   },
                   "casts": [],
                   "borrow_kind": "value",
@@ -6053,78 +6319,106 @@
                 },
                 "args": [
                   {
-                    "kind": "List",
+                    "kind": "Call",
                     "source_span": {
                       "lineno": 119,
-                      "col": 33,
+                      "col": 28,
                       "end_lineno": 119,
-                      "end_col": 49
+                      "end_col": 55
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "[73, 68, 65, 84]",
-                    "elements": [
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 119,
-                          "col": 34,
-                          "end_lineno": 119,
-                          "end_col": 36
-                        },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "73",
-                        "value": 73
+                    "repr": "bytearray([73, 68, 65, 84])",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 119,
+                        "col": 28,
+                        "end_lineno": 119,
+                        "end_col": 37
                       },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "bytearray",
+                      "id": "bytearray"
+                    },
+                    "args": [
                       {
-                        "kind": "Constant",
+                        "kind": "List",
                         "source_span": {
                           "lineno": 119,
                           "col": 38,
                           "end_lineno": 119,
-                          "end_col": 40
+                          "end_col": 54
                         },
                         "casts": [],
                         "borrow_kind": "value",
-                        "repr": "68",
-                        "value": 68
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 119,
-                          "col": 42,
-                          "end_lineno": 119,
-                          "end_col": 44
-                        },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "65",
-                        "value": 65
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 119,
-                          "col": 46,
-                          "end_lineno": 119,
-                          "end_col": 48
-                        },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "84",
-                        "value": 84
+                        "repr": "[73, 68, 65, 84]",
+                        "elements": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 119,
+                              "col": 39,
+                              "end_lineno": 119,
+                              "end_col": 41
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "73",
+                            "value": 73
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 119,
+                              "col": 43,
+                              "end_lineno": 119,
+                              "end_col": 45
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "68",
+                            "value": 68
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 119,
+                              "col": 47,
+                              "end_lineno": 119,
+                              "end_col": 49
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "65",
+                            "value": 65
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 119,
+                              "col": 51,
+                              "end_lineno": 119,
+                              "end_col": 53
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "84",
+                            "value": 84
+                          }
+                        ]
                       }
-                    ]
+                    ],
+                    "keywords": []
                   },
                   {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 119,
-                      "col": 51,
+                      "col": 57,
                       "end_lineno": 119,
-                      "end_col": 55
+                      "end_col": 61
                     },
                     "casts": [],
                     "borrow_kind": "value",
@@ -6144,7 +6438,7 @@
             "lineno": 120,
             "col": 4,
             "end_lineno": 120,
-            "end_col": 29
+            "end_col": 38
           },
           "target": {
             "kind": "Name",
@@ -6159,19 +6453,33 @@
             "repr": "iend_data",
             "id": "iend_data"
           },
-          "annotation": "list[int]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 120,
               "col": 27,
               "end_lineno": 120,
-              "end_col": 29
+              "end_col": 38
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 120,
+                "col": 27,
+                "end_lineno": 120,
+                "end_col": 36
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true
         },
@@ -6181,7 +6489,7 @@
             "lineno": 121,
             "col": 4,
             "end_lineno": 121,
-            "end_col": 62
+            "end_col": 68
           },
           "value": {
             "kind": "Call",
@@ -6189,32 +6497,32 @@
               "lineno": 121,
               "col": 4,
               "end_lineno": 121,
-              "end_col": 62
+              "end_col": 68
             },
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(png, _chunk([73, 69, 78, 68], iend_data))",
+            "repr": "_png_append(png, _chunk(bytearray([73, 69, 78, 68]), iend_data))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 121,
                 "col": 4,
                 "end_lineno": 121,
-                "end_col": 20
+                "end_col": 15
               },
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 121,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 121,
-                  "end_col": 24
+                  "end_col": 19
                 },
                 "casts": [],
                 "borrow_kind": "value",
@@ -6225,20 +6533,20 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 121,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 121,
-                  "end_col": 61
+                  "end_col": 67
                 },
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "_chunk([73, 69, 78, 68], iend_data)",
+                "repr": "_chunk(bytearray([73, 69, 78, 68]), iend_data)",
                 "func": {
                   "kind": "Name",
                   "source_span": {
                     "lineno": 121,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 121,
-                    "end_col": 32
+                    "end_col": 27
                   },
                   "casts": [],
                   "borrow_kind": "value",
@@ -6247,78 +6555,106 @@
                 },
                 "args": [
                   {
-                    "kind": "List",
+                    "kind": "Call",
                     "source_span": {
                       "lineno": 121,
-                      "col": 33,
+                      "col": 28,
                       "end_lineno": 121,
-                      "end_col": 49
+                      "end_col": 55
                     },
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "[73, 69, 78, 68]",
-                    "elements": [
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 121,
-                          "col": 34,
-                          "end_lineno": 121,
-                          "end_col": 36
-                        },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "73",
-                        "value": 73
+                    "repr": "bytearray([73, 69, 78, 68])",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 121,
+                        "col": 28,
+                        "end_lineno": 121,
+                        "end_col": 37
                       },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "bytearray",
+                      "id": "bytearray"
+                    },
+                    "args": [
                       {
-                        "kind": "Constant",
+                        "kind": "List",
                         "source_span": {
                           "lineno": 121,
                           "col": 38,
                           "end_lineno": 121,
-                          "end_col": 40
+                          "end_col": 54
                         },
                         "casts": [],
                         "borrow_kind": "value",
-                        "repr": "69",
-                        "value": 69
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 121,
-                          "col": 42,
-                          "end_lineno": 121,
-                          "end_col": 44
-                        },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "78",
-                        "value": 78
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 121,
-                          "col": 46,
-                          "end_lineno": 121,
-                          "end_col": 48
-                        },
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "68",
-                        "value": 68
+                        "repr": "[73, 69, 78, 68]",
+                        "elements": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 121,
+                              "col": 39,
+                              "end_lineno": 121,
+                              "end_col": 41
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "73",
+                            "value": 73
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 121,
+                              "col": 43,
+                              "end_lineno": 121,
+                              "end_col": 45
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "69",
+                            "value": 69
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 121,
+                              "col": 47,
+                              "end_lineno": 121,
+                              "end_col": 49
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "78",
+                            "value": 78
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 121,
+                              "col": 51,
+                              "end_lineno": 121,
+                              "end_col": 53
+                            },
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "68",
+                            "value": 68
+                          }
+                        ]
                       }
-                    ]
+                    ],
+                    "keywords": []
                   },
                   {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 121,
-                      "col": 51,
+                      "col": 57,
                       "end_lineno": 121,
-                      "end_col": 60
+                      "end_col": 66
                     },
                     "casts": [],
                     "borrow_kind": "value",

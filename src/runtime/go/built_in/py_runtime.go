@@ -58,7 +58,14 @@ func py_contains(haystack interface{}, needle interface{}) bool {
 func py_ternary_int(cond bool, a, b int64) int64 { if cond { return a }; return b }
 func py_ternary_float(cond bool, a, b float64) float64 { if cond { return a }; return b }
 func py_ternary_str(cond bool, a, b string) string { if cond { return a }; return b }
-func py_append_byte(s []byte, v int64) []byte { return append(s, byte(v)) }
+func py_append_byte(s []byte, v interface{}) []byte {
+	switch t := v.(type) {
+	case byte: return append(s, t)
+	case int64: return append(s, byte(t))
+	case int: return append(s, byte(t))
+	default: return s
+	}
+}
 
 func py_list_pop(s *[]interface{}, args ...int64) interface{} {
 	sl := *s; n := len(sl); idx := n - 1

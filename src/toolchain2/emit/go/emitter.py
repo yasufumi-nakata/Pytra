@@ -466,6 +466,22 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             fn_name = _str(func, "id")
             if fn_name == "":
                 fn_name = _str(func, "repr")
+            # bytearray/bytes constructor
+            if fn_name in ("bytearray", "bytes"):
+                if len(args) == 0:
+                    return "[]byte{}"
+                if len(args) == 1 and isinstance(args[0], dict):
+                    a0_kind = _str(args[0], "kind")
+                    a0_rt = _str(args[0], "resolved_type")
+                    if a0_kind == "List":
+                        # bytearray([1,2,3]) → []byte{1,2,3}
+                        elems = _list(args[0], "elements")
+                        parts = ["byte(" + _emit_expr(ctx, e) + ")" for e in elems]
+                        return "[]byte{" + ", ".join(parts) + "}"
+                    if a0_rt in ("int64", "int32", "int"):
+                        # bytearray(N) → make([]byte, N)
+                        return "make([]byte, " + arg_strs[0] + ")"
+                return "[]byte(" + arg_strs[0] + ")"
             # Class constructor: ClassName(...) → NewClassName(...)
             if fn_name in ctx.class_names:
                 return "New" + _safe_go_ident(fn_name) + "(" + ", ".join(arg_strs) + ")"
@@ -1258,9 +1274,17 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 # Collection iterator: for _, item := range collection
                 iter_expr = iter_plan.get("iter_expr")
                 iter_code = _emit_expr(ctx, iter_expr) if iter_expr is not None else "nil"
-                _emit(ctx, "for _, " + t_name + " := range " + iter_code + " {")
-                ctx.indent_level += 1
-                ctx.var_types[t_name] = ""
+                # Detect byte slice iteration → cast to int64
+                iter_rt = _str(iter_expr, "resolved_type") if isinstance(iter_expr, dict) else ""
+                if iter_rt in ("bytearray", "bytes", "list[uint8]"):
+                    _emit(ctx, "for _, _byte_ := range " + iter_code + " {")
+                    ctx.indent_level += 1
+                    _emit(ctx, "var " + t_name + " int64 = int64(_byte_)")
+                    ctx.var_types[t_name] = "int64"
+                else:
+                    _emit(ctx, "for _, " + t_name + " := range " + iter_code + " {")
+                    ctx.indent_level += 1
+                    ctx.var_types[t_name] = ""
                 _emit_body(ctx, body)
                 ctx.indent_level -= 1
                 _emit(ctx, "}")

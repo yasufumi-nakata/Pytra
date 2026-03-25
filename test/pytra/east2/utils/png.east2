@@ -62,11 +62,11 @@
         "end_lineno": 14,
         "end_col": 14
       },
-      "name": "_png_append_list",
-      "original_name": "_png_append_list",
+      "name": "_png_append",
+      "original_name": "_png_append",
       "arg_types": {
-        "dst": "list[int64]",
-        "src": "list[int64]"
+        "dst": "bytearray",
+        "src": "bytearray"
       },
       "arg_order": [
         "dst",
@@ -182,7 +182,7 @@
                   "end_lineno": 11,
                   "end_col": 15
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "src",
@@ -273,7 +273,7 @@
                   "end_lineno": 13,
                   "end_col": 26
                 },
-                "resolved_type": "None",
+                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "dst.append(src[i])",
@@ -297,7 +297,7 @@
                       "end_lineno": 13,
                       "end_col": 11
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "dst",
@@ -314,7 +314,7 @@
                       "end_lineno": 13,
                       "end_col": 25
                     },
-                    "resolved_type": "int64",
+                    "resolved_type": "uint8",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "src[i]",
@@ -326,7 +326,7 @@
                         "end_lineno": 13,
                         "end_col": 22
                       },
-                      "resolved_type": "list[int64]",
+                      "resolved_type": "bytearray",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "src",
@@ -348,28 +348,7 @@
                     }
                   }
                 ],
-                "keywords": [],
-                "lowered_kind": "BuiltinCall",
-                "builtin_name": "append",
-                "runtime_call": "list.append",
-                "runtime_module_id": "pytra.core.list",
-                "runtime_symbol": "list.append",
-                "runtime_call_adapter_kind": "builtin",
-                "semantic_tag": "stdlib.method.append",
-                "runtime_owner": {
-                  "kind": "Name",
-                  "source_span": {
-                    "lineno": 13,
-                    "col": 8,
-                    "end_lineno": 13,
-                    "end_col": 11
-                  },
-                  "resolved_type": "list[int64]",
-                  "casts": [],
-                  "borrow_kind": "readonly_ref",
-                  "repr": "dst",
-                  "id": "dst"
-                }
+                "keywords": []
               }
             },
             {
@@ -420,24 +399,12 @@
       "yield_value_type": "unknown",
       "arg_type_exprs": {
         "dst": {
-          "kind": "GenericType",
-          "base": "list",
-          "args": [
-            {
-              "kind": "NamedType",
-              "name": "int64"
-            }
-          ]
+          "kind": "NamedType",
+          "name": "bytearray"
         },
         "src": {
-          "kind": "GenericType",
-          "base": "list",
-          "args": [
-            {
-              "kind": "NamedType",
-              "name": "int64"
-            }
-          ]
+          "kind": "NamedType",
+          "name": "bytearray"
         }
       },
       "return_type_expr": {
@@ -471,7 +438,7 @@
       "name": "_crc32",
       "original_name": "_crc32",
       "arg_types": {
-        "data": "list[int64]"
+        "data": "bytearray"
       },
       "arg_order": [
         "data"
@@ -583,16 +550,16 @@
               "end_lineno": 20,
               "end_col": 9
             },
-            "resolved_type": "int64",
+            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "b",
             "id": "b"
           },
-          "target_type": "int64",
+          "target_type": "unknown",
           "iter_mode": "static_fastpath",
-          "iter_source_type": "list[int64]",
-          "iter_element_type": "int64",
+          "iter_source_type": "bytearray",
+          "iter_element_type": "unknown",
           "iter": {
             "kind": "Name",
             "source_span": {
@@ -601,14 +568,14 @@
               "end_lineno": 20,
               "end_col": 17
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "data",
             "id": "data",
             "iterable_trait": "yes",
             "iter_protocol": "static_range",
-            "iter_element_type": "int64"
+            "iter_element_type": "unknown"
           },
           "body": [
             {
@@ -668,9 +635,9 @@
                     "end_lineno": 21,
                     "end_col": 21
                   },
-                  "resolved_type": "int64",
+                  "resolved_type": "unknown",
                   "casts": [],
-                  "borrow_kind": "readonly_ref",
+                  "borrow_kind": "value",
                   "repr": "b",
                   "id": "b"
                 }
@@ -1167,14 +1134,8 @@
       "yield_value_type": "unknown",
       "arg_type_exprs": {
         "data": {
-          "kind": "GenericType",
-          "base": "list",
-          "args": [
-            {
-              "kind": "NamedType",
-              "name": "int64"
-            }
-          ]
+          "kind": "NamedType",
+          "name": "bytearray"
         }
       },
       "return_type_expr": {
@@ -1195,7 +1156,7 @@
       "name": "_adler32",
       "original_name": "_adler32",
       "arg_types": {
-        "data": "list[int64]"
+        "data": "bytearray"
       },
       "arg_order": [
         "data"
@@ -1347,16 +1308,16 @@
               "end_lineno": 20,
               "end_col": 9
             },
-            "resolved_type": "int64",
+            "resolved_type": "unknown",
             "casts": [],
             "borrow_kind": "value",
             "repr": "b",
             "id": "b"
           },
-          "target_type": "int64",
+          "target_type": "unknown",
           "iter_mode": "static_fastpath",
-          "iter_source_type": "list[int64]",
-          "iter_element_type": "int64",
+          "iter_source_type": "bytearray",
+          "iter_element_type": "unknown",
           "iter": {
             "kind": "Name",
             "source_span": {
@@ -1365,14 +1326,14 @@
               "end_lineno": 20,
               "end_col": 17
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "data",
             "id": "data",
             "iterable_trait": "yes",
             "iter_protocol": "static_range",
-            "iter_element_type": "int64"
+            "iter_element_type": "unknown"
           },
           "body": [
             {
@@ -1406,9 +1367,9 @@
                   "end_lineno": 38,
                   "end_col": 15
                 },
-                "resolved_type": "int64",
+                "resolved_type": "unknown",
                 "casts": [],
-                "borrow_kind": "readonly_ref",
+                "borrow_kind": "value",
                 "repr": "b",
                 "id": "b"
               },
@@ -1736,14 +1697,8 @@
       "yield_value_type": "unknown",
       "arg_type_exprs": {
         "data": {
-          "kind": "GenericType",
-          "base": "list",
-          "args": [
-            {
-              "kind": "NamedType",
-              "name": "int64"
-            }
-          ]
+          "kind": "NamedType",
+          "name": "bytearray"
         }
       },
       "return_type_expr": {
@@ -1759,7 +1714,7 @@
         "lineno": 46,
         "col": 0,
         "end_lineno": 47,
-        "end_col": 38
+        "end_col": 49
       },
       "name": "_png_u16le",
       "original_name": "_png_u16le",
@@ -1773,7 +1728,7 @@
       "arg_index": {
         "v": 0
       },
-      "return_type": "list[int64]",
+      "return_type": "bytearray",
       "arg_usage": {
         "v": "readonly"
       },
@@ -1786,134 +1741,164 @@
             "lineno": 47,
             "col": 4,
             "end_lineno": 47,
-            "end_col": 38
+            "end_col": 49
           },
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 47,
               "col": 11,
               "end_lineno": 47,
-              "end_col": 38
+              "end_col": 49
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[v & 0xFF, (v >> 8) & 0xFF]",
-            "elements": [
-              {
-                "kind": "BinOp",
-                "source_span": {
-                  "lineno": 47,
-                  "col": 12,
-                  "end_lineno": 47,
-                  "end_col": 20
-                },
-                "resolved_type": "int64",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "v & 0xFF",
-                "left": {
-                  "kind": "Name",
-                  "source_span": {
-                    "lineno": 47,
-                    "col": 12,
-                    "end_lineno": 47,
-                    "end_col": 13
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "readonly_ref",
-                  "repr": "v",
-                  "id": "v"
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 47,
-                    "col": 16,
-                    "end_lineno": 47,
-                    "end_col": 20
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
+            "repr": "bytearray([v & 0xFF, (v >> 8) & 0xFF])",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 47,
+                "col": 11,
+                "end_lineno": 47,
+                "end_col": 20
               },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [
               {
-                "kind": "BinOp",
+                "kind": "List",
                 "source_span": {
                   "lineno": 47,
-                  "col": 22,
+                  "col": 21,
                   "end_lineno": 47,
-                  "end_col": 37
+                  "end_col": 48
                 },
-                "resolved_type": "int64",
+                "resolved_type": "list[int64]",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "(v >> 8) & 0xFF",
-                "left": {
-                  "kind": "BinOp",
-                  "source_span": {
-                    "lineno": 47,
-                    "col": 22,
-                    "end_lineno": 47,
-                    "end_col": 30
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "(v >> 8)",
-                  "left": {
-                    "kind": "Name",
+                "repr": "[v & 0xFF, (v >> 8) & 0xFF]",
+                "elements": [
+                  {
+                    "kind": "BinOp",
                     "source_span": {
                       "lineno": 47,
-                      "col": 23,
+                      "col": 22,
                       "end_lineno": 47,
-                      "end_col": 24
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "readonly_ref",
-                    "repr": "v",
-                    "id": "v"
-                  },
-                  "op": "RShift",
-                  "right": {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 47,
-                      "col": 28,
-                      "end_lineno": 47,
-                      "end_col": 29
+                      "end_col": 30
                     },
                     "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "8",
-                    "value": 8
-                  }
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 47,
-                    "col": 33,
-                    "end_lineno": 47,
-                    "end_col": 37
+                    "repr": "v & 0xFF",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 47,
+                        "col": 22,
+                        "end_lineno": 47,
+                        "end_col": 23
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "v",
+                      "id": "v"
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 47,
+                        "col": 26,
+                        "end_lineno": 47,
+                        "end_col": 30
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
                   },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
+                  {
+                    "kind": "BinOp",
+                    "source_span": {
+                      "lineno": 47,
+                      "col": 32,
+                      "end_lineno": 47,
+                      "end_col": 47
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "(v >> 8) & 0xFF",
+                    "left": {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 47,
+                        "col": 32,
+                        "end_lineno": 47,
+                        "end_col": 40
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "(v >> 8)",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 47,
+                          "col": 33,
+                          "end_lineno": 47,
+                          "end_col": 34
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "v",
+                        "id": "v"
+                      },
+                      "op": "RShift",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 47,
+                          "col": 38,
+                          "end_lineno": 47,
+                          "end_col": 39
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "8",
+                        "value": 8
+                      }
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 47,
+                        "col": 43,
+                        "end_lineno": 47,
+                        "end_col": 47
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
+                  }
+                ]
               }
-            ]
+            ],
+            "keywords": []
           }
         }
       ],
@@ -1926,14 +1911,8 @@
         }
       },
       "return_type_expr": {
-        "kind": "GenericType",
-        "base": "list",
-        "args": [
-          {
-            "kind": "NamedType",
-            "name": "int64"
-          }
-        ]
+        "kind": "NamedType",
+        "name": "bytearray"
       },
       "leading_comments": [],
       "leading_trivia": []
@@ -1944,7 +1923,7 @@
         "lineno": 50,
         "col": 0,
         "end_lineno": 51,
-        "end_col": 74
+        "end_col": 85
       },
       "name": "_png_u32be",
       "original_name": "_png_u32be",
@@ -1958,7 +1937,7 @@
       "arg_index": {
         "v": 0
       },
-      "return_type": "list[int64]",
+      "return_type": "bytearray",
       "arg_usage": {
         "v": "readonly"
       },
@@ -1971,274 +1950,304 @@
             "lineno": 51,
             "col": 4,
             "end_lineno": 51,
-            "end_col": 74
+            "end_col": 85
           },
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 51,
               "col": 11,
               "end_lineno": 51,
-              "end_col": 74
+              "end_col": 85
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[(v >> 24) & 0xFF, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF]",
-            "elements": [
-              {
-                "kind": "BinOp",
-                "source_span": {
-                  "lineno": 51,
-                  "col": 12,
-                  "end_lineno": 51,
-                  "end_col": 28
-                },
-                "resolved_type": "int64",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "(v >> 24) & 0xFF",
-                "left": {
-                  "kind": "BinOp",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 12,
-                    "end_lineno": 51,
-                    "end_col": 21
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "(v >> 24)",
-                  "left": {
-                    "kind": "Name",
-                    "source_span": {
-                      "lineno": 51,
-                      "col": 13,
-                      "end_lineno": 51,
-                      "end_col": 14
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "readonly_ref",
-                    "repr": "v",
-                    "id": "v"
-                  },
-                  "op": "RShift",
-                  "right": {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 51,
-                      "col": 18,
-                      "end_lineno": 51,
-                      "end_col": 20
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "24",
-                    "value": 24
-                  }
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 24,
-                    "end_lineno": 51,
-                    "end_col": 28
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
+            "repr": "bytearray([(v >> 24) & 0xFF, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF])",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 51,
+                "col": 11,
+                "end_lineno": 51,
+                "end_col": 20
               },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [
               {
-                "kind": "BinOp",
+                "kind": "List",
                 "source_span": {
                   "lineno": 51,
-                  "col": 30,
+                  "col": 21,
                   "end_lineno": 51,
-                  "end_col": 46
+                  "end_col": 84
                 },
-                "resolved_type": "int64",
+                "resolved_type": "list[int64]",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "(v >> 16) & 0xFF",
-                "left": {
-                  "kind": "BinOp",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 30,
-                    "end_lineno": 51,
-                    "end_col": 39
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "(v >> 16)",
-                  "left": {
-                    "kind": "Name",
+                "repr": "[(v >> 24) & 0xFF, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF]",
+                "elements": [
+                  {
+                    "kind": "BinOp",
                     "source_span": {
                       "lineno": 51,
-                      "col": 31,
-                      "end_lineno": 51,
-                      "end_col": 32
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "readonly_ref",
-                    "repr": "v",
-                    "id": "v"
-                  },
-                  "op": "RShift",
-                  "right": {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 51,
-                      "col": 36,
+                      "col": 22,
                       "end_lineno": 51,
                       "end_col": 38
                     },
                     "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "16",
-                    "value": 16
-                  }
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 42,
-                    "end_lineno": 51,
-                    "end_col": 46
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
-              },
-              {
-                "kind": "BinOp",
-                "source_span": {
-                  "lineno": 51,
-                  "col": 48,
-                  "end_lineno": 51,
-                  "end_col": 63
-                },
-                "resolved_type": "int64",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "(v >> 8) & 0xFF",
-                "left": {
-                  "kind": "BinOp",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 48,
-                    "end_lineno": 51,
-                    "end_col": 56
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "(v >> 8)",
-                  "left": {
-                    "kind": "Name",
-                    "source_span": {
-                      "lineno": 51,
-                      "col": 49,
-                      "end_lineno": 51,
-                      "end_col": 50
+                    "repr": "(v >> 24) & 0xFF",
+                    "left": {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 22,
+                        "end_lineno": 51,
+                        "end_col": 31
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "(v >> 24)",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 23,
+                          "end_lineno": 51,
+                          "end_col": 24
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "v",
+                        "id": "v"
+                      },
+                      "op": "RShift",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 28,
+                          "end_lineno": 51,
+                          "end_col": 30
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "24",
+                        "value": 24
+                      }
                     },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "readonly_ref",
-                    "repr": "v",
-                    "id": "v"
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 34,
+                        "end_lineno": 51,
+                        "end_col": 38
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
                   },
-                  "op": "RShift",
-                  "right": {
-                    "kind": "Constant",
+                  {
+                    "kind": "BinOp",
                     "source_span": {
                       "lineno": 51,
-                      "col": 54,
+                      "col": 40,
                       "end_lineno": 51,
-                      "end_col": 55
+                      "end_col": 56
                     },
                     "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "8",
-                    "value": 8
+                    "repr": "(v >> 16) & 0xFF",
+                    "left": {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 40,
+                        "end_lineno": 51,
+                        "end_col": 49
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "(v >> 16)",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 41,
+                          "end_lineno": 51,
+                          "end_col": 42
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "v",
+                        "id": "v"
+                      },
+                      "op": "RShift",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 46,
+                          "end_lineno": 51,
+                          "end_col": 48
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "16",
+                        "value": 16
+                      }
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 52,
+                        "end_lineno": 51,
+                        "end_col": 56
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
+                  },
+                  {
+                    "kind": "BinOp",
+                    "source_span": {
+                      "lineno": 51,
+                      "col": 58,
+                      "end_lineno": 51,
+                      "end_col": 73
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "(v >> 8) & 0xFF",
+                    "left": {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 58,
+                        "end_lineno": 51,
+                        "end_col": 66
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "(v >> 8)",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 59,
+                          "end_lineno": 51,
+                          "end_col": 60
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "readonly_ref",
+                        "repr": "v",
+                        "id": "v"
+                      },
+                      "op": "RShift",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 51,
+                          "col": 64,
+                          "end_lineno": 51,
+                          "end_col": 65
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "8",
+                        "value": 8
+                      }
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 69,
+                        "end_lineno": 51,
+                        "end_col": 73
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
+                  },
+                  {
+                    "kind": "BinOp",
+                    "source_span": {
+                      "lineno": 51,
+                      "col": 75,
+                      "end_lineno": 51,
+                      "end_col": 83
+                    },
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "v & 0xFF",
+                    "left": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 75,
+                        "end_lineno": 51,
+                        "end_col": 76
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "v",
+                      "id": "v"
+                    },
+                    "op": "BitAnd",
+                    "right": {
+                      "kind": "Constant",
+                      "source_span": {
+                        "lineno": 51,
+                        "col": 79,
+                        "end_lineno": 51,
+                        "end_col": 83
+                      },
+                      "resolved_type": "int64",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "0xFF",
+                      "value": 255
+                    }
                   }
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 59,
-                    "end_lineno": 51,
-                    "end_col": 63
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
-              },
-              {
-                "kind": "BinOp",
-                "source_span": {
-                  "lineno": 51,
-                  "col": 65,
-                  "end_lineno": 51,
-                  "end_col": 73
-                },
-                "resolved_type": "int64",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "v & 0xFF",
-                "left": {
-                  "kind": "Name",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 65,
-                    "end_lineno": 51,
-                    "end_col": 66
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "readonly_ref",
-                  "repr": "v",
-                  "id": "v"
-                },
-                "op": "BitAnd",
-                "right": {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 51,
-                    "col": 69,
-                    "end_lineno": 51,
-                    "end_col": 73
-                  },
-                  "resolved_type": "int64",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "0xFF",
-                  "value": 255
-                }
+                ]
               }
-            ]
+            ],
+            "keywords": []
           }
         }
       ],
@@ -2251,14 +2260,8 @@
         }
       },
       "return_type_expr": {
-        "kind": "GenericType",
-        "base": "list",
-        "args": [
-          {
-            "kind": "NamedType",
-            "name": "int64"
-          }
-        ]
+        "kind": "NamedType",
+        "name": "bytearray"
       },
       "leading_comments": [],
       "leading_trivia": []
@@ -2274,7 +2277,7 @@
       "name": "_zlib_deflate_store",
       "original_name": "_zlib_deflate_store",
       "arg_types": {
-        "data": "list[int64]"
+        "data": "bytearray"
       },
       "arg_order": [
         "data"
@@ -2283,7 +2286,7 @@
       "arg_index": {
         "data": 0
       },
-      "return_type": "list[int64]",
+      "return_type": "bytearray",
       "arg_usage": {
         "data": "readonly"
       },
@@ -2296,7 +2299,7 @@
             "lineno": 55,
             "col": 4,
             "end_lineno": 55,
-            "end_col": 23
+            "end_col": 32
           },
           "target": {
             "kind": "Name",
@@ -2306,58 +2309,55 @@
               "end_lineno": 55,
               "end_col": 7
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out",
             "id": "out",
             "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
-              ]
+              "kind": "NamedType",
+              "name": "bytearray"
             }
           },
-          "annotation": "list[int64]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 55,
               "col": 21,
               "end_lineno": 55,
-              "end_col": 23
+              "end_col": 32
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 55,
+                "col": 21,
+                "end_lineno": 55,
+                "end_col": 30
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true,
-          "decl_type": "list[int64]",
+          "decl_type": "bytearray",
           "annotation_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           },
           "decl_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           }
         },
         {
@@ -2366,7 +2366,7 @@
             "lineno": 56,
             "col": 4,
             "end_lineno": 56,
-            "end_col": 39
+            "end_col": 45
           },
           "value": {
             "kind": "Call",
@@ -2374,83 +2374,113 @@
               "lineno": 56,
               "col": 4,
               "end_lineno": 56,
-              "end_col": 39
+              "end_col": 45
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, [0x78, 0x01])",
+            "repr": "_png_append(out, bytearray([0x78, 0x01]))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 56,
                 "col": 4,
                 "end_lineno": 56,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 56,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 56,
-                  "end_col": 24
+                  "end_col": 19
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "out",
                 "id": "out"
               },
               {
-                "kind": "List",
+                "kind": "Call",
                 "source_span": {
                   "lineno": 56,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 56,
-                  "end_col": 38
+                  "end_col": 44
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "[0x78, 0x01]",
-                "elements": [
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 56,
-                      "col": 27,
-                      "end_lineno": 56,
-                      "end_col": 31
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0x78",
-                    "value": 120
+                "repr": "bytearray([0x78, 0x01])",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 56,
+                    "col": 21,
+                    "end_lineno": 56,
+                    "end_col": 30
                   },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "bytearray",
+                  "id": "bytearray"
+                },
+                "args": [
                   {
-                    "kind": "Constant",
+                    "kind": "List",
                     "source_span": {
                       "lineno": 56,
-                      "col": 33,
+                      "col": 31,
                       "end_lineno": 56,
-                      "end_col": 37
+                      "end_col": 43
                     },
-                    "resolved_type": "int64",
+                    "resolved_type": "list[int64]",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "0x01",
-                    "value": 1
+                    "repr": "[0x78, 0x01]",
+                    "elements": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 56,
+                          "col": 32,
+                          "end_lineno": 56,
+                          "end_col": 36
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0x78",
+                        "value": 120
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 56,
+                          "col": 38,
+                          "end_lineno": 56,
+                          "end_col": 42
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0x01",
+                        "value": 1
+                      }
+                    ]
                   }
-                ]
+                ],
+                "keywords": []
               }
             ],
             "keywords": []
@@ -2513,7 +2543,7 @@
                   "end_lineno": 57,
                   "end_col": 16
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "data",
@@ -2966,7 +2996,7 @@
                   "end_lineno": 63,
                   "end_col": 25
                 },
-                "resolved_type": "None",
+                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "out.append(final)",
@@ -2990,7 +3020,7 @@
                       "end_lineno": 63,
                       "end_col": 11
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "out",
@@ -3014,28 +3044,7 @@
                     "id": "final"
                   }
                 ],
-                "keywords": [],
-                "lowered_kind": "BuiltinCall",
-                "builtin_name": "append",
-                "runtime_call": "list.append",
-                "runtime_module_id": "pytra.core.list",
-                "runtime_symbol": "list.append",
-                "runtime_call_adapter_kind": "builtin",
-                "semantic_tag": "stdlib.method.append",
-                "runtime_owner": {
-                  "kind": "Name",
-                  "source_span": {
-                    "lineno": 63,
-                    "col": 8,
-                    "end_lineno": 63,
-                    "end_col": 11
-                  },
-                  "resolved_type": "list[int64]",
-                  "casts": [],
-                  "borrow_kind": "readonly_ref",
-                  "repr": "out",
-                  "id": "out"
-                }
+                "keywords": []
               }
             },
             {
@@ -3044,7 +3053,7 @@
                 "lineno": 64,
                 "col": 8,
                 "end_lineno": 64,
-                "end_col": 52
+                "end_col": 47
               },
               "value": {
                 "kind": "Call",
@@ -3052,36 +3061,36 @@
                   "lineno": 64,
                   "col": 8,
                   "end_lineno": 64,
-                  "end_col": 52
+                  "end_col": 47
                 },
                 "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "_png_append_list(out, _png_u16le(chunk_len))",
+                "repr": "_png_append(out, _png_u16le(chunk_len))",
                 "func": {
                   "kind": "Name",
                   "source_span": {
                     "lineno": 64,
                     "col": 8,
                     "end_lineno": 64,
-                    "end_col": 24
+                    "end_col": 19
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "_png_append_list",
-                  "id": "_png_append_list"
+                  "repr": "_png_append",
+                  "id": "_png_append"
                 },
                 "args": [
                   {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 64,
-                      "col": 25,
+                      "col": 20,
                       "end_lineno": 64,
-                      "end_col": 28
+                      "end_col": 23
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "out",
@@ -3091,11 +3100,11 @@
                     "kind": "Call",
                     "source_span": {
                       "lineno": 64,
-                      "col": 30,
+                      "col": 25,
                       "end_lineno": 64,
-                      "end_col": 51
+                      "end_col": 46
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "_png_u16le(chunk_len)",
@@ -3103,9 +3112,9 @@
                       "kind": "Name",
                       "source_span": {
                         "lineno": 64,
-                        "col": 30,
+                        "col": 25,
                         "end_lineno": 64,
-                        "end_col": 40
+                        "end_col": 35
                       },
                       "resolved_type": "unknown",
                       "casts": [],
@@ -3118,9 +3127,9 @@
                         "kind": "Name",
                         "source_span": {
                           "lineno": 64,
-                          "col": 41,
+                          "col": 36,
                           "end_lineno": 64,
-                          "end_col": 50
+                          "end_col": 45
                         },
                         "resolved_type": "int64",
                         "casts": [],
@@ -3141,7 +3150,7 @@
                 "lineno": 65,
                 "col": 8,
                 "end_lineno": 65,
-                "end_col": 61
+                "end_col": 56
               },
               "value": {
                 "kind": "Call",
@@ -3149,36 +3158,36 @@
                   "lineno": 65,
                   "col": 8,
                   "end_lineno": 65,
-                  "end_col": 61
+                  "end_col": 56
                 },
                 "resolved_type": "None",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "_png_append_list(out, _png_u16le(0xFFFF ^ chunk_len))",
+                "repr": "_png_append(out, _png_u16le(0xFFFF ^ chunk_len))",
                 "func": {
                   "kind": "Name",
                   "source_span": {
                     "lineno": 65,
                     "col": 8,
                     "end_lineno": 65,
-                    "end_col": 24
+                    "end_col": 19
                   },
                   "resolved_type": "unknown",
                   "casts": [],
                   "borrow_kind": "value",
-                  "repr": "_png_append_list",
-                  "id": "_png_append_list"
+                  "repr": "_png_append",
+                  "id": "_png_append"
                 },
                 "args": [
                   {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 65,
-                      "col": 25,
+                      "col": 20,
                       "end_lineno": 65,
-                      "end_col": 28
+                      "end_col": 23
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "out",
@@ -3188,11 +3197,11 @@
                     "kind": "Call",
                     "source_span": {
                       "lineno": 65,
-                      "col": 30,
+                      "col": 25,
                       "end_lineno": 65,
-                      "end_col": 60
+                      "end_col": 55
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "_png_u16le(0xFFFF ^ chunk_len)",
@@ -3200,9 +3209,9 @@
                       "kind": "Name",
                       "source_span": {
                         "lineno": 65,
-                        "col": 30,
+                        "col": 25,
                         "end_lineno": 65,
-                        "end_col": 40
+                        "end_col": 35
                       },
                       "resolved_type": "unknown",
                       "casts": [],
@@ -3215,9 +3224,9 @@
                         "kind": "BinOp",
                         "source_span": {
                           "lineno": 65,
-                          "col": 41,
+                          "col": 36,
                           "end_lineno": 65,
-                          "end_col": 59
+                          "end_col": 54
                         },
                         "resolved_type": "int64",
                         "casts": [],
@@ -3227,9 +3236,9 @@
                           "kind": "Constant",
                           "source_span": {
                             "lineno": 65,
-                            "col": 41,
+                            "col": 36,
                             "end_lineno": 65,
-                            "end_col": 47
+                            "end_col": 42
                           },
                           "resolved_type": "int64",
                           "casts": [],
@@ -3242,9 +3251,9 @@
                           "kind": "Name",
                           "source_span": {
                             "lineno": 65,
-                            "col": 50,
+                            "col": 45,
                             "end_lineno": 65,
-                            "end_col": 59
+                            "end_col": 54
                           },
                           "resolved_type": "int64",
                           "casts": [],
@@ -3439,7 +3448,7 @@
                       "end_lineno": 69,
                       "end_col": 31
                     },
-                    "resolved_type": "None",
+                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "out.append(data[i])",
@@ -3463,7 +3472,7 @@
                           "end_lineno": 69,
                           "end_col": 15
                         },
-                        "resolved_type": "list[int64]",
+                        "resolved_type": "bytearray",
                         "casts": [],
                         "borrow_kind": "readonly_ref",
                         "repr": "out",
@@ -3480,7 +3489,7 @@
                           "end_lineno": 69,
                           "end_col": 30
                         },
-                        "resolved_type": "int64",
+                        "resolved_type": "uint8",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "data[i]",
@@ -3492,7 +3501,7 @@
                             "end_lineno": 69,
                             "end_col": 27
                           },
-                          "resolved_type": "list[int64]",
+                          "resolved_type": "bytearray",
                           "casts": [],
                           "borrow_kind": "readonly_ref",
                           "repr": "data",
@@ -3514,28 +3523,7 @@
                         }
                       }
                     ],
-                    "keywords": [],
-                    "lowered_kind": "BuiltinCall",
-                    "builtin_name": "append",
-                    "runtime_call": "list.append",
-                    "runtime_module_id": "pytra.core.list",
-                    "runtime_symbol": "list.append",
-                    "runtime_call_adapter_kind": "builtin",
-                    "semantic_tag": "stdlib.method.append",
-                    "runtime_owner": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 69,
-                        "col": 12,
-                        "end_lineno": 69,
-                        "end_col": 15
-                      },
-                      "resolved_type": "list[int64]",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "out",
-                      "id": "out"
-                    }
+                    "keywords": []
                   }
                 },
                 {
@@ -3630,7 +3618,7 @@
             "lineno": 72,
             "col": 4,
             "end_lineno": 72,
-            "end_col": 53
+            "end_col": 48
           },
           "value": {
             "kind": "Call",
@@ -3638,36 +3626,36 @@
               "lineno": 72,
               "col": 4,
               "end_lineno": 72,
-              "end_col": 53
+              "end_col": 48
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, _png_u32be(_adler32(data)))",
+            "repr": "_png_append(out, _png_u32be(_adler32(data)))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 72,
                 "col": 4,
                 "end_lineno": 72,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 72,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 72,
-                  "end_col": 24
+                  "end_col": 19
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "out",
@@ -3677,11 +3665,11 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 72,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 72,
-                  "end_col": 52
+                  "end_col": 47
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_png_u32be(_adler32(data))",
@@ -3689,9 +3677,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 72,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 72,
-                    "end_col": 36
+                    "end_col": 31
                   },
                   "resolved_type": "unknown",
                   "casts": [],
@@ -3704,9 +3692,9 @@
                     "kind": "Call",
                     "source_span": {
                       "lineno": 72,
-                      "col": 37,
+                      "col": 32,
                       "end_lineno": 72,
-                      "end_col": 51
+                      "end_col": 46
                     },
                     "resolved_type": "int64",
                     "casts": [],
@@ -3716,9 +3704,9 @@
                       "kind": "Name",
                       "source_span": {
                         "lineno": 72,
-                        "col": 37,
+                        "col": 32,
                         "end_lineno": 72,
-                        "end_col": 45
+                        "end_col": 40
                       },
                       "resolved_type": "unknown",
                       "casts": [],
@@ -3731,11 +3719,11 @@
                         "kind": "Name",
                         "source_span": {
                           "lineno": 72,
-                          "col": 46,
+                          "col": 41,
                           "end_lineno": 72,
-                          "end_col": 50
+                          "end_col": 45
                         },
-                        "resolved_type": "list[int64]",
+                        "resolved_type": "bytearray",
                         "casts": [],
                         "borrow_kind": "readonly_ref",
                         "repr": "data",
@@ -3767,7 +3755,7 @@
               "end_lineno": 73,
               "end_col": 14
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "out",
@@ -3779,25 +3767,13 @@
       "yield_value_type": "unknown",
       "arg_type_exprs": {
         "data": {
-          "kind": "GenericType",
-          "base": "list",
-          "args": [
-            {
-              "kind": "NamedType",
-              "name": "int64"
-            }
-          ]
+          "kind": "NamedType",
+          "name": "bytearray"
         }
       },
       "return_type_expr": {
-        "kind": "GenericType",
-        "base": "list",
-        "args": [
-          {
-            "kind": "NamedType",
-            "name": "int64"
-          }
-        ]
+        "kind": "NamedType",
+        "name": "bytearray"
       },
       "leading_comments": [],
       "leading_trivia": []
@@ -3813,8 +3789,8 @@
       "name": "_chunk",
       "original_name": "_chunk",
       "arg_types": {
-        "chunk_type": "list[int64]",
-        "data": "list[int64]"
+        "chunk_type": "bytearray",
+        "data": "bytearray"
       },
       "arg_order": [
         "chunk_type",
@@ -3825,7 +3801,7 @@
         "chunk_type": 0,
         "data": 1
       },
-      "return_type": "list[int64]",
+      "return_type": "bytearray",
       "arg_usage": {
         "chunk_type": "readonly",
         "data": "readonly"
@@ -3839,7 +3815,7 @@
             "lineno": 77,
             "col": 4,
             "end_lineno": 77,
-            "end_col": 29
+            "end_col": 38
           },
           "target": {
             "kind": "Name",
@@ -3849,58 +3825,55 @@
               "end_lineno": 77,
               "end_col": 13
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
             "repr": "crc_input",
             "id": "crc_input",
             "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
-              ]
+              "kind": "NamedType",
+              "name": "bytearray"
             }
           },
-          "annotation": "list[int64]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 77,
               "col": 27,
               "end_lineno": 77,
-              "end_col": 29
+              "end_col": 38
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 77,
+                "col": 27,
+                "end_lineno": 77,
+                "end_col": 36
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true,
-          "decl_type": "list[int64]",
+          "decl_type": "bytearray",
           "annotation_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           },
           "decl_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           }
         },
         {
@@ -3909,7 +3882,7 @@
             "lineno": 78,
             "col": 4,
             "end_lineno": 78,
-            "end_col": 43
+            "end_col": 38
           },
           "value": {
             "kind": "Call",
@@ -3917,36 +3890,36 @@
               "lineno": 78,
               "col": 4,
               "end_lineno": 78,
-              "end_col": 43
+              "end_col": 38
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(crc_input, chunk_type)",
+            "repr": "_png_append(crc_input, chunk_type)",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 78,
                 "col": 4,
                 "end_lineno": 78,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 78,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 78,
-                  "end_col": 30
+                  "end_col": 25
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "crc_input",
@@ -3956,11 +3929,11 @@
                 "kind": "Name",
                 "source_span": {
                   "lineno": 78,
-                  "col": 32,
+                  "col": 27,
                   "end_lineno": 78,
-                  "end_col": 42
+                  "end_col": 37
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "chunk_type",
@@ -3976,7 +3949,7 @@
             "lineno": 79,
             "col": 4,
             "end_lineno": 79,
-            "end_col": 37
+            "end_col": 32
           },
           "value": {
             "kind": "Call",
@@ -3984,36 +3957,36 @@
               "lineno": 79,
               "col": 4,
               "end_lineno": 79,
-              "end_col": 37
+              "end_col": 32
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(crc_input, data)",
+            "repr": "_png_append(crc_input, data)",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 79,
                 "col": 4,
                 "end_lineno": 79,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 79,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 79,
-                  "end_col": 30
+                  "end_col": 25
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "crc_input",
@@ -4023,11 +3996,11 @@
                 "kind": "Name",
                 "source_span": {
                   "lineno": 79,
-                  "col": 32,
+                  "col": 27,
                   "end_lineno": 79,
-                  "end_col": 36
+                  "end_col": 31
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "data",
@@ -4106,7 +4079,7 @@
                     "end_lineno": 80,
                     "end_col": 26
                   },
-                  "resolved_type": "list[int64]",
+                  "resolved_type": "bytearray",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "crc_input",
@@ -4141,7 +4114,7 @@
             "lineno": 81,
             "col": 4,
             "end_lineno": 81,
-            "end_col": 23
+            "end_col": 32
           },
           "target": {
             "kind": "Name",
@@ -4151,58 +4124,55 @@
               "end_lineno": 81,
               "end_col": 7
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
             "repr": "out",
             "id": "out",
             "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
-              ]
+              "kind": "NamedType",
+              "name": "bytearray"
             }
           },
-          "annotation": "list[int64]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 81,
               "col": 21,
               "end_lineno": 81,
-              "end_col": 23
+              "end_col": 32
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 81,
+                "col": 21,
+                "end_lineno": 81,
+                "end_col": 30
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true,
-          "decl_type": "list[int64]",
+          "decl_type": "bytearray",
           "annotation_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           },
           "decl_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           }
         },
         {
@@ -4211,7 +4181,7 @@
             "lineno": 82,
             "col": 4,
             "end_lineno": 82,
-            "end_col": 48
+            "end_col": 43
           },
           "value": {
             "kind": "Call",
@@ -4219,36 +4189,36 @@
               "lineno": 82,
               "col": 4,
               "end_lineno": 82,
-              "end_col": 48
+              "end_col": 43
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, _png_u32be(len(data)))",
+            "repr": "_png_append(out, _png_u32be(len(data)))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 82,
                 "col": 4,
                 "end_lineno": 82,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 82,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 82,
-                  "end_col": 24
+                  "end_col": 19
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "out",
@@ -4258,11 +4228,11 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 82,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 82,
-                  "end_col": 47
+                  "end_col": 42
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_png_u32be(len(data))",
@@ -4270,9 +4240,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 82,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 82,
-                    "end_col": 36
+                    "end_col": 31
                   },
                   "resolved_type": "unknown",
                   "casts": [],
@@ -4285,9 +4255,9 @@
                     "kind": "Call",
                     "source_span": {
                       "lineno": 82,
-                      "col": 37,
+                      "col": 32,
                       "end_lineno": 82,
-                      "end_col": 46
+                      "end_col": 41
                     },
                     "resolved_type": "int64",
                     "casts": [],
@@ -4297,9 +4267,9 @@
                       "kind": "Name",
                       "source_span": {
                         "lineno": 82,
-                        "col": 37,
+                        "col": 32,
                         "end_lineno": 82,
-                        "end_col": 40
+                        "end_col": 35
                       },
                       "resolved_type": "unknown",
                       "casts": [],
@@ -4312,11 +4282,11 @@
                         "kind": "Name",
                         "source_span": {
                           "lineno": 82,
-                          "col": 41,
+                          "col": 36,
                           "end_lineno": 82,
-                          "end_col": 45
+                          "end_col": 40
                         },
-                        "resolved_type": "list[int64]",
+                        "resolved_type": "bytearray",
                         "casts": [],
                         "borrow_kind": "readonly_ref",
                         "repr": "data",
@@ -4345,7 +4315,7 @@
             "lineno": 83,
             "col": 4,
             "end_lineno": 83,
-            "end_col": 37
+            "end_col": 32
           },
           "value": {
             "kind": "Call",
@@ -4353,36 +4323,36 @@
               "lineno": 83,
               "col": 4,
               "end_lineno": 83,
-              "end_col": 37
+              "end_col": 32
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, chunk_type)",
+            "repr": "_png_append(out, chunk_type)",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 83,
                 "col": 4,
                 "end_lineno": 83,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 83,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 83,
-                  "end_col": 24
+                  "end_col": 19
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "out",
@@ -4392,11 +4362,11 @@
                 "kind": "Name",
                 "source_span": {
                   "lineno": 83,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 83,
-                  "end_col": 36
+                  "end_col": 31
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "chunk_type",
@@ -4412,7 +4382,7 @@
             "lineno": 84,
             "col": 4,
             "end_lineno": 84,
-            "end_col": 31
+            "end_col": 26
           },
           "value": {
             "kind": "Call",
@@ -4420,36 +4390,36 @@
               "lineno": 84,
               "col": 4,
               "end_lineno": 84,
-              "end_col": 31
+              "end_col": 26
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, data)",
+            "repr": "_png_append(out, data)",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 84,
                 "col": 4,
                 "end_lineno": 84,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 84,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 84,
-                  "end_col": 24
+                  "end_col": 19
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "out",
@@ -4459,11 +4429,11 @@
                 "kind": "Name",
                 "source_span": {
                   "lineno": 84,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 84,
-                  "end_col": 30
+                  "end_col": 25
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "data",
@@ -4479,7 +4449,7 @@
             "lineno": 85,
             "col": 4,
             "end_lineno": 85,
-            "end_col": 42
+            "end_col": 37
           },
           "value": {
             "kind": "Call",
@@ -4487,36 +4457,36 @@
               "lineno": 85,
               "col": 4,
               "end_lineno": 85,
-              "end_col": 42
+              "end_col": 37
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(out, _png_u32be(crc))",
+            "repr": "_png_append(out, _png_u32be(crc))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 85,
                 "col": 4,
                 "end_lineno": 85,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 85,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 85,
-                  "end_col": 24
+                  "end_col": 19
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "out",
@@ -4526,11 +4496,11 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 85,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 85,
-                  "end_col": 41
+                  "end_col": 36
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_png_u32be(crc)",
@@ -4538,9 +4508,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 85,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 85,
-                    "end_col": 36
+                    "end_col": 31
                   },
                   "resolved_type": "unknown",
                   "casts": [],
@@ -4553,9 +4523,9 @@
                     "kind": "Name",
                     "source_span": {
                       "lineno": 85,
-                      "col": 37,
+                      "col": 32,
                       "end_lineno": 85,
-                      "end_col": 40
+                      "end_col": 35
                     },
                     "resolved_type": "int64",
                     "casts": [],
@@ -4586,7 +4556,7 @@
               "end_lineno": 86,
               "end_col": 14
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "readonly_ref",
             "repr": "out",
@@ -4598,35 +4568,17 @@
       "yield_value_type": "unknown",
       "arg_type_exprs": {
         "chunk_type": {
-          "kind": "GenericType",
-          "base": "list",
-          "args": [
-            {
-              "kind": "NamedType",
-              "name": "int64"
-            }
-          ]
+          "kind": "NamedType",
+          "name": "bytearray"
         },
         "data": {
-          "kind": "GenericType",
-          "base": "list",
-          "args": [
-            {
-              "kind": "NamedType",
-              "name": "int64"
-            }
-          ]
+          "kind": "NamedType",
+          "name": "bytearray"
         }
       },
       "return_type_expr": {
-        "kind": "GenericType",
-        "base": "list",
-        "args": [
-          {
-            "kind": "NamedType",
-            "name": "int64"
-          }
-        ]
+        "kind": "NamedType",
+        "name": "bytearray"
       },
       "leading_comments": [],
       "leading_trivia": []
@@ -4676,7 +4628,7 @@
             "lineno": 90,
             "col": 4,
             "end_lineno": 90,
-            "end_col": 23
+            "end_col": 32
           },
           "target": {
             "kind": "Name",
@@ -4686,58 +4638,55 @@
               "end_lineno": 90,
               "end_col": 7
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
             "repr": "raw",
             "id": "raw",
             "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
-              ]
+              "kind": "NamedType",
+              "name": "bytearray"
             }
           },
-          "annotation": "list[int64]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 90,
               "col": 21,
               "end_lineno": 90,
-              "end_col": 23
+              "end_col": 32
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 90,
+                "col": 21,
+                "end_lineno": 90,
+                "end_col": 30
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true,
-          "decl_type": "list[int64]",
+          "decl_type": "bytearray",
           "annotation_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           },
           "decl_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           }
         },
         {
@@ -4800,7 +4749,7 @@
                   "end_lineno": 92,
                   "end_col": 26
                 },
-                "resolved_type": "None",
+                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "raw.append(int(b))",
@@ -4824,7 +4773,7 @@
                       "end_lineno": 92,
                       "end_col": 11
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "raw",
@@ -4885,28 +4834,7 @@
                     "semantic_tag": "cast.int"
                   }
                 ],
-                "keywords": [],
-                "lowered_kind": "BuiltinCall",
-                "builtin_name": "append",
-                "runtime_call": "list.append",
-                "runtime_module_id": "pytra.core.list",
-                "runtime_symbol": "list.append",
-                "runtime_call_adapter_kind": "builtin",
-                "semantic_tag": "stdlib.method.append",
-                "runtime_owner": {
-                  "kind": "Name",
-                  "source_span": {
-                    "lineno": 92,
-                    "col": 8,
-                    "end_lineno": 92,
-                    "end_col": 11
-                  },
-                  "resolved_type": "list[int64]",
-                  "casts": [],
-                  "borrow_kind": "readonly_ref",
-                  "repr": "raw",
-                  "id": "raw"
-                }
+                "keywords": []
               }
             }
           ],
@@ -5063,7 +4991,7 @@
                     "end_lineno": 94,
                     "end_col": 14
                   },
-                  "resolved_type": "list[int64]",
+                  "resolved_type": "bytearray",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "raw",
@@ -5248,7 +5176,7 @@
                                     "end_lineno": 95,
                                     "end_col": 69
                                   },
-                                  "resolved_type": "list[int64]",
+                                  "resolved_type": "bytearray",
                                   "casts": [],
                                   "borrow_kind": "readonly_ref",
                                   "repr": "raw",
@@ -5365,7 +5293,7 @@
             "lineno": 97,
             "col": 4,
             "end_lineno": 97,
-            "end_col": 29
+            "end_col": 38
           },
           "target": {
             "kind": "Name",
@@ -5375,58 +5303,55 @@
               "end_lineno": 97,
               "end_col": 13
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
             "repr": "scanlines",
             "id": "scanlines",
             "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
-              ]
+              "kind": "NamedType",
+              "name": "bytearray"
             }
           },
-          "annotation": "list[int64]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 97,
               "col": 27,
               "end_lineno": 97,
-              "end_col": 29
+              "end_col": 38
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 97,
+                "col": 27,
+                "end_lineno": 97,
+                "end_col": 36
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true,
-          "decl_type": "list[int64]",
+          "decl_type": "bytearray",
           "annotation_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           },
           "decl_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           }
         },
         {
@@ -5608,7 +5533,7 @@
                   "end_lineno": 101,
                   "end_col": 27
                 },
-                "resolved_type": "None",
+                "resolved_type": "unknown",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "scanlines.append(0)",
@@ -5632,7 +5557,7 @@
                       "end_lineno": 101,
                       "end_col": 17
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "scanlines",
@@ -5656,28 +5581,7 @@
                     "value": 0
                   }
                 ],
-                "keywords": [],
-                "lowered_kind": "BuiltinCall",
-                "builtin_name": "append",
-                "runtime_call": "list.append",
-                "runtime_module_id": "pytra.core.list",
-                "runtime_symbol": "list.append",
-                "runtime_call_adapter_kind": "builtin",
-                "semantic_tag": "stdlib.method.append",
-                "runtime_owner": {
-                  "kind": "Name",
-                  "source_span": {
-                    "lineno": 101,
-                    "col": 8,
-                    "end_lineno": 101,
-                    "end_col": 17
-                  },
-                  "resolved_type": "list[int64]",
-                  "casts": [],
-                  "borrow_kind": "readonly_ref",
-                  "repr": "scanlines",
-                  "id": "scanlines"
-                }
+                "keywords": []
               }
             },
             {
@@ -5927,7 +5831,7 @@
                       "end_lineno": 106,
                       "end_col": 36
                     },
-                    "resolved_type": "None",
+                    "resolved_type": "unknown",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "scanlines.append(raw[i])",
@@ -5951,7 +5855,7 @@
                           "end_lineno": 106,
                           "end_col": 21
                         },
-                        "resolved_type": "list[int64]",
+                        "resolved_type": "bytearray",
                         "casts": [],
                         "borrow_kind": "readonly_ref",
                         "repr": "scanlines",
@@ -5968,7 +5872,7 @@
                           "end_lineno": 106,
                           "end_col": 35
                         },
-                        "resolved_type": "int64",
+                        "resolved_type": "uint8",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "raw[i]",
@@ -5980,7 +5884,7 @@
                             "end_lineno": 106,
                             "end_col": 32
                           },
-                          "resolved_type": "list[int64]",
+                          "resolved_type": "bytearray",
                           "casts": [],
                           "borrow_kind": "readonly_ref",
                           "repr": "raw",
@@ -6002,28 +5906,7 @@
                         }
                       }
                     ],
-                    "keywords": [],
-                    "lowered_kind": "BuiltinCall",
-                    "builtin_name": "append",
-                    "runtime_call": "list.append",
-                    "runtime_module_id": "pytra.core.list",
-                    "runtime_symbol": "list.append",
-                    "runtime_call_adapter_kind": "builtin",
-                    "semantic_tag": "stdlib.method.append",
-                    "runtime_owner": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 106,
-                        "col": 12,
-                        "end_lineno": 106,
-                        "end_col": 21
-                      },
-                      "resolved_type": "list[int64]",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "scanlines",
-                      "id": "scanlines"
-                    }
+                    "keywords": []
                   }
                 },
                 {
@@ -6118,7 +6001,7 @@
             "lineno": 110,
             "col": 4,
             "end_lineno": 110,
-            "end_col": 24
+            "end_col": 33
           },
           "target": {
             "kind": "Name",
@@ -6128,58 +6011,55 @@
               "end_lineno": 110,
               "end_col": 8
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
             "repr": "ihdr",
             "id": "ihdr",
             "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
-              ]
+              "kind": "NamedType",
+              "name": "bytearray"
             }
           },
-          "annotation": "list[int64]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 110,
               "col": 22,
               "end_lineno": 110,
-              "end_col": 24
+              "end_col": 33
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 110,
+                "col": 22,
+                "end_lineno": 110,
+                "end_col": 31
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true,
-          "decl_type": "list[int64]",
+          "decl_type": "bytearray",
           "annotation_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           },
           "decl_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           }
         },
         {
@@ -6188,7 +6068,7 @@
             "lineno": 111,
             "col": 4,
             "end_lineno": 111,
-            "end_col": 45
+            "end_col": 40
           },
           "value": {
             "kind": "Call",
@@ -6196,36 +6076,36 @@
               "lineno": 111,
               "col": 4,
               "end_lineno": 111,
-              "end_col": 45
+              "end_col": 40
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(ihdr, _png_u32be(width))",
+            "repr": "_png_append(ihdr, _png_u32be(width))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 111,
                 "col": 4,
                 "end_lineno": 111,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 111,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 111,
-                  "end_col": 25
+                  "end_col": 20
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ihdr",
@@ -6235,11 +6115,11 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 111,
-                  "col": 27,
+                  "col": 22,
                   "end_lineno": 111,
-                  "end_col": 44
+                  "end_col": 39
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_png_u32be(width)",
@@ -6247,9 +6127,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 111,
-                    "col": 27,
+                    "col": 22,
                     "end_lineno": 111,
-                    "end_col": 37
+                    "end_col": 32
                   },
                   "resolved_type": "unknown",
                   "casts": [],
@@ -6262,9 +6142,9 @@
                     "kind": "Name",
                     "source_span": {
                       "lineno": 111,
-                      "col": 38,
+                      "col": 33,
                       "end_lineno": 111,
-                      "end_col": 43
+                      "end_col": 38
                     },
                     "resolved_type": "int64",
                     "casts": [],
@@ -6285,7 +6165,7 @@
             "lineno": 112,
             "col": 4,
             "end_lineno": 112,
-            "end_col": 46
+            "end_col": 41
           },
           "value": {
             "kind": "Call",
@@ -6293,36 +6173,36 @@
               "lineno": 112,
               "col": 4,
               "end_lineno": 112,
-              "end_col": 46
+              "end_col": 41
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(ihdr, _png_u32be(height))",
+            "repr": "_png_append(ihdr, _png_u32be(height))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 112,
                 "col": 4,
                 "end_lineno": 112,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 112,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 112,
-                  "end_col": 25
+                  "end_col": 20
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ihdr",
@@ -6332,11 +6212,11 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 112,
-                  "col": 27,
+                  "col": 22,
                   "end_lineno": 112,
-                  "end_col": 45
+                  "end_col": 40
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_png_u32be(height)",
@@ -6344,9 +6224,9 @@
                   "kind": "Name",
                   "source_span": {
                     "lineno": 112,
-                    "col": 27,
+                    "col": 22,
                     "end_lineno": 112,
-                    "end_col": 37
+                    "end_col": 32
                   },
                   "resolved_type": "unknown",
                   "casts": [],
@@ -6359,9 +6239,9 @@
                     "kind": "Name",
                     "source_span": {
                       "lineno": 112,
-                      "col": 38,
+                      "col": 33,
                       "end_lineno": 112,
-                      "end_col": 44
+                      "end_col": 39
                     },
                     "resolved_type": "int64",
                     "casts": [],
@@ -6382,7 +6262,7 @@
             "lineno": 113,
             "col": 4,
             "end_lineno": 113,
-            "end_col": 43
+            "end_col": 49
           },
           "value": {
             "kind": "Call",
@@ -6390,125 +6270,155 @@
               "lineno": 113,
               "col": 4,
               "end_lineno": 113,
-              "end_col": 43
+              "end_col": 49
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(ihdr, [8, 2, 0, 0, 0])",
+            "repr": "_png_append(ihdr, bytearray([8, 2, 0, 0, 0]))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 113,
                 "col": 4,
                 "end_lineno": 113,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 113,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 113,
-                  "end_col": 25
+                  "end_col": 20
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "ihdr",
                 "id": "ihdr"
               },
               {
-                "kind": "List",
+                "kind": "Call",
                 "source_span": {
                   "lineno": 113,
-                  "col": 27,
+                  "col": 22,
                   "end_lineno": 113,
-                  "end_col": 42
+                  "end_col": 48
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "[8, 2, 0, 0, 0]",
-                "elements": [
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 113,
-                      "col": 28,
-                      "end_lineno": 113,
-                      "end_col": 29
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "8",
-                    "value": 8
+                "repr": "bytearray([8, 2, 0, 0, 0])",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 113,
+                    "col": 22,
+                    "end_lineno": 113,
+                    "end_col": 31
                   },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "bytearray",
+                  "id": "bytearray"
+                },
+                "args": [
                   {
-                    "kind": "Constant",
+                    "kind": "List",
                     "source_span": {
                       "lineno": 113,
-                      "col": 31,
+                      "col": 32,
                       "end_lineno": 113,
-                      "end_col": 32
+                      "end_col": 47
                     },
-                    "resolved_type": "int64",
+                    "resolved_type": "list[int64]",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "2",
-                    "value": 2
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 113,
-                      "col": 34,
-                      "end_lineno": 113,
-                      "end_col": 35
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0",
-                    "value": 0
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 113,
-                      "col": 37,
-                      "end_lineno": 113,
-                      "end_col": 38
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0",
-                    "value": 0
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 113,
-                      "col": 40,
-                      "end_lineno": 113,
-                      "end_col": 41
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "0",
-                    "value": 0
+                    "repr": "[8, 2, 0, 0, 0]",
+                    "elements": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 113,
+                          "col": 33,
+                          "end_lineno": 113,
+                          "end_col": 34
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "8",
+                        "value": 8
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 113,
+                          "col": 36,
+                          "end_lineno": 113,
+                          "end_col": 37
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "2",
+                        "value": 2
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 113,
+                          "col": 39,
+                          "end_lineno": 113,
+                          "end_col": 40
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0",
+                        "value": 0
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 113,
+                          "col": 42,
+                          "end_lineno": 113,
+                          "end_col": 43
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0",
+                        "value": 0
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 113,
+                          "col": 45,
+                          "end_lineno": 113,
+                          "end_col": 46
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "0",
+                        "value": 0
+                      }
+                    ]
                   }
-                ]
+                ],
+                "keywords": []
               }
             ],
             "keywords": []
@@ -6544,7 +6454,7 @@
               "end_lineno": 114,
               "end_col": 41
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_zlib_deflate_store(scanlines)",
@@ -6571,7 +6481,7 @@
                   "end_lineno": 114,
                   "end_col": 40
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "scanlines",
@@ -6581,7 +6491,7 @@
             "keywords": []
           },
           "declare": true,
-          "decl_type": "list[int64]",
+          "decl_type": "bytearray",
           "declare_init": true
         },
         {
@@ -6590,7 +6500,7 @@
             "lineno": 116,
             "col": 4,
             "end_lineno": 116,
-            "end_col": 23
+            "end_col": 32
           },
           "target": {
             "kind": "Name",
@@ -6600,58 +6510,55 @@
               "end_lineno": 116,
               "end_col": 7
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
             "repr": "png",
             "id": "png",
             "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
-              ]
+              "kind": "NamedType",
+              "name": "bytearray"
             }
           },
-          "annotation": "list[int64]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 116,
               "col": 21,
               "end_lineno": 116,
-              "end_col": 23
+              "end_col": 32
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 116,
+                "col": 21,
+                "end_lineno": 116,
+                "end_col": 30
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true,
-          "decl_type": "list[int64]",
+          "decl_type": "bytearray",
           "annotation_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           },
           "decl_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           },
           "leading_trivia": [
             {
@@ -6666,7 +6573,7 @@
             "lineno": 117,
             "col": 4,
             "end_lineno": 117,
-            "end_col": 60
+            "end_col": 66
           },
           "value": {
             "kind": "Call",
@@ -6674,167 +6581,197 @@
               "lineno": 117,
               "col": 4,
               "end_lineno": 117,
-              "end_col": 60
+              "end_col": 66
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(png, [137, 80, 78, 71, 13, 10, 26, 10])",
+            "repr": "_png_append(png, bytearray([137, 80, 78, 71, 13, 10, 26, 10]))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 117,
                 "col": 4,
                 "end_lineno": 117,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 117,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 117,
-                  "end_col": 24
+                  "end_col": 19
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "png",
                 "id": "png"
               },
               {
-                "kind": "List",
+                "kind": "Call",
                 "source_span": {
                   "lineno": 117,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 117,
-                  "end_col": 59
+                  "end_col": 65
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "[137, 80, 78, 71, 13, 10, 26, 10]",
-                "elements": [
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 27,
-                      "end_lineno": 117,
-                      "end_col": 30
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "137",
-                    "value": 137
+                "repr": "bytearray([137, 80, 78, 71, 13, 10, 26, 10])",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 117,
+                    "col": 21,
+                    "end_lineno": 117,
+                    "end_col": 30
                   },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "bytearray",
+                  "id": "bytearray"
+                },
+                "args": [
                   {
-                    "kind": "Constant",
+                    "kind": "List",
                     "source_span": {
                       "lineno": 117,
-                      "col": 32,
+                      "col": 31,
                       "end_lineno": 117,
-                      "end_col": 34
+                      "end_col": 64
                     },
-                    "resolved_type": "int64",
+                    "resolved_type": "list[int64]",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "80",
-                    "value": 80
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 36,
-                      "end_lineno": 117,
-                      "end_col": 38
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "78",
-                    "value": 78
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 40,
-                      "end_lineno": 117,
-                      "end_col": 42
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "71",
-                    "value": 71
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 44,
-                      "end_lineno": 117,
-                      "end_col": 46
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "13",
-                    "value": 13
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 48,
-                      "end_lineno": 117,
-                      "end_col": 50
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "10",
-                    "value": 10
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 52,
-                      "end_lineno": 117,
-                      "end_col": 54
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "26",
-                    "value": 26
-                  },
-                  {
-                    "kind": "Constant",
-                    "source_span": {
-                      "lineno": 117,
-                      "col": 56,
-                      "end_lineno": 117,
-                      "end_col": 58
-                    },
-                    "resolved_type": "int64",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "10",
-                    "value": 10
+                    "repr": "[137, 80, 78, 71, 13, 10, 26, 10]",
+                    "elements": [
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 32,
+                          "end_lineno": 117,
+                          "end_col": 35
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "137",
+                        "value": 137
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 37,
+                          "end_lineno": 117,
+                          "end_col": 39
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "80",
+                        "value": 80
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 41,
+                          "end_lineno": 117,
+                          "end_col": 43
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "78",
+                        "value": 78
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 45,
+                          "end_lineno": 117,
+                          "end_col": 47
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "71",
+                        "value": 71
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 49,
+                          "end_lineno": 117,
+                          "end_col": 51
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "13",
+                        "value": 13
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 53,
+                          "end_lineno": 117,
+                          "end_col": 55
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "10",
+                        "value": 10
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 57,
+                          "end_lineno": 117,
+                          "end_col": 59
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "26",
+                        "value": 26
+                      },
+                      {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 117,
+                          "col": 61,
+                          "end_lineno": 117,
+                          "end_col": 63
+                        },
+                        "resolved_type": "int64",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "10",
+                        "value": 10
+                      }
+                    ]
                   }
-                ]
+                ],
+                "keywords": []
               }
             ],
             "keywords": []
@@ -6846,7 +6783,7 @@
             "lineno": 118,
             "col": 4,
             "end_lineno": 118,
-            "end_col": 57
+            "end_col": 63
           },
           "value": {
             "kind": "Call",
@@ -6854,36 +6791,36 @@
               "lineno": 118,
               "col": 4,
               "end_lineno": 118,
-              "end_col": 57
+              "end_col": 63
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(png, _chunk([73, 72, 68, 82], ihdr))",
+            "repr": "_png_append(png, _chunk(bytearray([73, 72, 68, 82]), ihdr))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 118,
                 "col": 4,
                 "end_lineno": 118,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 118,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 118,
-                  "end_col": 24
+                  "end_col": 19
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "png",
@@ -6893,21 +6830,21 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 118,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 118,
-                  "end_col": 56
+                  "end_col": 62
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "_chunk([73, 72, 68, 82], ihdr)",
+                "repr": "_chunk(bytearray([73, 72, 68, 82]), ihdr)",
                 "func": {
                   "kind": "Name",
                   "source_span": {
                     "lineno": 118,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 118,
-                    "end_col": 32
+                    "end_col": 27
                   },
                   "resolved_type": "unknown",
                   "casts": [],
@@ -6917,85 +6854,115 @@
                 },
                 "args": [
                   {
-                    "kind": "List",
+                    "kind": "Call",
                     "source_span": {
                       "lineno": 118,
-                      "col": 33,
+                      "col": 28,
                       "end_lineno": 118,
-                      "end_col": 49
+                      "end_col": 55
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "[73, 72, 68, 82]",
-                    "elements": [
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 118,
-                          "col": 34,
-                          "end_lineno": 118,
-                          "end_col": 36
-                        },
-                        "resolved_type": "int64",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "73",
-                        "value": 73
+                    "repr": "bytearray([73, 72, 68, 82])",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 118,
+                        "col": 28,
+                        "end_lineno": 118,
+                        "end_col": 37
                       },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "bytearray",
+                      "id": "bytearray"
+                    },
+                    "args": [
                       {
-                        "kind": "Constant",
+                        "kind": "List",
                         "source_span": {
                           "lineno": 118,
                           "col": 38,
                           "end_lineno": 118,
-                          "end_col": 40
+                          "end_col": 54
                         },
-                        "resolved_type": "int64",
+                        "resolved_type": "list[int64]",
                         "casts": [],
                         "borrow_kind": "value",
-                        "repr": "72",
-                        "value": 72
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 118,
-                          "col": 42,
-                          "end_lineno": 118,
-                          "end_col": 44
-                        },
-                        "resolved_type": "int64",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "68",
-                        "value": 68
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 118,
-                          "col": 46,
-                          "end_lineno": 118,
-                          "end_col": 48
-                        },
-                        "resolved_type": "int64",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "82",
-                        "value": 82
+                        "repr": "[73, 72, 68, 82]",
+                        "elements": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 118,
+                              "col": 39,
+                              "end_lineno": 118,
+                              "end_col": 41
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "73",
+                            "value": 73
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 118,
+                              "col": 43,
+                              "end_lineno": 118,
+                              "end_col": 45
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "72",
+                            "value": 72
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 118,
+                              "col": 47,
+                              "end_lineno": 118,
+                              "end_col": 49
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "68",
+                            "value": 68
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 118,
+                              "col": 51,
+                              "end_lineno": 118,
+                              "end_col": 53
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "82",
+                            "value": 82
+                          }
+                        ]
                       }
-                    ]
+                    ],
+                    "keywords": []
                   },
                   {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 118,
-                      "col": 51,
+                      "col": 57,
                       "end_lineno": 118,
-                      "end_col": 55
+                      "end_col": 61
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "ihdr",
@@ -7014,7 +6981,7 @@
             "lineno": 119,
             "col": 4,
             "end_lineno": 119,
-            "end_col": 57
+            "end_col": 63
           },
           "value": {
             "kind": "Call",
@@ -7022,36 +6989,36 @@
               "lineno": 119,
               "col": 4,
               "end_lineno": 119,
-              "end_col": 57
+              "end_col": 63
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(png, _chunk([73, 68, 65, 84], idat))",
+            "repr": "_png_append(png, _chunk(bytearray([73, 68, 65, 84]), idat))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 119,
                 "col": 4,
                 "end_lineno": 119,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 119,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 119,
-                  "end_col": 24
+                  "end_col": 19
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "png",
@@ -7061,21 +7028,21 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 119,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 119,
-                  "end_col": 56
+                  "end_col": 62
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "_chunk([73, 68, 65, 84], idat)",
+                "repr": "_chunk(bytearray([73, 68, 65, 84]), idat)",
                 "func": {
                   "kind": "Name",
                   "source_span": {
                     "lineno": 119,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 119,
-                    "end_col": 32
+                    "end_col": 27
                   },
                   "resolved_type": "unknown",
                   "casts": [],
@@ -7085,85 +7052,115 @@
                 },
                 "args": [
                   {
-                    "kind": "List",
+                    "kind": "Call",
                     "source_span": {
                       "lineno": 119,
-                      "col": 33,
+                      "col": 28,
                       "end_lineno": 119,
-                      "end_col": 49
+                      "end_col": 55
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "[73, 68, 65, 84]",
-                    "elements": [
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 119,
-                          "col": 34,
-                          "end_lineno": 119,
-                          "end_col": 36
-                        },
-                        "resolved_type": "int64",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "73",
-                        "value": 73
+                    "repr": "bytearray([73, 68, 65, 84])",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 119,
+                        "col": 28,
+                        "end_lineno": 119,
+                        "end_col": 37
                       },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "bytearray",
+                      "id": "bytearray"
+                    },
+                    "args": [
                       {
-                        "kind": "Constant",
+                        "kind": "List",
                         "source_span": {
                           "lineno": 119,
                           "col": 38,
                           "end_lineno": 119,
-                          "end_col": 40
+                          "end_col": 54
                         },
-                        "resolved_type": "int64",
+                        "resolved_type": "list[int64]",
                         "casts": [],
                         "borrow_kind": "value",
-                        "repr": "68",
-                        "value": 68
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 119,
-                          "col": 42,
-                          "end_lineno": 119,
-                          "end_col": 44
-                        },
-                        "resolved_type": "int64",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "65",
-                        "value": 65
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 119,
-                          "col": 46,
-                          "end_lineno": 119,
-                          "end_col": 48
-                        },
-                        "resolved_type": "int64",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "84",
-                        "value": 84
+                        "repr": "[73, 68, 65, 84]",
+                        "elements": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 119,
+                              "col": 39,
+                              "end_lineno": 119,
+                              "end_col": 41
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "73",
+                            "value": 73
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 119,
+                              "col": 43,
+                              "end_lineno": 119,
+                              "end_col": 45
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "68",
+                            "value": 68
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 119,
+                              "col": 47,
+                              "end_lineno": 119,
+                              "end_col": 49
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "65",
+                            "value": 65
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 119,
+                              "col": 51,
+                              "end_lineno": 119,
+                              "end_col": 53
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "84",
+                            "value": 84
+                          }
+                        ]
                       }
-                    ]
+                    ],
+                    "keywords": []
                   },
                   {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 119,
-                      "col": 51,
+                      "col": 57,
                       "end_lineno": 119,
-                      "end_col": 55
+                      "end_col": 61
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "idat",
@@ -7182,7 +7179,7 @@
             "lineno": 120,
             "col": 4,
             "end_lineno": 120,
-            "end_col": 29
+            "end_col": 38
           },
           "target": {
             "kind": "Name",
@@ -7192,58 +7189,55 @@
               "end_lineno": 120,
               "end_col": 13
             },
-            "resolved_type": "list[int64]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
             "repr": "iend_data",
             "id": "iend_data",
             "type_expr": {
-              "kind": "GenericType",
-              "base": "list",
-              "args": [
-                {
-                  "kind": "NamedType",
-                  "name": "int64"
-                }
-              ]
+              "kind": "NamedType",
+              "name": "bytearray"
             }
           },
-          "annotation": "list[int64]",
+          "annotation": "bytearray",
           "value": {
-            "kind": "List",
+            "kind": "Call",
             "source_span": {
               "lineno": 120,
               "col": 27,
               "end_lineno": 120,
-              "end_col": 29
+              "end_col": 38
             },
-            "resolved_type": "list[unknown]",
+            "resolved_type": "bytearray",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "[]",
-            "elements": []
+            "repr": "bytearray()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 120,
+                "col": 27,
+                "end_lineno": 120,
+                "end_col": 36
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bytearray",
+              "id": "bytearray"
+            },
+            "args": [],
+            "keywords": []
           },
           "declare": true,
-          "decl_type": "list[int64]",
+          "decl_type": "bytearray",
           "annotation_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           },
           "decl_type_expr": {
-            "kind": "GenericType",
-            "base": "list",
-            "args": [
-              {
-                "kind": "NamedType",
-                "name": "int64"
-              }
-            ]
+            "kind": "NamedType",
+            "name": "bytearray"
           }
         },
         {
@@ -7252,7 +7246,7 @@
             "lineno": 121,
             "col": 4,
             "end_lineno": 121,
-            "end_col": 62
+            "end_col": 68
           },
           "value": {
             "kind": "Call",
@@ -7260,36 +7254,36 @@
               "lineno": 121,
               "col": 4,
               "end_lineno": 121,
-              "end_col": 62
+              "end_col": 68
             },
             "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
-            "repr": "_png_append_list(png, _chunk([73, 69, 78, 68], iend_data))",
+            "repr": "_png_append(png, _chunk(bytearray([73, 69, 78, 68]), iend_data))",
             "func": {
               "kind": "Name",
               "source_span": {
                 "lineno": 121,
                 "col": 4,
                 "end_lineno": 121,
-                "end_col": 20
+                "end_col": 15
               },
               "resolved_type": "unknown",
               "casts": [],
               "borrow_kind": "value",
-              "repr": "_png_append_list",
-              "id": "_png_append_list"
+              "repr": "_png_append",
+              "id": "_png_append"
             },
             "args": [
               {
                 "kind": "Name",
                 "source_span": {
                   "lineno": 121,
-                  "col": 21,
+                  "col": 16,
                   "end_lineno": 121,
-                  "end_col": 24
+                  "end_col": 19
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "png",
@@ -7299,21 +7293,21 @@
                 "kind": "Call",
                 "source_span": {
                   "lineno": 121,
-                  "col": 26,
+                  "col": 21,
                   "end_lineno": 121,
-                  "end_col": 61
+                  "end_col": 67
                 },
-                "resolved_type": "list[int64]",
+                "resolved_type": "bytearray",
                 "casts": [],
                 "borrow_kind": "value",
-                "repr": "_chunk([73, 69, 78, 68], iend_data)",
+                "repr": "_chunk(bytearray([73, 69, 78, 68]), iend_data)",
                 "func": {
                   "kind": "Name",
                   "source_span": {
                     "lineno": 121,
-                    "col": 26,
+                    "col": 21,
                     "end_lineno": 121,
-                    "end_col": 32
+                    "end_col": 27
                   },
                   "resolved_type": "unknown",
                   "casts": [],
@@ -7323,85 +7317,115 @@
                 },
                 "args": [
                   {
-                    "kind": "List",
+                    "kind": "Call",
                     "source_span": {
                       "lineno": 121,
-                      "col": 33,
+                      "col": 28,
                       "end_lineno": 121,
-                      "end_col": 49
+                      "end_col": 55
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "value",
-                    "repr": "[73, 69, 78, 68]",
-                    "elements": [
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 121,
-                          "col": 34,
-                          "end_lineno": 121,
-                          "end_col": 36
-                        },
-                        "resolved_type": "int64",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "73",
-                        "value": 73
+                    "repr": "bytearray([73, 69, 78, 68])",
+                    "func": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 121,
+                        "col": 28,
+                        "end_lineno": 121,
+                        "end_col": 37
                       },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "bytearray",
+                      "id": "bytearray"
+                    },
+                    "args": [
                       {
-                        "kind": "Constant",
+                        "kind": "List",
                         "source_span": {
                           "lineno": 121,
                           "col": 38,
                           "end_lineno": 121,
-                          "end_col": 40
+                          "end_col": 54
                         },
-                        "resolved_type": "int64",
+                        "resolved_type": "list[int64]",
                         "casts": [],
                         "borrow_kind": "value",
-                        "repr": "69",
-                        "value": 69
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 121,
-                          "col": 42,
-                          "end_lineno": 121,
-                          "end_col": 44
-                        },
-                        "resolved_type": "int64",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "78",
-                        "value": 78
-                      },
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 121,
-                          "col": 46,
-                          "end_lineno": 121,
-                          "end_col": 48
-                        },
-                        "resolved_type": "int64",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "68",
-                        "value": 68
+                        "repr": "[73, 69, 78, 68]",
+                        "elements": [
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 121,
+                              "col": 39,
+                              "end_lineno": 121,
+                              "end_col": 41
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "73",
+                            "value": 73
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 121,
+                              "col": 43,
+                              "end_lineno": 121,
+                              "end_col": 45
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "69",
+                            "value": 69
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 121,
+                              "col": 47,
+                              "end_lineno": 121,
+                              "end_col": 49
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "78",
+                            "value": 78
+                          },
+                          {
+                            "kind": "Constant",
+                            "source_span": {
+                              "lineno": 121,
+                              "col": 51,
+                              "end_lineno": 121,
+                              "end_col": 53
+                            },
+                            "resolved_type": "int64",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "68",
+                            "value": 68
+                          }
+                        ]
                       }
-                    ]
+                    ],
+                    "keywords": []
                   },
                   {
                     "kind": "Name",
                     "source_span": {
                       "lineno": 121,
-                      "col": 51,
+                      "col": 57,
                       "end_lineno": 121,
-                      "end_col": 60
+                      "end_col": 66
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "iend_data",
@@ -7527,7 +7551,7 @@
                       "end_lineno": 124,
                       "end_col": 25
                     },
-                    "resolved_type": "list[int64]",
+                    "resolved_type": "bytearray",
                     "casts": [],
                     "borrow_kind": "readonly_ref",
                     "repr": "png",
