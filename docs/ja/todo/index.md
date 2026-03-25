@@ -22,16 +22,15 @@
 
 1. [ ] [ID: P0-REGEN-S2] golden 更新後に emit parity テスト（Python 実行結果との一致）を自動実行し、end-to-end の正しさを検証する — Go parity で代替検証済み、C++ は P1-EMIT-CPP 後
 
-### P0-TEST-REORG: test/ ディレクトリ再編 + pytra 実装本体の golden 生成
+### P0-TEST-REORG: test/ ディレクトリ再編 + pytra 実装本体の golden 生成 — 完了
 
 文脈: [docs/ja/plans/p0-test-reorg.md](../plans/p0-test-reorg.md)
-必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md) — emitter/runtime の配置規約（§10 コンテナ参照セマンティクス、画像 runtime の canonical lane 等）
 
-1. [ ] [ID: P0-TEST-REORG-S1] `test/builtin/` → `test/include/builtin/`、`test/stdlib/` → `test/include/stdlib/` に移動
-2. [ ] [ID: P0-TEST-REORG-S2] `src/pytra/` の全 .py を parse し、`test/pytra/east1/py/` に golden 配置
-3. [ ] [ID: P0-TEST-REORG-S3] resolve → compile → optimize を通して `test/pytra/east2/`, `east3/`, `east3-opt/` に golden 配置
-4. [ ] [ID: P0-TEST-REORG-S4] `regenerate_golden.py` を test/include/ と test/pytra/ に対応させる
-5. [ ] [ID: P0-TEST-REORG-S5] `pytra-cli2` の resolve/compile/optimize/link が test/include/ の新パスで動作することを確認（parity 維持）
+1. [x] [ID: P0-TEST-REORG-S1] — 完了
+2. [x] [ID: P0-TEST-REORG-S2] — 完了（31/33、残り 2 件は parser 未対応: argparse.py 再帰, subprocess.py **kwargs）
+3. [x] [ID: P0-TEST-REORG-S3] — 完了（31/33）
+4. [x] [ID: P0-TEST-REORG-S4] — 完了
+5. [x] [ID: P0-TEST-REORG-S5] — 完了（C++ 18/18, golden 750/750）
 
 ### P1-GO-MIGRATE-S5: Go runtime 分解
 
