@@ -1294,6 +1294,37 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
         self.assertIn("auto n = 3;", cpp_code)
         self.assertNotIn("int64_t n = 3;", cpp_code)
 
+    def test_cpp_emitter_renders_unknown_vardecl_as_auto(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "None",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "VarDecl",
+                            "name": "tmp",
+                            "type": "unknown",
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("auto tmp = {};", cpp_code)
+        self.assertNotIn("int64_t tmp = 0;", cpp_code)
+
     def test_go_emitter_does_not_short_circuit_name_unbox_from_decl_type(self) -> None:
         doc = _module_doc(
             "app.main",

@@ -694,7 +694,6 @@ def _emit_var_decl(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     name = _str(node, "name")
     rt = _str(node, "type")
     if rt == "": rt = _str(node, "resolved_type")
-    if rt == "" or rt == "unknown": rt = "int64"
     ct = cpp_type(rt)
     ctx.var_types[name] = rt
     _emit(ctx, ct + " " + name + " = " + cpp_zero_value(rt) + ";")
