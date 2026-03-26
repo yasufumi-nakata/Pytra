@@ -8,7 +8,7 @@
   "modules": [
     {
       "module_id": "isinstance_tuple_check",
-      "input": "test/fixture/source/py/typing/isinstance_tuple_check.py",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/typing/isinstance_tuple_check.east3",
       "output": "east3/isinstance_tuple_check.east3.json",
       "source_path": "test/fixture/source/py/typing/isinstance_tuple_check.py",
       "is_entry": true,
@@ -16,7 +16,7 @@
     },
     {
       "module_id": "pytra.built_in.io_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
       "is_entry": false,

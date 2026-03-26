@@ -120,7 +120,7 @@
               "end_lineno": 9,
               "end_col": 9
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "i",
@@ -325,7 +325,7 @@
                 "end_lineno": 15,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -352,7 +352,7 @@
                     "end_lineno": 15,
                     "end_col": 22
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "sum_range_29",
@@ -428,7 +428,7 @@
             "end_lineno": 18,
             "end_col": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -455,7 +455,7 @@
                 "end_lineno": 18,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",

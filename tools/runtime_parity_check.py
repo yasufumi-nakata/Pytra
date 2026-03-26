@@ -23,9 +23,12 @@ if str((Path(__file__).resolve().parents[1] / "src")) not in sys.path:
 from toolchain.misc.pytra_cli_profiles import get_target_profile, list_parity_targets
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE_ROOT = ROOT / "test" / "fixtures"
+FIXTURE_ROOT = ROOT / "test" / "fixture" / "source" / "py"
 SAMPLE_ROOT = ROOT / "sample" / "py"
 ARTIFACT_OPTIONAL_TARGETS: set[str] = set()
+_LOCAL_TOOL_FALLBACKS: dict[str, tuple[Path, ...]] = {
+    "go": (ROOT / "work" / "tmp" / "go-toolchain" / "bin" / "go",),
+}
 
 # Declarative skip list: fixtures that are known to be unsupported by specific languages.
 # Key = language name, value = set of fixture stems to skip.
@@ -241,13 +244,43 @@ def run_shell(
         )
 
 
-def can_run(target: Target) -> bool:
+def _resolve_tool_path(tool: str) -> str:
+    if tool.startswith("/"):
+        if Path(tool).is_file():
+            return tool
+        return ""
+    found = shutil.which(tool)
+    if found is not None:
+        return found
+    for candidate in _LOCAL_TOOL_FALLBACKS.get(tool, ()):
+        if candidate.is_file():
+            return str(candidate)
+    return ""
+
+
+def _tool_env_for_target(target: Target) -> dict[str, str]:
+    extra_dirs: list[str] = []
     for tool in target.needs:
         if tool.startswith("/"):
-            if Path(tool).is_file():
-                continue
-            return False
-        if shutil.which(tool) is None:
+            continue
+        if shutil.which(tool) is not None:
+            continue
+        resolved = _resolve_tool_path(tool)
+        if resolved == "":
+            continue
+        tool_dir = str(Path(resolved).parent)
+        if tool_dir not in extra_dirs:
+            extra_dirs.append(tool_dir)
+    if len(extra_dirs) == 0:
+        return {}
+    current_path = os.environ.get("PATH", "")
+    path_parts = extra_dirs + ([current_path] if current_path != "" else [])
+    return {"PATH": os.pathsep.join(path_parts)}
+
+
+def can_run(target: Target) -> bool:
+    for tool in target.needs:
+        if _resolve_tool_path(tool) == "":
             return False
     return True
 
@@ -257,6 +290,8 @@ def _normalize_output_for_compare(stdout_text: str, target_name: str = "") -> st
     for line in stdout_text.splitlines():
         low = line.strip().lower()
         if low.startswith("elapsed_sec:") or low.startswith("elapsed:") or low.startswith("time_sec:"):
+            continue
+        if low.startswith("build:"):
             continue
         if low.startswith("generated:"):
             continue
@@ -356,27 +391,24 @@ def collect_sample_case_stems() -> list[str]:
 
 def collect_fixture_case_stems() -> list[str]:
     """Collect all fixture case stems, excluding negative tests (ng_*) and __init__."""
-    out: list[str] = []
+    seen: set[str] = set()
     for p in sorted(FIXTURE_ROOT.rglob("*.py")):
         stem = p.stem
         if stem == "__init__":
             continue
         if stem.startswith("ng_"):
             continue
-        if stem not in out:
-            out.append(stem)
-    return out
+        seen.add(stem)
+    return sorted(seen)
 
 
 def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool) -> tuple[list[str], str]:
     if all_samples:
         if len(cases) > 0:
             return [], "--all-samples cannot be combined with positional cases"
-        if case_root == "sample":
-            return collect_sample_case_stems(), ""
-        if case_root == "fixture":
-            return collect_fixture_case_stems(), ""
-        return [], "--all-samples: unknown case_root"
+        if case_root != "sample":
+            return [], "--all-samples requires --case-root sample"
+        return collect_sample_case_stems(), ""
     if len(cases) > 0:
         return cases, ""
     if case_root == "sample":
@@ -507,6 +539,7 @@ def check_case(
                 print(f"[SKIP] {case_stem}:{target.name} (missing toolchain)")
                 _record(target.name, "toolchain_missing", "missing toolchain")
                 continue
+            target_env = _tool_env_for_target(target)
             unsupported = _LANG_UNSUPPORTED_FIXTURES.get(target.name, set())
             if case_stem in unsupported:
                 print(f"[SKIP] {case_stem}:{target.name} (unsupported feature)")
@@ -519,7 +552,7 @@ def check_case(
                 if target_out_dir.exists():
                     shutil.rmtree(target_out_dir)
 
-            tr = run_shell(target.transpile_cmd, cwd=work, timeout_sec=cmd_timeout_sec)
+            tr = run_shell(target.transpile_cmd, cwd=work, env=target_env, timeout_sec=cmd_timeout_sec)
             if tr.returncode != 0:
                 msg = tr.stderr.strip()
                 mismatches.append(f"{case_stem}:{target.name}: transpile failed: {msg}")
@@ -530,7 +563,7 @@ def check_case(
             _purge_case_artifacts(work, case_stem)
             _safe_unlink(expected_artifact_path)
 
-            rr = run_shell(target.run_cmd, cwd=work, timeout_sec=cmd_timeout_sec)
+            rr = run_shell(target.run_cmd, cwd=work, env=target_env, timeout_sec=cmd_timeout_sec)
             if rr.returncode != 0:
                 msg = rr.stderr.strip()
                 mismatches.append(f"{case_stem}:{target.name}: run failed: {msg}")
@@ -645,7 +678,7 @@ def main() -> int:
         "--case-root",
         default="fixture",
         choices=("fixture", "sample"),
-        help="source root to read cases from (fixture: test/fixtures, sample: sample/py)",
+        help="source root to read cases from (fixture: test/fixture/source/py, sample: sample/py)",
     )
     parser.add_argument(
         "--ignore-unstable-stdout",

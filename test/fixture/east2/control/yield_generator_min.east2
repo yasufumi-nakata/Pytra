@@ -347,7 +347,7 @@
                 "end_lineno": 10,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "gen",
@@ -446,7 +446,7 @@
                 "end_lineno": 12,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -551,7 +551,7 @@
             "end_lineno": 16,
             "end_col": 8
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "main",

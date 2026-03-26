@@ -139,21 +139,6 @@ def _parse_extern_var_call(value_text: str) -> Optional[dict[str, str]]:
     return None
 
 
-def _normalize_typing_prefix(ann: str) -> str:
-    """typing.List[int] → list[int] など、typing. プレフィックスの正規化。"""
-    _TYPING_ALIASES: dict[str, str] = {
-        "typing.List": "list", "typing.Dict": "dict",
-        "typing.Tuple": "tuple", "typing.Set": "set",
-        "typing.Optional": "Optional", "typing.Union": "Union",
-    }
-    for prefix, replacement in _TYPING_ALIASES.items():
-        if ann.startswith(prefix):
-            rest = ann[len(prefix):]
-            if rest == "" or rest[0] == "[":
-                return replacement + rest
-    return ann
-
-
 def _parse_from_import(s: str) -> tuple[str, str]:
     """'from MOD import NAMES' をパースして (module, names_text) を返す。失敗時は ("", "")。"""
     m = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s)
@@ -1623,7 +1608,7 @@ def _parse_function_def(
                 if ":" in vararg_param:
                     colon_pos = vararg_param.find(":")
                     vararg_name_val = vararg_param[:colon_pos].strip()
-                    vararg_type_val = _normalize_typing_prefix(vararg_param[colon_pos + 1:].strip())
+                    vararg_type_val = vararg_param[colon_pos + 1:].strip()
                 else:
                     vararg_name_val = vararg_param
                     vararg_type_val = "unknown"
@@ -1647,7 +1632,7 @@ def _parse_function_def(
                 colon_pos = param.find(":")
                 pname = param[:colon_pos].strip()
                 ptype_ann = param[colon_pos + 1:].strip()
-                ptype = _normalize_typing_prefix(ptype_ann)
+                ptype = ptype_ann
             else:
                 pname = param
                 ptype = "unknown"
@@ -2073,6 +2058,18 @@ def _parse_block_lines(
         last_abs_ln = abs_ln
 
         # return statement
+        if s_clean == "return":
+            span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
+            ret_stmt = Return(source_span=span, value=None)
+            if len(pending_comments) > 0:
+                ret_stmt.leading_comments = list(pending_comments)
+            if len(pending_trivia) > 0:
+                ret_stmt.leading_trivia = list(pending_trivia)
+            stmts.append(ret_stmt)
+            i += 1
+            pending_trivia = []
+            pending_comments = []
+            continue
         if s_clean.startswith("return "):
             expr_text = s_clean[7:].strip()
             expr_col = _find_expr_col(ctx, expr_text, abs_ln, indent + 7)

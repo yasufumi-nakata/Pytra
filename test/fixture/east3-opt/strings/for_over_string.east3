@@ -994,7 +994,7 @@
             "end_lineno": 9,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -1021,7 +1021,7 @@
                 "end_lineno": 9,
                 "end_col_offset": 22
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "count_vowels",
@@ -1097,7 +1097,7 @@
             "end_lineno": 10,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -1124,7 +1124,7 @@
                 "end_lineno": 10,
                 "end_col_offset": 22
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "count_vowels",

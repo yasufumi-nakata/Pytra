@@ -110,7 +110,7 @@
                     "end_lineno": 5,
                     "end_col_offset": 15
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "module",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "os",
@@ -223,7 +223,7 @@
                       "end_lineno": 6,
                       "end_col_offset": 18
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "module",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "os",
@@ -496,7 +496,7 @@
                           "end_lineno": 8,
                           "end_col_offset": 19
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "module",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "os",
@@ -885,7 +885,7 @@
                           "end_lineno": 11,
                           "end_col_offset": 19
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "module",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "os",
@@ -1055,7 +1055,7 @@
                         "end_lineno": 13,
                         "end_col_offset": 18
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "module",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "os",
@@ -1165,82 +1165,110 @@
                 "borrow_kind": "value",
                 "repr": "(len(glob.glob(\"*.cpp\")) > 0)",
                 "left": {
-                  "kind": "ObjLen",
-                  "resolved_type": "int64",
-                  "borrow_kind": "value",
-                  "casts": [],
-                  "value": {
-                    "kind": "Call",
-                    "source_span": {
-                      "lineno": 14,
-                      "col_offset": 21,
-                      "end_lineno": 14,
-                      "end_col_offset": 39
-                    },
-                    "resolved_type": "unknown",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "glob.glob(\"*.cpp\")",
-                    "func": {
-                      "kind": "Attribute",
-                      "source_span": {
-                        "lineno": 14,
-                        "col_offset": 21,
-                        "end_lineno": 14,
-                        "end_col_offset": 30
-                      },
-                      "resolved_type": "unknown",
-                      "casts": [],
-                      "borrow_kind": "value",
-                      "repr": "glob.glob",
-                      "value": {
-                        "kind": "Name",
-                        "source_span": {
-                          "lineno": 14,
-                          "col_offset": 21,
-                          "end_lineno": 14,
-                          "end_col_offset": 25
-                        },
-                        "resolved_type": "unknown",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "glob",
-                        "id": "glob"
-                      },
-                      "attr": "glob"
-                    },
-                    "args": [
-                      {
-                        "kind": "Constant",
-                        "source_span": {
-                          "lineno": 14,
-                          "col_offset": 31,
-                          "end_lineno": 14,
-                          "end_col_offset": 38
-                        },
-                        "resolved_type": "str",
-                        "casts": [],
-                        "borrow_kind": "value",
-                        "repr": "\"*.cpp\"",
-                        "value": "*.cpp"
-                      }
-                    ],
-                    "keywords": [],
-                    "type_expr_summary_v1": {
-                      "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
-                    }
-                  },
+                  "kind": "Call",
                   "source_span": {
                     "lineno": 14,
                     "col_offset": 17,
                     "end_lineno": 14,
                     "end_col_offset": 40
                   },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
                   "repr": "len(glob.glob(\"*.cpp\"))",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 14,
+                      "col_offset": 17,
+                      "end_lineno": 14,
+                      "end_col_offset": 20
+                    },
+                    "resolved_type": "callable",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "len",
+                    "id": "len"
+                  },
+                  "args": [
+                    {
+                      "kind": "Call",
+                      "source_span": {
+                        "lineno": 14,
+                        "col_offset": 21,
+                        "end_lineno": 14,
+                        "end_col_offset": 39
+                      },
+                      "resolved_type": "list[str]",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "glob.glob(\"*.cpp\")",
+                      "func": {
+                        "kind": "Attribute",
+                        "source_span": {
+                          "lineno": 14,
+                          "col_offset": 21,
+                          "end_lineno": 14,
+                          "end_col_offset": 30
+                        },
+                        "resolved_type": "callable",
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "glob.glob",
+                        "value": {
+                          "kind": "Name",
+                          "source_span": {
+                            "lineno": 14,
+                            "col_offset": 21,
+                            "end_lineno": 14,
+                            "end_col_offset": 25
+                          },
+                          "resolved_type": "module",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "glob",
+                          "id": "glob"
+                        },
+                        "attr": "glob"
+                      },
+                      "args": [
+                        {
+                          "kind": "Constant",
+                          "source_span": {
+                            "lineno": 14,
+                            "col_offset": 31,
+                            "end_lineno": 14,
+                            "end_col_offset": 38
+                          },
+                          "resolved_type": "str",
+                          "casts": [],
+                          "borrow_kind": "value",
+                          "repr": "\"*.cpp\"",
+                          "value": "*.cpp"
+                        }
+                      ],
+                      "keywords": [],
+                      "resolved_runtime_call": "glob.glob",
+                      "resolved_runtime_source": "module_attr",
+                      "runtime_module_id": "pytra.std.glob",
+                      "runtime_symbol": "glob",
+                      "semantic_tag": "stdlib.fn.glob",
+                      "type_expr_summary_v1": {
+                        "schema_version": 1,
+                        "kind": "GenericType",
+                        "category": "static",
+                        "mirror": "list[str]"
+                      }
+                    }
+                  ],
+                  "keywords": [],
+                  "lowered_kind": "BuiltinCall",
+                  "builtin_name": "len",
+                  "runtime_call": "len",
+                  "runtime_module_id": "pytra.core.py_runtime",
+                  "runtime_symbol": "len",
+                  "runtime_call_adapter_kind": "builtin",
+                  "semantic_tag": "core.len",
                   "type_expr_summary_v1": {
                     "schema_version": 1,
                     "kind": "NamedType",
@@ -1305,7 +1333,7 @@
                 "end_lineno": 15,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -1385,7 +1413,7 @@
             "end_lineno": 19,
             "end_col_offset": 12
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_case",
@@ -1419,8 +1447,10 @@
           "source_module_id": "pytra.std",
           "source_export_name": "glob",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std",
-          "runtime_group": "std"
+          "runtime_module_id": "pytra.std.glob",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module",
+          "host_only": true
         },
         {
           "module_id": "pytra.std",
@@ -1432,8 +1462,10 @@
           "source_module_id": "pytra.std",
           "source_export_name": "os",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std",
-          "runtime_group": "std"
+          "runtime_module_id": "pytra.std.os",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module",
+          "host_only": true
         },
         {
           "module_id": "pytra.built_in.io_ops",

@@ -83,6 +83,8 @@ class ResolveContext:
     module_functions: dict[str, FuncSig] = field(default_factory=dict)
     # Classes defined in this module
     module_classes: dict[str, ClassSig] = field(default_factory=dict)
+    # Module-local type aliases (PEP 695 style), expanded during resolve
+    type_aliases: dict[str, str] = field(default_factory=dict)
     # Tracked implicit builtin modules
     used_builtin_modules: set[str] = field(default_factory=set)
     # Current function parameters (for borrow_kind: readonly_ref)
@@ -181,6 +183,14 @@ class ResolveContext:
         if local is not None:
             return local
         return self.registry.classes.get(name)
+
+
+def _ctx_normalize_type(raw: str, ctx: ResolveContext) -> str:
+    return normalize_type(raw, ctx.type_aliases)
+
+
+def _ctx_make_type_expr(type_str: str, ctx: ResolveContext) -> dict[str, JsonVal]:
+    return make_type_expr(_ctx_normalize_type(type_str, ctx))
 
 
 # ---------------------------------------------------------------------------
@@ -296,11 +306,26 @@ def _resolve_constant(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 def _resolve_name(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     name_val = expr.get("id")
     name: str = str(name_val) if isinstance(name_val, str) else ""
+    if name in ctx.import_modules:
+        expr["resolved_type"] = "module"
+        return "module"
+    imp: dict[str, str] = ctx.import_symbols.get(name, {})
+    if len(imp) > 0:
+        module_id: str = imp.get("module", "")
+        export_name: str = imp.get("name", "")
+        if export_name == "":
+            export_name = name
+        if ctx.registry.lookup_stdlib_class(module_id, export_name) is not None:
+            expr["resolved_type"] = "type"
+            return "type"
+        if ctx.registry.lookup_stdlib_function(module_id, export_name) is not None:
+            expr["resolved_type"] = "callable"
+            return "callable"
     t: str = ctx.scope.lookup(name)
-    # Class names resolve to "unknown" (they're types, not values)
+    # Class names are type objects in value position.
     if ctx.lookup_class(name) is not None:
-        expr["resolved_type"] = "unknown"
-        return "unknown"
+        expr["resolved_type"] = "type"
+        return "type"
     expr["resolved_type"] = t
     # Borrow kind: readonly_ref for typed names (references to known variables)
     # value for untyped (function names, unknown)
@@ -458,13 +483,25 @@ def _resolve_compare(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     values = expr.get("values")
+    result_type: str = "unknown"
     if isinstance(values, list):
         for v in values:
             if isinstance(v, dict):
-                _resolve_expr(v, ctx)
-    # BoolOp (and/or) always resolves to bool in Pytra
-    expr["resolved_type"] = "bool"
-    return "bool"
+                vt = _resolve_expr(v, ctx)
+                if result_type == "unknown":
+                    result_type = vt
+                    continue
+                if vt == "unknown" or vt == result_type:
+                    continue
+                if is_numeric(result_type) and is_numeric(vt):
+                    if is_float_type(result_type) or is_float_type(vt):
+                        result_type = "float64"
+                    elif is_int_type(result_type) and is_int_type(vt):
+                        result_type = _promote_int_types(result_type, vt)
+                    continue
+                result_type = "Any"
+    expr["resolved_type"] = result_type
+    return result_type
 
 
 def _resolve_call(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
@@ -506,6 +543,92 @@ def _resolve_call_args(expr: dict[str, JsonVal], ctx: ResolveContext) -> None:
                     _resolve_expr(val, ctx)
 
 
+_SIG_TYPE_PARAMS: set[str] = {"T", "U", "K", "V"}
+
+
+def _collect_call_arg_types(expr: dict[str, JsonVal]) -> list[str]:
+    """Collect already-resolved positional argument types from a Call node."""
+    result: list[str] = []
+    args = expr.get("args")
+    if isinstance(args, list):
+        for arg in args:
+            if isinstance(arg, dict):
+                rt = arg.get("resolved_type")
+                result.append(str(rt) if isinstance(rt, str) else "unknown")
+    return result
+
+
+def _bind_type_pattern(pattern: str, actual: str, bindings: dict[str, str]) -> None:
+    """Bind simple generic placeholders (T/U/K/V) from signature pattern to actual type."""
+    pat: str = normalize_type(pattern)
+    act: str = normalize_type(actual)
+    if pat == "" or pat == "unknown" or act == "" or act == "unknown":
+        return
+    if pat in _SIG_TYPE_PARAMS:
+        existing: str = bindings.get(pat, "")
+        if existing == "" or existing == act:
+            bindings[pat] = act
+        return
+    if pat == act:
+        return
+    if " | " in pat and " | " in act:
+        pat_parts: list[str] = pat.split(" | ")
+        act_parts: list[str] = act.split(" | ")
+        if len(pat_parts) == len(act_parts):
+            for i in range(len(pat_parts)):
+                _bind_type_pattern(pat_parts[i], act_parts[i], bindings)
+        return
+    pat_bracket: int = pat.find("[")
+    act_bracket: int = act.find("[")
+    if pat_bracket > 0 and act_bracket > 0 and pat.endswith("]") and act.endswith("]"):
+        pat_base: str = pat[:pat_bracket]
+        act_base: str = act[:act_bracket]
+        if pat_base != act_base:
+            return
+        pat_args: list[str] = extract_type_args(pat)
+        act_args: list[str] = extract_type_args(act)
+        if len(pat_args) != len(act_args):
+            return
+        for i in range(len(pat_args)):
+            _bind_type_pattern(pat_args[i], act_args[i], bindings)
+
+
+def _substitute_type_bindings(type_str: str, bindings: dict[str, str]) -> str:
+    """Apply generic placeholder bindings to a normalized signature type."""
+    t: str = normalize_type(type_str)
+    if t in _SIG_TYPE_PARAMS:
+        bound: str = bindings.get(t, "")
+        if bound != "":
+            return bound
+        return t
+    if " | " in t:
+        parts: list[str] = t.split(" | ")
+        return " | ".join([_substitute_type_bindings(part, bindings) for part in parts])
+    bracket: int = t.find("[")
+    if bracket > 0 and t.endswith("]"):
+        base: str = t[:bracket]
+        args: list[str] = extract_type_args(t)
+        rendered_args: list[str] = [_substitute_type_bindings(arg, bindings) for arg in args]
+        if len(rendered_args) == 1:
+            return base + "[" + rendered_args[0] + "]"
+        return base + "[" + ",".join(rendered_args) + "]"
+    return t
+
+
+def _infer_signature_return_type(sig: FuncSig, arg_types: list[str]) -> str:
+    """Infer a return type from a normalized function signature and actual arg types."""
+    bindings: dict[str, str] = {}
+    for i in range(min(len(sig.arg_names), len(arg_types))):
+        arg_name: str = sig.arg_names[i]
+        pattern: str = sig.arg_types.get(arg_name, "")
+        if pattern != "":
+            _bind_type_pattern(pattern, arg_types[i], bindings)
+    if sig.vararg_type != "":
+        for actual in arg_types[len(sig.arg_names):]:
+            _bind_type_pattern(sig.vararg_type, actual, bindings)
+    return normalize_type(_substitute_type_bindings(sig.return_type, bindings))
+
+
 def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx: ResolveContext) -> str:
     """Resolve a simple Name-based function call."""
     name_val = func.get("id")
@@ -520,11 +643,11 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
     # bytearray/bytes are built-in constructors not always in registry
     if name == "bytearray":
         expr["resolved_type"] = "bytearray"
-        func["resolved_type"] = "unknown"
+        func["resolved_type"] = "type"
         return "bytearray"
     if name == "bytes":
         expr["resolved_type"] = "bytes"
-        func["resolved_type"] = "unknown"
+        func["resolved_type"] = "type"
         return "bytes"
 
     # Imported symbol?
@@ -537,14 +660,14 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
     if local_func is not None:
         t: str = local_func.return_type
         expr["resolved_type"] = t
-        func["resolved_type"] = "unknown"
+        func["resolved_type"] = "callable"
         return t
 
     # Exception constructor? (Exception, RuntimeError, etc.)
     exception_names: set[str] = {"Exception", "RuntimeError", "NotImplementedError", "ValueError", "TypeError", "KeyError", "IndexError"}
     if name in exception_names:
         expr["resolved_type"] = name
-        func["resolved_type"] = "unknown"
+        func["resolved_type"] = "type"
         # Annotate as BuiltinCall
         exc_extern: ExternV2 | None = None
         exc_sig: FuncSig | None = ctx.registry.lookup_function(name)
@@ -573,7 +696,7 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
     local_class: ClassSig | None = ctx.lookup_class(name)
     if local_class is not None:
         expr["resolved_type"] = name
-        func["resolved_type"] = "unknown"
+        func["resolved_type"] = "type"
         return name
 
     # Unknown
@@ -589,90 +712,13 @@ def _resolve_builtin_call(
     ctx: ResolveContext,
 ) -> str:
     """Resolve a built-in function call (print, len, int, etc.)."""
-    # Determine return type
     sig: FuncSig | None = ctx.registry.lookup_function(name)
     ret: str = "unknown"
     if sig is not None:
-        ret = sig.return_type
-
-    # Type-specific overrides based on arguments
-    args = expr.get("args")
-    arg_types: list[str] = []
-    if isinstance(args, list):
-        for a in args:
-            if isinstance(a, dict):
-                at = a.get("resolved_type")
-                arg_types.append(str(at) if isinstance(at, str) else "unknown")
-
-    # Cast functions: int(x) → int64, float(x) → float64, etc.
-    if name == "int":
-        ret = "int64"
-    elif name == "float":
-        ret = "float64"
-    elif name == "str":
-        ret = "str"
-    elif name == "bool":
-        ret = "bool"
-    elif name == "bytearray":
-        ret = "bytearray"
-    elif name == "bytes":
-        ret = "bytes"
-    elif name == "len":
-        ret = "int64"
-    elif name == "ord":
-        ret = "int64"
-    elif name == "chr":
-        ret = "str"
-    elif name == "abs":
-        if len(arg_types) > 0:
-            ret = arg_types[0]
-        else:
-            ret = "int64"
-    elif name == "round":
-        ret = "int64"
-    elif name == "repr":
-        ret = "str"
-    elif name == "print":
-        ret = "None"
-    elif name == "isinstance" or name == "issubclass":
-        ret = "bool"
-    elif name == "min" or name == "max":
-        # Generic: return type of first argument
-        if len(arg_types) > 0:
-            ret = arg_types[0]
-    elif name == "sorted" or name == "reversed":
-        if len(arg_types) > 0:
-            ret = arg_types[0]
-    elif name == "enumerate":
-        if len(arg_types) > 0:
-            inner: str = arg_types[0]
-            elem: str = "unknown"
-            if inner.startswith("list[") and inner.endswith("]"):
-                elem = inner[5:-1]
-            ret = "list[tuple[int64," + elem + "]]"
-    elif name == "zip":
-        if len(arg_types) >= 2:
-            t1: str = arg_types[0]
-            t2: str = arg_types[1]
-            e1: str = "unknown"
-            e2: str = "unknown"
-            if t1.startswith("list[") and t1.endswith("]"):
-                e1 = t1[5:-1]
-            if t2.startswith("list[") and t2.endswith("]"):
-                e2 = t2[5:-1]
-            ret = "list[tuple[" + e1 + "," + e2 + "]]"
-    elif name == "sum":
-        if len(arg_types) > 0:
-            inner2: str = arg_types[0]
-            if inner2.startswith("list[") and inner2.endswith("]"):
-                ret = inner2[5:-1]
-            else:
-                ret = "int64"
-    elif name == "any" or name == "all":
-        ret = "bool"
+        ret = _infer_signature_return_type(sig, _collect_call_arg_types(expr))
 
     expr["resolved_type"] = ret
-    func["resolved_type"] = "unknown"
+    func["resolved_type"] = "callable"
 
     # Add runtime metadata from extern_v2
     extern: ExternV2 | None = sig.extern if sig is not None else None
@@ -696,6 +742,7 @@ def _resolve_builtin_call(
 
     # Specialize int(str)/float(str)/str(non-str) for emitter clarity
     specialized_rc: str = ""
+    arg_types: list[str] = _collect_call_arg_types(expr)
     if name == "int" and len(arg_types) > 0 and arg_types[0] == "str":
         specialized_rc = "py_int_from_str"
     elif name == "float" and len(arg_types) > 0 and arg_types[0] == "str":
@@ -739,13 +786,20 @@ def _resolve_imported_call(
     if export_name == "":
         export_name = local_name
 
-    func["resolved_type"] = "unknown"
+    arg_types: list[str] = _collect_call_arg_types(expr)
 
     # Determine return type from stdlib registry if available
     ret: str = "unknown"
     stdlib_func: FuncSig | None = ctx.registry.lookup_stdlib_function(module_id, export_name)
+    stdlib_class: ClassSig | None = ctx.registry.lookup_stdlib_class(module_id, export_name)
     if stdlib_func is not None:
-        ret = stdlib_func.return_type
+        ret = _infer_signature_return_type(stdlib_func, arg_types)
+        func["resolved_type"] = "callable"
+    elif stdlib_class is not None:
+        ret = stdlib_class.name
+        func["resolved_type"] = "type"
+    else:
+        func["resolved_type"] = "callable"
 
     runtime_module: str = ctx.canonical_module_id(module_id)
 
@@ -804,6 +858,7 @@ def _resolve_method_call(
         receiver_name: str = str(value.get("id", ""))
         mod_id: str = ctx.import_modules.get(receiver_name, "")
         if mod_id != "":
+            value["resolved_type"] = "module"
             return _resolve_module_attr_call(expr, func, receiver_name, mod_id, attr, ctx)
 
     # Container method call (list.append, str.split, etc.)
@@ -819,8 +874,22 @@ def _resolve_method_call(
         if msig is not None:
             ret: str = _substitute_type_params(msig.return_type, receiver_type, cls)
             expr["resolved_type"] = ret
-            func["resolved_type"] = "unknown"
+            func["resolved_type"] = "callable"
+            if "staticmethod" in msig.decorators:
+                expr["call_dispatch_kind"] = "static_method"
             return ret
+
+    # Imported/runtime stdlib class method
+    stdlib_cls: ClassSig | None = ctx.registry.find_stdlib_class(owner_base)
+    if stdlib_cls is not None:
+        stdlib_msig: FuncSig | None = stdlib_cls.methods.get(attr)
+        if stdlib_msig is not None and "property" not in stdlib_msig.decorators:
+            ret2: str = _ctx_normalize_type(_substitute_type_params(stdlib_msig.return_type, receiver_type, stdlib_cls), ctx)
+            expr["resolved_type"] = ret2
+            func["resolved_type"] = "callable"
+            if "staticmethod" in stdlib_msig.decorators:
+                expr["call_dispatch_kind"] = "static_method"
+            return ret2
 
     # Fallback
     func["resolved_type"] = "unknown"
@@ -837,117 +906,52 @@ def _resolve_module_attr_call(
     ctx: ResolveContext,
 ) -> str:
     """Resolve a module.attr() call (e.g., math.sqrt(x))."""
-    # Look up in stdlib registry first
-    stdlib_func: FuncSig | None = ctx.registry.lookup_stdlib_function(module_id, attr)
-    extern: ExternV2 | None = stdlib_func.extern if stdlib_func is not None else None
+    canonical: str = ctx.canonical_module_id(module_id)
+    stdlib_func: FuncSig | None = ctx.registry.lookup_stdlib_function(canonical, attr)
+    stdlib_class: ClassSig | None = ctx.registry.lookup_stdlib_class(canonical, attr)
+    extern: ExternV2 | None = None
+    if stdlib_func is not None:
+        extern = stdlib_func.extern
+    elif stdlib_class is not None:
+        extern = stdlib_class.extern
 
     # Determine return type
     ret: str = "unknown"
     if stdlib_func is not None:
-        ret = stdlib_func.return_type
-    if ret == "unknown":
-        ret = _infer_stdlib_return_type(ctx.canonical_module_id(module_id), attr, expr, ctx)
+        ret = _infer_signature_return_type(stdlib_func, _collect_call_arg_types(expr))
+        func["resolved_type"] = "callable"
+    elif stdlib_class is not None:
+        ret = stdlib_class.name
+        func["resolved_type"] = "type"
+    else:
+        func["resolved_type"] = "callable"
 
     expr["resolved_type"] = ret
-    func["resolved_type"] = "unknown"
 
     # Runtime metadata from extern_v2
     if extern is not None:
         expr["resolved_runtime_call"] = receiver_name + "." + attr
         expr["resolved_runtime_source"] = "module_attr"
-        expr["runtime_module_id"] = module_id
-        expr["runtime_symbol"] = extern.symbol
+        expr["runtime_module_id"] = extern.module if extern.module != "" else canonical
+        expr["runtime_symbol"] = extern.symbol if extern.symbol != "" else attr
         # Adapter kind from runtime index
-        adapter: str = ctx.lookup_adapter_kind(extern.module, extern.symbol)
+        adapter: str = ctx.lookup_adapter_kind(expr["runtime_module_id"], expr["runtime_symbol"])
         if adapter != "":
             expr["runtime_call_adapter_kind"] = adapter
-        expr["semantic_tag"] = extern.tag
+        if extern.tag != "":
+            expr["semantic_tag"] = extern.tag
     else:
         # Fallback for unresolved stdlib calls
         expr["resolved_runtime_call"] = receiver_name + "." + attr
         expr["resolved_runtime_source"] = "module_attr"
-        expr["runtime_module_id"] = module_id
+        expr["runtime_module_id"] = canonical
         expr["runtime_symbol"] = attr
-        canonical: str = ctx.canonical_module_id(module_id)
         adapter2: str = ctx.lookup_adapter_kind(canonical, attr)
         if adapter2 != "":
             expr["runtime_call_adapter_kind"] = adapter2
         expr["semantic_tag"] = "stdlib.method." + attr
 
     return ret
-
-
-def _infer_stdlib_return_type(canonical: str, attr: str, expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    """Infer return type for stdlib module.attr calls."""
-    # math module: most return float64
-    if canonical == "pytra.std.math":
-        if attr == "floor" or attr == "ceil":
-            return "float64"
-        if attr == "sqrt" or attr == "sin" or attr == "cos" or attr == "tan":
-            return "float64"
-        if attr == "log" or attr == "log2" or attr == "log10" or attr == "exp":
-            return "float64"
-        if attr == "fabs" or attr == "pow" or attr == "hypot" or attr == "atan2":
-            return "float64"
-        if attr == "pi" or attr == "e" or attr == "tau" or attr == "inf":
-            return "float64"
-        if attr == "isnan" or attr == "isinf" or attr == "isfinite":
-            return "bool"
-        return "float64"  # Default for math
-
-    # time module
-    if canonical == "pytra.std.time":
-        if attr == "time" or attr == "perf_counter" or attr == "monotonic":
-            return "float64"
-        if attr == "sleep":
-            return "None"
-        return "float64"
-
-    # random module
-    if canonical == "pytra.std.random":
-        if attr == "random":
-            return "float64"
-        if attr == "randint" or attr == "randrange":
-            return "int64"
-        if attr == "uniform":
-            return "float64"
-        if attr == "seed":
-            return "None"
-        if attr == "shuffle":
-            return "None"
-        if attr == "choice":
-            # Return element type from argument
-            args = expr.get("args")
-            if isinstance(args, list) and len(args) > 0:
-                first = args[0]
-                if isinstance(first, dict):
-                    ft = first.get("resolved_type")
-                    if isinstance(ft, str) and ft.startswith("list[") and ft.endswith("]"):
-                        return ft[5:-1]
-            return "unknown"
-        return "unknown"
-
-    # os module
-    if canonical == "pytra.std.os":
-        return "unknown"
-
-    # pathlib module
-    if canonical == "pytra.std.pathlib":
-        return "Path"
-
-    # json module
-    if canonical == "pytra.std.json":
-        if attr == "loads":
-            return "JsonValue"
-        if attr == "loads_obj":
-            return "JsonObj"
-        if attr == "loads_arr":
-            return "JsonArr"
-        if attr == "dumps" or attr == "dumps_jv":
-            return "str"
-        return "unknown"
-
-    return "unknown"
 
 
 def _normalize_method_runtime_call(owner_base: str, method: str, raw: str) -> str:
@@ -970,10 +974,10 @@ def _resolve_container_method_call(
     ret: str = method_sig.return_type
     if cls is not None:
         ret = _substitute_type_params(ret, receiver_type, cls)
-    ret = normalize_type(ret)
+    ret = _ctx_normalize_type(ret, ctx)
 
     expr["resolved_type"] = ret
-    func["resolved_type"] = "unknown"
+    func["resolved_type"] = "callable"
 
     # Runtime owner: the receiver expression
     value = func.get("value")
@@ -1067,7 +1071,13 @@ def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         mod_id: str = ctx.import_modules.get(receiver_name, "")
         if mod_id != "":
             canonical: str = ctx.canonical_module_id(mod_id)
+            value["resolved_type"] = "module"
             t: str = _infer_module_attr_type(canonical, attr, ctx)
+            if t == "unknown":
+                if ctx.registry.lookup_stdlib_class(canonical, attr) is not None:
+                    t = "type"
+                elif ctx.registry.lookup_stdlib_function(canonical, attr) is not None:
+                    t = "callable"
             expr["resolved_type"] = t
             return t
 
@@ -1080,17 +1090,38 @@ def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         cls_sig = ctx.module_classes.get(receiver_type)
     if cls_sig is not None and attr in cls_sig.fields:
         ft: str = cls_sig.fields[attr]
-        ft_resolved: str = normalize_type(ft)
+        ft_resolved: str = _ctx_normalize_type(ft, ctx)
         expr["resolved_type"] = ft_resolved
         return ft_resolved
+    if cls_sig is not None:
+        property_sig: FuncSig | None = cls_sig.methods.get(attr)
+        if property_sig is not None and "property" in property_sig.decorators:
+            pret: str = _ctx_normalize_type(_substitute_type_params(property_sig.return_type, receiver_type, cls_sig), ctx)
+            expr["resolved_type"] = pret
+            expr["attribute_access_kind"] = "property_getter"
+            return pret
 
     # Fall back to builtin registry classes
     cls2: ClassSig | None = ctx.registry.classes.get(owner_base)
     if cls2 is not None and attr in cls2.fields:
         ft2: str = cls2.fields[attr]
         ft2_resolved: str = _substitute_type_params(ft2, receiver_type, cls2)
-        expr["resolved_type"] = normalize_type(ft2_resolved)
-        return normalize_type(ft2_resolved)
+        expr["resolved_type"] = _ctx_normalize_type(ft2_resolved, ctx)
+        return _ctx_normalize_type(ft2_resolved, ctx)
+
+    stdlib_cls: ClassSig | None = ctx.registry.find_stdlib_class(owner_base)
+    if stdlib_cls is not None:
+        if attr in stdlib_cls.fields:
+            sft: str = stdlib_cls.fields[attr]
+            sft_resolved: str = _ctx_normalize_type(_substitute_type_params(sft, receiver_type, stdlib_cls), ctx)
+            expr["resolved_type"] = sft_resolved
+            return sft_resolved
+        stdlib_prop: FuncSig | None = stdlib_cls.methods.get(attr)
+        if stdlib_prop is not None and "property" in stdlib_prop.decorators:
+            sret: str = _ctx_normalize_type(_substitute_type_params(stdlib_prop.return_type, receiver_type, stdlib_cls), ctx)
+            expr["resolved_type"] = sret
+            expr["attribute_access_kind"] = "property_getter"
+            return sret
 
     expr["resolved_type"] = "unknown"
     return "unknown"
@@ -1424,8 +1455,8 @@ def _resolve_lambda(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
             for a in arg_order:
                 if isinstance(a, str):
                     at = arg_types_raw.get(a)
-                    arg_type_strs.append(normalize_type(str(at)) if isinstance(at, str) else "unknown")
-    ret: str = normalize_type(str(ret_raw)) if isinstance(ret_raw, str) else "unknown"
+                    arg_type_strs.append(_ctx_normalize_type(str(at), ctx) if isinstance(at, str) else "unknown")
+    ret: str = _ctx_normalize_type(str(ret_raw), ctx) if isinstance(ret_raw, str) else "unknown"
 
     # Add resolved_type to args entries
     args_list = expr.get("args")
@@ -1439,7 +1470,7 @@ def _resolve_lambda(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     if isinstance(arg_types_raw, dict):
         for k, v in arg_types_raw.items():
             if isinstance(v, str):
-                lam_scope.define(k, normalize_type(v))
+                lam_scope.define(k, _ctx_normalize_type(v, ctx))
     old_scope: Scope = ctx.scope
     ctx.scope = lam_scope
     body = expr.get("body")
@@ -1493,6 +1524,10 @@ def _resolve_stmt(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
         _resolve_function_def(stmt, ctx)
     elif kind == "ClassDef":
         _resolve_class_def(stmt, ctx)
+    elif kind == "TypeAlias":
+        value_raw = stmt.get("value")
+        if isinstance(value_raw, str):
+            stmt["value"] = _ctx_normalize_type(value_raw, ctx)
     elif kind == "Assign":
         _resolve_assign(stmt, ctx)
     elif kind == "AnnAssign":
@@ -1594,7 +1629,7 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
     if isinstance(arg_types_raw, dict):
         for k, v in arg_types_raw.items():
             if isinstance(v, str):
-                norm: str = normalize_type(v)
+                norm: str = _ctx_normalize_type(v, ctx)
                 arg_types[k] = norm
                 arg_types_raw[k] = norm
 
@@ -1602,8 +1637,15 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
     ret_raw = stmt.get("return_type")
     ret: str = "unknown"
     if isinstance(ret_raw, str):
-        ret = normalize_type(ret_raw)
+        ret = _ctx_normalize_type(ret_raw, ctx)
         stmt["return_type"] = ret
+
+    # Normalize vararg_type
+    vararg_type_raw = stmt.get("vararg_type")
+    if isinstance(vararg_type_raw, str):
+        vararg_type: str = _ctx_normalize_type(vararg_type_raw, ctx)
+        stmt["vararg_type"] = vararg_type
+        stmt["vararg_type_expr"] = make_type_expr(vararg_type)
 
     # Build arg_type_exprs / return_type_expr
     # Class methods get null (type info comes from class definition)
@@ -1650,7 +1692,7 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
     # Normalize yield_value_type
     yvt_raw = stmt.get("yield_value_type")
     if isinstance(yvt_raw, str) and yvt_raw != "unknown":
-        stmt["yield_value_type"] = normalize_type(yvt_raw)
+        stmt["yield_value_type"] = _ctx_normalize_type(yvt_raw, ctx)
 
     # Resolve body in function scope
     old_scope: Scope = ctx.scope
@@ -1756,7 +1798,7 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     if isinstance(ft_raw, dict):
         for fk, fv in ft_raw.items():
             if isinstance(fv, str):
-                ft_raw[fk] = normalize_type(fv)
+                ft_raw[fk] = _ctx_normalize_type(fv, ctx)
 
     # Collect fields from body
     cls_scope: Scope = ctx.scope.child()
@@ -1786,7 +1828,7 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
                         if isinstance(tgt, dict) and tgt.get("kind") == "Name":
                             vn = tgt.get("id")
                             if isinstance(vn, str):
-                                cls_scope.define(vn, normalize_type(ann))
+                                cls_scope.define(vn, _ctx_normalize_type(ann, ctx))
                 elif ik == "Assign":
                     tgt2 = item.get("target")
                     if isinstance(tgt2, dict) and tgt2.get("kind") == "Name":
@@ -1887,7 +1929,7 @@ def _resolve_ann_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     ann_raw = stmt.get("annotation")
     ann_type: str = "unknown"
     if isinstance(ann_raw, str):
-        ann_type = normalize_type(ann_raw)
+        ann_type = _ctx_normalize_type(ann_raw, ctx)
         stmt["annotation"] = ann_type
 
     # Add annotation_type_expr and decl_type_expr
@@ -2219,7 +2261,7 @@ def _convert_for_to_forrange(
         var_name = target.get("id")
         if isinstance(var_name, str):
             ctx.scope.define(var_name, "int64")
-            target["resolved_type"] = "unknown"  # ForRange target is "unknown" in golden
+            target["resolved_type"] = "int64"
 
     # Resolve body
     body = stmt.get("body")
@@ -2251,6 +2293,7 @@ def _resolve_for_range(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
         var_name = target.get("id")
         if isinstance(var_name, str):
             ctx.scope.define(var_name, "int64")
+            target["resolved_type"] = "int64"
 
     body = stmt.get("body")
     if isinstance(body, list):
@@ -2291,18 +2334,32 @@ def _resolve_try(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
 
 
 def _resolve_with(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
+    context_expr = stmt.get("context_expr")
+    if isinstance(context_expr, dict):
+        _resolve_expr(context_expr, ctx)
+
+    saved_scope: Scope = ctx.scope
+    body_scope: Scope = saved_scope.child()
+    var_name_val = stmt.get("var_name")
+    if isinstance(var_name_val, str) and var_name_val != "":
+        body_scope.define(var_name_val, "unknown")
+    ctx.scope = body_scope
+
     items = stmt.get("items")
     if isinstance(items, list):
         for item in items:
             if isinstance(item, dict):
-                context_expr = item.get("context_expr")
-                if isinstance(context_expr, dict):
-                    _resolve_expr(context_expr, ctx)
+                item_context_expr = item.get("context_expr")
+                if isinstance(item_context_expr, dict):
+                    _resolve_expr(item_context_expr, ctx)
     body = stmt.get("body")
-    if isinstance(body, list):
-        for s in body:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
+    try:
+        if isinstance(body, list):
+            for s in body:
+                if isinstance(s, dict):
+                    _resolve_stmt(s, ctx)
+    finally:
+        ctx.scope = saved_scope
 
 
 # ---------------------------------------------------------------------------
@@ -2405,6 +2462,8 @@ def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[s
     export_name: str = str(export_name_val) if isinstance(export_name_val, str) else ""
     binding_kind_val = binding.get("binding_kind")
     binding_kind: str = str(binding_kind_val) if isinstance(binding_kind_val, str) else ""
+    local_name_val = binding.get("local_name")
+    local_name: str = str(local_name_val) if isinstance(local_name_val, str) else ""
 
     canonical: str = ctx.canonical_module_id(module_id)
     runtime_group: str = ctx.lookup_runtime_module_group(canonical)
@@ -2416,6 +2475,14 @@ def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[s
     binding["runtime_group"] = runtime_group
 
     if binding_kind == "module":
+        binding["resolved_binding_kind"] = "module"
+        binding["host_only"] = True
+        return binding
+
+    promoted_module: str = ctx.import_modules.get(local_name, "")
+    if promoted_module != "" and promoted_module != canonical:
+        binding["runtime_module_id"] = promoted_module
+        binding["runtime_group"] = ctx.lookup_runtime_module_group(promoted_module)
         binding["resolved_binding_kind"] = "module"
         binding["host_only"] = True
         return binding
@@ -2448,6 +2515,32 @@ def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[s
 # Pre-scan: collect module-level signatures before resolution
 # ---------------------------------------------------------------------------
 
+def _resolve_import_symbol_module_alias(
+    module_id: str,
+    export_name: str,
+    ctx: ResolveContext,
+) -> str:
+    """Resolve `from X import y` when `y` should be treated as a module alias."""
+    if export_name == "":
+        return ""
+    candidates: list[str] = []
+    canonical_source: str = ctx.canonical_module_id(module_id)
+    if canonical_source != "":
+        candidates.append(canonical_source + "." + export_name)
+    if module_id != "":
+        candidates.append(module_id + "." + export_name)
+    if export_name.startswith("pytra.std.") or export_name.startswith("pytra."):
+        candidates.append(export_name)
+    seen: set[str] = set()
+    for candidate in candidates:
+        normalized: str = ctx.canonical_module_id(candidate)
+        if normalized == "" or normalized in seen:
+            continue
+        seen.add(normalized)
+        if ctx.runtime_module_exists(normalized) or normalized in ctx.registry.stdlib_modules:
+            return normalized
+    return ""
+
 def _prescan_module(doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Pre-scan module body to collect function/class signatures and imports."""
     # Collect renamed symbols
@@ -2471,23 +2564,41 @@ def _prescan_module(doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
                 if isinstance(v, dict):
                     mod = v.get("module")
                     nm = v.get("name")
+                    module_id: str = str(mod) if isinstance(mod, str) else ""
+                    export_name: str = str(nm) if isinstance(nm, str) else k
+                    promoted_module: str = _resolve_import_symbol_module_alias(module_id, export_name, ctx)
+                    if promoted_module != "":
+                        ctx.import_modules[k] = promoted_module
+                        continue
                     ctx.import_symbols[k] = {
-                        "module": str(mod) if isinstance(mod, str) else "",
-                        "name": str(nm) if isinstance(nm, str) else k,
+                        "module": module_id,
+                        "name": export_name,
                     }
 
-    # Collect function and class signatures
+    # Collect module-local type aliases before signature extraction.
     body = doc.get("body")
+    if isinstance(body, list):
+        for item in body:
+            if not isinstance(item, dict) or item.get("kind") != "TypeAlias":
+                continue
+            alias_name = item.get("name")
+            alias_value = item.get("value")
+            if isinstance(alias_name, str) and alias_name != "" and isinstance(alias_value, str) and alias_value != "":
+                ctx.type_aliases[alias_name] = alias_value
+        for alias_name, alias_value in list(ctx.type_aliases.items()):
+            ctx.type_aliases[alias_name] = _ctx_normalize_type(alias_value, ctx)
+
+    # Collect function and class signatures
     if isinstance(body, list):
         for item in body:
             if not isinstance(item, dict):
                 continue
             kind = item.get("kind")
             if kind == "FunctionDef":
-                sig: FuncSig = _extract_func_sig_for_prescan(item)
+                sig: FuncSig = _extract_func_sig_for_prescan(item, ctx)
                 ctx.module_functions[sig.name] = sig
             elif kind == "ClassDef":
-                csig: ClassSig = _extract_class_sig_for_prescan(item)
+                csig: ClassSig = _extract_class_sig_for_prescan(item, ctx)
                 ctx.module_classes[csig.name] = csig
                 # Register class as a scope type
                 ctx.scope.define(csig.name, csig.name)
@@ -2500,11 +2611,11 @@ def _prescan_module(doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
                 continue
             kind = item.get("kind")
             if kind == "FunctionDef":
-                sig2: FuncSig = _extract_func_sig_for_prescan(item)
+                sig2: FuncSig = _extract_func_sig_for_prescan(item, ctx)
                 ctx.module_functions[sig2.name] = sig2
 
 
-def _extract_func_sig_for_prescan(node: dict[str, JsonVal]) -> FuncSig:
+def _extract_func_sig_for_prescan(node: dict[str, JsonVal], ctx: ResolveContext) -> FuncSig:
     """Extract a function signature during prescan (before full resolution)."""
     name_val = node.get("name")
     name: str = str(name_val) if isinstance(name_val, str) else ""
@@ -2513,7 +2624,7 @@ def _extract_func_sig_for_prescan(node: dict[str, JsonVal]) -> FuncSig:
     if isinstance(arg_types_raw, dict):
         for k, v in arg_types_raw.items():
             if isinstance(v, str):
-                arg_types[k] = normalize_type(v)
+                arg_types[k] = _ctx_normalize_type(v, ctx)
     arg_order_raw = node.get("arg_order")
     arg_names: list[str] = []
     if isinstance(arg_order_raw, list):
@@ -2521,11 +2632,23 @@ def _extract_func_sig_for_prescan(node: dict[str, JsonVal]) -> FuncSig:
             if isinstance(a, str):
                 arg_names.append(a)
     ret_raw = node.get("return_type")
-    ret: str = normalize_type(str(ret_raw)) if isinstance(ret_raw, str) else "unknown"
-    return FuncSig(name=name, arg_names=arg_names, arg_types=arg_types, return_type=ret, decorators=[])
+    ret: str = _ctx_normalize_type(str(ret_raw), ctx) if isinstance(ret_raw, str) else "unknown"
+    vararg_name_val = node.get("vararg_name")
+    vararg_name: str = str(vararg_name_val) if isinstance(vararg_name_val, str) else ""
+    vararg_type_raw = node.get("vararg_type")
+    vararg_type: str = _ctx_normalize_type(str(vararg_type_raw), ctx) if isinstance(vararg_type_raw, str) else ""
+    return FuncSig(
+        name=name,
+        arg_names=arg_names,
+        arg_types=arg_types,
+        return_type=ret,
+        decorators=[],
+        vararg_name=vararg_name,
+        vararg_type=vararg_type,
+    )
 
 
-def _extract_class_sig_for_prescan(node: dict[str, JsonVal]) -> ClassSig:
+def _extract_class_sig_for_prescan(node: dict[str, JsonVal], ctx: ResolveContext) -> ClassSig:
     """Extract a class signature during prescan."""
     name_val = node.get("name")
     name: str = str(name_val) if isinstance(name_val, str) else ""
@@ -2544,7 +2667,7 @@ def _extract_class_sig_for_prescan(node: dict[str, JsonVal]) -> ClassSig:
                 continue
             kind = item.get("kind")
             if kind == "FunctionDef":
-                msig: FuncSig = _extract_func_sig_for_prescan(item)
+                msig: FuncSig = _extract_func_sig_for_prescan(item, ctx)
                 msig.is_method = True
                 msig.owner_class = name
                 methods[msig.name] = msig
@@ -2554,13 +2677,13 @@ def _extract_class_sig_for_prescan(node: dict[str, JsonVal]) -> ClassSig:
                     fld_name = target.get("id")
                     ann = item.get("annotation")
                     if isinstance(fld_name, str) and isinstance(ann, str):
-                        fields[fld_name] = normalize_type(ann)
+                        fields[fld_name] = _ctx_normalize_type(ann, ctx)
     # Also extract from field_types (top-level ClassDef field from parse)
     ft_raw = node.get("field_types")
     if isinstance(ft_raw, dict):
         for fk, fv in ft_raw.items():
             if isinstance(fk, str) and isinstance(fv, str) and fk not in fields:
-                fields[fk] = normalize_type(fv)
+                fields[fk] = _ctx_normalize_type(fv, ctx)
     return ClassSig(name=name, bases=bases, methods=methods, fields=fields)
 
 
@@ -2577,7 +2700,7 @@ def resolve_east1_to_east2(
     Mutates east1_doc in place and returns it.
     """
     if registry is None:
-        registry = BuiltinRegistry()
+        raise ValueError("registry is required for resolve_east1_to_east2()")
 
     source_path_val = east1_doc.get("source_path")
     source_file: str = str(source_path_val) if isinstance(source_path_val, str) else ""

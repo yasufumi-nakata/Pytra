@@ -147,7 +147,7 @@
               "end_lineno": 8,
               "end_col_offset": 24
             },
-            "resolved_type": "unknown",
+            "resolved_type": "callable",
             "casts": [],
             "borrow_kind": "value",
             "repr": "extern",
@@ -174,7 +174,7 @@
                   "end_lineno": 8,
                   "end_col_offset": 28
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "sys",
@@ -316,7 +316,7 @@
               "end_lineno": 9,
               "end_col_offset": 24
             },
-            "resolved_type": "unknown",
+            "resolved_type": "callable",
             "casts": [],
             "borrow_kind": "value",
             "repr": "extern",
@@ -343,7 +343,7 @@
                   "end_lineno": 9,
                   "end_col_offset": 28
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "sys",
@@ -449,7 +449,7 @@
             "end_lineno": 10,
             "end_col_offset": 15
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "extern",
@@ -476,7 +476,7 @@
                 "end_lineno": 10,
                 "end_col_offset": 19
               },
-              "resolved_type": "unknown",
+              "resolved_type": "module",
               "casts": [],
               "borrow_kind": "value",
               "repr": "sys",
@@ -551,7 +551,7 @@
             "end_lineno": 11,
             "end_col_offset": 15
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "extern",
@@ -578,7 +578,7 @@
                 "end_lineno": 11,
                 "end_col_offset": 19
               },
-              "resolved_type": "unknown",
+              "resolved_type": "module",
               "casts": [],
               "borrow_kind": "value",
               "repr": "sys",
@@ -679,7 +679,7 @@
                 "end_lineno": 16,
                 "end_col_offset": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "sys.exit",
@@ -691,7 +691,7 @@
                   "end_lineno": 16,
                   "end_col_offset": 7
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "sys",
@@ -718,7 +718,7 @@
             "keywords": [],
             "resolved_runtime_call": "sys.exit",
             "resolved_runtime_source": "module_attr",
-            "runtime_module_id": "sys",
+            "runtime_module_id": "pytra.std.sys",
             "runtime_symbol": "exit",
             "semantic_tag": "stdlib.fn.exit",
             "type_expr_summary_v1": {
@@ -898,7 +898,7 @@
                 "end_lineno": 21,
                 "end_col_offset": 14
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "argv.clear",
@@ -1025,7 +1025,7 @@
                     "end_lineno": 23,
                     "end_col_offset": 19
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "argv.append",
@@ -1351,7 +1351,7 @@
                 "end_lineno": 28,
                 "end_col_offset": 14
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "path.clear",
@@ -1478,7 +1478,7 @@
                     "end_lineno": 30,
                     "end_col_offset": 19
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "path.append",
@@ -1828,7 +1828,7 @@
                     "end_lineno": 35,
                     "end_col_offset": 7
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "module",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "sys",
@@ -2048,7 +2048,7 @@
                     "end_lineno": 40,
                     "end_col_offset": 7
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "module",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "sys",

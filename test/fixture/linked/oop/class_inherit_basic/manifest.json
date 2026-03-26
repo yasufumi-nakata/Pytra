@@ -8,7 +8,7 @@
   "modules": [
     {
       "module_id": "class_inherit_basic",
-      "input": "test/fixture/source/py/oop/class_inherit_basic.py",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/oop/class_inherit_basic.east3",
       "output": "east3/class_inherit_basic.east3.json",
       "source_path": "test/fixture/source/py/oop/class_inherit_basic.py",
       "is_entry": true,
@@ -16,7 +16,7 @@
     },
     {
       "module_id": "pytra.built_in.io_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
       "is_entry": false,

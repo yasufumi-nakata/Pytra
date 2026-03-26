@@ -8,7 +8,7 @@
   "modules": [
     {
       "module_id": "ok_generator_tuple_target",
-      "input": "test/fixture/source/py/signature/ok_generator_tuple_target.py",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/signature/ok_generator_tuple_target.east3",
       "output": "east3/ok_generator_tuple_target.east3.json",
       "source_path": "test/fixture/source/py/signature/ok_generator_tuple_target.py",
       "is_entry": true,
@@ -16,7 +16,7 @@
     },
     {
       "module_id": "pytra.built_in.io_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
       "is_entry": false,
@@ -24,7 +24,7 @@
     },
     {
       "module_id": "pytra.built_in.sequence",
-      "input": "/workspace/Pytra/src/pytra/built_in/sequence.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/sequence.east",
       "output": "east3/pytra/built_in/sequence.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/sequence.py",
       "is_entry": false,
@@ -32,7 +32,7 @@
     },
     {
       "module_id": "pytra.built_in.zip_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/zip_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/zip_ops.east",
       "output": "east3/pytra/built_in/zip_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/zip_ops.py",
       "is_entry": false,

@@ -185,7 +185,7 @@
               "end_lineno": 10,
               "end_col": 9
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "y",
@@ -322,7 +322,7 @@
                   "end_lineno": 12,
                   "end_col": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "x",
@@ -429,7 +429,7 @@
                       "end_lineno": 14,
                       "end_col": 18
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "dy",
@@ -510,7 +510,7 @@
                           "end_lineno": 15,
                           "end_col": 22
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "dx",
@@ -1344,7 +1344,7 @@
                             "end_lineno": 22,
                             "end_col": 26
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "row.append",
@@ -1551,7 +1551,7 @@
                                 "end_lineno": 22,
                                 "end_col": 26
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "row.append",
@@ -1641,7 +1641,7 @@
                                 "end_lineno": 26,
                                 "end_col": 26
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "row.append",
@@ -1736,7 +1736,7 @@
                     "end_lineno": 27,
                     "end_col": 18
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "nxt.append",
@@ -2098,7 +2098,7 @@
                 "end_lineno": 34,
                 "end_col": 21
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "bytearray",
@@ -2170,7 +2170,7 @@
               "end_lineno": 10,
               "end_col": 9
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "y",
@@ -2237,7 +2237,7 @@
                   "end_lineno": 12,
                   "end_col": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "x",
@@ -2439,7 +2439,7 @@
                       "end_lineno": 38,
                       "end_col": 18
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "yy",
@@ -2686,7 +2686,7 @@
                           "end_lineno": 40,
                           "end_col": 22
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "xx",
@@ -2872,7 +2872,7 @@
                 "end_lineno": 42,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "bytes",
@@ -3198,7 +3198,7 @@
                 "end_lineno": 52,
                 "end_col": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "perf_counter",
@@ -3458,7 +3458,7 @@
               "end_lineno": 10,
               "end_col": 9
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "y",
@@ -3525,7 +3525,7 @@
                   "end_lineno": 12,
                   "end_col": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "x",
@@ -4925,7 +4925,7 @@
               "end_lineno": 81,
               "end_col": 10
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "gy",
@@ -5020,7 +5020,7 @@
                   "end_lineno": 82,
                   "end_col": 14
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "gx",
@@ -5348,7 +5348,7 @@
                             "end_lineno": 85,
                             "end_col": 24
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "len",
@@ -5399,7 +5399,7 @@
                           "end_lineno": 86,
                           "end_col": 22
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "int64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "py",
@@ -5492,7 +5492,7 @@
                                 "end_lineno": 87,
                                 "end_col": 28
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "len",
@@ -5570,7 +5570,7 @@
                               "end_lineno": 88,
                               "end_col": 26
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "px",
@@ -6044,7 +6044,7 @@
                                 "end_lineno": 92,
                                 "end_col": 24
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "len",
@@ -6095,7 +6095,7 @@
                               "end_lineno": 86,
                               "end_col": 22
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "py",
@@ -6188,7 +6188,7 @@
                                     "end_lineno": 94,
                                     "end_col": 28
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "callable",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "len",
@@ -6266,7 +6266,7 @@
                                   "end_lineno": 88,
                                   "end_col": 26
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "int64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "px",
@@ -6685,7 +6685,7 @@
                                 "end_lineno": 99,
                                 "end_col": 24
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "len",
@@ -6736,7 +6736,7 @@
                               "end_lineno": 86,
                               "end_col": 22
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "int64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "py",
@@ -6829,7 +6829,7 @@
                                     "end_lineno": 101,
                                     "end_col": 28
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "callable",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "len",
@@ -6907,7 +6907,7 @@
                                   "end_lineno": 88,
                                   "end_col": 26
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "int64",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "px",
@@ -7404,7 +7404,7 @@
               "end_lineno": 107,
               "end_col": 9
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "_",
@@ -7483,7 +7483,7 @@
                     "end_lineno": 108,
                     "end_col": 21
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "frames.append",
@@ -7524,7 +7524,7 @@
                         "end_lineno": 108,
                         "end_col": 28
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "render",
@@ -7657,7 +7657,7 @@
                     "end_lineno": 109,
                     "end_col": 25
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "next_state",
@@ -7744,7 +7744,7 @@
                 "end_lineno": 111,
                 "end_col": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "save_gif",
@@ -7883,7 +7883,7 @@
                     "end_lineno": 111,
                     "end_col": 68
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "grayscale_palette",
@@ -7995,7 +7995,7 @@
                   "end_lineno": 112,
                   "end_col": 26
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "perf_counter",
@@ -8057,7 +8057,7 @@
                 "end_lineno": 113,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -8131,7 +8131,7 @@
                 "end_lineno": 114,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -8205,7 +8205,7 @@
                 "end_lineno": 115,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -8292,7 +8292,7 @@
             "end_lineno": 119,
             "end_col": 28
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_07_game_of_life_loop",

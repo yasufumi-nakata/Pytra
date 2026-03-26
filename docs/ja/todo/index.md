@@ -25,8 +25,8 @@
 文脈: [docs/ja/plans/p1-emit-go-parity.md](../plans/p1-emit-go-parity.md)
 必読: [docs/ja/spec/spec-emitter-guide.md](../spec/spec-emitter-guide.md)
 
-1. [ ] [ID: P1-GO-PARITY-S1] list/dict comprehension の Go 変換を実装
-2. [ ] [ID: P1-GO-PARITY-S2] EAST 不足の修正: `write_text` 等を resolve で BuiltinCall に lowering、with 文 parser 対応、bytearray 型伝播
+1. [x] [ID: P1-GO-PARITY-S1] list/dict comprehension の Go 変換を実装
+2. [x] [ID: P1-GO-PARITY-S2] EAST 不足の修正: `write_text` 等を resolve で BuiltinCall に lowering、with 文 parser 対応、bytearray 型伝播
 3. [ ] [ID: P1-GO-PARITY-S3] fixture 132 件で `go run` + stdout 一致
 4. [ ] [ID: P1-GO-PARITY-S4] sample 18 件で `go run` + stdout 一致（PNG/GIF artifact CRC32 一致を含む）
 

@@ -747,7 +747,7 @@
                   "end_lineno": 11,
                   "end_col_offset": 21
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "reversed",
@@ -825,7 +825,7 @@
                     "end_lineno": 12,
                     "end_col_offset": 18
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "rev.append",
@@ -1086,7 +1086,7 @@
                 "end_lineno": 14,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1127,7 +1127,7 @@
                     "end_lineno": 14,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1275,7 +1275,7 @@
                 "end_lineno": 15,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1316,7 +1316,7 @@
                     "end_lineno": 15,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1505,7 +1505,7 @@
                 "end_lineno": 16,
                 "end_col_offset": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_all",
@@ -2228,7 +2228,7 @@
             "end_lineno": 20,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -2255,7 +2255,7 @@
                 "end_lineno": 20,
                 "end_col_offset": 32
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_reversed_enumerate",

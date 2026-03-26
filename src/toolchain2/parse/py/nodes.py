@@ -550,12 +550,12 @@ class Swap:
 @dataclass
 class Return:
     source_span: SourceSpan
-    value: Expr
+    value: Optional[Expr]
     leading_trivia: Optional[list[TriviaNode]] = None
     leading_comments: Optional[list[str]] = None
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": K.RETURN, "source_span": self.source_span.to_jv(),
-                                  "value": expr_to_jv(self.value)}
+                                  "value": expr_to_jv(self.value) if self.value is not None else None}
         if self.leading_trivia is not None:
             d["leading_trivia"] = [t.to_jv() for t in self.leading_trivia]
         if self.leading_comments is not None:
@@ -754,7 +754,8 @@ class TypeAlias:
     value: str
     def to_jv(self) -> dict[str, JsonVal]:
         return {"kind": "TypeAlias", "source_span": self.source_span.to_jv(),
-                "name": self.name}
+                "name": self.name,
+                "value": self.value}
 
 Stmt = Union[
     Import, ImportFrom, AnnAssign, Assign, AugAssign, ExprStmt, Swap, Return, Yield, Raise, Pass,

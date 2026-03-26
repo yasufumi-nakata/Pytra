@@ -132,7 +132,7 @@
                 "end_lineno": 9,
                 "end_col": 33
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "bytearray",
@@ -168,7 +168,7 @@
               "end_lineno": 11,
               "end_col": 9
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "y",
@@ -426,7 +426,7 @@
                   "end_lineno": 13,
                   "end_col": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "x",
@@ -2980,7 +2980,7 @@
                             "end_lineno": 61,
                             "end_col": 31
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "int",
@@ -3120,7 +3120,7 @@
                             "end_lineno": 62,
                             "end_col": 23
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "int",
@@ -3288,7 +3288,7 @@
                             "end_lineno": 63,
                             "end_col": 23
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "int",
@@ -3484,7 +3484,7 @@
                             "end_lineno": 64,
                             "end_col": 23
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "int",
@@ -4452,7 +4452,7 @@
                 "end_lineno": 85,
                 "end_col": 31
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "perf_counter",
@@ -4530,7 +4530,7 @@
                 "end_lineno": 86,
                 "end_col": 47
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "render_orbit_trap_julia",
@@ -4663,7 +4663,7 @@
                 "end_lineno": 87,
                 "end_col": 21
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "png.write_rgb_png",
@@ -4675,7 +4675,7 @@
                   "end_lineno": 87,
                   "end_col": 7
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "png",
@@ -4741,7 +4741,12 @@
                 "id": "pixels"
               }
             ],
-            "keywords": []
+            "keywords": [],
+            "resolved_runtime_call": "png.write_rgb_png",
+            "resolved_runtime_source": "module_attr",
+            "runtime_module_id": "pytra.utils.png",
+            "runtime_symbol": "write_rgb_png",
+            "semantic_tag": "stdlib.method.write_rgb_png"
           }
         },
         {
@@ -4803,7 +4808,7 @@
                   "end_lineno": 88,
                   "end_col": 33
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "perf_counter",
@@ -4872,7 +4877,7 @@
                 "end_lineno": 90,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -4952,7 +4957,7 @@
                 "end_lineno": 91,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -5054,7 +5059,7 @@
                 "end_lineno": 92,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -5128,7 +5133,7 @@
                 "end_lineno": 93,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -5215,7 +5220,7 @@
             "end_lineno": 97,
             "end_col": 27
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_04_orbit_trap_julia",
@@ -5260,8 +5265,10 @@
           "source_module_id": "pytra.utils",
           "source_export_name": "png",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils",
-          "runtime_group": "utils"
+          "runtime_module_id": "pytra.utils.png",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "module",
+          "host_only": true
         },
         {
           "module_id": "pytra.built_in.io_ops",

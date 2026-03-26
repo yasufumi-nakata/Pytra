@@ -381,7 +381,7 @@
                 "end_lineno": 22,
                 "end_col": 18
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "a.speak",
@@ -476,7 +476,7 @@
                 "end_lineno": 26,
                 "end_col": 18
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "d.speak",
@@ -582,7 +582,7 @@
                 "end_lineno": 30,
                 "end_col": 23
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "LoudDog",
@@ -649,7 +649,7 @@
                 "end_lineno": 31,
                 "end_col": 20
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "LoudDog",
@@ -697,7 +697,7 @@
                 "end_lineno": 32,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -724,7 +724,7 @@
                     "end_lineno": 32,
                     "end_col": 25
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "call_via_animal",
@@ -787,7 +787,7 @@
                 "end_lineno": 33,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -814,7 +814,7 @@
                     "end_lineno": 33,
                     "end_col": 22
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "call_via_dog",
@@ -890,7 +890,7 @@
             "end_lineno": 37,
             "end_col": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -917,7 +917,7 @@
                 "end_lineno": 37,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",

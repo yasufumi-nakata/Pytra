@@ -147,7 +147,7 @@
                     "end_lineno": 9,
                     "end_col": 15
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "bool",
@@ -364,7 +364,7 @@
                       "end_lineno": 17,
                       "end_col": 19
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "bool",
@@ -483,13 +483,10 @@
           "source_module_id": "pytra.std",
           "source_export_name": "template",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std",
+          "runtime_module_id": "pytra.std.template",
           "runtime_group": "std",
-          "resolved_binding_kind": "symbol",
-          "runtime_symbol": "template",
-          "runtime_symbol_kind": "function",
-          "runtime_symbol_dispatch": "function",
-          "runtime_semantic_tag": "stdlib.fn.template"
+          "resolved_binding_kind": "module",
+          "host_only": true
         },
         {
           "module_id": "pytra.core.py_runtime",

@@ -412,7 +412,7 @@
                         "end_lineno": 14,
                         "end_col": 22
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "out.append",
@@ -640,7 +640,7 @@
                         "end_lineno": 14,
                         "end_col": 22
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "out.append",

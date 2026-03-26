@@ -559,7 +559,7 @@
                 "end_lineno": 12,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -659,7 +659,7 @@
                 "end_lineno": 13,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -753,7 +753,7 @@
                 "end_lineno": 14,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -866,7 +866,7 @@
                 "end_lineno": 18,
                 "end_col_offset": 8
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "main",
@@ -924,7 +924,7 @@
             "end_lineno": 21,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -951,7 +951,7 @@
                 "end_lineno": 21,
                 "end_col_offset": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",

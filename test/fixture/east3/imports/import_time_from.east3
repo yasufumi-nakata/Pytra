@@ -112,7 +112,7 @@
                 "end_lineno": 9,
                 "end_col_offset": 31
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "perf_counter",
@@ -196,7 +196,7 @@
                 "end_lineno": 10,
                 "end_col_offset": 29
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "perf_counter",
@@ -251,7 +251,7 @@
                 "end_lineno": 11,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -278,7 +278,7 @@
                     "end_lineno": 11,
                     "end_col_offset": 24
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_true",
@@ -436,7 +436,7 @@
                 "end_lineno": 15,
                 "end_col_offset": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_case",
@@ -494,7 +494,7 @@
             "end_lineno": 19,
             "end_col_offset": 14
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "_case_main",

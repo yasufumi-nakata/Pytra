@@ -5,6 +5,7 @@ import os
 import shlex
 import subprocess
 import sys
+import tempfile
 import time
 import unittest
 from pathlib import Path
@@ -37,10 +38,18 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertEqual(stems[-1], "18_mini_language_interpreter")
         self.assertNotIn("__init__", stems)
 
+    def test_collect_fixture_case_stems_is_fixed_to_132_cases(self) -> None:
+        stems = self.rpc.collect_fixture_case_stems()
+        self.assertEqual(len(stems), 132)
+        self.assertEqual(stems[:5], ["add", "alias_arg", "any_basic", "any_dict_items", "any_list_mixed"])
+        self.assertEqual(stems[-5:], ["tuple_assign", "type_alias_pep695", "type_ignore_from_import", "typing_extended", "yield_generator_min"])
+
     def test_resolve_case_stems_defaults(self) -> None:
         stems_fixture, err_fixture = self.rpc.resolve_case_stems([], "fixture", False)
         self.assertEqual(err_fixture, "")
-        self.assertEqual(stems_fixture, ["math_extended", "pathlib_extended", "inheritance_virtual_dispatch_multilang"])
+        self.assertEqual(len(stems_fixture), 132)
+        self.assertEqual(stems_fixture[0], "add")
+        self.assertEqual(stems_fixture[-1], "yield_generator_min")
 
         stems_sample, err_sample = self.rpc.resolve_case_stems([], "sample", False)
         self.assertEqual(err_sample, "")
@@ -79,6 +88,65 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertEqual(records[0].category, "toolchain_missing")
         self.assertEqual(records[0].target, "cpp")
 
+    def test_can_run_accepts_local_go_toolchain_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            go_bin = Path(tmp) / "go"
+            go_bin.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            go_bin.chmod(0o755)
+            target = self.rpc.Target(name="go", transpile_cmd="noop", run_cmd="noop", needs=("python", "go"))
+
+            with patch.object(self.rpc, "_LOCAL_TOOL_FALLBACKS", {"go": (go_bin,)}), patch.object(
+                self.rpc.shutil, "which", side_effect=lambda tool: sys.executable if tool == "python" else None
+            ):
+                self.assertTrue(self.rpc.can_run(target))
+                env = self.rpc._tool_env_for_target(target)
+
+        self.assertIn(str(go_bin.parent), env.get("PATH", ""))
+
+    def test_check_case_passes_target_env_to_transpile_and_run(self) -> None:
+        records: list = []
+        target = self.rpc.Target(name="go", transpile_cmd="transpile", run_cmd="run", needs=("python", "go"))
+        envs: list[dict[str, str] | None] = []
+        call_index = {"value": 0}
+
+        def _side_effect(
+            cmd: str,
+            cwd: Path,
+            *,
+            env: dict[str, str] | None = None,
+            timeout_sec: int | None = None,
+        ):
+            _ = cmd
+            _ = timeout_sec
+            envs.append(env)
+            idx = call_index["value"]
+            call_index["value"] = idx + 1
+            if idx == 0:
+                return subprocess.CompletedProcess(args="python fake.py", returncode=0, stdout="True\n", stderr="")
+            return subprocess.CompletedProcess(args="noop", returncode=0, stdout="True\n", stderr="")
+
+        with patch.object(self.rpc, "find_case_path", return_value=ROOT / "sample" / "py" / "01_mandelbrot.py"), patch.object(
+            self.rpc, "run_shell", side_effect=_side_effect
+        ), patch.object(self.rpc, "build_targets", return_value=[target]), patch.object(
+            self.rpc, "can_run", return_value=True
+        ), patch.object(
+            self.rpc, "_tool_env_for_target", return_value={"PATH": "/tmp/go-bin"}
+        ):
+            code = self.rpc.check_case(
+                "01_mandelbrot",
+                {"go"},
+                case_root="sample",
+                ignore_stdout=False,
+                east3_opt_level="1",
+                records=records,
+            )
+
+        self.assertEqual(code, 0)
+        self.assertEqual(len(envs), 3)
+        self.assertEqual(envs[0], {"PYTHONPATH": "src"})
+        self.assertEqual(envs[1], {"PATH": "/tmp/go-bin"})
+        self.assertEqual(envs[2], {"PATH": "/tmp/go-bin"})
+
     def test_build_targets_includes_ruby_entry(self) -> None:
         case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
         targets = self.rpc.build_targets("01_mandelbrot", case_path, "1")
@@ -112,7 +180,7 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertIn("--output-dir work/transpile/scala/01_mandelbrot_", scala_target.transpile_cmd)
         self.assertIn("src/pytra-cli.py", scala_target.run_cmd)
         self.assertIn("--build --run", scala_target.run_cmd)
-        self.assertEqual(scala_target.needs, ("python", "scala"))
+        self.assertEqual(scala_target.needs, ("python", "scala-cli"))
 
     def test_build_targets_includes_nim_entry(self) -> None:
         case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"

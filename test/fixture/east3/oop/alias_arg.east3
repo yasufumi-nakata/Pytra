@@ -326,7 +326,7 @@
                 "end_lineno": 16,
                 "end_col_offset": 11
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Box",
@@ -437,7 +437,7 @@
                 "end_lineno": 18,
                 "end_col_offset": 8
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "bump",
@@ -496,7 +496,7 @@
                 "end_lineno": 19,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -576,7 +576,7 @@
                 "end_lineno": 20,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -687,7 +687,7 @@
                 "end_lineno": 24,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_alias_arg",
@@ -745,7 +745,7 @@
             "end_lineno": 27,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -772,7 +772,7 @@
                 "end_lineno": 27,
                 "end_col_offset": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",

@@ -205,7 +205,7 @@
                 "end_lineno": 7,
                 "end_col_offset": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Obj",
@@ -255,7 +255,7 @@
                 "end_lineno": 8,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -382,7 +382,7 @@
             "end_lineno": 12,
             "end_col_offset": 8
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "main",

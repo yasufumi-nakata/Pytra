@@ -72,7 +72,7 @@
                 "end_lineno": 5,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -111,7 +111,7 @@
                       "end_lineno": 5,
                       "end_col": 14
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "sqrt",
@@ -212,7 +212,7 @@
             "end_lineno": 9,
             "end_col": 8
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "main",

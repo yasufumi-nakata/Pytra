@@ -8,7 +8,7 @@
   "modules": [
     {
       "module_id": "pytra.built_in.io_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
       "is_entry": false,
@@ -16,7 +16,7 @@
     },
     {
       "module_id": "yield_generator_min",
-      "input": "test/fixture/source/py/control/yield_generator_min.py",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/control/yield_generator_min.east3",
       "output": "east3/yield_generator_min.east3.json",
       "source_path": "test/fixture/source/py/control/yield_generator_min.py",
       "is_entry": true,

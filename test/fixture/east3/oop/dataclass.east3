@@ -351,7 +351,7 @@
                 "end_lineno": 20,
                 "end_col_offset": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Point99",
@@ -416,7 +416,7 @@
                 "end_lineno": 21,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -443,7 +443,7 @@
                     "end_lineno": 21,
                     "end_col_offset": 17
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "p.total",
@@ -531,7 +531,7 @@
             "end_lineno": 24,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -558,7 +558,7 @@
                 "end_lineno": 24,
                 "end_col_offset": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",

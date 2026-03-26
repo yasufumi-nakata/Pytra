@@ -8,7 +8,7 @@
   "modules": [
     {
       "module_id": "pytra.built_in.io_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
       "is_entry": false,
@@ -16,7 +16,7 @@
     },
     {
       "module_id": "str_for_each",
-      "input": "test/fixture/source/py/strings/str_for_each.py",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/strings/str_for_each.east3",
       "output": "east3/str_for_each.east3.json",
       "source_path": "test/fixture/source/py/strings/str_for_each.py",
       "is_entry": true,

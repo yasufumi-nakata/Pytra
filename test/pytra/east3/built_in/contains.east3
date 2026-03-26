@@ -893,7 +893,7 @@
                 "end_lineno": 29,
                 "end_col_offset": 11
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "len",
@@ -982,7 +982,7 @@
                 "end_lineno": 30,
                 "end_col_offset": 11
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "len",

@@ -530,14 +530,14 @@
           "end_lineno": 21,
           "end_col_offset": 3
         },
-        "resolved_type": "tuple[unknown, unknown, unknown, unknown, unknown]",
+        "resolved_type": "tuple[unknown, unknown, unknown, unknown, type]",
         "casts": [],
         "borrow_kind": "value",
         "repr": "POD",
         "id": "POD"
       },
       "declare": true,
-      "decl_type": "tuple[unknown, unknown, unknown, unknown, unknown]",
+      "decl_type": "tuple[unknown, unknown, unknown, unknown, type]",
       "declare_init": true,
       "leading_trivia": [
         {
@@ -570,7 +570,7 @@
           "end_lineno": 21,
           "end_col_offset": 41
         },
-        "resolved_type": "tuple[unknown, unknown, unknown, unknown, unknown]",
+        "resolved_type": "tuple[unknown, unknown, unknown, unknown, type]",
         "casts": [],
         "borrow_kind": "value",
         "repr": "(type(None), bool, int, float, str)",
@@ -676,7 +676,7 @@
               "end_lineno": 21,
               "end_col_offset": 40
             },
-            "resolved_type": "unknown",
+            "resolved_type": "type",
             "casts": [],
             "borrow_kind": "value",
             "repr": "str",
@@ -688,7 +688,7 @@
         "schema_version": 1,
         "kind": "GenericType",
         "category": "static",
-        "mirror": "tuple[unknown,unknown,unknown,unknown,unknown]"
+        "mirror": "tuple[unknown,unknown,unknown,unknown,type]"
       }
     },
     {

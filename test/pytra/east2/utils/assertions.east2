@@ -459,7 +459,7 @@
                     "end_lineno": 16,
                     "end_col": 13
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "print",
@@ -564,7 +564,7 @@
                     "end_lineno": 18,
                     "end_col": 13
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "print",
@@ -733,7 +733,7 @@
                 "end_lineno": 23,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_eq_any",
@@ -907,7 +907,7 @@
                     "end_lineno": 27,
                     "end_col": 13
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "print",
@@ -1060,7 +1060,7 @@
                     "end_lineno": 29,
                     "end_col": 13
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "print",
@@ -1412,7 +1412,7 @@
                             "end_lineno": 38,
                             "end_col": 21
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "print",
@@ -1517,7 +1517,7 @@
                             "end_lineno": 40,
                             "end_col": 21
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "print",

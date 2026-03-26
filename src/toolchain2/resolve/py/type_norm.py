@@ -38,6 +38,17 @@ _TYPE_MAP: dict[str, str] = {
     "complex": "complex128",
 }
 
+_TYPING_ALIASES: dict[str, str] = {
+    "typing.List": "List",
+    "typing.Dict": "Dict",
+    "typing.Set": "Set",
+    "typing.Tuple": "Tuple",
+    "typing.Deque": "Deque",
+    "typing.Optional": "Optional",
+    "typing.Union": "Union",
+    "typing.Any": "Any",
+}
+
 # Numeric types for promotion
 _NUMERIC_TYPES: set[str] = {
     "int8", "int16", "int32", "int64",
@@ -53,11 +64,39 @@ _INT_TYPES: set[str] = {
 _FLOAT_TYPES: set[str] = {"float32", "float64"}
 
 
-def normalize_type(raw: str) -> str:
+def _strip_outer_quotes(t: str) -> str:
+    result: str = t
+    while len(result) >= 2:
+        if (result[0] == '"' and result[-1] == '"') or (result[0] == "'" and result[-1] == "'"):
+            result = result[1:-1].strip()
+            continue
+        break
+    return result
+
+
+def _normalize_typing_alias(name: str) -> str:
+    alias: str = _TYPING_ALIASES.get(name, "")
+    if alias != "":
+        return alias
+    return name
+
+
+def normalize_type(raw: str, aliases: dict[str, str] | None = None, _seen: set[str] | None = None) -> str:
     """Normalize a Python type annotation to EAST2 canonical form."""
-    t: str = raw.strip()
+    t: str = _strip_outer_quotes(raw.strip())
     if t == "":
         return "unknown"
+    t = _normalize_typing_alias(t)
+    alias_map: dict[str, str] = aliases if aliases is not None else {}
+    seen: set[str] = _seen if _seen is not None else set()
+
+    alias_target: str = alias_map.get(t, "")
+    if alias_target != "":
+        if t in seen:
+            return t
+        next_seen: set[str] = set(seen)
+        next_seen.add(t)
+        return normalize_type(alias_target, alias_map, next_seen)
 
     # Direct mapping
     mapped: str = _TYPE_MAP.get(t, "")
@@ -67,12 +106,18 @@ def normalize_type(raw: str) -> str:
     # Optional[X] → X | None (as string representation)
     if t.startswith("Optional[") and t.endswith("]"):
         inner: str = t[9:-1].strip()
-        return normalize_type(inner) + " | None"
+        return normalize_type(inner, alias_map, seen) + " | None"
+
+    # Union[X, Y] → X | Y
+    if t.startswith("Union[") and t.endswith("]"):
+        union_inner: str = t[6:-1].strip()
+        union_args: list[str] = split_generic_types(union_inner)
+        return " | ".join([normalize_type(a, alias_map, seen) for a in union_args])
 
     # Generic types: list[X], dict[K,V], set[X], tuple[X,...], deque[X]
     bracket: int = t.find("[")
     if bracket > 0 and t.endswith("]"):
-        base: str = t[:bracket].strip()
+        base: str = _normalize_typing_alias(t[:bracket].strip())
         inner_str: str = t[bracket + 1:-1]
         # Normalize base
         base_norm: str = base
@@ -88,7 +133,7 @@ def normalize_type(raw: str) -> str:
             base_norm = "deque"
         # Normalize inner type args
         args: list[str] = split_generic_types(inner_str)
-        norm_args: list[str] = [normalize_type(a) for a in args]
+        norm_args: list[str] = [normalize_type(a, alias_map, seen) for a in args]
         if len(norm_args) == 1:
             return base_norm + "[" + norm_args[0] + "]"
         return base_norm + "[" + ",".join(norm_args) + "]"
@@ -96,7 +141,7 @@ def normalize_type(raw: str) -> str:
     # Union type: X | Y
     if "|" in t:
         parts: list[str] = t.split("|")
-        norm_parts: list[str] = [normalize_type(p.strip()) for p in parts]
+        norm_parts: list[str] = [normalize_type(p.strip(), alias_map, seen) for p in parts]
         return " | ".join(norm_parts)
 
     # Unknown type → keep as-is (user-defined class names etc.)

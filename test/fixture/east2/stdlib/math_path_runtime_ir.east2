@@ -89,7 +89,7 @@
               "end_lineno": 6,
               "end_col": 25
             },
-            "resolved_type": "unknown",
+            "resolved_type": "Path",
             "casts": [],
             "borrow_kind": "value",
             "repr": "Path(\"tmp/a.txt\")",
@@ -101,7 +101,7 @@
                 "end_lineno": 6,
                 "end_col": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Path",
@@ -131,6 +131,7 @@
             "runtime_call_adapter_kind": "extern_delegate"
           },
           "declare": true,
+          "decl_type": "Path",
           "declare_init": true
         },
         {
@@ -175,9 +176,9 @@
                 "end_lineno": 7,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "Path",
               "casts": [],
-              "borrow_kind": "value",
+              "borrow_kind": "readonly_ref",
               "repr": "p",
               "id": "p"
             },
@@ -228,9 +229,9 @@
                 "end_lineno": 8,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "Path",
               "casts": [],
-              "borrow_kind": "value",
+              "borrow_kind": "readonly_ref",
               "repr": "p",
               "id": "p"
             },
@@ -281,9 +282,9 @@
                 "end_lineno": 9,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "Path",
               "casts": [],
-              "borrow_kind": "value",
+              "borrow_kind": "readonly_ref",
               "repr": "p",
               "id": "p"
             },
@@ -334,7 +335,7 @@
                 "end_lineno": 10,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "math.sin",
@@ -346,7 +347,7 @@
                   "end_lineno": 10,
                   "end_col": 12
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "math",
@@ -375,7 +376,7 @@
                     "end_lineno": 10,
                     "end_col": 21
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "module",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "math",
@@ -387,7 +388,7 @@
             "keywords": [],
             "resolved_runtime_call": "math.sin",
             "resolved_runtime_source": "module_attr",
-            "runtime_module_id": "math",
+            "runtime_module_id": "pytra.std.math",
             "runtime_symbol": "sin",
             "runtime_call_adapter_kind": "math.float_args",
             "semantic_tag": "stdlib.method.sin"
@@ -424,7 +425,7 @@
                 "end_lineno": 11,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -562,7 +563,7 @@
             "end_lineno": 16,
             "end_col": 7
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run",

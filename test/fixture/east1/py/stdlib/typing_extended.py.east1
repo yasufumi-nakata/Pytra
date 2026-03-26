@@ -55,7 +55,7 @@
       "name": "_sum_list",
       "original_name": "_sum_list",
       "arg_types": {
-        "xs": "list[int]"
+        "xs": "typing.List[int]"
       },
       "arg_order": [
         "xs"
@@ -219,7 +219,7 @@
       "name": "_head_pair",
       "original_name": "_head_pair",
       "arg_types": {
-        "pair": "tuple[int, int]"
+        "pair": "typing.Tuple[int, int]"
       },
       "arg_order": [
         "pair"
@@ -296,8 +296,8 @@
       "name": "_has_key",
       "original_name": "_has_key",
       "arg_types": {
-        "d": "dict[str, int]",
-        "keys": "set[str]"
+        "d": "typing.Dict[str, int]",
+        "keys": "typing.Set[str]"
       },
       "arg_order": [
         "d",

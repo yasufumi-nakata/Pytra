@@ -159,7 +159,11 @@
         }
       ],
       "vararg_name": "params",
-      "vararg_type": "unknown"
+      "vararg_type": "unknown",
+      "vararg_type_expr": {
+        "kind": "NamedType",
+        "name": "unknown"
+      }
     }
   ],
   "main_guard_body": [],

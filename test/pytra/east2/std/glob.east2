@@ -118,7 +118,7 @@
                 "end_lineno": 11,
                 "end_col": 25
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_glob_mod.glob",
@@ -130,7 +130,7 @@
                   "end_lineno": 11,
                   "end_col": 20
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_glob_mod",
@@ -157,7 +157,7 @@
             "keywords": [],
             "resolved_runtime_call": "_glob_mod.glob",
             "resolved_runtime_source": "module_attr",
-            "runtime_module_id": "glob",
+            "runtime_module_id": "pytra.std.glob",
             "runtime_symbol": "glob",
             "semantic_tag": "stdlib.fn.glob"
           }

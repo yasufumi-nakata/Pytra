@@ -177,13 +177,14 @@
               "end_lineno": 7,
               "end_col_offset": 12
             },
-            "resolved_type": "unknown",
+            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "old_argv",
             "id": "old_argv"
           },
           "declare": true,
+          "decl_type": "list[str]",
           "declare_init": true,
           "value": {
             "kind": "Attribute",
@@ -193,7 +194,7 @@
               "end_lineno": 7,
               "end_col_offset": 23
             },
-            "resolved_type": "unknown",
+            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "sys.argv",
@@ -205,7 +206,7 @@
                 "end_lineno": 7,
                 "end_col_offset": 18
               },
-              "resolved_type": "unknown",
+              "resolved_type": "module",
               "casts": [],
               "borrow_kind": "value",
               "repr": "sys",
@@ -215,10 +216,9 @@
           },
           "type_expr_summary_v1": {
             "schema_version": 1,
-            "kind": "DynamicType",
-            "category": "dynamic",
-            "mirror": "unknown",
-            "dynamic_name": "unknown"
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "list[str]"
           },
           "meta": {
             "lifetime_node_id": "n10",
@@ -262,13 +262,14 @@
               "end_lineno": 8,
               "end_col_offset": 12
             },
-            "resolved_type": "unknown",
+            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "old_path",
             "id": "old_path"
           },
           "declare": true,
+          "decl_type": "list[str]",
           "declare_init": true,
           "value": {
             "kind": "Attribute",
@@ -278,7 +279,7 @@
               "end_lineno": 8,
               "end_col_offset": 23
             },
-            "resolved_type": "unknown",
+            "resolved_type": "list[str]",
             "casts": [],
             "borrow_kind": "value",
             "repr": "sys.path",
@@ -290,7 +291,7 @@
                 "end_lineno": 8,
                 "end_col_offset": 18
               },
-              "resolved_type": "unknown",
+              "resolved_type": "module",
               "casts": [],
               "borrow_kind": "value",
               "repr": "sys",
@@ -300,10 +301,9 @@
           },
           "type_expr_summary_v1": {
             "schema_version": 1,
-            "kind": "DynamicType",
-            "category": "dynamic",
-            "mirror": "unknown",
-            "dynamic_name": "unknown"
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "list[str]"
           },
           "meta": {
             "lifetime_node_id": "n9",
@@ -349,7 +349,7 @@
               "end_lineno": 9,
               "end_col_offset": 28
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "sys.set_argv([\"a\", \"b\"])",
@@ -361,7 +361,7 @@
                 "end_lineno": 9,
                 "end_col_offset": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "sys.set_argv",
@@ -373,7 +373,7 @@
                   "end_lineno": 9,
                   "end_col_offset": 7
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "sys",
@@ -427,12 +427,16 @@
               }
             ],
             "keywords": [],
+            "resolved_runtime_call": "sys.set_argv",
+            "resolved_runtime_source": "module_attr",
+            "runtime_module_id": "pytra.std.sys",
+            "runtime_symbol": "set_argv",
+            "semantic_tag": "stdlib.fn.set_argv",
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {
@@ -478,7 +482,7 @@
               "end_lineno": 10,
               "end_col_offset": 23
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "sys.set_path([\"x\"])",
@@ -490,7 +494,7 @@
                 "end_lineno": 10,
                 "end_col_offset": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "sys.set_path",
@@ -502,7 +506,7 @@
                   "end_lineno": 10,
                   "end_col_offset": 7
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "sys",
@@ -542,12 +546,16 @@
               }
             ],
             "keywords": [],
+            "resolved_runtime_call": "sys.set_path",
+            "resolved_runtime_source": "module_attr",
+            "runtime_module_id": "pytra.std.sys",
+            "runtime_symbol": "set_path",
+            "semantic_tag": "stdlib.fn.set_path",
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {
@@ -605,7 +613,7 @@
                 "end_lineno": 11,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -646,7 +654,7 @@
                     "end_lineno": 11,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -666,7 +674,7 @@
                         "end_lineno": 11,
                         "end_col_offset": 50
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "list[str]",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "sys.argv",
@@ -678,7 +686,7 @@
                           "end_lineno": 11,
                           "end_col_offset": 45
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "module",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "sys",
@@ -709,19 +717,17 @@
                     "repr": "isinstance(sys.argv, list)",
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "GenericType",
+                      "category": "static",
+                      "mirror": "list[str]"
                     },
                     "narrowing_lane_v1": {
                       "schema_version": 1,
-                      "source_category": "dynamic",
+                      "source_category": "static",
                       "source_type": {
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "GenericType",
+                        "category": "static",
+                        "mirror": "list[str]"
                       }
                     }
                   },
@@ -856,7 +862,7 @@
                 "end_lineno": 12,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -897,7 +903,7 @@
                     "end_lineno": 12,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -917,7 +923,7 @@
                         "end_lineno": 12,
                         "end_col_offset": 50
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "list[str]",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "sys.path",
@@ -929,7 +935,7 @@
                           "end_lineno": 12,
                           "end_col_offset": 45
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "module",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "sys",
@@ -960,19 +966,17 @@
                     "repr": "isinstance(sys.path, list)",
                     "type_expr_summary_v1": {
                       "schema_version": 1,
-                      "kind": "DynamicType",
-                      "category": "dynamic",
-                      "mirror": "unknown",
-                      "dynamic_name": "unknown"
+                      "kind": "GenericType",
+                      "category": "static",
+                      "mirror": "list[str]"
                     },
                     "narrowing_lane_v1": {
                       "schema_version": 1,
-                      "source_category": "dynamic",
+                      "source_category": "static",
                       "source_type": {
-                        "kind": "DynamicType",
-                        "category": "dynamic",
-                        "mirror": "unknown",
-                        "dynamic_name": "unknown"
+                        "kind": "GenericType",
+                        "category": "static",
+                        "mirror": "list[str]"
                       }
                     }
                   },
@@ -1108,7 +1112,7 @@
                 "end_lineno": 13,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1149,7 +1153,7 @@
                     "end_lineno": 13,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1164,7 +1168,7 @@
                       "end_lineno": 13,
                       "end_col_offset": 42
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "sys.argv[0]",
@@ -1176,7 +1180,7 @@
                         "end_lineno": 13,
                         "end_col_offset": 39
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "list[str]",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "sys.argv",
@@ -1188,7 +1192,7 @@
                           "end_lineno": 13,
                           "end_col_offset": 34
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "module",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "sys",
@@ -1339,7 +1343,7 @@
                 "end_lineno": 14,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1380,7 +1384,7 @@
                     "end_lineno": 14,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1395,7 +1399,7 @@
                       "end_lineno": 14,
                       "end_col_offset": 42
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "str",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "sys.path[0]",
@@ -1407,7 +1411,7 @@
                         "end_lineno": 14,
                         "end_col_offset": 39
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "list[str]",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "sys.path",
@@ -1419,7 +1423,7 @@
                           "end_lineno": 14,
                           "end_col_offset": 34
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "module",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "sys",
@@ -1559,7 +1563,7 @@
               "end_lineno": 15,
               "end_col_offset": 26
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "sys.set_argv(old_argv)",
@@ -1571,7 +1575,7 @@
                 "end_lineno": 15,
                 "end_col_offset": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "sys.set_argv",
@@ -1583,7 +1587,7 @@
                   "end_lineno": 15,
                   "end_col_offset": 7
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "sys",
@@ -1600,20 +1604,24 @@
                   "end_lineno": 15,
                   "end_col_offset": 25
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "list[str]",
                 "casts": [],
-                "borrow_kind": "value",
+                "borrow_kind": "readonly_ref",
                 "repr": "old_argv",
                 "id": "old_argv"
               }
             ],
             "keywords": [],
+            "resolved_runtime_call": "sys.set_argv",
+            "resolved_runtime_source": "module_attr",
+            "runtime_module_id": "pytra.std.sys",
+            "runtime_symbol": "set_argv",
+            "semantic_tag": "stdlib.fn.set_argv",
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {
@@ -1657,7 +1665,7 @@
               "end_lineno": 16,
               "end_col_offset": 26
             },
-            "resolved_type": "unknown",
+            "resolved_type": "None",
             "casts": [],
             "borrow_kind": "value",
             "repr": "sys.set_path(old_path)",
@@ -1669,7 +1677,7 @@
                 "end_lineno": 16,
                 "end_col_offset": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "sys.set_path",
@@ -1681,7 +1689,7 @@
                   "end_lineno": 16,
                   "end_col_offset": 7
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "sys",
@@ -1698,20 +1706,24 @@
                   "end_lineno": 16,
                   "end_col_offset": 25
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "list[str]",
                 "casts": [],
-                "borrow_kind": "value",
+                "borrow_kind": "readonly_ref",
                 "repr": "old_path",
                 "id": "old_path"
               }
             ],
             "keywords": [],
+            "resolved_runtime_call": "sys.set_path",
+            "resolved_runtime_source": "module_attr",
+            "runtime_module_id": "pytra.std.sys",
+            "runtime_symbol": "set_path",
+            "semantic_tag": "stdlib.fn.set_path",
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
             }
           },
           "meta": {
@@ -1765,7 +1777,7 @@
                 "end_lineno": 17,
                 "end_col_offset": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_all",
@@ -2353,7 +2365,7 @@
             "end_lineno": 21,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -2380,7 +2392,7 @@
                 "end_lineno": 21,
                 "end_col_offset": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_sys_extended",
@@ -2430,8 +2442,10 @@
           "source_module_id": "pytra.std",
           "source_export_name": "sys",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std",
-          "runtime_group": "std"
+          "runtime_module_id": "pytra.std.sys",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module",
+          "host_only": true
         },
         {
           "module_id": "pytra.utils.assertions",

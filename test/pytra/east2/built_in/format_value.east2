@@ -243,7 +243,7 @@
                     "end_lineno": 22,
                     "end_col": 22
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_to_str",
@@ -313,7 +313,7 @@
                 "end_lineno": 23,
                 "end_col": 31
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_parse_format_spec",
@@ -383,7 +383,7 @@
                 "end_lineno": 24,
                 "end_col": 22
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_format_core",
@@ -453,7 +453,7 @@
                 "end_lineno": 25,
                 "end_col": 23
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_apply_align",
@@ -635,7 +635,7 @@
                     "end_lineno": 22,
                     "end_col": 22
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_to_str",
@@ -746,7 +746,7 @@
                     "end_lineno": 33,
                     "end_col": 26
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_repr_value",
@@ -857,7 +857,7 @@
                     "end_lineno": 33,
                     "end_col": 26
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_repr_value",
@@ -913,7 +913,7 @@
                 "end_lineno": 36,
                 "end_col": 18
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_to_str",
@@ -1065,7 +1065,7 @@
                 "end_lineno": 41,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "isinstance",
@@ -1094,7 +1094,7 @@
                   "end_lineno": 41,
                   "end_col": 28
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "type",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "str",
@@ -1177,7 +1177,7 @@
                     "end_lineno": 43,
                     "end_col": 19
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "isinstance",
@@ -1356,7 +1356,7 @@
                         "end_lineno": 48,
                         "end_col": 19
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "isinstance",
@@ -1440,7 +1440,7 @@
                             "end_lineno": 49,
                             "end_col": 23
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "_int_to_str",
@@ -1498,7 +1498,7 @@
                             "end_lineno": 50,
                             "end_col": 19
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "isinstance",
@@ -1582,7 +1582,7 @@
                                 "end_lineno": 51,
                                 "end_col": 25
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "_float_to_str",
@@ -1654,7 +1654,7 @@
                                 "end_lineno": 53,
                                 "end_col": 15
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "str",
@@ -1791,7 +1791,7 @@
                 "end_lineno": 41,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "isinstance",
@@ -1820,7 +1820,7 @@
                   "end_lineno": 41,
                   "end_col": 28
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "type",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "str",
@@ -1943,7 +1943,7 @@
                 "end_lineno": 60,
                 "end_col": 18
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_to_str",
@@ -2121,7 +2121,7 @@
                       "end_lineno": 65,
                       "end_col": 32
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "_int_to_str",
@@ -2585,7 +2585,7 @@
                         "end_lineno": 73,
                         "end_col": 25
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "digits.append",
@@ -2730,7 +2730,7 @@
                             "end_lineno": 75,
                             "end_col": 25
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "digits.append",
@@ -2875,7 +2875,7 @@
                                 "end_lineno": 77,
                                 "end_col": 25
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "digits.append",
@@ -3020,7 +3020,7 @@
                                     "end_lineno": 79,
                                     "end_col": 25
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "callable",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "digits.append",
@@ -3165,7 +3165,7 @@
                                         "end_lineno": 81,
                                         "end_col": 25
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "callable",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "digits.append",
@@ -3310,7 +3310,7 @@
                                             "end_lineno": 83,
                                             "end_col": 25
                                           },
-                                          "resolved_type": "unknown",
+                                          "resolved_type": "callable",
                                           "casts": [],
                                           "borrow_kind": "value",
                                           "repr": "digits.append",
@@ -3455,7 +3455,7 @@
                                                 "end_lineno": 85,
                                                 "end_col": 25
                                               },
-                                              "resolved_type": "unknown",
+                                              "resolved_type": "callable",
                                               "casts": [],
                                               "borrow_kind": "value",
                                               "repr": "digits.append",
@@ -3600,7 +3600,7 @@
                                                     "end_lineno": 87,
                                                     "end_col": 25
                                                   },
-                                                  "resolved_type": "unknown",
+                                                  "resolved_type": "callable",
                                                   "casts": [],
                                                   "borrow_kind": "value",
                                                   "repr": "digits.append",
@@ -3745,7 +3745,7 @@
                                                         "end_lineno": 89,
                                                         "end_col": 25
                                                       },
-                                                      "resolved_type": "unknown",
+                                                      "resolved_type": "callable",
                                                       "casts": [],
                                                       "borrow_kind": "value",
                                                       "repr": "digits.append",
@@ -3835,7 +3835,7 @@
                                                         "end_lineno": 91,
                                                         "end_col": 25
                                                       },
-                                                      "resolved_type": "unknown",
+                                                      "resolved_type": "callable",
                                                       "casts": [],
                                                       "borrow_kind": "value",
                                                       "repr": "digits.append",
@@ -4095,7 +4095,7 @@
                   "end_lineno": 94,
                   "end_col": 16
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -4468,7 +4468,7 @@
                 "end_lineno": 103,
                 "end_col": 14
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "str",
@@ -5096,7 +5096,7 @@
                 "end_lineno": 122,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "len",
@@ -10078,7 +10078,7 @@
                 "end_lineno": 206,
                 "end_col": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_spec_type",
@@ -10160,7 +10160,7 @@
                 "end_lineno": 207,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_spec_sign",
@@ -10242,7 +10242,7 @@
                 "end_lineno": 208,
                 "end_col": 36
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_spec_precision",
@@ -10324,7 +10324,7 @@
                 "end_lineno": 209,
                 "end_col": 34
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_spec_grouping",
@@ -10507,7 +10507,7 @@
                         "end_lineno": 211,
                         "end_col": 44
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "isinstance",
@@ -10536,7 +10536,7 @@
                           "end_lineno": 211,
                           "end_col": 55
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "type",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "str",
@@ -10600,7 +10600,7 @@
                     "end_lineno": 212,
                     "end_col": 24
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_to_str",
@@ -10737,7 +10737,7 @@
                         "end_lineno": 214,
                         "end_col": 38
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "_str_to_int",
@@ -10812,7 +10812,7 @@
                           "end_lineno": 215,
                           "end_col": 18
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "callable",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "len",
@@ -11032,7 +11032,7 @@
                     "end_lineno": 219,
                     "end_col": 17
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "isinstance",
@@ -11106,7 +11106,7 @@
                       "end_lineno": 219,
                       "end_col": 48
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "isinstance",
@@ -11179,7 +11179,7 @@
                     "end_lineno": 220,
                     "end_col": 26
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_format_int",
@@ -11277,7 +11277,7 @@
                 "end_lineno": 222,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "isinstance",
@@ -11347,7 +11347,7 @@
                     "end_lineno": 223,
                     "end_col": 28
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_format_float",
@@ -11459,7 +11459,7 @@
                 "end_lineno": 226,
                 "end_col": 18
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_to_str",
@@ -12003,7 +12003,7 @@
                     "end_lineno": 235,
                     "end_col": 25
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_int_to_str",
@@ -12130,7 +12130,7 @@
                         "end_lineno": 237,
                         "end_col": 25
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "_int_to_hex",
@@ -12271,7 +12271,7 @@
                             "end_lineno": 239,
                             "end_col": 25
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "_int_to_hex",
@@ -12412,7 +12412,7 @@
                                 "end_lineno": 241,
                                 "end_col": 25
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "_int_to_oct",
@@ -12539,7 +12539,7 @@
                                     "end_lineno": 243,
                                     "end_col": 25
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "callable",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "_int_to_bin",
@@ -12852,7 +12852,7 @@
                                         "end_lineno": 246,
                                         "end_col": 28
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "callable",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "_format_float",
@@ -12879,7 +12879,7 @@
                                             "end_lineno": 246,
                                             "end_col": 34
                                           },
-                                          "resolved_type": "unknown",
+                                          "resolved_type": "callable",
                                           "casts": [],
                                           "borrow_kind": "value",
                                           "repr": "float",
@@ -13023,7 +13023,7 @@
                                         "end_lineno": 235,
                                         "end_col": 25
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "callable",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "_int_to_str",
@@ -13160,7 +13160,7 @@
                     "end_lineno": 251,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_insert_grouping",
@@ -13432,7 +13432,7 @@
                             "end_lineno": 254,
                             "end_col": 34
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "_insert_grouping",
@@ -13587,7 +13587,7 @@
                                 "end_lineno": 254,
                                 "end_col": 34
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "_insert_grouping",
@@ -13742,7 +13742,7 @@
                                     "end_lineno": 254,
                                     "end_col": 34
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "callable",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "_insert_grouping",
@@ -13842,7 +13842,7 @@
                                     "end_lineno": 260,
                                     "end_col": 34
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "callable",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "_insert_grouping",
@@ -13937,7 +13937,7 @@
                 "end_lineno": 262,
                 "end_col": 22
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_apply_sign",
@@ -14210,7 +14210,7 @@
                     "end_lineno": 268,
                     "end_col": 26
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_str_to_int",
@@ -14695,7 +14695,7 @@
                     "end_lineno": 275,
                     "end_col": 26
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_float_fixed",
@@ -14836,7 +14836,7 @@
                         "end_lineno": 277,
                         "end_col": 24
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "_float_exp",
@@ -14991,7 +14991,7 @@
                             "end_lineno": 279,
                             "end_col": 24
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "_float_exp",
@@ -15208,7 +15208,7 @@
                                 "end_lineno": 281,
                                 "end_col": 28
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "_float_general",
@@ -15375,7 +15375,7 @@
                                       "end_lineno": 283,
                                       "end_col": 26
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "callable",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "_float_fixed",
@@ -15622,7 +15622,7 @@
                                         "end_lineno": 286,
                                         "end_col": 30
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "callable",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "_float_fixed",
@@ -15708,7 +15708,7 @@
                                         "end_lineno": 286,
                                         "end_col": 30
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "callable",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "_float_fixed",
@@ -15864,7 +15864,7 @@
                     "end_lineno": 292,
                     "end_col": 31
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "raw.find",
@@ -16252,7 +16252,7 @@
                           "end_lineno": 296,
                           "end_col": 34
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "callable",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "_insert_grouping",
@@ -16373,7 +16373,7 @@
                         "end_lineno": 298,
                         "end_col": 35
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "raw.find",
@@ -16552,7 +16552,7 @@
                               "end_lineno": 300,
                               "end_col": 38
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "callable",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "_insert_grouping",
@@ -16716,7 +16716,7 @@
                             "end_lineno": 302,
                             "end_col": 38
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "_insert_grouping",
@@ -16807,7 +16807,7 @@
                 "end_lineno": 304,
                 "end_col": 22
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_apply_sign",
@@ -17406,7 +17406,7 @@
                     "end_lineno": 318,
                     "end_col": 21
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "digits.append",
@@ -17703,7 +17703,7 @@
                   "end_lineno": 321,
                   "end_col": 16
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -18338,7 +18338,7 @@
                     "end_lineno": 334,
                     "end_col": 21
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "digits.append",
@@ -18379,7 +18379,7 @@
                         "end_lineno": 334,
                         "end_col": 33
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "_int_to_str",
@@ -18638,7 +18638,7 @@
                   "end_lineno": 337,
                   "end_col": 16
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -19352,7 +19352,7 @@
                         "end_lineno": 73,
                         "end_col": 25
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "digits.append",
@@ -19442,7 +19442,7 @@
                         "end_lineno": 75,
                         "end_col": 25
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "digits.append",
@@ -19686,7 +19686,7 @@
                   "end_lineno": 356,
                   "end_col": 16
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -20137,7 +20137,7 @@
                     "end_lineno": 368,
                     "end_col": 26
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "int",
@@ -20235,7 +20235,7 @@
                     "end_lineno": 369,
                     "end_col": 26
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_int_to_str",
@@ -20608,7 +20608,7 @@
                 "end_lineno": 376,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "int",
@@ -20780,7 +20780,7 @@
                   "end_lineno": 377,
                   "end_col": 38
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "int",
@@ -20897,7 +20897,7 @@
                   "end_lineno": 378,
                   "end_col": 38
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "int",
@@ -20987,7 +20987,7 @@
                 "end_lineno": 380,
                 "end_col": 31
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_int_to_str",
@@ -21068,7 +21068,7 @@
                   "end_lineno": 382,
                   "end_col": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -21243,7 +21243,7 @@
                     "end_lineno": 385,
                     "end_col": 22
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_int_to_str",
@@ -22382,7 +22382,7 @@
                 "end_lineno": 407,
                 "end_col": 32
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_float_fixed",
@@ -22742,7 +22742,7 @@
                 "end_lineno": 410,
                 "end_col": 30
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_int_to_str",
@@ -22817,7 +22817,7 @@
                   "end_lineno": 411,
                   "end_col": 10
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -23345,7 +23345,7 @@
                       "end_lineno": 422,
                       "end_col": 27
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "_float_fixed",
@@ -24749,7 +24749,7 @@
                     "end_lineno": 440,
                     "end_col": 34
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_float_fixed",
@@ -24881,7 +24881,7 @@
                         "end_lineno": 443,
                         "end_col": 33
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "result.endswith",
@@ -25088,7 +25088,7 @@
                         "end_lineno": 445,
                         "end_col": 30
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "result.endswith",
@@ -25333,7 +25333,7 @@
                 "end_lineno": 448,
                 "end_col": 21
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_float_exp",
@@ -25893,7 +25893,7 @@
                 "end_lineno": 464,
                 "end_col": 32
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_spec_width",
@@ -26056,7 +26056,7 @@
                 "end_lineno": 467,
                 "end_col": 28
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_str_to_int",
@@ -26131,7 +26131,7 @@
                   "end_lineno": 468,
                   "end_col": 10
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -26256,7 +26256,7 @@
                 "end_lineno": 471,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_spec_fill",
@@ -26436,7 +26436,7 @@
                 "end_lineno": 474,
                 "end_col": 28
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_spec_align",
@@ -26545,7 +26545,7 @@
                   "end_lineno": 475,
                   "end_col": 32
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -27245,7 +27245,7 @@
                           "end_lineno": 486,
                           "end_col": 14
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "callable",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "len",
@@ -27801,7 +27801,7 @@
                 "end_lineno": 490,
                 "end_col": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_spec_type",
@@ -28211,7 +28211,7 @@
                     "end_lineno": 501,
                     "end_col": 17
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "len",
@@ -29554,7 +29554,7 @@
                 "end_lineno": 529,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "len",
@@ -30060,7 +30060,7 @@
                     "end_lineno": 538,
                     "end_col": 20
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "parts.append",
@@ -30348,7 +30348,7 @@
                   "end_lineno": 542,
                   "end_col": 16
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",

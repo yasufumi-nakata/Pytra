@@ -171,7 +171,7 @@
                 "end_lineno": 3,
                 "end_col_offset": 13
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "s.discard",
@@ -283,7 +283,7 @@
                 "end_lineno": 4,
                 "end_col_offset": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "s.remove",
@@ -442,7 +442,7 @@
                   "end_lineno": 6,
                   "end_col_offset": 23
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -531,7 +531,7 @@
                     "end_lineno": 6,
                     "end_col_offset": 23
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "len",
@@ -980,7 +980,7 @@
                 "end_lineno": 10,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -1420,7 +1420,7 @@
             "end_lineno": 14,
             "end_col_offset": 12
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_case",

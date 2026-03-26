@@ -137,6 +137,22 @@ def _resolve_call_sig_key(
             return ""
         module_id = import_modules.get(owner_id, "")
         if module_id == "":
+            owner_rt = owner.get("resolved_type")
+            if isinstance(owner_rt, str) and owner_rt != "":
+                # First try any imported class symbol that matches the receiver type.
+                for imported in import_symbols.values():
+                    if not isinstance(imported, str) or "::" not in imported:
+                        continue
+                    mod, export = imported.split("::", 1)
+                    if export == owner_rt:
+                        if mod.startswith("pytra."):
+                            return mod + "::" + export + "." + attr
+                        if mod != "":
+                            return "pytra.std." + mod + "::" + export + "." + attr
+                        return mod + "::" + export + "." + attr
+                # Then try a local-class method in the current module.
+                if current_module_id != "":
+                    return current_module_id + "::" + owner_rt + "." + attr
             return ""
         return module_id + "::" + attr
 
@@ -209,6 +225,8 @@ def _expand_walk(
                                 args.append(deep_copy_json(default_val))
                             else:
                                 args.append(default_val)
+                if len(kw_map) > 0:
+                    node["keywords"] = []
 
     for v in node.values():
         if isinstance(v, (dict, list)):
@@ -221,17 +239,26 @@ def _expand_walk(
             )
 
 
-def expand_cross_module_defaults(modules_with_ids: list[tuple[str, dict[str, JsonVal]]]) -> None:
+def expand_cross_module_defaults(
+    modules_with_ids: list[tuple[str, dict[str, JsonVal]] | dict[str, JsonVal]],
+) -> None:
     """Expand default arguments in Call nodes across all linked modules.
 
     Args:
-        modules_with_ids: list of (module_id, east_doc) tuples.
+        modules_with_ids: list of (module_id, east_doc) tuples or plain docs.
 
     Mutates the east_doc of each module in-place.
     """
     # Collect signatures from all modules (using explicit module_id)
     sigs: dict[str, dict[str, JsonVal]] = {}
-    for module_id, doc in modules_with_ids:
+    normalized: list[tuple[str, dict[str, JsonVal]]] = []
+    for entry in modules_with_ids:
+        if isinstance(entry, tuple) and len(entry) == 2:
+            module_id, doc = entry
+        else:
+            doc = entry if isinstance(entry, dict) else {}
+            module_id = _module_id_from_doc(doc)
+        normalized.append((module_id, doc))
         if not isinstance(doc, dict) or module_id == "":
             continue
         body = doc.get("body")
@@ -245,7 +272,7 @@ def expand_cross_module_defaults(modules_with_ids: list[tuple[str, dict[str, Jso
         return
 
     # Expand defaults in all modules
-    for module_id, doc in modules_with_ids:
+    for module_id, doc in normalized:
         if isinstance(doc, dict):
             import_modules, import_symbols = collect_import_maps(doc)
             _expand_walk(

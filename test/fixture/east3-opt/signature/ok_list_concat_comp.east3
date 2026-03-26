@@ -440,7 +440,7 @@
                       "end_lineno": 8,
                       "end_col_offset": 45
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "uchars.index",
@@ -615,7 +615,7 @@
                         "end_lineno": 8,
                         "end_col_offset": 45
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "uchars.index",
@@ -834,7 +834,7 @@
                         "end_lineno": 8,
                         "end_col_offset": 45
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "uchars.index",
@@ -1031,7 +1031,7 @@
                 "end_lineno": 9,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -1382,7 +1382,7 @@
             "end_lineno": 13,
             "end_col_offset": 24
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_list_concat_comp",

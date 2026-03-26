@@ -332,7 +332,7 @@
                     "end_lineno": 19,
                     "end_col_offset": 26
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "self._items.append",
@@ -492,7 +492,7 @@
                     "end_lineno": 22,
                     "end_col_offset": 26
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "self._items.insert",
@@ -674,7 +674,7 @@
                       "end_lineno": 25,
                       "end_col_offset": 14
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "len",
@@ -774,7 +774,7 @@
                         "end_lineno": 26,
                         "end_col_offset": 28
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "type",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "IndexError",
@@ -844,7 +844,7 @@
                     "end_lineno": 27,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "self._items.pop",
@@ -998,7 +998,7 @@
                       "end_lineno": 25,
                       "end_col_offset": 14
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "len",
@@ -1098,7 +1098,7 @@
                         "end_lineno": 26,
                         "end_col_offset": 28
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "type",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "IndexError",
@@ -1446,7 +1446,7 @@
                     "end_lineno": 37,
                     "end_col_offset": 18
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "len",

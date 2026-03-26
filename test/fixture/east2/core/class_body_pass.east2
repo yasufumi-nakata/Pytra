@@ -102,7 +102,7 @@
                 "end_lineno": 6,
                 "end_col": 22
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Marker",
@@ -150,7 +150,7 @@
                 "end_lineno": 7,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -255,7 +255,7 @@
             "end_lineno": 11,
             "end_col": 8
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "main",

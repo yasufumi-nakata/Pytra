@@ -35,12 +35,17 @@
     "str.isalpha": "py_str_isalpha",
     "str.isalnum": "py_str_isalnum",
     "str.isspace": "py_str_isspace",
-    "py_write_text": "py_pathlib_write_text",
     "py_floordiv": "py_floordiv"
   },
   "skip_modules": [
     "pytra.built_in.",
-    "pytra.std.",
+    "pytra.std.glob",
+    "pytra.std.math",
+    "pytra.std.os",
+    "pytra.std.os_path",
+    "pytra.std.random",
+    "pytra.std.sys",
+    "pytra.std.time",
     "pytra.core."
   ]
 }

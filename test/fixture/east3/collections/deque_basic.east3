@@ -179,81 +179,43 @@
             }
           ],
           "value": {
-            "kind": "Unbox",
-            "resolved_type": "deque",
-            "borrow_kind": "value",
-            "casts": [],
-            "value": {
-              "kind": "Call",
-              "source_span": {
-                "lineno": 8,
-                "col_offset": 15,
-                "end_lineno": 8,
-                "end_col_offset": 22
-              },
-              "resolved_type": "unknown",
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "deque()",
-              "func": {
-                "kind": "Name",
-                "source_span": {
-                  "lineno": 8,
-                  "col_offset": 15,
-                  "end_lineno": 8,
-                  "end_col_offset": 20
-                },
-                "resolved_type": "unknown",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "deque",
-                "id": "deque"
-              },
-              "args": [],
-              "keywords": [],
-              "resolved_runtime_call": "collections.deque",
-              "resolved_runtime_source": "import_symbol",
-              "runtime_module_id": "pytra.std.collections",
-              "runtime_symbol": "deque",
-              "runtime_call_adapter_kind": "extern_delegate",
-              "type_expr_summary_v1": {
-                "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
-              }
-            },
+            "kind": "Call",
             "source_span": {
               "lineno": 8,
               "col_offset": 15,
               "end_lineno": 8,
               "end_col_offset": 22
             },
+            "resolved_type": "deque",
+            "casts": [],
+            "borrow_kind": "value",
             "repr": "deque()",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 8,
+                "col_offset": 15,
+                "end_lineno": 8,
+                "end_col_offset": 20
+              },
+              "resolved_type": "type",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "deque",
+              "id": "deque"
+            },
+            "args": [],
+            "keywords": [],
+            "resolved_runtime_call": "collections.deque",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.std.collections",
+            "runtime_symbol": "deque",
+            "runtime_call_adapter_kind": "extern_delegate",
             "type_expr_summary_v1": {
               "schema_version": 1,
               "kind": "NamedType",
               "category": "static",
               "mirror": "deque"
-            },
-            "target": "deque",
-            "on_fail": "raise",
-            "bridge_lane_v1": {
-              "schema_version": 1,
-              "target": {
-                "kind": "NamedType",
-                "category": "static",
-                "mirror": "deque"
-              },
-              "target_category": "static",
-              "value": {
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
-              },
-              "value_category": "dynamic"
             }
           },
           "type_expr_summary_v1": {
@@ -513,7 +475,7 @@
                 "end_lineno": 12,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -554,7 +516,7 @@
                     "end_lineno": 12,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -581,7 +543,7 @@
                         "end_lineno": 12,
                         "end_col_offset": 34
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "len",
@@ -720,7 +682,7 @@
                 "end_lineno": 14,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -761,7 +723,7 @@
                     "end_lineno": 14,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -926,7 +888,7 @@
                 "end_lineno": 15,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -967,7 +929,7 @@
                     "end_lineno": 15,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1126,7 +1088,7 @@
                 "end_lineno": 16,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1167,7 +1129,7 @@
                     "end_lineno": 16,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1194,7 +1156,7 @@
                         "end_lineno": 16,
                         "end_col_offset": 34
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "len",
@@ -1333,7 +1295,7 @@
                 "end_lineno": 18,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1374,7 +1336,7 @@
                     "end_lineno": 18,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1539,7 +1501,7 @@
                 "end_lineno": 19,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1580,7 +1542,7 @@
                     "end_lineno": 19,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1607,7 +1569,7 @@
                         "end_lineno": 19,
                         "end_col_offset": 34
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "len",
@@ -1974,7 +1936,7 @@
                 "end_lineno": 24,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -2015,7 +1977,7 @@
                     "end_lineno": 24,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -2174,7 +2136,7 @@
                 "end_lineno": 25,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -2215,7 +2177,7 @@
                     "end_lineno": 25,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -2374,7 +2336,7 @@
                 "end_lineno": 26,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -2415,7 +2377,7 @@
                     "end_lineno": 26,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -2787,7 +2749,7 @@
                 "end_lineno": 31,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -2828,7 +2790,7 @@
                     "end_lineno": 31,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -2855,7 +2817,7 @@
                         "end_lineno": 31,
                         "end_col_offset": 34
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "len",
@@ -2994,7 +2956,7 @@
                 "end_lineno": 33,
                 "end_col_offset": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_all",
@@ -3093,7 +3055,7 @@
             "end_lineno": 37,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -3120,7 +3082,7 @@
                 "end_lineno": 37,
                 "end_col_offset": 25
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_deque_basic",

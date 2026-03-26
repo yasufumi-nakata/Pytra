@@ -284,7 +284,7 @@
                 "end_lineno": 15,
                 "end_col": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "perf_counter",
@@ -394,7 +394,7 @@
               "end_lineno": 18,
               "end_col": 9
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "t",
@@ -487,7 +487,7 @@
                     "end_lineno": 19,
                     "end_col": 25
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "type",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "bytearray",
@@ -559,7 +559,7 @@
                   "end_lineno": 20,
                   "end_col": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "y",
@@ -694,7 +694,7 @@
                       "end_lineno": 22,
                       "end_col": 17
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "int64",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "x",
@@ -911,7 +911,7 @@
                           "end_lineno": 25,
                           "end_col": 184
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "float64",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "( math.sin((x + t * 2.0) * 0.045) + math.sin((y - t * 1.2) * 0.05) + math.sin((x + y + t * 1.7) * 0.03) + math.sin(math.sqrt(dx * dx + dy * dy) * 0.07 - t * 0.18) )",
@@ -923,7 +923,7 @@
                             "end_lineno": 25,
                             "end_col": 123
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "float64",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "math.sin((x + t * 2.0) * 0.045) + math.sin((y - t * 1.2) * 0.05) + math.sin((x + y + t * 1.7) * 0.03)",
@@ -935,7 +935,7 @@
                               "end_lineno": 25,
                               "end_col": 86
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "math.sin((x + t * 2.0) * 0.045) + math.sin((y - t * 1.2) * 0.05)",
@@ -947,7 +947,7 @@
                                 "end_lineno": 25,
                                 "end_col": 53
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "float64",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "math.sin((x + t * 2.0) * 0.045)",
@@ -959,7 +959,7 @@
                                   "end_lineno": 25,
                                   "end_col": 30
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "callable",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "math.sin",
@@ -971,7 +971,7 @@
                                     "end_lineno": 25,
                                     "end_col": 26
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "module",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "math",
@@ -1093,7 +1093,13 @@
                                   }
                                 }
                               ],
-                              "keywords": []
+                              "keywords": [],
+                              "resolved_runtime_call": "math.sin",
+                              "resolved_runtime_source": "module_attr",
+                              "runtime_module_id": "pytra.std.math",
+                              "runtime_symbol": "sin",
+                              "runtime_call_adapter_kind": "math.float_args",
+                              "semantic_tag": "stdlib.method.sin"
                             },
                             "op": "Add",
                             "right": {
@@ -1104,7 +1110,7 @@
                                 "end_lineno": 25,
                                 "end_col": 86
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "float64",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "math.sin((y - t * 1.2) * 0.05)",
@@ -1116,7 +1122,7 @@
                                   "end_lineno": 25,
                                   "end_col": 64
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "callable",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "math.sin",
@@ -1128,7 +1134,7 @@
                                     "end_lineno": 25,
                                     "end_col": 60
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "module",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "math",
@@ -1250,7 +1256,13 @@
                                   }
                                 }
                               ],
-                              "keywords": []
+                              "keywords": [],
+                              "resolved_runtime_call": "math.sin",
+                              "resolved_runtime_source": "module_attr",
+                              "runtime_module_id": "pytra.std.math",
+                              "runtime_symbol": "sin",
+                              "runtime_call_adapter_kind": "math.float_args",
+                              "semantic_tag": "stdlib.method.sin"
                             }
                           },
                           "op": "Add",
@@ -1262,7 +1274,7 @@
                               "end_lineno": 25,
                               "end_col": 123
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "float64",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "math.sin((x + y + t * 1.7) * 0.03)",
@@ -1274,7 +1286,7 @@
                                 "end_lineno": 25,
                                 "end_col": 97
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "callable",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "math.sin",
@@ -1286,7 +1298,7 @@
                                   "end_lineno": 25,
                                   "end_col": 93
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "module",
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "math",
@@ -1436,7 +1448,13 @@
                                 }
                               }
                             ],
-                            "keywords": []
+                            "keywords": [],
+                            "resolved_runtime_call": "math.sin",
+                            "resolved_runtime_source": "module_attr",
+                            "runtime_module_id": "pytra.std.math",
+                            "runtime_symbol": "sin",
+                            "runtime_call_adapter_kind": "math.float_args",
+                            "semantic_tag": "stdlib.method.sin"
                           }
                         },
                         "op": "Add",
@@ -1448,7 +1466,7 @@
                             "end_lineno": 25,
                             "end_col": 182
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "float64",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "math.sin(math.sqrt(dx * dx + dy * dy) * 0.07 - t * 0.18)",
@@ -1460,7 +1478,7 @@
                               "end_lineno": 25,
                               "end_col": 134
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "callable",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "math.sin",
@@ -1472,7 +1490,7 @@
                                 "end_lineno": 25,
                                 "end_col": 130
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "module",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "math",
@@ -1513,7 +1531,7 @@
                                     "end_lineno": 25,
                                     "end_col": 163
                                   },
-                                  "resolved_type": "unknown",
+                                  "resolved_type": "float64",
                                   "casts": [],
                                   "borrow_kind": "value",
                                   "repr": "math.sqrt(dx * dx + dy * dy)",
@@ -1525,7 +1543,7 @@
                                       "end_lineno": 25,
                                       "end_col": 144
                                     },
-                                    "resolved_type": "unknown",
+                                    "resolved_type": "callable",
                                     "casts": [],
                                     "borrow_kind": "value",
                                     "repr": "math.sqrt",
@@ -1537,7 +1555,7 @@
                                         "end_lineno": 25,
                                         "end_col": 139
                                       },
-                                      "resolved_type": "unknown",
+                                      "resolved_type": "module",
                                       "casts": [],
                                       "borrow_kind": "value",
                                       "repr": "math",
@@ -1645,7 +1663,13 @@
                                       }
                                     }
                                   ],
-                                  "keywords": []
+                                  "keywords": [],
+                                  "resolved_runtime_call": "math.sqrt",
+                                  "resolved_runtime_source": "module_attr",
+                                  "runtime_module_id": "pytra.std.math",
+                                  "runtime_symbol": "sqrt",
+                                  "runtime_call_adapter_kind": "math.float_args",
+                                  "semantic_tag": "stdlib.method.sqrt"
                                 },
                                 "op": "Mult",
                                 "right": {
@@ -1715,10 +1739,17 @@
                               }
                             }
                           ],
-                          "keywords": []
+                          "keywords": [],
+                          "resolved_runtime_call": "math.sin",
+                          "resolved_runtime_source": "module_attr",
+                          "runtime_module_id": "pytra.std.math",
+                          "runtime_symbol": "sin",
+                          "runtime_call_adapter_kind": "math.float_args",
+                          "semantic_tag": "stdlib.method.sin"
                         }
                       },
                       "declare": true,
+                      "decl_type": "float64",
                       "declare_init": true
                     },
                     {
@@ -1763,7 +1794,7 @@
                             "end_lineno": 31,
                             "end_col": 23
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "int",
@@ -1802,9 +1833,9 @@
                                   "end_lineno": 31,
                                   "end_col": 26
                                 },
-                                "resolved_type": "unknown",
+                                "resolved_type": "float64",
                                 "casts": [],
-                                "borrow_kind": "value",
+                                "borrow_kind": "readonly_ref",
                                 "repr": "v",
                                 "id": "v"
                               },
@@ -2229,7 +2260,7 @@
                     "end_lineno": 37,
                     "end_col": 21
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "frames.append",
@@ -2270,7 +2301,7 @@
                         "end_lineno": 37,
                         "end_col": 27
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "type",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "bytes",
@@ -2356,7 +2387,7 @@
                 "end_lineno": 39,
                 "end_col": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "save_gif",
@@ -2439,7 +2470,7 @@
                     "end_lineno": 39,
                     "end_col": 54
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "grayscale_palette",
@@ -2551,7 +2582,7 @@
                   "end_lineno": 40,
                   "end_col": 26
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "perf_counter",
@@ -2613,7 +2644,7 @@
                 "end_lineno": 41,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -2687,7 +2718,7 @@
                 "end_lineno": 42,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -2761,7 +2792,7 @@
                 "end_lineno": 43,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -2859,7 +2890,7 @@
             "end_lineno": 47,
             "end_col": 24
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_10_plasma_effect",
@@ -2886,8 +2917,10 @@
           "source_module_id": "pytra.std",
           "source_export_name": "math",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std",
-          "runtime_group": "std"
+          "runtime_module_id": "pytra.std.math",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module",
+          "host_only": true
         },
         {
           "module_id": "pytra.std.time",

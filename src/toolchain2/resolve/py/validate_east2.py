@@ -20,6 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from pytra.std.json import JsonVal
+from toolchain2.resolve.py.type_norm import normalize_type
 
 
 @dataclass
@@ -40,11 +41,8 @@ _EXPR_KINDS: set[str] = {
     "Name", "Constant", "BinOp", "UnaryOp", "Compare", "BoolOp",
     "Call", "Attribute", "Subscript", "List", "Dict", "Set", "Tuple",
     "IfExp", "ListComp", "DictComp", "SetComp", "Starred",
-    "JoinedStr", "FormattedValue", "Lambda",
+    "JoinedStr", "FormattedValue", "Lambda", "RangeExpr",
 }
-
-# Unresolved Python types that should have been normalized
-_UNNORMALIZED_TYPES: set[str] = {"int", "float", "byte", "bytes", "bytearray"}
 
 
 def validate_east2(doc: dict[str, JsonVal]) -> ValidationResult:
@@ -125,11 +123,13 @@ def _walk_node(node: JsonVal, ctx: _WalkContext, in_class: bool, path: str) -> N
         ctx.expr_count += 1
         rt = node.get("resolved_type")
         if isinstance(rt, str) and rt != "":
-            ctx.resolved_count += 1
+            if rt == "unknown":
+                ctx.result.errors.append(path + ": " + kind + " resolved_type is unknown")
+            else:
+                ctx.resolved_count += 1
         else:
             ctx.missing_resolved_count += 1
-            # Only warn, don't error — some contexts legitimately lack it
-            # ctx.result.warnings.append(path + ": " + kind + " missing resolved_type")
+            ctx.result.errors.append(path + ": " + kind + " missing resolved_type")
 
     # --- range() Call check ---
     if kind == "Call":
@@ -176,21 +176,24 @@ def _check_type_normalization(node: dict[str, JsonVal], ctx: _WalkContext, path:
     for field_name in ("resolved_type", "return_type", "decl_type", "annotation", "target_type"):
         val = node.get(field_name)
         if isinstance(val, str):
-            # Check for unnormalized types at top level
-            if val in _UNNORMALIZED_TYPES:
+            normalized: str = normalize_type(val)
+            if normalized != val:
                 ctx.unnormalized_type_count += 1
-                ctx.result.warnings.append(
-                    path + "." + field_name + ": unnormalized type '" + val + "'"
+                ctx.result.errors.append(
+                    path + "." + field_name + ": unnormalized type '" + val + "' (expected '" + normalized + "')"
                 )
 
     # Check arg_types dict
     at = node.get("arg_types")
     if isinstance(at, dict):
         for ak, av in at.items():
-            if isinstance(av, str) and av in _UNNORMALIZED_TYPES:
+            if isinstance(av, str):
+                normalized_arg: str = normalize_type(av)
+                if normalized_arg == av:
+                    continue
                 ctx.unnormalized_type_count += 1
-                ctx.result.warnings.append(
-                    path + ".arg_types." + ak + ": unnormalized type '" + av + "'"
+                ctx.result.errors.append(
+                    path + ".arg_types." + ak + ": unnormalized type '" + av + "' (expected '" + normalized_arg + "')"
                 )
 
 

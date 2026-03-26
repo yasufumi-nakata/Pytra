@@ -127,7 +127,7 @@
                 "end_lineno": 12,
                 "end_col": 20
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "os.getcwd",
@@ -139,7 +139,7 @@
                   "end_lineno": 12,
                   "end_col": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "os",
@@ -151,7 +151,7 @@
             "keywords": [],
             "resolved_runtime_call": "os.getcwd",
             "resolved_runtime_source": "module_attr",
-            "runtime_module_id": "os",
+            "runtime_module_id": "pytra.std.os",
             "runtime_symbol": "getcwd",
             "semantic_tag": "stdlib.fn.getcwd"
           }
@@ -266,7 +266,7 @@
                   "end_lineno": 17,
                   "end_col": 34
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "bool",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "path.exists(p)",
@@ -278,7 +278,7 @@
                     "end_lineno": 17,
                     "end_col": 31
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "path.exists",
@@ -290,7 +290,7 @@
                       "end_lineno": 17,
                       "end_col": 24
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "module",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "path",
@@ -314,7 +314,12 @@
                     "id": "p"
                   }
                 ],
-                "keywords": []
+                "keywords": [],
+                "resolved_runtime_call": "path.exists",
+                "resolved_runtime_source": "module_attr",
+                "runtime_module_id": "pytra.std.os_path",
+                "runtime_symbol": "exists",
+                "semantic_tag": "stdlib.fn.path_exists"
               }
             ]
           },
@@ -373,7 +378,7 @@
                 "end_lineno": 19,
                 "end_col": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "os.mkdir",
@@ -385,7 +390,7 @@
                   "end_lineno": 19,
                   "end_col": 6
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "os",
@@ -412,7 +417,7 @@
             "keywords": [],
             "resolved_runtime_call": "os.mkdir",
             "resolved_runtime_source": "module_attr",
-            "runtime_module_id": "os",
+            "runtime_module_id": "pytra.std.os",
             "runtime_symbol": "mkdir",
             "semantic_tag": "stdlib.fn.mkdir"
           }
@@ -511,7 +516,7 @@
                 "end_lineno": 24,
                 "end_col": 15
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "os.makedirs",
@@ -523,7 +528,7 @@
                   "end_lineno": 24,
                   "end_col": 6
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "os",
@@ -568,7 +573,7 @@
             ],
             "resolved_runtime_call": "os.makedirs",
             "resolved_runtime_source": "module_attr",
-            "runtime_module_id": "os",
+            "runtime_module_id": "pytra.std.os",
             "runtime_symbol": "makedirs",
             "semantic_tag": "stdlib.fn.makedirs"
           }
@@ -644,8 +649,10 @@
           "source_module_id": "pytra.std",
           "source_export_name": "os_path",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std",
-          "runtime_group": "std"
+          "runtime_module_id": "pytra.std.os_path",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module",
+          "host_only": true
         }
       ],
       "qualified_refs": [

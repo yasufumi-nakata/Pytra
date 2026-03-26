@@ -197,124 +197,86 @@
             "name": "str"
           },
           "value": {
-            "kind": "Unbox",
-            "resolved_type": "str",
-            "borrow_kind": "value",
-            "casts": [],
-            "value": {
-              "kind": "Call",
-              "source_span": {
-                "lineno": 7,
-                "col_offset": 15,
-                "end_lineno": 7,
-                "end_col_offset": 43
-              },
-              "resolved_type": "unknown",
-              "casts": [],
-              "borrow_kind": "value",
-              "repr": "sub(r\"\\s+\", \" \", \"a   b\\tc\")",
-              "func": {
-                "kind": "Name",
-                "source_span": {
-                  "lineno": 7,
-                  "col_offset": 15,
-                  "end_lineno": 7,
-                  "end_col_offset": 18
-                },
-                "resolved_type": "unknown",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "sub",
-                "id": "sub"
-              },
-              "args": [
-                {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 7,
-                    "col_offset": 19,
-                    "end_lineno": 7,
-                    "end_col_offset": 25
-                  },
-                  "resolved_type": "str",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "r\"\\s+\"",
-                  "value": "\\s+"
-                },
-                {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 7,
-                    "col_offset": 27,
-                    "end_lineno": 7,
-                    "end_col_offset": 30
-                  },
-                  "resolved_type": "str",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "\" \"",
-                  "value": " "
-                },
-                {
-                  "kind": "Constant",
-                  "source_span": {
-                    "lineno": 7,
-                    "col_offset": 32,
-                    "end_lineno": 7,
-                    "end_col_offset": 42
-                  },
-                  "resolved_type": "str",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "\"a   b\\tc\"",
-                  "value": "a   b\tc"
-                }
-              ],
-              "keywords": [],
-              "resolved_runtime_call": "re.sub",
-              "resolved_runtime_source": "import_symbol",
-              "runtime_module_id": "pytra.std.re",
-              "runtime_symbol": "sub",
-              "runtime_call_adapter_kind": "extern_delegate",
-              "type_expr_summary_v1": {
-                "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
-              }
-            },
+            "kind": "Call",
             "source_span": {
               "lineno": 7,
               "col_offset": 15,
               "end_lineno": 7,
               "end_col_offset": 43
             },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
             "repr": "sub(r\"\\s+\", \" \", \"a   b\\tc\")",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 7,
+                "col_offset": 15,
+                "end_lineno": 7,
+                "end_col_offset": 18
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "sub",
+              "id": "sub"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 7,
+                  "col_offset": 19,
+                  "end_lineno": 7,
+                  "end_col_offset": 25
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "r\"\\s+\"",
+                "value": "\\s+"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 7,
+                  "col_offset": 27,
+                  "end_lineno": 7,
+                  "end_col_offset": 30
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\" \"",
+                "value": " "
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 7,
+                  "col_offset": 32,
+                  "end_lineno": 7,
+                  "end_col_offset": 42
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"a   b\\tc\"",
+                "value": "a   b\tc"
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "re.sub",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.std.re",
+            "runtime_symbol": "sub",
+            "runtime_call_adapter_kind": "extern_delegate",
             "type_expr_summary_v1": {
               "schema_version": 1,
               "kind": "NamedType",
               "category": "static",
               "mirror": "str"
-            },
-            "target": "str",
-            "on_fail": "raise",
-            "bridge_lane_v1": {
-              "schema_version": 1,
-              "target": {
-                "kind": "NamedType",
-                "category": "static",
-                "mirror": "str"
-              },
-              "target_category": "static",
-              "value": {
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
-              },
-              "value_category": "dynamic"
             }
           },
           "type_expr_summary_v1": {
@@ -376,7 +338,7 @@
                 "end_lineno": 8,
                 "end_col_offset": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -417,7 +379,7 @@
                     "end_lineno": 8,
                     "end_col_offset": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -563,7 +525,7 @@
                 "end_lineno": 9,
                 "end_col_offset": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_all",
@@ -867,7 +829,7 @@
             "end_lineno": 13,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -894,7 +856,7 @@
                 "end_lineno": 13,
                 "end_col_offset": 25
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_re_extended",

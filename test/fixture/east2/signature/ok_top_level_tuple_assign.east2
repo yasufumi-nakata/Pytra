@@ -196,7 +196,7 @@
                 "end_lineno": 8,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -298,7 +298,7 @@
             "end_lineno": 12,
             "end_col": 20
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_tuple_assign",

@@ -516,8 +516,8 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
         go_code = emit_go_module(doc)
         cpp_code = emit_cpp_module(doc)
 
-        self.assertIn("int64(Status.ERROR)", go_code)
-        self.assertNotIn("py_int(Status.ERROR)", go_code)
+        self.assertIn("int64(Status_ERROR)", go_code)
+        self.assertNotIn("py_int(Status_ERROR)", go_code)
         self.assertIn("static_cast<int64_t>(Status.ERROR)", cpp_code)
         self.assertNotIn("py_int(Status.ERROR)", cpp_code)
 
@@ -554,6 +554,132 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
             go_code = emit_go_module(doc)
 
         self.assertIn("rt_helper()", go_code)
+
+    def test_go_emitter_emits_pathlib_class_and_uses_native_os_path_helpers(self) -> None:
+        doc = _fixture_doc("src/runtime/east/std/pathlib.east")
+        meta = doc.setdefault("meta", {})
+        assert isinstance(meta, dict)
+        meta["linked_program_v1"] = {"module_id": "pytra.std.pathlib"}
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("type Path struct", go_code)
+        self.assertIn("func NewPath(", go_code)
+        self.assertIn("func (self *Path) joinpath(", go_code)
+        self.assertIn("join(", go_code)
+        self.assertIn("dirname(", go_code)
+        self.assertNotIn("py_Path(", go_code)
+        self.assertNotIn("py_pathlib_write_text", go_code)
+
+    def test_go_emitter_keeps_comprehensions_as_iife_instead_of_placeholder(self) -> None:
+        doc = _fixture_doc("test/fixture/east3-opt/collections/comprehension_dict_set.east3")
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("func() map[", go_code)
+        self.assertIn("__comp_result := map[", go_code)
+        self.assertNotIn("nil /*", go_code)
+
+    def test_go_emitter_returns_mutated_bytearray_helpers(self) -> None:
+        doc = _fixture_doc("test/pytra/east3-opt/utils/png.east3")
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("func _png_append(dst []byte, src []byte) []byte {", go_code)
+        self.assertIn("return dst", go_code)
+        self.assertIn("out = _png_append(out, []byte{byte(120), byte(1)})", go_code)
+
+    def test_go_emitter_uses_marker_interfaces_for_user_class_isinstance(self) -> None:
+        doc = _fixture_doc("test/fixture/east3-opt/oop/class_inherit_basic.east3")
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("func (_ Base) __pytra_is_Base() {}", go_code)
+        self.assertIn("func (_ Child) __pytra_is_Child() {}", go_code)
+        self.assertIn("interface{ __pytra_is_Base() }", go_code)
+        self.assertNotIn("any(c).(*Base)", go_code)
+
+    def test_go_emitter_lowers_class_vars_and_staticmethods_without_instance_fields(self) -> None:
+        class_doc = _fixture_doc("test/fixture/east3-opt/oop/class_member.east3")
+        static_doc = _fixture_doc("test/fixture/east3-opt/oop/staticmethod_basic.east3")
+
+        class_go = emit_go_module(class_doc)
+        static_go = emit_go_module(static_doc)
+
+        self.assertIn("var Counter_value int64 = 0", class_go)
+        self.assertIn("func NewCounter() *Counter {", class_go)
+        self.assertIn("Counter_value += 1", class_go)
+        self.assertNotIn("func NewCounter(value int64) *Counter {", class_go)
+        self.assertIn("py_print(MathUtil_double(5))", static_go)
+        self.assertIn("py_print(MathUtil_triple(4))", static_go)
+        self.assertNotIn("MathUtil.double(5)", static_go)
+
+    def test_go_emitter_lowers_super_calls_and_polymorphic_base_params(self) -> None:
+        super_doc = _fixture_doc("test/fixture/east3-opt/oop/super_init.east3")
+        dispatch_doc = _fixture_doc("test/fixture/east3-opt/oop/inheritance_virtual_dispatch_multilang.east3")
+
+        super_go = emit_go_module(super_doc)
+        dispatch_go = emit_go_module(dispatch_doc)
+
+        self.assertIn("obj.Base = *NewBase()", super_go)
+        self.assertIn("(\"loud-\" + self.Dog.speak())", dispatch_go)
+        self.assertIn("type __pytra_iface_Animal interface {", dispatch_go)
+        self.assertIn("func call_via_animal(a __pytra_iface_Animal) string {", dispatch_go)
+        self.assertIn("func call_via_dog(d __pytra_iface_Dog) string {", dispatch_go)
+
+    def test_go_emitter_turns_returning_try_into_return_iife(self) -> None:
+        doc = _fixture_doc("test/pytra/east3-opt/utils/assertions.east3")
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("return func() bool {", go_code)
+        self.assertIn("__try_result = (py_to_string(actual) == py_to_string(expected))", go_code)
+        self.assertIn("__try_result = (actual == expected)", go_code)
+
+    def test_go_emitter_uses_len_based_truthiness_for_bytes_ifexp(self) -> None:
+        doc = _fixture_doc("test/fixture/east3-opt/typing/bytes_truthiness.east3")
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("if len(payload) > 0 {", go_code)
+        self.assertIn("for len(payload) > 0 {", go_code)
+        self.assertIn("return py_ternary_int(len(payload) > 0, 1, 0)", go_code)
+
+    def test_go_emitter_keeps_tuple_star_args_as_backing_slice_indexes(self) -> None:
+        doc = _fixture_doc("test/fixture/east3-opt/typing/starred_call_tuple_basic.east3")
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("rgb := []any{1, 2, 3}", go_code)
+        self.assertIn("mix_rgb(py_to_int64(rgb[0]), py_to_int64(rgb[1]), py_to_int64(rgb[2]))", go_code)
+        self.assertNotIn("rgb.([]any)", go_code)
+
+    def test_go_emitter_wraps_optional_scalars_with_typed_temporaries(self) -> None:
+        doc = _fixture_doc("test/fixture/east3-opt/typing/none_optional.east3")
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("func maybe_value(flag bool) *int64 {", go_code)
+        self.assertIn("var __opt_1 int64 = 42", go_code)
+        self.assertIn("var __opt_3 int64 = __dict_get_2", go_code)
+        self.assertIn("var __opt_5 int64 = __dict_get_4", go_code)
+
+    def test_go_emitter_lowers_enum_family_to_named_int_consts(self) -> None:
+        enum_go = emit_go_module(_fixture_doc("test/fixture/east3-opt/typing/enum_basic.east3"))
+        intenum_go = emit_go_module(_fixture_doc("test/fixture/east3-opt/typing/intenum_basic.east3"))
+        intflag_go = emit_go_module(_fixture_doc("test/fixture/east3-opt/typing/intflag_basic.east3"))
+
+        self.assertIn("type Color int64", enum_go)
+        self.assertIn("Color_RED Color = 1", enum_go)
+        self.assertIn("Color_BLUE Color = 2", enum_go)
+        self.assertNotIn("Enum", enum_go)
+        self.assertIn("type Status int64", intenum_go)
+        self.assertIn("Status_ERROR Status = 1", intenum_go)
+        self.assertNotIn("IntEnum", intenum_go)
+        self.assertIn("type Perm int64", intflag_go)
+        self.assertIn("Perm_READ Perm = 1", intflag_go)
+        self.assertIn("Perm((Perm_READ | Perm_WRITE))", intflag_go)
+        self.assertNotIn("IntFlag", intflag_go)
 
     def test_cpp_emitter_runtime_symbol_prefix_uses_skip_modules_without_pytra_hardcode(self) -> None:
         doc = _module_doc(

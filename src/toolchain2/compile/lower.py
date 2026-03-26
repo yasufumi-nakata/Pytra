@@ -57,6 +57,7 @@ from toolchain2.compile.passes import (
     lower_enumerate,
     hoist_block_scope_variables,
     apply_integer_promotion,
+    apply_guard_narrowing,
     apply_type_propagation,
     apply_yields_dynamic,
     detect_swap_patterns,
@@ -292,6 +293,28 @@ def _wrap_value_for_target_type(
     if target_t == "unknown":
         return value_expr
     value_summary = expr_type_summary(ctx, value_expr)
+    target_contains_dynamic_lane = (
+        "Any" in target_t or "object" in target_t or "unknown" in target_t
+    )
+    value_t = normalize_type_name(value_summary.get("mirror"))
+    value_requires_runtime_unbox = isinstance(value_expr, dict) and value_expr.get("yields_dynamic") is True
+    if (
+        target_contains_dynamic_lane
+        and not is_dynamic_like_summary(target_summary)
+        and not is_dynamic_like_summary(value_summary)
+        and not value_requires_runtime_unbox
+        and value_t != "unknown"
+        and value_t != target_t
+    ):
+        out = _make_boundary_expr(
+            kind=BOX, value_key="value", value_node=value_expr,
+            resolved_type=target_t, source_expr=value_expr,
+            ctx=ctx,
+        )
+        out["target"] = target_t
+        out["bridge_lane_v1"] = bridge_lane_payload(target_summary, value_summary)
+        set_type_expr_summary(out, target_summary)
+        return out
     if is_dynamic_like_summary(target_summary) and not is_dynamic_like_summary(value_summary):
         out = _make_boundary_expr(
             kind=BOX, value_key="value", value_node=value_expr,
@@ -301,7 +324,12 @@ def _wrap_value_for_target_type(
         out["bridge_lane_v1"] = bridge_lane_payload(target_summary, value_summary)
         set_type_expr_summary(out, target_summary)
         return out
-    if not is_dynamic_like_summary(target_summary) and is_dynamic_like_summary(value_summary):
+    if not is_dynamic_like_summary(target_summary) and (
+        is_dynamic_like_summary(value_summary) or value_requires_runtime_unbox
+    ):
+        bridge_value_summary = value_summary
+        if value_requires_runtime_unbox and not is_dynamic_like_summary(value_summary):
+            bridge_value_summary = unknown_type_summary()
         out = _make_boundary_expr(
             kind=UNBOX, value_key="value", value_node=value_expr,
             resolved_type=target_t, source_expr=value_expr,
@@ -309,7 +337,7 @@ def _wrap_value_for_target_type(
         )
         out["target"] = target_t
         out["on_fail"] = "raise"
-        out["bridge_lane_v1"] = bridge_lane_payload(target_summary, value_summary)
+        out["bridge_lane_v1"] = bridge_lane_payload(target_summary, bridge_value_summary)
         set_type_expr_summary(out, target_summary)
         return out
     return value_expr
@@ -1532,6 +1560,7 @@ def lower_east2_to_east3(east_module: Node, object_dispatch_mode: str = "") -> N
     lower_enumerate(lowered, ctx)
     hoist_block_scope_variables(lowered, ctx)
     apply_integer_promotion(lowered, ctx)
+    apply_guard_narrowing(lowered, ctx)
     apply_type_propagation(lowered, ctx)
     apply_yields_dynamic(lowered, ctx)
     detect_swap_patterns(lowered, ctx)

@@ -110,7 +110,7 @@
                 "end_lineno": 11,
                 "end_col": 28
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "time.perf_counter",
@@ -122,7 +122,7 @@
                   "end_lineno": 11,
                   "end_col": 15
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "time",
@@ -134,7 +134,7 @@
             "keywords": [],
             "resolved_runtime_call": "time.perf_counter",
             "resolved_runtime_source": "module_attr",
-            "runtime_module_id": "time",
+            "runtime_module_id": "pytra.std.time",
             "runtime_symbol": "perf_counter",
             "semantic_tag": "stdlib.fn.perf_counter"
           }

@@ -480,7 +480,7 @@
           "end_lineno": 21,
           "end_col": 41
         },
-        "resolved_type": "tuple[unknown, unknown, unknown, unknown, unknown]",
+        "resolved_type": "tuple[unknown, unknown, unknown, unknown, type]",
         "casts": [],
         "borrow_kind": "value",
         "repr": "(type(None), bool, int, float, str)",
@@ -579,7 +579,7 @@
               "end_lineno": 21,
               "end_col": 40
             },
-            "resolved_type": "unknown",
+            "resolved_type": "type",
             "casts": [],
             "borrow_kind": "value",
             "repr": "str",
@@ -588,7 +588,7 @@
         ]
       },
       "declare": true,
-      "decl_type": "tuple[unknown, unknown, unknown, unknown, unknown]",
+      "decl_type": "tuple[unknown, unknown, unknown, unknown, type]",
       "declare_init": true,
       "leading_trivia": [
         {

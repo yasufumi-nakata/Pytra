@@ -117,7 +117,7 @@
                 "end_lineno": 8,
                 "end_col": 21
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "isinstance",
@@ -146,7 +146,7 @@
                   "end_lineno": 8,
                   "end_col": 29
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "type",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "Base",
@@ -224,7 +224,7 @@
             "end_lineno": 11,
             "end_col": 18
           },
-          "resolved_type": "unknown",
+          "resolved_type": "type",
           "casts": [],
           "borrow_kind": "value",
           "repr": "Base",
@@ -291,7 +291,7 @@
             "end_lineno": 12,
             "end_col": 20
           },
-          "resolved_type": "unknown",
+          "resolved_type": "type",
           "casts": [],
           "borrow_kind": "value",
           "repr": "Child",
@@ -339,7 +339,7 @@
             "end_lineno": 13,
             "end_col": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -366,7 +366,7 @@
                 "end_lineno": 13,
                 "end_col": 15
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "check",
@@ -429,7 +429,7 @@
             "end_lineno": 14,
             "end_col": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -456,7 +456,7 @@
                 "end_lineno": 14,
                 "end_col": 15
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "check",
@@ -519,7 +519,7 @@
             "end_lineno": 15,
             "end_col": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -546,7 +546,7 @@
                 "end_lineno": 15,
                 "end_col": 20
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "isinstance",
@@ -575,7 +575,7 @@
                   "end_lineno": 15,
                   "end_col": 29
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "type",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "Child",

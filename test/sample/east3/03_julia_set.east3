@@ -136,7 +136,7 @@
                 "end_lineno": 9,
                 "end_col_offset": 33
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "bytearray",
@@ -1912,7 +1912,7 @@
                             "end_lineno": 37,
                             "end_col_offset": 23
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "int",
@@ -2085,7 +2085,7 @@
                             "end_lineno": 38,
                             "end_col_offset": 23
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "int",
@@ -2286,7 +2286,7 @@
                             "end_lineno": 39,
                             "end_col_offset": 23
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "int",
@@ -3026,7 +3026,7 @@
                 "end_lineno": 54,
                 "end_col_offset": 31
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "perf_counter",
@@ -3110,7 +3110,7 @@
                 "end_lineno": 55,
                 "end_col_offset": 36
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "render_julia",
@@ -3245,7 +3245,7 @@
                 "end_lineno": 56,
                 "end_col_offset": 21
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "png.write_rgb_png",
@@ -3257,7 +3257,7 @@
                   "end_lineno": 56,
                   "end_col_offset": 7
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "png",
@@ -3324,6 +3324,11 @@
               }
             ],
             "keywords": [],
+            "resolved_runtime_call": "png.write_rgb_png",
+            "resolved_runtime_source": "module_attr",
+            "runtime_module_id": "pytra.utils.png",
+            "runtime_symbol": "write_rgb_png",
+            "semantic_tag": "stdlib.method.write_rgb_png",
             "type_expr_summary_v1": {
               "schema_version": 1,
               "kind": "DynamicType",
@@ -3402,7 +3407,7 @@
                   "end_lineno": 57,
                   "end_col_offset": 33
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "perf_counter",
@@ -3473,7 +3478,7 @@
                 "end_lineno": 59,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -3559,7 +3564,7 @@
                 "end_lineno": 60,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -3667,7 +3672,7 @@
                 "end_lineno": 61,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -3747,7 +3752,7 @@
                 "end_lineno": 62,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -3841,7 +3846,7 @@
             "end_lineno": 66,
             "end_col_offset": 13
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_julia",
@@ -3893,8 +3898,10 @@
           "source_module_id": "pytra.utils",
           "source_export_name": "png",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.utils",
-          "runtime_group": "utils"
+          "runtime_module_id": "pytra.utils.png",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "module",
+          "host_only": true
         },
         {
           "module_id": "pytra.built_in.io_ops",

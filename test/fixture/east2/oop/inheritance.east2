@@ -319,7 +319,7 @@
                 "end_lineno": 18,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Dog",
@@ -367,7 +367,7 @@
                 "end_lineno": 19,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -394,7 +394,7 @@
                     "end_lineno": 19,
                     "end_col": 16
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "d.bark",
@@ -469,7 +469,7 @@
             "end_lineno": 22,
             "end_col": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -496,7 +496,7 @@
                 "end_lineno": 22,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",

@@ -8,7 +8,7 @@
   "modules": [
     {
       "module_id": "argparse_extended",
-      "input": "test/fixture/source/py/stdlib/argparse_extended.py",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/stdlib/argparse_extended.east3",
       "output": "east3/argparse_extended.east3.json",
       "source_path": "test/fixture/source/py/stdlib/argparse_extended.py",
       "is_entry": true,
@@ -16,7 +16,7 @@
     },
     {
       "module_id": "pytra.built_in.io_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
       "is_entry": false,
@@ -24,7 +24,7 @@
     },
     {
       "module_id": "pytra.built_in.sequence",
-      "input": "/workspace/Pytra/src/pytra/built_in/sequence.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/sequence.east",
       "output": "east3/pytra/built_in/sequence.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/sequence.py",
       "is_entry": false,
@@ -32,7 +32,7 @@
     },
     {
       "module_id": "pytra.std.argparse",
-      "input": "/workspace/Pytra/src/pytra/std/argparse.py",
+      "input": "/workspace/Pytra/src/runtime/east/std/argparse.east",
       "output": "east3/pytra/std/argparse.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/std/argparse.py",
       "is_entry": false,
@@ -40,7 +40,7 @@
     },
     {
       "module_id": "pytra.std.sys",
-      "input": "/workspace/Pytra/src/pytra/std/sys.py",
+      "input": "/workspace/Pytra/src/runtime/east/std/sys.east",
       "output": "east3/pytra/std/sys.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/std/sys.py",
       "is_entry": false,
@@ -48,9 +48,9 @@
     },
     {
       "module_id": "pytra.utils.assertions",
-      "input": "/workspace/Pytra/src/pytra/utils/assertions.py",
+      "input": "/workspace/Pytra/src/runtime/east/utils/assertions.east",
       "output": "east3/pytra/utils/assertions.east3.json",
-      "source_path": "/workspace/Pytra/src/pytra/utils/assertions.py",
+      "source_path": "src/pytra/utils/assertions.py",
       "is_entry": false,
       "module_kind": "runtime"
     }

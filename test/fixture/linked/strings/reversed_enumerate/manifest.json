@@ -8,7 +8,7 @@
   "modules": [
     {
       "module_id": "pytra.built_in.io_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
       "is_entry": false,
@@ -16,7 +16,7 @@
     },
     {
       "module_id": "pytra.built_in.iter_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/iter_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/iter_ops.east",
       "output": "east3/pytra/built_in/iter_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/iter_ops.py",
       "is_entry": false,
@@ -24,15 +24,15 @@
     },
     {
       "module_id": "pytra.utils.assertions",
-      "input": "/workspace/Pytra/src/pytra/utils/assertions.py",
+      "input": "/workspace/Pytra/src/runtime/east/utils/assertions.east",
       "output": "east3/pytra/utils/assertions.east3.json",
-      "source_path": "/workspace/Pytra/src/pytra/utils/assertions.py",
+      "source_path": "src/pytra/utils/assertions.py",
       "is_entry": false,
       "module_kind": "runtime"
     },
     {
       "module_id": "reversed_enumerate",
-      "input": "test/fixture/source/py/strings/reversed_enumerate.py",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/strings/reversed_enumerate.east3",
       "output": "east3/reversed_enumerate.east3.json",
       "source_path": "test/fixture/source/py/strings/reversed_enumerate.py",
       "is_entry": true,

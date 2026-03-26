@@ -223,7 +223,7 @@
                 "end_lineno": 11,
                 "end_col_offset": 11
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Tag",
@@ -358,7 +358,7 @@
                 "end_lineno": 13,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -385,7 +385,7 @@
                     "end_lineno": 13,
                     "end_col_offset": 14
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "t.id",
@@ -479,7 +479,7 @@
                 "end_lineno": 14,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -506,7 +506,7 @@
                     "end_lineno": 14,
                     "end_col_offset": 14
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "u.id",
@@ -800,7 +800,7 @@
                 "end_lineno": 18,
                 "end_col_offset": 23
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_stateless_value",
@@ -921,7 +921,7 @@
             "end_lineno": 21,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -948,7 +948,7 @@
                 "end_lineno": 21,
                 "end_col_offset": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",

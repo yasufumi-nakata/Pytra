@@ -8,7 +8,7 @@
   "modules": [
     {
       "module_id": "15_wave_interference_loop",
-      "input": "sample/py/15_wave_interference_loop.py",
+      "input": "/workspace/Pytra/test/sample/east3-opt/15_wave_interference_loop.east3",
       "output": "east3/15_wave_interference_loop.east3.json",
       "source_path": "sample/py/15_wave_interference_loop.py",
       "is_entry": true,
@@ -16,7 +16,7 @@
     },
     {
       "module_id": "pytra.built_in.io_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
       "is_entry": false,
@@ -24,7 +24,7 @@
     },
     {
       "module_id": "pytra.std.math",
-      "input": "/workspace/Pytra/src/pytra/std/math.py",
+      "input": "/workspace/Pytra/src/runtime/east/std/math.east",
       "output": "east3/pytra/std/math.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/std/math.py",
       "is_entry": false,
@@ -32,7 +32,7 @@
     },
     {
       "module_id": "pytra.std.time",
-      "input": "/workspace/Pytra/src/pytra/std/time.py",
+      "input": "/workspace/Pytra/src/runtime/east/std/time.east",
       "output": "east3/pytra/std/time.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/std/time.py",
       "is_entry": false,
@@ -40,7 +40,7 @@
     },
     {
       "module_id": "pytra.utils.gif",
-      "input": "src/pytra/utils/gif.py",
+      "input": "/workspace/Pytra/src/runtime/east/utils/gif.east",
       "output": "east3/pytra/utils/gif.east3.json",
       "source_path": "src/pytra/utils/gif.py",
       "is_entry": false,

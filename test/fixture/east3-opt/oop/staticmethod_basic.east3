@@ -445,7 +445,7 @@
             "end_lineno": 11,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -484,7 +484,7 @@
                   "end_lineno": 11,
                   "end_col_offset": 18
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "type",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "MathUtil",
@@ -563,7 +563,7 @@
             "end_lineno": 12,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -602,7 +602,7 @@
                   "end_lineno": 12,
                   "end_col_offset": 18
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "type",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "MathUtil",

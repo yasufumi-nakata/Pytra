@@ -167,7 +167,7 @@
                   "end_lineno": 10,
                   "end_col_offset": 14
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "fib",
@@ -246,7 +246,7 @@
                   "end_lineno": 10,
                   "end_col_offset": 27
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "fib",
@@ -395,7 +395,7 @@
                 "end_lineno": 14,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -422,7 +422,7 @@
                     "end_lineno": 14,
                     "end_col_offset": 13
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "fib",
@@ -511,7 +511,7 @@
             "end_lineno": 17,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -538,7 +538,7 @@
                 "end_lineno": 17,
                 "end_col_offset": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",

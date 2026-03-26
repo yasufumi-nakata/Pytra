@@ -430,7 +430,7 @@
                   "end_lineno": 17,
                   "end_col_offset": 11
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "int",
@@ -1162,7 +1162,7 @@
                   "end_lineno": 34,
                   "end_col_offset": 20
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_next_u31",
@@ -1282,7 +1282,7 @@
                 "end_lineno": 39,
                 "end_col_offset": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "int",
@@ -1371,7 +1371,7 @@
                 "end_lineno": 40,
                 "end_col_offset": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "int",
@@ -1667,7 +1667,7 @@
                   "end_lineno": 44,
                   "end_col_offset": 19
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "int",
@@ -1713,7 +1713,7 @@
                         "end_lineno": 44,
                         "end_col_offset": 26
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "random",
@@ -1926,7 +1926,7 @@
                   "end_lineno": 51,
                   "end_col_offset": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "choices",
@@ -2027,7 +2027,7 @@
                   "end_lineno": 52,
                   "end_col_offset": 13
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "choices",
@@ -2155,7 +2155,7 @@
                 "end_lineno": 54,
                 "end_col_offset": 11
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "len",
@@ -2325,7 +2325,7 @@
                 "end_lineno": 58,
                 "end_col_offset": 15
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "int",
@@ -2615,7 +2615,7 @@
                     "end_lineno": 64,
                     "end_col_offset": 26
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "weight_vals.append",
@@ -2656,7 +2656,7 @@
                         "end_lineno": 64,
                         "end_col_offset": 32
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "float",
@@ -2849,7 +2849,7 @@
                   "end_lineno": 67,
                   "end_col_offset": 10
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -3264,7 +3264,7 @@
                               "end_lineno": 74,
                               "end_col_offset": 26
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "callable",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "random",
@@ -3817,7 +3817,7 @@
                             "end_lineno": 84,
                             "end_col_offset": 26
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "out.append",
@@ -4030,7 +4030,7 @@
                     "end_lineno": 88,
                     "end_col_offset": 18
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "out.append",
@@ -4097,7 +4097,7 @@
                           "end_lineno": 88,
                           "end_col_offset": 37
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "callable",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "randint",
@@ -4531,7 +4531,7 @@
                       "end_lineno": 96,
                       "end_col_offset": 20
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "float",
@@ -4601,7 +4601,7 @@
                         "end_lineno": 96,
                         "end_col_offset": 32
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "float",
@@ -4832,7 +4832,7 @@
                     "end_lineno": 100,
                     "end_col_offset": 19
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "random",
@@ -4902,7 +4902,7 @@
                 "end_lineno": 101,
                 "end_col_offset": 15
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "random",
@@ -4969,7 +4969,7 @@
                 "end_lineno": 102,
                 "end_col_offset": 20
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "_math.sqrt",
@@ -4981,7 +4981,7 @@
                   "end_lineno": 102,
                   "end_col_offset": 15
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "module",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_math",
@@ -5051,7 +5051,7 @@
                       "end_lineno": 102,
                       "end_col_offset": 37
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "_math.log",
@@ -5063,7 +5063,7 @@
                         "end_lineno": 102,
                         "end_col_offset": 33
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "module",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "_math",
@@ -5196,7 +5196,7 @@
                   "end_lineno": 103,
                   "end_col_offset": 24
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_math.cos",
@@ -5208,7 +5208,7 @@
                     "end_lineno": 103,
                     "end_col_offset": 20
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "module",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_math",
@@ -5276,7 +5276,7 @@
                           "end_lineno": 103,
                           "end_col_offset": 36
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "module",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "_math",
@@ -5396,7 +5396,7 @@
                   "end_lineno": 104,
                   "end_col_offset": 24
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "_math.sin",
@@ -5408,7 +5408,7 @@
                     "end_lineno": 104,
                     "end_col_offset": 20
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "module",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "_math",
@@ -5476,7 +5476,7 @@
                           "end_lineno": 104,
                           "end_col_offset": 36
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "module",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "_math",
@@ -5710,7 +5710,7 @@
                   "end_lineno": 107,
                   "end_col_offset": 16
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "float",
@@ -5780,7 +5780,7 @@
                     "end_lineno": 107,
                     "end_col_offset": 28
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "float",
@@ -5940,7 +5940,7 @@
                   "end_lineno": 112,
                   "end_col_offset": 11
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "callable",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "len",
@@ -6100,7 +6100,7 @@
                     "end_lineno": 114,
                     "end_col_offset": 19
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "randint",

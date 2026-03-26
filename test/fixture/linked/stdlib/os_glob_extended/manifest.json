@@ -8,7 +8,7 @@
   "modules": [
     {
       "module_id": "os_glob_extended",
-      "input": "test/fixture/source/py/stdlib/os_glob_extended.py",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/stdlib/os_glob_extended.east3",
       "output": "east3/os_glob_extended.east3.json",
       "source_path": "test/fixture/source/py/stdlib/os_glob_extended.py",
       "is_entry": true,
@@ -16,7 +16,7 @@
     },
     {
       "module_id": "pytra.built_in.io_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
       "is_entry": false,
@@ -24,7 +24,7 @@
     },
     {
       "module_id": "pytra.std.glob",
-      "input": "/workspace/Pytra/src/pytra/std/glob.py",
+      "input": "/workspace/Pytra/src/runtime/east/std/glob.east",
       "output": "east3/pytra/std/glob.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/std/glob.py",
       "is_entry": false,
@@ -32,7 +32,7 @@
     },
     {
       "module_id": "pytra.std.os",
-      "input": "src/pytra/std/os.py",
+      "input": "/workspace/Pytra/src/runtime/east/std/os.east",
       "output": "east3/pytra/std/os.east3.json",
       "source_path": "src/pytra/std/os.py",
       "is_entry": false,
@@ -40,7 +40,7 @@
     },
     {
       "module_id": "pytra.std.os_path",
-      "input": "/workspace/Pytra/src/pytra/std/os_path.py",
+      "input": "/workspace/Pytra/src/runtime/east/std/os_path.east",
       "output": "east3/pytra/std/os_path.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/std/os_path.py",
       "is_entry": false,

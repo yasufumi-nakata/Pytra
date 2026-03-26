@@ -188,7 +188,7 @@
                 "end_lineno": 19,
                 "end_col_offset": 13
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Cat",
@@ -278,7 +278,7 @@
                 "end_lineno": 20,
                 "end_col_offset": 13
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Dog",
@@ -353,7 +353,7 @@
                 "end_lineno": 21,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -387,7 +387,7 @@
                     "end_lineno": 21,
                     "end_col_offset": 29
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "type",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Dog",
@@ -488,7 +488,7 @@
                 "end_lineno": 22,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -522,7 +522,7 @@
                     "end_lineno": 22,
                     "end_col_offset": 32
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "type",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Animal",
@@ -621,7 +621,7 @@
                 "end_lineno": 23,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -655,7 +655,7 @@
                     "end_lineno": 23,
                     "end_col_offset": 29
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "type",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Cat",
@@ -752,7 +752,7 @@
                 "end_lineno": 24,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -786,7 +786,7 @@
                     "end_lineno": 24,
                     "end_col_offset": 32
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "type",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Animal",
@@ -1177,7 +1177,7 @@
             "end_lineno": 27,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -1204,7 +1204,7 @@
                 "end_lineno": 27,
                 "end_col_offset": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",

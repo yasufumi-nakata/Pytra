@@ -8,7 +8,7 @@
   "modules": [
     {
       "module_id": "dict_in",
-      "input": "test/fixture/source/py/collections/dict_in.py",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/collections/dict_in.east3",
       "output": "east3/dict_in.east3.json",
       "source_path": "test/fixture/source/py/collections/dict_in.py",
       "is_entry": true,
@@ -16,7 +16,7 @@
     },
     {
       "module_id": "pytra.built_in.io_ops",
-      "input": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
       "is_entry": false,
@@ -24,9 +24,9 @@
     },
     {
       "module_id": "pytra.utils.assertions",
-      "input": "/workspace/Pytra/src/pytra/utils/assertions.py",
+      "input": "/workspace/Pytra/src/runtime/east/utils/assertions.east",
       "output": "east3/pytra/utils/assertions.east3.json",
-      "source_path": "/workspace/Pytra/src/pytra/utils/assertions.py",
+      "source_path": "src/pytra/utils/assertions.py",
       "is_entry": false,
       "module_kind": "runtime"
     }

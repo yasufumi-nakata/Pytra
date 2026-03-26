@@ -199,7 +199,7 @@
                 "end_lineno": 12,
                 "end_col": 14
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "inc",
@@ -226,7 +226,7 @@
                     "end_lineno": 12,
                     "end_col": 18
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "inc",
@@ -317,7 +317,7 @@
                 "end_lineno": 16,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -344,7 +344,7 @@
                     "end_lineno": 16,
                     "end_col": 15
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "twice",
@@ -420,7 +420,7 @@
             "end_lineno": 19,
             "end_col": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -447,7 +447,7 @@
                 "end_lineno": 19,
                 "end_col": 26
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_stdout",

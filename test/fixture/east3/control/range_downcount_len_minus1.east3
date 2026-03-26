@@ -124,7 +124,7 @@
                     "end_lineno": 6,
                     "end_col_offset": 22
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "len",
@@ -430,7 +430,7 @@
                 "end_lineno": 12,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -457,7 +457,7 @@
                     "end_lineno": 12,
                     "end_col_offset": 17
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "sum_rev",
@@ -603,7 +603,7 @@
             "end_lineno": 16,
             "end_col_offset": 14
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "_case_main",

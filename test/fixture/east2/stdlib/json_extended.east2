@@ -170,7 +170,7 @@
               "end_lineno": 7,
               "end_col": 26
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "dumps(\"abc\")",
@@ -182,7 +182,7 @@
                 "end_lineno": 7,
                 "end_col": 19
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "dumps",
@@ -257,7 +257,7 @@
               "end_lineno": 8,
               "end_col": 24
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "dumps(123)",
@@ -269,7 +269,7 @@
                 "end_lineno": 8,
                 "end_col": 19
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "dumps",
@@ -344,7 +344,7 @@
               "end_lineno": 9,
               "end_col": 25
             },
-            "resolved_type": "unknown",
+            "resolved_type": "str",
             "casts": [],
             "borrow_kind": "value",
             "repr": "dumps(True)",
@@ -356,7 +356,7 @@
                 "end_lineno": 9,
                 "end_col": 19
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "dumps",
@@ -424,7 +424,7 @@
                 "end_lineno": 10,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -465,7 +465,7 @@
                     "end_lineno": 10,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -575,7 +575,7 @@
                 "end_lineno": 11,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -616,7 +616,7 @@
                     "end_lineno": 11,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -726,7 +726,7 @@
                 "end_lineno": 12,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -767,7 +767,7 @@
                     "end_lineno": 12,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -877,7 +877,7 @@
                 "end_lineno": 13,
                 "end_col": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_all",
@@ -962,7 +962,7 @@
             "end_lineno": 17,
             "end_col": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -989,7 +989,7 @@
                 "end_lineno": 17,
                 "end_col": 27
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_json_extended",

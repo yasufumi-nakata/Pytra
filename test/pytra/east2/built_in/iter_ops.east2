@@ -200,7 +200,7 @@
                     "end_lineno": 7,
                     "end_col": 18
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "out.append",
@@ -291,7 +291,7 @@
                 "end_lineno": 8,
                 "end_col": 19
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "reversed",
@@ -582,7 +582,7 @@
                     "end_lineno": 15,
                     "end_col": 18
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "out.append",

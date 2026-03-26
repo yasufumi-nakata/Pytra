@@ -195,7 +195,7 @@
                 "end_lineno": 10,
                 "end_col_offset": 18
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "results.append",
@@ -236,7 +236,7 @@
                     "end_lineno": 10,
                     "end_col_offset": 31
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -263,7 +263,7 @@
                         "end_lineno": 10,
                         "end_col_offset": 35
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "int",
@@ -290,7 +290,7 @@
                             "end_lineno": 10,
                             "end_col_offset": 45
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "math.sqrt",
@@ -302,7 +302,7 @@
                               "end_lineno": 10,
                               "end_col_offset": 40
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "module",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "math",
@@ -329,7 +329,7 @@
                         "keywords": [],
                         "resolved_runtime_call": "math.sqrt",
                         "resolved_runtime_source": "module_attr",
-                        "runtime_module_id": "math",
+                        "runtime_module_id": "pytra.std.math",
                         "runtime_symbol": "sqrt",
                         "runtime_call_adapter_kind": "math.float_args",
                         "semantic_tag": "stdlib.method.sqrt",
@@ -487,7 +487,7 @@
                 "end_lineno": 11,
                 "end_col_offset": 18
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "results.append",
@@ -528,7 +528,7 @@
                     "end_lineno": 11,
                     "end_col_offset": 31
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -555,7 +555,7 @@
                         "end_lineno": 11,
                         "end_col_offset": 35
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "callable",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "int",
@@ -582,7 +582,7 @@
                             "end_lineno": 11,
                             "end_col_offset": 46
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "math.floor",
@@ -594,7 +594,7 @@
                               "end_lineno": 11,
                               "end_col_offset": 40
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "module",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "math",
@@ -621,7 +621,7 @@
                         "keywords": [],
                         "resolved_runtime_call": "math.floor",
                         "resolved_runtime_source": "module_attr",
-                        "runtime_module_id": "math",
+                        "runtime_module_id": "pytra.std.math",
                         "runtime_symbol": "floor",
                         "runtime_call_adapter_kind": "math.float_args",
                         "semantic_tag": "stdlib.method.floor",
@@ -780,7 +780,7 @@
                 "end_lineno": 12,
                 "end_col_offset": 18
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "results.append",
@@ -821,7 +821,7 @@
                     "end_lineno": 12,
                     "end_col_offset": 33
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_true",
@@ -860,7 +860,7 @@
                           "end_lineno": 12,
                           "end_col_offset": 43
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "callable",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "math.fabs",
@@ -872,7 +872,7 @@
                             "end_lineno": 12,
                             "end_col_offset": 38
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "module",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "math",
@@ -913,7 +913,7 @@
                       "keywords": [],
                       "resolved_runtime_call": "math.fabs",
                       "resolved_runtime_source": "module_attr",
-                      "runtime_module_id": "math",
+                      "runtime_module_id": "pytra.std.math",
                       "runtime_symbol": "fabs",
                       "runtime_call_adapter_kind": "math.float_args",
                       "semantic_tag": "stdlib.method.fabs",
@@ -976,7 +976,7 @@
                             "end_lineno": 12,
                             "end_col_offset": 43
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "callable",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "math.fabs",
@@ -988,7 +988,7 @@
                               "end_lineno": 12,
                               "end_col_offset": 38
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "module",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "math",
@@ -1029,7 +1029,7 @@
                         "keywords": [],
                         "resolved_runtime_call": "math.fabs",
                         "resolved_runtime_source": "module_attr",
-                        "runtime_module_id": "math",
+                        "runtime_module_id": "pytra.std.math",
                         "runtime_symbol": "fabs",
                         "runtime_call_adapter_kind": "math.float_args",
                         "semantic_tag": "stdlib.method.fabs",
@@ -1174,7 +1174,7 @@
                 "end_lineno": 13,
                 "end_col_offset": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -1201,7 +1201,7 @@
                     "end_lineno": 13,
                     "end_col_offset": 23
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_all",
@@ -1626,7 +1626,7 @@
                 "end_lineno": 17,
                 "end_col_offset": 12
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_case",
@@ -1747,7 +1747,7 @@
             "end_lineno": 21,
             "end_col_offset": 14
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "_case_main",

@@ -114,7 +114,7 @@
                     "end_lineno": 5,
                     "end_col": 15
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "module",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "os",
@@ -254,7 +254,7 @@
                     "end_lineno": 6,
                     "end_col": 18
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "module",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "os",
@@ -430,7 +430,7 @@
                           "end_lineno": 8,
                           "end_col": 19
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "module",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "os",
@@ -794,7 +794,7 @@
                           "end_lineno": 11,
                           "end_col": 19
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "module",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "os",
@@ -942,7 +942,7 @@
                         "end_lineno": 13,
                         "end_col": 18
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "module",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "os",
@@ -1067,7 +1067,7 @@
                       "end_lineno": 14,
                       "end_col": 20
                     },
-                    "resolved_type": "unknown",
+                    "resolved_type": "callable",
                     "casts": [],
                     "borrow_kind": "value",
                     "repr": "len",
@@ -1082,7 +1082,7 @@
                         "end_lineno": 14,
                         "end_col": 39
                       },
-                      "resolved_type": "unknown",
+                      "resolved_type": "list[str]",
                       "casts": [],
                       "borrow_kind": "value",
                       "repr": "glob.glob(\"*.cpp\")",
@@ -1094,7 +1094,7 @@
                           "end_lineno": 14,
                           "end_col": 30
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "callable",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "glob.glob",
@@ -1106,7 +1106,7 @@
                             "end_lineno": 14,
                             "end_col": 25
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "module",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "glob",
@@ -1130,7 +1130,12 @@
                           "value": "*.cpp"
                         }
                       ],
-                      "keywords": []
+                      "keywords": [],
+                      "resolved_runtime_call": "glob.glob",
+                      "resolved_runtime_source": "module_attr",
+                      "runtime_module_id": "pytra.std.glob",
+                      "runtime_symbol": "glob",
+                      "semantic_tag": "stdlib.fn.glob"
                     }
                   ],
                   "keywords": [],
@@ -1196,7 +1201,7 @@
                 "end_lineno": 15,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -1269,7 +1274,7 @@
             "end_lineno": 19,
             "end_col": 12
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "run_case",
@@ -1296,8 +1301,10 @@
           "source_module_id": "pytra.std",
           "source_export_name": "glob",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std",
-          "runtime_group": "std"
+          "runtime_module_id": "pytra.std.glob",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module",
+          "host_only": true
         },
         {
           "module_id": "pytra.std",
@@ -1309,8 +1316,10 @@
           "source_module_id": "pytra.std",
           "source_export_name": "os",
           "source_binding_kind": "symbol",
-          "runtime_module_id": "pytra.std",
-          "runtime_group": "std"
+          "runtime_module_id": "pytra.std.os",
+          "runtime_group": "std",
+          "resolved_binding_kind": "module",
+          "host_only": true
         },
         {
           "module_id": "pytra.built_in.io_ops",

@@ -36,6 +36,8 @@ class FuncSig:
     arg_types: dict[str, str]  # normalized types
     return_type: str  # normalized type
     decorators: list[str]
+    vararg_name: str = ""
+    vararg_type: str = ""
     is_method: bool = False
     owner_class: str = ""
     extern: ExternV2 | None = None  # from meta.extern_v2
@@ -102,6 +104,19 @@ class BuiltinRegistry:
             return mod2.functions.get(name)
         return None
 
+    def lookup_stdlib_class(self, module_id: str, name: str) -> ClassSig | None:
+        """Look up a class in a stdlib module."""
+        mod: ModuleSig | None = self.stdlib_modules.get(module_id)
+        if mod is not None:
+            cls: ClassSig | None = mod.classes.get(name)
+            if cls is not None:
+                return cls
+        canonical: str = "pytra.std." + module_id if "." not in module_id else module_id
+        mod2: ModuleSig | None = self.stdlib_modules.get(canonical)
+        if mod2 is not None:
+            return mod2.classes.get(name)
+        return None
+
     def lookup_stdlib_variable(self, module_id: str, name: str) -> VarSig | None:
         """Look up a variable in a stdlib module."""
         mod: ModuleSig | None = self.stdlib_modules.get(module_id)
@@ -113,6 +128,19 @@ class BuiltinRegistry:
         mod2: ModuleSig | None = self.stdlib_modules.get(canonical)
         if mod2 is not None:
             return mod2.variables.get(name)
+        return None
+
+    def find_stdlib_class(self, name: str) -> ClassSig | None:
+        """Find a stdlib class by simple class name across loaded modules."""
+        seen: set[int] = set()
+        for mod in self.stdlib_modules.values():
+            mod_id = id(mod)
+            if mod_id in seen:
+                continue
+            seen.add(mod_id)
+            cls: ClassSig | None = mod.classes.get(name)
+            if cls is not None:
+                return cls
         return None
 
     def is_builtin(self, name: str) -> bool:
@@ -160,6 +188,10 @@ def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> 
                 arg_names.append(a)
     ret_raw = node.get("return_type")
     ret: str = normalize_type(str(ret_raw)) if isinstance(ret_raw, str) else "unknown"
+    vararg_name_val = node.get("vararg_name")
+    vararg_name: str = str(vararg_name_val) if isinstance(vararg_name_val, str) else ""
+    vararg_type_raw = node.get("vararg_type")
+    vararg_type: str = normalize_type(str(vararg_type_raw)) if isinstance(vararg_type_raw, str) else ""
     decs_raw = node.get("decorators")
     decs: list[str] = []
     if isinstance(decs_raw, list):
@@ -173,6 +205,8 @@ def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> 
         arg_types=arg_types,
         return_type=ret,
         decorators=decs,
+        vararg_name=vararg_name,
+        vararg_type=vararg_type,
         is_method=is_method,
         owner_class=owner,
         extern=extern,
@@ -269,6 +303,84 @@ def _load_module_sig(east1_path: Path, module_id: str) -> ModuleSig:
     return msig
 
 
+def _merge_module_sig(dst: ModuleSig, src: ModuleSig) -> None:
+    """Merge src into dst, keeping runtime-source entries authoritative."""
+    for name, sig in src.functions.items():
+        if name not in dst.functions:
+            dst.functions[name] = sig
+    for name, sig in src.variables.items():
+        if name not in dst.variables:
+            dst.variables[name] = sig
+    for name, cls in src.classes.items():
+        existing: ClassSig | None = dst.classes.get(name)
+        if existing is None:
+            dst.classes[name] = cls
+            continue
+        for method_name, method_sig in cls.methods.items():
+            if method_name not in existing.methods:
+                existing.methods[method_name] = method_sig
+        for field_name, field_type in cls.fields.items():
+            if field_name not in existing.fields:
+                existing.fields[field_name] = field_type
+        if len(existing.bases) == 0 and len(cls.bases) > 0:
+            existing.bases = cls.bases
+        if len(existing.template_params) == 0 and len(cls.template_params) > 0:
+            existing.template_params = cls.template_params
+        if existing.extern is None and cls.extern is not None:
+            existing.extern = cls.extern
+
+
+def _module_aliases(module_id: str) -> list[str]:
+    aliases: list[str] = [module_id]
+    if module_id.startswith("pytra.std."):
+        aliases.append(module_id[len("pytra.std."):])
+    return aliases
+
+
+def _register_stdlib_module(reg: BuiltinRegistry, module_id: str, msig: ModuleSig) -> None:
+    canonical: str = module_id if module_id.startswith("pytra.std.") else "pytra.std." + module_id
+    existing: ModuleSig | None = reg.stdlib_modules.get(canonical)
+    if existing is not None:
+        _merge_module_sig(existing, msig)
+        msig = existing
+    for alias in _module_aliases(canonical):
+        reg.stdlib_modules[alias] = msig
+
+
+def _candidate_stdlib_dirs(stdlib_dir: Path) -> list[Path]:
+    """Return stdlib EAST1 directories in merge order: runtime source first, include overlay last."""
+    dirs: list[Path] = []
+    if stdlib_dir.exists():
+        if len(stdlib_dir.parents) >= 4 and stdlib_dir.parents[3].name == "test":
+            test_root: Path = stdlib_dir.parents[3]
+            pytra_std = test_root / "pytra" / "east1" / "py" / "std"
+            include_std = test_root / "include" / "east1" / "py" / "std"
+            for candidate in (pytra_std, include_std):
+                if candidate.exists():
+                    dirs.append(candidate)
+        else:
+            dirs.append(stdlib_dir)
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for candidate2 in dirs:
+        key: str = str(candidate2)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(candidate2)
+    return unique
+
+
+def _module_name_from_east1_path(east1_file: Path, stdlib_dir: Path) -> str:
+    rel: Path = east1_file.relative_to(stdlib_dir)
+    name: str = str(rel)
+    if name.endswith(".py.east1"):
+        return name[: -len(".py.east1")].replace("/", ".")
+    if name.endswith(".east1"):
+        return name[: -len(".east1")].replace("/", ".")
+    return rel.stem.replace("/", ".")
+
+
 def load_builtin_registry(
     builtins_east1_path: Path | None = None,
     containers_east1_path: Path | None = None,
@@ -312,18 +424,11 @@ def load_builtin_registry(
 
     # Load stdlib modules
     if stdlib_dir is not None and stdlib_dir.exists():
-        # Enumerate all .py.east1 files in stdlib dir
-        # Use manual listing since pytra.std.glob might not support this
-        import_candidates: list[str] = [
-            "math", "time", "sys", "os", "os_path", "glob", "subprocess",
-        ]
-        for mod_name in import_candidates:
-            east1_file: Path = stdlib_dir / (mod_name + ".py.east1")
-            if east1_file.exists():
+        for std_dir in _candidate_stdlib_dirs(stdlib_dir):
+            for east1_file in sorted(std_dir.glob("*.east1"), key=str):
+                mod_name: str = _module_name_from_east1_path(east1_file, std_dir)
                 canonical: str = "pytra.std." + mod_name
                 msig: ModuleSig = _load_module_sig(east1_file, canonical)
-                reg.stdlib_modules[canonical] = msig
-                # Also register with short name
-                reg.stdlib_modules[mod_name] = msig
+                _register_stdlib_module(reg, canonical, msig)
 
     return reg

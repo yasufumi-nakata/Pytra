@@ -82,7 +82,7 @@
               "end_lineno": 5,
               "end_col": 20
             },
-            "resolved_type": "unknown",
+            "resolved_type": "Path",
             "casts": [],
             "borrow_kind": "value",
             "repr": "Path(raw)",
@@ -94,7 +94,7 @@
                 "end_lineno": 5,
                 "end_col": 15
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Path",
@@ -124,6 +124,7 @@
             "runtime_call_adapter_kind": "extern_delegate"
           },
           "declare": true,
+          "decl_type": "Path",
           "declare_init": true
         },
         {
@@ -154,7 +155,7 @@
                 "end_lineno": 6,
                 "end_col": 14
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "str",
@@ -169,9 +170,9 @@
                   "end_lineno": 6,
                   "end_col": 19
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "Path",
                 "casts": [],
-                "borrow_kind": "value",
+                "borrow_kind": "readonly_ref",
                 "repr": "path",
                 "id": "path"
               }
@@ -249,7 +250,7 @@
                 "end_lineno": 10,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -276,7 +277,7 @@
                     "end_lineno": 10,
                     "end_col": 19
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "stringify",
@@ -352,7 +353,7 @@
             "end_lineno": 14,
             "end_col": 8
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "main",

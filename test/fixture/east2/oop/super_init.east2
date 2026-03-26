@@ -449,7 +449,7 @@
                 "end_lineno": 19,
                 "end_col": 20
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Child",
@@ -497,7 +497,7 @@
                 "end_lineno": 20,
                 "end_col": 9
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "print",
@@ -524,7 +524,7 @@
                     "end_lineno": 20,
                     "end_col": 21
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "c.get_value",
@@ -618,7 +618,7 @@
             "end_lineno": 19,
             "end_col": 20
           },
-          "resolved_type": "unknown",
+          "resolved_type": "type",
           "casts": [],
           "borrow_kind": "value",
           "repr": "Child",
@@ -666,7 +666,7 @@
             "end_lineno": 25,
             "end_col": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -693,7 +693,7 @@
                 "end_lineno": 25,
                 "end_col": 22
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_eq",
@@ -720,7 +720,7 @@
                     "end_lineno": 25,
                     "end_col": 34
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "c.get_value",

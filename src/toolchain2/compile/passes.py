@@ -17,7 +17,7 @@ from toolchain2.common.kinds import (
     ASSIGN, ANN_ASSIGN, AUG_ASSIGN, EXPR, RETURN, YIELD,
     IF, WHILE, FOR, FOR_RANGE, FOR_CORE, TRY, SWAP,
     NAME, CONSTANT, CALL, ATTRIBUTE, SUBSCRIPT,
-    BIN_OP, UNARY_OP, COMPARE, IF_EXP,
+    BIN_OP, UNARY_OP, COMPARE, IF_EXP, BOOL_OP,
     LIST, DICT, SET, TUPLE, LIST_COMP,
     UNBOX,
     STATIC_RANGE_FOR_PLAN, RUNTIME_ITER_FOR_PLAN,
@@ -1375,6 +1375,355 @@ def apply_integer_promotion(module: Node, ctx: CompileContext) -> Node:
 
 
 # ===========================================================================
+# guard narrowing
+# ===========================================================================
+
+_TYPE_GUARD_DEFAULTS: dict[str, str] = {
+    "PYTRA_TID_NONE": "None",
+    "PYTRA_TID_BOOL": "bool",
+    "PYTRA_TID_INT": "int64",
+    "PYTRA_TID_FLOAT": "float64",
+    "PYTRA_TID_STR": "str",
+}
+
+
+def _split_union_members(type_name: str) -> list[str]:
+    parts: list[str] = []
+    cur = ""
+    depth = 0
+    for ch in type_name:
+        if ch == "[":
+            depth += 1
+            cur += ch
+        elif ch == "]":
+            if depth > 0:
+                depth -= 1
+            cur += ch
+        elif ch == "|" and depth == 0:
+            part = cur.strip()
+            if part != "":
+                parts.append(part)
+            cur = ""
+        else:
+            cur += ch
+    tail = cur.strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
+def _type_matches_guard(type_name: str, guard_type: str) -> bool:
+    norm = normalize_type_name(type_name)
+    guard = normalize_type_name(guard_type)
+    if norm == "" or norm == "unknown" or guard == "" or guard == "unknown":
+        return False
+    if guard == "None":
+        return norm == "None"
+    if guard == "bool":
+        return norm == "bool"
+    if guard == "int":
+        return norm in _INT_WIDTH or norm == "int"
+    if guard == "float":
+        return norm in ("float", "float32", "float64")
+    if guard == "str":
+        return norm == "str"
+    if guard in ("list", "dict", "set", "tuple"):
+        return norm == guard or norm.startswith(guard + "[")
+    return norm == guard
+
+
+def _select_guard_target_type(source_type: str, expected_name: str) -> str:
+    src = normalize_type_name(source_type)
+    expected = normalize_type_name(expected_name)
+    if src == "" or src == "unknown" or expected == "" or expected == "unknown":
+        return ""
+    guard_type = expected
+    default_type = _TYPE_GUARD_DEFAULTS.get(expected, "")
+    if default_type != "":
+        guard_type = default_type
+        if expected == "PYTRA_TID_INT":
+            guard_type = "int"
+        elif expected == "PYTRA_TID_FLOAT":
+            guard_type = "float"
+    members = _split_union_members(src)
+    if len(members) == 0:
+        members = [src]
+    for member in members:
+        if _type_matches_guard(member, guard_type):
+            return normalize_type_name(member)
+    if default_type != "":
+        return normalize_type_name(default_type)
+    if _type_matches_guard(src, guard_type):
+        return src
+    return expected
+
+
+def _guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
+    if not isinstance(expr, dict):
+        return {}
+    nd: Node = expr
+    kind = nd.get("kind", "")
+    if kind == "IsInstance":
+        value = nd.get("value")
+        expected = nd.get("expected_type_id")
+        if not isinstance(value, dict) or value.get("kind") != NAME:
+            return {}
+        name = _tp_safe(value.get("id"))
+        if name == "":
+            return {}
+        expected_name = ""
+        if isinstance(expected, dict):
+            expected_name = _tp_safe(expected.get("id"))
+            if expected_name == "":
+                expected_name = _tp_safe(expected.get("repr"))
+        target_type = _select_guard_target_type(_tp_safe(value.get("resolved_type")), expected_name)
+        if target_type == "" or target_type == "unknown":
+            return {}
+        return {name: target_type}
+    if kind == BOOL_OP and _tp_safe(nd.get("op")) == "And":
+        merged: dict[str, str] = {}
+        values = nd.get("values")
+        if not isinstance(values, list):
+            return merged
+        for value in values:
+            child = _guard_narrowing_from_expr(value)
+            for name, target_type in child.items():
+                cur = merged.get(name, "")
+                if cur == "" or cur == target_type:
+                    merged[name] = target_type
+                else:
+                    merged.pop(name, None)
+        return merged
+    return {}
+
+
+def _make_guard_unbox(name_node: Node, target_type: str) -> Node:
+    out: Node = {
+        "kind": UNBOX,
+        "value": deep_copy_json(name_node),
+        "resolved_type": target_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "target": target_type,
+        "on_fail": "raise",
+    }
+    span = name_node.get("source_span")
+    if isinstance(span, dict):
+        out["source_span"] = span
+    repr_obj = name_node.get("repr")
+    if isinstance(repr_obj, str) and repr_obj != "":
+        out["repr"] = repr_obj
+    return out
+
+
+def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
+    if isinstance(node, list):
+        for i in range(len(node)):
+            node[i] = _guard_expr(node[i], env)
+        return node
+    if not isinstance(node, dict):
+        return node
+    nd: Node = node
+    kind = nd.get("kind", "")
+    if kind == NAME:
+        name = _tp_safe(nd.get("id"))
+        target_type = env.get(name, "")
+        current_type = _tp_safe(nd.get("resolved_type"))
+        if target_type != "" and target_type != current_type:
+            return _make_guard_unbox(nd, target_type)
+        return nd
+    if kind in (FUNCTION_DEF, CLASS_DEF, UNBOX):
+        return nd
+    for key in list(nd.keys()):
+        value = nd[key]
+        if isinstance(value, (dict, list)):
+            nd[key] = _guard_expr(value, env)
+    return nd
+
+
+def _guard_lvalue(node: JsonVal, env: dict[str, str]) -> JsonVal:
+    if not isinstance(node, dict):
+        return node
+    nd: Node = node
+    kind = nd.get("kind", "")
+    if kind == ATTRIBUTE:
+        value = nd.get("value")
+        if isinstance(value, (dict, list)):
+            nd["value"] = _guard_expr(value, env)
+        return nd
+    if kind == SUBSCRIPT:
+        value = nd.get("value")
+        if isinstance(value, (dict, list)):
+            nd["value"] = _guard_expr(value, env)
+        slice_obj = nd.get("slice")
+        if isinstance(slice_obj, (dict, list)):
+            nd["slice"] = _guard_expr(slice_obj, env)
+        return nd
+    if kind in (TUPLE, LIST):
+        elements = nd.get("elements")
+        if isinstance(elements, list):
+            for i in range(len(elements)):
+                elements[i] = _guard_lvalue(elements[i], env)
+        return nd
+    return nd
+
+
+def _target_names(node: JsonVal) -> set[str]:
+    if not isinstance(node, dict):
+        return set()
+    nd: Node = node
+    kind = nd.get("kind", "")
+    if kind == NAME:
+        name = _tp_safe(nd.get("id"))
+        return {name} if name != "" else set()
+    if kind == NAME_TARGET:
+        name = _tp_safe(nd.get("id"))
+        return {name} if name != "" else set()
+    if kind in (TUPLE, LIST):
+        out: set[str] = set()
+        elements = nd.get("elements")
+        if isinstance(elements, list):
+            for elem in elements:
+                out.update(_target_names(elem))
+        return out
+    if kind == TUPLE_TARGET:
+        out = set()
+        elements = nd.get("elements")
+        if isinstance(elements, list):
+            for elem in elements:
+                out.update(_target_names(elem))
+        return out
+    return set()
+
+
+def _guard_stmt_list(stmts: JsonVal, env: dict[str, str]) -> JsonVal:
+    if not isinstance(stmts, list):
+        return stmts
+    local_env = dict(env)
+    for stmt in stmts:
+        _guard_stmt(stmt, local_env)
+        if not isinstance(stmt, dict):
+            continue
+        kind = stmt.get("kind", "")
+        if kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN, FOR, FOR_RANGE):
+            for name in _target_names(stmt.get("target")):
+                local_env.pop(name, None)
+        elif kind == FOR_CORE:
+            for name in _target_names(stmt.get("target_plan")):
+                local_env.pop(name, None)
+    return stmts
+
+
+def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
+    if not isinstance(stmt, dict):
+        return
+    nd: Node = stmt
+    kind = nd.get("kind", "")
+    if kind == FUNCTION_DEF:
+        _guard_stmt_list(nd.get("body"), {})
+        return
+    if kind == CLASS_DEF:
+        body = nd.get("body")
+        if isinstance(body, list):
+            for item in body:
+                _guard_stmt(item, {})
+        return
+    if kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
+        target = nd.get("target")
+        if isinstance(target, dict):
+            nd["target"] = _guard_lvalue(target, env)
+        value = nd.get("value")
+        if isinstance(value, (dict, list)):
+            nd["value"] = _guard_expr(value, env)
+        return
+    if kind == EXPR:
+        value = nd.get("value")
+        if isinstance(value, (dict, list)):
+            nd["value"] = _guard_expr(value, env)
+        return
+    if kind == RETURN:
+        value = nd.get("value")
+        if isinstance(value, (dict, list)):
+            nd["value"] = _guard_expr(value, env)
+        return
+    if kind == IF:
+        test = nd.get("test")
+        if isinstance(test, (dict, list)):
+            nd["test"] = _guard_expr(test, env)
+        body_env = dict(env)
+        body_env.update(_guard_narrowing_from_expr(nd.get("test")))
+        _guard_stmt_list(nd.get("body"), body_env)
+        _guard_stmt_list(nd.get("orelse"), env)
+        return
+    if kind == WHILE:
+        test = nd.get("test")
+        if isinstance(test, (dict, list)):
+            nd["test"] = _guard_expr(test, env)
+        body_env = dict(env)
+        body_env.update(_guard_narrowing_from_expr(nd.get("test")))
+        _guard_stmt_list(nd.get("body"), body_env)
+        _guard_stmt_list(nd.get("orelse"), env)
+        return
+    if kind == FOR:
+        iter_obj = nd.get("iter")
+        if isinstance(iter_obj, (dict, list)):
+            nd["iter"] = _guard_expr(iter_obj, env)
+        body_env = dict(env)
+        for name in _target_names(nd.get("target")):
+            body_env.pop(name, None)
+        _guard_stmt_list(nd.get("body"), body_env)
+        _guard_stmt_list(nd.get("orelse"), env)
+        return
+    if kind == FOR_RANGE:
+        for key in ("start", "stop", "step"):
+            value = nd.get(key)
+            if isinstance(value, (dict, list)):
+                nd[key] = _guard_expr(value, env)
+        body_env = dict(env)
+        for name in _target_names(nd.get("target")):
+            body_env.pop(name, None)
+        _guard_stmt_list(nd.get("body"), body_env)
+        _guard_stmt_list(nd.get("orelse"), env)
+        return
+    if kind == FOR_CORE:
+        iter_plan = nd.get("iter_plan")
+        if isinstance(iter_plan, dict):
+            for key in ("iter_expr", "start", "stop", "step"):
+                value = iter_plan.get(key)
+                if isinstance(value, (dict, list)):
+                    iter_plan[key] = _guard_expr(value, env)
+        body_env = dict(env)
+        for name in _target_names(nd.get("target_plan")):
+            body_env.pop(name, None)
+        _guard_stmt_list(nd.get("body"), body_env)
+        _guard_stmt_list(nd.get("orelse"), env)
+        return
+    if kind == TRY:
+        _guard_stmt_list(nd.get("body"), env)
+        handlers = nd.get("handlers")
+        if isinstance(handlers, list):
+            for handler in handlers:
+                if not isinstance(handler, dict):
+                    continue
+                body = handler.get("body")
+                if isinstance(body, list):
+                    _guard_stmt_list(body, env)
+        _guard_stmt_list(nd.get("orelse"), env)
+        _guard_stmt_list(nd.get("finalbody"), env)
+        return
+    for key in list(nd.keys()):
+        value = nd[key]
+        if isinstance(value, (dict, list)):
+            nd[key] = _guard_expr(value, env)
+
+
+def apply_guard_narrowing(module: Node, ctx: CompileContext) -> Node:
+    _guard_stmt_list(module.get("body"), {})
+    _guard_stmt_list(module.get("main_guard_body"), {})
+    return module
+
+
+# ===========================================================================
 # type propagation
 # ===========================================================================
 
@@ -1457,7 +1806,7 @@ def _tp_binop(node: JsonVal) -> None:
             _tp_binop(v)
     if nd.get("kind") == BIN_OP:
         rt = _tp_safe(nd.get("resolved_type"))
-        if rt not in ("", "unknown"):
+        if rt not in ("", "unknown") and "|" not in rt:
             return
         left = nd.get("left")
         right = nd.get("right")

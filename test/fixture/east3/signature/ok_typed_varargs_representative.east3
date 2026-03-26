@@ -344,7 +344,7 @@
                 "end_lineno": 15,
                 "end_col_offset": 27
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "merge_controller_states",
@@ -550,7 +550,7 @@
             "end_lineno": 20,
             "end_col_offset": 40
           },
-          "resolved_type": "unknown",
+          "resolved_type": "type",
           "casts": [],
           "borrow_kind": "value",
           "repr": "ControllerState",
@@ -689,7 +689,7 @@
             "end_lineno": 22,
             "end_col_offset": 40
           },
-          "resolved_type": "unknown",
+          "resolved_type": "type",
           "casts": [],
           "borrow_kind": "value",
           "repr": "ControllerState",
@@ -828,7 +828,7 @@
             "end_lineno": 24,
             "end_col_offset": 40
           },
-          "resolved_type": "unknown",
+          "resolved_type": "type",
           "casts": [],
           "borrow_kind": "value",
           "repr": "ControllerState",
@@ -938,7 +938,7 @@
             "end_lineno": 26,
             "end_col_offset": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -965,7 +965,7 @@
                 "end_lineno": 26,
                 "end_col_offset": 33
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "apply_controller_states",

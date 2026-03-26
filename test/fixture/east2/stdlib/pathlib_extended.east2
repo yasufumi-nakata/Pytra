@@ -95,7 +95,7 @@
               "end_lineno": 7,
               "end_col": 52
             },
-            "resolved_type": "unknown",
+            "resolved_type": "Path",
             "casts": [],
             "borrow_kind": "value",
             "repr": "Path(\"work/transpile/obj/pathlib_case32\")",
@@ -107,7 +107,7 @@
                 "end_lineno": 7,
                 "end_col": 15
               },
-              "resolved_type": "unknown",
+              "resolved_type": "type",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Path",
@@ -137,6 +137,7 @@
             "runtime_call_adapter_kind": "extern_delegate"
           },
           "declare": true,
+          "decl_type": "Path",
           "declare_init": true
         },
         {
@@ -179,9 +180,9 @@
                   "end_lineno": 8,
                   "end_col": 8
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "Path",
                 "casts": [],
-                "borrow_kind": "value",
+                "borrow_kind": "readonly_ref",
                 "repr": "root",
                 "id": "root"
               },
@@ -256,7 +257,7 @@
               "end_lineno": 10,
               "end_col": 31
             },
-            "resolved_type": "str",
+            "resolved_type": "Path",
             "casts": [],
             "borrow_kind": "value",
             "repr": "root / \"values.txt\"",
@@ -268,9 +269,9 @@
                 "end_lineno": 10,
                 "end_col": 16
               },
-              "resolved_type": "unknown",
+              "resolved_type": "Path",
               "casts": [],
-              "borrow_kind": "value",
+              "borrow_kind": "readonly_ref",
               "repr": "root",
               "id": "root"
             },
@@ -291,7 +292,7 @@
             }
           },
           "declare": true,
-          "decl_type": "str",
+          "decl_type": "Path",
           "declare_init": true,
           "leading_trivia": [
             {
@@ -340,7 +341,7 @@
                   "end_lineno": 11,
                   "end_col": 9
                 },
-                "resolved_type": "str",
+                "resolved_type": "Path",
                 "casts": [],
                 "borrow_kind": "readonly_ref",
                 "repr": "child",
@@ -471,7 +472,7 @@
                 "end_lineno": 14,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -512,7 +513,7 @@
                     "end_lineno": 14,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -551,7 +552,7 @@
                           "end_lineno": 14,
                           "end_col": 36
                         },
-                        "resolved_type": "str",
+                        "resolved_type": "Path",
                         "casts": [],
                         "borrow_kind": "readonly_ref",
                         "repr": "child",
@@ -651,7 +652,7 @@
                 "end_lineno": 15,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -692,7 +693,7 @@
                     "end_lineno": 15,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -719,7 +720,7 @@
                         "end_lineno": 15,
                         "end_col": 36
                       },
-                      "resolved_type": "str",
+                      "resolved_type": "Path",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "child",
@@ -816,7 +817,7 @@
                 "end_lineno": 16,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -857,7 +858,7 @@
                     "end_lineno": 16,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -884,7 +885,7 @@
                         "end_lineno": 16,
                         "end_col": 36
                       },
-                      "resolved_type": "str",
+                      "resolved_type": "Path",
                       "casts": [],
                       "borrow_kind": "readonly_ref",
                       "repr": "child",
@@ -981,7 +982,7 @@
                 "end_lineno": 17,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1022,7 +1023,7 @@
                     "end_lineno": 17,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1085,7 +1086,7 @@
                               "end_lineno": 17,
                               "end_col": 37
                             },
-                            "resolved_type": "str",
+                            "resolved_type": "Path",
                             "casts": [],
                             "borrow_kind": "readonly_ref",
                             "repr": "child",
@@ -1203,7 +1204,7 @@
                 "end_lineno": 18,
                 "end_col": 17
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "checks.append",
@@ -1244,7 +1245,7 @@
                     "end_lineno": 18,
                     "end_col": 30
                   },
-                  "resolved_type": "unknown",
+                  "resolved_type": "callable",
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "py_assert_eq",
@@ -1283,7 +1284,7 @@
                           "end_lineno": 18,
                           "end_col": 36
                         },
-                        "resolved_type": "str",
+                        "resolved_type": "Path",
                         "casts": [],
                         "borrow_kind": "readonly_ref",
                         "repr": "child",
@@ -1383,7 +1384,7 @@
                 "end_lineno": 19,
                 "end_col": 24
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "py_assert_all",
@@ -1468,7 +1469,7 @@
             "end_lineno": 22,
             "end_col": 9
           },
-          "resolved_type": "unknown",
+          "resolved_type": "callable",
           "casts": [],
           "borrow_kind": "value",
           "repr": "print",
@@ -1495,7 +1496,7 @@
                 "end_lineno": 22,
                 "end_col": 30
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "run_pathlib_extended",
