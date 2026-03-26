@@ -1,62 +1,73 @@
-<a href="../../ja/plans/README.md">
-  <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
-</a>
+<a href="../../ja/plans/README.md"><img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square"></a>
+
+> [!WARNING]
+> This file is synchronized from `docs/ja/plans/README.md` and still requires manual English translation.
+
+> Source of truth: `docs/ja/plans/README.md`
 
 # plans
 
-This folder stores long-term plans, design drafts, and investigation notes.
+このフォルダは、長期計画・設計ドラフト・調査メモの置き場です。
 
-## How To Read Live Plans
+## live plan の見方
 
-- The canonical entrypoint for live `plans/` is this `README.md`, not the raw file listing.
-- `active` means only live plans referenced directly by unfinished tasks in `docs/ja/todo/index.md`.
-- `backlog` means live `p*-*.md` files that are not registered in TODO yet and are either still unfinished backlog drafts or intentional live status/report sinks.
-- `stale-complete` means live `p*-*.md` files that are no longer referenced by TODO, have every checklist item complete, and are not live status/report sinks. These should be moved out of live `plans/`.
+- `plans/` 直下の canonical entrypoint は raw のファイル一覧ではなく、この `README.md` とする。
+- `active` は `docs/ja/todo/index.md` の未完了タスクから直接参照されている live plan に限る。
+- `backlog` は live の `p*-*.md` で、TODO 未登録かつ、未完了 backlog か live status/report sink として残してよいものとする。
+- `stale-complete` は live の `p*-*.md` で、TODO 未登録、checklist 完了、かつ live status/report sink でもないものとする。これは `plans/` 直下へ残さず archive へ移す。
 
-Active live plans as of 2026-03-14:
+2026-03-14 時点の active live plan:
 - `p2-cpp-pyruntime-upstream-fallback-shrink.md`
 
-## Rules
+## ルール
 
-- `docs/ja/` is the source of truth. This `docs/en/` tree is the English mirror.
-- Keep planning documents under discussion in this folder; formal tracking of unfinished tasks stays in `docs/ja/todo/index.md`.
-- Move only concrete, actionable items into `docs/ja/todo/index.md`.
-- Each plan should map one-to-one with a TODO task ID (for example: `P1-COMP-01`).
-- In TODO entries, always list both the task ID and the corresponding plan file path.
-- If you place supporting reports such as readiness reports under `plans/`, always link them from the corresponding plan.
-- For priority-override instructions, use `docs/ja/plans/instruction-template.md`.
-- If a draft remains under live `plans/` before it is promoted into TODO, treat it as backlog through this README instead of the raw file listing.
-- New backlog drafts may write `Related TODO: none (backlog draft / not yet promoted)` and should replace that line with the real TODO ID once promoted.
+- 記載内容は日本語で書く。
+- ここには未完了タスクに紐づく計画のみを置き、正式な進捗管理は `docs/ja/todo/index.md` で行う。
+- 具体的に着手する項目だけを `docs/ja/todo/index.md` に転記する。
+- 各 plan は `todo` のタスク ID（例: `P1-COMP-01`）と 1 対 1 で紐づける。
+- `todo` 側には、タスク ID と対応 plan ファイルパスを必ず併記する。
+- readiness report のような補助レポートを `plans/` に置く場合も、対応する plan から必ずリンクする。
+- 優先度上書きの指示形式は `docs/ja/plans/instruction-template.md` を使う。
+- TODO 未登録の draft を live `plans/` に置く場合は backlog とみなし、raw のファイル一覧ではなくこの README の分類基準で扱う。
+- 新しい backlog draft は `関連 TODO:` に `なし（backlog draft / TODO 未登録）` を明記してよい。TODO へ昇格した時点で対応 ID に差し替える。
 
-## Completion Handoff Checklist
+## 完了時の運用（必須）
 
-- Once the parent TODO task and all child tasks are marked `[x]` in `docs/ja/todo/index.md`, move the live plan to `docs/ja/plans/archive/YYYYMMDD-<slug>.md`.
-- Remove the completed task from `docs/ja/todo/index.md` and add a completion section to `docs/ja/todo/archive/YYYYMMDD.md`.
-- Add the archived plan link to `docs/ja/todo/archive/index.md`.
-- Mirror the same plan / TODO / archive handoff under `docs/en/`.
-- Remove the completed plan from the active live plan list in `plans/README.md` and verify that the backlog / stale-complete classification still holds.
-- Run `python3 tools/check_todo_priority.py` and `git diff --check` after the handoff.
+- 紐づく `todo` のタスク ID がすべて完了（`[x]`）した plan は、`docs/ja/plans/` に残さない。
+- 完了した plan は `docs/ja/plans/archive/YYYYMMDD-<task-group>.md` へ移動する。
+- `YYYYMMDD` は移動日（または完了確定日）を使う。
+- `docs/ja/todo/archive/index.md` に、完了 plan へのリンクを 1 行追加する。
+- 詳細な完了文脈は該当日の `docs/ja/todo/archive/YYYYMMDD.md` 側に記録する。
 
-## Recommended Template
+## Archive Handoff Checklist
+
+- 親 task と子 task を `docs/ja/todo/index.md` 上で全て `[x]` にしたら、live plan を `docs/ja/plans/archive/YYYYMMDD-<slug>.md` へ移動する。
+- `docs/ja/todo/index.md` から完了 task を削除し、`docs/ja/todo/archive/YYYYMMDD.md` に完了 section を追加する。
+- `docs/ja/todo/archive/index.md` に archive plan へのリンクを追加する。
+- `docs/en/` mirror の plan / TODO / archive も同じ handoff を反映する。
+- `plans/README.md` の active live plan 一覧から完了 plan を外し、backlog / stale-complete の分類基準が崩れていないことを確認する。
+- handoff 後に `python3 tools/check_todo_priority.py` と `git diff --check` を実行する。
+
+## 推奨テンプレート
 
 ```md
-# TASK GROUP: <GROUP-ID>
+# TASK GROUP: <グループID>
 
-Last updated: YYYY-MM-DD
+最終更新: YYYY-MM-DD
 
-Related TODO:
-- `docs/ja/todo/index.md` `ID: ...`
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: ...`
 
-Background:
-Objective:
-In scope:
+背景:
+目的:
+対象:
 - ...
-Out of scope:
+非対象:
 - ...
-Acceptance criteria:
+受け入れ基準:
 - ...
-Validation commands:
+確認コマンド:
 - ...
-Decision log:
-- YYYY-MM-DD: Initial draft.
+決定ログ:
+- YYYY-MM-DD: 初版作成。
 ```

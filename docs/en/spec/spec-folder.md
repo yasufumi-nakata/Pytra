@@ -2,208 +2,246 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-# Folder Responsibility Map Specification (Pytra)
+# Folder Responsibility Map Specification for Pytra
 
-This document is the source of truth for placement decisions: which folder should contain what.
-Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec-runtime.md`); this file defines boundaries only.
+This document is the source of truth for placement boundaries, what should be placed in which folder.
+For algorithmic details, see other specifications such as `spec-dev.md`, `spec-east.md`, and `spec-runtime.md`. This document is limited to placement decisions.
 
 ## 1. Scope
 
 - In scope:
-  - Repository top-level folders
-  - Major responsibility boundaries under `src/`
-  - `docs/ja/todo/` operation boundaries
+  - top-level folders in the repository
+  - major responsibility boundaries under `src/`
+  - operational boundaries for `docs/ja/todo/`
 - Out of scope:
-  - Detailed algorithms
-  - Full per-language support matrix
+  - detailed implementation of each feature
+  - a complete matrix of per-language support granularity
 
-## 2. Top-Level Folder Responsibilities
+## 2. Top-level repository responsibilities
 
 ### 2.1 `src/`
 
-- Purpose: transpiler implementation, shared libraries, and target runtimes.
-- Allowed: `py2*.py`, `src/pytra/`, `src/runtime/<lang>/{generated,native}/`, `src/toolchain/emit/`. Legacy `pytra-gen/pytra-core` is rollout debt only.
-- For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` must not exist; any re-entry is a contract failure.
-- The canonical repo layout allows only `src/runtime/<lang>/{generated,native}/` as live runtime roots.
-- Not allowed: logs, temporary outputs, process docs.
+- Purpose: holds the transpiler itself, shared libraries, and target-language runtime implementations.
+- Place here:
+  - `py2*.py` entrypoints
+  - `src/toolchain/`, the transpiler implementation
+  - `src/pytra/`, the source-of-truth reference libraries used during transpilation
+  - `src/runtime/east/`, `.east` files, language-independent intermediate representation converted into each target language during link
+  - `src/runtime/<lang>/`, handwritten runtime code specific to each target language. The old `native/`-abolished note in Japanese source refers to the old direct layout.
+  - checked-in `src/runtime/<lang>/pytra/**` must not exist for non-C++ and non-C# backends, and reappearance is a contract failure
+  - the canonical repository layout allows only `src/runtime/<lang>/{generated,native}/`
+  - `src/toolchain/emit/`
+- Do not place here:
+  - operational logs, temporary verification outputs, or procedure documents
 
 ### 2.2 `test/`
 
-- Purpose: regression tests and fixtures.
-- Allowed: unit/integration tests, fixtures.
-- Not allowed: production implementation.
+- Purpose: regression tests and verification fixtures.
+- Place here: unit and integration tests, fixtures, and verification helpers.
+- Do not place here: production implementation code.
 
 ### 2.3 `sample/`
 
-- Purpose: public sample inputs/outputs and comparison artifacts.
-- Allowed: `sample/py`, `sample/<lang>`, `sample/images`, `sample/golden`.
-- Not allowed: unorganized local experiments.
+- Purpose: public sample inputs and outputs, and paths for comparing generated artifacts.
+- Place here: `sample/py`, `sample/<lang>`, `sample/images`, and `sample/golden`.
+- Do not place here: unorganized experimental code still under development.
 
 ### 2.4 `docs/ja/`
 
-- Purpose: source of truth documentation.
-- Allowed: `spec/`, `plans/`, `todo/`, `language/`, `news/`.
-- Not allowed: implementation code.
+- Purpose: the source of truth for specifications, operations, and history.
+- Place here: `spec/`, `spec/archive/`, `plans/`, `todo/`, `language/`, and `changelog.md`.
+- Do not place here: implementation code.
 
 ### 2.5 `docs/en/`
 
-- Purpose: English translation mirror of `docs/ja/`.
-- Allowed: translated counterparts of `docs/ja/`.
-- Not allowed: upstream-first edits diverging from `docs/ja/`.
+- Purpose: the English mirror of `docs/ja/`.
+- Place here: translations corresponding to `docs/ja/`.
+- Do not place here: changes that lead the Japanese source of truth.
 
 ### 2.6 `materials/`
 
-- Purpose: user-provided references and source materials.
-- Allowed: `materials/refs/`, `materials/inbox/`, `materials/archive/`.
-- Not allowed: modifying original source files for transpiler convenience.
+- Purpose: user-provided materials and reference data.
+- Place here: `materials/refs/`, `materials/inbox/`, and `materials/archive/`.
+- Do not place here: original source files modified only for the convenience of the transpiler.
 
 ### 2.7 `work/`
 
-- Purpose: isolated temporary workspace for Codex.
-- Allowed: `work/out/`, `work/selfhost/`, `work/tmp/`, `work/logs/`.
-- Not allowed: canonical source artifacts.
+- Purpose: isolate temporary working space for Codex.
+- Place here: `work/out/`, `work/selfhost/`, `work/tmp/`, and `work/logs/`.
+- Do not place here: source-of-truth data.
 
-### 2.8 `out/`, `selfhost/`, `archive/` (compat operation)
+### 2.8 Standard directory structure for build output
 
-- Purpose: backward-compatible operation during phased cleanup.
-- Allowed: outputs from existing scripts.
-- Not allowed: new permanent storage policy.
-- Note: use `work/` first for new temporary outputs.
+Build output generated by `pytra build` or by `pytra link` plus an emitter follows the standard structure below across all backends.
 
-## 3. Responsibilities Under `src/`
-
-### 3.1 `src/toolchain/` — 4-stage pipeline
-
-Based on the gcc `cc1` / `as` / `ld` analogy, the transpilation pipeline is separated into 4 stages.
-
+```text
+<output_root>/
+├── manifest.json
+├── east3/
+│   ├── <entry_module>.json
+│   └── std/time.json
+└── emit/
+    ├── <entry_module>.<ext>
+    ├── std/time.<ext>
+    ├── std/time_native.<ext>
+    └── built_in/py_runtime.<ext>
 ```
+
+| Directory | Contents | Producer |
+|---|---|---|
+| `manifest.json` | link-output manifest read by the emitter | linker |
+| `east3/` | intermediate EAST3 JSON referenced by the manifest | linker |
+| `emit/` | final target-language output | emitter |
+
+Naming rules:
+
+- `manifest.json`, formerly `link-output.json`, is the canonical name.
+- `east3/`, formerly `linked/`, holds linker intermediate outputs.
+- `emit/`, formerly `out/`, holds the emitter's final outputs.
+- Every backend and `pytra-cli.py` must follow this structure and must not invent its own directory names.
+
+### 2.9 `out/`, `selfhost/`, and `archive/`, compatibility operation
+
+- Purpose: compatibility with existing operation, to be cleaned up in stages.
+- Place here: artifacts still produced by older scripts.
+- Do not place here: permanent storage for new operation.
+- Note: for new temporary output, prefer `work/`.
+
+## 3. Responsibilities under `src/`
+
+### 3.1 `src/toolchain/`, four-stage pipeline
+
+Following the `cc1`, `as`, and `ld` analogy from gcc, the transpilation pipeline is split into four stages.
+
+```text
 src/toolchain/
-  frontends/   ← parse: .py → EAST
-  compile/     ← compile: EAST1 → EAST2 → EAST3
-  link/        ← link: EAST3 modules → linked EAST
-  emit/        ← emit: linked EAST → target source
-    common/    ← CodeEmitter base (language-independent)
-    cpp/       ← C++ backend (emitter, optimizer, lower, profiles)
-    rs/        ← Rust backend
-    cs/        ← C# backend
-    ...        ← all 15 languages
-    cpp.py     ← C++ emit entry point (import-isolated)
-    all.py     ← all-backend generic entry point
-  misc/        ← compatibility shim / facade (backend registry, etc.; scheduled for removal)
+  frontends/
+  compile/
+  link/
+  emit/
+    common/
+    cpp/
+    rs/
+    cs/
+    ...
+    cpp.py
+    all.py
+  misc/
 ```
 
-- `src/toolchain/frontends/`: input-language frontend (e.g., `transpile_cli.py`, `python_frontend.py`, `east1_build.py`, `signature_registry.py`)
-- `src/toolchain/ir/`: EAST1/2/3 definitions, lowering, optimizer, pipeline (e.g., `core.py`, `east1.py`, `east2.py`, `east3.py`, `east3_optimizer.py`)
-- `src/toolchain/link/`: linker and linked program optimizer (e.g., `program_loader.py`, `global_optimizer.py`)
-- `src/toolchain/emit/`: per-target-language emit implementations. Each `<lang>/` has `emitter/`, `optimizer/`, `lower/`, `profiles/`.
-- `src/toolchain/misc/`: compatibility shim / facade (e.g., legacy import route receivers, backend registry)
-- Not allowed:
-  - re-adding to `compiler` any logic that has already been moved to `frontends` / `ir`
+- `src/toolchain/frontends/`: input-language frontends, for example `transpile_cli.py`, `python_frontend.py`, `east1_build.py`, and `signature_registry.py`
+- `src/toolchain/compile/`: EAST1, EAST2, and EAST3 definitions, lowering, optimizer, and pipeline, for example `core.py`, `east1.py`, `east2.py`, `east3.py`, and `east3_optimizer.py`
+- `src/toolchain/link/`: linker and linked-program optimizer, for example `program_loader.py` and `global_optimizer.py`
+- `src/toolchain/emit/`: per-target emit implementations. Each `<lang>/` contains `emitter/`, `optimizer/`, `lower/`, and `profiles/`.
+- `src/toolchain/misc/`: compatibility shims and facades, for example old import paths and the backend registry
+- Do not place here:
+  - new implementations that move logic back into `compiler` after it has already been moved into `frontends` or the IR side
 - Dependency direction:
-  - canonical direction is `toolchain.frontends → toolchain.compile → toolchain.link → toolchain.emit`
-  - `toolchain.emit → toolchain.frontends` is forbidden
-  - `toolchain.compiler → toolchain.frontends|toolchain.compile` is allowed as a compatibility layer
-  - `pytra-cli.py` does NOT import `toolchain.emit` (emit is called as a subprocess via `toolchain.emit.cpp` / `toolchain.emit.all`)
-  - as a temporary exception, `toolchain.compile.core` may reference `toolchain.frontends.signature_registry|frontend_semantics` (scheduled for removal in the cycle-elimination task)
+  - the canonical direction is `toolchain.frontends -> toolchain.compile -> toolchain.link -> toolchain.emit`
+  - `toolchain.emit -> toolchain.frontends` is forbidden
+  - `toolchain.misc -> toolchain.frontends|toolchain.compile` is allowed as a compatibility layer
+  - `pytra-cli.py` must not import `toolchain.emit`; emit is invoked through subprocesses into `toolchain.emit.cpp` or `toolchain.emit.all`
+  - as a temporary exception, `toolchain.compile.core` may still refer to `toolchain.frontends.signature_registry|frontend_semantics`, planned for removal by a dedicated cycle-breaking task
 
-#### 3.1.1 Forbidden Old Import Paths (Migration Contract)
+#### 3.1.1 Prohibited old import paths, migration rule
 
-- Adding new imports to the old paths `pytra.frontends` / `pytra.ir` / `pytra.compiler` is forbidden.
-- The canonical paths are `toolchain.frontends` / `toolchain.compile` / `toolchain.compiler`.
-- Do not add re-export / alias shims to keep old paths alive (no backward-compatibility layer).
-- Audit and removal of remaining references is done in phased migration; unmigrated references can be found with:
-  - `rg -n "pytra\\.(frontends|ir|compiler)" src tools test`
-  - `rg -n "toolchain\\.(frontends|ir|compiler)" src tools test`
+- New imports to the old paths `pytra.frontends`, `pytra.ir`, and `pytra.compiler` are forbidden.
+- The canonical paths are `toolchain.frontends`, `toolchain.compile`, and `toolchain.misc`.
+- Do not add re-export or alias shims that keep the old paths alive.
+- Inventory and removal of existing references must proceed in stages, and remaining references must stay visible through `rg`.
+  - Recommended check: `rg -n "pytra\\.(frontends|ir|compiler)" src tools test`
+  - Post-migration check: `rg -n "toolchain\\.(frontends|ir|compiler)" src tools test`
 
-### 3.2 `src/pytra/` (transpile-time reference library)
+### 3.2 `src/pytra/`, reference libraries used during transpilation
 
-- Purpose: hold the Python namespace library (`pytra.std` / `pytra.utils` / `pytra.built_in`) that the transpiler references.
-- Allowed: `src/pytra/std/`, `src/pytra/utils/`, `src/pytra/built_in/`
-- Not allowed:
-  - concrete implementations of `frontends` / `ir` / `compiler`
+- Purpose: holds the Python-namespace libraries the transpiler refers to, `pytra.std`, `pytra.utils`, and `pytra.built_in`.
+- Place here:
+  - `src/pytra/std/`, `src/pytra/utils/`, and `src/pytra/built_in/`
+- Do not place here:
+  - actual implementations of `frontends`, `ir`, or `compiler`
   - backend-specific logic
 
 ### 3.3 `src/toolchain/emit/`
 
-- Purpose: absorb target-language syntax differences.
-- Allowed: backend-specific hook implementations.
-- Not allowed: language-agnostic semantic lowering.
+- Purpose: absorb language-specific syntax differences.
+- Place here: backend-specific hook implementations.
+- Do not place here: language-independent semantic lowering.
 
-#### 3.2.1 Standard backend pipeline directories
+#### 3.3.1 Standard backend-pipeline directories
 
-- The standard backend layout is `src/toolchain/emit/<lang>/{lower,optimizer,emitter}/`.
-- Responsibilities are fixed as:
-  - `lower/`: language-specific lowering from `EAST3 -> <LangIR>`
-  - `optimizer/`: language-specific optimization on `<LangIR> -> <LangIR>`
-  - `emitter/`: final rendering from `<LangIR> -> source text`
-- New implementation work must be placed in these three layers, and must not add semantic lowering or optimizer-equivalent logic into `emitter/`.
-- Existing backends may migrate in phases, but the target shape must converge to this same directory contract.
-- The canonical guard for non-C++ 3-layer wiring and reverse-import prevention is `python3 tools/check_noncpp_east3_contract.py`.
+- The standard backend structure is `src/toolchain/emit/<lang>/{lower,optimizer,emitter}/`.
+- The roles are fixed as follows.
+  - `lower/`: language-specific lowering from `EAST3` to `<LangIR>`
+  - `optimizer/`: language-specific optimization from `<LangIR>` to `<LangIR>`
+  - `emitter/`: rendering from `<LangIR>` to final source text
+- New implementations must go into those three layers. Do not add semantic lowering or optimizer-equivalent logic to `emitter/`.
+- Existing backends may migrate in stages, but the final target layout must converge on the same convention.
+- The source of truth for preventing regression in non-C++ backend three-layer wiring and reverse-flow imports is `python3 tools/check_noncpp_east3_contract.py`.
 
-#### 3.2.2 Extension directories (plan-2) and final target shape (plan-3)
+#### 3.3.2 Additional-feature directories, plan 2, and final target shape, plan 3
 
-- Current operation uses plan-2 (`core + extensions`).
-  - core (required): `lower/`, `optimizer/`, `emitter/`
-  - extension (optional): `extensions/<topic>/`
-- Use fixed feature names under `extensions/`.
-  - Examples: `extensions/runtime/`, `extensions/packaging/`, `extensions/integration/`
-- Language-specific ad-hoc directory names such as `header/`, `multifile/`, `runtime_emit/`, `hooks/` are disallowed for new additions and should be migrated gradually into `extensions/<topic>/`.
-- In a later plan-3 phase, extension features are moved out of `src/toolchain/emit/<lang>/` and each backend converges toward a `lower/optimizer/emitter`-centric shape.
+- The current operation adopts plan 2, core plus extensions.
+  - required core: `lower/`, `optimizer/`, `emitter/`
+  - optional extensions: `extensions/<topic>/`
+- Names under `extensions/` are fixed by feature name.
+  - examples: `extensions/runtime/`, `extensions/packaging/`, `extensions/integration/`
+- New language-specific directories such as `header/`, `multifile/`, `runtime_emit/`, and `hooks/` are forbidden. Existing ones should be moved gradually under `extensions/<topic>/`.
+- In the future plan-3 transition, extension features are gradually moved out from `src/toolchain/emit/<lang>/`, converging to a layout centered on `lower/optimizer/emitter`.
 
-### 3.3 `src/toolchain/emit/common/profiles/` and `src/toolchain/emit/<lang>/profiles/`
+### 3.4 `src/toolchain/emit/common/profiles/` and `src/toolchain/emit/<lang>/profiles/`
 
-- Purpose: declarative language-difference profiles.
-- Allowed:
-  - Shared defaults: `src/toolchain/emit/common/profiles/core.json`
-  - Per-language profiles: `src/toolchain/emit/<lang>/profiles/{profile,types,operators,runtime_calls,syntax}.json`
-- Not allowed: executable logic.
+- Purpose: keep language-difference settings as declarative JSON.
+- Place here:
+  - shared defaults: `src/toolchain/emit/common/profiles/core.json`
+  - language differences: `src/toolchain/emit/<lang>/profiles/{profile,types,operators,runtime_calls,syntax}.json`
+- Do not place here: executable logic, Python code.
 
-### 3.4 `src/runtime/`
+### 3.5 `src/runtime/`
 
-- Purpose: target runtime implementations.
-- Allowed: `src/runtime/<lang>/{generated,native}/`. Legacy backends may temporarily keep `pytra-gen/pytra-core`.
-- Not allowed: transpiler core logic.
+- Purpose: holds runtime implementations for target languages.
+- Place here: `src/runtime/<lang>/{generated,native}/` implementations. Not-yet-migrated backends may keep `pytra-gen/pytra-core` temporarily.
+- Do not place here: the transpiler's own logic.
 
-### 3.5 `src/*_module/` (legacy compatibility)
+### 3.6 `src/*_module/`, legacy compatibility
 
-- Purpose: compatibility with old layout.
-- Allowed: existing compatibility assets only.
-- Not allowed: new runtime implementations.
-- Note: phased removal target; new implementations go to the canonical lanes under `src/runtime/<lang>/{generated,native}/`.
+- Purpose: compatibility with older placement.
+- Place here: existing compatibility assets only.
+- Do not place here: new real implementations.
+- Note: this is scheduled for gradual removal. New work must use the canonical lanes, `src/runtime/<lang>/{generated,native}/`.
 
-## 4. Documentation Operation Boundaries
+## 4. Documentation-operation boundaries
 
 ### 4.1 `docs/ja/todo/index.md`
 
-- Purpose: open tasks only.
-- Allowed: open IDs, priorities, short progress notes.
-- Not allowed: completed history body.
+- Purpose: manage only unfinished tasks.
+- Place here: unfinished IDs, priorities, and minimal progress notes.
+- Do not place here: the full text of completed-task history.
 
 ### 4.2 `docs/ja/todo/archive/`
 
-- Purpose: completed history by date.
-- Allowed: `YYYYMMDD.md`, `index.md`.
-- Not allowed: open tasks.
+- Purpose: store completed history by date.
+- Place here: `YYYYMMDD.md` and `index.md`.
+- Do not place here: unfinished tasks.
 
 ### 4.3 `docs/ja/spec/archive/`
 
-- Purpose: store retired legacy specifications with a date stamp.
-- Allowed: `YYYYMMDD-<slug>.md`, `index.md`.
-- Not allowed: current specifications (those belong directly under `docs/ja/spec/`).
+- Purpose: store retired specifications with dates.
+- Place here: `YYYYMMDD-<slug>.md` and `index.md`.
+- Do not place here: current specifications. Current specifications stay directly under `docs/ja/spec/`.
 
-## 5. Placement Checklist
+## 5. Checklist when adding a file
 
-When adding a new file, verify:
+Any new file must satisfy the following.
 
-1. Purpose matches the folder responsibility.
-2. No violation of "not allowed" items.
-3. Dependency direction does not reverse boundaries.
-4. If boundaries change, update this spec and related specs in the same change.
+1. Its purpose matches the responsibility of the existing folder.
+2. It does not violate any prohibited-item rule, what must not be placed there.
+3. It does not reverse the dependency direction.
+4. If it changes a responsibility boundary, update this document and the related specifications in the same change.
 
-## 6. Related Specifications
+## 6. Related specifications
 
-- Implementation: `docs/en/spec/spec-dev.md`
-- EAST staged architecture: `docs/en/spec/spec-east.md#east-stages`
-- EAST migration responsibility map: `docs/en/spec/spec-east.md#east-file-mapping`
-- Runtime: `docs/en/spec/spec-runtime.md`
-- Codex operations: `docs/en/spec/spec-codex.md`
+- Implementation specification: `docs/ja/spec/spec-dev.md`
+- EAST three-stage structure: `docs/ja/spec/spec-east.md#east-stages`
+- EAST migration responsibility mapping: `docs/ja/spec/spec-east.md#east-file-mapping`
+- Runtime specification: `docs/ja/spec/spec-runtime.md`
+- Codex operation: `docs/ja/spec/spec-codex.md`

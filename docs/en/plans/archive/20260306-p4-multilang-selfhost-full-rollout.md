@@ -8,11 +8,11 @@ Related TODO:
 
 Background:
 - In current multi-language selfhost status, unfinished `stage1/stage2/stage3` remains outside C++.
-- `rs/cs` now fail at stage2 compile, `js` fails stage3, `ts/go/java/swift/kotlin` still have no multistage runner contract, and `ruby/lua/scala` remain outside multistage monitoring scope.
+- `rs/cs` still have unfinished `stage2`/`stage3` work, `js` still fails stage3, `ts/go/java/swift/kotlin` still have no multistage runner contract, and `ruby/lua/scala/php/nim` remain outside multistage monitoring scope.
 - To eventually establish a full "self-conversion chain works on all languages" state, this is tracked as a very-low-priority long-term backlog.
 
 Goal:
-- Gradually satisfy selfhost conditions for `py2<lang>.py` (`cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala`) and converge to full multistage monitoring coverage across all languages.
+- Gradually satisfy selfhost conditions for `py2<lang>.py` (`cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim`) and converge to full multistage monitoring coverage across all languages.
 
 In scope:
 - `tools/check_multilang_selfhost_stage1.py` / `tools/check_multilang_selfhost_multistage.py` / `tools/check_multilang_selfhost_suite.py`
@@ -38,7 +38,8 @@ Verification commands:
 Decision log:
 - 2026-02-27: Per user request, added full multi-language selfhost completion as very-low-priority (`P4`) TODO.
 - 2026-03-02: Per user request, added `ruby/lua/scala` to selfhost target languages and expanded P4 monitoring scope to `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala`.
-- 2026-03-06: Per user instruction, this plan was withdrawn from the open TODO list because selfhost work is not meaningful until the ABI/runtime boundary is properly stabilized. This is not treated as completed; it is deferred for later re-entry.
+- 2026-03-05: Per user request, added `php/nim` to the selfhost target languages and expanded the P4 monitoring scope to `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim`. At the same time, reconfirmed the policy of achieving selfhost through the common path without increasing language-specific special-case implementations.
+- 2026-03-06: Per user instruction, this plan was withdrawn from the open TODO list because there is no point in advancing it before the current ABI / runtime responsibility boundary is stabilized. This is not treated as completed; it will be reevaluated after the ABI specification is established.
 - 2026-02-27: Fixed per-language stage blockers and runner-contract definitions (`S1-01`, `S1-02`).
 - 2026-02-27 to 2026-03-01: Completed Rust stage1 unblock and C# stage2/stage3 unblocks through incremental emitter/runtime/selfhost source fixes.
 - 2026-03-01: `P4-MULTILANG-SH-01-S2-02` and child tasks through `S2-02-S3` reached done status; remaining work is now JS/TS/GSK chain and CI integration.
@@ -66,7 +67,7 @@ Per-language blocker snapshot (2026-02-27 baseline):
 | kotlin | pass | skip | skip | `runner_not_defined` | multistage runner undefined |
 
 Supplement:
-- At the timing of this table, `ruby/lua/scala` were outside checker targets and therefore unmeasured (monitoring not connected).
+- At the timing of this table, `ruby/lua/scala/php/nim` were outside checker targets and therefore unmeasured (monitoring not connected).
 
 Blocking-chain priority:
 1. Fix `rs` stage2 compile failure (cannot proceed to stage3).
@@ -98,6 +99,8 @@ Language-specific runner contracts:
 | ruby | no build needed (interpreter run) | `ruby <stage*.rb> <input.py> -o <out.rb>` | `out.rb` is generated |
 | lua | no build needed (interpreter run) | `lua <stage*.lua> <input.py> -o <out.lua>` | `out.lua` is generated |
 | scala | `scala run <runtime.scala> <stage*.scala> -- --help` (runnability check) | `scala run <runtime.scala> <stage*.scala> -- <input.py> -o <out.scala>` | `out.scala` is generated |
+| php | no build needed (interpreter run) | `php <stage*.php> <input.py> -o <out.php>` | `out.php` is generated |
+| nim | `nim c -o:<runner> <stage*.nim>` | `<runner> <input.py> -o <out.nim>` | `out.nim` is generated |
 
 Failure classification rules:
 - build failure: `compile_fail` / `stage2_compile_fail`
@@ -129,9 +132,9 @@ Failure classification rules:
 - [ ] [ID: P4-MULTILANG-SH-01-S2-03] Resolve JS selfhost stage2 dependency-transpile failure and pass multistage.
 - [ ] [ID: P4-MULTILANG-SH-01-S3-01] Resolve TypeScript preview-only status and move to a selfhost-executable generation mode.
 - [ ] [ID: P4-MULTILANG-SH-01-S3-02] Link with Go/Java/Swift/Kotlin native-backend tasks and enable selfhost execution chains.
-- [ ] [ID: P4-MULTILANG-SH-01-S3-03] Add Ruby/Lua/Scala3 to selfhost multistage checker targets and resolve runner-undefined/out-of-scope status.
-- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S1] Add `ruby/lua/scala` to target-language sets in `check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` / `check_multilang_selfhost_suite.py`, and implement category classification.
-- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S2] Add stage2/stage3 runner implementations (build/run/output-missing checks) for Ruby/Lua/Scala3.
-- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S3] Establish first multistage baseline for `ruby/lua/scala` and lock language-specific blocker chains.
+- [ ] [ID: P4-MULTILANG-SH-01-S3-03] Add Ruby/Lua/Scala3/PHP/Nim to selfhost multistage checker targets and resolve runner-undefined/out-of-scope status.
+- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S1] Add `ruby/lua/scala/php/nim` to target-language sets in `check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` / `check_multilang_selfhost_suite.py`, and implement category classification.
+- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S2] Add stage2/stage3 runner implementations (build/run/output-missing checks) for Ruby/Lua/Scala3/PHP/Nim.
+- [ ] [ID: P4-MULTILANG-SH-01-S3-03-S3] Establish the first multistage baseline for `ruby/lua/scala/php/nim` and lock language-specific blocker chains.
 - [ ] [ID: P4-MULTILANG-SH-01-S4-01] Integrate all-language multistage regressions into CI path to continuously detect failure-category recurrence.
 - [ ] [ID: P4-MULTILANG-SH-01-S4-02] Document completion-judgment template (stage-pass and exclusion conditions per language) and lock operation rules.

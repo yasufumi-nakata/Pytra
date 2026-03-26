@@ -4,17 +4,20 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-21
+Last updated: 2026-03-23
 
 ## Operation Policy
 
 - `docs/ja/todo/archive/index.md` keeps only the index.
-- The body of completed-history entries is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
-- Completed plans are moved under `docs/ja/plans/archive/`, and this index links to them.
-- On the `docs/` side, `docs/ja/` remains the source of truth and translations are synchronized from it.
+- The body of completed history is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
+- Completed plans are moved to `docs/ja/plans/archive/`, and this index links to them.
+- Under `docs/`, `docs/ja/` is the source of truth and translations are synchronized from it.
 
 ## Completed Plan Archive
 
+- [2026-03-25 / P0 fully completed + P1-EMIT-GO/GO-RUNTIME/GO-MIGRATE completed](20260325.md)
+- [2026-03-24 / Bulk archive of all TODOs due to pipeline redesign kickoff](20260324.md)
+- [2026-03-23 / P0-28 to P0-31, P2-BUILD-OUTPUT-STRUCTURE, P5-SWIFT, P6-ZIG-OBJ-CONTAINERS](20260323.md)
 - [2026-03-21 / P0-CPP-GENERATED-RUNTIME-PIPELINE-01](20260321.md)
 - [2026-03-21 / P0-UNION-ARG-ESCAPE-01/02/03](20260321.md)
 - [2026-03-21 / P0-ESCAPE-TO-STORAGE-HINT-01](20260321.md)
@@ -27,14 +30,45 @@ Last updated: 2026-03-21
 - [2026-03-21 / P0-LINKER-RESOLVED-INCLUDES-01](20260321.md)
 - [2026-03-21 / P1-PIPELINE-STAGE-SEPARATION-01](20260321.md)
 - [2026-03-21 / P4-VARARG-EAST3-LOWERING-01](20260321.md)
-- [2026-03-21 / P5-CPP-PY-IS-TYPE-DEAD-CODE-REMOVE-01](20260321.md)
-- [2026-03-21 / P5-EAST3-FLOORDIV-MOD-NODE-01](20260321.md)
-- [2026-03-21 / P6-CPP-LIST-MUT-IR-BYPASS-FIX-01](20260321.md)
-- [2026-03-21 / P6-EAST3-LEN-SLICE-NODE-01](20260321.md)
+- [2026-03-21 / P0-GPP-COMPILE-HEADERS-01](20260321.md)
+- [2026-03-21 / P0-19 block-scope variable hoisting](20260321b.md)
+- [2026-03-21 / P0-20 disable loop-invariant hoisting](20260321b.md)
+- [2026-03-21 / P0-11 PowerShell emitter parity](20260321b.md)
+- [2026-03-21 / P0-12 CLI C++ options forwarding](20260321b.md)
+- [2026-03-21 / P0-13 CLI path migration](20260321b.md)
+- [2026-03-21 / P0-15 emitter output assertions](20260321b.md)
+- [2026-03-21 / P0-16 runtime include paths](20260321b.md)
+- [2026-03-21 / P0-17 emitter legacy API cleanup](20260321b.md)
+- [2026-03-21 / P1 Julia native backend](20260321b.md)
+- [2026-03-21 / P2 remove noncpp_runtime_call](20260321b.md)
+- [2026-03-21 / P2 make link-output manifest mandatory](20260321b.md)
+- [2026-03-21 / P2 linker submodule import](20260321b.md)
+- [2026-03-21 / P2 emitter reserved-word avoidance](20260321b.md)
+- [2026-03-21 / P4 Dart native backend](20260321b.md)
+- [2026-03-21 / P7 Zig native backend](20260321b.md)
+- [2026-03-21 / P1-BACKEND-REGISTRY-DECOUPLING-01](20260321.md)
+- [2026-03-21 / P1-EMIT-DIRECT-CALL-01/02](20260321.md)
+- [2026-03-22 / P0-21 integer promotion](20260322.md)
+- [2026-03-22 / P0-23 builtin-type method return types](20260322.md)
+- [2026-03-22 / P0-24 Callable type tracking](20260322.md)
+- [2026-03-22 / P0-25 generator lowering](20260322.md)
+- [2026-03-22 / P0-26 `str` subscript type](20260322.md)
+- [2026-03-22 / P0-27 `__truediv__` lowering](20260322.md)
+- [2026-03-22 / P1 integer promotion narrowing](20260322.md)
+- [2026-03-22 / P2 emit_all_modules root_rel_prefix](20260322.md)
+- [2026-03-22 / P2 mutable param rename](20260322.md)
+- [2026-03-22 / P4 integer promotion operand cast](20260322.md)
+- [2026-03-22 / P5 C# multi-module emit parity](20260322.md)
+- [2026-03-22 / P7 default-argument expansion](20260322.md)
+- [2026-03-22 / P7 module constant type resolution](20260322.md)
+- [2026-03-21 / P1-CPP-STATICMETHOD-EMIT-01](20260321.md)
+- [2026-03-21 / P1-CPP-PATH-RC-TYPE-01](20260321.md)
+- [2026-03-21 / P7-SELFHOST-NATIVE-COMPILER-ELIM-01](20260321.md)
+- [2026-03-21 / P7-SELFHOST-MULTIMOD-TRANSPILE-01](20260321.md)
 
-- [2026-03-19 / P2-COMPILE-LINK-PIPELINE-01](../../../ja/todo/archive/20260319.md)
-- [2026-03-19 / P6-DEQUE-NATIVE-MAPPING-01](../../../ja/todo/archive/20260319.md)
-- [2026-03-19 / P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S1](../../../ja/todo/archive/20260319.md)
+- [2026-03-19 / P2-COMPILE-LINK-PIPELINE-01](20260319.md)
+- [2026-03-19 / P6-DEQUE-NATIVE-MAPPING-01](20260319.md)
+- [2026-03-19 / P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S1](20260319.md)
 
 - [2026-03-18 / P5-ANY-ELIM-OBJECT-FREE-01](../plans/archive/20260318-p5-any-elimination-object-free.md)
 
@@ -153,11 +187,59 @@ Last updated: 2026-03-21
 - [2026-03-11 / P2-COMPILER-TYPED-BOUNDARY-01](../plans/archive/20260311-p2-compiler-typed-boundary.md)
 - [2026-03-09 / P1-EAST-TYPEEXPR-01](../plans/archive/20260309-p1-east-typeexpr-strengthening.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-CORE-BOUNDARY-01](../plans/archive/20260309-p0-cpp-pyruntime-core-boundary-realign.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-ARGV-STATE-01](../plans/archive/20260309-p0-cpp-pyruntime-argv-state-slim.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-PROCESS-SURFACE-01](../plans/archive/20260309-p0-cpp-pyruntime-process-surface-realign.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-SCOPEEXIT-01](../plans/archive/20260309-p0-cpp-pyruntime-scope-exit-lane-realign.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-DICTVALUECAST-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-value-cast-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-LISTITEMCAST-01](../plans/archive/20260309-p0-cpp-pyruntime-list-item-cast-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01](../plans/archive/20260309-p0-cpp-pyruntime-upstream-realign.md)
+- [2026-03-09 / P0-DOCS-TUTORIAL-RESTRUCTURE-01](../plans/archive/20260309-p0-docs-tutorial-restructure-01.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01](../plans/archive/20260309-p0-cpp-pyruntime-optional-predicates-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01](../plans/archive/20260309-p0-cpp-pyruntime-variadic-minmax-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-SORTED-01](../plans/archive/20260309-p0-cpp-pyruntime-sorted-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-DICTVIEW-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-view-helper-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-STRAT-01](../plans/archive/20260309-p0-cpp-pyruntime-string-at-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-DICTITEMS-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-items-sugar-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-TYPEDLISTFROMOBJECT-01](../plans/archive/20260309-p0-cpp-pyruntime-typed-list-from-object-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-DICTKEYCAST-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-key-cast-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-DICTGET-STRING-SUGAR-01](../plans/archive/20260309-p0-cpp-pyruntime-dictget-string-sugar-retirement.md)
+- [2026-03-09 / P1-LINKED-HELPER-ARTIFACT-01](../plans/archive/20260309-p1-linked-helper-artifact-lane.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-OBJECT-NULLOPT-01](../plans/archive/20260309-p0-cpp-pyruntime-object-nullopt-compare-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-DICT-STR-DEFAULT-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-str-default-final-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-FINAL-01](../plans/archive/20260309-p0-cpp-pyruntime-generic-dictdefault-final-retirement.md)
+- [2026-03-09 / P4-CPP-SELFHOST-FULLPARITY-01](../plans/archive/20260309-p4-cpp-selfhost-full-sample-parity.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-DICT-STR-NODE-FINAL-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-str-node-final-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-OPTIONAL-DICTGET-01](../plans/archive/20260309-p0-cpp-pyruntime-optional-dict-get-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-OBJECT-KEY-01](../plans/archive/20260309-p0-cpp-pyruntime-object-key-retirement.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-OBJECT-DICTDEFAULT-REMAIN-01](../plans/archive/20260309-p0-cpp-pyruntime-object-dictdefault-remain-retirement.md)
+- [2026-03-08 / P4-CPP-SELFHOST-ROLLOUT-01](../plans/archive/20260308-p4-cpp-selfhost-rollout.md)
+- [2026-03-08 / P3-COMPILER-JSONVALUE-INTERNAL-01](../plans/archive/20260308-p3-compiler-jsonvalue-internal-alignment.md)
+- [2026-03-08 / P2-JS-AMBIENT-GLOBAL-EXTERN-01](../plans/archive/20260308-p2-js-ambient-global-extern.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-DICT-STR-NODE-01](../plans/archive/20260308-p0-cpp-pyruntime-dict-str-node-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-STRLIST-01](../plans/archive/20260308-p0-cpp-pyruntime-object-strlist-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01](../plans/archive/20260308-p0-cpp-pyruntime-generic-dict-get-default-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01](../plans/archive/20260308-p0-cpp-pyruntime-object-begin-end-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-STRCMP-01](../plans/archive/20260308-p0-cpp-pyruntime-object-string-compare-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-DYNRANGE-01](../plans/archive/20260308-p0-cpp-pyruntime-dyn-range-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-DYNITER-01](../plans/archive/20260308-p0-cpp-pyruntime-dynamic-iteration-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-DICTGET-CONVENIENCE-01](../plans/archive/20260308-p0-cpp-pyruntime-dict-get-convenience-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-DICTDEFAULT-OBJECT-01](../plans/archive/20260308-p0-cpp-pyruntime-object-dict-default-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-READ-01](../plans/archive/20260308-p0-cpp-pyruntime-object-read-bridge-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-DICTGET-01](../plans/archive/20260308-p0-cpp-pyruntime-object-dict-get-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-DICTGET-MAYBE-01](../plans/archive/20260308-p0-cpp-pyruntime-dict-get-maybe-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-COLLECTION-01](../plans/archive/20260308-p0-cpp-pyruntime-object-collection-bridge-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-OBJECT-LANE-01](../plans/archive/20260308-p0-cpp-pyruntime-object-lane-retirement.md)
+- [2026-03-08 / P0-CPP-SELFHOST-ANY-COMPAT-01](../plans/archive/20260308-p0-cpp-selfhost-any-compat-retirement.md)
+- [2026-03-08 / P0-CPP-PYRUNTIME-DYNAMIC-BRIDGE-01](../plans/archive/20260308-p0-cpp-pyruntime-dynamic-bridge-retirement.md)
+- [2026-03-08 / P0-CPP-DYNAMIC-HELPER-FIRSTWAVE-01](../plans/archive/20260308-p0-cpp-dynamic-helper-first-wave-retirement.md)
+- [2026-03-08 / P2-JSONVALUE-SELFHOST-ALIGN-01](../plans/archive/20260308-p2-jsonvalue-selfhost-decode-alignment.md)
+- [2026-03-08 / P1-JSONVALUE-DECODE-FIRST-01](../plans/archive/20260308-p1-jsonvalue-decode-first-contract.md)
 - [2026-03-08 / P2-LINKED-RUNTIME-TEMPLATE-01](../plans/archive/20260308-p2-linked-runtime-helper-template-v1.md)
 - [2026-03-08 / P0-PYTRACLI-CPP-MAXOPT-LINKED-01](../plans/archive/20260308-p0-pytra-cli-cpp-maxopt-linked-build.md)
 - [2026-03-08 / P0-RUNTIME-ABI-MODE-SIMPLIFY-01](../plans/archive/20260308-p0-runtime-abi-mode-simplify-value-value-mut.md)
 - [2026-03-08 / P4-NONCPP-BACKEND-RECOVERY-01](../plans/archive/20260308-p4-noncpp-backend-recovery-after-linked-program.md)
 - [2026-03-08 / P1-ALLTARGET-SAMPLE-PARITY-01](../plans/archive/20260308-p1-all-target-sample-parity-rollout.md)
+- [2026-03-08 / P1-CPP-PYRUNTIME-TEMPLATE-SLIM-01](../plans/archive/20260308-p1-cpp-pyruntime-template-slimming.md)
 - [2026-03-08 / P1-CPP-PY-RUNTIME-SLIM-01](../plans/archive/20260308-p1-cpp-py-runtime-core-slimming.md)
 - [2026-03-08 / P1-RUNTIME-ABI-DECORATOR-01](../plans/archive/20260308-p1-runtime-abi-decorator-for-generated-helpers.md)
 - [2026-03-08 / P0-BACKEND-RUNTIME-KNOWLEDGE-LEAK-01](../plans/archive/20260308-p0-backend-runtime-knowledge-leak-retirement.md)
@@ -176,7 +258,7 @@ Last updated: 2026-03-21
 - [2026-02-23 / TG-DOCS-SYNC](../plans/archive/20260223-tg-docs-sync.md)
 - [2026-02-23 / TG-P0-BOXING](../plans/archive/20260223-tg-p0-boxing.md)
 - [2026-02-23 / TG-P2-MICROGPT-COMPAT](../plans/archive/20260223-tg-p2-microgpt-compat.md)
-- [2026-02-23 / TG-P3-SPEC-DRAFTS](../plans/archive/20260223-tg-p3-spec-drafts.md)
+
 
 ## Deferred / Shelved Plan Archive
 
