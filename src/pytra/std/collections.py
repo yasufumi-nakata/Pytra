@@ -19,7 +19,10 @@ class deque:
         self._items.append(value)
 
     def appendleft(self, value: int) -> None:
-        self._items.insert(0, value)
+        new_items: list[int] = [value]
+        for item in self._items:
+            new_items.append(item)
+        self._items = new_items
 
     def pop(self) -> int:
         if len(self._items) == 0:
@@ -37,4 +40,4 @@ class deque:
         return len(self._items)
 
     def clear(self) -> None:
-        self._items = []
+        self._items = self._items[:0]

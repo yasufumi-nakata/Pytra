@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
-FIXTURE_ROOT = ROOT / "test" / "fixtures"
+FIXTURE_ROOT = ROOT / "test" / "fixture" / "source" / "py"
 
 
 class FixturesTruthTest(unittest.TestCase):
