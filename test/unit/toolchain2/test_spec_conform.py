@@ -87,6 +87,21 @@ type Scalar = int | float
         self.assertEqual(type_alias.get("name"), "Scalar")
         self.assertEqual(type_alias.get("value"), "int | float")
 
+    def test_parser_accepts_keyword_unpack_in_call(self) -> None:
+        source = """
+def f(kwargs: dict[str, object]) -> None:
+    run(["echo"], **kwargs)
+"""
+        east1 = parse_python_source(source, "<mem>").to_jv()
+
+        call = next(node for node in _walk(east1) if node.get("kind") == "Call")
+        keywords = call.get("keywords", [])
+
+        self.assertEqual(len(keywords), 1)
+        self.assertIsNone(keywords[0].get("arg"))
+        self.assertEqual(keywords[0].get("value", {}).get("kind"), "Name")
+        self.assertEqual(keywords[0].get("value", {}).get("id"), "kwargs")
+
     def test_resolver_expands_type_aliases_by_east2(self) -> None:
         source = """
 type Scalar = int | float

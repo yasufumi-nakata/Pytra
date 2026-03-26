@@ -719,6 +719,10 @@ class ExprParser:
                     self.advance()  # skip =
                     kw_value = self.parse_expr()
                     keywords.append(Keyword(arg=kw_name, value_node=kw_value))
+                elif self.peek().value == "**":
+                    self.advance()
+                    kw_value = self.parse_expr()
+                    keywords.append(Keyword(arg=None, value_node=kw_value))
                 elif self.peek().value == "*":
                     # *args — starred argument
                     star_tok = self.advance()

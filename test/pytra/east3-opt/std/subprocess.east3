@@ -1,0 +1,5320 @@
+{
+  "kind": "Module",
+  "source_path": "src/pytra/std/subprocess.py",
+  "body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 1,
+        "col_offset": 0,
+        "end_lineno": 1,
+        "end_col_offset": 69
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 1,
+          "col_offset": 0,
+          "end_lineno": 1,
+          "end_col_offset": 69
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"pytra.std.subprocess: subprocess API with Python runtime fallback.",
+        "value": "pytra.std.subprocess: subprocess API with Python runtime fallba"
+      }
+    },
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 5,
+        "col_offset": 0,
+        "end_lineno": 5,
+        "end_col_offset": 3
+      },
+      "value": {
+        "kind": "Constant",
+        "source_span": {
+          "lineno": 5,
+          "col_offset": 0,
+          "end_lineno": 5,
+          "end_col_offset": 3
+        },
+        "resolved_type": "str",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "\"\"\"",
+        "value": ""
+      }
+    },
+    {
+      "kind": "Import",
+      "source_span": {
+        "lineno": 7,
+        "col_offset": 0,
+        "end_lineno": 7,
+        "end_col_offset": 32
+      },
+      "names": [
+        {
+          "name": "subprocess",
+          "asname": "_subprocess"
+        }
+      ]
+    },
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 9,
+        "col_offset": 0,
+        "end_lineno": 9,
+        "end_col_offset": 28
+      },
+      "module": "pytra.std",
+      "names": [
+        {
+          "name": "extern",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "ClassDef",
+      "source_span": {
+        "lineno": 12,
+        "col_offset": 0,
+        "end_lineno": 20,
+        "end_col_offset": 0
+      },
+      "name": "CompletedProcess",
+      "original_name": "CompletedProcess",
+      "base": null,
+      "dataclass": false,
+      "field_types": {
+        "returncode": "int64",
+        "stdout": "str",
+        "stderr": "str"
+      },
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 13,
+            "col_offset": 4,
+            "end_lineno": 13,
+            "end_col_offset": 37
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 13,
+              "col_offset": 4,
+              "end_lineno": 13,
+              "end_col_offset": 37
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"\"Result of a subprocess run.\"\"\"",
+            "value": "Result of a subprocess run."
+          }
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 15,
+            "col_offset": 4,
+            "end_lineno": 18,
+            "end_col_offset": 33
+          },
+          "name": "__init__",
+          "original_name": "__init__",
+          "arg_types": {
+            "self": "CompletedProcess",
+            "returncode": "int64",
+            "stdout": "str",
+            "stderr": "str"
+          },
+          "arg_order": [
+            "self",
+            "returncode",
+            "stdout",
+            "stderr"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "self": 0,
+            "returncode": 1,
+            "stdout": 2,
+            "stderr": 3
+          },
+          "return_type": "None",
+          "arg_usage": {
+            "self": "readonly",
+            "returncode": "readonly",
+            "stdout": "readonly",
+            "stderr": "readonly"
+          },
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "AnnAssign",
+              "source_span": {
+                "lineno": 16,
+                "col_offset": 8,
+                "end_lineno": 16,
+                "end_col_offset": 41
+              },
+              "target": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 16,
+                  "col_offset": 8,
+                  "end_lineno": 16,
+                  "end_col_offset": 23
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "self.returncode",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col_offset": 8,
+                    "end_lineno": 16,
+                    "end_col_offset": 12
+                  },
+                  "resolved_type": "CompletedProcess",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "self",
+                  "id": "self"
+                },
+                "attr": "returncode",
+                "type_expr": {
+                  "kind": "NamedType",
+                  "name": "int64"
+                }
+              },
+              "annotation": "int64",
+              "declare": true,
+              "decl_type": "int64",
+              "annotation_type_expr": {
+                "kind": "NamedType",
+                "name": "int64"
+              },
+              "decl_type_expr": {
+                "kind": "NamedType",
+                "name": "int64"
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 16,
+                  "col_offset": 13,
+                  "end_lineno": 16,
+                  "end_col_offset": 23
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "returncode",
+                "id": "returncode"
+              },
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
+              },
+              "meta": {
+                "lifetime_node_id": "n2",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "returncode"
+                ],
+                "lifetime_live_in": [
+                  "returncode",
+                  "stderr",
+                  "stdout"
+                ],
+                "lifetime_live_out": [
+                  "stderr",
+                  "stdout"
+                ],
+                "lifetime_last_use_vars": [
+                  "returncode"
+                ]
+              }
+            },
+            {
+              "kind": "AnnAssign",
+              "source_span": {
+                "lineno": 17,
+                "col_offset": 8,
+                "end_lineno": 17,
+                "end_col_offset": 33
+              },
+              "target": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 17,
+                  "col_offset": 8,
+                  "end_lineno": 17,
+                  "end_col_offset": 19
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "self.stdout",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 17,
+                    "col_offset": 8,
+                    "end_lineno": 17,
+                    "end_col_offset": 12
+                  },
+                  "resolved_type": "CompletedProcess",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "self",
+                  "id": "self"
+                },
+                "attr": "stdout",
+                "type_expr": {
+                  "kind": "NamedType",
+                  "name": "str"
+                }
+              },
+              "annotation": "str",
+              "declare": true,
+              "decl_type": "str",
+              "annotation_type_expr": {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              "decl_type_expr": {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 17,
+                  "col_offset": 13,
+                  "end_lineno": 17,
+                  "end_col_offset": 19
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "stdout",
+                "id": "stdout"
+              },
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "str"
+              },
+              "meta": {
+                "lifetime_node_id": "n1",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "stdout"
+                ],
+                "lifetime_live_in": [
+                  "stderr",
+                  "stdout"
+                ],
+                "lifetime_live_out": [
+                  "stderr"
+                ],
+                "lifetime_last_use_vars": [
+                  "stdout"
+                ]
+              }
+            },
+            {
+              "kind": "AnnAssign",
+              "source_span": {
+                "lineno": 18,
+                "col_offset": 8,
+                "end_lineno": 18,
+                "end_col_offset": 33
+              },
+              "target": {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 18,
+                  "col_offset": 8,
+                  "end_lineno": 18,
+                  "end_col_offset": 19
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "self.stderr",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 18,
+                    "col_offset": 8,
+                    "end_lineno": 18,
+                    "end_col_offset": 12
+                  },
+                  "resolved_type": "CompletedProcess",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "self",
+                  "id": "self"
+                },
+                "attr": "stderr",
+                "type_expr": {
+                  "kind": "NamedType",
+                  "name": "str"
+                }
+              },
+              "annotation": "str",
+              "declare": true,
+              "decl_type": "str",
+              "annotation_type_expr": {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              "decl_type_expr": {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 18,
+                  "col_offset": 13,
+                  "end_lineno": 18,
+                  "end_col_offset": 19
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "stderr",
+                "id": "stderr"
+              },
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "str"
+              },
+              "meta": {
+                "lifetime_node_id": "n0",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "stderr"
+                ],
+                "lifetime_live_in": [
+                  "stderr"
+                ],
+                "lifetime_live_out": [],
+                "lifetime_last_use_vars": [
+                  "stderr"
+                ]
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "decorators": [],
+          "returns": "None",
+          "mutates_self": true,
+          "meta": {
+            "lifetime_analysis": {
+              "schema_version": "east3_lifetime_v1",
+              "status": "ok",
+              "reason": "",
+              "entry_node": "n2",
+              "order": [
+                "n0",
+                "n1",
+                "n2"
+              ],
+              "cfg": [
+                {
+                  "id": "n0",
+                  "kind": "AnnAssign",
+                  "defs": [],
+                  "uses": [
+                    "stderr"
+                  ],
+                  "succ": []
+                },
+                {
+                  "id": "n1",
+                  "kind": "AnnAssign",
+                  "defs": [],
+                  "uses": [
+                    "stdout"
+                  ],
+                  "succ": [
+                    "n0"
+                  ]
+                },
+                {
+                  "id": "n2",
+                  "kind": "AnnAssign",
+                  "defs": [],
+                  "uses": [
+                    "returncode"
+                  ],
+                  "succ": [
+                    "n1"
+                  ]
+                }
+              ],
+              "def_use": {
+                "defs": {},
+                "uses": {
+                  "returncode": [
+                    "n2"
+                  ],
+                  "stderr": [
+                    "n0"
+                  ],
+                  "stdout": [
+                    "n1"
+                  ]
+                }
+              },
+              "variables": {
+                "returncode": {
+                  "def_nodes": [],
+                  "use_nodes": [
+                    "n2"
+                  ],
+                  "live_in_nodes": [
+                    "n2"
+                  ],
+                  "live_out_nodes": [],
+                  "last_use_nodes": [
+                    "n2"
+                  ],
+                  "lifetime_class": "escape_or_unknown"
+                },
+                "self": {
+                  "def_nodes": [],
+                  "use_nodes": [],
+                  "live_in_nodes": [],
+                  "live_out_nodes": [],
+                  "last_use_nodes": [],
+                  "lifetime_class": "escape_or_unknown"
+                },
+                "stderr": {
+                  "def_nodes": [],
+                  "use_nodes": [
+                    "n0"
+                  ],
+                  "live_in_nodes": [
+                    "n0",
+                    "n1",
+                    "n2"
+                  ],
+                  "live_out_nodes": [
+                    "n1",
+                    "n2"
+                  ],
+                  "last_use_nodes": [
+                    "n0"
+                  ],
+                  "lifetime_class": "escape_or_unknown"
+                },
+                "stdout": {
+                  "def_nodes": [],
+                  "use_nodes": [
+                    "n1"
+                  ],
+                  "live_in_nodes": [
+                    "n1",
+                    "n2"
+                  ],
+                  "live_out_nodes": [
+                    "n2"
+                  ],
+                  "last_use_nodes": [
+                    "n1"
+                  ],
+                  "lifetime_class": "escape_or_unknown"
+                }
+              },
+              "arg_order": [
+                "self",
+                "returncode",
+                "stdout",
+                "stderr"
+              ],
+              "arg_escape": [
+                true,
+                true,
+                true,
+                true
+              ],
+              "has_dynamic_name_access": false
+            }
+          }
+        }
+      ],
+      "class_storage_hint": "ref",
+      "leading_comments": [],
+      "leading_trivia": [
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 22,
+        "col_offset": 0,
+        "end_lineno": 54,
+        "end_col_offset": 68
+      },
+      "name": "run",
+      "original_name": "run",
+      "arg_types": {
+        "cmd": "list[str]",
+        "cwd": "str",
+        "capture_output": "bool",
+        "env": "dict[str,str]"
+      },
+      "arg_order": [
+        "cmd",
+        "cwd",
+        "capture_output",
+        "env"
+      ],
+      "arg_defaults": {
+        "cwd": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 22,
+            "col_offset": 35,
+            "end_lineno": 22,
+            "end_col_offset": 37
+          },
+          "resolved_type": "str",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "\"\"",
+          "value": ""
+        },
+        "capture_output": {
+          "kind": "Constant",
+          "source_span": {
+            "lineno": 22,
+            "col_offset": 62,
+            "end_lineno": 22,
+            "end_col_offset": 67
+          },
+          "resolved_type": "bool",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "False",
+          "value": false
+        },
+        "env": {
+          "kind": "Dict",
+          "source_span": {
+            "lineno": 22,
+            "col_offset": 91,
+            "end_lineno": 22,
+            "end_col_offset": 93
+          },
+          "resolved_type": "dict[str,str]",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "{}",
+          "keys": [],
+          "values": []
+        }
+      },
+      "arg_index": {
+        "cmd": 0,
+        "cwd": 1,
+        "capture_output": 2,
+        "env": 3
+      },
+      "return_type": "CompletedProcess",
+      "arg_usage": {
+        "cmd": "reassigned",
+        "cwd": "reassigned",
+        "capture_output": "reassigned",
+        "env": "reassigned"
+      },
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 23,
+            "col_offset": 4,
+            "end_lineno": 23,
+            "end_col_offset": 37
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 23,
+              "col_offset": 4,
+              "end_lineno": 23,
+              "end_col_offset": 37
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"\"Run a command as a subprocess.",
+            "value": "Run a command as a subproce"
+          },
+          "meta": {
+            "lifetime_node_id": "n31",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "Args",
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "Args",
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 25,
+            "col_offset": 4,
+            "end_lineno": 25,
+            "end_col_offset": 9
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 25,
+              "col_offset": 4,
+              "end_lineno": 25,
+              "end_col_offset": 8
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "Args",
+            "id": "Args"
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
+          "meta": {
+            "lifetime_node_id": "n30",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "Args"
+            ],
+            "lifetime_live_in": [
+              "Args",
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_last_use_vars": [
+              "Args"
+            ]
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 26,
+            "col_offset": 8,
+            "end_lineno": 26,
+            "end_col_offset": 35
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 26,
+              "col_offset": 8,
+              "end_lineno": 26,
+              "end_col_offset": 11
+            },
+            "resolved_type": "Command and arguments.",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "cmd",
+            "id": "cmd",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "Command and arguments."
+            }
+          },
+          "annotation": "Command and arguments.",
+          "declare": true,
+          "decl_type": "Command and arguments.",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "Command and arguments."
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "Command and arguments."
+          },
+          "meta": {
+            "lifetime_node_id": "n29",
+            "lifetime_defs": [
+              "cmd"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "cmd",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 27,
+            "col_offset": 8,
+            "end_lineno": 27,
+            "end_col_offset": 56
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 27,
+              "col_offset": 8,
+              "end_lineno": 27,
+              "end_col_offset": 11
+            },
+            "resolved_type": "Working directory (empty string",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "cwd",
+            "id": "cwd",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "Working directory (empty string"
+            }
+          },
+          "annotation": "Working directory (empty string",
+          "declare": true,
+          "decl_type": "Working directory (empty string",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "Working directory (empty string"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "Working directory (empty string"
+          },
+          "value": {
+            "kind": "Unbox",
+            "resolved_type": "Working directory (empty string",
+            "borrow_kind": "value",
+            "casts": [],
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 27,
+                "col_offset": 47,
+                "end_lineno": 27,
+                "end_col_offset": 54
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "inherit",
+              "id": "inherit"
+            },
+            "source_span": {
+              "lineno": 27,
+              "col_offset": 47,
+              "end_lineno": 27,
+              "end_col_offset": 54
+            },
+            "repr": "inherit",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "Working directory (empty string"
+            },
+            "target": "Working directory (empty string",
+            "on_fail": "raise",
+            "bridge_lane_v1": {
+              "schema_version": 1,
+              "target": {
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "Working directory (empty string"
+              },
+              "target_category": "static",
+              "value": {
+                "kind": "DynamicType",
+                "category": "dynamic",
+                "mirror": "unknown",
+                "dynamic_name": "unknown"
+              },
+              "value_category": "dynamic"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "Working directory (empty string"
+          },
+          "meta": {
+            "lifetime_node_id": "n28",
+            "lifetime_defs": [
+              "cwd"
+            ],
+            "lifetime_uses": [
+              "inherit"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "cmd",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "cmd",
+              "cwd",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 28,
+            "col_offset": 8,
+            "end_lineno": 28,
+            "end_col_offset": 66
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 28,
+              "col_offset": 8,
+              "end_lineno": 28,
+              "end_col_offset": 22
+            },
+            "resolved_type": "If True, capture stdout/stderr as strings.",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "capture_output",
+            "id": "capture_output",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "If True, capture stdout/stderr as strings."
+            }
+          },
+          "annotation": "If True, capture stdout/stderr as strings.",
+          "declare": true,
+          "decl_type": "If True, capture stdout/stderr as strings.",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "If True, capture stdout/stderr as strings."
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "If True, capture stdout/stderr as strings."
+          },
+          "meta": {
+            "lifetime_node_id": "n27",
+            "lifetime_defs": [
+              "capture_output"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "cmd",
+              "cwd",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 29,
+            "col_offset": 8,
+            "end_lineno": 29,
+            "end_col_offset": 68
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 29,
+              "col_offset": 8,
+              "end_lineno": 29,
+              "end_col_offset": 11
+            },
+            "resolved_type": "Environment variables. Empty dict",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "env",
+            "id": "env",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "Environment variables. Empty dict"
+            }
+          },
+          "annotation": "Environment variables. Empty dict",
+          "declare": true,
+          "decl_type": "Environment variables. Empty dict",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "Environment variables. Empty dict"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "Environment variables. Empty dict"
+          },
+          "value": {
+            "kind": "Unbox",
+            "resolved_type": "Environment variables. Empty dict",
+            "borrow_kind": "value",
+            "casts": [],
+            "value": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 29,
+                "col_offset": 49,
+                "end_lineno": 29,
+                "end_col_offset": 56
+              },
+              "resolved_type": "unknown",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "inherit",
+              "id": "inherit"
+            },
+            "source_span": {
+              "lineno": 29,
+              "col_offset": 49,
+              "end_lineno": 29,
+              "end_col_offset": 56
+            },
+            "repr": "inherit",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "Environment variables. Empty dict"
+            },
+            "target": "Environment variables. Empty dict",
+            "on_fail": "raise",
+            "bridge_lane_v1": {
+              "schema_version": 1,
+              "target": {
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "Environment variables. Empty dict"
+              },
+              "target_category": "static",
+              "value": {
+                "kind": "DynamicType",
+                "category": "dynamic",
+                "mirror": "unknown",
+                "dynamic_name": "unknown"
+              },
+              "value_category": "dynamic"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "Environment variables. Empty dict"
+          },
+          "meta": {
+            "lifetime_node_id": "n26",
+            "lifetime_defs": [
+              "env"
+            ],
+            "lifetime_uses": [
+              "inherit"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "import",
+              "inherit",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "import",
+              "len"
+            ],
+            "lifetime_last_use_vars": [
+              "inherit"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 31,
+            "col_offset": 4,
+            "end_lineno": 31,
+            "end_col_offset": 12
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 31,
+              "col_offset": 4,
+              "end_lineno": 31,
+              "end_col_offset": 11
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "Returns",
+            "id": "Returns"
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ],
+          "meta": {
+            "lifetime_node_id": "n25",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "Returns"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "Returns",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "import",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "import",
+              "len"
+            ],
+            "lifetime_last_use_vars": [
+              "Returns"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 32,
+            "col_offset": 8,
+            "end_lineno": 32,
+            "end_col_offset": 68
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 32,
+              "col_offset": 8,
+              "end_lineno": 32,
+              "end_col_offset": 24
+            },
+            "resolved_type": "type",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "CompletedProcess",
+            "id": "CompletedProcess"
+          },
+          "meta": {
+            "lifetime_node_id": "n24",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "CompletedProcess"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "import",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "import",
+              "len"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 33,
+            "col_offset": 4,
+            "end_lineno": 33,
+            "end_col_offset": 7
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 33,
+              "col_offset": 4,
+              "end_lineno": 33,
+              "end_col_offset": 7
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"\"",
+            "value": ""
+          },
+          "meta": {
+            "lifetime_node_id": "n23",
+            "lifetime_defs": [],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "import",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "import",
+              "len"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 34,
+            "col_offset": 4,
+            "end_lineno": 34,
+            "end_col_offset": 20
+          },
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 34,
+              "col_offset": 4,
+              "end_lineno": 34,
+              "end_col_offset": 10
+            },
+            "resolved_type": "unknown",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "import",
+            "id": "import"
+          },
+          "meta": {
+            "lifetime_node_id": "n22",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "import"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "import",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "len"
+            ],
+            "lifetime_last_use_vars": [
+              "import"
+            ]
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 35,
+            "col_offset": 4,
+            "end_lineno": 35,
+            "end_col_offset": 34
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 35,
+              "col_offset": 4,
+              "end_lineno": 35,
+              "end_col_offset": 10
+            },
+            "resolved_type": "dict[str,object]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "kwargs",
+            "id": "kwargs",
+            "type_expr": {
+              "kind": "GenericType",
+              "base": "dict",
+              "args": [
+                {
+                  "kind": "NamedType",
+                  "name": "str"
+                },
+                {
+                  "kind": "DynamicType",
+                  "name": "object"
+                }
+              ]
+            }
+          },
+          "annotation": "dict[str,object]",
+          "declare": true,
+          "decl_type": "dict[str,object]",
+          "annotation_type_expr": {
+            "kind": "GenericType",
+            "base": "dict",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              {
+                "kind": "DynamicType",
+                "name": "object"
+              }
+            ]
+          },
+          "decl_type_expr": {
+            "kind": "GenericType",
+            "base": "dict",
+            "args": [
+              {
+                "kind": "NamedType",
+                "name": "str"
+              },
+              {
+                "kind": "DynamicType",
+                "name": "object"
+              }
+            ]
+          },
+          "value": {
+            "kind": "Dict",
+            "source_span": {
+              "lineno": 35,
+              "col_offset": 32,
+              "end_lineno": 35,
+              "end_col_offset": 34
+            },
+            "resolved_type": "dict[str,object]",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "{}",
+            "keys": [],
+            "values": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "GenericType",
+              "category": "static",
+              "mirror": "dict[str,object]"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "GenericType",
+            "category": "static",
+            "mirror": "dict[str,object]"
+          },
+          "meta": {
+            "lifetime_node_id": "n21",
+            "lifetime_defs": [
+              "kwargs"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "kwargs",
+              "len"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 36,
+            "col_offset": 4,
+            "end_lineno": 37,
+            "end_col_offset": 27
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 36,
+              "col_offset": 7,
+              "end_lineno": 36,
+              "end_col_offset": 16
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "cwd != \"\"",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 36,
+                "col_offset": 7,
+                "end_lineno": 36,
+                "end_col_offset": 10
+              },
+              "resolved_type": "Working directory (empty string",
+              "casts": [],
+              "borrow_kind": "readonly_ref",
+              "repr": "cwd",
+              "id": "cwd"
+            },
+            "ops": [
+              "NotEq"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 36,
+                  "col_offset": 14,
+                  "end_lineno": 36,
+                  "end_col_offset": 16
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"\"",
+                "value": ""
+              }
+            ],
+            "normalized_expr_version": "east3_expr_v1",
+            "normalized_expr": {
+              "kind": "Compare",
+              "source_span": {
+                "lineno": 36,
+                "col_offset": 7,
+                "end_lineno": 36,
+                "end_col_offset": 16
+              },
+              "resolved_type": "bool",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "cwd != \"\"",
+              "left": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 36,
+                  "col_offset": 7,
+                  "end_lineno": 36,
+                  "end_col_offset": 10
+                },
+                "resolved_type": "Working directory (empty string",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "cwd",
+                "id": "cwd"
+              },
+              "ops": [
+                "NotEq"
+              ],
+              "comparators": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 36,
+                    "col_offset": 14,
+                    "end_lineno": 36,
+                    "end_col_offset": 16
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"\"",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "body": [
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 37,
+                "col_offset": 8,
+                "end_lineno": 37,
+                "end_col_offset": 27
+              },
+              "target": {
+                "kind": "Subscript",
+                "source_span": {
+                  "lineno": 37,
+                  "col_offset": 8,
+                  "end_lineno": 37,
+                  "end_col_offset": 21
+                },
+                "resolved_type": "object",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "kwargs[\"cwd\"]",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 37,
+                    "col_offset": 8,
+                    "end_lineno": 37,
+                    "end_col_offset": 14
+                  },
+                  "resolved_type": "dict[str,object]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "kwargs",
+                  "id": "kwargs"
+                },
+                "slice": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 37,
+                    "col_offset": 15,
+                    "end_lineno": 37,
+                    "end_col_offset": 20
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"cwd\"",
+                  "value": "cwd",
+                  "dict_key_verified": true
+                }
+              },
+              "declare": true,
+              "decl_type": "Working directory (empty string",
+              "declare_init": true,
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 37,
+                  "col_offset": 16,
+                  "end_lineno": 37,
+                  "end_col_offset": 19
+                },
+                "resolved_type": "Working directory (empty string",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "cwd",
+                "id": "cwd"
+              },
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "Working directory (empty string"
+              },
+              "meta": {
+                "lifetime_node_id": "n20",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "cwd"
+                ],
+                "lifetime_live_in": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_os",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "cwd",
+                  "dict",
+                  "env",
+                  "kwargs",
+                  "len"
+                ],
+                "lifetime_live_out": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_os",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "dict",
+                  "env",
+                  "kwargs",
+                  "len"
+                ],
+                "lifetime_last_use_vars": [
+                  "cwd"
+                ]
+              }
+            }
+          ],
+          "orelse": [],
+          "meta": {
+            "lifetime_node_id": "n19",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "cwd"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "kwargs",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "cwd",
+              "dict",
+              "env",
+              "kwargs",
+              "len"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 38,
+            "col_offset": 4,
+            "end_lineno": 40,
+            "end_col_offset": 29
+          },
+          "test": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 38,
+              "col_offset": 7,
+              "end_lineno": 38,
+              "end_col_offset": 21
+            },
+            "resolved_type": "If True, capture stdout/stderr as strings.",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "capture_output",
+            "id": "capture_output"
+          },
+          "body": [
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 39,
+                "col_offset": 8,
+                "end_lineno": 39,
+                "end_col_offset": 39
+              },
+              "target": {
+                "kind": "Subscript",
+                "source_span": {
+                  "lineno": 39,
+                  "col_offset": 8,
+                  "end_lineno": 39,
+                  "end_col_offset": 32
+                },
+                "resolved_type": "object",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "kwargs[\"capture_output\"]",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 39,
+                    "col_offset": 8,
+                    "end_lineno": 39,
+                    "end_col_offset": 14
+                  },
+                  "resolved_type": "dict[str,object]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "kwargs",
+                  "id": "kwargs"
+                },
+                "slice": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 39,
+                    "col_offset": 15,
+                    "end_lineno": 39,
+                    "end_col_offset": 31
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"capture_output\"",
+                  "value": "capture_output",
+                  "dict_key_verified": true
+                }
+              },
+              "declare": true,
+              "decl_type": "bool",
+              "declare_init": true,
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 39,
+                  "col_offset": 35,
+                  "end_lineno": 39,
+                  "end_col_offset": 39
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "True",
+                "value": true
+              },
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "bool"
+              },
+              "meta": {
+                "lifetime_node_id": "n18",
+                "lifetime_defs": [],
+                "lifetime_uses": [],
+                "lifetime_live_in": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_os",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "dict",
+                  "env",
+                  "kwargs",
+                  "len"
+                ],
+                "lifetime_live_out": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_os",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "dict",
+                  "env",
+                  "kwargs",
+                  "len"
+                ],
+                "lifetime_last_use_vars": []
+              }
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 40,
+                "col_offset": 8,
+                "end_lineno": 40,
+                "end_col_offset": 29
+              },
+              "target": {
+                "kind": "Subscript",
+                "source_span": {
+                  "lineno": 40,
+                  "col_offset": 8,
+                  "end_lineno": 40,
+                  "end_col_offset": 22
+                },
+                "resolved_type": "object",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "kwargs[\"text\"]",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 40,
+                    "col_offset": 8,
+                    "end_lineno": 40,
+                    "end_col_offset": 14
+                  },
+                  "resolved_type": "dict[str,object]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "kwargs",
+                  "id": "kwargs"
+                },
+                "slice": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 40,
+                    "col_offset": 15,
+                    "end_lineno": 40,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"text\"",
+                  "value": "text",
+                  "dict_key_verified": true
+                }
+              },
+              "declare": true,
+              "decl_type": "bool",
+              "declare_init": true,
+              "value": {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 40,
+                  "col_offset": 25,
+                  "end_lineno": 40,
+                  "end_col_offset": 29
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "True",
+                "value": true
+              },
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "bool"
+              },
+              "meta": {
+                "lifetime_node_id": "n17",
+                "lifetime_defs": [],
+                "lifetime_uses": [],
+                "lifetime_live_in": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_os",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "dict",
+                  "env",
+                  "kwargs",
+                  "len"
+                ],
+                "lifetime_live_out": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_os",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "dict",
+                  "env",
+                  "kwargs",
+                  "len"
+                ],
+                "lifetime_last_use_vars": []
+              }
+            }
+          ],
+          "orelse": [],
+          "meta": {
+            "lifetime_node_id": "n16",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "capture_output"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "dict",
+              "env",
+              "kwargs",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "dict",
+              "env",
+              "kwargs",
+              "len"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 41,
+            "col_offset": 4,
+            "end_lineno": 45,
+            "end_col_offset": 30
+          },
+          "test": {
+            "kind": "Compare",
+            "source_span": {
+              "lineno": 41,
+              "col_offset": 7,
+              "end_lineno": 41,
+              "end_col_offset": 19
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "len(env) > 0",
+            "left": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 41,
+                "col_offset": 7,
+                "end_lineno": 41,
+                "end_col_offset": 15
+              },
+              "resolved_type": "int64",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "len(env)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 41,
+                  "col_offset": 7,
+                  "end_lineno": 41,
+                  "end_col_offset": 10
+                },
+                "resolved_type": "callable",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "len",
+                "id": "len"
+              },
+              "args": [
+                {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 41,
+                    "col_offset": 11,
+                    "end_lineno": 41,
+                    "end_col_offset": 14
+                  },
+                  "resolved_type": "Environment variables. Empty dict",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "env",
+                  "id": "env",
+                  "call_arg_type": "Obj"
+                }
+              ],
+              "keywords": [],
+              "lowered_kind": "BuiltinCall",
+              "builtin_name": "len",
+              "runtime_call": "len",
+              "runtime_module_id": "pytra.core.py_runtime",
+              "runtime_symbol": "len",
+              "runtime_call_adapter_kind": "builtin",
+              "semantic_tag": "core.len",
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
+              }
+            },
+            "ops": [
+              "Gt"
+            ],
+            "comparators": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 41,
+                  "col_offset": 18,
+                  "end_lineno": 41,
+                  "end_col_offset": 19
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "0",
+                "value": 0
+              }
+            ],
+            "normalized_expr_version": "east3_expr_v1",
+            "normalized_expr": {
+              "kind": "Compare",
+              "source_span": {
+                "lineno": 41,
+                "col_offset": 7,
+                "end_lineno": 41,
+                "end_col_offset": 19
+              },
+              "resolved_type": "bool",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "len(env) > 0",
+              "left": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 41,
+                  "col_offset": 7,
+                  "end_lineno": 41,
+                  "end_col_offset": 15
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "len(env)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 41,
+                    "col_offset": 7,
+                    "end_lineno": 41,
+                    "end_col_offset": 10
+                  },
+                  "resolved_type": "callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "len",
+                  "id": "len"
+                },
+                "args": [
+                  {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 41,
+                      "col_offset": 11,
+                      "end_lineno": 41,
+                      "end_col_offset": 14
+                    },
+                    "resolved_type": "Environment variables. Empty dict",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "env",
+                    "id": "env",
+                    "call_arg_type": "Obj"
+                  }
+                ],
+                "keywords": [],
+                "lowered_kind": "BuiltinCall",
+                "builtin_name": "len",
+                "runtime_call": "len",
+                "runtime_module_id": "pytra.core.py_runtime",
+                "runtime_symbol": "len",
+                "runtime_call_adapter_kind": "builtin",
+                "semantic_tag": "core.len",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int64"
+                }
+              },
+              "ops": [
+                "Gt"
+              ],
+              "comparators": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 41,
+                    "col_offset": 18,
+                    "end_lineno": 41,
+                    "end_col_offset": 19
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "0",
+                  "value": 0
+                }
+              ]
+            }
+          },
+          "body": [
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 42,
+                "col_offset": 8,
+                "end_lineno": 42,
+                "end_col_offset": 34
+              },
+              "target": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 42,
+                  "col_offset": 8,
+                  "end_lineno": 42,
+                  "end_col_offset": 14
+                },
+                "resolved_type": "dict",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "merged",
+                "id": "merged"
+              },
+              "declare": true,
+              "decl_type": "dict",
+              "declare_init": true,
+              "value": {
+                "kind": "Call",
+                "source_span": {
+                  "lineno": 42,
+                  "col_offset": 17,
+                  "end_lineno": 42,
+                  "end_col_offset": 34
+                },
+                "resolved_type": "dict",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "dict(_os.environ)",
+                "func": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 42,
+                    "col_offset": 17,
+                    "end_lineno": 42,
+                    "end_col_offset": 21
+                  },
+                  "resolved_type": "type",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "dict",
+                  "id": "dict"
+                },
+                "args": [
+                  {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 42,
+                      "col_offset": 22,
+                      "end_lineno": 42,
+                      "end_col_offset": 33
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "_os.environ",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 42,
+                        "col_offset": 22,
+                        "end_lineno": 42,
+                        "end_col_offset": 25
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "_os",
+                      "id": "_os"
+                    },
+                    "attr": "environ"
+                  }
+                ],
+                "keywords": [],
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "dict"
+                }
+              },
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "dict"
+              },
+              "meta": {
+                "lifetime_node_id": "n15",
+                "lifetime_defs": [
+                  "merged"
+                ],
+                "lifetime_uses": [
+                  "_os",
+                  "dict"
+                ],
+                "lifetime_live_in": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_os",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "dict",
+                  "env",
+                  "kwargs"
+                ],
+                "lifetime_live_out": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "env",
+                  "kwargs",
+                  "merged"
+                ],
+                "lifetime_last_use_vars": [
+                  "_os",
+                  "dict"
+                ]
+              }
+            },
+            {
+              "kind": "ForCore",
+              "iter_mode": "runtime_protocol",
+              "iter_plan": {
+                "kind": "RuntimeIterForPlan",
+                "iter_expr": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 43,
+                    "col_offset": 20,
+                    "end_lineno": 43,
+                    "end_col_offset": 31
+                  },
+                  "resolved_type": "unknown",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "env.items()",
+                  "func": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 43,
+                      "col_offset": 20,
+                      "end_lineno": 43,
+                      "end_col_offset": 29
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "env.items",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 43,
+                        "col_offset": 20,
+                        "end_lineno": 43,
+                        "end_col_offset": 23
+                      },
+                      "resolved_type": "Environment variables. Empty dict",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "env",
+                      "id": "env"
+                    },
+                    "attr": "items"
+                  },
+                  "args": [],
+                  "keywords": [],
+                  "iterable_trait": "yes",
+                  "iter_protocol": "static_range",
+                  "iter_element_type": "unknown",
+                  "type_expr_summary_v1": {
+                    "schema_version": 1,
+                    "kind": "DynamicType",
+                    "category": "dynamic",
+                    "mirror": "unknown",
+                    "dynamic_name": "unknown"
+                  }
+                },
+                "dispatch_mode": "native",
+                "init_op": "ObjIterInit",
+                "next_op": "ObjIterNext"
+              },
+              "target_plan": {
+                "kind": "NameTarget",
+                "id": "__iter_tmp_1",
+                "target_type": "",
+                "direct_unpack_names": [
+                  "k",
+                  "v"
+                ],
+                "tuple_expanded": true
+              },
+              "body": [
+                {
+                  "kind": "Assign",
+                  "target": {
+                    "kind": "Name",
+                    "id": "k",
+                    "resolved_type": "unknown"
+                  },
+                  "value": {
+                    "kind": "Subscript",
+                    "value": {
+                      "kind": "Name",
+                      "id": "__iter_tmp_1",
+                      "resolved_type": "tuple"
+                    },
+                    "slice": {
+                      "kind": "Constant",
+                      "value": 0,
+                      "resolved_type": "int64"
+                    },
+                    "resolved_type": "unknown"
+                  },
+                  "decl_type": "unknown",
+                  "declare": true,
+                  "unused": true,
+                  "meta": {
+                    "lifetime_node_id": "n14",
+                    "lifetime_defs": [
+                      "k"
+                    ],
+                    "lifetime_uses": [
+                      "__iter_tmp_1"
+                    ],
+                    "lifetime_live_in": [
+                      "CompletedProcess",
+                      "PYTRA_TID_STR",
+                      "__iter_tmp_1",
+                      "_subprocess",
+                      "capture_output",
+                      "cmd",
+                      "env",
+                      "kwargs",
+                      "merged"
+                    ],
+                    "lifetime_live_out": [
+                      "CompletedProcess",
+                      "PYTRA_TID_STR",
+                      "__iter_tmp_1",
+                      "_subprocess",
+                      "capture_output",
+                      "cmd",
+                      "env",
+                      "kwargs",
+                      "merged"
+                    ],
+                    "lifetime_last_use_vars": []
+                  }
+                },
+                {
+                  "kind": "Assign",
+                  "target": {
+                    "kind": "Name",
+                    "id": "v",
+                    "resolved_type": "unknown"
+                  },
+                  "value": {
+                    "kind": "Subscript",
+                    "value": {
+                      "kind": "Name",
+                      "id": "__iter_tmp_1",
+                      "resolved_type": "tuple"
+                    },
+                    "slice": {
+                      "kind": "Constant",
+                      "value": 1,
+                      "resolved_type": "int64"
+                    },
+                    "resolved_type": "unknown"
+                  },
+                  "decl_type": "unknown",
+                  "declare": true,
+                  "meta": {
+                    "lifetime_node_id": "n13",
+                    "lifetime_defs": [
+                      "v"
+                    ],
+                    "lifetime_uses": [
+                      "__iter_tmp_1"
+                    ],
+                    "lifetime_live_in": [
+                      "CompletedProcess",
+                      "PYTRA_TID_STR",
+                      "__iter_tmp_1",
+                      "_subprocess",
+                      "capture_output",
+                      "cmd",
+                      "env",
+                      "kwargs",
+                      "merged"
+                    ],
+                    "lifetime_live_out": [
+                      "CompletedProcess",
+                      "PYTRA_TID_STR",
+                      "_subprocess",
+                      "capture_output",
+                      "cmd",
+                      "env",
+                      "kwargs",
+                      "merged",
+                      "v"
+                    ],
+                    "lifetime_last_use_vars": [
+                      "__iter_tmp_1"
+                    ]
+                  }
+                },
+                {
+                  "kind": "Assign",
+                  "source_span": {
+                    "lineno": 44,
+                    "col_offset": 12,
+                    "end_lineno": 44,
+                    "end_col_offset": 25
+                  },
+                  "target": {
+                    "kind": "Subscript",
+                    "source_span": {
+                      "lineno": 44,
+                      "col_offset": 12,
+                      "end_lineno": 44,
+                      "end_col_offset": 21
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "merged[k]",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 44,
+                        "col_offset": 12,
+                        "end_lineno": 44,
+                        "end_col_offset": 18
+                      },
+                      "resolved_type": "dict",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "merged",
+                      "id": "merged"
+                    },
+                    "slice": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 44,
+                        "col_offset": 19,
+                        "end_lineno": 44,
+                        "end_col_offset": 20
+                      },
+                      "resolved_type": "unknown",
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "k",
+                      "id": "k"
+                    }
+                  },
+                  "declare": true,
+                  "declare_init": true,
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 44,
+                      "col_offset": 24,
+                      "end_lineno": 44,
+                      "end_col_offset": 25
+                    },
+                    "resolved_type": "unknown",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "v",
+                    "id": "v"
+                  },
+                  "type_expr_summary_v1": {
+                    "schema_version": 1,
+                    "kind": "DynamicType",
+                    "category": "dynamic",
+                    "mirror": "unknown",
+                    "dynamic_name": "unknown"
+                  },
+                  "meta": {
+                    "lifetime_node_id": "n12",
+                    "lifetime_defs": [],
+                    "lifetime_uses": [
+                      "v"
+                    ],
+                    "lifetime_live_in": [
+                      "CompletedProcess",
+                      "PYTRA_TID_STR",
+                      "_subprocess",
+                      "capture_output",
+                      "cmd",
+                      "env",
+                      "kwargs",
+                      "merged",
+                      "v"
+                    ],
+                    "lifetime_live_out": [
+                      "CompletedProcess",
+                      "PYTRA_TID_STR",
+                      "_subprocess",
+                      "capture_output",
+                      "cmd",
+                      "env",
+                      "kwargs",
+                      "merged"
+                    ],
+                    "lifetime_last_use_vars": [
+                      "v"
+                    ]
+                  }
+                }
+              ],
+              "orelse": [],
+              "source_span": {
+                "lineno": 43,
+                "col_offset": 0,
+                "end_lineno": 44,
+                "end_col_offset": 25
+              },
+              "meta": {
+                "lifetime_node_id": "n11",
+                "lifetime_defs": [
+                  "__iter_tmp_1"
+                ],
+                "lifetime_uses": [
+                  "env"
+                ],
+                "lifetime_live_in": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "env",
+                  "kwargs",
+                  "merged"
+                ],
+                "lifetime_live_out": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "__iter_tmp_1",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "env",
+                  "kwargs",
+                  "merged"
+                ],
+                "lifetime_last_use_vars": []
+              }
+            },
+            {
+              "kind": "Assign",
+              "source_span": {
+                "lineno": 45,
+                "col_offset": 8,
+                "end_lineno": 45,
+                "end_col_offset": 30
+              },
+              "target": {
+                "kind": "Subscript",
+                "source_span": {
+                  "lineno": 45,
+                  "col_offset": 8,
+                  "end_lineno": 45,
+                  "end_col_offset": 21
+                },
+                "resolved_type": "object",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "kwargs[\"env\"]",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 45,
+                    "col_offset": 8,
+                    "end_lineno": 45,
+                    "end_col_offset": 14
+                  },
+                  "resolved_type": "dict[str,object]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "kwargs",
+                  "id": "kwargs"
+                },
+                "slice": {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 45,
+                    "col_offset": 15,
+                    "end_lineno": 45,
+                    "end_col_offset": 20
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "\"env\"",
+                  "value": "env",
+                  "dict_key_verified": true
+                }
+              },
+              "declare": true,
+              "decl_type": "dict",
+              "declare_init": true,
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 45,
+                  "col_offset": 24,
+                  "end_lineno": 45,
+                  "end_col_offset": 30
+                },
+                "resolved_type": "dict",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "merged",
+                "id": "merged"
+              },
+              "type_expr_summary_v1": {
+                "schema_version": 1,
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "dict"
+              },
+              "meta": {
+                "lifetime_node_id": "n10",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "merged"
+                ],
+                "lifetime_live_in": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "kwargs",
+                  "merged"
+                ],
+                "lifetime_live_out": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "_subprocess",
+                  "capture_output",
+                  "cmd",
+                  "kwargs"
+                ],
+                "lifetime_last_use_vars": [
+                  "merged"
+                ]
+              }
+            }
+          ],
+          "orelse": [],
+          "meta": {
+            "lifetime_node_id": "n9",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "env",
+              "len"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "dict",
+              "env",
+              "kwargs",
+              "len"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_os",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "dict",
+              "env",
+              "kwargs"
+            ],
+            "lifetime_last_use_vars": [
+              "len"
+            ]
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 46,
+            "col_offset": 4,
+            "end_lineno": 46,
+            "end_col_offset": 41
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 46,
+              "col_offset": 4,
+              "end_lineno": 46,
+              "end_col_offset": 8
+            },
+            "resolved_type": "CompletedProcess",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "proc",
+            "id": "proc"
+          },
+          "declare": true,
+          "decl_type": "CompletedProcess",
+          "declare_init": true,
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 46,
+              "col_offset": 11,
+              "end_lineno": 46,
+              "end_col_offset": 41
+            },
+            "resolved_type": "CompletedProcess",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "_subprocess.run(cmd, **kwargs)",
+            "func": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 46,
+                "col_offset": 11,
+                "end_lineno": 46,
+                "end_col_offset": 26
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "_subprocess.run",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 46,
+                  "col_offset": 11,
+                  "end_lineno": 46,
+                  "end_col_offset": 22
+                },
+                "resolved_type": "module",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "_subprocess",
+                "id": "_subprocess",
+                "runtime_module_id": "subprocess"
+              },
+              "attr": "run"
+            },
+            "args": [
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 46,
+                  "col_offset": 27,
+                  "end_lineno": 46,
+                  "end_col_offset": 30
+                },
+                "resolved_type": "Command and arguments.",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "cmd",
+                "id": "cmd",
+                "call_arg_type": "list[str]"
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 22,
+                  "col_offset": 35,
+                  "end_lineno": 22,
+                  "end_col_offset": 37
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "\"\"",
+                "value": ""
+              },
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 22,
+                  "col_offset": 62,
+                  "end_lineno": 22,
+                  "end_col_offset": 67
+                },
+                "resolved_type": "bool",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "False",
+                "value": false
+              },
+              {
+                "kind": "Dict",
+                "source_span": {
+                  "lineno": 22,
+                  "col_offset": 91,
+                  "end_lineno": 22,
+                  "end_col_offset": 93
+                },
+                "resolved_type": "dict[str,str]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "{}",
+                "keys": [],
+                "values": []
+              }
+            ],
+            "keywords": [
+              {
+                "arg": null,
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 46,
+                    "col_offset": 34,
+                    "end_lineno": 46,
+                    "end_col_offset": 40
+                  },
+                  "resolved_type": "dict[str,object]",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "kwargs",
+                  "id": "kwargs"
+                }
+              }
+            ],
+            "resolved_runtime_call": "_subprocess.run",
+            "resolved_runtime_source": "module_attr",
+            "runtime_module_id": "subprocess",
+            "runtime_symbol": "run",
+            "semantic_tag": "stdlib.method.run",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "CompletedProcess"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "CompletedProcess"
+          },
+          "meta": {
+            "lifetime_node_id": "n8",
+            "lifetime_defs": [
+              "proc"
+            ],
+            "lifetime_uses": [
+              "_subprocess",
+              "cmd",
+              "kwargs"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "_subprocess",
+              "capture_output",
+              "cmd",
+              "kwargs"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "capture_output",
+              "proc"
+            ],
+            "lifetime_last_use_vars": [
+              "_subprocess",
+              "cmd",
+              "kwargs"
+            ]
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 47,
+            "col_offset": 4,
+            "end_lineno": 47,
+            "end_col_offset": 19
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 47,
+              "col_offset": 4,
+              "end_lineno": 47,
+              "end_col_offset": 14
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "stdout_txt",
+            "id": "stdout_txt"
+          },
+          "declare": true,
+          "decl_type": "str",
+          "declare_init": true,
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 47,
+              "col_offset": 17,
+              "end_lineno": 47,
+              "end_col_offset": 19
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"",
+            "value": ""
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "str"
+          },
+          "meta": {
+            "lifetime_node_id": "n7",
+            "lifetime_defs": [
+              "stdout_txt"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "capture_output",
+              "proc"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "capture_output",
+              "proc",
+              "stdout_txt"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 48,
+            "col_offset": 4,
+            "end_lineno": 48,
+            "end_col_offset": 19
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 48,
+              "col_offset": 4,
+              "end_lineno": 48,
+              "end_col_offset": 14
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "stderr_txt",
+            "id": "stderr_txt"
+          },
+          "declare": true,
+          "decl_type": "str",
+          "declare_init": true,
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 48,
+              "col_offset": 17,
+              "end_lineno": 48,
+              "end_col_offset": 19
+            },
+            "resolved_type": "str",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "\"\"",
+            "value": ""
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "str"
+          },
+          "meta": {
+            "lifetime_node_id": "n6",
+            "lifetime_defs": [
+              "stderr_txt"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "capture_output",
+              "proc",
+              "stdout_txt"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "capture_output",
+              "proc",
+              "stderr_txt",
+              "stdout_txt"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "If",
+          "source_span": {
+            "lineno": 38,
+            "col_offset": 4,
+            "end_lineno": 53,
+            "end_col_offset": 36
+          },
+          "test": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 38,
+              "col_offset": 7,
+              "end_lineno": 38,
+              "end_col_offset": 21
+            },
+            "resolved_type": "If True, capture stdout/stderr as strings.",
+            "casts": [],
+            "borrow_kind": "readonly_ref",
+            "repr": "capture_output",
+            "id": "capture_output"
+          },
+          "body": [
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 50,
+                "col_offset": 8,
+                "end_lineno": 51,
+                "end_col_offset": 36
+              },
+              "test": {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 50,
+                    "col_offset": 22,
+                    "end_lineno": 50,
+                    "end_col_offset": 33
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "proc.stdout",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 50,
+                      "col_offset": 22,
+                      "end_lineno": 50,
+                      "end_col_offset": 26
+                    },
+                    "resolved_type": "CompletedProcess",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "proc",
+                    "id": "proc"
+                  },
+                  "attr": "stdout",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "PYTRA_TID_STR",
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "PYTRA_TID_STR",
+                  "source_span": {
+                    "lineno": 50,
+                    "col_offset": 35,
+                    "end_lineno": 50,
+                    "end_col_offset": 38
+                  }
+                },
+                "source_span": {
+                  "lineno": 50,
+                  "col_offset": 11,
+                  "end_lineno": 50,
+                  "end_col_offset": 39
+                },
+                "repr": "isinstance(proc.stdout, str)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "str"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "str"
+                  }
+                }
+              },
+              "body": [
+                {
+                  "kind": "Assign",
+                  "source_span": {
+                    "lineno": 51,
+                    "col_offset": 12,
+                    "end_lineno": 51,
+                    "end_col_offset": 36
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 51,
+                      "col_offset": 12,
+                      "end_lineno": 51,
+                      "end_col_offset": 22
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "stdout_txt",
+                    "id": "stdout_txt"
+                  },
+                  "declare": true,
+                  "decl_type": "str",
+                  "declare_init": true,
+                  "value": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 51,
+                      "col_offset": 25,
+                      "end_lineno": 51,
+                      "end_col_offset": 36
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "proc.stdout",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 51,
+                        "col_offset": 25,
+                        "end_lineno": 51,
+                        "end_col_offset": 29
+                      },
+                      "resolved_type": "CompletedProcess",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "proc",
+                      "id": "proc"
+                    },
+                    "attr": "stdout"
+                  },
+                  "type_expr_summary_v1": {
+                    "schema_version": 1,
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "str"
+                  },
+                  "meta": {
+                    "lifetime_node_id": "n5",
+                    "lifetime_defs": [
+                      "stdout_txt"
+                    ],
+                    "lifetime_uses": [
+                      "proc"
+                    ],
+                    "lifetime_live_in": [
+                      "CompletedProcess",
+                      "PYTRA_TID_STR",
+                      "proc",
+                      "stderr_txt"
+                    ],
+                    "lifetime_live_out": [
+                      "CompletedProcess",
+                      "PYTRA_TID_STR",
+                      "proc",
+                      "stderr_txt",
+                      "stdout_txt"
+                    ],
+                    "lifetime_last_use_vars": []
+                  }
+                }
+              ],
+              "orelse": [],
+              "meta": {
+                "lifetime_node_id": "n4",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "PYTRA_TID_STR",
+                  "proc"
+                ],
+                "lifetime_live_in": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "proc",
+                  "stderr_txt",
+                  "stdout_txt"
+                ],
+                "lifetime_live_out": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "proc",
+                  "stderr_txt",
+                  "stdout_txt"
+                ],
+                "lifetime_last_use_vars": []
+              }
+            },
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 52,
+                "col_offset": 8,
+                "end_lineno": 53,
+                "end_col_offset": 36
+              },
+              "test": {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Attribute",
+                  "source_span": {
+                    "lineno": 52,
+                    "col_offset": 22,
+                    "end_lineno": 52,
+                    "end_col_offset": 33
+                  },
+                  "resolved_type": "str",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "proc.stderr",
+                  "value": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 52,
+                      "col_offset": 22,
+                      "end_lineno": 52,
+                      "end_col_offset": 26
+                    },
+                    "resolved_type": "CompletedProcess",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "proc",
+                    "id": "proc"
+                  },
+                  "attr": "stderr",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "PYTRA_TID_STR",
+                  "resolved_type": "int64",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "PYTRA_TID_STR",
+                  "source_span": {
+                    "lineno": 52,
+                    "col_offset": 35,
+                    "end_lineno": 52,
+                    "end_col_offset": 38
+                  }
+                },
+                "source_span": {
+                  "lineno": 52,
+                  "col_offset": 11,
+                  "end_lineno": 52,
+                  "end_col_offset": 39
+                },
+                "repr": "isinstance(proc.stderr, str)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "str"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "str"
+                  }
+                }
+              },
+              "body": [
+                {
+                  "kind": "Assign",
+                  "source_span": {
+                    "lineno": 53,
+                    "col_offset": 12,
+                    "end_lineno": 53,
+                    "end_col_offset": 36
+                  },
+                  "target": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 53,
+                      "col_offset": 12,
+                      "end_lineno": 53,
+                      "end_col_offset": 22
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "stderr_txt",
+                    "id": "stderr_txt"
+                  },
+                  "declare": true,
+                  "decl_type": "str",
+                  "declare_init": true,
+                  "value": {
+                    "kind": "Attribute",
+                    "source_span": {
+                      "lineno": 53,
+                      "col_offset": 25,
+                      "end_lineno": 53,
+                      "end_col_offset": 36
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "proc.stderr",
+                    "value": {
+                      "kind": "Name",
+                      "source_span": {
+                        "lineno": 53,
+                        "col_offset": 25,
+                        "end_lineno": 53,
+                        "end_col_offset": 29
+                      },
+                      "resolved_type": "CompletedProcess",
+                      "casts": [],
+                      "borrow_kind": "readonly_ref",
+                      "repr": "proc",
+                      "id": "proc"
+                    },
+                    "attr": "stderr"
+                  },
+                  "type_expr_summary_v1": {
+                    "schema_version": 1,
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "str"
+                  },
+                  "meta": {
+                    "lifetime_node_id": "n3",
+                    "lifetime_defs": [
+                      "stderr_txt"
+                    ],
+                    "lifetime_uses": [
+                      "proc"
+                    ],
+                    "lifetime_live_in": [
+                      "CompletedProcess",
+                      "proc",
+                      "stdout_txt"
+                    ],
+                    "lifetime_live_out": [
+                      "CompletedProcess",
+                      "proc",
+                      "stderr_txt",
+                      "stdout_txt"
+                    ],
+                    "lifetime_last_use_vars": []
+                  }
+                }
+              ],
+              "orelse": [],
+              "meta": {
+                "lifetime_node_id": "n2",
+                "lifetime_defs": [],
+                "lifetime_uses": [
+                  "PYTRA_TID_STR",
+                  "proc"
+                ],
+                "lifetime_live_in": [
+                  "CompletedProcess",
+                  "PYTRA_TID_STR",
+                  "proc",
+                  "stderr_txt",
+                  "stdout_txt"
+                ],
+                "lifetime_live_out": [
+                  "CompletedProcess",
+                  "proc",
+                  "stderr_txt",
+                  "stdout_txt"
+                ],
+                "lifetime_last_use_vars": [
+                  "PYTRA_TID_STR"
+                ]
+              }
+            }
+          ],
+          "orelse": [],
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "capture_output"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "capture_output",
+              "proc",
+              "stderr_txt",
+              "stdout_txt"
+            ],
+            "lifetime_live_out": [
+              "CompletedProcess",
+              "PYTRA_TID_STR",
+              "proc",
+              "stderr_txt",
+              "stdout_txt"
+            ],
+            "lifetime_last_use_vars": [
+              "capture_output"
+            ]
+          }
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 54,
+            "col_offset": 4,
+            "end_lineno": 54,
+            "end_col_offset": 68
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 54,
+              "col_offset": 11,
+              "end_lineno": 54,
+              "end_col_offset": 68
+            },
+            "resolved_type": "CompletedProcess",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "CompletedProcess(proc.returncode, stdout_txt, stderr_txt)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 54,
+                "col_offset": 11,
+                "end_lineno": 54,
+                "end_col_offset": 27
+              },
+              "resolved_type": "type",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "CompletedProcess",
+              "id": "CompletedProcess"
+            },
+            "args": [
+              {
+                "kind": "Attribute",
+                "source_span": {
+                  "lineno": 54,
+                  "col_offset": 28,
+                  "end_lineno": 54,
+                  "end_col_offset": 43
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "proc.returncode",
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 54,
+                    "col_offset": 28,
+                    "end_lineno": 54,
+                    "end_col_offset": 32
+                  },
+                  "resolved_type": "CompletedProcess",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "proc",
+                  "id": "proc"
+                },
+                "attr": "returncode",
+                "call_arg_type": "int64"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 54,
+                  "col_offset": 45,
+                  "end_lineno": 54,
+                  "end_col_offset": 55
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "stdout_txt",
+                "id": "stdout_txt",
+                "call_arg_type": "str"
+              },
+              {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 54,
+                  "col_offset": 57,
+                  "end_lineno": 54,
+                  "end_col_offset": 67
+                },
+                "resolved_type": "str",
+                "casts": [],
+                "borrow_kind": "readonly_ref",
+                "repr": "stderr_txt",
+                "id": "stderr_txt",
+                "call_arg_type": "str"
+              }
+            ],
+            "keywords": [],
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "CompletedProcess"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "CompletedProcess",
+              "proc",
+              "stderr_txt",
+              "stdout_txt"
+            ],
+            "lifetime_live_in": [
+              "CompletedProcess",
+              "proc",
+              "stderr_txt",
+              "stdout_txt"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "CompletedProcess",
+              "proc",
+              "stderr_txt",
+              "stdout_txt"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {
+        "cmd": {
+          "kind": "GenericType",
+          "base": "list",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          ]
+        },
+        "cwd": {
+          "kind": "NamedType",
+          "name": "str"
+        },
+        "capture_output": {
+          "kind": "NamedType",
+          "name": "bool"
+        },
+        "env": {
+          "kind": "GenericType",
+          "base": "dict",
+          "args": [
+            {
+              "kind": "NamedType",
+              "name": "str"
+            },
+            {
+              "kind": "NamedType",
+              "name": "str"
+            }
+          ]
+        }
+      },
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "CompletedProcess"
+      },
+      "leading_comments": [],
+      "leading_trivia": [],
+      "returns": "CompletedProcess",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n31",
+          "order": [
+            "n0",
+            "n1",
+            "n2",
+            "n3",
+            "n4",
+            "n5",
+            "n6",
+            "n7",
+            "n8",
+            "n9",
+            "n10",
+            "n11",
+            "n12",
+            "n13",
+            "n14",
+            "n15",
+            "n16",
+            "n17",
+            "n18",
+            "n19",
+            "n20",
+            "n21",
+            "n22",
+            "n23",
+            "n24",
+            "n25",
+            "n26",
+            "n27",
+            "n28",
+            "n29",
+            "n30",
+            "n31"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Return",
+              "defs": [],
+              "uses": [
+                "CompletedProcess",
+                "proc",
+                "stderr_txt",
+                "stdout_txt"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "If",
+              "defs": [],
+              "uses": [
+                "capture_output"
+              ],
+              "succ": [
+                "n0",
+                "n4"
+              ]
+            },
+            {
+              "id": "n2",
+              "kind": "If",
+              "defs": [],
+              "uses": [
+                "PYTRA_TID_STR",
+                "proc"
+              ],
+              "succ": [
+                "n0",
+                "n3"
+              ]
+            },
+            {
+              "id": "n3",
+              "kind": "Assign",
+              "defs": [
+                "stderr_txt"
+              ],
+              "uses": [
+                "proc"
+              ],
+              "succ": [
+                "n0"
+              ]
+            },
+            {
+              "id": "n4",
+              "kind": "If",
+              "defs": [],
+              "uses": [
+                "PYTRA_TID_STR",
+                "proc"
+              ],
+              "succ": [
+                "n2",
+                "n5"
+              ]
+            },
+            {
+              "id": "n5",
+              "kind": "Assign",
+              "defs": [
+                "stdout_txt"
+              ],
+              "uses": [
+                "proc"
+              ],
+              "succ": [
+                "n2"
+              ]
+            },
+            {
+              "id": "n6",
+              "kind": "Assign",
+              "defs": [
+                "stderr_txt"
+              ],
+              "uses": [],
+              "succ": [
+                "n1"
+              ]
+            },
+            {
+              "id": "n7",
+              "kind": "Assign",
+              "defs": [
+                "stdout_txt"
+              ],
+              "uses": [],
+              "succ": [
+                "n6"
+              ]
+            },
+            {
+              "id": "n8",
+              "kind": "Assign",
+              "defs": [
+                "proc"
+              ],
+              "uses": [
+                "_subprocess",
+                "cmd",
+                "kwargs"
+              ],
+              "succ": [
+                "n7"
+              ]
+            },
+            {
+              "id": "n9",
+              "kind": "If",
+              "defs": [],
+              "uses": [
+                "env",
+                "len"
+              ],
+              "succ": [
+                "n15",
+                "n8"
+              ]
+            },
+            {
+              "id": "n10",
+              "kind": "Assign",
+              "defs": [],
+              "uses": [
+                "merged"
+              ],
+              "succ": [
+                "n8"
+              ]
+            },
+            {
+              "id": "n11",
+              "kind": "ForCore",
+              "defs": [
+                "__iter_tmp_1"
+              ],
+              "uses": [
+                "env"
+              ],
+              "succ": [
+                "n10",
+                "n14"
+              ]
+            },
+            {
+              "id": "n12",
+              "kind": "Assign",
+              "defs": [],
+              "uses": [
+                "v"
+              ],
+              "succ": [
+                "n11"
+              ]
+            },
+            {
+              "id": "n13",
+              "kind": "Assign",
+              "defs": [
+                "v"
+              ],
+              "uses": [
+                "__iter_tmp_1"
+              ],
+              "succ": [
+                "n12"
+              ]
+            },
+            {
+              "id": "n14",
+              "kind": "Assign",
+              "defs": [
+                "k"
+              ],
+              "uses": [
+                "__iter_tmp_1"
+              ],
+              "succ": [
+                "n13"
+              ]
+            },
+            {
+              "id": "n15",
+              "kind": "Assign",
+              "defs": [
+                "merged"
+              ],
+              "uses": [
+                "_os",
+                "dict"
+              ],
+              "succ": [
+                "n11"
+              ]
+            },
+            {
+              "id": "n16",
+              "kind": "If",
+              "defs": [],
+              "uses": [
+                "capture_output"
+              ],
+              "succ": [
+                "n18",
+                "n9"
+              ]
+            },
+            {
+              "id": "n17",
+              "kind": "Assign",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n9"
+              ]
+            },
+            {
+              "id": "n18",
+              "kind": "Assign",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n17"
+              ]
+            },
+            {
+              "id": "n19",
+              "kind": "If",
+              "defs": [],
+              "uses": [
+                "cwd"
+              ],
+              "succ": [
+                "n16",
+                "n20"
+              ]
+            },
+            {
+              "id": "n20",
+              "kind": "Assign",
+              "defs": [],
+              "uses": [
+                "cwd"
+              ],
+              "succ": [
+                "n16"
+              ]
+            },
+            {
+              "id": "n21",
+              "kind": "AnnAssign",
+              "defs": [
+                "kwargs"
+              ],
+              "uses": [],
+              "succ": [
+                "n19"
+              ]
+            },
+            {
+              "id": "n22",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "import"
+              ],
+              "succ": [
+                "n21"
+              ]
+            },
+            {
+              "id": "n23",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n22"
+              ]
+            },
+            {
+              "id": "n24",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "CompletedProcess"
+              ],
+              "succ": [
+                "n23"
+              ]
+            },
+            {
+              "id": "n25",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "Returns"
+              ],
+              "succ": [
+                "n24"
+              ]
+            },
+            {
+              "id": "n26",
+              "kind": "AnnAssign",
+              "defs": [
+                "env"
+              ],
+              "uses": [
+                "inherit"
+              ],
+              "succ": [
+                "n25"
+              ]
+            },
+            {
+              "id": "n27",
+              "kind": "AnnAssign",
+              "defs": [
+                "capture_output"
+              ],
+              "uses": [],
+              "succ": [
+                "n26"
+              ]
+            },
+            {
+              "id": "n28",
+              "kind": "AnnAssign",
+              "defs": [
+                "cwd"
+              ],
+              "uses": [
+                "inherit"
+              ],
+              "succ": [
+                "n27"
+              ]
+            },
+            {
+              "id": "n29",
+              "kind": "AnnAssign",
+              "defs": [
+                "cmd"
+              ],
+              "uses": [],
+              "succ": [
+                "n28"
+              ]
+            },
+            {
+              "id": "n30",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "Args"
+              ],
+              "succ": [
+                "n29"
+              ]
+            },
+            {
+              "id": "n31",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [],
+              "succ": [
+                "n30"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "__iter_tmp_1": [
+                "n11"
+              ],
+              "capture_output": [
+                "n27"
+              ],
+              "cmd": [
+                "n29"
+              ],
+              "cwd": [
+                "n28"
+              ],
+              "env": [
+                "n26"
+              ],
+              "k": [
+                "n14"
+              ],
+              "kwargs": [
+                "n21"
+              ],
+              "merged": [
+                "n15"
+              ],
+              "proc": [
+                "n8"
+              ],
+              "stderr_txt": [
+                "n3",
+                "n6"
+              ],
+              "stdout_txt": [
+                "n5",
+                "n7"
+              ],
+              "v": [
+                "n13"
+              ]
+            },
+            "uses": {
+              "Args": [
+                "n30"
+              ],
+              "CompletedProcess": [
+                "n0",
+                "n24"
+              ],
+              "PYTRA_TID_STR": [
+                "n2",
+                "n4"
+              ],
+              "Returns": [
+                "n25"
+              ],
+              "__iter_tmp_1": [
+                "n13",
+                "n14"
+              ],
+              "_os": [
+                "n15"
+              ],
+              "_subprocess": [
+                "n8"
+              ],
+              "capture_output": [
+                "n1",
+                "n16"
+              ],
+              "cmd": [
+                "n8"
+              ],
+              "cwd": [
+                "n19",
+                "n20"
+              ],
+              "dict": [
+                "n15"
+              ],
+              "env": [
+                "n11",
+                "n9"
+              ],
+              "import": [
+                "n22"
+              ],
+              "inherit": [
+                "n26",
+                "n28"
+              ],
+              "kwargs": [
+                "n8"
+              ],
+              "len": [
+                "n9"
+              ],
+              "merged": [
+                "n10"
+              ],
+              "proc": [
+                "n0",
+                "n2",
+                "n3",
+                "n4",
+                "n5"
+              ],
+              "stderr_txt": [
+                "n0"
+              ],
+              "stdout_txt": [
+                "n0"
+              ],
+              "v": [
+                "n12"
+              ]
+            }
+          },
+          "variables": {
+            "Args": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n30"
+              ],
+              "live_in_nodes": [
+                "n30",
+                "n31"
+              ],
+              "live_out_nodes": [
+                "n31"
+              ],
+              "last_use_nodes": [
+                "n30"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "CompletedProcess": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0",
+                "n24"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "PYTRA_TID_STR": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n2",
+                "n4"
+              ],
+              "live_in_nodes": [
+                "n1",
+                "n2",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "last_use_nodes": [
+                "n2"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "Returns": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n25"
+              ],
+              "live_in_nodes": [
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "live_out_nodes": [
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "last_use_nodes": [
+                "n25"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "__iter_tmp_1": {
+              "def_nodes": [
+                "n11"
+              ],
+              "use_nodes": [
+                "n13",
+                "n14"
+              ],
+              "live_in_nodes": [
+                "n13",
+                "n14"
+              ],
+              "live_out_nodes": [
+                "n11",
+                "n14"
+              ],
+              "last_use_nodes": [
+                "n13"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "_os": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n15"
+              ],
+              "live_in_nodes": [
+                "n9",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "live_out_nodes": [
+                "n9",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "last_use_nodes": [
+                "n15"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "_subprocess": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n8"
+              ],
+              "live_in_nodes": [
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "live_out_nodes": [
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "last_use_nodes": [
+                "n8"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "capture_output": {
+              "def_nodes": [
+                "n27"
+              ],
+              "use_nodes": [
+                "n1",
+                "n16"
+              ],
+              "live_in_nodes": [
+                "n1",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26"
+              ],
+              "live_out_nodes": [
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27"
+              ],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "cmd": {
+              "def_nodes": [
+                "n29"
+              ],
+              "use_nodes": [
+                "n8"
+              ],
+              "live_in_nodes": [
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28"
+              ],
+              "live_out_nodes": [
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29"
+              ],
+              "last_use_nodes": [
+                "n8"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "cwd": {
+              "def_nodes": [
+                "n28"
+              ],
+              "use_nodes": [
+                "n19",
+                "n20"
+              ],
+              "live_in_nodes": [
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27"
+              ],
+              "live_out_nodes": [
+                "n19",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28"
+              ],
+              "last_use_nodes": [
+                "n20"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "dict": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n15"
+              ],
+              "live_in_nodes": [
+                "n9",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "live_out_nodes": [
+                "n9",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "last_use_nodes": [
+                "n15"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "env": {
+              "def_nodes": [
+                "n26"
+              ],
+              "use_nodes": [
+                "n11",
+                "n9"
+              ],
+              "live_in_nodes": [
+                "n9",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25"
+              ],
+              "live_out_nodes": [
+                "n9",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26"
+              ],
+              "last_use_nodes": [],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "import": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n22"
+              ],
+              "live_in_nodes": [
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "live_out_nodes": [
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "last_use_nodes": [
+                "n22"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "inherit": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n26",
+                "n28"
+              ],
+              "live_in_nodes": [
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "live_out_nodes": [
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "last_use_nodes": [
+                "n26"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "k": {
+              "def_nodes": [
+                "n14"
+              ],
+              "use_nodes": [],
+              "live_in_nodes": [],
+              "live_out_nodes": [],
+              "last_use_nodes": [],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "kwargs": {
+              "def_nodes": [
+                "n21"
+              ],
+              "use_nodes": [
+                "n8"
+              ],
+              "live_in_nodes": [
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20"
+              ],
+              "live_out_nodes": [
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21"
+              ],
+              "last_use_nodes": [
+                "n8"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "len": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n9"
+              ],
+              "live_in_nodes": [
+                "n9",
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "live_out_nodes": [
+                "n16",
+                "n17",
+                "n18",
+                "n19",
+                "n20",
+                "n21",
+                "n22",
+                "n23",
+                "n24",
+                "n25",
+                "n26",
+                "n27",
+                "n28",
+                "n29",
+                "n30",
+                "n31"
+              ],
+              "last_use_nodes": [
+                "n9"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "merged": {
+              "def_nodes": [
+                "n15"
+              ],
+              "use_nodes": [
+                "n10"
+              ],
+              "live_in_nodes": [
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14"
+              ],
+              "live_out_nodes": [
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15"
+              ],
+              "last_use_nodes": [
+                "n10"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "proc": {
+              "def_nodes": [
+                "n8"
+              ],
+              "use_nodes": [
+                "n0",
+                "n2",
+                "n3",
+                "n4",
+                "n5"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "stderr_txt": {
+              "def_nodes": [
+                "n3",
+                "n6"
+              ],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n4",
+                "n5"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "stdout_txt": {
+              "def_nodes": [
+                "n5",
+                "n7"
+              ],
+              "use_nodes": [
+                "n0"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n6"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "escape_or_unknown"
+            },
+            "v": {
+              "def_nodes": [
+                "n13"
+              ],
+              "use_nodes": [
+                "n12"
+              ],
+              "live_in_nodes": [
+                "n12"
+              ],
+              "live_out_nodes": [
+                "n13"
+              ],
+              "last_use_nodes": [
+                "n12"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            }
+          },
+          "arg_order": [
+            "cmd",
+            "cwd",
+            "capture_output",
+            "env"
+          ],
+          "arg_escape": [
+            true,
+            true,
+            true,
+            true
+          ],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "subprocess",
+          "export_name": "",
+          "local_name": "_subprocess",
+          "binding_kind": "module",
+          "source_file": "src/pytra/std/subprocess.py",
+          "source_line": 7,
+          "source_module_id": "subprocess",
+          "source_export_name": "",
+          "source_binding_kind": "module",
+          "runtime_module_id": "subprocess",
+          "runtime_group": "",
+          "resolved_binding_kind": "module",
+          "host_only": true
+        },
+        {
+          "module_id": "pytra.std",
+          "export_name": "extern",
+          "local_name": "extern",
+          "binding_kind": "symbol",
+          "source_file": "src/pytra/std/subprocess.py",
+          "source_line": 9,
+          "source_module_id": "pytra.std",
+          "source_export_name": "extern",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.std",
+          "runtime_group": "std",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "extern",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.extern"
+        },
+        {
+          "module_id": "pytra.core.py_runtime",
+          "export_name": "",
+          "local_name": "pytra.core.py_runtime",
+          "binding_kind": "implicit_builtin",
+          "source_file": "src/pytra/std/subprocess.py",
+          "source_line": 0,
+          "source_module_id": "pytra.core.py_runtime",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.core.py_runtime",
+          "runtime_group": "core"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.std",
+          "symbol": "extern",
+          "local_name": "extern"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "subprocess",
+        "export_name": "",
+        "local_name": "_subprocess",
+        "binding_kind": "module",
+        "source_file": "src/pytra/std/subprocess.py",
+        "source_line": 7,
+        "host_only": true
+      },
+      {
+        "module_id": "pytra.std",
+        "export_name": "extern",
+        "local_name": "extern",
+        "binding_kind": "symbol",
+        "source_file": "src/pytra/std/subprocess.py",
+        "source_line": 9
+      },
+      {
+        "module_id": "pytra.core.py_runtime",
+        "export_name": "",
+        "local_name": "pytra.core.py_runtime",
+        "binding_kind": "implicit_builtin",
+        "source_file": "src/pytra/std/subprocess.py",
+        "source_line": 0
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.std",
+        "symbol": "extern",
+        "local_name": "extern"
+      }
+    ],
+    "import_modules": {
+      "_subprocess": "subprocess"
+    },
+    "import_symbols": {
+      "extern": {
+        "module": "pytra.std",
+        "name": "extern"
+      }
+    },
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

@@ -79,7 +79,7 @@ class ImportAlias:
 
 @dataclass
 class Keyword:
-    arg: str
+    arg: Optional[str]
     value_node: Expr  # forward ref
     def to_jv(self) -> dict[str, JsonVal]:
         return {"arg": self.arg, "value": expr_to_jv(self.value_node)}
