@@ -1839,21 +1839,31 @@ def _emit_comp_iife(
             lines.append(pad + "for _, " + byte_name + " := range " + iter_code + " {")
             depth += 1
             if t_name != "_":
-                bind_rt = t_type if t_type not in ("", "unknown") else "int64"
-                bind_gt = _go_signature_type(ctx, bind_rt)
-                bind_code = byte_name if bind_gt in ("byte", "uint8") else bind_gt + "(" + byte_name + ")"
-                lines.append((indent * depth) + "var " + t_name + " " + bind_gt + " = " + bind_code)
-                ctx.var_types[t_name] = bind_rt
+                if t_type not in ("", "unknown"):
+                    bind_rt = t_type
+                    bind_gt = _go_signature_type(ctx, bind_rt)
+                    bind_code = byte_name if bind_gt in ("byte", "uint8") else bind_gt + "(" + byte_name + ")"
+                    lines.append((indent * depth) + "var " + t_name + " " + bind_gt + " = " + bind_code)
+                    ctx.var_types[t_name] = bind_rt
+                else:
+                    lines.append((indent * depth) + t_name + " := " + byte_name)
+                    ctx.var_types[t_name] = ""
         elif iter_rt == "str":
             rune_name = _next_temp(ctx, "r")
             lines.append(pad + "for _, " + rune_name + " := range " + iter_code + " {")
             depth += 1
             if t_name != "_":
-                bind_rt = t_type if t_type not in ("", "unknown") else "str"
-                bind_gt = _go_signature_type(ctx, bind_rt)
-                bind_code = "string(" + rune_name + ")" if bind_gt == "string" else rune_name
-                lines.append((indent * depth) + "var " + t_name + " " + bind_gt + " = " + bind_code)
-                ctx.var_types[t_name] = bind_rt
+                bind_code = "string(" + rune_name + ")"
+                if t_type not in ("", "unknown"):
+                    bind_rt = t_type
+                    bind_gt = _go_signature_type(ctx, bind_rt)
+                    if bind_gt != "string":
+                        bind_code = rune_name
+                    lines.append((indent * depth) + "var " + t_name + " " + bind_gt + " = " + bind_code)
+                    ctx.var_types[t_name] = bind_rt
+                else:
+                    lines.append((indent * depth) + t_name + " := " + bind_code)
+                    ctx.var_types[t_name] = ""
         else:
             if target_kind == "Tuple":
                 item_name = _next_temp(ctx, "tuple_item")
@@ -2124,14 +2134,6 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 decl_type = _str(node, "decl_type")
                 if decl_type == "" or decl_type == "unknown":
                     decl_type = _str(target_node, "resolved_type")
-                if (decl_type == "" or decl_type == "unknown") and isinstance(value, dict):
-                    decl_type = _str(value, "resolved_type")
-                if (decl_type == "" or decl_type == "unknown") and isinstance(value, dict):
-                    if _str(value, "kind") == "Subscript":
-                        parent = value.get("value")
-                        if isinstance(parent, dict) and _str(parent, "resolved_type").startswith("tuple["):
-                            if ctx.current_return_type not in ("", "None", "unknown"):
-                                decl_type = ctx.current_return_type
                 if (
                     isinstance(value, dict)
                     and _str(value, "kind") == "Name"
@@ -2310,21 +2312,31 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if iter_rt in ("bytearray", "bytes", "list[uint8]"):
                     _emit(ctx, "for _, _byte_ := range " + iter_code + " {")
                     ctx.indent_level += 1
-                    bind_rt = t_type if t_type not in ("", "unknown") else "int64"
-                    bind_gt = _go_signature_type(ctx, bind_rt)
-                    bind_code = "_byte_" if bind_gt in ("byte", "uint8") else bind_gt + "(_byte_)"
-                    _emit(ctx, "var " + t_name + " " + bind_gt + " = " + bind_code)
-                    ctx.var_types[t_name] = bind_rt
+                    if t_type not in ("", "unknown"):
+                        bind_rt = t_type
+                        bind_gt = _go_signature_type(ctx, bind_rt)
+                        bind_code = "_byte_" if bind_gt in ("byte", "uint8") else bind_gt + "(_byte_)"
+                        _emit(ctx, "var " + t_name + " " + bind_gt + " = " + bind_code)
+                        ctx.var_types[t_name] = bind_rt
+                    elif t_name != "_":
+                        _emit(ctx, t_name + " := _byte_")
+                        ctx.var_types[t_name] = ""
                 elif iter_rt == "str":
                     rune_name = _next_temp(ctx, "r")
                     _emit(ctx, "for _, " + rune_name + " := range " + iter_code + " {")
                     ctx.indent_level += 1
                     if t_name != "_":
-                        bind_rt = t_type if t_type not in ("", "unknown") else "str"
-                        bind_gt = _go_signature_type(ctx, bind_rt)
-                        bind_code = "string(" + rune_name + ")" if bind_gt == "string" else rune_name
-                        _emit(ctx, "var " + t_name + " " + bind_gt + " = " + bind_code)
-                        ctx.var_types[t_name] = bind_rt
+                        bind_code = "string(" + rune_name + ")"
+                        if t_type not in ("", "unknown"):
+                            bind_rt = t_type
+                            bind_gt = _go_signature_type(ctx, bind_rt)
+                            if bind_gt != "string":
+                                bind_code = rune_name
+                            _emit(ctx, "var " + t_name + " " + bind_gt + " = " + bind_code)
+                            ctx.var_types[t_name] = bind_rt
+                        else:
+                            _emit(ctx, t_name + " := " + bind_code)
+                            ctx.var_types[t_name] = ""
                 elif iter_rt.startswith("set[") or iter_rt.startswith("dict["):
                     _emit(ctx, "for " + t_name + " := range " + iter_code + " {")
                     ctx.indent_level += 1
@@ -2379,11 +2391,6 @@ def _emit_range_for(
 
     s_code = _emit_expr(ctx, start) if start is not None else "0"
     e_code = _emit_expr(ctx, stop) if stop is not None else "0"
-    bind_rt = t_type if t_type not in ("", "unknown") else "int64"
-    bind_gt = _go_signature_type(ctx, bind_rt)
-    if bind_gt in ("", "any"):
-        bind_rt = "int64"
-        bind_gt = "int64"
 
     # Determine step
     step_code = "1"
@@ -2406,12 +2413,21 @@ def _emit_range_for(
     if loop_var == "_":
         loop_var = "_loop_"
     assign_op = " = " if loop_var in ctx.var_types else " := "
-    start_code = bind_gt + "(" + s_code + ")"
-    stop_code = bind_gt + "(" + e_code + ")"
-    step_bind_code = bind_gt + "(" + step_code + ")"
+    bind_rt = ""
+    start_code = s_code
+    stop_code = e_code
+    step_bind_code = step_code
+    if t_type not in ("", "unknown"):
+        bind_rt = t_type
+        bind_gt = _go_signature_type(ctx, bind_rt)
+        if bind_gt in ("", "any"):
+            raise RuntimeError("range_target_type_required")
+        start_code = bind_gt + "(" + s_code + ")"
+        stop_code = bind_gt + "(" + e_code + ")"
+        step_bind_code = bind_gt + "(" + step_code + ")"
     _emit(ctx, "for " + loop_var + assign_op + start_code + "; " + loop_var + cmp_op + stop_code + "; " + loop_var + " += " + step_bind_code + " {")
     ctx.indent_level += 1
-    if t_name != "_":
+    if t_name != "_" and bind_rt != "":
         ctx.var_types[t_name] = bind_rt
     _emit_body(ctx, body)
     ctx.indent_level -= 1

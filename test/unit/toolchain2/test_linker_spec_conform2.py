@@ -1140,6 +1140,38 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
         self.assertNotIn("var x float64 = float64(n)", go_code)
         self.assertNotIn("x += float64(n)", go_code)
 
+    def test_go_emitter_does_not_infer_assignment_decl_type_from_value(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_index": {},
+                    "return_type": "None",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "Assign",
+                            "target": {"kind": "Name", "id": "n", "resolved_type": "unknown"},
+                            "value": {"kind": "Constant", "value": 3, "resolved_type": "int64"},
+                            "declare": True,
+                        }
+                    ],
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("n := 3", go_code)
+        self.assertNotIn("var n int64 = 3", go_code)
+
     def test_go_emitter_does_not_invent_dict_get_default_casts(self) -> None:
         doc = _module_doc(
             "app.main",
