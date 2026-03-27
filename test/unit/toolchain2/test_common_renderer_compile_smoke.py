@@ -75,6 +75,17 @@ def f() -> int:
     return x
 '''
 
+PRINT_SOURCE = """
+def f() -> int:
+    x = 1
+    if x < 2:
+        x = x + 2
+    return x
+
+if __name__ == "__main__":
+    print(f())
+"""
+
 
 def _assert_go_compiles(source: str) -> None:
     east3 = _build_east3(source, target_language="go")
@@ -332,6 +343,14 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
 
         self.assertEqual(go_stdout, "")
         self.assertEqual(cpp_stdout, "")
+        self.assertEqual(go_stdout, cpp_stdout)
+
+    def test_common_renderer_print_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(PRINT_SOURCE)
+        cpp_stdout = _run_cpp(PRINT_SOURCE)
+
+        self.assertEqual(go_stdout, "3\n")
+        self.assertEqual(cpp_stdout, "3\n")
         self.assertEqual(go_stdout, cpp_stdout)
 
 
