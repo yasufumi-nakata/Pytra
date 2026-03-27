@@ -1327,8 +1327,24 @@ def _emit_slice_expr(ctx: CppEmitContext, node: dict[str, JsonVal], value_expr: 
 
 def _emit_ifexp(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     test = _emit_condition_expr(ctx, node.get("test"))
-    body = _emit_expr(ctx, node.get("body"))
-    orelse = _emit_expr(ctx, node.get("orelse"))
+    resolved_type = _str(node, "resolved_type")
+    body_node = node.get("body")
+    orelse_node = node.get("orelse")
+    optional_inner = _optional_inner_type(resolved_type)
+    if optional_inner != "":
+        body_expr = _emit_expr(ctx, body_node) if not (isinstance(body_node, dict) and _str(body_node, "resolved_type") == "None") else "::std::nullopt"
+        orelse_expr = _emit_expr(ctx, orelse_node) if not (isinstance(orelse_node, dict) and _str(orelse_node, "resolved_type") == "None") else "::std::nullopt"
+        if body_expr != "::std::nullopt":
+            body_expr = "::std::optional<" + cpp_signature_type(optional_inner) + ">(" + body_expr + ")"
+        if orelse_expr != "::std::nullopt":
+            orelse_expr = "::std::optional<" + cpp_signature_type(optional_inner) + ">(" + orelse_expr + ")"
+        return "(" + test + " ? " + body_expr + " : " + orelse_expr + ")"
+    if "|" in resolved_type:
+        body = _emit_expr_as_type(ctx, body_node, "object")
+        orelse = _emit_expr_as_type(ctx, orelse_node, "object")
+        return "(" + test + " ? " + body + " : " + orelse + ")"
+    body = _emit_expr(ctx, body_node)
+    orelse = _emit_expr(ctx, orelse_node)
     return "(" + test + " ? " + body + " : " + orelse + ")"
 
 
@@ -1501,7 +1517,11 @@ def _emit_aug_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
 def _emit_return(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     value = node.get("value")
     if value is None: _emit(ctx, "return;")
-    else: _emit(ctx, "return " + _emit_expr(ctx, value) + ";")
+    elif ctx.current_return_type == "None":
+        _emit(ctx, "(void)(" + _emit_expr(ctx, value) + ");")
+        _emit(ctx, "return;")
+    else:
+        _emit(ctx, "return " + _emit_expr(ctx, value) + ";")
 
 
 def _emit_if(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
