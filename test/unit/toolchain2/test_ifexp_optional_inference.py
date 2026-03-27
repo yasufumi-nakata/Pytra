@@ -92,6 +92,20 @@ def f(summary: dict[str, str]) -> str:
         ifexp = next(node for node in _walk(east2) if node.get("kind") == "IfExp")
         self.assertEqual(ifexp.get("resolved_type"), "str")
 
+    def test_ifexp_unknown_branch_with_none_becomes_optional_any(self) -> None:
+        east2 = _resolve(
+            """\
+type Node = dict[str, object]
+
+def f(node: Node):
+    out = node["kind"] if "kind" in node else None
+    return out
+"""
+        )
+
+        ifexp = next(node for node in _walk(east2) if node.get("kind") == "IfExp")
+        self.assertEqual(ifexp.get("resolved_type"), "Any | None")
+
 
 if __name__ == "__main__":
     unittest.main()

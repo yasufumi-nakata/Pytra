@@ -645,6 +645,10 @@ def _split_union_type_parts(type_str: str) -> list[str]:
 
 
 def _merge_ifexp_result_type(body_type: str, orelse_type: str) -> str:
+    if _is_unknown_like_type(body_type) and orelse_type == "None":
+        return "Any | None"
+    if _is_unknown_like_type(orelse_type) and body_type == "None":
+        return "Any | None"
     if _is_unknown_like_type(body_type):
         return orelse_type
     if _is_unknown_like_type(orelse_type):
