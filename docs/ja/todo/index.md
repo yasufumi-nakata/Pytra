@@ -71,6 +71,7 @@
 7. [x] [ID: P3-TRAIT-S7] C++ emitter の trait 写像を実装する（virtual 継承 + Object<T> 変換コンストラクタ + override）
 8. [x] [ID: P3-TRAIT-S8] Go emitter の trait 写像を実装する（interface 生成、構造的充足）
 9. [x] [ID: P3-TRAIT-S9] `test/fixture/source/py/oop/` に trait fixture を追加（trait 定義、多重実装、upcast、isinstance）+ golden 生成（east1/east2/east3/east3-opt/linked）+ C++/Go parity 確認 — `trait_basic.py` を追加し、focused unittest 3 件、`trait_basic` の linked golden 再生成、`python3 tools/runtime_parity_check.py --targets go --cmd-timeout-sec 60 trait_basic` と `--targets cpp` を pass
+10. [x] [ID: P3-TRAIT-S10] C++ runtime から runtime trait 判定を撤去する — trait は compile 時の型概念であり runtime に情報を持たせない。ControlBlock の `trait_bits` フィールド、`has_trait()` メソッド、`pytra_trait_bits_for<T>` ヘルパー、linker の `trait_id_table_v1` / `class_trait_masks_v1` 生成を全て削除する。Go runtime 側にも同様の trait runtime 情報があれば削除する。spec-trait.md §7 の改訂（runtime 判定禁止）に準拠させる — linker は trait 実装関係だけを静的解決し、trait `isinstance` は link 時に bool 定数へ畳む。C++ runtime の trait bitset / helper は削除し、`trait_basic` の C++/Go parity を再確認済み
 
 ### P4-INT32: int のデフォルトサイズを int64 → int32 に変更
 

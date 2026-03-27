@@ -2510,18 +2510,17 @@ def has_key(env: dict[str, int], name: str) -> bool:
         linked = next(module.east_doc for module in result.linked_modules if module.module_id == "app")
         self.assertEqual(linked.get("meta", {}).get("emit_context"), {"module_id": "app", "is_entry": True})
         linked_program = linked.get("meta", {}).get("linked_program_v1", {})
-        self.assertEqual(linked_program.get("trait_id_table_v1"), {"app.Drawable": 0})
-        self.assertEqual(linked_program.get("class_trait_masks_v1"), {"app.Circle": 1})
+        self.assertNotIn("trait_id_table_v1", linked_program)
+        self.assertNotIn("class_trait_masks_v1", linked_program)
         self.assertNotIn("app.Drawable", linked_program.get("type_id_resolved_v1", {}))
         self.assertIn("app.Circle", linked_program.get("type_id_resolved_v1", {}))
 
         trait_check = next(
             node for node in _walk_nodes(linked)
-            if node.get("kind") == "IsInstance"
+            if node.get("kind") == "Constant" and isinstance(node.get("value"), bool)
         )
-        self.assertEqual(trait_check.get("predicate_kind"), "trait")
-        self.assertEqual(trait_check.get("expected_trait_id"), 0)
-        self.assertEqual(trait_check.get("expected_trait_fqcn"), "app.Drawable")
+        self.assertEqual(trait_check.get("value"), True)
+        self.assertEqual(trait_check.get("resolved_type"), "bool")
 
     def test_cpp_emitter_lowers_traits_to_virtual_interfaces_and_trait_masks(self) -> None:
         doc = _module_doc(
@@ -2587,23 +2586,14 @@ def has_key(env: dict[str, int], name: str) -> bool:
                     "body": [
                         {
                             "kind": "Return",
-                            "value": {
-                                "kind": "IsInstance",
-                                "value": {"kind": "Name", "id": "d", "resolved_type": "Drawable"},
-                                "expected_type_id": {"kind": "Name", "id": "Drawable"},
-                                "expected_trait_id": 0,
-                                "expected_trait_fqcn": "app.Drawable",
-                                "resolved_type": "bool",
-                            },
-                        }
+                            "value": {"kind": "Constant", "value": True, "resolved_type": "bool"},
+                        },
                     ],
                 },
             ],
             meta_extra={
                 "linked_program_v1": {
                     "module_id": "app",
-                    "trait_id_table_v1": {"app.Drawable": 0},
-                    "class_trait_masks_v1": {"app.Circle": 1},
                     "type_id_resolved_v1": {"app.Circle": 1000},
                     "type_info_table_v1": {"app.Circle": {"id": 1000, "entry": 1000, "exit": 1001}},
                 }
@@ -2616,8 +2606,8 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("virtual void draw() const = 0;", cpp_code)
         self.assertIn("class Circle : virtual public Drawable {", cpp_code)
         self.assertIn("void draw() const override;", cpp_code)
-        self.assertIn("static constexpr uint64_t __pytra_trait_bits = 1ULL;", cpp_code)
-        self.assertIn("return py_runtime_value_has_trait(d, 0);", cpp_code)
+        self.assertNotIn("__pytra_trait_bits", cpp_code)
+        self.assertIn("return true;", cpp_code)
 
     def test_go_emitter_lowers_traits_to_interfaces_and_trait_assertions(self) -> None:
         doc = _module_doc(
@@ -2683,13 +2673,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
                     "body": [
                         {
                             "kind": "Return",
-                            "value": {
-                                "kind": "IsInstance",
-                                "value": {"kind": "Name", "id": "d", "resolved_type": "Drawable"},
-                                "expected_type_id": {"kind": "Name", "id": "Drawable"},
-                                "expected_trait_fqcn": "app.Drawable",
-                                "resolved_type": "bool",
-                            },
+                            "value": {"kind": "Constant", "value": True, "resolved_type": "bool"},
                         }
                     ],
                 },
@@ -2701,7 +2685,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("type Drawable interface {", go_code)
         self.assertIn("\tdraw()", go_code)
         self.assertIn("func ok(d Drawable) bool {", go_code)
-        self.assertIn("_, ok := any(d).(Drawable)", go_code)
+        self.assertIn("return true", go_code)
 
     def test_go_emitter_turns_returning_try_into_return_iife(self) -> None:
         doc = _fixture_doc("test/pytra/east3-opt/utils/assertions.east3")

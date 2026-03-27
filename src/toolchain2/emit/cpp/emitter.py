@@ -45,10 +45,8 @@ class CppEmitContext:
     class_names: set[str] = field(default_factory=set)
     class_field_types: dict[str, dict[str, str]] = field(default_factory=dict)
     class_type_ids: dict[str, int] = field(default_factory=dict)
-    trait_ids: dict[str, int] = field(default_factory=dict)
     class_type_info: dict[str, dict[str, int]] = field(default_factory=dict)
     class_symbol_fqcns: dict[str, str] = field(default_factory=dict)
-    class_trait_masks: dict[str, int] = field(default_factory=dict)
     current_class: str = ""
     current_return_type: str = ""
     current_function_scope: str = ""
@@ -995,10 +993,9 @@ def _emit_object_unbox(value_expr: str, target: str) -> str:
 
 def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     value = node.get("value")
-    expected_trait_id = node.get("expected_trait_id")
-    if isinstance(expected_trait_id, int):
-        value_expr_trait = _emit_expr(ctx, value)
-        return "py_runtime_value_has_trait(" + value_expr_trait + ", " + str(expected_trait_id) + ")"
+    expected_trait_fqcn = _str(node, "expected_trait_fqcn")
+    if expected_trait_fqcn != "":
+        _emit_fail(ctx, "unexpected_trait_isinstance", expected_trait_fqcn)
     expected = node.get("expected_type_id")
     expected_name = _str(expected, "id") if isinstance(expected, dict) else ""
     value_expr = _emit_expr(ctx, value)
@@ -1467,10 +1464,6 @@ def _emit_class_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                 _emit(ctx, decl + ";")
         if is_trait:
             _emit(ctx, "virtual ~" + name + "() = default;")
-        else:
-            mask = ctx.class_trait_masks.get(ctx.class_symbol_fqcns.get(name, ctx.module_id + "." + name), 0)
-            if mask != 0:
-                _emit(ctx, "static constexpr uint64_t __pytra_trait_bits = " + str(mask) + "ULL;")
         ctx.indent_level -= 1
         ctx.indent_level -= 1
         _emit(ctx, "};")
@@ -1871,22 +1864,10 @@ def emit_cpp_module(
     type_id_table_raw = _dict(lp, "type_id_table")
     if len(type_id_table_raw) == 0:
         type_id_table_raw = _dict(lp, "type_id_resolved_v1")
-    trait_id_table_raw = _dict(lp, "trait_id_table_v1")
-    class_trait_masks_raw = _dict(lp, "class_trait_masks_v1")
     type_info_table_raw = _dict(lp, "type_info_table_v1")
     ctx.class_type_ids = {
         key: value
         for key, value in type_id_table_raw.items()
-        if isinstance(key, str) and isinstance(value, int)
-    }
-    ctx.trait_ids = {
-        key: value
-        for key, value in trait_id_table_raw.items()
-        if isinstance(key, str) and isinstance(value, int)
-    }
-    ctx.class_trait_masks = {
-        key: value
-        for key, value in class_trait_masks_raw.items()
         if isinstance(key, str) and isinstance(value, int)
     }
     ctx.class_type_info = {

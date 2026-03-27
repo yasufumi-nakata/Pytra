@@ -2056,8 +2056,7 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     value = _emit_expr(ctx, node.get("value"))
     expected_trait_fqcn = _str(node, "expected_trait_fqcn")
     if expected_trait_fqcn != "":
-        trait_name = expected_trait_fqcn.rsplit(".", 1)[-1]
-        return "func() bool { _, ok := any(" + value + ").(" + _go_symbol_name(ctx, trait_name) + "); return ok }()"
+        raise RuntimeError("go emitter unexpected trait isinstance after link: " + expected_trait_fqcn)
     expected = node.get("expected_type_id")
     expected_name = ""
     if isinstance(expected, dict):

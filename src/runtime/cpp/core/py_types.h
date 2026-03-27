@@ -146,7 +146,7 @@ inline const T& Object<void>::unbox() const {
 
 inline Object<void>::Object(int64 v) : cb(nullptr) {
     auto* boxed = new PyBoxedValue<int64>(v);
-    cb = new ControlBlock{0, PYTRA_TID_INT, 0, boxed};
+    cb = new ControlBlock{0, PYTRA_TID_INT, boxed};
     retain();
 }
 
@@ -154,25 +154,25 @@ inline Object<void>::Object(int v) : Object(static_cast<int64>(v)) {}
 
 inline Object<void>::Object(const char* v) : cb(nullptr) {
     auto* boxed = new PyBoxedValue<str>(str(v));
-    cb = new ControlBlock{0, PYTRA_TID_STR, 0, boxed};
+    cb = new ControlBlock{0, PYTRA_TID_STR, boxed};
     retain();
 }
 
 inline Object<void>::Object(float64 v) : cb(nullptr) {
     auto* boxed = new PyBoxedValue<float64>(v);
-    cb = new ControlBlock{0, PYTRA_TID_FLOAT, 0, boxed};
+    cb = new ControlBlock{0, PYTRA_TID_FLOAT, boxed};
     retain();
 }
 
 inline Object<void>::Object(bool v) : cb(nullptr) {
     auto* boxed = new PyBoxedValue<bool>(v);
-    cb = new ControlBlock{0, PYTRA_TID_BOOL, 0, boxed};
+    cb = new ControlBlock{0, PYTRA_TID_BOOL, boxed};
     retain();
 }
 
 inline Object<void>::Object(const str& v) : cb(nullptr) {
     auto* boxed = new PyBoxedValue<str>(v);
-    cb = new ControlBlock{0, PYTRA_TID_STR, 0, boxed};
+    cb = new ControlBlock{0, PYTRA_TID_STR, boxed};
     retain();
 }
 

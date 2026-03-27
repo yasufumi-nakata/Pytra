@@ -1,7 +1,6 @@
-"""trait_id table builder for linked programs.
+"""Trait relationship helpers for linked programs.
 
-Trait は type_id 木とは独立に deterministic な 0-origin id を持つ。
-v1 は 64 trait までを許可し、class ごとの実装集合を uint64 bitset で表現する。
+Trait は runtime metadata を持たず、link 時に nominal 関係だけを解決する。
 """
 
 from __future__ import annotations
@@ -77,9 +76,6 @@ def _trait_extends_names(class_def: dict[str, JsonVal]) -> list[str]:
                         out.append(name)
             if len(out) > 0:
                 return out
-    base = _safe_str(class_def.get("base"))
-    if base != "":
-        return [base]
     bases = class_def.get("bases")
     out2: list[str] = []
     if isinstance(bases, list):
@@ -87,6 +83,9 @@ def _trait_extends_names(class_def: dict[str, JsonVal]) -> list[str]:
             name2 = _safe_str(item2)
             if name2 != "":
                 out2.append(name2)
+    base = _safe_str(class_def.get("base"))
+    if base != "" and len(out2) == 0:
+        out2.append(base)
     return out2
 
 
@@ -150,10 +149,7 @@ def _resolve_trait_name(
     raise _input_invalid("undefined trait: " + module_id + " -> " + name)
 
 
-def build_trait_id_table(
-    modules: list[LinkedModule],
-) -> tuple[dict[str, JsonVal], dict[str, JsonVal]]:
-    trait_defs: dict[str, dict[str, JsonVal]] = {}
+def build_trait_implementation_map(modules: list[LinkedModule]) -> tuple[set[str], dict[str, set[str]]]:
     all_traits: set[str] = set()
     local_traits_by_module: dict[str, dict[str, str]] = {}
     import_maps: dict[str, tuple[dict[str, str], dict[str, str]]] = {}
@@ -176,7 +172,6 @@ def build_trait_id_table(
             fqcn = module.module_id + "." + class_name
             local_traits[class_name] = fqcn
             all_traits.add(fqcn)
-            trait_defs[fqcn] = class_def
         local_traits_by_module[module.module_id] = local_traits
 
     trait_bases: dict[str, list[str]] = {}
@@ -205,32 +200,23 @@ def build_trait_id_table(
                 )
             trait_bases[fqcn] = bases
 
-    trait_id_table: dict[str, JsonVal] = {}
-    sorted_traits = sorted(list(all_traits))
-    if len(sorted_traits) > 64:
-        raise _input_invalid("trait_id overflow (>64 traits)")
-    idx = 0
-    while idx < len(sorted_traits):
-        trait_id_table[sorted_traits[idx]] = idx
-        idx += 1
+    memo: dict[str, set[str]] = {}
 
-    memo_masks: dict[str, int] = {}
-
-    def _trait_mask(fqcn: str, stack: list[str]) -> int:
-        if fqcn in memo_masks:
-            return memo_masks[fqcn]
+    def _trait_closure(fqcn: str, stack: list[str]) -> set[str]:
+        if fqcn in memo:
+            return memo[fqcn]
         if fqcn in stack:
             raise _input_invalid("trait inheritance cycle: " + " -> ".join(stack + [fqcn]))
-        trait_id_val = trait_id_table.get(fqcn)
-        if not isinstance(trait_id_val, int):
-            raise _input_invalid("missing trait_id: " + fqcn)
-        mask = 1 << trait_id_val
+        out: set[str] = {fqcn}
         for base_fqcn in trait_bases.get(fqcn, []):
-            mask |= _trait_mask(base_fqcn, stack + [fqcn])
-        memo_masks[fqcn] = mask
-        return mask
+            out |= _trait_closure(base_fqcn, stack + [fqcn])
+        memo[fqcn] = out
+        return out
 
-    class_trait_masks: dict[str, JsonVal] = {}
+    impls_by_type: dict[str, set[str]] = {}
+    for trait_fqcn in sorted(all_traits):
+        impls_by_type[trait_fqcn] = set(_trait_closure(trait_fqcn, []))
+
     for module in modules:
         import_modules2, import_symbols2 = import_maps.get(module.module_id, ({}, {}))
         local_traits2 = local_traits_by_module.get(module.module_id, {})
@@ -242,9 +228,8 @@ def build_trait_id_table(
             if class_name2 == "":
                 continue
             fqcn2 = module.module_id + "." + class_name2
-            mask2 = 0
-            impl_names = _implemented_trait_names(class_def2)
-            for impl_name in impl_names:
+            trait_set: set[str] = set()
+            for impl_name in _implemented_trait_names(class_def2):
                 trait_fqcn = _resolve_trait_name(
                     impl_name,
                     module_id=module.module_id,
@@ -253,7 +238,8 @@ def build_trait_id_table(
                     import_modules=import_modules2,
                     import_symbols=import_symbols2,
                 )
-                mask2 |= _trait_mask(trait_fqcn, [])
-            class_trait_masks[fqcn2] = mask2
+                trait_set |= _trait_closure(trait_fqcn, [])
+            if len(trait_set) > 0:
+                impls_by_type[fqcn2] = trait_set
 
-    return trait_id_table, class_trait_masks
+    return all_traits, impls_by_type

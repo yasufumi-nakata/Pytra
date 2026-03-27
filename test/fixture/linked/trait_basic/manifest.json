@@ -53,16 +53,6 @@
       "trait_basic._IdentityDecorator": 1001,
       "trait_basic._ImplementsFactory": 1002
     },
-    "trait_id_table": {
-      "trait_basic.Drawable": 0,
-      "trait_basic.Named": 1,
-      "trait_basic.ShapeLike": 2
-    },
-    "class_trait_masks_v1": {
-      "trait_basic._IdentityDecorator": 0,
-      "trait_basic._ImplementsFactory": 0,
-      "trait_basic.Circle": 7
-    },
     "type_id_base_map": {
       "trait_basic.Circle": 8,
       "trait_basic._IdentityDecorator": 8,
