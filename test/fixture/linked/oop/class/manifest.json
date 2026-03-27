@@ -39,7 +39,6 @@
       "class.Multiplier": 8
     },
     "call_graph": {
-      "class::Multiplier.mul": [],
       "class::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -54,9 +53,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "class::Multiplier.mul"
-      ],
       [
         "pytra.utils.assertions::py_assert_stdout"
       ],

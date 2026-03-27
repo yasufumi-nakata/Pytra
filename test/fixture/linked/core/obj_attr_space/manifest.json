@@ -31,15 +31,11 @@
       "obj_attr_space.Obj": 8
     },
     "call_graph": {
-      "obj_attr_space::Obj.__init__": [],
       "obj_attr_space::__main__": [],
       "obj_attr_space::__pytra_main": [],
       "pytra.built_in.io_ops::py_print": []
     },
     "sccs": [
-      [
-        "obj_attr_space::Obj.__init__"
-      ],
       [
         "obj_attr_space::__main__"
       ],

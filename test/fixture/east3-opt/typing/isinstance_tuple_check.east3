@@ -127,7 +127,8 @@
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Cat",
-                  "id": "Cat"
+                  "id": "Cat",
+                  "type_object_of": "Cat"
                 },
                 "source_span": {
                   "lineno": 8,
@@ -186,7 +187,8 @@
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Dog",
-                  "id": "Dog"
+                  "id": "Dog",
+                  "type_object_of": "Dog"
                 },
                 "source_span": {
                   "lineno": 8,
@@ -961,7 +963,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/typing/isinstance_tuple_check.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [],

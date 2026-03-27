@@ -22,30 +22,30 @@ def _copy_node(node: dict[str, JsonVal]) -> dict[str, JsonVal]:
     return out
 
 
-def _try_fold_literal_static_cast(call_node: dict[str, JsonVal]) -> dict[str, JsonVal] | None:
+def _try_fold_literal_static_cast(call_node: dict[str, JsonVal]) -> tuple[bool, dict[str, JsonVal]]:
     if call_node.get("kind") != "Call":
-        return None
+        return False, {}
     if call_node.get("lowered_kind") != "BuiltinCall":
-        return None
+        return False, {}
     if call_node.get("runtime_call") != "static_cast":
-        return None
+        return False, {}
 
     args_obj = call_node.get("args")
     args = args_obj if isinstance(args_obj, list) else []
     if len(args) != 1:
-        return None
+        return False, {}
     arg = args[0]
     if not isinstance(arg, dict):
-        return None
+        return False, {}
     if arg.get("kind") != "Constant":
-        return None
+        return False, {}
 
     target_t = _normalize_type_name(call_node.get("resolved_type"))
     source_t = _normalize_type_name(arg.get("resolved_type"))
     if target_t == "unknown" or source_t == "unknown":
-        return None
+        return False, {}
     if target_t != source_t:
-        return None
+        return False, {}
 
     folded = _copy_node(arg)
     span_obj = call_node.get("source_span")
@@ -54,7 +54,7 @@ def _try_fold_literal_static_cast(call_node: dict[str, JsonVal]) -> dict[str, Js
     repr_obj = call_node.get("repr")
     if isinstance(repr_obj, str) and repr_obj != "":
         folded["repr"] = repr_obj
-    return folded
+    return True, folded
 
 
 class LiteralCastFoldPass(East3OptimizerPass):
@@ -65,32 +65,32 @@ class LiteralCastFoldPass(East3OptimizerPass):
 
     def _rewrite(self, node: JsonVal) -> tuple[JsonVal, int]:
         if isinstance(node, list):
-            out: list[JsonVal] = list(node)
+            out_list: list[JsonVal] = list(node)
             changed = 0
             for i, item in enumerate(node):
                 new_item, delta = self._rewrite(item)
                 if new_item is not item:
-                    out[i] = new_item
+                    out_list[i] = new_item
                 changed += delta
-            return out, changed
+            return out_list, changed
 
         if not isinstance(node, dict):
             return node, 0
 
-        out = _copy_node(node)
+        out_dict = _copy_node(node)
         changed = 0
         keys = list(node.keys())
         for key in keys:
             value = node[key]
             new_value, delta = self._rewrite(value)
             if new_value is not value:
-                out[key] = new_value
+                out_dict[key] = new_value
             changed += delta
 
-        folded = _try_fold_literal_static_cast(out)
-        if folded is not None:
+        did_fold, folded = _try_fold_literal_static_cast(out_dict)
+        if did_fold:
             return folded, changed + 1
-        return out, changed
+        return out_dict, changed
 
     def run(self, east3_doc: dict[str, JsonVal], context: PassContext) -> PassResult:
         _ = context

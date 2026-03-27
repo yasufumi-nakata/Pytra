@@ -15,6 +15,22 @@
       "module_kind": "runtime"
     },
     {
+      "module_id": "pytra.built_in.sequence",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/sequence.east",
+      "output": "east3/pytra/built_in/sequence.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/sequence.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "pytra.built_in.string_ops",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/string_ops.east",
+      "output": "east3/pytra/built_in/string_ops.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/string_ops.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
       "module_id": "pytra.std.re",
       "input": "/workspace/Pytra/src/runtime/east/std/re.east",
       "output": "east3/pytra/std/re.east3.json",
@@ -50,6 +66,59 @@
     },
     "call_graph": {
       "pytra.built_in.io_ops::py_print": [],
+      "pytra.built_in.sequence::py_range": [],
+      "pytra.built_in.sequence::py_repeat": [],
+      "pytra.built_in.string_ops::_contains_char": [],
+      "pytra.built_in.string_ops::_is_space": [],
+      "pytra.built_in.string_ops::_normalize_index": [],
+      "pytra.built_in.string_ops::py_count": [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      "pytra.built_in.string_ops::py_endswith": [],
+      "pytra.built_in.string_ops::py_find": [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      "pytra.built_in.string_ops::py_find_window": [
+        "pytra.built_in.string_ops::_normalize_index"
+      ],
+      "pytra.built_in.string_ops::py_join": [],
+      "pytra.built_in.string_ops::py_lstrip": [
+        "pytra.built_in.string_ops::_is_space"
+      ],
+      "pytra.built_in.string_ops::py_lstrip_chars": [
+        "pytra.built_in.string_ops::_contains_char"
+      ],
+      "pytra.built_in.string_ops::py_replace": [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      "pytra.built_in.string_ops::py_replace_n": [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      "pytra.built_in.string_ops::py_rfind": [
+        "pytra.built_in.string_ops::py_rfind_window"
+      ],
+      "pytra.built_in.string_ops::py_rfind_window": [
+        "pytra.built_in.string_ops::_normalize_index"
+      ],
+      "pytra.built_in.string_ops::py_rstrip": [
+        "pytra.built_in.string_ops::_is_space"
+      ],
+      "pytra.built_in.string_ops::py_rstrip_chars": [
+        "pytra.built_in.string_ops::_contains_char"
+      ],
+      "pytra.built_in.string_ops::py_split": [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      "pytra.built_in.string_ops::py_splitlines": [],
+      "pytra.built_in.string_ops::py_startswith": [],
+      "pytra.built_in.string_ops::py_strip": [
+        "pytra.built_in.string_ops::py_lstrip",
+        "pytra.built_in.string_ops::py_rstrip"
+      ],
+      "pytra.built_in.string_ops::py_strip_chars": [
+        "pytra.built_in.string_ops::py_lstrip_chars",
+        "pytra.built_in.string_ops::py_rstrip_chars"
+      ],
       "pytra.std.re::Match.__init__": [],
       "pytra.std.re::Match.group": [],
       "pytra.std.re::Pattern.__init__": [],
@@ -99,6 +168,75 @@
     "sccs": [
       [
         "pytra.built_in.io_ops::py_print"
+      ],
+      [
+        "pytra.built_in.sequence::py_range"
+      ],
+      [
+        "pytra.built_in.sequence::py_repeat"
+      ],
+      [
+        "pytra.built_in.string_ops::_contains_char"
+      ],
+      [
+        "pytra.built_in.string_ops::_is_space"
+      ],
+      [
+        "pytra.built_in.string_ops::_normalize_index"
+      ],
+      [
+        "pytra.built_in.string_ops::py_find_window"
+      ],
+      [
+        "pytra.built_in.string_ops::py_count"
+      ],
+      [
+        "pytra.built_in.string_ops::py_endswith"
+      ],
+      [
+        "pytra.built_in.string_ops::py_find"
+      ],
+      [
+        "pytra.built_in.string_ops::py_join"
+      ],
+      [
+        "pytra.built_in.string_ops::py_lstrip"
+      ],
+      [
+        "pytra.built_in.string_ops::py_lstrip_chars"
+      ],
+      [
+        "pytra.built_in.string_ops::py_replace"
+      ],
+      [
+        "pytra.built_in.string_ops::py_replace_n"
+      ],
+      [
+        "pytra.built_in.string_ops::py_rfind_window"
+      ],
+      [
+        "pytra.built_in.string_ops::py_rfind"
+      ],
+      [
+        "pytra.built_in.string_ops::py_rstrip"
+      ],
+      [
+        "pytra.built_in.string_ops::py_rstrip_chars"
+      ],
+      [
+        "pytra.built_in.string_ops::py_split"
+      ],
+      [
+        "pytra.built_in.string_ops::py_splitlines"
+      ],
+      [
+        "pytra.built_in.string_ops::py_startswith"
+      ],
+      [
+        "pytra.built_in.string_ops::py_strip"
+      ],
+      [
+        "pytra.built_in.string_ops::py_strip_chars"
       ],
       [
         "pytra.std.re::Match.__init__"

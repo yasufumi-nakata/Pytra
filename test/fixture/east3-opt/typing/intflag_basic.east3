@@ -35,7 +35,11 @@
       "original_name": "Perm",
       "base": "IntFlag",
       "dataclass": false,
-      "field_types": {},
+      "field_types": {
+        "READ": "Perm",
+        "WRITE": "Perm",
+        "EXEC": "Perm"
+      },
       "body": [
         {
           "kind": "Assign",
@@ -53,9 +57,9 @@
               "end_lineno": 6,
               "end_col_offset": 8
             },
-            "resolved_type": "int64",
+            "resolved_type": "Perm",
             "casts": [],
-            "borrow_kind": "value",
+            "borrow_kind": "readonly_ref",
             "repr": "READ",
             "id": "READ"
           },
@@ -99,9 +103,9 @@
               "end_lineno": 7,
               "end_col_offset": 9
             },
-            "resolved_type": "int64",
+            "resolved_type": "Perm",
             "casts": [],
-            "borrow_kind": "value",
+            "borrow_kind": "readonly_ref",
             "repr": "WRITE",
             "id": "WRITE"
           },
@@ -145,9 +149,9 @@
               "end_lineno": 8,
               "end_col_offset": 8
             },
-            "resolved_type": "int64",
+            "resolved_type": "Perm",
             "casts": [],
-            "borrow_kind": "value",
+            "borrow_kind": "readonly_ref",
             "repr": "EXEC",
             "id": "EXEC"
           },
@@ -237,11 +241,78 @@
             "name": "Perm"
           },
           "value": {
-            "kind": "Unbox",
+            "kind": "BinOp",
+            "source_span": {
+              "lineno": 12,
+              "col_offset": 15,
+              "end_lineno": 12,
+              "end_col_offset": 37
+            },
             "resolved_type": "Perm",
-            "borrow_kind": "value",
             "casts": [],
-            "value": {
+            "borrow_kind": "value",
+            "repr": "Perm.READ | Perm.WRITE",
+            "left": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 12,
+                "col_offset": 15,
+                "end_lineno": 12,
+                "end_col_offset": 24
+              },
+              "resolved_type": "Perm",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "Perm.READ",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 12,
+                  "col_offset": 15,
+                  "end_lineno": 12,
+                  "end_col_offset": 19
+                },
+                "resolved_type": "type",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "Perm",
+                "id": "Perm",
+                "type_object_of": "Perm"
+              },
+              "attr": "READ"
+            },
+            "op": "BitOr",
+            "right": {
+              "kind": "Attribute",
+              "source_span": {
+                "lineno": 12,
+                "col_offset": 27,
+                "end_lineno": 12,
+                "end_col_offset": 37
+              },
+              "resolved_type": "Perm",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "Perm.WRITE",
+              "value": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 12,
+                  "col_offset": 27,
+                  "end_lineno": 12,
+                  "end_col_offset": 31
+                },
+                "resolved_type": "type",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "Perm",
+                "id": "Perm",
+                "type_object_of": "Perm"
+              },
+              "attr": "WRITE"
+            },
+            "normalized_expr_version": "east3_expr_v1",
+            "normalized_expr": {
               "kind": "BinOp",
               "source_span": {
                 "lineno": 12,
@@ -249,7 +320,7 @@
                 "end_lineno": 12,
                 "end_col_offset": 37
               },
-              "resolved_type": "unknown",
+              "resolved_type": "Perm",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Perm.READ | Perm.WRITE",
@@ -261,7 +332,7 @@
                   "end_lineno": 12,
                   "end_col_offset": 24
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "Perm",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "Perm.READ",
@@ -277,7 +348,8 @@
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Perm",
-                  "id": "Perm"
+                  "id": "Perm",
+                  "type_object_of": "Perm"
                 },
                 "attr": "READ"
               },
@@ -290,7 +362,7 @@
                   "end_lineno": 12,
                   "end_col_offset": 37
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "Perm",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "Perm.WRITE",
@@ -306,112 +378,11 @@
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Perm",
-                  "id": "Perm"
+                  "id": "Perm",
+                  "type_object_of": "Perm"
                 },
                 "attr": "WRITE"
-              },
-              "normalized_expr_version": "east3_expr_v1",
-              "normalized_expr": {
-                "kind": "BinOp",
-                "source_span": {
-                  "lineno": 12,
-                  "col_offset": 15,
-                  "end_lineno": 12,
-                  "end_col_offset": 37
-                },
-                "resolved_type": "unknown",
-                "casts": [],
-                "borrow_kind": "value",
-                "repr": "Perm.READ | Perm.WRITE",
-                "left": {
-                  "kind": "Attribute",
-                  "source_span": {
-                    "lineno": 12,
-                    "col_offset": 15,
-                    "end_lineno": 12,
-                    "end_col_offset": 24
-                  },
-                  "resolved_type": "unknown",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "Perm.READ",
-                  "value": {
-                    "kind": "Name",
-                    "source_span": {
-                      "lineno": 12,
-                      "col_offset": 15,
-                      "end_lineno": 12,
-                      "end_col_offset": 19
-                    },
-                    "resolved_type": "type",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "Perm",
-                    "id": "Perm"
-                  },
-                  "attr": "READ"
-                },
-                "op": "BitOr",
-                "right": {
-                  "kind": "Attribute",
-                  "source_span": {
-                    "lineno": 12,
-                    "col_offset": 27,
-                    "end_lineno": 12,
-                    "end_col_offset": 37
-                  },
-                  "resolved_type": "unknown",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "Perm.WRITE",
-                  "value": {
-                    "kind": "Name",
-                    "source_span": {
-                      "lineno": 12,
-                      "col_offset": 27,
-                      "end_lineno": 12,
-                      "end_col_offset": 31
-                    },
-                    "resolved_type": "type",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "Perm",
-                    "id": "Perm"
-                  },
-                  "attr": "WRITE"
-                }
               }
-            },
-            "source_span": {
-              "lineno": 12,
-              "col_offset": 15,
-              "end_lineno": 12,
-              "end_col_offset": 37
-            },
-            "repr": "Perm.READ | Perm.WRITE",
-            "type_expr_summary_v1": {
-              "schema_version": 1,
-              "kind": "NamedType",
-              "category": "static",
-              "mirror": "Perm"
-            },
-            "target": "Perm",
-            "on_fail": "raise",
-            "bridge_lane_v1": {
-              "schema_version": 1,
-              "target": {
-                "kind": "NamedType",
-                "category": "static",
-                "mirror": "Perm"
-              },
-              "target_category": "static",
-              "value": {
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
-              },
-              "value_category": "dynamic"
             }
           },
           "type_expr_summary_v1": {
@@ -516,7 +487,7 @@
                 "end_lineno": 13,
                 "end_col_offset": 37
               },
-              "resolved_type": "unknown",
+              "resolved_type": "Perm",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Perm.WRITE",
@@ -532,7 +503,8 @@
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "Perm",
-                "id": "Perm"
+                "id": "Perm",
+                "type_object_of": "Perm"
               },
               "attr": "WRITE"
             },
@@ -572,7 +544,7 @@
                   "end_lineno": 13,
                   "end_col_offset": 37
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "Perm",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "Perm.WRITE",
@@ -588,7 +560,8 @@
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Perm",
-                  "id": "Perm"
+                  "id": "Perm",
+                  "type_object_of": "Perm"
                 },
                 "attr": "WRITE"
               }
@@ -699,7 +672,7 @@
                 "end_lineno": 14,
                 "end_col_offset": 35
               },
-              "resolved_type": "unknown",
+              "resolved_type": "Perm",
               "casts": [],
               "borrow_kind": "value",
               "repr": "Perm.EXEC",
@@ -715,7 +688,8 @@
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "Perm",
-                "id": "Perm"
+                "id": "Perm",
+                "type_object_of": "Perm"
               },
               "attr": "EXEC"
             },
@@ -755,7 +729,7 @@
                   "end_lineno": 14,
                   "end_col_offset": 35
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "Perm",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "Perm.EXEC",
@@ -771,7 +745,8 @@
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Perm",
-                  "id": "Perm"
+                  "id": "Perm",
+                  "type_object_of": "Perm"
                 },
                 "attr": "EXEC"
               }
@@ -1360,7 +1335,7 @@
                             "end_lineno": 17,
                             "end_col_offset": 54
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "Perm",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Perm.WRITE",
@@ -1376,7 +1351,8 @@
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Perm",
-                            "id": "Perm"
+                            "id": "Perm",
+                            "type_object_of": "Perm"
                           },
                           "attr": "WRITE"
                         }
@@ -1421,7 +1397,7 @@
                               "end_lineno": 17,
                               "end_col_offset": 54
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "Perm",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Perm.WRITE",
@@ -1437,7 +1413,8 @@
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "Perm",
-                              "id": "Perm"
+                              "id": "Perm",
+                              "type_object_of": "Perm"
                             },
                             "attr": "WRITE"
                           }
@@ -1737,7 +1714,7 @@
                             "end_lineno": 18,
                             "end_col_offset": 52
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "Perm",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Perm.EXEC",
@@ -1753,7 +1730,8 @@
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Perm",
-                            "id": "Perm"
+                            "id": "Perm",
+                            "type_object_of": "Perm"
                           },
                           "attr": "EXEC"
                         }
@@ -1798,7 +1776,7 @@
                               "end_lineno": 18,
                               "end_col_offset": 52
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "Perm",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Perm.EXEC",
@@ -1814,7 +1792,8 @@
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "Perm",
-                              "id": "Perm"
+                              "id": "Perm",
+                              "type_object_of": "Perm"
                             },
                             "attr": "EXEC"
                           }
@@ -2102,11 +2081,79 @@
                       },
                       "args": [
                         {
-                          "kind": "Unbox",
-                          "resolved_type": "Obj",
-                          "borrow_kind": "value",
+                          "kind": "BinOp",
+                          "source_span": {
+                            "lineno": 19,
+                            "col_offset": 35,
+                            "end_lineno": 19,
+                            "end_col_offset": 57
+                          },
+                          "resolved_type": "Perm",
                           "casts": [],
-                          "value": {
+                          "borrow_kind": "value",
+                          "repr": "Perm.READ ^ Perm.WRITE",
+                          "left": {
+                            "kind": "Attribute",
+                            "source_span": {
+                              "lineno": 19,
+                              "col_offset": 35,
+                              "end_lineno": 19,
+                              "end_col_offset": 44
+                            },
+                            "resolved_type": "Perm",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "Perm.READ",
+                            "value": {
+                              "kind": "Name",
+                              "source_span": {
+                                "lineno": 19,
+                                "col_offset": 35,
+                                "end_lineno": 19,
+                                "end_col_offset": 39
+                              },
+                              "resolved_type": "type",
+                              "casts": [],
+                              "borrow_kind": "value",
+                              "repr": "Perm",
+                              "id": "Perm",
+                              "type_object_of": "Perm"
+                            },
+                            "attr": "READ"
+                          },
+                          "op": "BitXor",
+                          "right": {
+                            "kind": "Attribute",
+                            "source_span": {
+                              "lineno": 19,
+                              "col_offset": 47,
+                              "end_lineno": 19,
+                              "end_col_offset": 57
+                            },
+                            "resolved_type": "Perm",
+                            "casts": [],
+                            "borrow_kind": "value",
+                            "repr": "Perm.WRITE",
+                            "value": {
+                              "kind": "Name",
+                              "source_span": {
+                                "lineno": 19,
+                                "col_offset": 47,
+                                "end_lineno": 19,
+                                "end_col_offset": 51
+                              },
+                              "resolved_type": "type",
+                              "casts": [],
+                              "borrow_kind": "value",
+                              "repr": "Perm",
+                              "id": "Perm",
+                              "type_object_of": "Perm"
+                            },
+                            "attr": "WRITE"
+                          },
+                          "call_arg_type": "Obj",
+                          "normalized_expr_version": "east3_expr_v1",
+                          "normalized_expr": {
                             "kind": "BinOp",
                             "source_span": {
                               "lineno": 19,
@@ -2114,7 +2161,7 @@
                               "end_lineno": 19,
                               "end_col_offset": 57
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "Perm",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Perm.READ ^ Perm.WRITE",
@@ -2126,7 +2173,7 @@
                                 "end_lineno": 19,
                                 "end_col_offset": 44
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "Perm",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "Perm.READ",
@@ -2142,7 +2189,8 @@
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "Perm",
-                                "id": "Perm"
+                                "id": "Perm",
+                                "type_object_of": "Perm"
                               },
                               "attr": "READ"
                             },
@@ -2155,7 +2203,7 @@
                                 "end_lineno": 19,
                                 "end_col_offset": 57
                               },
-                              "resolved_type": "unknown",
+                              "resolved_type": "Perm",
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "Perm.WRITE",
@@ -2171,121 +2219,19 @@
                                 "casts": [],
                                 "borrow_kind": "value",
                                 "repr": "Perm",
-                                "id": "Perm"
+                                "id": "Perm",
+                                "type_object_of": "Perm"
                               },
                               "attr": "WRITE"
                             },
-                            "call_arg_type": "Obj",
-                            "normalized_expr_version": "east3_expr_v1",
-                            "normalized_expr": {
-                              "kind": "BinOp",
-                              "source_span": {
-                                "lineno": 19,
-                                "col_offset": 35,
-                                "end_lineno": 19,
-                                "end_col_offset": 57
-                              },
-                              "resolved_type": "unknown",
-                              "casts": [],
-                              "borrow_kind": "value",
-                              "repr": "Perm.READ ^ Perm.WRITE",
-                              "left": {
-                                "kind": "Attribute",
-                                "source_span": {
-                                  "lineno": 19,
-                                  "col_offset": 35,
-                                  "end_lineno": 19,
-                                  "end_col_offset": 44
-                                },
-                                "resolved_type": "unknown",
-                                "casts": [],
-                                "borrow_kind": "value",
-                                "repr": "Perm.READ",
-                                "value": {
-                                  "kind": "Name",
-                                  "source_span": {
-                                    "lineno": 19,
-                                    "col_offset": 35,
-                                    "end_lineno": 19,
-                                    "end_col_offset": 39
-                                  },
-                                  "resolved_type": "type",
-                                  "casts": [],
-                                  "borrow_kind": "value",
-                                  "repr": "Perm",
-                                  "id": "Perm"
-                                },
-                                "attr": "READ"
-                              },
-                              "op": "BitXor",
-                              "right": {
-                                "kind": "Attribute",
-                                "source_span": {
-                                  "lineno": 19,
-                                  "col_offset": 47,
-                                  "end_lineno": 19,
-                                  "end_col_offset": 57
-                                },
-                                "resolved_type": "unknown",
-                                "casts": [],
-                                "borrow_kind": "value",
-                                "repr": "Perm.WRITE",
-                                "value": {
-                                  "kind": "Name",
-                                  "source_span": {
-                                    "lineno": 19,
-                                    "col_offset": 47,
-                                    "end_lineno": 19,
-                                    "end_col_offset": 51
-                                  },
-                                  "resolved_type": "type",
-                                  "casts": [],
-                                  "borrow_kind": "value",
-                                  "repr": "Perm",
-                                  "id": "Perm"
-                                },
-                                "attr": "WRITE"
-                              },
-                              "call_arg_type": "Obj"
-                            }
-                          },
-                          "source_span": {
-                            "lineno": 19,
-                            "col_offset": 35,
-                            "end_lineno": 19,
-                            "end_col_offset": 57
-                          },
-                          "repr": "Perm.READ ^ Perm.WRITE",
-                          "type_expr_summary_v1": {
-                            "schema_version": 1,
-                            "kind": "NamedType",
-                            "category": "static",
-                            "mirror": "Obj"
-                          },
-                          "target": "Obj",
-                          "on_fail": "raise",
-                          "bridge_lane_v1": {
-                            "schema_version": 1,
-                            "target": {
-                              "kind": "NamedType",
-                              "category": "static",
-                              "mirror": "Obj"
-                            },
-                            "target_category": "static",
-                            "value": {
-                              "kind": "DynamicType",
-                              "category": "dynamic",
-                              "mirror": "unknown",
-                              "dynamic_name": "unknown"
-                            },
-                            "value_category": "dynamic"
+                            "call_arg_type": "Obj"
                           }
                         }
                       ],
                       "keywords": [],
                       "lowered_kind": "BuiltinCall",
                       "builtin_name": "int",
-                      "runtime_call": "int",
+                      "runtime_call": "static_cast",
                       "runtime_module_id": "pytra.core.py_runtime",
                       "runtime_symbol": "int",
                       "runtime_call_adapter_kind": "builtin",
@@ -3186,7 +3132,17 @@
         "local_name": "py_assert_all",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/intflag_basic.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_all",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_all",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_all"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -3194,7 +3150,17 @@
         "local_name": "py_assert_eq",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/intflag_basic.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_eq",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_eq",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
       },
       {
         "module_id": "pytra.built_in.io_ops",
@@ -3202,7 +3168,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/typing/intflag_basic.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       },
       {
         "module_id": "pytra.core.py_runtime",
@@ -3210,7 +3180,11 @@
         "local_name": "pytra.core.py_runtime",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/typing/intflag_basic.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.core.py_runtime",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.core.py_runtime",
+        "runtime_group": "core"
       }
     ],
     "qualified_symbol_refs": [

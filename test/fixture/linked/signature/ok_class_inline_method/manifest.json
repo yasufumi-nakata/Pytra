@@ -31,14 +31,10 @@
       "ok_class_inline_method.Value": 8
     },
     "call_graph": {
-      "ok_class_inline_method::Value.__pow__": [],
       "ok_class_inline_method::__main__": [],
       "pytra.built_in.io_ops::py_print": []
     },
     "sccs": [
-      [
-        "ok_class_inline_method::Value.__pow__"
-      ],
       [
         "ok_class_inline_method::__main__"
       ],

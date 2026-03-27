@@ -540,7 +540,17 @@
         "local_name": "Path",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/stdlib/path_stringify.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.std.pathlib",
+        "source_export_name": "Path",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.std.pathlib",
+        "runtime_group": "std",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "Path",
+        "runtime_symbol_kind": "class",
+        "runtime_symbol_dispatch": "ctor",
+        "runtime_semantic_tag": "stdlib.symbol.Path"
       },
       {
         "module_id": "pytra.built_in.io_ops",
@@ -548,7 +558,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/stdlib/path_stringify.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       },
       {
         "module_id": "pytra.core.py_runtime",
@@ -556,7 +570,11 @@
         "local_name": "pytra.core.py_runtime",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/stdlib/path_stringify.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.core.py_runtime",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.core.py_runtime",
+        "runtime_group": "core"
       }
     ],
     "qualified_symbol_refs": [

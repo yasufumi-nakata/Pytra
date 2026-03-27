@@ -39,7 +39,6 @@
       "alias_arg.Box": 8
     },
     "call_graph": {
-      "alias_arg::Box.__init__": [],
       "alias_arg::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -60,9 +59,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "alias_arg::Box.__init__"
-      ],
       [
         "pytra.utils.assertions::py_assert_stdout"
       ],

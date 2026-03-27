@@ -33,18 +33,10 @@
       "class_inherit_basic.Child": 1000
     },
     "call_graph": {
-      "class_inherit_basic::Base.speak": [],
-      "class_inherit_basic::Child.speak": [],
       "class_inherit_basic::__main__": [],
       "pytra.built_in.io_ops::py_print": []
     },
     "sccs": [
-      [
-        "class_inherit_basic::Base.speak"
-      ],
-      [
-        "class_inherit_basic::Child.speak"
-      ],
       [
         "class_inherit_basic::__main__"
       ],

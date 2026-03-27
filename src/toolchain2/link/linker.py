@@ -380,7 +380,9 @@ def _collect_module_type_aliases(doc: dict[str, JsonVal]) -> dict[str, str]:
         if not isinstance(stmt, dict) or stmt.get("kind") != "TypeAlias":
             continue
         name = stmt.get("name")
-        raw = stmt.get("type_expr")
+        raw = stmt.get("value")
+        if not isinstance(raw, str) or raw == "":
+            raw = stmt.get("type_expr")
         if isinstance(name, str) and name != "" and isinstance(raw, str) and raw != "":
             aliases[name] = normalize_type(raw, aliases, {name})
     return aliases
@@ -454,6 +456,11 @@ def _normalize_runtime_type_aliases(node: JsonVal, aliases: dict[str, str]) -> N
             _normalize_runtime_type_aliases(value, aliases)
 
     kind = node.get("kind")
+    if kind == "TypeAlias":
+        raw_alias = node.get("value")
+        if isinstance(raw_alias, str) and raw_alias != "":
+            node["value"] = _normalize_type_alias(raw_alias, aliases)
+        return
     if kind == "FunctionDef":
         arg_types = node.get("arg_types")
         arg_defaults = node.get("arg_defaults")

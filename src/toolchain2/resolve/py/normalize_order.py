@@ -122,6 +122,16 @@ _FUNCDEF_FIELDS: list[str] = [
     "leading_comments", "leading_trivia",
 ]
 
+_CLOSUREDEF_FIELDS: list[str] = [
+    "kind", "source_span", "name", "original_name",
+    "captures", "capture_types", "capture_modes", "is_recursive",
+    "arg_types", "arg_order", "arg_defaults", "arg_index",
+    "return_type", "arg_usage", "renamed_symbols", "docstring",
+    "body", "is_generator", "yield_value_type",
+    "arg_type_exprs", "return_type_expr",
+    "leading_comments", "leading_trivia",
+]
+
 # ClassDef
 _CLASSDEF_FIELDS: list[str] = [
     "kind", "source_span", "name", "original_name", "base",
@@ -197,6 +207,7 @@ _KIND_FIELDS: dict[str, list[str]] = {
     "BoolOp": _BOOLOP_FIELDS,
     "ListComp": _LISTCOMP_FIELDS,
     "FunctionDef": _FUNCDEF_FIELDS,
+    "ClosureDef": _CLOSUREDEF_FIELDS,
     "ClassDef": _CLASSDEF_FIELDS,
     "For": ["kind", "source_span", "target", "target_type",
             "iter_mode", "iter_source_type", "iter_element_type",

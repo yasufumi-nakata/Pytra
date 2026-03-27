@@ -39,8 +39,6 @@
       "instance_member.Point": 8
     },
     "call_graph": {
-      "instance_member::Point.__init__": [],
-      "instance_member::Point.total": [],
       "instance_member::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -55,12 +53,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "instance_member::Point.__init__"
-      ],
-      [
-        "instance_member::Point.total"
-      ],
       [
         "pytra.utils.assertions::py_assert_stdout"
       ],

@@ -39,10 +39,6 @@
       "property_method_call.MapperHolder": 8
     },
     "call_graph": {
-      "property_method_call::MapperHolder.__init__": [],
-      "property_method_call::MapperHolder.is_mmc3": [],
-      "property_method_call::MapperHolder.mapper": [],
-      "property_method_call::MapperHolder.mapper_text": [],
       "property_method_call::__main__": [
         "property_method_call::run_property_method_call"
       ],
@@ -60,18 +56,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "property_method_call::MapperHolder.__init__"
-      ],
-      [
-        "property_method_call::MapperHolder.is_mmc3"
-      ],
-      [
-        "property_method_call::MapperHolder.mapper"
-      ],
-      [
-        "property_method_call::MapperHolder.mapper_text"
-      ],
       [
         "pytra.utils.assertions::py_assert_all"
       ],

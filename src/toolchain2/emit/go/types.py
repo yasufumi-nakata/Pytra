@@ -26,18 +26,35 @@ _TYPE_MAP: dict[str, str] = {
     "none": "",
     "bytes": "[]byte",
     "bytearray": "[]byte",
+    "list": "[]any",
+    "dict": "map[string]any",
+    "set": "map[any]struct{}",
+    "tuple": "[]any",
     "object": "any",
     "Obj": "any",
     "Any": "any",
+    "JsonVal": "any",
+    "Node": "map[string]any",
     "Callable": "any",
     "callable": "any",
+    "Exception": "string",
+    "BaseException": "string",
+    "RuntimeError": "string",
+    "ValueError": "string",
+    "TypeError": "string",
+    "IndexError": "string",
+    "KeyError": "string",
 }
 
 
 def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
-    if not resolved_type.startswith("callable[") or not resolved_type.endswith("]"):
+    if not (
+        (resolved_type.startswith("callable[") or resolved_type.startswith("Callable["))
+        and resolved_type.endswith("]")
+    ):
         return [], "unknown"
-    inner = resolved_type[len("callable["):-1].strip()
+    prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
+    inner = resolved_type[prefix_len:-1].strip()
     if inner == "":
         return [], "unknown"
     if inner.startswith("["):
@@ -73,7 +90,7 @@ def go_type(resolved_type: str) -> str:
     if resolved_type == "" or resolved_type == "unknown":
         return "any"
 
-    if resolved_type.startswith("callable[") and resolved_type.endswith("]"):
+    if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
         params, ret = _parse_callable_signature(resolved_type)
         param_gts = [go_type(param) for param in params]
         ret_gt = go_type(ret)
@@ -83,7 +100,7 @@ def go_type(resolved_type: str) -> str:
 
     # Direct mapping
     mapped = _TYPE_MAP.get(resolved_type, "")
-    if mapped != "":
+    if resolved_type in _TYPE_MAP:
         return mapped
 
     # list[T] → []T
@@ -111,7 +128,9 @@ def go_type(resolved_type: str) -> str:
     if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):
         inner = resolved_type[: -7] if resolved_type.endswith(" | None") else resolved_type[: -6]
         gt = go_type(inner)
-        if gt.startswith("*") or gt == "interface{}" or gt.startswith("[]") or gt.startswith("map[") or gt.startswith("func("):
+        if gt in ("any", "interface{}"):
+            return gt
+        if gt.startswith("*") or gt.startswith("[]") or gt.startswith("map[") or gt.startswith("func("):
             return gt
         return "*" + gt
 

@@ -37,12 +37,13 @@ Rust に変換するなら:
 2. [アーキテクチャ](./architecture.md) — パイプラインの全体像と各段の役割
 3. [Python 互換性ガイド](../spec/spec-python-compat.md) — Python との違い、使えない構文
 4. [エラーの見方](./troubleshooting.md) — 詰まったときに
+5. [Union 型と isinstance ナローイング](./union-and-narrowing.md) — 複数の型を扱う方法と型の自動絞り込み
 
 ここまで読めば普通に使えます。以下は必要に応じて:
 
-5. [発展的な使い方](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT 等
-6. [仕様書トップ](../spec/index.md) — 言語仕様の正本
-7. [開発運用ガイド](./dev-operations.md) — parity check, local CI（開発者向け）
+6. [発展的な使い方](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT 等
+7. [仕様書トップ](../spec/index.md) — 言語仕様の正本
+8. [開発運用ガイド](./dev-operations.md) — parity check, local CI（開発者向け）
 
 ## 関連リンク
 

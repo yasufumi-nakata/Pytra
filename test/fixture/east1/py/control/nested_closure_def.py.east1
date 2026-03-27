@@ -1,0 +1,616 @@
+{
+  "kind": "Module",
+  "source_path": "/workspace/Pytra/test/fixtures/control/nested_closure_def.py",
+  "source_span": {
+    "lineno": null,
+    "col": null,
+    "end_lineno": null,
+    "end_col": null
+  },
+  "body": [
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 1,
+        "col": 0,
+        "end_lineno": 14,
+        "end_col": 28
+      },
+      "name": "outer",
+      "original_name": "outer",
+      "arg_types": {
+        "seed": "int",
+        "bump": "int"
+      },
+      "arg_order": [
+        "seed",
+        "bump"
+      ],
+      "arg_defaults": {},
+      "arg_index": {
+        "seed": 0,
+        "bump": 1
+      },
+      "return_type": "int",
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 2,
+            "col": 4,
+            "end_lineno": 2,
+            "end_col": 17
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 2,
+              "col": 4,
+              "end_lineno": 2,
+              "end_col": 5
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x",
+            "id": "x"
+          },
+          "annotation": "int",
+          "value": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 2,
+              "col": 13,
+              "end_lineno": 2,
+              "end_col": 17
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "seed",
+            "id": "seed"
+          },
+          "declare": true
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 3,
+            "col": 4,
+            "end_lineno": 3,
+            "end_col": 18
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 3,
+              "col": 4,
+              "end_lineno": 3,
+              "end_col": 9
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "scale",
+            "id": "scale"
+          },
+          "annotation": "int",
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 3,
+              "col": 17,
+              "end_lineno": 3,
+              "end_col": 18
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "2",
+            "value": 2
+          },
+          "declare": true
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 5,
+            "col": 4,
+            "end_lineno": 6,
+            "end_col": 28
+          },
+          "name": "inner",
+          "original_name": "inner",
+          "arg_types": {
+            "y": "int"
+          },
+          "arg_order": [
+            "y"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "y": 0
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 6,
+                "col": 8,
+                "end_lineno": 6,
+                "end_col": 28
+              },
+              "value": {
+                "kind": "BinOp",
+                "source_span": {
+                  "lineno": 6,
+                  "col": 15,
+                  "end_lineno": 6,
+                  "end_col": 28
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "x + scale + y",
+                "left": {
+                  "kind": "BinOp",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 15,
+                    "end_lineno": 6,
+                    "end_col": 24
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "x + scale",
+                  "left": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 15,
+                      "end_lineno": 6,
+                      "end_col": 16
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "x",
+                    "id": "x"
+                  },
+                  "op": "Add",
+                  "right": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 6,
+                      "col": 19,
+                      "end_lineno": 6,
+                      "end_col": 24
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "scale",
+                    "id": "scale"
+                  }
+                },
+                "op": "Add",
+                "right": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 6,
+                    "col": 27,
+                    "end_lineno": 6,
+                    "end_col": 28
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "y",
+                  "id": "y"
+                }
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "leading_comments": [],
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "kind": "FunctionDef",
+          "source_span": {
+            "lineno": 8,
+            "col": 4,
+            "end_lineno": 11,
+            "end_col": 32
+          },
+          "name": "rec",
+          "original_name": "rec",
+          "arg_types": {
+            "n": "int"
+          },
+          "arg_order": [
+            "n"
+          ],
+          "arg_defaults": {},
+          "arg_index": {
+            "n": 0
+          },
+          "return_type": "int",
+          "renamed_symbols": {},
+          "docstring": null,
+          "body": [
+            {
+              "kind": "If",
+              "source_span": {
+                "lineno": 9,
+                "col": 8,
+                "end_lineno": 10,
+                "end_col": 20
+              },
+              "test": {
+                "kind": "Compare",
+                "source_span": {
+                  "lineno": 9,
+                  "col": 11,
+                  "end_lineno": 9,
+                  "end_col": 17
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "n <= 0",
+                "left": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 9,
+                    "col": 11,
+                    "end_lineno": 9,
+                    "end_col": 12
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "n",
+                  "id": "n"
+                },
+                "ops": [
+                  "LtE"
+                ],
+                "comparators": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 9,
+                      "col": 16,
+                      "end_lineno": 9,
+                      "end_col": 17
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  }
+                ]
+              },
+              "body": [
+                {
+                  "kind": "Return",
+                  "source_span": {
+                    "lineno": 10,
+                    "col": 12,
+                    "end_lineno": 10,
+                    "end_col": 20
+                  },
+                  "value": {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 10,
+                      "col": 19,
+                      "end_lineno": 10,
+                      "end_col": 20
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "0",
+                    "value": 0
+                  }
+                }
+              ],
+              "orelse": []
+            },
+            {
+              "kind": "Return",
+              "source_span": {
+                "lineno": 11,
+                "col": 8,
+                "end_lineno": 11,
+                "end_col": 32
+              },
+              "value": {
+                "kind": "BinOp",
+                "source_span": {
+                  "lineno": 11,
+                  "col": 15,
+                  "end_lineno": 11,
+                  "end_col": 32
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "rec(n - 1) + bump",
+                "left": {
+                  "kind": "Call",
+                  "source_span": {
+                    "lineno": 11,
+                    "col": 15,
+                    "end_lineno": 11,
+                    "end_col": 25
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "rec(n - 1)",
+                  "func": {
+                    "kind": "Name",
+                    "source_span": {
+                      "lineno": 11,
+                      "col": 15,
+                      "end_lineno": 11,
+                      "end_col": 18
+                    },
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "rec",
+                    "id": "rec"
+                  },
+                  "args": [
+                    {
+                      "kind": "BinOp",
+                      "source_span": {
+                        "lineno": 11,
+                        "col": 19,
+                        "end_lineno": 11,
+                        "end_col": 24
+                      },
+                      "casts": [],
+                      "borrow_kind": "value",
+                      "repr": "n - 1",
+                      "left": {
+                        "kind": "Name",
+                        "source_span": {
+                          "lineno": 11,
+                          "col": 19,
+                          "end_lineno": 11,
+                          "end_col": 20
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "n",
+                        "id": "n"
+                      },
+                      "op": "Sub",
+                      "right": {
+                        "kind": "Constant",
+                        "source_span": {
+                          "lineno": 11,
+                          "col": 23,
+                          "end_lineno": 11,
+                          "end_col": 24
+                        },
+                        "casts": [],
+                        "borrow_kind": "value",
+                        "repr": "1",
+                        "value": 1
+                      }
+                    }
+                  ],
+                  "keywords": []
+                },
+                "op": "Add",
+                "right": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 11,
+                    "col": 28,
+                    "end_lineno": 11,
+                    "end_col": 32
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "bump",
+                  "id": "bump"
+                }
+              }
+            }
+          ],
+          "is_generator": 0,
+          "yield_value_type": "unknown",
+          "leading_comments": [],
+          "leading_trivia": []
+        },
+        {
+          "kind": "Assign",
+          "source_span": {
+            "lineno": 13,
+            "col": 4,
+            "end_lineno": 13,
+            "end_col": 16
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 13,
+              "col": 4,
+              "end_lineno": 13,
+              "end_col": 5
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x",
+            "id": "x"
+          },
+          "value": {
+            "kind": "BinOp",
+            "source_span": {
+              "lineno": 13,
+              "col": 8,
+              "end_lineno": 13,
+              "end_col": 16
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x + bump",
+            "left": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 13,
+                "col": 8,
+                "end_lineno": 13,
+                "end_col": 9
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "x",
+              "id": "x"
+            },
+            "op": "Add",
+            "right": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 13,
+                "col": 12,
+                "end_lineno": 13,
+                "end_col": 16
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "bump",
+              "id": "bump"
+            }
+          },
+          "declare": true
+        },
+        {
+          "kind": "Return",
+          "source_span": {
+            "lineno": 14,
+            "col": 4,
+            "end_lineno": 14,
+            "end_col": 28
+          },
+          "value": {
+            "kind": "BinOp",
+            "source_span": {
+              "lineno": 14,
+              "col": 11,
+              "end_lineno": 14,
+              "end_col": 28
+            },
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "inner(3) + rec(2)",
+            "left": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 14,
+                "col": 11,
+                "end_lineno": 14,
+                "end_col": 19
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "inner(3)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 11,
+                  "end_lineno": 14,
+                  "end_col": 16
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "inner",
+                "id": "inner"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 14,
+                    "col": 17,
+                    "end_lineno": 14,
+                    "end_col": 18
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "3",
+                  "value": 3
+                }
+              ],
+              "keywords": []
+            },
+            "op": "Add",
+            "right": {
+              "kind": "Call",
+              "source_span": {
+                "lineno": 14,
+                "col": 22,
+                "end_lineno": 14,
+                "end_col": 28
+              },
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "rec(2)",
+              "func": {
+                "kind": "Name",
+                "source_span": {
+                  "lineno": 14,
+                  "col": 22,
+                  "end_lineno": 14,
+                  "end_col": 25
+                },
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "rec",
+                "id": "rec"
+              },
+              "args": [
+                {
+                  "kind": "Constant",
+                  "source_span": {
+                    "lineno": 14,
+                    "col": 26,
+                    "end_lineno": 14,
+                    "end_col": 27
+                  },
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "2",
+                  "value": 2
+                }
+              ],
+              "keywords": []
+            }
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "leading_comments": [],
+      "leading_trivia": []
+    }
+  ],
+  "main_guard_body": [],
+  "renamed_symbols": {},
+  "meta": {
+    "import_resolution": {
+      "bindings": [],
+      "qualified_refs": []
+    },
+    "import_bindings": [],
+    "qualified_symbol_refs": [],
+    "import_modules": {},
+    "import_symbols": {}
+  },
+  "east_stage": 1
+}

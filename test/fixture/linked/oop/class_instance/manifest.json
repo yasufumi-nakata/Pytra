@@ -39,8 +39,6 @@
       "class_instance.Box100": 8
     },
     "call_graph": {
-      "class_instance::Box100.__init__": [],
-      "class_instance::Box100.next": [],
       "class_instance::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -55,12 +53,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "class_instance::Box100.__init__"
-      ],
-      [
-        "class_instance::Box100.next"
-      ],
       [
         "pytra.utils.assertions::py_assert_stdout"
       ],

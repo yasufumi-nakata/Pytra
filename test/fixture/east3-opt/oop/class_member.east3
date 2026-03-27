@@ -94,7 +94,7 @@
           }
         },
         {
-          "kind": "FunctionDef",
+          "kind": "ClosureDef",
           "source_span": {
             "lineno": 10,
             "col_offset": 4,
@@ -136,7 +136,7 @@
                   "end_lineno": 11,
                   "end_col_offset": 21
                 },
-                "resolved_type": "unknown",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "Counter.value",
@@ -152,7 +152,8 @@
                   "casts": [],
                   "borrow_kind": "value",
                   "repr": "Counter",
-                  "id": "Counter"
+                  "id": "Counter",
+                  "type_object_of": "Counter"
                 },
                 "attr": "value"
               },
@@ -175,24 +176,9 @@
               },
               "type_expr_summary_v1": {
                 "schema_version": 1,
-                "kind": "DynamicType",
-                "category": "dynamic",
-                "mirror": "unknown",
-                "dynamic_name": "unknown"
-              },
-              "meta": {
-                "lifetime_node_id": "n1",
-                "lifetime_defs": [],
-                "lifetime_uses": [
-                  "Counter"
-                ],
-                "lifetime_live_in": [
-                  "Counter"
-                ],
-                "lifetime_live_out": [
-                  "Counter"
-                ],
-                "lifetime_last_use_vars": []
+                "kind": "NamedType",
+                "category": "static",
+                "mirror": "int64"
               }
             },
             {
@@ -204,169 +190,44 @@
                 "end_col_offset": 28
               },
               "value": {
-                "kind": "Unbox",
-                "resolved_type": "int64",
-                "borrow_kind": "value",
-                "casts": [],
-                "value": {
-                  "kind": "Attribute",
-                  "source_span": {
-                    "lineno": 12,
-                    "col_offset": 15,
-                    "end_lineno": 12,
-                    "end_col_offset": 28
-                  },
-                  "resolved_type": "unknown",
-                  "casts": [],
-                  "borrow_kind": "value",
-                  "repr": "Counter.value",
-                  "value": {
-                    "kind": "Name",
-                    "source_span": {
-                      "lineno": 12,
-                      "col_offset": 15,
-                      "end_lineno": 12,
-                      "end_col_offset": 22
-                    },
-                    "resolved_type": "type",
-                    "casts": [],
-                    "borrow_kind": "value",
-                    "repr": "Counter",
-                    "id": "Counter"
-                  },
-                  "attr": "value"
-                },
+                "kind": "Attribute",
                 "source_span": {
                   "lineno": 12,
                   "col_offset": 15,
                   "end_lineno": 12,
                   "end_col_offset": 28
                 },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
                 "repr": "Counter.value",
-                "type_expr_summary_v1": {
-                  "schema_version": 1,
-                  "kind": "NamedType",
-                  "category": "static",
-                  "mirror": "int64"
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 12,
+                    "col_offset": 15,
+                    "end_lineno": 12,
+                    "end_col_offset": 22
+                  },
+                  "resolved_type": "type",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "Counter",
+                  "id": "Counter",
+                  "type_object_of": "Counter"
                 },
-                "target": "int64",
-                "on_fail": "raise",
-                "bridge_lane_v1": {
-                  "schema_version": 1,
-                  "target": {
-                    "kind": "NamedType",
-                    "category": "static",
-                    "mirror": "int64"
-                  },
-                  "target_category": "static",
-                  "value": {
-                    "kind": "DynamicType",
-                    "category": "dynamic",
-                    "mirror": "unknown",
-                    "dynamic_name": "unknown"
-                  },
-                  "value_category": "dynamic"
-                }
-              },
-              "meta": {
-                "lifetime_node_id": "n0",
-                "lifetime_defs": [],
-                "lifetime_uses": [
-                  "Counter"
-                ],
-                "lifetime_live_in": [
-                  "Counter"
-                ],
-                "lifetime_live_out": [],
-                "lifetime_last_use_vars": [
-                  "Counter"
-                ]
+                "attr": "value"
               }
             }
           ],
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "captures": [],
+          "capture_types": {},
+          "capture_modes": {},
           "returns": "int64",
-          "mutates_self": false,
-          "meta": {
-            "lifetime_analysis": {
-              "schema_version": "east3_lifetime_v1",
-              "status": "ok",
-              "reason": "",
-              "entry_node": "n1",
-              "order": [
-                "n0",
-                "n1"
-              ],
-              "cfg": [
-                {
-                  "id": "n0",
-                  "kind": "Return",
-                  "defs": [],
-                  "uses": [
-                    "Counter"
-                  ],
-                  "succ": []
-                },
-                {
-                  "id": "n1",
-                  "kind": "AugAssign",
-                  "defs": [],
-                  "uses": [
-                    "Counter"
-                  ],
-                  "succ": [
-                    "n0"
-                  ]
-                }
-              ],
-              "def_use": {
-                "defs": {},
-                "uses": {
-                  "Counter": [
-                    "n0",
-                    "n1"
-                  ]
-                }
-              },
-              "variables": {
-                "Counter": {
-                  "def_nodes": [],
-                  "use_nodes": [
-                    "n0",
-                    "n1"
-                  ],
-                  "live_in_nodes": [
-                    "n0",
-                    "n1"
-                  ],
-                  "live_out_nodes": [
-                    "n1"
-                  ],
-                  "last_use_nodes": [
-                    "n0"
-                  ],
-                  "lifetime_class": "escape_or_unknown"
-                },
-                "self": {
-                  "def_nodes": [],
-                  "use_nodes": [],
-                  "live_in_nodes": [],
-                  "live_out_nodes": [],
-                  "last_use_nodes": [],
-                  "lifetime_class": "escape_or_unknown"
-                }
-              },
-              "arg_order": [
-                "self"
-              ],
-              "arg_escape": [
-                true
-              ],
-              "has_dynamic_name_access": false
-            }
-          }
+          "mutates_self": false
         }
       ],
       "class_storage_hint": "value",
@@ -1063,19 +924,55 @@
                 }
               },
               {
-                "kind": "Name",
+                "kind": "Box",
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 22,
+                    "col_offset": 34,
+                    "end_lineno": 22,
+                    "end_col_offset": 44
+                  },
+                  "resolved_type": "Callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "_case_main",
+                  "id": "_case_main",
+                  "call_arg_type": "object"
+                },
                 "source_span": {
                   "lineno": 22,
                   "col_offset": 34,
                   "end_lineno": 22,
                   "end_col_offset": 44
                 },
-                "resolved_type": "callable[[],None]",
-                "casts": [],
-                "borrow_kind": "value",
                 "repr": "_case_main",
-                "id": "_case_main",
-                "call_arg_type": "object"
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "object",
+                  "dynamic_name": "object"
+                },
+                "bridge_lane_v1": {
+                  "schema_version": 1,
+                  "target": {
+                    "kind": "DynamicType",
+                    "category": "dynamic",
+                    "mirror": "object",
+                    "dynamic_name": "object"
+                  },
+                  "target_category": "dynamic",
+                  "value": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "Callable"
+                  },
+                  "value_category": "static"
+                }
               }
             ],
             "keywords": [],
@@ -1162,7 +1059,17 @@
         "local_name": "py_assert_stdout",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/oop/class_member.py",
-        "source_line": 6
+        "source_line": 6,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_stdout",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_stdout",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
       },
       {
         "module_id": "pytra.built_in.io_ops",
@@ -1170,7 +1077,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/oop/class_member.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [

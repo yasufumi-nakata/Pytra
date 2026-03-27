@@ -36,7 +36,7 @@
       },
       "body": [
         {
-          "kind": "FunctionDef",
+          "kind": "ClosureDef",
           "source_span": {
             "lineno": 12,
             "col_offset": 4,
@@ -60,7 +60,7 @@
           },
           "return_type": "None",
           "arg_usage": {
-            "self": "readonly",
+            "self": "reassigned",
             "name": "readonly"
           },
           "renamed_symbols": {},
@@ -124,94 +124,20 @@
                 "kind": "NamedType",
                 "category": "static",
                 "mirror": "str"
-              },
-              "meta": {
-                "lifetime_node_id": "n0",
-                "lifetime_defs": [],
-                "lifetime_uses": [
-                  "name"
-                ],
-                "lifetime_live_in": [
-                  "name"
-                ],
-                "lifetime_live_out": [],
-                "lifetime_last_use_vars": [
-                  "name"
-                ]
               }
             }
           ],
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "captures": [],
+          "capture_types": {},
+          "capture_modes": {},
           "returns": "None",
-          "mutates_self": true,
-          "meta": {
-            "lifetime_analysis": {
-              "schema_version": "east3_lifetime_v1",
-              "status": "ok",
-              "reason": "",
-              "entry_node": "n0",
-              "order": [
-                "n0"
-              ],
-              "cfg": [
-                {
-                  "id": "n0",
-                  "kind": "Assign",
-                  "defs": [],
-                  "uses": [
-                    "name"
-                  ],
-                  "succ": []
-                }
-              ],
-              "def_use": {
-                "defs": {},
-                "uses": {
-                  "name": [
-                    "n0"
-                  ]
-                }
-              },
-              "variables": {
-                "name": {
-                  "def_nodes": [],
-                  "use_nodes": [
-                    "n0"
-                  ],
-                  "live_in_nodes": [
-                    "n0"
-                  ],
-                  "live_out_nodes": [],
-                  "last_use_nodes": [
-                    "n0"
-                  ],
-                  "lifetime_class": "escape_or_unknown"
-                },
-                "self": {
-                  "def_nodes": [],
-                  "use_nodes": [],
-                  "live_in_nodes": [],
-                  "live_out_nodes": [],
-                  "last_use_nodes": [],
-                  "lifetime_class": "escape_or_unknown"
-                }
-              },
-              "arg_order": [
-                "self",
-                "name"
-              ],
-              "arg_escape": [
-                true,
-                true
-              ],
-              "has_dynamic_name_access": false
-            }
-          }
+          "mutates_self": true
         },
         {
-          "kind": "FunctionDef",
+          "kind": "ClosureDef",
           "source_span": {
             "lineno": 15,
             "col_offset": 4,
@@ -329,102 +255,17 @@
                   "category": "static",
                   "mirror": "None"
                 }
-              },
-              "meta": {
-                "lifetime_node_id": "n0",
-                "lifetime_defs": [],
-                "lifetime_uses": [
-                  "print",
-                  "self"
-                ],
-                "lifetime_live_in": [
-                  "print",
-                  "self"
-                ],
-                "lifetime_live_out": [],
-                "lifetime_last_use_vars": [
-                  "print",
-                  "self"
-                ]
               }
             }
           ],
           "is_generator": 0,
           "yield_value_type": "unknown",
           "decorators": [],
+          "captures": [],
+          "capture_types": {},
+          "capture_modes": {},
           "returns": "None",
-          "mutates_self": true,
-          "meta": {
-            "lifetime_analysis": {
-              "schema_version": "east3_lifetime_v1",
-              "status": "ok",
-              "reason": "",
-              "entry_node": "n0",
-              "order": [
-                "n0"
-              ],
-              "cfg": [
-                {
-                  "id": "n0",
-                  "kind": "Expr",
-                  "defs": [],
-                  "uses": [
-                    "print",
-                    "self"
-                  ],
-                  "succ": []
-                }
-              ],
-              "def_use": {
-                "defs": {},
-                "uses": {
-                  "print": [
-                    "n0"
-                  ],
-                  "self": [
-                    "n0"
-                  ]
-                }
-              },
-              "variables": {
-                "print": {
-                  "def_nodes": [],
-                  "use_nodes": [
-                    "n0"
-                  ],
-                  "live_in_nodes": [
-                    "n0"
-                  ],
-                  "live_out_nodes": [],
-                  "last_use_nodes": [
-                    "n0"
-                  ],
-                  "lifetime_class": "local_non_escape_candidate"
-                },
-                "self": {
-                  "def_nodes": [],
-                  "use_nodes": [
-                    "n0"
-                  ],
-                  "live_in_nodes": [
-                    "n0"
-                  ],
-                  "live_out_nodes": [],
-                  "last_use_nodes": [
-                    "n0"
-                  ],
-                  "lifetime_class": "escape_or_unknown"
-                }
-              },
-              "arg_order": [
-                "self"
-              ],
-              "arg_escape": [
-                true
-              ],
-              "has_dynamic_name_access": false
-            }
-          }
+          "mutates_self": true
         }
       ],
       "class_storage_hint": "ref",
@@ -1399,19 +1240,55 @@
                 }
               },
               {
-                "kind": "Name",
+                "kind": "Box",
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 31,
+                    "col_offset": 84,
+                    "end_lineno": 31,
+                    "end_col_offset": 94
+                  },
+                  "resolved_type": "Callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "_case_main",
+                  "id": "_case_main",
+                  "call_arg_type": "object"
+                },
                 "source_span": {
                   "lineno": 31,
                   "col_offset": 84,
                   "end_lineno": 31,
                   "end_col_offset": 94
                 },
-                "resolved_type": "callable[[],None]",
-                "casts": [],
-                "borrow_kind": "value",
                 "repr": "_case_main",
-                "id": "_case_main",
-                "call_arg_type": "object"
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "object",
+                  "dynamic_name": "object"
+                },
+                "bridge_lane_v1": {
+                  "schema_version": 1,
+                  "target": {
+                    "kind": "DynamicType",
+                    "category": "dynamic",
+                    "mirror": "object",
+                    "dynamic_name": "object"
+                  },
+                  "target_category": "dynamic",
+                  "value": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "Callable"
+                  },
+                  "value_category": "static"
+                }
               }
             ],
             "keywords": [],
@@ -1498,7 +1375,17 @@
         "local_name": "py_assert_stdout",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/oop/gc_reassign.py",
-        "source_line": 10
+        "source_line": 10,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_stdout",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_stdout",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
       },
       {
         "module_id": "pytra.built_in.io_ops",
@@ -1506,7 +1393,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/oop/gc_reassign.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [

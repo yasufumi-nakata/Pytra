@@ -10,7 +10,7 @@
       "module_id": "isinstance_narrowing",
       "input": "/workspace/Pytra/test/fixture/east3-opt/typing/isinstance_narrowing.east3",
       "output": "east3/isinstance_narrowing.east3.json",
-      "source_path": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+      "source_path": "test/fixture/source/py/typing/isinstance_narrowing.py",
       "is_entry": true,
       "module_kind": "user"
     },

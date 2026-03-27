@@ -15,10 +15,34 @@
       "module_kind": "user"
     },
     {
+      "module_id": "pytra.built_in.contains",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/contains.east",
+      "output": "east3/pytra/built_in/contains.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/contains.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
       "module_id": "pytra.built_in.io_ops",
       "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
       "output": "east3/pytra/built_in/io_ops.east3.json",
       "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "pytra.built_in.scalar_ops",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/scalar_ops.east",
+      "output": "east3/pytra/built_in/scalar_ops.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/scalar_ops.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "pytra.built_in.sequence",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/sequence.east",
+      "output": "east3/pytra/built_in/sequence.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/sequence.py",
       "is_entry": false,
       "module_kind": "runtime"
     },
@@ -42,7 +66,16 @@
         "pytra.utils.assertions::py_assert_all",
         "pytra.utils.assertions::py_assert_eq"
       ],
+      "pytra.built_in.contains::py_contains_dict_object": [],
+      "pytra.built_in.contains::py_contains_list_object": [],
+      "pytra.built_in.contains::py_contains_set_object": [],
+      "pytra.built_in.contains::py_contains_str_object": [],
       "pytra.built_in.io_ops::py_print": [],
+      "pytra.built_in.scalar_ops::py_chr": [],
+      "pytra.built_in.scalar_ops::py_ord": [],
+      "pytra.built_in.scalar_ops::py_to_int64_base": [],
+      "pytra.built_in.sequence::py_range": [],
+      "pytra.built_in.sequence::py_repeat": [],
       "pytra.utils.assertions::_eq_any": [],
       "pytra.utils.assertions::py_assert_all": [],
       "pytra.utils.assertions::py_assert_eq": [
@@ -68,7 +101,34 @@
         "comprehension_dict_set::__main__"
       ],
       [
+        "pytra.built_in.contains::py_contains_dict_object"
+      ],
+      [
+        "pytra.built_in.contains::py_contains_list_object"
+      ],
+      [
+        "pytra.built_in.contains::py_contains_set_object"
+      ],
+      [
+        "pytra.built_in.contains::py_contains_str_object"
+      ],
+      [
         "pytra.built_in.io_ops::py_print"
+      ],
+      [
+        "pytra.built_in.scalar_ops::py_chr"
+      ],
+      [
+        "pytra.built_in.scalar_ops::py_ord"
+      ],
+      [
+        "pytra.built_in.scalar_ops::py_to_int64_base"
+      ],
+      [
+        "pytra.built_in.sequence::py_range"
+      ],
+      [
+        "pytra.built_in.sequence::py_repeat"
       ],
       [
         "pytra.utils.assertions::py_assert_stdout"

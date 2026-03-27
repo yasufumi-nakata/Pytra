@@ -10,6 +10,7 @@ MODULE: str = "Module"
 
 # --- definitions ---
 FUNCTION_DEF: str = "FunctionDef"
+CLOSURE_DEF: str = "ClosureDef"
 CLASS_DEF: str = "ClassDef"
 VAR_DECL: str = "VarDecl"
 

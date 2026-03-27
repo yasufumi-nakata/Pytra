@@ -38,13 +38,37 @@
 - 継承は木または森（forest）とみなし、循環は禁止。
 - 同一基底配下では後述の `type_id` 範囲が親子関係を完全に表現する。
 
-### 4.2 `isinstance` と trait 判定を分離する
+### 4.2 POD 型とクラス型の `isinstance` 判定の分離
 
-- `isinstance(x, T)` は名目的型関係（継承）だけで判定する。
+`isinstance` の判定方式は、対象の型カテゴリによって 2 系統に分かれる。
+
+| カテゴリ | 対象型 | 判定方式 | 継承考慮 |
+|---|---|---|---|
+| POD 型 | `int8`, `uint8`, `int16`, `uint16`, `int32`, `uint32`, `int64`, `uint64`, `float32`, `float64`, `bool` | exact type match | なし |
+| クラス型 | ユーザー定義クラス、nominal ADT variant | `type_id` 区間判定 | あり（単一継承チェーン走査） |
+
+POD 型の規則:
+
+- POD 型は相互に継承関係を持たない。値域の包含関係（`int8` ⊂ `int16` 等）は部分型関係として扱わない。
+- `isinstance(x: int16, int8)` → `False`（別の型）
+- `isinstance(x: int16, int16)` → `True`（同一型）
+- `isinstance(x: int8, int16)` → `False`（値域が含まれていても型が異なる）
+- POD 型はトランスパイル先で値型（C++ の `int16_t`、Go の `int16` 等）に直接マッピングされ、`type_id` を持たない。
+- 整数型間の変換は `isinstance` ではなく、EAST2 の cast 挿入（`numeric_promotion`）で処理する。
+
+クラス型の規則:
+
+- クラス型は `type_id` を持ち、§8 の区間判定アルゴリズムに従う。
+- `isinstance(x: Dog, Animal)` → `True`（Dog が Animal を継承していれば）
+- 継承チェーンの走査は `type_id_min/max` による O(1) 区間比較で実現する。
+
+### 4.3 `isinstance` と trait 判定を分離する
+
+- `isinstance(x, T)` は名目的型関係（POD は exact match、クラスは継承）だけで判定する。
 - `iterable` / `truthy` / `len` / `str` などは trait/protocol slot で判定する。
 - trait を継承判定に混ぜない（実装破綻防止）。
 
-### 4.3 文字列名に依存しない
+### 4.4 文字列名に依存しない
 
 - 型判定に `constructor.name` や RTTI 名文字列を使わない。
 - minify の影響を受ける文字列比較は禁止。
@@ -177,6 +201,8 @@ EAST3 連携規約:
 4. 範囲判定同値性: `child.type_id` が `parent.type_id_min <= child <= parent.type_id_max` を満たす。
 5. JS/TS minify 想定: 型名変更後も `type_id` 判定結果が不変。
 6. trait 分離: `iterable` 実装の有無が `isinstance` 結果に影響しない。
+7. POD exact match: `isinstance(x: int16, int8)` が偽、`isinstance(x: int16, int16)` が真。
+8. POD 非部分型: `isinstance(x: int8, int16)` が偽（値域包含≠型同一性）。
 
 ## 13. 段階導入
 

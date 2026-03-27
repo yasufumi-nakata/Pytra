@@ -1,0 +1,3784 @@
+{
+  "kind": "Module",
+  "source_path": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_pod_exact.py",
+  "body": [
+    {
+      "kind": "ImportFrom",
+      "source_span": {
+        "lineno": 5,
+        "col_offset": 0,
+        "end_lineno": 5,
+        "end_col_offset": 51
+      },
+      "module": "pytra.utils.assertions",
+      "names": [
+        {
+          "name": "py_assert_stdout",
+          "asname": null
+        }
+      ],
+      "level": 0
+    },
+    {
+      "kind": "FunctionDef",
+      "source_span": {
+        "lineno": 8,
+        "col_offset": 0,
+        "end_lineno": 32,
+        "end_col_offset": 35
+      },
+      "name": "_case_main",
+      "original_name": "_case_main",
+      "arg_types": {},
+      "arg_order": [],
+      "arg_defaults": {},
+      "arg_index": {},
+      "return_type": "None",
+      "arg_usage": {},
+      "renamed_symbols": {},
+      "docstring": null,
+      "body": [
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 9,
+            "col_offset": 4,
+            "end_lineno": 9,
+            "end_col_offset": 18
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 9,
+              "col_offset": 4,
+              "end_lineno": 9,
+              "end_col_offset": 7
+            },
+            "resolved_type": "int16",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x16",
+            "id": "x16",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int16"
+            }
+          },
+          "annotation": "int16",
+          "declare": true,
+          "decl_type": "int16",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int16"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int16"
+          },
+          "value": {
+            "kind": "Call",
+            "func": {
+              "kind": "Name",
+              "id": "int",
+              "resolved_type": "callable",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "int"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 9,
+                  "col_offset": 5,
+                  "end_lineno": 9,
+                  "end_col_offset": 6
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              }
+            ],
+            "keywords": [],
+            "resolved_type": "int16",
+            "borrow_kind": "value",
+            "casts": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "int",
+            "runtime_call": "static_cast",
+            "source_span": {
+              "lineno": 9,
+              "col_offset": 5,
+              "end_lineno": 9,
+              "end_col_offset": 6
+            },
+            "repr": "1",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "int16"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "int16"
+          },
+          "meta": {
+            "lifetime_node_id": "n17",
+            "lifetime_defs": [
+              "x16"
+            ],
+            "lifetime_uses": [
+              "int"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 10,
+            "col_offset": 4,
+            "end_lineno": 10,
+            "end_col_offset": 16
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 4,
+              "end_lineno": 10,
+              "end_col_offset": 6
+            },
+            "resolved_type": "int8",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x8",
+            "id": "x8",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int8"
+            }
+          },
+          "annotation": "int8",
+          "declare": true,
+          "decl_type": "int8",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int8"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int8"
+          },
+          "value": {
+            "kind": "Call",
+            "func": {
+              "kind": "Name",
+              "id": "int",
+              "resolved_type": "callable",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "int"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 10,
+                  "col_offset": 15,
+                  "end_lineno": 10,
+                  "end_col_offset": 16
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              }
+            ],
+            "keywords": [],
+            "resolved_type": "int8",
+            "borrow_kind": "value",
+            "casts": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "int",
+            "runtime_call": "static_cast",
+            "source_span": {
+              "lineno": 10,
+              "col_offset": 15,
+              "end_lineno": 10,
+              "end_col_offset": 16
+            },
+            "repr": "1",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "int8"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "int8"
+          },
+          "meta": {
+            "lifetime_node_id": "n16",
+            "lifetime_defs": [
+              "x8"
+            ],
+            "lifetime_uses": [
+              "int"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x8"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 11,
+            "col_offset": 4,
+            "end_lineno": 11,
+            "end_col_offset": 18
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 11,
+              "col_offset": 4,
+              "end_lineno": 11,
+              "end_col_offset": 7
+            },
+            "resolved_type": "int32",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x32",
+            "id": "x32",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int32"
+            }
+          },
+          "annotation": "int32",
+          "declare": true,
+          "decl_type": "int32",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int32"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int32"
+          },
+          "value": {
+            "kind": "Call",
+            "func": {
+              "kind": "Name",
+              "id": "int",
+              "resolved_type": "callable",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "int"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 11,
+                  "col_offset": 17,
+                  "end_lineno": 11,
+                  "end_col_offset": 18
+                },
+                "resolved_type": "int64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1",
+                "value": 1
+              }
+            ],
+            "keywords": [],
+            "resolved_type": "int32",
+            "borrow_kind": "value",
+            "casts": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "int",
+            "runtime_call": "static_cast",
+            "source_span": {
+              "lineno": 11,
+              "col_offset": 17,
+              "end_lineno": 11,
+              "end_col_offset": 18
+            },
+            "repr": "1",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "int32"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "int32"
+          },
+          "meta": {
+            "lifetime_node_id": "n15",
+            "lifetime_defs": [
+              "x32"
+            ],
+            "lifetime_uses": [
+              "int"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x8"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x8"
+            ],
+            "lifetime_last_use_vars": [
+              "int"
+            ]
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 12,
+            "col_offset": 4,
+            "end_lineno": 12,
+            "end_col_offset": 18
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 12,
+              "col_offset": 4,
+              "end_lineno": 12,
+              "end_col_offset": 7
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "x64",
+            "id": "x64",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "int64"
+            }
+          },
+          "annotation": "int64",
+          "declare": true,
+          "decl_type": "int64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "int64"
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 12,
+              "col_offset": 17,
+              "end_lineno": 12,
+              "end_col_offset": 18
+            },
+            "resolved_type": "int64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "1",
+            "value": 1
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "int64"
+          },
+          "meta": {
+            "lifetime_node_id": "n14",
+            "lifetime_defs": [
+              "x64"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x8"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x64",
+              "x8"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 15,
+            "col_offset": 4,
+            "end_lineno": 15,
+            "end_col_offset": 33
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 15,
+              "col_offset": 4,
+              "end_lineno": 15,
+              "end_col_offset": 33
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(x16, int16))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 15,
+                "col_offset": 4,
+                "end_lineno": 15,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 15,
+                    "col_offset": 21,
+                    "end_lineno": 15,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "int16",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "x16",
+                  "id": "x16",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "int16",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "int16",
+                  "source_span": {
+                    "lineno": 15,
+                    "col_offset": 26,
+                    "end_lineno": 15,
+                    "end_col_offset": 31
+                  }
+                },
+                "source_span": {
+                  "lineno": 15,
+                  "col_offset": 10,
+                  "end_lineno": 15,
+                  "end_col_offset": 32
+                },
+                "repr": "isinstance(x16, int16)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int16"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "int16"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "comment",
+              "text": "exact match: True"
+            }
+          ],
+          "leading_comments": [
+            "exact match: True"
+          ],
+          "meta": {
+            "lifetime_node_id": "n13",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "int16",
+              "print",
+              "x16"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x64",
+              "x8"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x64",
+              "x8"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 16,
+            "col_offset": 4,
+            "end_lineno": 16,
+            "end_col_offset": 31
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 16,
+              "col_offset": 4,
+              "end_lineno": 16,
+              "end_col_offset": 31
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(x8, int8))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 16,
+                "col_offset": 4,
+                "end_lineno": 16,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 16,
+                    "col_offset": 21,
+                    "end_lineno": 16,
+                    "end_col_offset": 23
+                  },
+                  "resolved_type": "int8",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "x8",
+                  "id": "x8",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "int8",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "int8",
+                  "source_span": {
+                    "lineno": 16,
+                    "col_offset": 25,
+                    "end_lineno": 16,
+                    "end_col_offset": 29
+                  }
+                },
+                "source_span": {
+                  "lineno": 16,
+                  "col_offset": 10,
+                  "end_lineno": 16,
+                  "end_col_offset": 30
+                },
+                "repr": "isinstance(x8, int8)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int8"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "int8"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n12",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "int8",
+              "print",
+              "x8"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x64",
+              "x8"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x64",
+              "x8"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 17,
+            "col_offset": 4,
+            "end_lineno": 17,
+            "end_col_offset": 33
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 17,
+              "col_offset": 4,
+              "end_lineno": 17,
+              "end_col_offset": 33
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(x32, int32))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 17,
+                "col_offset": 4,
+                "end_lineno": 17,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 17,
+                    "col_offset": 21,
+                    "end_lineno": 17,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "int32",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "x32",
+                  "id": "x32",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "int32",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "int32",
+                  "source_span": {
+                    "lineno": 17,
+                    "col_offset": 26,
+                    "end_lineno": 17,
+                    "end_col_offset": 31
+                  }
+                },
+                "source_span": {
+                  "lineno": 17,
+                  "col_offset": 10,
+                  "end_lineno": 17,
+                  "end_col_offset": 32
+                },
+                "repr": "isinstance(x32, int32)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int32"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "int32"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n11",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "int32",
+              "print",
+              "x32"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x64",
+              "x8"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x64",
+              "x8"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 18,
+            "col_offset": 4,
+            "end_lineno": 18,
+            "end_col_offset": 33
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 18,
+              "col_offset": 4,
+              "end_lineno": 18,
+              "end_col_offset": 33
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(x64, int64))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 18,
+                "col_offset": 4,
+                "end_lineno": 18,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 18,
+                    "col_offset": 21,
+                    "end_lineno": 18,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "x64",
+                  "id": "x64",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "int64",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "int64",
+                  "source_span": {
+                    "lineno": 18,
+                    "col_offset": 26,
+                    "end_lineno": 18,
+                    "end_col_offset": 31
+                  }
+                },
+                "source_span": {
+                  "lineno": 18,
+                  "col_offset": 10,
+                  "end_lineno": 18,
+                  "end_col_offset": 32
+                },
+                "repr": "isinstance(x64, int64)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int64"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "int64"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n10",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "int64",
+              "print",
+              "x64"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int64",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x64",
+              "x8"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x8"
+            ],
+            "lifetime_last_use_vars": [
+              "int64",
+              "x64"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 21,
+            "col_offset": 4,
+            "end_lineno": 21,
+            "end_col_offset": 32
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 21,
+              "col_offset": 4,
+              "end_lineno": 21,
+              "end_col_offset": 32
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(x16, int8))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 21,
+                "col_offset": 4,
+                "end_lineno": 21,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 21,
+                    "col_offset": 21,
+                    "end_lineno": 21,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "int16",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "x16",
+                  "id": "x16",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "int8",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "int8",
+                  "source_span": {
+                    "lineno": 21,
+                    "col_offset": 26,
+                    "end_lineno": 21,
+                    "end_col_offset": 30
+                  }
+                },
+                "source_span": {
+                  "lineno": 21,
+                  "col_offset": 10,
+                  "end_lineno": 21,
+                  "end_col_offset": 31
+                },
+                "repr": "isinstance(x16, int8)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int16"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "int16"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "comment",
+              "text": "different integer types: False (no subtype hierarchy)"
+            }
+          ],
+          "leading_comments": [
+            "different integer types: False (no subtype hierarchy)"
+          ],
+          "meta": {
+            "lifetime_node_id": "n9",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "int8",
+              "print",
+              "x16"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "int8",
+              "print",
+              "x16",
+              "x32",
+              "x8"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "print",
+              "x16",
+              "x32",
+              "x8"
+            ],
+            "lifetime_last_use_vars": [
+              "int8"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 22,
+            "col_offset": 4,
+            "end_lineno": 22,
+            "end_col_offset": 32
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 22,
+              "col_offset": 4,
+              "end_lineno": 22,
+              "end_col_offset": 32
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(x8, int16))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 22,
+                "col_offset": 4,
+                "end_lineno": 22,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 22,
+                    "col_offset": 21,
+                    "end_lineno": 22,
+                    "end_col_offset": 23
+                  },
+                  "resolved_type": "int8",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "x8",
+                  "id": "x8",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "int16",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "int16",
+                  "source_span": {
+                    "lineno": 22,
+                    "col_offset": 25,
+                    "end_lineno": 22,
+                    "end_col_offset": 30
+                  }
+                },
+                "source_span": {
+                  "lineno": 22,
+                  "col_offset": 10,
+                  "end_lineno": 22,
+                  "end_col_offset": 31
+                },
+                "repr": "isinstance(x8, int16)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int8"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "int8"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n8",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "int16",
+              "print",
+              "x8"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "print",
+              "x16",
+              "x32",
+              "x8"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "print",
+              "x16",
+              "x32"
+            ],
+            "lifetime_last_use_vars": [
+              "x8"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 23,
+            "col_offset": 4,
+            "end_lineno": 23,
+            "end_col_offset": 33
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 23,
+              "col_offset": 4,
+              "end_lineno": 23,
+              "end_col_offset": 33
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(x16, int32))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 23,
+                "col_offset": 4,
+                "end_lineno": 23,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 23,
+                    "col_offset": 21,
+                    "end_lineno": 23,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "int16",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "x16",
+                  "id": "x16",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "int32",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "int32",
+                  "source_span": {
+                    "lineno": 23,
+                    "col_offset": 26,
+                    "end_lineno": 23,
+                    "end_col_offset": 31
+                  }
+                },
+                "source_span": {
+                  "lineno": 23,
+                  "col_offset": 10,
+                  "end_lineno": 23,
+                  "end_col_offset": 32
+                },
+                "repr": "isinstance(x16, int32)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int16"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "int16"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n7",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "int32",
+              "print",
+              "x16"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "int32",
+              "print",
+              "x16",
+              "x32"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "print",
+              "x32"
+            ],
+            "lifetime_last_use_vars": [
+              "int32",
+              "x16"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 24,
+            "col_offset": 4,
+            "end_lineno": 24,
+            "end_col_offset": 33
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 24,
+              "col_offset": 4,
+              "end_lineno": 24,
+              "end_col_offset": 33
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(x32, int16))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 24,
+                "col_offset": 4,
+                "end_lineno": 24,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 24,
+                    "col_offset": 21,
+                    "end_lineno": 24,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "int32",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "x32",
+                  "id": "x32",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "int16",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "int16",
+                  "source_span": {
+                    "lineno": 24,
+                    "col_offset": 26,
+                    "end_lineno": 24,
+                    "end_col_offset": 31
+                  }
+                },
+                "source_span": {
+                  "lineno": 24,
+                  "col_offset": 10,
+                  "end_lineno": 24,
+                  "end_col_offset": 32
+                },
+                "repr": "isinstance(x32, int16)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "int32"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "int32"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n6",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "int16",
+              "print",
+              "x32"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "int16",
+              "print",
+              "x32"
+            ],
+            "lifetime_live_out": [
+              "float",
+              "float32",
+              "float64",
+              "print"
+            ],
+            "lifetime_last_use_vars": [
+              "int16",
+              "x32"
+            ]
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 27,
+            "col_offset": 4,
+            "end_lineno": 27,
+            "end_col_offset": 22
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 27,
+              "col_offset": 4,
+              "end_lineno": 27,
+              "end_col_offset": 7
+            },
+            "resolved_type": "float32",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "f32",
+            "id": "f32",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "float32"
+            }
+          },
+          "annotation": "float32",
+          "declare": true,
+          "decl_type": "float32",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "float32"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "float32"
+          },
+          "leading_trivia": [
+            {
+              "kind": "blank",
+              "count": 1
+            },
+            {
+              "kind": "comment",
+              "text": "float types: exact match only"
+            }
+          ],
+          "leading_comments": [
+            "float types: exact match only"
+          ],
+          "value": {
+            "kind": "Call",
+            "func": {
+              "kind": "Name",
+              "id": "float",
+              "resolved_type": "callable",
+              "borrow_kind": "value",
+              "casts": [],
+              "repr": "float"
+            },
+            "args": [
+              {
+                "kind": "Constant",
+                "source_span": {
+                  "lineno": 27,
+                  "col_offset": 19,
+                  "end_lineno": 27,
+                  "end_col_offset": 22
+                },
+                "resolved_type": "float64",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "1.0",
+                "value": 1.0
+              }
+            ],
+            "keywords": [],
+            "resolved_type": "float32",
+            "borrow_kind": "value",
+            "casts": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "float",
+            "runtime_call": "static_cast",
+            "source_span": {
+              "lineno": 27,
+              "col_offset": 19,
+              "end_lineno": 27,
+              "end_col_offset": 22
+            },
+            "repr": "1.0",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "float32"
+            }
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "float32"
+          },
+          "meta": {
+            "lifetime_node_id": "n5",
+            "lifetime_defs": [
+              "f32"
+            ],
+            "lifetime_uses": [
+              "float"
+            ],
+            "lifetime_live_in": [
+              "float",
+              "float32",
+              "float64",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "f32",
+              "float32",
+              "float64",
+              "print"
+            ],
+            "lifetime_last_use_vars": [
+              "float"
+            ]
+          }
+        },
+        {
+          "kind": "AnnAssign",
+          "source_span": {
+            "lineno": 28,
+            "col_offset": 4,
+            "end_lineno": 28,
+            "end_col_offset": 22
+          },
+          "target": {
+            "kind": "Name",
+            "source_span": {
+              "lineno": 28,
+              "col_offset": 4,
+              "end_lineno": 28,
+              "end_col_offset": 7
+            },
+            "resolved_type": "float64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "f64",
+            "id": "f64",
+            "type_expr": {
+              "kind": "NamedType",
+              "name": "float64"
+            }
+          },
+          "annotation": "float64",
+          "declare": true,
+          "decl_type": "float64",
+          "annotation_type_expr": {
+            "kind": "NamedType",
+            "name": "float64"
+          },
+          "decl_type_expr": {
+            "kind": "NamedType",
+            "name": "float64"
+          },
+          "value": {
+            "kind": "Constant",
+            "source_span": {
+              "lineno": 28,
+              "col_offset": 19,
+              "end_lineno": 28,
+              "end_col_offset": 22
+            },
+            "resolved_type": "float64",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "1.0",
+            "value": 1.0
+          },
+          "type_expr_summary_v1": {
+            "schema_version": 1,
+            "kind": "NamedType",
+            "category": "static",
+            "mirror": "float64"
+          },
+          "meta": {
+            "lifetime_node_id": "n4",
+            "lifetime_defs": [
+              "f64"
+            ],
+            "lifetime_uses": [],
+            "lifetime_live_in": [
+              "f32",
+              "float32",
+              "float64",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "f32",
+              "f64",
+              "float32",
+              "float64",
+              "print"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 29,
+            "col_offset": 4,
+            "end_lineno": 29,
+            "end_col_offset": 35
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 29,
+              "col_offset": 4,
+              "end_lineno": 29,
+              "end_col_offset": 35
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(f64, float64))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 29,
+                "col_offset": 4,
+                "end_lineno": 29,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 29,
+                    "col_offset": 21,
+                    "end_lineno": 29,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "float64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "f64",
+                  "id": "f64",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "float64",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "float64",
+                  "source_span": {
+                    "lineno": 29,
+                    "col_offset": 26,
+                    "end_lineno": 29,
+                    "end_col_offset": 33
+                  }
+                },
+                "source_span": {
+                  "lineno": 29,
+                  "col_offset": 10,
+                  "end_lineno": 29,
+                  "end_col_offset": 34
+                },
+                "repr": "isinstance(f64, float64)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "float64"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "float64"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n3",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "f64",
+              "float64",
+              "print"
+            ],
+            "lifetime_live_in": [
+              "f32",
+              "f64",
+              "float32",
+              "float64",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "f32",
+              "f64",
+              "float32",
+              "float64",
+              "print"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 30,
+            "col_offset": 4,
+            "end_lineno": 30,
+            "end_col_offset": 35
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 30,
+              "col_offset": 4,
+              "end_lineno": 30,
+              "end_col_offset": 35
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(f32, float32))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 30,
+                "col_offset": 4,
+                "end_lineno": 30,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 30,
+                    "col_offset": 21,
+                    "end_lineno": 30,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "float32",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "f32",
+                  "id": "f32",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "float32",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "float32",
+                  "source_span": {
+                    "lineno": 30,
+                    "col_offset": 26,
+                    "end_lineno": 30,
+                    "end_col_offset": 33
+                  }
+                },
+                "source_span": {
+                  "lineno": 30,
+                  "col_offset": 10,
+                  "end_lineno": 30,
+                  "end_col_offset": 34
+                },
+                "repr": "isinstance(f32, float32)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "float32"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "float32"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n2",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "f32",
+              "float32",
+              "print"
+            ],
+            "lifetime_live_in": [
+              "f32",
+              "f64",
+              "float32",
+              "float64",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "f32",
+              "f64",
+              "float32",
+              "float64",
+              "print"
+            ],
+            "lifetime_last_use_vars": []
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 31,
+            "col_offset": 4,
+            "end_lineno": 31,
+            "end_col_offset": 35
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 31,
+              "col_offset": 4,
+              "end_lineno": 31,
+              "end_col_offset": 35
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(f64, float32))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 31,
+                "col_offset": 4,
+                "end_lineno": 31,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 31,
+                    "col_offset": 21,
+                    "end_lineno": 31,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "float64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "f64",
+                  "id": "f64",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "float32",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "float32",
+                  "source_span": {
+                    "lineno": 31,
+                    "col_offset": 26,
+                    "end_lineno": 31,
+                    "end_col_offset": 33
+                  }
+                },
+                "source_span": {
+                  "lineno": 31,
+                  "col_offset": 10,
+                  "end_lineno": 31,
+                  "end_col_offset": 34
+                },
+                "repr": "isinstance(f64, float32)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "float64"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "float64"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n1",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "f64",
+              "float32",
+              "print"
+            ],
+            "lifetime_live_in": [
+              "f32",
+              "f64",
+              "float32",
+              "float64",
+              "print"
+            ],
+            "lifetime_live_out": [
+              "f32",
+              "float64",
+              "print"
+            ],
+            "lifetime_last_use_vars": [
+              "f64",
+              "float32"
+            ]
+          }
+        },
+        {
+          "kind": "Expr",
+          "source_span": {
+            "lineno": 32,
+            "col_offset": 4,
+            "end_lineno": 32,
+            "end_col_offset": 35
+          },
+          "value": {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 32,
+              "col_offset": 4,
+              "end_lineno": 32,
+              "end_col_offset": 35
+            },
+            "resolved_type": "None",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "print(isinstance(f32, float64))",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 32,
+                "col_offset": 4,
+                "end_lineno": 32,
+                "end_col_offset": 9
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "print",
+              "id": "print"
+            },
+            "args": [
+              {
+                "kind": "IsInstance",
+                "resolved_type": "bool",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 32,
+                    "col_offset": 21,
+                    "end_lineno": 32,
+                    "end_col_offset": 24
+                  },
+                  "resolved_type": "float32",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "f32",
+                  "id": "f32",
+                  "call_arg_type": "Obj"
+                },
+                "expected_type_id": {
+                  "kind": "Name",
+                  "id": "float64",
+                  "resolved_type": "unknown",
+                  "borrow_kind": "value",
+                  "casts": [],
+                  "repr": "float64",
+                  "source_span": {
+                    "lineno": 32,
+                    "col_offset": 26,
+                    "end_lineno": 32,
+                    "end_col_offset": 33
+                  }
+                },
+                "source_span": {
+                  "lineno": 32,
+                  "col_offset": 10,
+                  "end_lineno": 32,
+                  "end_col_offset": 34
+                },
+                "repr": "isinstance(f32, float64)",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "NamedType",
+                  "category": "static",
+                  "mirror": "float32"
+                },
+                "narrowing_lane_v1": {
+                  "schema_version": 1,
+                  "source_category": "static",
+                  "source_type": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "float32"
+                  }
+                }
+              }
+            ],
+            "keywords": [],
+            "lowered_kind": "BuiltinCall",
+            "builtin_name": "print",
+            "runtime_call": "py_print",
+            "runtime_module_id": "pytra.built_in.io_ops",
+            "runtime_symbol": "py_print",
+            "runtime_call_adapter_kind": "builtin",
+            "semantic_tag": "core.print",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "None"
+            }
+          },
+          "meta": {
+            "lifetime_node_id": "n0",
+            "lifetime_defs": [],
+            "lifetime_uses": [
+              "f32",
+              "float64",
+              "print"
+            ],
+            "lifetime_live_in": [
+              "f32",
+              "float64",
+              "print"
+            ],
+            "lifetime_live_out": [],
+            "lifetime_last_use_vars": [
+              "f32",
+              "float64",
+              "print"
+            ]
+          }
+        }
+      ],
+      "is_generator": 0,
+      "yield_value_type": "unknown",
+      "arg_type_exprs": {},
+      "return_type_expr": {
+        "kind": "NamedType",
+        "name": "None"
+      },
+      "leading_comments": [
+        "isinstance on POD types uses exact type match (no subtype hierarchy).",
+        "int8/int16/int32/int64 etc. are distinct types even though",
+        "their value ranges have inclusion relationships."
+      ],
+      "leading_trivia": [
+        {
+          "kind": "comment",
+          "text": "isinstance on POD types uses exact type match (no subtype hierarchy)."
+        },
+        {
+          "kind": "comment",
+          "text": "int8/int16/int32/int64 etc. are distinct types even though"
+        },
+        {
+          "kind": "comment",
+          "text": "their value ranges have inclusion relationships."
+        },
+        {
+          "kind": "blank",
+          "count": 1
+        }
+      ],
+      "returns": "None",
+      "meta": {
+        "lifetime_analysis": {
+          "schema_version": "east3_lifetime_v1",
+          "status": "ok",
+          "reason": "",
+          "entry_node": "n17",
+          "order": [
+            "n0",
+            "n1",
+            "n2",
+            "n3",
+            "n4",
+            "n5",
+            "n6",
+            "n7",
+            "n8",
+            "n9",
+            "n10",
+            "n11",
+            "n12",
+            "n13",
+            "n14",
+            "n15",
+            "n16",
+            "n17"
+          ],
+          "cfg": [
+            {
+              "id": "n0",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "f32",
+                "float64",
+                "print"
+              ],
+              "succ": []
+            },
+            {
+              "id": "n1",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "f64",
+                "float32",
+                "print"
+              ],
+              "succ": [
+                "n0"
+              ]
+            },
+            {
+              "id": "n2",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "f32",
+                "float32",
+                "print"
+              ],
+              "succ": [
+                "n1"
+              ]
+            },
+            {
+              "id": "n3",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "f64",
+                "float64",
+                "print"
+              ],
+              "succ": [
+                "n2"
+              ]
+            },
+            {
+              "id": "n4",
+              "kind": "AnnAssign",
+              "defs": [
+                "f64"
+              ],
+              "uses": [],
+              "succ": [
+                "n3"
+              ]
+            },
+            {
+              "id": "n5",
+              "kind": "AnnAssign",
+              "defs": [
+                "f32"
+              ],
+              "uses": [
+                "float"
+              ],
+              "succ": [
+                "n4"
+              ]
+            },
+            {
+              "id": "n6",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "int16",
+                "print",
+                "x32"
+              ],
+              "succ": [
+                "n5"
+              ]
+            },
+            {
+              "id": "n7",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "int32",
+                "print",
+                "x16"
+              ],
+              "succ": [
+                "n6"
+              ]
+            },
+            {
+              "id": "n8",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "int16",
+                "print",
+                "x8"
+              ],
+              "succ": [
+                "n7"
+              ]
+            },
+            {
+              "id": "n9",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "int8",
+                "print",
+                "x16"
+              ],
+              "succ": [
+                "n8"
+              ]
+            },
+            {
+              "id": "n10",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "int64",
+                "print",
+                "x64"
+              ],
+              "succ": [
+                "n9"
+              ]
+            },
+            {
+              "id": "n11",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "int32",
+                "print",
+                "x32"
+              ],
+              "succ": [
+                "n10"
+              ]
+            },
+            {
+              "id": "n12",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "int8",
+                "print",
+                "x8"
+              ],
+              "succ": [
+                "n11"
+              ]
+            },
+            {
+              "id": "n13",
+              "kind": "Expr",
+              "defs": [],
+              "uses": [
+                "int16",
+                "print",
+                "x16"
+              ],
+              "succ": [
+                "n12"
+              ]
+            },
+            {
+              "id": "n14",
+              "kind": "AnnAssign",
+              "defs": [
+                "x64"
+              ],
+              "uses": [],
+              "succ": [
+                "n13"
+              ]
+            },
+            {
+              "id": "n15",
+              "kind": "AnnAssign",
+              "defs": [
+                "x32"
+              ],
+              "uses": [
+                "int"
+              ],
+              "succ": [
+                "n14"
+              ]
+            },
+            {
+              "id": "n16",
+              "kind": "AnnAssign",
+              "defs": [
+                "x8"
+              ],
+              "uses": [
+                "int"
+              ],
+              "succ": [
+                "n15"
+              ]
+            },
+            {
+              "id": "n17",
+              "kind": "AnnAssign",
+              "defs": [
+                "x16"
+              ],
+              "uses": [
+                "int"
+              ],
+              "succ": [
+                "n16"
+              ]
+            }
+          ],
+          "def_use": {
+            "defs": {
+              "f32": [
+                "n5"
+              ],
+              "f64": [
+                "n4"
+              ],
+              "x16": [
+                "n17"
+              ],
+              "x32": [
+                "n15"
+              ],
+              "x64": [
+                "n14"
+              ],
+              "x8": [
+                "n16"
+              ]
+            },
+            "uses": {
+              "f32": [
+                "n0",
+                "n2"
+              ],
+              "f64": [
+                "n1",
+                "n3"
+              ],
+              "float": [
+                "n5"
+              ],
+              "float32": [
+                "n1",
+                "n2"
+              ],
+              "float64": [
+                "n0",
+                "n3"
+              ],
+              "int": [
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "int16": [
+                "n13",
+                "n6",
+                "n8"
+              ],
+              "int32": [
+                "n11",
+                "n7"
+              ],
+              "int64": [
+                "n10"
+              ],
+              "int8": [
+                "n12",
+                "n9"
+              ],
+              "print": [
+                "n0",
+                "n1",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n2",
+                "n3",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "x16": [
+                "n13",
+                "n7",
+                "n9"
+              ],
+              "x32": [
+                "n11",
+                "n6"
+              ],
+              "x64": [
+                "n10"
+              ],
+              "x8": [
+                "n12",
+                "n8"
+              ]
+            }
+          },
+          "variables": {
+            "f32": {
+              "def_nodes": [
+                "n5"
+              ],
+              "use_nodes": [
+                "n0",
+                "n2"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3",
+                "n4"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "f64": {
+              "def_nodes": [
+                "n4"
+              ],
+              "use_nodes": [
+                "n1",
+                "n3"
+              ],
+              "live_in_nodes": [
+                "n1",
+                "n2",
+                "n3"
+              ],
+              "live_out_nodes": [
+                "n2",
+                "n3",
+                "n4"
+              ],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "float": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n5"
+              ],
+              "live_in_nodes": [
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_out_nodes": [
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "last_use_nodes": [
+                "n5"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "float32": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n1",
+                "n2"
+              ],
+              "live_in_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_out_nodes": [
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "float64": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0",
+                "n3"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "int": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_in_nodes": [
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_out_nodes": [
+                "n16",
+                "n17"
+              ],
+              "last_use_nodes": [
+                "n15"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "int16": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n13",
+                "n6",
+                "n8"
+              ],
+              "live_in_nodes": [
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_out_nodes": [
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "last_use_nodes": [
+                "n6"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "int32": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n11",
+                "n7"
+              ],
+              "live_in_nodes": [
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_out_nodes": [
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "last_use_nodes": [
+                "n7"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "int64": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n10"
+              ],
+              "live_in_nodes": [
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_out_nodes": [
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "last_use_nodes": [
+                "n10"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "int8": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n12",
+                "n9"
+              ],
+              "live_in_nodes": [
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_out_nodes": [
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "last_use_nodes": [
+                "n9"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "print": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n0",
+                "n1",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n2",
+                "n3",
+                "n6",
+                "n7",
+                "n8",
+                "n9"
+              ],
+              "live_in_nodes": [
+                "n0",
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "live_out_nodes": [
+                "n1",
+                "n2",
+                "n3",
+                "n4",
+                "n5",
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "last_use_nodes": [
+                "n0"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "x16": {
+              "def_nodes": [
+                "n17"
+              ],
+              "use_nodes": [
+                "n13",
+                "n7",
+                "n9"
+              ],
+              "live_in_nodes": [
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16"
+              ],
+              "live_out_nodes": [
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16",
+                "n17"
+              ],
+              "last_use_nodes": [
+                "n7"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "x32": {
+              "def_nodes": [
+                "n15"
+              ],
+              "use_nodes": [
+                "n11",
+                "n6"
+              ],
+              "live_in_nodes": [
+                "n6",
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14"
+              ],
+              "live_out_nodes": [
+                "n7",
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15"
+              ],
+              "last_use_nodes": [
+                "n6"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "x64": {
+              "def_nodes": [
+                "n14"
+              ],
+              "use_nodes": [
+                "n10"
+              ],
+              "live_in_nodes": [
+                "n10",
+                "n11",
+                "n12",
+                "n13"
+              ],
+              "live_out_nodes": [
+                "n11",
+                "n12",
+                "n13",
+                "n14"
+              ],
+              "last_use_nodes": [
+                "n10"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            },
+            "x8": {
+              "def_nodes": [
+                "n16"
+              ],
+              "use_nodes": [
+                "n12",
+                "n8"
+              ],
+              "live_in_nodes": [
+                "n8",
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15"
+              ],
+              "live_out_nodes": [
+                "n9",
+                "n10",
+                "n11",
+                "n12",
+                "n13",
+                "n14",
+                "n15",
+                "n16"
+              ],
+              "last_use_nodes": [
+                "n8"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
+            }
+          },
+          "arg_order": [],
+          "arg_escape": [],
+          "has_dynamic_name_access": false
+        }
+      }
+    }
+  ],
+  "main_guard_body": [
+    {
+      "kind": "Expr",
+      "source_span": {
+        "lineno": 35,
+        "col_offset": 4,
+        "end_lineno": 35,
+        "end_col_offset": 146
+      },
+      "value": {
+        "kind": "Call",
+        "source_span": {
+          "lineno": 35,
+          "col_offset": 4,
+          "end_lineno": 35,
+          "end_col_offset": 146
+        },
+        "resolved_type": "None",
+        "casts": [],
+        "borrow_kind": "value",
+        "repr": "print(py_assert_stdout([ 'True', 'True', 'True', 'True', 'False', 'False', 'False', 'False', 'True', 'True', 'False', 'False', ], _case_main))",
+        "func": {
+          "kind": "Name",
+          "source_span": {
+            "lineno": 35,
+            "col_offset": 4,
+            "end_lineno": 35,
+            "end_col_offset": 9
+          },
+          "resolved_type": "callable",
+          "casts": [],
+          "borrow_kind": "value",
+          "repr": "print",
+          "id": "print"
+        },
+        "args": [
+          {
+            "kind": "Call",
+            "source_span": {
+              "lineno": 35,
+              "col_offset": 10,
+              "end_lineno": 35,
+              "end_col_offset": 145
+            },
+            "resolved_type": "bool",
+            "casts": [],
+            "borrow_kind": "value",
+            "repr": "py_assert_stdout([ 'True', 'True', 'True', 'True', 'False', 'False', 'False', 'False', 'True', 'True', 'False', 'False', ], _case_main)",
+            "func": {
+              "kind": "Name",
+              "source_span": {
+                "lineno": 35,
+                "col_offset": 10,
+                "end_lineno": 35,
+                "end_col_offset": 26
+              },
+              "resolved_type": "callable",
+              "casts": [],
+              "borrow_kind": "value",
+              "repr": "py_assert_stdout",
+              "id": "py_assert_stdout"
+            },
+            "args": [
+              {
+                "kind": "List",
+                "source_span": {
+                  "lineno": 35,
+                  "col_offset": 27,
+                  "end_lineno": 35,
+                  "end_col_offset": 132
+                },
+                "resolved_type": "list[str]",
+                "casts": [],
+                "borrow_kind": "value",
+                "repr": "[ 'True', 'True', 'True', 'True', 'False', 'False', 'False', 'False', 'True', 'True', 'False', 'False', ]",
+                "elements": [
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 29,
+                      "end_lineno": 35,
+                      "end_col_offset": 35
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'True'",
+                    "value": "True"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 37,
+                      "end_lineno": 35,
+                      "end_col_offset": 43
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'True'",
+                    "value": "True"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 45,
+                      "end_lineno": 35,
+                      "end_col_offset": 51
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'True'",
+                    "value": "True"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 53,
+                      "end_lineno": 35,
+                      "end_col_offset": 59
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'True'",
+                    "value": "True"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 61,
+                      "end_lineno": 35,
+                      "end_col_offset": 68
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'False'",
+                    "value": "False"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 70,
+                      "end_lineno": 35,
+                      "end_col_offset": 77
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'False'",
+                    "value": "False"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 79,
+                      "end_lineno": 35,
+                      "end_col_offset": 86
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'False'",
+                    "value": "False"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 88,
+                      "end_lineno": 35,
+                      "end_col_offset": 95
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'False'",
+                    "value": "False"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 97,
+                      "end_lineno": 35,
+                      "end_col_offset": 103
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'True'",
+                    "value": "True"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 105,
+                      "end_lineno": 35,
+                      "end_col_offset": 111
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'True'",
+                    "value": "True"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 113,
+                      "end_lineno": 35,
+                      "end_col_offset": 120
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'False'",
+                    "value": "False"
+                  },
+                  {
+                    "kind": "Constant",
+                    "source_span": {
+                      "lineno": 35,
+                      "col_offset": 122,
+                      "end_lineno": 35,
+                      "end_col_offset": 129
+                    },
+                    "resolved_type": "str",
+                    "casts": [],
+                    "borrow_kind": "value",
+                    "repr": "'False'",
+                    "value": "False"
+                  }
+                ],
+                "call_arg_type": "list[str]",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "GenericType",
+                  "category": "static",
+                  "mirror": "list[str]"
+                }
+              },
+              {
+                "kind": "Box",
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 35,
+                    "col_offset": 134,
+                    "end_lineno": 35,
+                    "end_col_offset": 144
+                  },
+                  "resolved_type": "Callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "_case_main",
+                  "id": "_case_main",
+                  "call_arg_type": "object"
+                },
+                "source_span": {
+                  "lineno": 35,
+                  "col_offset": 134,
+                  "end_lineno": 35,
+                  "end_col_offset": 144
+                },
+                "repr": "_case_main",
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "object",
+                  "dynamic_name": "object"
+                },
+                "bridge_lane_v1": {
+                  "schema_version": 1,
+                  "target": {
+                    "kind": "DynamicType",
+                    "category": "dynamic",
+                    "mirror": "object",
+                    "dynamic_name": "object"
+                  },
+                  "target_category": "dynamic",
+                  "value": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "Callable"
+                  },
+                  "value_category": "static"
+                }
+              }
+            ],
+            "keywords": [],
+            "resolved_runtime_call": "py_assert_stdout",
+            "resolved_runtime_source": "import_symbol",
+            "runtime_module_id": "pytra.utils.assertions",
+            "runtime_symbol": "py_assert_stdout",
+            "runtime_call_adapter_kind": "extern_delegate",
+            "type_expr_summary_v1": {
+              "schema_version": 1,
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "bool"
+            }
+          }
+        ],
+        "keywords": [],
+        "lowered_kind": "BuiltinCall",
+        "builtin_name": "print",
+        "runtime_call": "py_print",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_symbol": "py_print",
+        "runtime_call_adapter_kind": "builtin",
+        "semantic_tag": "core.print",
+        "type_expr_summary_v1": {
+          "schema_version": 1,
+          "kind": "NamedType",
+          "category": "static",
+          "mirror": "None"
+        }
+      },
+      "discard_result": true
+    }
+  ],
+  "renamed_symbols": {},
+  "meta": {
+    "parser_backend": "self_hosted",
+    "import_resolution": {
+      "schema_version": 1,
+      "bindings": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "export_name": "py_assert_stdout",
+          "local_name": "py_assert_stdout",
+          "binding_kind": "symbol",
+          "source_file": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_pod_exact.py",
+          "source_line": 5,
+          "source_module_id": "pytra.utils.assertions",
+          "source_export_name": "py_assert_stdout",
+          "source_binding_kind": "symbol",
+          "runtime_module_id": "pytra.utils.assertions",
+          "runtime_group": "utils",
+          "resolved_binding_kind": "symbol",
+          "runtime_symbol": "py_assert_stdout",
+          "runtime_symbol_kind": "function",
+          "runtime_symbol_dispatch": "function",
+          "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
+        },
+        {
+          "module_id": "pytra.built_in.io_ops",
+          "export_name": "",
+          "local_name": "pytra.built_in.io_ops",
+          "binding_kind": "implicit_builtin",
+          "source_file": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_pod_exact.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.io_ops",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.io_ops",
+          "runtime_group": "built_in"
+        }
+      ],
+      "qualified_refs": [
+        {
+          "module_id": "pytra.utils.assertions",
+          "symbol": "py_assert_stdout",
+          "local_name": "py_assert_stdout"
+        }
+      ]
+    },
+    "import_bindings": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "export_name": "py_assert_stdout",
+        "local_name": "py_assert_stdout",
+        "binding_kind": "symbol",
+        "source_file": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_pod_exact.py",
+        "source_line": 5,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_stdout",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_stdout",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
+      },
+      {
+        "module_id": "pytra.built_in.io_ops",
+        "export_name": "",
+        "local_name": "pytra.built_in.io_ops",
+        "binding_kind": "implicit_builtin",
+        "source_file": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_pod_exact.py",
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
+      }
+    ],
+    "qualified_symbol_refs": [
+      {
+        "module_id": "pytra.utils.assertions",
+        "symbol": "py_assert_stdout",
+        "local_name": "py_assert_stdout"
+      }
+    ],
+    "import_modules": {},
+    "import_symbols": {
+      "py_assert_stdout": {
+        "module": "pytra.utils.assertions",
+        "name": "py_assert_stdout"
+      }
+    },
+    "dispatch_mode": "native",
+    "lifetime_schema_version": "east3_lifetime_v1"
+  },
+  "east_stage": 3,
+  "schema_version": 1
+}

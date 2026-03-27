@@ -244,7 +244,7 @@
                   "end_lineno": 8,
                   "end_col": 20
                 },
-                "resolved_type": "int64 | float64",
+                "resolved_type": "int64",
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "a + b",
@@ -256,7 +256,7 @@
                     "end_lineno": 8,
                     "end_col": 16
                   },
-                  "resolved_type": "int64 | float64",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "a",
@@ -271,7 +271,7 @@
                     "end_lineno": 8,
                     "end_col": 20
                   },
-                  "resolved_type": "int64 | float64",
+                  "resolved_type": "int64",
                   "casts": [],
                   "borrow_kind": "readonly_ref",
                   "repr": "b",
@@ -1188,7 +1188,17 @@
         "local_name": "py_assert_all",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_all",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_all",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_all"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -1196,7 +1206,17 @@
         "local_name": "py_assert_eq",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_eq",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_eq",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -1204,7 +1224,17 @@
         "local_name": "py_assert_true",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_true",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_true",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_true"
       },
       {
         "module_id": "pytra.built_in.io_ops",
@@ -1212,7 +1242,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [

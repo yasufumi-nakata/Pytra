@@ -124,6 +124,7 @@
               "borrow_kind": "value",
               "repr": "Base",
               "id": "Base",
+              "type_object_of": "Base",
               "call_arg_type": "type"
             },
             "source_span": {
@@ -765,6 +766,7 @@
               "borrow_kind": "value",
               "repr": "Child",
               "id": "Child",
+              "type_object_of": "Child",
               "call_arg_type": "type"
             },
             "source_span": {
@@ -837,7 +839,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/oop/isinstance_user_class.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [],

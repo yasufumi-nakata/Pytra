@@ -43,9 +43,6 @@
       "inheritance_virtual_dispatch_multilang.LoudDog": 1001
     },
     "call_graph": {
-      "inheritance_virtual_dispatch_multilang::Animal.speak": [],
-      "inheritance_virtual_dispatch_multilang::Dog.speak": [],
-      "inheritance_virtual_dispatch_multilang::LoudDog.speak": [],
       "inheritance_virtual_dispatch_multilang::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -65,15 +62,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "inheritance_virtual_dispatch_multilang::Animal.speak"
-      ],
-      [
-        "inheritance_virtual_dispatch_multilang::Dog.speak"
-      ],
-      [
-        "inheritance_virtual_dispatch_multilang::LoudDog.speak"
-      ],
       [
         "pytra.utils.assertions::py_assert_stdout"
       ],

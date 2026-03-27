@@ -317,7 +317,7 @@
             "lowered_kind": "BuiltinCall",
             "builtin_name": "join",
             "runtime_call": "str.join",
-            "runtime_module_id": "pytra.core.str",
+            "runtime_module_id": "pytra.built_in.string_ops",
             "runtime_symbol": "str.join",
             "runtime_call_adapter_kind": "builtin",
             "semantic_tag": "stdlib.method.join",
@@ -794,19 +794,55 @@
                 }
               },
               {
-                "kind": "Name",
+                "kind": "Box",
+                "resolved_type": "object",
+                "borrow_kind": "value",
+                "casts": [],
+                "value": {
+                  "kind": "Name",
+                  "source_span": {
+                    "lineno": 17,
+                    "col_offset": 38,
+                    "end_lineno": 17,
+                    "end_col_offset": 48
+                  },
+                  "resolved_type": "Callable",
+                  "casts": [],
+                  "borrow_kind": "value",
+                  "repr": "_case_main",
+                  "id": "_case_main",
+                  "call_arg_type": "object"
+                },
                 "source_span": {
                   "lineno": 17,
                   "col_offset": 38,
                   "end_lineno": 17,
                   "end_col_offset": 48
                 },
-                "resolved_type": "callable[[],None]",
-                "casts": [],
-                "borrow_kind": "value",
                 "repr": "_case_main",
-                "id": "_case_main",
-                "call_arg_type": "object"
+                "type_expr_summary_v1": {
+                  "schema_version": 1,
+                  "kind": "DynamicType",
+                  "category": "dynamic",
+                  "mirror": "object",
+                  "dynamic_name": "object"
+                },
+                "bridge_lane_v1": {
+                  "schema_version": 1,
+                  "target": {
+                    "kind": "DynamicType",
+                    "category": "dynamic",
+                    "mirror": "object",
+                    "dynamic_name": "object"
+                  },
+                  "target_category": "dynamic",
+                  "value": {
+                    "kind": "NamedType",
+                    "category": "static",
+                    "mirror": "Callable"
+                  },
+                  "value_category": "static"
+                }
               }
             ],
             "keywords": [],
@@ -893,7 +929,17 @@
         "local_name": "py_assert_stdout",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/core/str_join_method.py",
-        "source_line": 3
+        "source_line": 3,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_stdout",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_stdout",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_stdout"
       },
       {
         "module_id": "pytra.built_in.io_ops",
@@ -901,7 +947,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/core/str_join_method.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [

@@ -17,7 +17,7 @@ def _dict_key_type(owner_type: JsonVal) -> str:
     owner_t = _norm_text(owner_type)
     if not owner_t.startswith("dict[") or not owner_t.endswith("]"):
         return ""
-    inner = owner_t[5:-1].strip()
+    inner = owner_t[5 : len(owner_t) - 1].strip()
     if inner == "":
         return ""
     depth = 0

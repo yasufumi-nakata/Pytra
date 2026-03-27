@@ -47,7 +47,6 @@
       ],
       "pytra.utils.assertions::py_assert_stdout": [],
       "pytra.utils.assertions::py_assert_true": [],
-      "stateless_value::Tag.id": [],
       "stateless_value::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -74,9 +73,6 @@
       ],
       [
         "pytra.utils.assertions::py_assert_true"
-      ],
-      [
-        "stateless_value::Tag.id"
       ],
       [
         "stateless_value::__main__"

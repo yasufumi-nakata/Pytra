@@ -32,19 +32,11 @@
     },
     "call_graph": {
       "pytra.built_in.io_ops::py_print": [],
-      "staticmethod_basic::MathUtil.double": [],
-      "staticmethod_basic::MathUtil.triple": [],
       "staticmethod_basic::__main__": []
     },
     "sccs": [
       [
         "pytra.built_in.io_ops::py_print"
-      ],
-      [
-        "staticmethod_basic::MathUtil.double"
-      ],
-      [
-        "staticmethod_basic::MathUtil.triple"
       ],
       [
         "staticmethod_basic::__main__"

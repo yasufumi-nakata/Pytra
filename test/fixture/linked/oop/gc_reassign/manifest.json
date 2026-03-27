@@ -39,8 +39,6 @@
       "gc_reassign.Tracked": 8
     },
     "call_graph": {
-      "gc_reassign::Tracked.__del__": [],
-      "gc_reassign::Tracked.__init__": [],
       "gc_reassign::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -58,12 +56,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "gc_reassign::Tracked.__del__"
-      ],
-      [
-        "gc_reassign::Tracked.__init__"
-      ],
       [
         "pytra.utils.assertions::py_assert_stdout"
       ],

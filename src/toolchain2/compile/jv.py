@@ -62,10 +62,38 @@ class CompileContext:
 
     tuple_unpack_counter: int = 0
     current_return_type: str = ""
+    local_storage_scopes: list[dict[str, str]] = field(default_factory=lambda: [{}])
 
     def next_tuple_tmp_name(self) -> str:
         self.tuple_unpack_counter += 1
         return "__tup_" + str(self.tuple_unpack_counter)
+
+    def push_storage_scope(self) -> None:
+        self.local_storage_scopes.append({})
+
+    def pop_storage_scope(self) -> None:
+        if len(self.local_storage_scopes) > 1:
+            self.local_storage_scopes.pop()
+
+    def set_storage_type(self, name: str, type_name: str) -> None:
+        n = name.strip()
+        t = normalize_type_name(type_name)
+        if n == "" or t == "" or len(self.local_storage_scopes) == 0:
+            return
+        self.local_storage_scopes[-1][n] = t
+
+    def lookup_storage_type(self, name: str) -> str:
+        n = name.strip()
+        if n == "":
+            return ""
+        i = len(self.local_storage_scopes) - 1
+        while i >= 0:
+            scope = self.local_storage_scopes[i]
+            t = scope.get(n, "")
+            if t != "":
+                return t
+            i -= 1
+        return ""
 
 
 def jv_str(v: JsonVal) -> str:

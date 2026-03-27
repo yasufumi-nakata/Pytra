@@ -2110,6 +2110,18 @@
       "schema_version": 1,
       "bindings": [
         {
+          "module_id": "pytra.built_in.contains",
+          "export_name": "",
+          "local_name": "pytra.built_in.contains",
+          "binding_kind": "implicit_builtin",
+          "source_file": "test/fixture/source/py/collections/dict_wrapper_methods.py",
+          "source_line": 0,
+          "source_module_id": "pytra.built_in.contains",
+          "source_binding_kind": "implicit_builtin",
+          "runtime_module_id": "pytra.built_in.contains",
+          "runtime_group": "built_in"
+        },
+        {
           "module_id": "pytra.built_in.io_ops",
           "export_name": "",
           "local_name": "pytra.built_in.io_ops",
@@ -2126,12 +2138,28 @@
     },
     "import_bindings": [
       {
+        "module_id": "pytra.built_in.contains",
+        "export_name": "",
+        "local_name": "pytra.built_in.contains",
+        "binding_kind": "implicit_builtin",
+        "source_file": "test/fixture/source/py/collections/dict_wrapper_methods.py",
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.contains",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.contains",
+        "runtime_group": "built_in"
+      },
+      {
         "module_id": "pytra.built_in.io_ops",
         "export_name": "",
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/collections/dict_wrapper_methods.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [],

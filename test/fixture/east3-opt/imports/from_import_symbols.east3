@@ -3504,7 +3504,18 @@
         "local_name": "floor",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/imports/from_import_symbols.py",
-        "source_line": 3
+        "source_line": 3,
+        "source_module_id": "math",
+        "source_export_name": "floor",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.std.math",
+        "runtime_group": "std",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "floor",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.floor",
+        "runtime_call_adapter_kind": "math.float_args"
       },
       {
         "module_id": "math",
@@ -3512,7 +3523,18 @@
         "local_name": "msqrt",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/imports/from_import_symbols.py",
-        "source_line": 3
+        "source_line": 3,
+        "source_module_id": "math",
+        "source_export_name": "sqrt",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.std.math",
+        "runtime_group": "std",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "sqrt",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.sqrt",
+        "runtime_call_adapter_kind": "math.float_args"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -3520,7 +3542,17 @@
         "local_name": "py_assert_all",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/imports/from_import_symbols.py",
-        "source_line": 4
+        "source_line": 4,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_all",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_all",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_all"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -3528,7 +3560,17 @@
         "local_name": "py_assert_eq",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/imports/from_import_symbols.py",
-        "source_line": 4
+        "source_line": 4,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_eq",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_eq",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -3536,7 +3578,17 @@
         "local_name": "py_assert_true",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/imports/from_import_symbols.py",
-        "source_line": 4
+        "source_line": 4,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_true",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_true",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_true"
       },
       {
         "module_id": "pytra.utils.png",
@@ -3544,7 +3596,17 @@
         "local_name": "write_rgb_png",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/imports/from_import_symbols.py",
-        "source_line": 5
+        "source_line": 5,
+        "source_module_id": "pytra.utils.png",
+        "source_export_name": "write_rgb_png",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.png",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "write_rgb_png",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.write_rgb_png"
       },
       {
         "module_id": "time",
@@ -3552,7 +3614,17 @@
         "local_name": "perf_counter",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/imports/from_import_symbols.py",
-        "source_line": 6
+        "source_line": 6,
+        "source_module_id": "time",
+        "source_export_name": "perf_counter",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.std.time",
+        "runtime_group": "std",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "perf_counter",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.perf_counter"
       },
       {
         "module_id": "pytra.built_in.io_ops",
@@ -3560,7 +3632,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/imports/from_import_symbols.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       },
       {
         "module_id": "pytra.core.py_runtime",
@@ -3568,7 +3644,11 @@
         "local_name": "pytra.core.py_runtime",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/imports/from_import_symbols.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.core.py_runtime",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.core.py_runtime",
+        "runtime_group": "core"
       }
     ],
     "qualified_symbol_refs": [

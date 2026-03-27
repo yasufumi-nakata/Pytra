@@ -17,7 +17,10 @@ def _deep_copy_json(val: JsonVal) -> JsonVal:
     if isinstance(val, list):
         return [_deep_copy_json(item) for item in val]
     if isinstance(val, dict):
-        return {key: _deep_copy_json(value) for key, value in val.items()}
+        out: dict[str, JsonVal] = {}
+        for key in val:
+            out[key] = _deep_copy_json(val[key])
+        return out
     return val
 
 

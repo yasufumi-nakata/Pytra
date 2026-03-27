@@ -66,7 +66,7 @@ def _safe_container_type(type_name: str, rhs_kind: str) -> bool:
     if kind == "" or kind != rhs_kind:
         return False
     if kind == "List":
-        elem_parts = _split_generic_types(t[5:-1])
+        elem_parts = _split_generic_types(t[5 : len(t) - 1])
         if len(elem_parts) != 1:
             return False
         elem_t = _norm_text(elem_parts[0])
@@ -74,7 +74,7 @@ def _safe_container_type(type_name: str, rhs_kind: str) -> bool:
             return False
         return True
     if kind == "Set":
-        elem_parts = _split_generic_types(t[4:-1])
+        elem_parts = _split_generic_types(t[4 : len(t) - 1])
         if len(elem_parts) != 1:
             return False
         elem_t = _norm_text(elem_parts[0])
@@ -82,7 +82,7 @@ def _safe_container_type(type_name: str, rhs_kind: str) -> bool:
             return False
         return True
     if kind == "Dict":
-        kv_parts = _split_generic_types(t[5:-1])
+        kv_parts = _split_generic_types(t[5 : len(t) - 1])
         if len(kv_parts) != 2:
             return False
         key_t = _norm_text(kv_parts[0])

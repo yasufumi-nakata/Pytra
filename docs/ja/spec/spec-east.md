@@ -129,7 +129,7 @@
 - `borrow_kind` は `value | readonly_ref | mutable_ref`（`move` は未使用）。
 - 主要式は構造化子ノードを持つ（`left/right`, `args`, `elements`, `entries` など）。
 
-関数ノードは以下を持つ。
+関数ノード（`FunctionDef`, `ClosureDef`）は以下を持つ。
 
 - `arg_types`, `arg_type_exprs`, `return_type`, `return_type_expr`, `arg_usage`, `renamed_symbols`
 - `arg_type_exprs` / `return_type_expr` は `arg_types` / `return_type` の構造化正本。
@@ -137,6 +137,9 @@
 - `meta.runtime_abi_v1`（任意。`@abi` の canonical metadata）
 - `meta.template_v1`（任意。`@template` の canonical metadata）
 - `meta.template_specialization_v1`（任意。linked-program が materialize した specialization metadata）
+- `ClosureDef` は上記に加えて `captures: [{name, mode, type_expr?}, ...]` を持つ。
+- `ClosureDef.mode` は v1 では `readonly | mutable`。`readonly` は outer binding の再束縛を観測しない capture、`mutable` は outer binding の再束縛を観測し得る capture を表す。
+- `EAST3` では関数内 `FunctionDef` をそのまま backend へ流さず、capture 解析済みの `ClosureDef` へ lower する。
 
 代入文ノード（`Assign`, `AnnAssign`）は以下を持ち得る。
 
@@ -424,6 +427,82 @@
     - `a or b` -> `truthy(a) ? a : b`
     - `a and b` -> `truthy(a) ? b : a`
   - 値選択の判定・出力は `src/pytra-cli.py` 側で行い、EAST では追加ノードへ lower しない。
+- `IfExp`（三項演算子 `body if test else orelse`）:
+  - 真側（`body`）と偽側（`orelse`）の `resolved_type` をそれぞれ解決する。
+  - 両側が同じ型 `T` なら、IfExp の型は `T`。`unknown` に落としてはならない。
+  - 片側が `None` の場合、もう片側の型 `T` から `OptionalType(inner=T)` を生成する。例: `expr if cond else None` → `Optional[T]`。
+  - 両側が異なる非 None 型の場合は `UnionType` を生成する。例: `a if cond else b`（a: int, b: str）→ `int | str`。
+  - 数値型の混在（`int64 if cond else float64`）では cast ルール（§8）に従い `ifexp_numeric_promotion` を付与する。
+
+### 7.1 isinstance 型ナローイング（type narrowing）
+
+`isinstance` 判定に基づいて、対象変数の型を自動的に narrowing する。
+
+規則:
+
+- resolve が条件式の `isinstance(x, T)` パターンを検出し、該当スコープで `x` の `resolved_type` / `type_expr` を `T` に更新する。
+- narrowing は resolve 段の型環境更新で実現し、新しい EAST ノードは導入しない。
+- emitter は narrowing 済みの `resolved_type` を写像するだけであり、追加の責務を持たない。
+
+対応パターン（v1）:
+
+**パターン 1: if/elif ブロック内 narrowing**
+
+```python
+val: JsonVal = json.loads(data)
+
+if isinstance(val, dict):
+    # val は dict[str, JsonVal] として型解決される
+    val.get("key")  # OK
+
+elif isinstance(val, list):
+    # val は list[JsonVal] として型解決される
+    val[0]  # OK
+```
+
+**パターン 2: early return guard（fallthrough narrowing）**
+
+`if not isinstance(x, T):` の if ブロックが必ず脱出する（`return` / `raise` / `break` / `continue`）場合、後続の文で `x` を `T` に narrowing する。
+
+```python
+def process(val: JsonVal) -> str:
+    if not isinstance(val, dict):
+        return ""
+    # ここ以降 val は dict[str, JsonVal]
+    val.get("key")  # OK
+```
+
+**パターン 3: ternary isinstance**
+
+`y = x if isinstance(x, T) else default` の真側で `x` を `T` として解決する。
+
+```python
+owner_node = owner if isinstance(owner, dict) else None
+# owner_node の型は dict[str, JsonVal] | None
+```
+
+**パターン 4: ブロック内伝播**
+
+narrowing は if ブロック内のループ等に自然に伝播する。
+
+```python
+if isinstance(items, list):
+    for item in items:  # items は list として型解決済み
+        process(item)
+```
+
+安全制約:
+
+- if ブロック内で `x` に再代入がある場合、narrowing を無効化する。
+- v1 では以下を対応しない（将来拡張候補）:
+  - `else` ブロックでの除外型推論
+  - `isinstance` と `and`/`or` の組み合わせ
+- 対応しないパターンでは narrowing を適用せず、従来どおり手動 `cast` を要求する（fail-closed）。
+
+既存互換:
+
+- 手動 `cast` は引き続き有効であり、narrowing と併用できる。
+- narrowing は暗黙 cast と等価であり、型安全性を破壊しない。
 
 `range` について:
 

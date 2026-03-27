@@ -49,9 +49,6 @@
       ],
       "pytra.utils.assertions::py_assert_stdout": [],
       "pytra.utils.assertions::py_assert_true": [],
-      "super_init::Base.__init__": [],
-      "super_init::Child.__init__": [],
-      "super_init::Child.get_value": [],
       "super_init::__main__": [
         "pytra.utils.assertions::py_assert_eq"
       ],
@@ -75,15 +72,6 @@
       ],
       [
         "pytra.utils.assertions::py_assert_true"
-      ],
-      [
-        "super_init::Base.__init__"
-      ],
-      [
-        "super_init::Child.__init__"
-      ],
-      [
-        "super_init::Child.get_value"
       ],
       [
         "super_init::__main__"

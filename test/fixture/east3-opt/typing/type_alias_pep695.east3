@@ -113,11 +113,11 @@
                 },
                 "expected_type_id": {
                   "kind": "Name",
-                  "id": "PYTRA_TID_INT",
-                  "resolved_type": "int64",
+                  "id": "int64",
+                  "resolved_type": "unknown",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "PYTRA_TID_INT",
+                  "repr": "int64",
                   "source_span": {
                     "lineno": 7,
                     "col_offset": 21,
@@ -172,11 +172,11 @@
                 },
                 "expected_type_id": {
                   "kind": "Name",
-                  "id": "PYTRA_TID_INT",
-                  "resolved_type": "int64",
+                  "id": "int64",
+                  "resolved_type": "unknown",
                   "borrow_kind": "value",
                   "casts": [],
-                  "repr": "PYTRA_TID_INT",
+                  "repr": "int64",
                   "source_span": {
                     "lineno": 7,
                     "col_offset": 44,
@@ -233,63 +233,33 @@
                 "borrow_kind": "value",
                 "repr": "a + b",
                 "left": {
-                  "kind": "Unbox",
-                  "value": {
-                    "kind": "Name",
-                    "source_span": {
-                      "lineno": 8,
-                      "col_offset": 15,
-                      "end_lineno": 8,
-                      "end_col_offset": 16
-                    },
-                    "resolved_type": "int64 | float64",
-                    "casts": [],
-                    "borrow_kind": "readonly_ref",
-                    "repr": "a",
-                    "id": "a"
-                  },
-                  "resolved_type": "int64",
-                  "borrow_kind": "value",
-                  "casts": [],
-                  "target": "int64",
-                  "on_fail": "raise",
+                  "kind": "Name",
                   "source_span": {
                     "lineno": 8,
                     "col_offset": 15,
                     "end_lineno": 8,
                     "end_col_offset": 16
                   },
-                  "repr": "a"
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "a",
+                  "id": "a"
                 },
                 "op": "Add",
                 "right": {
-                  "kind": "Unbox",
-                  "value": {
-                    "kind": "Name",
-                    "source_span": {
-                      "lineno": 8,
-                      "col_offset": 19,
-                      "end_lineno": 8,
-                      "end_col_offset": 20
-                    },
-                    "resolved_type": "int64 | float64",
-                    "casts": [],
-                    "borrow_kind": "readonly_ref",
-                    "repr": "b",
-                    "id": "b"
-                  },
-                  "resolved_type": "int64",
-                  "borrow_kind": "value",
-                  "casts": [],
-                  "target": "int64",
-                  "on_fail": "raise",
+                  "kind": "Name",
                   "source_span": {
                     "lineno": 8,
                     "col_offset": 19,
                     "end_lineno": 8,
                     "end_col_offset": 20
                   },
-                  "repr": "b"
+                  "resolved_type": "int64",
+                  "casts": [],
+                  "borrow_kind": "readonly_ref",
+                  "repr": "b",
+                  "id": "b"
                 },
                 "normalized_expr_version": "east3_expr_v1",
                 "normalized_expr": {
@@ -305,63 +275,33 @@
                   "borrow_kind": "value",
                   "repr": "a + b",
                   "left": {
-                    "kind": "Unbox",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 8,
-                        "col_offset": 15,
-                        "end_lineno": 8,
-                        "end_col_offset": 16
-                      },
-                      "resolved_type": "int64 | float64",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "a",
-                      "id": "a"
-                    },
-                    "resolved_type": "int64",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "target": "int64",
-                    "on_fail": "raise",
+                    "kind": "Name",
                     "source_span": {
                       "lineno": 8,
                       "col_offset": 15,
                       "end_lineno": 8,
                       "end_col_offset": 16
                     },
-                    "repr": "a"
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "a",
+                    "id": "a"
                   },
                   "op": "Add",
                   "right": {
-                    "kind": "Unbox",
-                    "value": {
-                      "kind": "Name",
-                      "source_span": {
-                        "lineno": 8,
-                        "col_offset": 19,
-                        "end_lineno": 8,
-                        "end_col_offset": 20
-                      },
-                      "resolved_type": "int64 | float64",
-                      "casts": [],
-                      "borrow_kind": "readonly_ref",
-                      "repr": "b",
-                      "id": "b"
-                    },
-                    "resolved_type": "int64",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "target": "int64",
-                    "on_fail": "raise",
+                    "kind": "Name",
                     "source_span": {
                       "lineno": 8,
                       "col_offset": 19,
                       "end_lineno": 8,
                       "end_col_offset": 20
                     },
-                    "repr": "b"
+                    "resolved_type": "int64",
+                    "casts": [],
+                    "borrow_kind": "readonly_ref",
+                    "repr": "b",
+                    "id": "b"
                   }
                 }
               },
@@ -389,21 +329,21 @@
             "lifetime_node_id": "n1",
             "lifetime_defs": [],
             "lifetime_uses": [
-              "PYTRA_TID_INT",
               "a",
-              "b"
+              "b",
+              "int64"
             ],
             "lifetime_live_in": [
-              "PYTRA_TID_INT",
               "a",
-              "b"
+              "b",
+              "int64"
             ],
             "lifetime_live_out": [
               "a",
               "b"
             ],
             "lifetime_last_use_vars": [
-              "PYTRA_TID_INT"
+              "int64"
             ]
           }
         },
@@ -509,9 +449,9 @@
               "kind": "If",
               "defs": [],
               "uses": [
-                "PYTRA_TID_INT",
                 "a",
-                "b"
+                "b",
+                "int64"
               ],
               "succ": [
                 "n0",
@@ -532,9 +472,6 @@
           "def_use": {
             "defs": {},
             "uses": {
-              "PYTRA_TID_INT": [
-                "n1"
-              ],
               "a": [
                 "n1",
                 "n2"
@@ -542,24 +479,13 @@
               "b": [
                 "n1",
                 "n2"
+              ],
+              "int64": [
+                "n1"
               ]
             }
           },
           "variables": {
-            "PYTRA_TID_INT": {
-              "def_nodes": [],
-              "use_nodes": [
-                "n1"
-              ],
-              "live_in_nodes": [
-                "n1"
-              ],
-              "live_out_nodes": [],
-              "last_use_nodes": [
-                "n1"
-              ],
-              "lifetime_class": "local_non_escape_candidate"
-            },
             "a": {
               "def_nodes": [],
               "use_nodes": [
@@ -595,6 +521,20 @@
                 "n2"
               ],
               "lifetime_class": "escape_or_unknown"
+            },
+            "int64": {
+              "def_nodes": [],
+              "use_nodes": [
+                "n1"
+              ],
+              "live_in_nodes": [
+                "n1"
+              ],
+              "live_out_nodes": [],
+              "last_use_nodes": [
+                "n1"
+              ],
+              "lifetime_class": "local_non_escape_candidate"
             }
           },
           "arg_order": [
@@ -1989,7 +1929,17 @@
         "local_name": "py_assert_all",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_all",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_all",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_all"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -1997,7 +1947,17 @@
         "local_name": "py_assert_eq",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_eq",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_eq",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -2005,7 +1965,17 @@
         "local_name": "py_assert_true",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_true",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_true",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_true"
       },
       {
         "module_id": "pytra.built_in.io_ops",
@@ -2013,7 +1983,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/typing/type_alias_pep695.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [

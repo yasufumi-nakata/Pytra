@@ -1723,7 +1723,17 @@
         "local_name": "py_assert_all",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/none_optional.py",
-        "source_line": 4
+        "source_line": 4,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_all",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_all",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_all"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -1731,7 +1741,17 @@
         "local_name": "py_assert_eq",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/none_optional.py",
-        "source_line": 4
+        "source_line": 4,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_eq",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_eq",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -1739,7 +1759,17 @@
         "local_name": "py_assert_true",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/none_optional.py",
-        "source_line": 4
+        "source_line": 4,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_true",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_true",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_true"
       },
       {
         "module_id": "pytra.built_in.io_ops",
@@ -1747,7 +1777,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/typing/none_optional.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [

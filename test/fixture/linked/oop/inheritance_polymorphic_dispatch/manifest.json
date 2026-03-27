@@ -43,9 +43,6 @@
       "inheritance_polymorphic_dispatch.Dog": 1000
     },
     "call_graph": {
-      "inheritance_polymorphic_dispatch::Animal.bark": [],
-      "inheritance_polymorphic_dispatch::Chihuahua.bark": [],
-      "inheritance_polymorphic_dispatch::Dog.bark": [],
       "inheritance_polymorphic_dispatch::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -60,15 +57,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "inheritance_polymorphic_dispatch::Animal.bark"
-      ],
-      [
-        "inheritance_polymorphic_dispatch::Chihuahua.bark"
-      ],
-      [
-        "inheritance_polymorphic_dispatch::Dog.bark"
-      ],
       [
         "pytra.utils.assertions::py_assert_stdout"
       ],

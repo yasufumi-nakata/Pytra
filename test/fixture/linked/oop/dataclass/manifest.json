@@ -39,7 +39,6 @@
       "dataclass.Point99": 8
     },
     "call_graph": {
-      "dataclass::Point99.total": [],
       "dataclass::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -54,9 +53,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "dataclass::Point99.total"
-      ],
       [
         "pytra.utils.assertions::py_assert_stdout"
       ],

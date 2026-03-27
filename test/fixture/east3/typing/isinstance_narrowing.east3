@@ -1,6 +1,6 @@
 {
   "kind": "Module",
-  "source_path": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+  "source_path": "test/fixture/source/py/typing/isinstance_narrowing.py",
   "body": [
     {
       "kind": "ImportFrom",
@@ -2745,7 +2745,7 @@
           "export_name": "JsonVal",
           "local_name": "JsonVal",
           "binding_kind": "symbol",
-          "source_file": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+          "source_file": "test/fixture/source/py/typing/isinstance_narrowing.py",
           "source_line": 1,
           "source_module_id": "pytra.std.json",
           "source_export_name": "JsonVal",
@@ -2768,7 +2768,7 @@
         "export_name": "JsonVal",
         "local_name": "JsonVal",
         "binding_kind": "symbol",
-        "source_file": "/workspace/Pytra/test/fixture/source/py/typing/isinstance_narrowing.py",
+        "source_file": "test/fixture/source/py/typing/isinstance_narrowing.py",
         "source_line": 1,
         "source_module_id": "pytra.std.json",
         "source_export_name": "JsonVal",

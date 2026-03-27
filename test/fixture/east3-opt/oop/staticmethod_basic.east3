@@ -17,7 +17,7 @@
       "field_types": {},
       "body": [
         {
-          "kind": "FunctionDef",
+          "kind": "ClosureDef",
           "source_span": {
             "lineno": 3,
             "col_offset": 4,
@@ -135,20 +135,6 @@
                     "value": 2
                   }
                 }
-              },
-              "meta": {
-                "lifetime_node_id": "n0",
-                "lifetime_defs": [],
-                "lifetime_uses": [
-                  "x"
-                ],
-                "lifetime_live_in": [
-                  "x"
-                ],
-                "lifetime_live_out": [],
-                "lifetime_last_use_vars": [
-                  "x"
-                ]
               }
             }
           ],
@@ -157,64 +143,14 @@
           "decorators": [
             "staticmethod"
           ],
+          "captures": [],
+          "capture_types": {},
+          "capture_modes": {},
           "returns": "int64",
-          "mutates_self": false,
-          "meta": {
-            "lifetime_analysis": {
-              "schema_version": "east3_lifetime_v1",
-              "status": "ok",
-              "reason": "",
-              "entry_node": "n0",
-              "order": [
-                "n0"
-              ],
-              "cfg": [
-                {
-                  "id": "n0",
-                  "kind": "Return",
-                  "defs": [],
-                  "uses": [
-                    "x"
-                  ],
-                  "succ": []
-                }
-              ],
-              "def_use": {
-                "defs": {},
-                "uses": {
-                  "x": [
-                    "n0"
-                  ]
-                }
-              },
-              "variables": {
-                "x": {
-                  "def_nodes": [],
-                  "use_nodes": [
-                    "n0"
-                  ],
-                  "live_in_nodes": [
-                    "n0"
-                  ],
-                  "live_out_nodes": [],
-                  "last_use_nodes": [
-                    "n0"
-                  ],
-                  "lifetime_class": "escape_or_unknown"
-                }
-              },
-              "arg_order": [
-                "x"
-              ],
-              "arg_escape": [
-                true
-              ],
-              "has_dynamic_name_access": false
-            }
-          }
+          "mutates_self": false
         },
         {
-          "kind": "FunctionDef",
+          "kind": "ClosureDef",
           "source_span": {
             "lineno": 7,
             "col_offset": 4,
@@ -332,20 +268,6 @@
                     "value": 3
                   }
                 }
-              },
-              "meta": {
-                "lifetime_node_id": "n0",
-                "lifetime_defs": [],
-                "lifetime_uses": [
-                  "x"
-                ],
-                "lifetime_live_in": [
-                  "x"
-                ],
-                "lifetime_live_out": [],
-                "lifetime_last_use_vars": [
-                  "x"
-                ]
               }
             }
           ],
@@ -354,61 +276,11 @@
           "decorators": [
             "staticmethod"
           ],
+          "captures": [],
+          "capture_types": {},
+          "capture_modes": {},
           "returns": "int64",
-          "mutates_self": false,
-          "meta": {
-            "lifetime_analysis": {
-              "schema_version": "east3_lifetime_v1",
-              "status": "ok",
-              "reason": "",
-              "entry_node": "n0",
-              "order": [
-                "n0"
-              ],
-              "cfg": [
-                {
-                  "id": "n0",
-                  "kind": "Return",
-                  "defs": [],
-                  "uses": [
-                    "x"
-                  ],
-                  "succ": []
-                }
-              ],
-              "def_use": {
-                "defs": {},
-                "uses": {
-                  "x": [
-                    "n0"
-                  ]
-                }
-              },
-              "variables": {
-                "x": {
-                  "def_nodes": [],
-                  "use_nodes": [
-                    "n0"
-                  ],
-                  "live_in_nodes": [
-                    "n0"
-                  ],
-                  "live_out_nodes": [],
-                  "last_use_nodes": [
-                    "n0"
-                  ],
-                  "lifetime_class": "escape_or_unknown"
-                }
-              },
-              "arg_order": [
-                "x"
-              ],
-              "arg_escape": [
-                true
-              ],
-              "has_dynamic_name_access": false
-            }
-          }
+          "mutates_self": false
         }
       ],
       "class_storage_hint": "value",
@@ -460,7 +332,7 @@
               "end_lineno": 11,
               "end_col_offset": 28
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "MathUtil.double(5)",
@@ -472,7 +344,7 @@
                 "end_lineno": 11,
                 "end_col_offset": 25
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "MathUtil.double",
@@ -488,7 +360,8 @@
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "MathUtil",
-                "id": "MathUtil"
+                "id": "MathUtil",
+                "type_object_of": "MathUtil"
               },
               "attr": "double"
             },
@@ -509,12 +382,12 @@
               }
             ],
             "keywords": [],
+            "call_dispatch_kind": "static_method",
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "int64"
             }
           }
         ],
@@ -578,7 +451,7 @@
               "end_lineno": 12,
               "end_col_offset": 28
             },
-            "resolved_type": "unknown",
+            "resolved_type": "int64",
             "casts": [],
             "borrow_kind": "value",
             "repr": "MathUtil.triple(4)",
@@ -590,7 +463,7 @@
                 "end_lineno": 12,
                 "end_col_offset": 25
               },
-              "resolved_type": "unknown",
+              "resolved_type": "callable",
               "casts": [],
               "borrow_kind": "value",
               "repr": "MathUtil.triple",
@@ -606,7 +479,8 @@
                 "casts": [],
                 "borrow_kind": "value",
                 "repr": "MathUtil",
-                "id": "MathUtil"
+                "id": "MathUtil",
+                "type_object_of": "MathUtil"
               },
               "attr": "triple"
             },
@@ -627,12 +501,12 @@
               }
             ],
             "keywords": [],
+            "call_dispatch_kind": "static_method",
             "type_expr_summary_v1": {
               "schema_version": 1,
-              "kind": "DynamicType",
-              "category": "dynamic",
-              "mirror": "unknown",
-              "dynamic_name": "unknown"
+              "kind": "NamedType",
+              "category": "static",
+              "mirror": "int64"
             }
           }
         ],
@@ -682,7 +556,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/oop/staticmethod_basic.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [],

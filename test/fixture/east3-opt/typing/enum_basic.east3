@@ -35,7 +35,10 @@
       "original_name": "Color",
       "base": "Enum",
       "dataclass": false,
-      "field_types": {},
+      "field_types": {
+        "RED": "Color",
+        "BLUE": "Color"
+      },
       "body": [
         {
           "kind": "Assign",
@@ -53,9 +56,9 @@
               "end_lineno": 6,
               "end_col_offset": 7
             },
-            "resolved_type": "int64",
+            "resolved_type": "Color",
             "casts": [],
-            "borrow_kind": "value",
+            "borrow_kind": "readonly_ref",
             "repr": "RED",
             "id": "RED"
           },
@@ -99,9 +102,9 @@
               "end_lineno": 7,
               "end_col_offset": 8
             },
-            "resolved_type": "int64",
+            "resolved_type": "Color",
             "casts": [],
-            "borrow_kind": "value",
+            "borrow_kind": "readonly_ref",
             "repr": "BLUE",
             "id": "BLUE"
           },
@@ -360,7 +363,7 @@
                           "end_lineno": 12,
                           "end_col_offset": 40
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "Color",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "Color.RED",
@@ -376,7 +379,8 @@
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color",
-                          "id": "Color"
+                          "id": "Color",
+                          "type_object_of": "Color"
                         },
                         "attr": "RED"
                       },
@@ -392,7 +396,7 @@
                             "end_lineno": 12,
                             "end_col_offset": 53
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "Color",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color.RED",
@@ -408,7 +412,8 @@
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color",
-                            "id": "Color"
+                            "id": "Color",
+                            "type_object_of": "Color"
                           },
                           "attr": "RED"
                         }
@@ -435,7 +440,7 @@
                             "end_lineno": 12,
                             "end_col_offset": 40
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "Color",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color.RED",
@@ -451,7 +456,8 @@
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color",
-                            "id": "Color"
+                            "id": "Color",
+                            "type_object_of": "Color"
                           },
                           "attr": "RED"
                         },
@@ -467,7 +473,7 @@
                               "end_lineno": 12,
                               "end_col_offset": 53
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "Color",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color.RED",
@@ -483,7 +489,8 @@
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "Color",
-                              "id": "Color"
+                              "id": "Color",
+                              "type_object_of": "Color"
                             },
                             "attr": "RED"
                           }
@@ -757,7 +764,7 @@
                           "end_lineno": 13,
                           "end_col_offset": 40
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "Color",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "Color.RED",
@@ -773,7 +780,8 @@
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color",
-                          "id": "Color"
+                          "id": "Color",
+                          "type_object_of": "Color"
                         },
                         "attr": "RED"
                       },
@@ -789,7 +797,7 @@
                             "end_lineno": 13,
                             "end_col_offset": 54
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "Color",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color.BLUE",
@@ -805,7 +813,8 @@
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color",
-                            "id": "Color"
+                            "id": "Color",
+                            "type_object_of": "Color"
                           },
                           "attr": "BLUE"
                         }
@@ -832,7 +841,7 @@
                             "end_lineno": 13,
                             "end_col_offset": 40
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "Color",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color.RED",
@@ -848,7 +857,8 @@
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color",
-                            "id": "Color"
+                            "id": "Color",
+                            "type_object_of": "Color"
                           },
                           "attr": "RED"
                         },
@@ -864,7 +874,7 @@
                               "end_lineno": 13,
                               "end_col_offset": 54
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "Color",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color.BLUE",
@@ -880,7 +890,8 @@
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "Color",
-                              "id": "Color"
+                              "id": "Color",
+                              "type_object_of": "Color"
                             },
                             "attr": "BLUE"
                           }
@@ -1154,7 +1165,7 @@
                           "end_lineno": 14,
                           "end_col_offset": 41
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "Color",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "Color.BLUE",
@@ -1170,7 +1181,8 @@
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color",
-                          "id": "Color"
+                          "id": "Color",
+                          "type_object_of": "Color"
                         },
                         "attr": "BLUE"
                       },
@@ -1186,7 +1198,7 @@
                             "end_lineno": 14,
                             "end_col_offset": 55
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "Color",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color.BLUE",
@@ -1202,7 +1214,8 @@
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color",
-                            "id": "Color"
+                            "id": "Color",
+                            "type_object_of": "Color"
                           },
                           "attr": "BLUE"
                         }
@@ -1229,7 +1242,7 @@
                             "end_lineno": 14,
                             "end_col_offset": 41
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "Color",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color.BLUE",
@@ -1245,7 +1258,8 @@
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color",
-                            "id": "Color"
+                            "id": "Color",
+                            "type_object_of": "Color"
                           },
                           "attr": "BLUE"
                         },
@@ -1261,7 +1275,7 @@
                               "end_lineno": 14,
                               "end_col_offset": 55
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "Color",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color.BLUE",
@@ -1277,7 +1291,8 @@
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "Color",
-                              "id": "Color"
+                              "id": "Color",
+                              "type_object_of": "Color"
                             },
                             "attr": "BLUE"
                           }
@@ -1551,7 +1566,7 @@
                           "end_lineno": 15,
                           "end_col_offset": 41
                         },
-                        "resolved_type": "unknown",
+                        "resolved_type": "Color",
                         "casts": [],
                         "borrow_kind": "value",
                         "repr": "Color.BLUE",
@@ -1567,7 +1582,8 @@
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color",
-                          "id": "Color"
+                          "id": "Color",
+                          "type_object_of": "Color"
                         },
                         "attr": "BLUE"
                       },
@@ -1583,7 +1599,7 @@
                             "end_lineno": 15,
                             "end_col_offset": 54
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "Color",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color.RED",
@@ -1599,7 +1615,8 @@
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color",
-                            "id": "Color"
+                            "id": "Color",
+                            "type_object_of": "Color"
                           },
                           "attr": "RED"
                         }
@@ -1626,7 +1643,7 @@
                             "end_lineno": 15,
                             "end_col_offset": 41
                           },
-                          "resolved_type": "unknown",
+                          "resolved_type": "Color",
                           "casts": [],
                           "borrow_kind": "value",
                           "repr": "Color.BLUE",
@@ -1642,7 +1659,8 @@
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color",
-                            "id": "Color"
+                            "id": "Color",
+                            "type_object_of": "Color"
                           },
                           "attr": "BLUE"
                         },
@@ -1658,7 +1676,7 @@
                               "end_lineno": 15,
                               "end_col_offset": 54
                             },
-                            "resolved_type": "unknown",
+                            "resolved_type": "Color",
                             "casts": [],
                             "borrow_kind": "value",
                             "repr": "Color.RED",
@@ -1674,7 +1692,8 @@
                               "casts": [],
                               "borrow_kind": "value",
                               "repr": "Color",
-                              "id": "Color"
+                              "id": "Color",
+                              "type_object_of": "Color"
                             },
                             "attr": "RED"
                           }
@@ -2357,7 +2376,17 @@
         "local_name": "py_assert_all",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/enum_basic.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_all",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_all",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_all"
       },
       {
         "module_id": "pytra.utils.assertions",
@@ -2365,7 +2394,17 @@
         "local_name": "py_assert_eq",
         "binding_kind": "symbol",
         "source_file": "test/fixture/source/py/typing/enum_basic.py",
-        "source_line": 1
+        "source_line": 1,
+        "source_module_id": "pytra.utils.assertions",
+        "source_export_name": "py_assert_eq",
+        "source_binding_kind": "symbol",
+        "runtime_module_id": "pytra.utils.assertions",
+        "runtime_group": "utils",
+        "resolved_binding_kind": "symbol",
+        "runtime_symbol": "py_assert_eq",
+        "runtime_symbol_kind": "function",
+        "runtime_symbol_dispatch": "function",
+        "runtime_semantic_tag": "stdlib.fn.py_assert_eq"
       },
       {
         "module_id": "pytra.built_in.io_ops",
@@ -2373,7 +2412,11 @@
         "local_name": "pytra.built_in.io_ops",
         "binding_kind": "implicit_builtin",
         "source_file": "test/fixture/source/py/typing/enum_basic.py",
-        "source_line": 0
+        "source_line": 0,
+        "source_module_id": "pytra.built_in.io_ops",
+        "source_binding_kind": "implicit_builtin",
+        "runtime_module_id": "pytra.built_in.io_ops",
+        "runtime_group": "built_in"
       }
     ],
     "qualified_symbol_refs": [

@@ -39,7 +39,6 @@
       "class_member.Counter": 8
     },
     "call_graph": {
-      "class_member::Counter.inc": [],
       "class_member::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -54,9 +53,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "class_member::Counter.inc"
-      ],
       [
         "pytra.utils.assertions::py_assert_stdout"
       ],

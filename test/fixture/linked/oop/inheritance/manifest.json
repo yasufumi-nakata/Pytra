@@ -41,8 +41,6 @@
       "inheritance.Dog": 1000
     },
     "call_graph": {
-      "inheritance::Animal.sound": [],
-      "inheritance::Dog.bark": [],
       "inheritance::__main__": [
         "pytra.utils.assertions::py_assert_stdout"
       ],
@@ -57,12 +55,6 @@
       "pytra.utils.assertions::py_assert_true": []
     },
     "sccs": [
-      [
-        "inheritance::Animal.sound"
-      ],
-      [
-        "inheritance::Dog.bark"
-      ],
       [
         "pytra.utils.assertions::py_assert_stdout"
       ],
