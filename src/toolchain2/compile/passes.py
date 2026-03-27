@@ -204,7 +204,9 @@ def _yield_walk(node: JsonVal) -> None:
                 _yield_walk(s)
         return
     for val in nd.values():
-        if isinstance(val, (dict, list)):
+        if isinstance(val, dict):
+            _yield_walk(val)
+        elif isinstance(val, list):
             _yield_walk(val)
 
 
@@ -254,74 +256,141 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
             rt = annotation_type
         elif rt in ("", "unknown"):
             rt = "list[unknown]"
-    init: Node = {
-        "kind": ANN_ASSIGN,
-        "target": {"kind": NAME, "id": result_name, "resolved_type": rt},
-        "annotation": rt, "decl_type": rt, "declare": True,
-        "value": {"kind": LIST, "elements": [], "resolved_type": rt},
-    }
+    target_node: Node = {}
+    target_node["kind"] = NAME
+    target_node["id"] = result_name
+    target_node["resolved_type"] = rt
+    value_node: Node = {}
+    value_node["kind"] = LIST
+    value_node["elements"] = []
+    value_node["resolved_type"] = rt
+    init: Node = {}
+    init["kind"] = ANN_ASSIGN
+    init["target"] = target_node
+    init["annotation"] = rt
+    init["decl_type"] = rt
+    init["declare"] = True
+    init["value"] = value_node
     elt = lc.get("elt")
     append_arg = deep_copy_json(elt) if elt is not None else None
     elem_type = ""
     if rt.startswith("list[") and rt.endswith("]"):
         elem_type = rt[5:-1]
     if isinstance(append_arg, dict) and elem_type != "":
-        append_arg["call_arg_type"] = elem_type
-        append_kind = append_arg.get("kind", "")
-        append_rt = jv_str(append_arg.get("resolved_type", "")).strip()
+        append_node: Node = cast(dict[str, JsonVal], append_arg)
+        append_node["call_arg_type"] = elem_type
+        append_kind = append_node.get("kind", "")
+        append_rt: str = jv_str(append_node.get("resolved_type", ""))
         if append_kind == LIST and append_rt in ("", "unknown", "list[unknown]"):
-            append_arg["resolved_type"] = elem_type
+            append_node["resolved_type"] = elem_type
         elif append_kind == DICT and append_rt in ("", "unknown", "dict[unknown,unknown]"):
-            append_arg["resolved_type"] = elem_type
+            append_node["resolved_type"] = elem_type
         elif append_kind == SET and append_rt in ("", "unknown", "set[unknown]"):
-            append_arg["resolved_type"] = elem_type
+            append_node["resolved_type"] = elem_type
     generators = lc.get("generators", [])
     if not isinstance(generators, list):
         generators = []
-    append_stmt: Node = {
-        "kind": EXPR,
-        "value": {
-            "kind": CALL,
-            "func": {"kind": ATTRIBUTE, "value": {"kind": NAME, "id": result_name, "resolved_type": rt}, "attr": "append"},
-            "args": [append_arg] if append_arg is not None else [],
-            "resolved_type": "None",
-        },
-    }
+    generator_list: list[JsonVal] = cast(list[JsonVal], generators)
+    recv: Node = {}
+    recv["kind"] = NAME
+    recv["id"] = result_name
+    recv["resolved_type"] = rt
+    append_func: Node = {}
+    append_func["kind"] = ATTRIBUTE
+    append_func["value"] = recv
+    append_func["attr"] = "append"
+    append_args: list[JsonVal] = []
+    if append_arg is not None:
+        append_args.append(append_arg)
+    append_call: Node = {}
+    append_call["kind"] = CALL
+    append_call["func"] = append_func
+    append_call["args"] = append_args
+    append_call["resolved_type"] = "None"
+    append_stmt: Node = {}
+    append_stmt["kind"] = EXPR
+    append_stmt["value"] = append_call
     body: list[JsonVal] = [append_stmt]
-    for gen in reversed(generators):
+    for gen_idx in range(len(generator_list) - 1, -1, -1):
+        gen = generator_list[gen_idx]
         if not isinstance(gen, dict):
             continue
-        ifs = gen.get("ifs")
-        if isinstance(ifs, list) and len(ifs) > 0:
-            for cond in reversed(ifs):
-                if isinstance(cond, dict):
-                    body = [{"kind": IF, "test": deep_copy_json(cond), "body": body, "orelse": []}]
-        target = gen.get("target")
-        iter_expr = gen.get("iter")
+        gen_node: Node = cast(dict[str, JsonVal], gen)
+        ifs = gen_node.get("ifs")
+        if isinstance(ifs, list):
+            ifs_list: list[JsonVal] = cast(list[JsonVal], ifs)
+            if len(ifs_list) > 0:
+                for cond_idx in range(len(ifs_list) - 1, -1, -1):
+                    cond = ifs_list[cond_idx]
+                    if isinstance(cond, dict):
+                        if_stmt: Node = {}
+                        if_stmt["kind"] = IF
+                        if_stmt["test"] = deep_copy_json(cond)
+                        if_stmt["body"] = body
+                        if_stmt["orelse"] = []
+                        body2: list[JsonVal] = []
+                        body2.append(if_stmt)
+                        body = body2
+        target = gen_node.get("target")
+        iter_expr = gen_node.get("iter")
+        iter_kind = ""
+        iter_node: Node = {}
+        if isinstance(iter_expr, dict):
+            iter_node = cast(dict[str, JsonVal], iter_expr)
+            iter_kind = jv_str(iter_node.get("kind", ""))
         tp = _build_lc_target_plan(target)
-        if isinstance(iter_expr, dict) and iter_expr.get("kind") in ("RangeExpr", FOR_RANGE):
-            fs: Node = {
-                "kind": FOR_CORE, "iter_mode": "static_fastpath",
-                "iter_plan": {
-                    "kind": STATIC_RANGE_FOR_PLAN,
-                    "start": deep_copy_json(iter_expr.get("start", {"kind": CONSTANT, "value": 0, "resolved_type": "int64"})),
-                    "stop": deep_copy_json(iter_expr.get("stop", {"kind": CONSTANT, "value": 0})),
-                    "step": deep_copy_json(iter_expr.get("step", {"kind": CONSTANT, "value": 1, "resolved_type": "int64"})),
-                },
-                "target_plan": tp, "body": body, "orelse": [],
-            }
+        if iter_kind in ("RangeExpr", FOR_RANGE):
+            iter_plan: Node = {}
+            iter_plan["kind"] = STATIC_RANGE_FOR_PLAN
+            start_default: Node = {}
+            start_default["kind"] = CONSTANT
+            start_default["value"] = 0
+            start_default["resolved_type"] = "int64"
+            stop_default: Node = {}
+            stop_default["kind"] = CONSTANT
+            stop_default["value"] = 0
+            step_default: Node = {}
+            step_default["kind"] = CONSTANT
+            step_default["value"] = 1
+            step_default["resolved_type"] = "int64"
+            iter_plan["start"] = deep_copy_json(iter_node.get("start", start_default))
+            iter_plan["stop"] = deep_copy_json(iter_node.get("stop", stop_default))
+            iter_plan["step"] = deep_copy_json(iter_node.get("step", step_default))
+            fs: Node = {}
+            fs["kind"] = FOR_CORE
+            fs["iter_mode"] = "static_fastpath"
+            fs["iter_plan"] = iter_plan
+            fs["target_plan"] = tp
+            fs["body"] = body
+            fs["orelse"] = []
         else:
-            fs = {
-                "kind": FOR_CORE, "iter_mode": "runtime_protocol",
-                "iter_plan": {
-                    "kind": RUNTIME_ITER_FOR_PLAN,
-                    "iter_expr": deep_copy_json(iter_expr) if iter_expr else {"kind": NAME, "id": "__empty"},
-                    "dispatch_mode": "generic", "init_op": "ObjIterInit", "next_op": "ObjIterNext",
-                },
-                "target_plan": tp, "body": body, "orelse": [],
-            }
-        body = [fs]
-    return [init] + body
+            iter_plan: Node = {}
+            iter_plan["kind"] = RUNTIME_ITER_FOR_PLAN
+            if iter_expr:
+                iter_plan["iter_expr"] = deep_copy_json(iter_expr)
+            else:
+                empty_name: Node = {}
+                empty_name["kind"] = NAME
+                empty_name["id"] = "__empty"
+                iter_plan["iter_expr"] = empty_name
+            iter_plan["dispatch_mode"] = "generic"
+            iter_plan["init_op"] = "ObjIterInit"
+            iter_plan["next_op"] = "ObjIterNext"
+            fs: Node = {}
+            fs["kind"] = FOR_CORE
+            fs["iter_mode"] = "runtime_protocol"
+            fs["iter_plan"] = iter_plan
+            fs["target_plan"] = tp
+            fs["body"] = body
+            fs["orelse"] = []
+        body3: list[JsonVal] = []
+        body3.append(fs)
+        body = body3
+    out: list[Node] = [init]
+    for stmt in body:
+        if isinstance(stmt, dict):
+            out.append(cast(dict[str, JsonVal], stmt))
+    return out
 
 
 def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
@@ -337,7 +406,7 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                 target = stmt.get("target")
                 tn = ""
                 if isinstance(target, dict) and target.get("kind") == NAME:
-                    tn = jv_str(target.get("id", "")).strip()
+                    tn = jv_str(target.get("id", ""))
                 cn = tn if tn != "" else ctx.next_comp_name()
                 at = ""
                 if kind == ANN_ASSIGN:
@@ -346,18 +415,25 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                         at = ann
                 expanded = _expand_lc_to_stmts(value, cn, at)
                 if cn != tn and tn != "":
-                    expanded.append({
-                        "kind": ASSIGN,
-                        "target": deep_copy_json(target),
-                        "value": {"kind": NAME, "id": cn, "resolved_type": jv_str(value.get("resolved_type", ""))},
-                    })
-                result.extend(expanded)
+                    assign_value: Node = {}
+                    assign_value["kind"] = NAME
+                    assign_value["id"] = cn
+                    assign_value["resolved_type"] = jv_str(value.get("resolved_type", ""))
+                    assign_stmt: Node = {}
+                    assign_stmt["kind"] = ASSIGN
+                    assign_stmt["target"] = deep_copy_json(target)
+                    assign_stmt["value"] = assign_value
+                    expanded.append(assign_stmt)
+                for ex in expanded:
+                    result.append(ex)
                 continue
         if kind == EXPR:
             ev = stmt.get("value")
             if isinstance(ev, dict) and ev.get("kind") == LIST_COMP:
-                tmp = ctx.next_comp_name()
-                result.extend(_expand_lc_to_stmts(ev, tmp))
+                tmp: str = ctx.next_comp_name()
+                expanded_expr = _expand_lc_to_stmts(ev, tmp)
+                for ex in expanded_expr:
+                    result.append(ex)
                 continue
         # Recurse
         for key in ("body", "orelse", "finalbody"):
@@ -379,7 +455,8 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
 def lower_listcomp(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
     if isinstance(body, list):
-        module["body"] = _lc_in_stmts(body, ctx)
+        body_list: list[JsonVal] = cast(list[JsonVal], body)
+        module["body"] = _lc_in_stmts(body_list, ctx)
     return module
 
 
