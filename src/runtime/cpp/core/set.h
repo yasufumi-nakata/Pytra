@@ -23,6 +23,16 @@ public:
     template <class It>
     set(It first, It last) : data_(first, last) {}
 
+    template <class U, ::std::enable_if_t<::std::is_constructible_v<T, U>, int> = 0>
+    set(const Object<set<U>>& other) {
+        if (!other) {
+            return;
+        }
+        for (const auto& value : *other) {
+            data_.insert(static_cast<T>(value));
+        }
+    }
+
     operator const base_type&() const { return data_; }  // NOLINT(google-explicit-constructor)
     operator base_type&() { return data_; }              // NOLINT(google-explicit-constructor)
 

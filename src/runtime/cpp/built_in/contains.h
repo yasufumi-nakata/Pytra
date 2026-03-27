@@ -24,6 +24,11 @@ static inline bool py_contains(const dict<str, V>& d, const Q& key) {
     return d.find(str(py_to_string(key))) != d.end();
 }
 
+template <class K, class V, class Q>
+static inline bool py_contains(const Object<dict<K, V>>& d, const Q& key) {
+    return py_contains(*d, key);
+}
+
 template <class T, class Q>
 static inline bool py_contains(const list<T>& values, const Q& key) {
     return py_list_contains_ref(values, key);
@@ -37,6 +42,11 @@ static inline bool py_contains(const Object<list<T>>& values, const Q& key) {
 template <class T, class Q>
 static inline bool py_contains(const set<T>& values, const Q& key) {
     return values.find(static_cast<T>(key)) != values.end();
+}
+
+template <class T, class Q>
+static inline bool py_contains(const Object<set<T>>& values, const Q& key) {
+    return py_contains(*values, key);
 }
 
 template <class Q>

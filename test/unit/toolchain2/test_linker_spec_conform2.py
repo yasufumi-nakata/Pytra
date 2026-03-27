@@ -1459,8 +1459,149 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         cpp_code = emit_cpp_module(doc)
 
-        self.assertIn("while ((!(stack).empty())) {", cpp_code)
+        self.assertIn("Object<list<int64>> stack = rc_list_from_value(list<int64>{int64(1)});", cpp_code)
+        self.assertIn("while (py_to_bool(stack)) {", cpp_code)
         self.assertIn("py_list_pop_mut(stack);", cpp_code)
+
+    def test_cpp_emitter_defaults_container_locals_to_ref_wrappers(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "build",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_usage": {},
+                    "return_type": "None",
+                    "body": [
+                        {"kind": "VarDecl", "name": "xs", "type": "list[int64]"},
+                        {"kind": "VarDecl", "name": "env", "type": "dict[str,int64]"},
+                        {"kind": "VarDecl", "name": "seen", "type": "set[int64]"},
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("Object<list<int64>> xs = rc_list_new<int64>();", cpp_code)
+        self.assertIn("Object<dict<str, int64>> env = rc_dict_new<str, int64>();", cpp_code)
+        self.assertIn("Object<set<int64>> seen = rc_set_new<int64>();", cpp_code)
+
+    def test_cpp_emitter_allows_hinted_container_value_locals(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            meta_extra={
+                "linked_program_v1": {
+                    "container_ownership_hints_v1": {
+                        "container_value_locals_v1": {
+                            "app.main::build": {
+                                "version": "1",
+                                "locals": ["xs"],
+                            }
+                        }
+                    }
+                }
+            },
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "build",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_usage": {},
+                    "return_type": "None",
+                    "body": [
+                        {"kind": "VarDecl", "name": "xs", "type": "list[int64]"},
+                        {"kind": "VarDecl", "name": "env", "type": "dict[str,int64]"},
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("list<int64> xs = list<int64>{};", cpp_code)
+        self.assertIn("Object<dict<str, int64>> env = rc_dict_new<str, int64>();", cpp_code)
+
+    def test_cpp_emitter_wraps_container_builtin_results_as_ref_handles(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run_case",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_usage": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "Assign",
+                            "target": {"kind": "Name", "id": "d", "resolved_type": "dict[str,int64]"},
+                            "declare": True,
+                            "decl_type": "dict[str,int64]",
+                            "declare_init": True,
+                            "value": {"kind": "Dict", "resolved_type": "dict[str,int64]", "entries": []},
+                        },
+                        {
+                            "kind": "Assign",
+                            "target": {"kind": "Name", "id": "ks", "resolved_type": "list[str]"},
+                            "declare": True,
+                            "decl_type": "list[str]",
+                            "declare_init": True,
+                            "value": {
+                                "kind": "Call",
+                                "lowered_kind": "BuiltinCall",
+                                "runtime_call": "dict.keys",
+                                "builtin_name": "keys",
+                                "resolved_type": "list[str]",
+                                "func": {
+                                    "kind": "Attribute",
+                                    "value": {"kind": "Name", "id": "d", "resolved_type": "dict[str,int64]"},
+                                    "attr": "keys",
+                                },
+                                "args": [],
+                            },
+                        },
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("Object<list<str>> ks = rc_list_from_value(py_dict_keys(d));", cpp_code)
+
+    def test_cpp_emitter_supports_set_literals_as_ref_wrappers(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Assign",
+                    "target": {"kind": "Name", "id": "seen", "resolved_type": "set[int64]"},
+                    "declare": True,
+                    "decl_type": "set[int64]",
+                    "declare_init": True,
+                    "value": {
+                        "kind": "Set",
+                        "resolved_type": "set[int64]",
+                        "elements": [
+                            {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                            {"kind": "Constant", "value": 2, "resolved_type": "int64"},
+                        ],
+                    },
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("Object<set<int64>> seen = rc_set_from_value(set<int64>{int64(1), int64(2)});", cpp_code)
 
     def test_cpp_emitter_uses_py_at_for_dict_reads_but_keeps_subscript_store_targets(self) -> None:
         doc = _module_doc(
@@ -1513,7 +1654,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
         cpp_code = emit_cpp_module(doc)
 
         self.assertIn("return py_at(env, name);", cpp_code)
-        self.assertIn('env[str("x")] = int64(1);', cpp_code)
+        self.assertIn('py_at(env, str("x")) = int64(1);', cpp_code)
 
     def test_cpp_emitter_rewrites_negative_unary_list_index_from_size(self) -> None:
         doc = _module_doc(
@@ -1549,7 +1690,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         cpp_code = emit_cpp_module(doc)
 
-        self.assertIn("return stack[(stack.size() - int64(1))];", cpp_code)
+        self.assertIn("return py_list_at_ref(stack, (py_len(stack) - int64(1)));", cpp_code)
 
     def test_emitters_treat_runtime_call_int_as_cast_without_link_normalization(self) -> None:
         doc = _fixture_doc("test/fixture/east3-opt/typing/intenum_basic.east3")

@@ -35,7 +35,30 @@ _TYPE_MAP: dict[str, str] = {
 }
 
 
-def cpp_type(resolved_type: str) -> str:
+def is_container_resolved_type(resolved_type: str) -> bool:
+    return (
+        resolved_type.startswith("list[")
+        or resolved_type.startswith("dict[")
+        or resolved_type.startswith("set[")
+    )
+
+
+def cpp_container_value_type(resolved_type: str) -> str:
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        return "list<" + cpp_signature_type(inner) + ">"
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        parts = _split_generic_args(inner)
+        if len(parts) == 2:
+            return "dict<" + cpp_signature_type(parts[0]) + ", " + cpp_signature_type(parts[1]) + ">"
+    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+        inner = resolved_type[4:-1]
+        return "set<" + cpp_signature_type(inner) + ">"
+    return ""
+
+
+def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str:
     """Convert an EAST3 resolved_type to a C++ type string."""
     if resolved_type == "" or resolved_type == "unknown":
         return "auto"
@@ -44,22 +67,12 @@ def cpp_type(resolved_type: str) -> str:
     if mapped != "":
         return mapped
 
-    # list[T] → list<T>
-    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
-        inner = resolved_type[5:-1]
-        return "list<" + cpp_type(inner) + ">"
-
-    # dict[K, V] → dict<K, V>
-    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
-        inner = resolved_type[5:-1]
-        parts = _split_generic_args(inner)
-        if len(parts) == 2:
-            return "dict<" + cpp_type(parts[0]) + ", " + cpp_type(parts[1]) + ">"
-
-    # set[T] → set<T>
-    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
-        inner = resolved_type[4:-1]
-        return "set<" + cpp_type(inner) + ">"
+    # list[T] / dict[K, V] / set[T]
+    container_value_type = cpp_container_value_type(resolved_type)
+    if container_value_type != "":
+        if prefer_value_container:
+            return container_value_type
+        return "Object<" + container_value_type + ">"
 
     # tuple[A, B, ...]
     if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
@@ -80,7 +93,7 @@ def cpp_type(resolved_type: str) -> str:
     return resolved_type
 
 
-def cpp_signature_type(resolved_type: str) -> str:
+def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = False) -> str:
     """Type text for declarations/signatures.
 
     `unknown` / general union は `auto` にせず fail-closed で `object` に倒す。
@@ -91,10 +104,13 @@ def cpp_signature_type(resolved_type: str) -> str:
         return "object"
     optional_inner = _top_level_optional_inner(resolved_type)
     if optional_inner != "":
-        return "::std::optional<" + cpp_signature_type(optional_inner) + ">"
+        return "::std::optional<" + cpp_signature_type(
+            optional_inner,
+            prefer_value_container=prefer_value_container,
+        ) + ">"
     if _is_top_level_union(resolved_type):
         return "object"
-    return cpp_type(resolved_type)
+    return cpp_type(resolved_type, prefer_value_container=prefer_value_container)
 
 
 def cpp_param_decl(resolved_type: str, name: str, *, mutable: bool = False) -> str:
@@ -107,8 +123,30 @@ def cpp_param_decl(resolved_type: str, name: str, *, mutable: bool = False) -> s
     return "const " + ct + "& " + name
 
 
-def cpp_zero_value(resolved_type: str) -> str:
-    ct = cpp_signature_type(resolved_type)
+def cpp_zero_value(resolved_type: str, *, prefer_value_container: bool = False) -> str:
+    if is_container_resolved_type(resolved_type):
+        container_value_type = cpp_container_value_type(resolved_type)
+        if prefer_value_container:
+            return container_value_type + "{}"
+        if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+            inner = resolved_type[5:-1]
+            return "rc_list_new<" + cpp_signature_type(inner) + ">()"
+        if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+            inner = resolved_type[5:-1]
+            parts = _split_generic_args(inner)
+            if len(parts) == 2:
+                return (
+                    "rc_dict_new<"
+                    + cpp_signature_type(parts[0])
+                    + ", "
+                    + cpp_signature_type(parts[1])
+                    + ">()"
+                )
+        if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+            inner = resolved_type[4:-1]
+            return "rc_set_new<" + cpp_signature_type(inner) + ">()"
+
+    ct = cpp_signature_type(resolved_type, prefer_value_container=prefer_value_container)
     if ct == "void":
         return ""
     if ct == "object":

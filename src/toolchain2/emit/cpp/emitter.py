@@ -20,6 +20,8 @@ from toolchain2.emit.cpp.types import (
     cpp_signature_type,
     cpp_param_decl,
     collect_cpp_type_vars,
+    cpp_container_value_type,
+    is_container_resolved_type,
 )
 from toolchain2.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
@@ -47,8 +49,12 @@ class CppEmitContext:
     class_symbol_fqcns: dict[str, str] = field(default_factory=dict)
     current_class: str = ""
     current_return_type: str = ""
+    current_function_scope: str = ""
+    current_value_container_locals: set[str] = field(default_factory=set)
     runtime_imports: dict[str, str] = field(default_factory=dict)
     import_aliases: dict[str, str] = field(default_factory=dict)
+    container_value_locals_by_scope: dict[str, set[str]] = field(default_factory=dict)
+    value_container_vars: set[str] = field(default_factory=set)
     mapping: RuntimeMapping = field(default_factory=RuntimeMapping)
     temp_counter: int = 0
     emit_class_decls: bool = True
@@ -161,6 +167,97 @@ def _expr_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
     if kind == "Attribute":
         return _attribute_static_type(ctx, node)
     return ""
+
+
+def _scope_key(ctx: CppEmitContext, func_name: str, owner_name: str = "") -> str:
+    scope_name = func_name if owner_name == "" else owner_name + "." + func_name
+    if ctx.module_id == "":
+        return scope_name
+    return ctx.module_id + "::" + scope_name
+
+
+def _container_value_locals_for_scope(
+    ctx: CppEmitContext,
+    func_name: str,
+    owner_name: str = "",
+) -> set[str]:
+    keys = [_scope_key(ctx, func_name, owner_name)]
+    if owner_name != "":
+        keys.append(_scope_key(ctx, func_name))
+    out: set[str] = set()
+    for key in keys:
+        out.update(ctx.container_value_locals_by_scope.get(key, set()))
+    return out
+
+
+def _prefer_value_container_local(ctx: CppEmitContext, name: str, resolved_type: str) -> bool:
+    return (
+        name != ""
+        and is_container_resolved_type(resolved_type)
+        and name in ctx.current_value_container_locals
+    )
+
+
+def _register_local_storage(ctx: CppEmitContext, name: str, resolved_type: str) -> None:
+    ctx.var_types[name] = resolved_type
+    if _prefer_value_container_local(ctx, name, resolved_type):
+        ctx.value_container_vars.add(name)
+    else:
+        ctx.value_container_vars.discard(name)
+
+
+def _decl_cpp_type(ctx: CppEmitContext, resolved_type: str, name: str = "") -> str:
+    return cpp_signature_type(
+        resolved_type,
+        prefer_value_container=_prefer_value_container_local(ctx, name, resolved_type),
+    )
+
+
+def _decl_cpp_zero_value(ctx: CppEmitContext, resolved_type: str, name: str = "") -> str:
+    return cpp_zero_value(
+        resolved_type,
+        prefer_value_container=_prefer_value_container_local(ctx, name, resolved_type),
+    )
+
+
+def _uses_ref_container_storage(ctx: CppEmitContext, node: JsonVal) -> bool:
+    if not isinstance(node, dict):
+        return False
+    resolved_type = _effective_resolved_type(node)
+    if not is_container_resolved_type(resolved_type):
+        return False
+    kind = _str(node, "kind")
+    if kind in ("Name", "NameTarget"):
+        name = _str(node, "id")
+        return name == "" or name not in ctx.value_container_vars
+    if kind == "Attribute":
+        return True
+    return True
+
+
+def _wrap_container_value_expr(resolved_type: str, value_expr: str) -> str:
+    if resolved_type.startswith("list["):
+        return "rc_list_from_value(" + value_expr + ")"
+    if resolved_type.startswith("dict["):
+        return "rc_dict_from_value(" + value_expr + ")"
+    if resolved_type.startswith("set["):
+        return "rc_set_from_value(" + value_expr + ")"
+    return value_expr
+
+
+def _wrap_container_result_if_needed(node: dict[str, JsonVal], value_expr: str) -> str:
+    resolved_type = _str(node, "resolved_type")
+    if not is_container_resolved_type(resolved_type):
+        return value_expr
+    trimmed = value_expr.strip()
+    if (
+        trimmed.startswith("rc_list_from_value(")
+        or trimmed.startswith("rc_dict_from_value(")
+        or trimmed.startswith("rc_set_from_value(")
+        or ".as<" in trimmed
+    ):
+        return value_expr
+    return _wrap_container_value_expr(resolved_type, value_expr)
 
 
 def _optional_inner_type(type_name: str) -> str:
@@ -328,6 +425,7 @@ def _emit_expr(ctx: CppEmitContext, node: JsonVal) -> str:
     if kind == "Attribute": return _emit_attribute(ctx, node)
     if kind == "Subscript": return _emit_subscript(ctx, node)
     if kind == "List": return _emit_list_literal(ctx, node)
+    if kind == "Set": return _emit_set_literal(ctx, node)
     if kind == "Dict": return _emit_dict_literal(ctx, node)
     if kind == "Tuple": return _emit_tuple_literal(ctx, node)
     if kind == "IfExp": return _emit_ifexp(ctx, node)
@@ -411,9 +509,13 @@ def _emit_binop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         ln = node.get("left")
         rn = node.get("right")
         if isinstance(ln, dict) and _str(ln, "kind") == "List":
-            return cpp_type(rt) + "(" + right + ", " + (_emit_expr(ctx, _list(ln, "elements")[0]) if len(_list(ln, "elements")) == 1 else "0") + ")"
+            value_ct = cpp_type(rt, prefer_value_container=True)
+            repeated = value_ct + "(" + right + ", " + (_emit_expr(ctx, _list(ln, "elements")[0]) if len(_list(ln, "elements")) == 1 else "0") + ")"
+            return _wrap_container_value_expr(rt, repeated) if is_container_resolved_type(rt) else repeated
         if isinstance(rn, dict) and _str(rn, "kind") == "List":
-            return cpp_type(rt) + "(" + left + ", " + (_emit_expr(ctx, _list(rn, "elements")[0]) if len(_list(rn, "elements")) == 1 else "0") + ")"
+            value_ct = cpp_type(rt, prefer_value_container=True)
+            repeated = value_ct + "(" + left + ", " + (_emit_expr(ctx, _list(rn, "elements")[0]) if len(_list(rn, "elements")) == 1 else "0") + ")"
+            return _wrap_container_value_expr(rt, repeated) if is_container_resolved_type(rt) else repeated
     if op == "FloorDiv": return "py_floordiv(" + left + ", " + right + ")"
     if op == "Pow": return "std::pow(static_cast<double>(" + left + "), static_cast<double>(" + right + "))"
     go_op = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/", "Mod": "%",
@@ -505,10 +607,12 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 )
                 return _qualify_runtime_call_symbol(symbol_name) + "(" + ", ".join(call_arg_strs) + ")"
             if attr == "append" and len(call_arg_strs) >= 1:
-                return owner + ".push_back(" + call_arg_strs[0] + ")"
+                member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
+                return owner + member_sep + "push_back(" + call_arg_strs[0] + ")"
             if owner == "this":
                 return "this->" + attr + "(" + ", ".join(call_arg_strs) + ")"
-            return owner + "." + attr + "(" + ", ".join(call_arg_strs) + ")"
+            member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
+            return owner + member_sep + attr + "(" + ", ".join(call_arg_strs) + ")"
         if fk == "Name":
             fn = _str(func, "id")
             if fn == "": fn = _str(func, "repr")
@@ -545,7 +649,7 @@ def _emit_condition_expr(ctx: CppEmitContext, node: JsonVal) -> str:
         or resolved_type.startswith("set[")
         or resolved_type in ("bytes", "bytearray")
     ):
-        return "(!(" + expr + ").empty())"
+        return "py_to_bool(" + expr + ")"
     return expr
 
 
@@ -611,32 +715,54 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if rc == "list.append":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
-            if len(arg_strs) >= 1: return owner + ".push_back(" + arg_strs[0] + ")"
+            if len(arg_strs) >= 1: return "py_list_append_mut(" + owner + ", " + arg_strs[0] + ")"
     if rc == "list.pop":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
             if len(arg_strs) >= 1:
-                return "py_list_pop_mut(" + owner + ", " + arg_strs[0] + ")"
-            return "py_list_pop_mut(" + owner + ")"
+                return _wrap_container_result_if_needed(node, "py_list_pop_mut(" + owner + ", " + arg_strs[0] + ")")
+            return _wrap_container_result_if_needed(node, "py_list_pop_mut(" + owner + ")")
     if rc == "list.clear":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
-            return owner + ".clear()"
+            return "py_list_clear_mut(" + owner + ")"
     if rc == "list.index" and method_owner != "" and len(arg_strs) >= 1:
         return "py_index(" + method_owner + ", " + arg_strs[0] + ")"
     if rc == "dict.get":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
-            if len(arg_strs) >= 2: return "py_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
-            if len(arg_strs) >= 1: return owner + "[" + arg_strs[0] + "]"
+            if len(arg_strs) >= 2:
+                return _wrap_container_result_if_needed(node, "py_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")")
+            if len(arg_strs) >= 1:
+                return _wrap_container_result_if_needed(node, "py_dict_get(" + owner + ", " + arg_strs[0] + ")")
     if rc == "dict.clear":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
-            return owner + ".clear()"
+            return "py_dict_clear_mut(" + owner + ")"
     if rc == "dict.items":
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
-            return owner + ".items()"
+            return _wrap_container_result_if_needed(node, "py_dict_items(" + owner + ")")
+    if rc == "dict.keys":
+        if isinstance(func, dict):
+            owner = _emit_expr(ctx, func.get("value"))
+            return _wrap_container_result_if_needed(node, "py_dict_keys(" + owner + ")")
+    if rc == "dict.values":
+        if isinstance(func, dict):
+            owner = _emit_expr(ctx, func.get("value"))
+            return _wrap_container_result_if_needed(node, "py_dict_values(" + owner + ")")
+    if rc == "set.add":
+        if isinstance(func, dict) and len(arg_strs) >= 1:
+            owner = _emit_expr(ctx, func.get("value"))
+            return "py_set_add_mut(" + owner + ", " + arg_strs[0] + ")"
+    if rc == "set.discard":
+        if isinstance(func, dict) and len(arg_strs) >= 1:
+            owner = _emit_expr(ctx, func.get("value"))
+            return "py_set_discard_mut(" + owner + ", " + arg_strs[0] + ")"
+    if rc == "set.remove":
+        if isinstance(func, dict) and len(arg_strs) >= 1:
+            owner = _emit_expr(ctx, func.get("value"))
+            return "py_set_remove_mut(" + owner + ", " + arg_strs[0] + ")"
     if rc in ("py_write_text", "pathlib.write_text"):
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
@@ -645,7 +771,8 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     # Mapping resolution
     adapter = _str(node, "runtime_call_adapter_kind")
     resolved = resolve_runtime_call(rc, bn, adapter, ctx.mapping)
-    if resolved != "": return resolved + "(" + ", ".join(call_arg_strs) + ")"
+    if resolved != "":
+        return _wrap_container_result_if_needed(node, resolved + "(" + ", ".join(call_arg_strs) + ")")
     fn = rc if rc != "" else bn
     if fn != "":
         if "." in fn:
@@ -698,18 +825,20 @@ def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         )
     if owner == "this":
         return "this->" + attr
-    return owner + "." + attr
+    member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
+    return owner + member_sep + attr
 
 
 def _emit_subscript_index(ctx: CppEmitContext, value: str, slice_node: JsonVal) -> str:
     idx = _emit_expr(ctx, slice_node)
+    size_expr = "py_len(" + value + ")"
     if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Constant":
         iv = slice_node.get("value")
         if isinstance(iv, int) and iv < 0:
-            return "(" + value + ".size()" + str(iv) + ")"
+            return "(" + size_expr + str(iv) + ")"
     if isinstance(slice_node, dict) and _str(slice_node, "kind") == "UnaryOp" and _str(slice_node, "op") == "USub":
         operand = _emit_expr(ctx, slice_node.get("operand"))
-        return "(" + value + ".size() - " + operand + ")"
+        return "(" + size_expr + " - " + operand + ")"
     return idx
 
 
@@ -730,6 +859,8 @@ def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     idx = _emit_subscript_index(ctx, value, sl)
     if value_type == "str":
         return "py_str_slice(" + value + ", " + idx + ", (" + idx + " + int64(1)))"
+    if value_type.startswith("list[") or value_type in ("bytes", "bytearray"):
+        return "py_list_at_ref(" + value + ", " + idx + ")"
     if value_type.startswith("dict["):
         return "py_at(" + value + ", " + idx + ")"
     return value + "[" + idx + "]"
@@ -738,29 +869,47 @@ def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_subscript_store_target(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     value = _emit_expr(ctx, node.get("value"))
     sl = node.get("slice")
+    value_node = node.get("value")
+    value_type = _effective_resolved_type(value_node)
     idx = _emit_subscript_index(ctx, value, sl)
+    if value_type.startswith("list[") or value_type in ("bytes", "bytearray"):
+        return "py_list_at_ref(" + value + ", " + idx + ")"
+    if value_type.startswith("dict["):
+        return "py_at(" + value + ", " + idx + ")"
     return value + "[" + idx + "]"
 
 
 def _emit_list_literal(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     elements = _list(node, "elements")
     rt = _str(node, "resolved_type")
-    ct = cpp_type(rt)
     parts = [_emit_expr(ctx, e) for e in elements]
-    return ct + "{" + ", ".join(parts) + "}"
+    plain_ct = cpp_type(rt, prefer_value_container=True)
+    literal = plain_ct + "{" + ", ".join(parts) + "}"
+    return _wrap_container_value_expr(rt, literal) if is_container_resolved_type(rt) else literal
 
 
 def _emit_dict_literal(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     rt = _str(node, "resolved_type")
-    ct = cpp_type(rt)
+    plain_ct = cpp_type(rt, prefer_value_container=True)
     entries = _list(node, "entries")
     if len(entries) > 0:
         parts = []
         for e in entries:
             if isinstance(e, dict):
                 parts.append("{" + _emit_expr(ctx, e.get("key")) + ", " + _emit_expr(ctx, e.get("value")) + "}")
-        return ct + "{" + ", ".join(parts) + "}"
-    return ct + "{}"
+        literal = plain_ct + "{" + ", ".join(parts) + "}"
+        return _wrap_container_value_expr(rt, literal) if is_container_resolved_type(rt) else literal
+    literal = plain_ct + "{}"
+    return _wrap_container_value_expr(rt, literal) if is_container_resolved_type(rt) else literal
+
+
+def _emit_set_literal(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
+    rt = _str(node, "resolved_type")
+    plain_ct = cpp_type(rt, prefer_value_container=True)
+    elements = _list(node, "elements")
+    parts = [_emit_expr(ctx, e) for e in elements]
+    literal = plain_ct + "{" + ", ".join(parts) + "}"
+    return _wrap_container_value_expr(rt, literal) if is_container_resolved_type(rt) else literal
 
 
 def _emit_tuple_literal(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
@@ -820,9 +969,9 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         target.startswith("list[")
         or target.startswith("dict[")
         or target.startswith("set[")
-        or target.startswith("tuple[")
-        or target in ("bytes", "bytearray")
     ):
+        return "(" + value_expr + ").as<" + cpp_container_value_type(target) + ">()"
+    if target.startswith("tuple[") or target in ("bytes", "bytearray"):
         return "(*(" + value_expr + ").as<" + cpp_signature_type(target) + ">())"
     return value_expr
 
@@ -842,7 +991,9 @@ def _emit_box(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         or value_type.startswith("dict[")
         or value_type.startswith("set[")
     ):
-        cpp_value_type = cpp_signature_type(value_type)
+        if _uses_ref_container_storage(ctx, value):
+            return "object(" + value_expr + ")"
+        cpp_value_type = cpp_signature_type(value_type, prefer_value_container=True)
         return (
             "object(make_object<"
             + cpp_value_type
@@ -1063,7 +1214,6 @@ def _emit_ann_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     target_val = node.get("target")
     rt = _str(node, "decl_type")
     if rt == "": rt = _str(node, "resolved_type")
-    ct = cpp_signature_type(rt)
     value = node.get("value")
 
     name = ""
@@ -1081,11 +1231,12 @@ def _emit_ann_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         if value is not None: _emit(ctx, lhs + " = " + _emit_expr(ctx, value) + ";")
         return
 
-    ctx.var_types[name] = rt
+    _register_local_storage(ctx, name, rt)
+    ct = _decl_cpp_type(ctx, rt, name)
     if value is not None:
         _emit(ctx, ct + " " + name + " = " + _emit_expr(ctx, value) + ";")
     else:
-        _emit(ctx, ct + " " + name + " = " + cpp_zero_value(rt) + ";")
+        _emit(ctx, ct + " " + name + " = " + _decl_cpp_zero_value(ctx, rt, name) + ";")
 
 
 def _emit_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
@@ -1110,11 +1261,11 @@ def _emit_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, name + " = " + val_code + ";")
         else:
             dt = _str(node, "decl_type")
-            ctx.var_types[name] = dt
+            _register_local_storage(ctx, name, dt)
             if dt == "" or dt == "unknown":
                 _emit(ctx, "auto " + name + " = " + val_code + ";")
             else:
-                ct = cpp_signature_type(dt)
+                ct = _decl_cpp_type(ctx, dt, name)
                 _emit(ctx, ct + " " + name + " = " + val_code + ";")
         if _bool(node, "unused") and _bool(node, "declare"):
             _emit(ctx, "(void)" + name + ";")
@@ -1201,10 +1352,10 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                 cmp = " > " if neg else " < "
                 decl = ""
                 if t_name not in ctx.var_types:
-                    decl = (cpp_signature_type(target_type) if target_type not in ("", "unknown") else "auto") + " "
+                    decl = (_decl_cpp_type(ctx, target_type, t_name) if target_type not in ("", "unknown") else "auto") + " "
                 _emit(ctx, "for (" + decl + t_name + " = " + start + "; " + t_name + cmp + stop + "; " + t_name + " += " + step + ") {")
                 ctx.indent_level += 1
-                ctx.var_types[t_name] = target_type
+                _register_local_storage(ctx, t_name, target_type)
                 _emit_body(ctx, body)
                 ctx.indent_level -= 1
                 _emit(ctx, "}")
@@ -1224,7 +1375,7 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                     if t_name not in ctx.var_types:
                         decl = "str "
                     _emit(ctx, decl + t_name + " = py_str_slice(" + iter_tmp + ", " + idx_name + ", (" + idx_name + " + int64(1)));")
-                    ctx.var_types[t_name] = "str"
+                    _register_local_storage(ctx, t_name, "str")
                     _emit_body(ctx, body)
                     ctx.indent_level -= 1
                     _emit(ctx, "}")
@@ -1235,16 +1386,16 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                     ctx.indent_level += 1
                     decl = ""
                     if t_name not in ctx.var_types:
-                        decl = (cpp_signature_type(target_type) if target_type not in ("", "unknown") else "auto") + " "
+                        decl = (_decl_cpp_type(ctx, target_type, t_name) if target_type not in ("", "unknown") else "auto") + " "
                     _emit(ctx, decl + t_name + " = " + entry_name + ".first;")
-                    ctx.var_types[t_name] = target_type
+                    _register_local_storage(ctx, t_name, target_type)
                     _emit_body(ctx, body)
                     ctx.indent_level -= 1
                     _emit(ctx, "}")
                     return
                 _emit(ctx, "for (auto " + t_name + " : " + iter_code + ") {")
                 ctx.indent_level += 1
-                ctx.var_types[t_name] = target_type
+                _register_local_storage(ctx, t_name, target_type)
                 _emit_body(ctx, body)
                 ctx.indent_level -= 1
                 _emit(ctx, "}")
@@ -1268,12 +1419,18 @@ def _emit_closure_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         return
     ctx.includes_needed.add("functional")
     saved = dict(ctx.var_types)
+    saved_value_container_vars = set(ctx.value_container_vars)
     saved_ret = ctx.current_return_type
+    saved_scope = ctx.current_function_scope
+    saved_scope_locals = set(ctx.current_value_container_locals)
     return_type = _return_type(node)
     ctx.current_return_type = return_type
+    name = _str(node, "name")
+    ctx.current_function_scope = _scope_key(ctx, name)
+    ctx.current_value_container_locals = _container_value_locals_for_scope(ctx, name)
     for arg_name, arg_type, _ in _function_param_meta(node):
-        ctx.var_types[arg_name] = arg_type
-    ctx.var_types[name] = _closure_function_type(node)
+        _register_local_storage(ctx, arg_name, arg_type)
+    _register_local_storage(ctx, name, _closure_function_type(node))
     params = [_param_decl_text(arg_type, arg_name, mutable) for arg_name, arg_type, mutable in _function_param_meta(node)]
     ret = cpp_signature_type(return_type)
     signature = "[" + "&" + "](" + ", ".join(params) + ")"
@@ -1286,8 +1443,11 @@ def _emit_closure_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     _emit(ctx, "};")
     _emit_blank(ctx)
     ctx.var_types = saved
+    ctx.value_container_vars = saved_value_container_vars
     ctx.var_types[name] = _closure_function_type(node)
     ctx.current_return_type = saved_ret
+    ctx.current_function_scope = saved_scope
+    ctx.current_value_container_locals = saved_scope_locals
 
 
 def _emit_class_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
@@ -1333,9 +1493,9 @@ def _emit_var_decl(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     name = _str(node, "name")
     rt = _str(node, "type")
     if rt == "": rt = _str(node, "resolved_type")
-    ct = cpp_signature_type(rt)
-    ctx.var_types[name] = rt
-    _emit(ctx, ct + " " + name + " = " + cpp_zero_value(rt) + ";")
+    ct = _decl_cpp_type(ctx, rt, name)
+    _register_local_storage(ctx, name, rt)
+    _emit(ctx, ct + " " + name + " = " + _decl_cpp_zero_value(ctx, rt, name) + ";")
 
 
 def _emit_swap(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
@@ -1416,15 +1576,24 @@ def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner
     if _has_decorator(node, "extern"):
         return
     saved = dict(ctx.var_types)
+    saved_value_container_vars = set(ctx.value_container_vars)
     saved_ret = ctx.current_return_type
+    saved_scope = ctx.current_function_scope
+    saved_scope_locals = set(ctx.current_value_container_locals)
     return_type = _return_type(node)
     ctx.current_return_type = return_type
+    func_name = _str(node, "name")
+    ctx.current_function_scope = _scope_key(ctx, func_name, owner_name)
+    ctx.current_value_container_locals = _container_value_locals_for_scope(ctx, func_name, owner_name)
     for arg_name, arg_type, _ in _function_param_meta(node):
-        ctx.var_types[arg_name] = arg_type
+        _register_local_storage(ctx, arg_name, arg_type)
     signature = _function_signature(ctx, node, owner_name=owner_name, declaration_only=False)
     if signature == "":
         ctx.var_types = saved
+        ctx.value_container_vars = saved_value_container_vars
         ctx.current_return_type = saved_ret
+        ctx.current_function_scope = saved_scope
+        ctx.current_value_container_locals = saved_scope_locals
         return
     template_prefix = _function_template_prefix(node)
     if template_prefix != "":
@@ -1436,7 +1605,10 @@ def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner
     _emit(ctx, "}")
     _emit_blank(ctx)
     ctx.var_types = saved
+    ctx.value_container_vars = saved_value_container_vars
     ctx.current_return_type = saved_ret
+    ctx.current_function_scope = saved_scope
+    ctx.current_value_container_locals = saved_scope_locals
 
 
 def _function_signature(
@@ -1573,6 +1745,8 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
             return value_expr
     if target_name in ctx.class_names and (needs_runtime_cast or storage_unknown_ref):
         return "(*(" + value_expr + ").as<" + target_name + ">())"
+    if is_container_resolved_type(target_name) and needs_runtime_cast:
+        return "(" + value_expr + ").as<" + cpp_container_value_type(target_name) + ">()"
     if target_name == "str" and needs_runtime_cast:
         return _emit_object_unbox(value_expr, "str")
     if target_name in ("int", "int64") and needs_runtime_cast:
@@ -1593,6 +1767,30 @@ def _next_temp(ctx: CppEmitContext, prefix: str) -> str:
     return prefix + "_" + str(ctx.temp_counter)
 
 
+def _load_container_value_locals(
+    linked_program_meta: dict[str, JsonVal],
+) -> dict[str, set[str]]:
+    hints = _dict(linked_program_meta, "container_ownership_hints_v1")
+    raw = _dict(hints, "container_value_locals_v1")
+    out: dict[str, set[str]] = {}
+    for scope_key, payload in raw.items():
+        if not isinstance(scope_key, str) or scope_key == "":
+            continue
+        if not isinstance(payload, dict):
+            continue
+        locals_raw = payload.get("locals")
+        if not isinstance(locals_raw, list):
+            continue
+        locals_out = {
+            name
+            for name in locals_raw
+            if isinstance(name, str) and name != ""
+        }
+        if len(locals_out) > 0:
+            out[scope_key] = locals_out
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Module emission
 # ---------------------------------------------------------------------------
@@ -1607,6 +1805,8 @@ def emit_cpp_module(
     module_id = ""
     emit_ctx_meta = _dict(meta, "emit_context")
     if emit_ctx_meta: module_id = _str(emit_ctx_meta, "module_id")
+    if module_id == "":
+        module_id = _str(meta, "module_id")
     lp = _dict(meta, "linked_program_v1")
     if module_id == "" and lp: module_id = _str(lp, "module_id")
 
@@ -1635,6 +1835,7 @@ def emit_cpp_module(
         for key, value in type_info_table_raw.items()
         if isinstance(key, str) and isinstance(value, dict)
     }
+    ctx.container_value_locals_by_scope = _load_container_value_locals(lp)
 
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")

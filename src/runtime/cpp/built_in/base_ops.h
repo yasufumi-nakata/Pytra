@@ -14,6 +14,18 @@ static inline int64 py_len(const Object<list<T>>& v) {
     return static_cast<int64>(v->size());
 }
 
+template <class K, class V>
+static inline int64 py_len(const Object<dict<K, V>>& v) {
+    if (!v) return 0;
+    return static_cast<int64>(v->size());
+}
+
+template <class T>
+static inline int64 py_len(const Object<set<T>>& v) {
+    if (!v) return 0;
+    return static_cast<int64>(v->size());
+}
+
 template <class T>
 static inline int64 py_len(const T& v) {
     return static_cast<int64>(v.size());

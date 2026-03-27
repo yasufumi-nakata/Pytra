@@ -255,6 +255,26 @@ Object<To> upcast(const Object<From>& from) {
     return Object<To>(from.cb, new_ptr);
 }
 
+template<typename T>
+auto begin(Object<T>& value) -> decltype((*value).begin()) {
+    return (*value).begin();
+}
+
+template<typename T>
+auto begin(const Object<T>& value) -> decltype((*value).begin()) {
+    return (*value).begin();
+}
+
+template<typename T>
+auto end(Object<T>& value) -> decltype((*value).end()) {
+    return (*value).end();
+}
+
+template<typename T>
+auto end(const Object<T>& value) -> decltype((*value).end()) {
+    return (*value).end();
+}
+
 // =============================
 // is_subtype
 // =============================

@@ -44,6 +44,37 @@ static inline const V& py_at(const dict<K, V>& d, const Q& key) {
     return it->second;
 }
 
+template <class K, class V, class Q>
+static inline V& py_at(Object<dict<K, V>>& d, const Q& key) {
+    return py_at(*d, key);
+}
+
+template <class K, class V, class Q>
+static inline const V& py_at(const Object<dict<K, V>>& d, const Q& key) {
+    return py_at(*d, key);
+}
+
+template <class K, class V, class Q>
+static inline V py_dict_get(const dict<K, V>& d, const Q& key) {
+    const K k = [&]() -> K {
+        if constexpr (py_is_cstr_like<Q>::value) {
+            return py_coerce_cstr_typed_value<K>(key);
+        } else if constexpr (::std::is_same_v<K, Q>) {
+            return key;
+        } else if constexpr (::std::is_convertible_v<Q, K>) {
+            return static_cast<K>(key);
+        } else {
+            return K(key);
+        }
+    }();
+    return d.get(k);
+}
+
+template <class K, class V, class Q>
+static inline V py_dict_get(const Object<dict<K, V>>& d, const Q& key) {
+    return py_dict_get(*d, key);
+}
+
 template <class K, class V, class Q, class D>
 static inline V py_dict_get(const dict<K, V>& d, const Q& key, const D& default_value) {
     const K k = [&]() -> K {
@@ -70,9 +101,59 @@ static inline V py_dict_get(const dict<K, V>& d, const Q& key, const D& default_
     }
 }
 
+template <class K, class V, class Q, class D>
+static inline V py_dict_get(const Object<dict<K, V>>& d, const Q& key, const D& default_value) {
+    return py_dict_get(*d, key, default_value);
+}
+
+template <class K, class V>
+static inline void py_dict_clear_mut(dict<K, V>& d) {
+    d.clear();
+}
+
+template <class K, class V>
+static inline void py_dict_clear_mut(Object<dict<K, V>>& d) {
+    py_dict_clear_mut(*d);
+}
+
+template <class K, class V>
+static inline list<::std::tuple<K, V>> py_dict_items(const dict<K, V>& d) {
+    return d.items();
+}
+
+template <class K, class V>
+static inline list<::std::tuple<K, V>> py_dict_items(const Object<dict<K, V>>& d) {
+    return py_dict_items(*d);
+}
+
+template <class K, class V>
+static inline list<K> py_dict_keys(const dict<K, V>& d) {
+    return d.keys();
+}
+
+template <class K, class V>
+static inline list<K> py_dict_keys(const Object<dict<K, V>>& d) {
+    return py_dict_keys(*d);
+}
+
+template <class K, class V>
+static inline list<V> py_dict_values(const dict<K, V>& d) {
+    return d.values();
+}
+
+template <class K, class V>
+static inline list<V> py_dict_values(const Object<dict<K, V>>& d) {
+    return py_dict_values(*d);
+}
+
 template <class T>
 static inline int64 py_index(const list<T>& v, const T& item) {
     return v.index(item);
+}
+
+template <class T>
+static inline int64 py_index(const Object<list<T>>& v, const T& item) {
+    return py_index(*v, item);
 }
 
 #endif  // PYTRA_BUILT_IN_DICT_OPS_H

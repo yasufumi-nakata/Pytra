@@ -19,6 +19,14 @@ static inline list<T> py_list_slice_copy(const list<T>& values, int64 lo, int64 
 }
 
 template <class T>
+static inline list<T> py_list_slice_copy(const Object<list<T>>& values, int64 lo, int64 up) {
+    if (!values) {
+        return list<T>{};
+    }
+    return py_list_slice_copy(*values, lo, up);
+}
+
+template <class T>
 static inline int64 py_list_normalize_index_or_raise(const list<T>& values, int64 idx, const char* label) {
     int64 pos = idx;
     const int64 n = static_cast<int64>(values.size());
@@ -39,6 +47,16 @@ template <class T>
 static inline typename list<T>::const_reference py_list_at_ref(const list<T>& values, int64 idx) {
     const int64 pos = py_list_normalize_index_or_raise(values, idx, "list index out of range");
     return values[static_cast<::std::size_t>(pos)];
+}
+
+template <class T>
+static inline typename list<T>::reference py_list_at_ref(Object<list<T>>& values, int64 idx) {
+    return py_list_at_ref(*values, idx);
+}
+
+template <class T>
+static inline typename list<T>::const_reference py_list_at_ref(const Object<list<T>>& values, int64 idx) {
+    return py_list_at_ref(*values, idx);
 }
 
 template <class T>
@@ -85,6 +103,11 @@ static inline void py_list_append_mut(list<T>& values, const U& item) {
     }
 }
 
+template <class T, class U>
+static inline void py_list_append_mut(Object<list<T>>& values, const U& item) {
+    py_list_append_mut(*values, item);
+}
+
 template <class T, class I, class U>
 static inline void py_list_set_at_mut(list<T>& values, I idx, const U& item) {
     int64 pos = py_to<int64>(idx);
@@ -100,9 +123,19 @@ static inline void py_list_set_at_mut(list<T>& values, I idx, const U& item) {
     }
 }
 
+template <class T, class I, class U>
+static inline void py_list_set_at_mut(Object<list<T>>& values, I idx, const U& item) {
+    py_list_set_at_mut(*values, idx, item);
+}
+
 template <class T, class U>
 static inline void py_list_extend_mut(list<T>& values, const U& items) {
     values.extend(items);
+}
+
+template <class T, class U>
+static inline void py_list_extend_mut(Object<list<T>>& values, const U& items) {
+    py_list_extend_mut(*values, items);
 }
 
 template <class T>
@@ -111,8 +144,18 @@ static inline T py_list_pop_mut(list<T>& values) {
 }
 
 template <class T>
+static inline T py_list_pop_mut(Object<list<T>>& values) {
+    return py_list_pop_mut(*values);
+}
+
+template <class T>
 static inline T py_list_pop_mut(list<T>& values, int64 idx) {
     return values.pop(idx);
+}
+
+template <class T>
+static inline T py_list_pop_mut(Object<list<T>>& values, int64 idx) {
+    return py_list_pop_mut(*values, idx);
 }
 
 template <class T>
@@ -121,13 +164,28 @@ static inline void py_list_clear_mut(list<T>& values) {
 }
 
 template <class T>
+static inline void py_list_clear_mut(Object<list<T>>& values) {
+    py_list_clear_mut(*values);
+}
+
+template <class T>
 static inline void py_list_reverse_mut(list<T>& values) {
     ::std::reverse(values.begin(), values.end());
 }
 
 template <class T>
+static inline void py_list_reverse_mut(Object<list<T>>& values) {
+    py_list_reverse_mut(*values);
+}
+
+template <class T>
 static inline void py_list_sort_mut(list<T>& values) {
     ::std::sort(values.begin(), values.end());
+}
+
+template <class T>
+static inline void py_list_sort_mut(Object<list<T>>& values) {
+    py_list_sort_mut(*values);
 }
 
 // py_list_at_ref for object (= Object<void>): downcast to list<object> and index.

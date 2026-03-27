@@ -34,7 +34,7 @@
 5. [x] [ID: P1-EMIT-CPP-S5] `toolchain/` への依存をゼロにし、`toolchain/` を除去する — pytra-cli2.py から toolchain/ import ゼロ達成
 6. [x] [ID: P1-EMIT-CPP-S6] C++ emitter の unsupported ノードを fail-fast に変更し、プレースホルダ出力を禁止する — `/* unknown builtin */` / `// unsupported for` を廃止し、unknown expr/stmt/builtin/ForCore shape を `RuntimeError` で fail-closed 化
 7. [x] [ID: P1-EMIT-CPP-S7] mapping.json 外の名前変換ハードコードを除去する — `resolve_runtime_call()` fallback の dotted `runtime_call` は unmapped なら fail-closed とし、C++ emitter の `fn.replace(".", "_")` を削除
-8. [ ] [ID: P1-EMIT-CPP-S8] C++ emitter の container 既定表現を spec 準拠に修正する — `list<T>` / `dict<K,V>` / `set<T>` を既定で `Object<list<T>>` 等の参照型ラッパーにし、`container_value_locals_v1` がある局所のみ値型を許可する
+8. [x] [ID: P1-EMIT-CPP-S8] C++ emitter の container 既定表現を spec 準拠に修正する — `list<T>` / `dict<K,V>` / `set<T>` を既定で `Object<list<T>>` 等の参照型ラッパーへ移行し、`container_value_locals_v1` がある局所のみ値型を許可。`dict_wrapper_methods.py` / `set_wrapper_methods.py` の C++ build+run を確認
 
 ### P2-SELFHOST: toolchain2 自身の変換テスト
 

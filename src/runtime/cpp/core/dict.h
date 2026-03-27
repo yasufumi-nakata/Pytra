@@ -32,6 +32,21 @@ public:
         }
     }
 
+    template <
+        class KK,
+        class VV,
+        ::std::enable_if_t<
+            ::std::is_constructible_v<K, KK> &&
+            ::std::is_constructible_v<V, VV>, int> = 0>
+    dict(const Object<dict<KK, VV>>& other) {
+        if (!other) {
+            return;
+        }
+        for (const auto& kv : *other) {
+            data_[K(kv.first)] = _convert_value(kv.second);
+        }
+    }
+
     operator const base_type&() const { return data_; }  // NOLINT(google-explicit-constructor)
     operator base_type&() { return data_; }              // NOLINT(google-explicit-constructor)
 

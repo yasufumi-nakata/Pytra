@@ -12,6 +12,7 @@
 #include "core/conversions.h"
 #include "built_in/list_ops.h"
 #include "built_in/dict_ops.h"
+#include "built_in/set_ops.h"
 #include "built_in/bounds.h"
 #include "core/type_id_support.h"
 #include "core/tagged_value.h"

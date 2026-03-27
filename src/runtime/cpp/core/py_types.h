@@ -74,6 +74,62 @@ static inline list<T> rc_list_copy_value(const Object<list<T>>& values) {
     return *values;
 }
 
+template <class K, class V>
+static inline Object<dict<K, V>> rc_dict_new() {
+    return make_object<dict<K, V>>(PYTRA_TID_DICT);
+}
+
+template <class K, class V>
+static inline Object<dict<K, V>> rc_dict_from_value(dict<K, V> values) {
+    return make_object<dict<K, V>>(PYTRA_TID_DICT, ::std::move(values));
+}
+
+template <class K, class V>
+static inline dict<K, V>& rc_dict_ref(Object<dict<K, V>>& values) {
+    return *values;
+}
+
+template <class K, class V>
+static inline const dict<K, V>& rc_dict_ref(const Object<dict<K, V>>& values) {
+    return *values;
+}
+
+template <class K, class V>
+static inline dict<K, V> rc_dict_copy_value(const Object<dict<K, V>>& values) {
+    if (!values) {
+        return dict<K, V>{};
+    }
+    return *values;
+}
+
+template <class T>
+static inline Object<set<T>> rc_set_new() {
+    return make_object<set<T>>(PYTRA_TID_SET);
+}
+
+template <class T>
+static inline Object<set<T>> rc_set_from_value(set<T> values) {
+    return make_object<set<T>>(PYTRA_TID_SET, ::std::move(values));
+}
+
+template <class T>
+static inline set<T>& rc_set_ref(Object<set<T>>& values) {
+    return *values;
+}
+
+template <class T>
+static inline const set<T>& rc_set_ref(const Object<set<T>>& values) {
+    return *values;
+}
+
+template <class T>
+static inline set<T> rc_set_copy_value(const Object<set<T>>& values) {
+    if (!values) {
+        return set<T>{};
+    }
+    return *values;
+}
+
 // POD boxing for Object<void> (= object)
 // These create a heap-allocated boxed value wrapped in ControlBlock.
 template<typename T>

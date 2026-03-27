@@ -78,11 +78,20 @@ static inline pytra_type_id py_runtime_value_type_id(const T& value) {
 template <class K, class V>
 static inline pytra_type_id py_runtime_value_type_id(const dict<K, V>&) { return PYTRA_TID_DICT; }
 
+template <class K, class V>
+static inline pytra_type_id py_runtime_value_type_id(const Object<dict<K, V>>&) { return PYTRA_TID_DICT; }
+
 template <class T>
 static inline pytra_type_id py_runtime_value_type_id(const list<T>&) { return PYTRA_TID_LIST; }
 
 template <class T>
+static inline pytra_type_id py_runtime_value_type_id(const Object<list<T>>&) { return PYTRA_TID_LIST; }
+
+template <class T>
 static inline pytra_type_id py_runtime_value_type_id(const set<T>&) { return PYTRA_TID_SET; }
+
+template <class T>
+static inline pytra_type_id py_runtime_value_type_id(const Object<set<T>>&) { return PYTRA_TID_SET; }
 
 // Object<T> isinstance is provided by Object<T>::isinstance(TypeInfo*) in object.h.
 // Legacy rc<T>/RcObject specializations removed (Object<T> migration complete).

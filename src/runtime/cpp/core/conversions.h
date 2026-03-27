@@ -13,6 +13,31 @@ static inline bool py_to_bool(const Object<list<T>>& v) {
     return v && !v->empty();
 }
 
+template <class T>
+static inline bool py_to_bool(const list<T>& v) {
+    return !v.empty();
+}
+
+template <class K, class V>
+static inline bool py_to_bool(const dict<K, V>& v) {
+    return !v.empty();
+}
+
+template <class K, class V>
+static inline bool py_to_bool(const Object<dict<K, V>>& v) {
+    return v && !v->empty();
+}
+
+template <class T>
+static inline bool py_to_bool(const set<T>& v) {
+    return !v.empty();
+}
+
+template <class T>
+static inline bool py_to_bool(const Object<set<T>>& v) {
+    return v && !v->empty();
+}
+
 static inline bool py_to_bool(bool v) {
     return v;
 }
