@@ -121,6 +121,7 @@ FIXTURE_IFEXP_TERNARY_REGRESSION_SOURCE = _fixture_case_source(
     "test/fixture/source/py/control/ifexp_ternary_regression.py"
 )
 FIXTURE_IF_ELSE_SOURCE = _fixture_case_source("test/fixture/source/py/control/if_else.py")
+FIXTURE_NESTED_CALL_SOURCE = _fixture_case_source("test/fixture/source/py/core/nested_call.py")
 FIXTURE_NOT_SOURCE = _fixture_case_source("test/fixture/source/py/control/not.py")
 FIXTURE_TUPLE_ASSIGN_SOURCE = _fixture_case_source("test/fixture/source/py/core/tuple_assign.py")
 
@@ -444,6 +445,14 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
     def test_common_renderer_fixture_if_else_stdout_parity_between_go_and_cpp(self) -> None:
         go_stdout = _run_go(FIXTURE_IF_ELSE_SOURCE)
         cpp_stdout = _run_cpp(FIXTURE_IF_ELSE_SOURCE)
+
+        self.assertEqual(go_stdout, "12\n")
+        self.assertEqual(cpp_stdout, "12\n")
+        self.assertEqual(go_stdout, cpp_stdout)
+
+    def test_common_renderer_fixture_nested_call_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(FIXTURE_NESTED_CALL_SOURCE)
+        cpp_stdout = _run_cpp(FIXTURE_NESTED_CALL_SOURCE)
 
         self.assertEqual(go_stdout, "12\n")
         self.assertEqual(cpp_stdout, "12\n")
