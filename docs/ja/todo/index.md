@@ -39,7 +39,7 @@
 10. [x] [ID: P1-EMIT-CPP-S10] C++ emitter の runtime call 名解決を mapping.json に一本化する — `runtime/cpp/mapping.json` に `py_int_from_str/std::stoll`・`py_float_from_str/std::stod` を寄せ、C++ emitter から `append → push_back` と container helper / numeric cast の個別分岐を削除。attribute call も runtime metadata + mapping 経由で解決
 11. [x] [ID: P1-EMIT-CPP-S11] C++ emitter の `is_entry` / `main_guard_body` 出力を emitter guide 準拠に修正する — `emit_context.is_entry` を唯一のスイッチにし、`is_entry=False` の module では `main_guard_body` も `main()` も emit しないよう修正。entry module だけ `__pytra_main_guard()` を保持
 12. [x] [ID: P1-EMIT-CPP-S12] C++ emitter の残存プレースホルダ出力を廃止し fail-fast を徹底する — `/* slice */` と `/* assign */` fallback を `unsupported_slice_shape` / `unsupported_assign_target` の `RuntimeError` に置換し、focused fail-fast test を追加
-13. [ ] [ID: P1-EMIT-CPP-S13] C++ emitter の数値 cast 出力判定を `mapping.json` `implicit_promotions` 準拠に修正する — `BinOp.casts` を常時 `static_cast` へ描画する現状を改め、`implicit_promotions` に一致する cast だけを省略し、それ以外は明示 cast を出力する。cast 省略判定を backend 固有ロジックで持たない
+13. [x] [ID: P1-EMIT-CPP-S13] C++ emitter の数値 cast 出力判定を `mapping.json` `implicit_promotions` 準拠に修正する — `RuntimeMapping` に `implicit_promotions` を追加し、C++ `mapping.json` の整数/float 昇格表に一致する `BinOp.casts` だけを省略。非該当 cast は従来どおり明示 `static_cast` を維持
 14. [ ] [ID: P1-EMIT-CPP-S14] C++ backend helper の module/path ハードコードを shared metadata へ寄せる — `runtime_paths.py` に残っている `pytra.typing` / `pytra.types` / `pytra.dataclasses` / `pytra.enum` / `pytra.std.template` / `pytra.core.` 等の具体的 module ID 依存を棚卸しし、shared helper / linker metadata 経由へ縮退して emitter guide の「具体的 module ID を backend に持ち込まない」契約へ合わせる
 
 ### P2-SELFHOST: toolchain2 自身の変換テスト

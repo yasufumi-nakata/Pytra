@@ -43,6 +43,10 @@ class RuntimeMapping:
     builtin_prefix: str = "__pytra_"
     calls: dict[str, str] = field(default_factory=dict)
     skip_module_prefixes: list[str] = field(default_factory=list)
+    implicit_promotions: set[str] = field(default_factory=set)
+
+    def is_implicit_cast(self, from_type: str, to_type: str) -> bool:
+        return (from_type + "->" + to_type) in self.implicit_promotions
 
 
 def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
@@ -80,10 +84,23 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
                 skip_item = str(item)
                 skip.append(skip_item)
 
+    implicit_promotions_raw: JsonVal = None
+    if "implicit_promotions" in raw:
+        implicit_promotions_raw = raw["implicit_promotions"]
+    implicit_promotions: set[str] = set()
+    if isinstance(implicit_promotions_raw, list):
+        for item in implicit_promotions_raw:
+            if isinstance(item, list) and len(item) == 2:
+                from_type = item[0]
+                to_type = item[1]
+                if isinstance(from_type, str) and isinstance(to_type, str):
+                    implicit_promotions.add(from_type + "->" + to_type)
+
     return RuntimeMapping(
         builtin_prefix=prefix_str,
         calls=calls,
         skip_module_prefixes=skip,
+        implicit_promotions=implicit_promotions,
     )
 
 

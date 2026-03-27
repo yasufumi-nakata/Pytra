@@ -501,9 +501,15 @@ def _emit_binop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     for cast in _list(node, "casts"):
         if isinstance(cast, dict):
             on = _str(cast, "on")
-            to = cpp_type(_str(cast, "to"))
-            if on == "left": left = "static_cast<" + to + ">(" + left + ")"
-            elif on == "right": right = "static_cast<" + to + ">(" + right + ")"
+            from_type = _str(cast, "from")
+            to_type = _str(cast, "to")
+            to = cpp_type(to_type)
+            if ctx.mapping.is_implicit_cast(from_type, to_type):
+                continue
+            if on == "left":
+                left = "static_cast<" + to + ">(" + left + ")"
+            elif on == "right":
+                right = "static_cast<" + to + ">(" + right + ")"
     # List multiply
     if op == "Mult":
         ln = node.get("left")

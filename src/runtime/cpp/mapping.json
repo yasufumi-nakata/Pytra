@@ -67,5 +67,15 @@
   },
   "skip_modules": [
     "pytra.core."
+  ],
+  "implicit_promotions": [
+    ["uint8", "int64"],
+    ["int8", "int64"],
+    ["int16", "int64"],
+    ["uint16", "int64"],
+    ["int32", "int64"],
+    ["uint32", "int64"],
+    ["int64", "float64"],
+    ["float32", "float64"]
   ]
 }

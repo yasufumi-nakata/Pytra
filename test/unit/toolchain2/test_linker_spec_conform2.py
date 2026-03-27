@@ -1926,8 +1926,59 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         self.assertIn("int64(Status_ERROR)", go_code)
         self.assertNotIn("py_int(Status_ERROR)", go_code)
-        self.assertIn("static_cast<int64_t>(Status.ERROR)", cpp_code)
-        self.assertNotIn("py_int(Status.ERROR)", cpp_code)
+        self.assertIn("static_cast<int64>(Status::ERROR)", cpp_code)
+        self.assertNotIn("py_int(Status::ERROR)", cpp_code)
+
+    def test_cpp_emitter_skips_binop_casts_for_implicit_promotions(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "BinOp",
+                        "op": "Add",
+                        "resolved_type": "int64",
+                        "left": {"kind": "Name", "id": "a", "resolved_type": "int64"},
+                        "right": {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                        "casts": [
+                            {"on": "left", "from": "int8", "to": "int64", "reason": "numeric_promotion"}
+                        ],
+                    },
+                }
+            ],
+            meta_extra={"emit_context": {"module_id": "app.main", "is_entry": False}},
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("(a + int64(1));", cpp_code)
+        self.assertNotIn("static_cast<int64_t>(a)", cpp_code)
+
+    def test_cpp_emitter_keeps_binop_casts_outside_implicit_promotions(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "BinOp",
+                        "op": "Add",
+                        "resolved_type": "uint8",
+                        "left": {"kind": "Name", "id": "a", "resolved_type": "uint8"},
+                        "right": {"kind": "Constant", "value": 1, "resolved_type": "uint8"},
+                        "casts": [
+                            {"on": "left", "from": "int64", "to": "uint8", "reason": "narrowing"}
+                        ],
+                    },
+                }
+            ],
+            meta_extra={"emit_context": {"module_id": "app.main", "is_entry": False}},
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("static_cast<uint8>(a)", cpp_code)
 
     def test_go_emitter_runtime_symbol_prefix_uses_skip_modules_without_pytra_hardcode(self) -> None:
         doc = _module_doc(
