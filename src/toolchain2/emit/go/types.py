@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+from pytra.std.json import JsonVal
+from pytra.typing import cast
+
 
 # EAST3 resolved_type → Go type
 _TYPE_MAP: dict[str, str] = {
@@ -47,16 +50,16 @@ _TYPE_MAP: dict[str, str] = {
 }
 
 
-def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
+def _parse_callable_signature(resolved_type: str) -> list[JsonVal]:
     if not (
         (resolved_type.startswith("callable[") or resolved_type.startswith("Callable["))
         and resolved_type.endswith("]")
     ):
-        return [], "unknown"
+        return [[], "unknown"]
     prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
     inner = resolved_type[prefix_len:-1].strip()
     if inner == "":
-        return [], "unknown"
+        return [[], "unknown"]
     if inner.startswith("["):
         depth = 0
         close_idx = -1
@@ -74,15 +77,28 @@ def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
         if close_idx >= 0 and close_idx + 1 < len(inner) and inner[close_idx + 1] == ",":
             params_text = inner[1:close_idx].strip()
             ret_text = inner[close_idx + 2:].strip()
-            params = _split_generic_args(params_text) if params_text != "" else []
-            return params, ret_text if ret_text != "" else "unknown"
+            params: list[str] = []
+            if params_text != "":
+                params = _split_generic_args(params_text)
+            params_json: list[JsonVal] = []
+            for param in params:
+                params_json.append(param)
+            return [params_json, ret_text if ret_text != "" else "unknown"]
     arrow_idx = inner.find("->")
     if arrow_idx >= 0:
         params_text2 = inner[:arrow_idx].strip()
         ret_text2 = inner[arrow_idx + 2:].strip()
-        params2 = [part.strip() for part in params_text2.split(",") if part.strip() != ""] if params_text2 != "" else []
-        return params2, ret_text2 if ret_text2 != "" else "unknown"
-    return [], inner
+        params2: list[str] = []
+        if params_text2 != "":
+            for part in params_text2.split(","):
+                item = part.strip()
+                if item != "":
+                    params2.append(item)
+        params2_json: list[JsonVal] = []
+        for param2 in params2:
+            params2_json.append(param2)
+        return [params2_json, ret_text2 if ret_text2 != "" else "unknown"]
+    return [[], inner]
 
 
 def go_type(resolved_type: str) -> str:
@@ -91,7 +107,9 @@ def go_type(resolved_type: str) -> str:
         return "any"
 
     if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
-        params, ret = _parse_callable_signature(resolved_type)
+        signature = _parse_callable_signature(resolved_type)
+        params = cast(list[str], signature[0])
+        ret = cast(str, signature[1])
         param_gts = [go_type(param) for param in params]
         ret_gt = go_type(ret)
         if ret_gt == "":

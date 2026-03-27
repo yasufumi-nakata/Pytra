@@ -18,6 +18,7 @@ from dataclasses import field
 from pytra.std.json import JsonVal
 from pytra.std import json
 from pytra.std.pathlib import Path
+from pytra.typing import cast
 
 
 # ---------------------------------------------------------------------------
@@ -90,11 +91,13 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
     implicit_promotions: set[str] = set()
     if isinstance(implicit_promotions_raw, list):
         for item in implicit_promotions_raw:
-            if isinstance(item, list) and len(item) == 2:
-                from_type = item[0]
-                to_type = item[1]
-                if isinstance(from_type, str) and isinstance(to_type, str):
-                    implicit_promotions.add(from_type + "->" + to_type)
+            if isinstance(item, list):
+                item_list = cast(list[JsonVal], item)
+                if len(item_list) == 2:
+                    from_type = item_list[0]
+                    to_type = item_list[1]
+                    if isinstance(from_type, str) and isinstance(to_type, str):
+                        implicit_promotions.add(from_type + "->" + to_type)
 
     return RuntimeMapping(
         builtin_prefix=prefix_str,

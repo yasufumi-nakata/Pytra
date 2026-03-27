@@ -327,6 +327,9 @@ def summarize_type_expr(expr: JsonVal) -> Node:
     if kind == OPTIONAL_TYPE:
         out["category"] = "optional"
         inner_summary = summarize_type_expr(d.get("inner"))
+        im = jv_str(inner_summary.get("mirror", "unknown"))
+        if im != "" and im != "unknown":
+            out["inner_mirror"] = im
         ic = jv_str(inner_summary.get("category", "unknown"))
         if ic != "unknown":
             out["inner_category"] = ic
@@ -544,10 +547,9 @@ def hydrate_nominal_adt_summary(ctx: CompileContext, summary: Node, mirror: Json
             return summary
         return make_nominal_adt_type_summary(summary_mirror, jv_str(decl.get("family_name", summary_mirror)))
     if category == "optional" and jv_str(summary.get("nominal_adt_name", "")) == "":
-        suffix_parts = summary_mirror.split(" | ")
-        if len(suffix_parts) != 2 or suffix_parts[1] != "None":
+        inner_name = normalize_type_name(summary.get("inner_mirror"))
+        if inner_name == "unknown":
             return summary
-        inner_name = suffix_parts[0]
         decl = lookup_nominal_adt_decl(ctx, inner_name)
         if "family_name" not in decl:
             return summary
@@ -623,10 +625,10 @@ def raise_json_contract_violation(semantic_tag: str, owner_summary: Node) -> Non
     expected = expected_json_receiver_type_name(semantic_tag)
     if expected == "":
         return
-    actual = json_nominal_type_name(owner_summary)
+    actual: str = json_nominal_type_name(owner_summary)
     if actual == expected:
         return
-    mirror = normalize_type_name(owner_summary.get("mirror"))
+    mirror: str = normalize_type_name(owner_summary.get("mirror"))
     category: str = jv_str(owner_summary.get("category", "unknown"))
     actual_desc = actual if actual != "" else mirror
     if actual_desc == "":
@@ -647,12 +649,12 @@ def raise_json_contract_violation(semantic_tag: str, owner_summary: Node) -> Non
 def representative_json_contract_metadata(ctx: CompileContext, call: Node, receiver_node: JsonVal) -> tuple[str, Node, Node]:
     result_summary = structured_type_expr_summary_from_node(call)
     receiver_summary = structured_type_expr_summary_from_node(receiver_node)
-    rc = jv_str(result_summary.get("category", "unknown"))
-    rf = jv_str(result_summary.get("nominal_adt_family", ""))
-    rn = jv_str(result_summary.get("nominal_adt_name", ""))
-    recc = jv_str(receiver_summary.get("category", "unknown"))
-    recf = jv_str(receiver_summary.get("nominal_adt_family", ""))
-    recn = jv_str(receiver_summary.get("nominal_adt_name", ""))
+    rc: str = jv_str(result_summary.get("category", "unknown"))
+    rf: str = jv_str(result_summary.get("nominal_adt_family", ""))
+    rn: str = jv_str(result_summary.get("nominal_adt_name", ""))
+    recc: str = jv_str(receiver_summary.get("category", "unknown"))
+    recf: str = jv_str(receiver_summary.get("nominal_adt_family", ""))
+    recn: str = jv_str(receiver_summary.get("nominal_adt_name", ""))
     if (
         rc == "optional"
         and rf == "json"
@@ -664,12 +666,12 @@ def representative_json_contract_metadata(ctx: CompileContext, call: Node, recei
         return ("type_expr", result_summary, receiver_summary)
     compat_result = type_expr_summary_from_node(ctx, call)
     compat_receiver = expr_type_summary(ctx, receiver_node)
-    crc = jv_str(compat_result.get("category", "unknown"))
-    crf = jv_str(compat_result.get("nominal_adt_family", ""))
-    crn = jv_str(compat_result.get("nominal_adt_name", ""))
-    crec = jv_str(compat_receiver.get("category", "unknown"))
-    crecf = jv_str(compat_receiver.get("nominal_adt_family", ""))
-    crecn = jv_str(compat_receiver.get("nominal_adt_name", ""))
+    crc: str = jv_str(compat_result.get("category", "unknown"))
+    crf: str = jv_str(compat_result.get("nominal_adt_family", ""))
+    crn: str = jv_str(compat_result.get("nominal_adt_name", ""))
+    crec: str = jv_str(compat_receiver.get("category", "unknown"))
+    crecf: str = jv_str(compat_receiver.get("nominal_adt_family", ""))
+    crecn: str = jv_str(compat_receiver.get("nominal_adt_name", ""))
     if (
         crc == "optional"
         and crf == "json"
