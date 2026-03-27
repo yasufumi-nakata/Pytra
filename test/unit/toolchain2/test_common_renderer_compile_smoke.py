@@ -116,11 +116,13 @@ FIXTURE_ADD_SOURCE = _fixture_case_source("test/fixture/source/py/core/add.py")
 FIXTURE_ASSIGN_SOURCE = _fixture_case_source("test/fixture/source/py/core/assign.py")
 FIXTURE_COMPARE_SOURCE = _fixture_case_source("test/fixture/source/py/core/compare.py")
 FIXTURE_DEFAULT_PARAM_SOURCE = _fixture_case_source("test/fixture/source/py/core/default_param.py")
+FIXTURE_FOR_RANGE_SOURCE = _fixture_case_source("test/fixture/source/py/control/for_range.py")
 FIXTURE_IFEXP_BOOL_SOURCE = _fixture_case_source("test/fixture/source/py/control/ifexp_bool.py")
 FIXTURE_IFEXP_TERNARY_REGRESSION_SOURCE = _fixture_case_source(
     "test/fixture/source/py/control/ifexp_ternary_regression.py"
 )
 FIXTURE_IF_ELSE_SOURCE = _fixture_case_source("test/fixture/source/py/control/if_else.py")
+FIXTURE_LOOP_SOURCE = _fixture_case_source("test/fixture/source/py/control/loop.py")
 FIXTURE_NESTED_CALL_SOURCE = _fixture_case_source("test/fixture/source/py/core/nested_call.py")
 FIXTURE_NOT_SOURCE = _fixture_case_source("test/fixture/source/py/control/not.py")
 FIXTURE_STRING_SOURCE = _fixture_case_source("test/fixture/source/py/strings/string.py")
@@ -427,6 +429,14 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
         self.assertEqual(cpp_stdout, expected)
         self.assertEqual(go_stdout, cpp_stdout)
 
+    def test_common_renderer_fixture_for_range_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(FIXTURE_FOR_RANGE_SOURCE)
+        cpp_stdout = _run_cpp(FIXTURE_FOR_RANGE_SOURCE)
+
+        self.assertEqual(go_stdout, "10\n")
+        self.assertEqual(cpp_stdout, "10\n")
+        self.assertEqual(go_stdout, cpp_stdout)
+
     def test_common_renderer_fixture_ifexp_bool_stdout_parity_between_go_and_cpp(self) -> None:
         go_stdout = _run_go(FIXTURE_IFEXP_BOOL_SOURCE)
         cpp_stdout = _run_cpp(FIXTURE_IFEXP_BOOL_SOURCE)
@@ -458,6 +468,14 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
 
         self.assertEqual(go_stdout, "12\n")
         self.assertEqual(cpp_stdout, "12\n")
+        self.assertEqual(go_stdout, cpp_stdout)
+
+    def test_common_renderer_fixture_loop_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(FIXTURE_LOOP_SOURCE)
+        cpp_stdout = _run_cpp(FIXTURE_LOOP_SOURCE)
+
+        self.assertEqual(go_stdout, "14\n")
+        self.assertEqual(cpp_stdout, "14\n")
         self.assertEqual(go_stdout, cpp_stdout)
 
     def test_common_renderer_fixture_not_stdout_parity_between_go_and_cpp(self) -> None:
