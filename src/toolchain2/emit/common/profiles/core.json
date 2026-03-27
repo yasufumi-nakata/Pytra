@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "lowering": {
+    "tuple_unpack_style": "individual_temps",
+    "container_covariance": false,
+    "closure_style": "closure_syntax",
+    "with_style": "try_finally",
+    "property_style": "method_call",
+    "swap_style": "temp_var"
+  }
+}

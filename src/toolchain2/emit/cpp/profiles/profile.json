@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "language": "cpp",
+  "include": [],
+  "lowering": {
+    "tuple_unpack_style": "structured_binding",
+    "container_covariance": false,
+    "closure_style": "closure_syntax",
+    "with_style": "raii",
+    "property_style": "method_call",
+    "swap_style": "std_swap"
+  }
+}

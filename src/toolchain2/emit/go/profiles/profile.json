@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "language": "go",
+  "include": [],
+  "lowering": {
+    "tuple_unpack_style": "multi_return",
+    "container_covariance": false,
+    "closure_style": "closure_syntax",
+    "with_style": "defer",
+    "property_style": "method_call",
+    "swap_style": "multi_assign"
+  }
+}
