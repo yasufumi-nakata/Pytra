@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from pytra.std.json import JsonVal
+from pytra.typing import cast
 
 if TYPE_CHECKING:
     from toolchain2.link.linker import LinkedModule
@@ -232,7 +233,8 @@ def build_call_graph(
     for module in sorted(modules, key=lambda m: m.module_id):
         doc = module.east_doc
         if isinstance(doc, dict):
-            syms = _collect_symbols(doc, module.module_id)
+            doc_node: dict[str, JsonVal] = cast(dict[str, JsonVal], doc)
+            syms = _collect_symbols(doc_node, module.module_id)
             known_symbols.update(syms.keys())
 
     # Build per-module call graphs and merge
@@ -243,8 +245,9 @@ def build_call_graph(
         doc = module.east_doc
         if not isinstance(doc, dict):
             continue
+        doc_node: dict[str, JsonVal] = cast(dict[str, JsonVal], doc)
         module_graph, module_unresolved = _build_module_call_graph(
-            doc, module.module_id, known_symbols,
+            doc_node, module.module_id, known_symbols,
         )
         for caller in sorted(module_graph.keys()):
             raw_graph[caller] = set(sorted(module_graph[caller]))

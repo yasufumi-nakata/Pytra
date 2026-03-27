@@ -170,14 +170,14 @@ def _go_type_with_ctx(ctx: EmitContext, resolved_type: str) -> str:
     if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):
         inner4 = resolved_type[:-7] if resolved_type.endswith(" | None") else resolved_type[:-6]
         gt = _go_type_with_ctx(ctx, inner4)
-        if gt.startswith("*") or gt == "interface{}" or gt == "any" or gt.startswith("[]") or gt.startswith("map[") or gt.startswith("func("):
+        if gt.startswith("*") or gt == "any" or gt.startswith("[]") or gt.startswith("map[") or gt.startswith("func("):
             return gt
         return "*" + gt
 
     if "|" in resolved_type:
         parts2 = [part.strip() for part in resolved_type.split("|") if part.strip() != ""]
         if len(parts2) > 1:
-            return "interface{}"
+            return "any"
 
     mapped = go_type(resolved_type)
     if resolved_type in ("None", "none"):
@@ -422,6 +422,19 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     safe_name = _go_symbol_name(ctx, name)
     resolved_type = _str(node, "resolved_type")
     scope_type = ctx.var_types.get(safe_name, "")
+    if (
+        resolved_type != ""
+        and resolved_type != "unknown"
+        and (scope_type == "" or scope_type == "unknown")
+        and (
+            resolved_type == "Node"
+            or resolved_type.startswith("dict[")
+            or resolved_type.startswith("list[")
+            or resolved_type.startswith("set[")
+            or resolved_type.startswith("tuple[")
+        )
+    ):
+        return safe_name
     scope_optional_inner = _optional_inner_type(scope_type)
     if (
         resolved_type != ""
@@ -631,7 +644,7 @@ def _optional_inner_type(resolved_type: str) -> str:
 
 def _wrap_optional_resolved_code(ctx: EmitContext, value_code: str, inner_type: str) -> str:
     inner_gt = go_type(inner_type)
-    if inner_gt == "" or inner_gt == "any" or inner_gt.startswith("*") or inner_gt == "interface{}":
+    if inner_gt == "" or inner_gt == "any" or inner_gt.startswith("*"):
         return value_code
     temp_name = _next_temp(ctx, "opt")
     return (
@@ -690,7 +703,7 @@ def _emit_unbox(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         scope_type = ctx.var_types.get(scope_name, "")
         if scope_type == target_type or (scope_type != "" and go_type(scope_type) == target_gt):
             return _emit_expr(ctx, value_node)
-    if target_gt in ("any", "interface{}"):
+    if target_gt == "any":
         return _emit_expr(ctx, value_node)
     if target_gt != "" and target_gt != "any" and source_gt == target_gt:
         return _emit_expr(ctx, value_node)
@@ -751,7 +764,7 @@ def _box_dynamic_value_code(ctx: EmitContext, value_node: JsonVal) -> str:
 
 def _box_value_code(ctx: EmitContext, value_node: JsonVal, target_type: str) -> str:
     target_gt = go_type(target_type)
-    if target_type in ("Any", "object", "Obj", "unknown") or target_gt in ("any", "interface{}"):
+    if target_type in ("Any", "object", "Obj", "unknown") or target_gt == "any":
         return _box_dynamic_value_code(ctx, value_node)
     if target_type.startswith("tuple[") and target_type.endswith("]"):
         elem_types = _split_generic_args(target_type[6:-1])
@@ -1197,6 +1210,24 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         if target_name == "":
                             target_name = _str(target_node, "repr")
                     value_node = args[1] if len(args) >= 2 and isinstance(args[1], dict) else None
+                    if isinstance(value_node, dict) and _str(value_node, "kind") == "Name":
+                        source_type0 = _str(value_node, "resolved_type")
+                        if target_name != "" and source_type0 == target_name:
+                            return arg_strs[1]
+                        scope_name = _go_symbol_name(ctx, _str(value_node, "id"))
+                        scope_type = ctx.var_types.get(scope_name, "")
+                        target_gt0 = _go_type_with_ctx(ctx, target_name)
+                        if (
+                            target_gt0 != ""
+                            and target_gt0 != "any"
+                            and (
+                                scope_type == ""
+                                or scope_type == "unknown"
+                                or scope_type in ("JsonVal", "Any", "Obj", "object")
+                                or go_type(scope_type) == "any"
+                            )
+                        ):
+                            return _coerce_from_any(arg_strs[1], target_name)
                     if isinstance(value_node, dict) and _str(value_node, "kind") == "Name":
                         scope_name = _go_symbol_name(ctx, _str(value_node, "id"))
                         scope_type = ctx.var_types.get(scope_name, "")
@@ -3438,7 +3469,7 @@ def _emit_type_alias(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     value = _str(node, "value")
     go_name = _go_symbol_name(ctx, name)
     go_value = _go_type_with_ctx(ctx, value)
-    if go_value == "" or go_value == "interface{}":
+    if go_value == "" or go_value == "any":
         go_value = "any"
     _emit(ctx, "type " + go_name + " = " + go_value)
 

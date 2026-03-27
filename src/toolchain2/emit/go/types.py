@@ -128,17 +128,17 @@ def go_type(resolved_type: str) -> str:
     if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):
         inner = resolved_type[: -7] if resolved_type.endswith(" | None") else resolved_type[: -6]
         gt = go_type(inner)
-        if gt in ("any", "interface{}"):
+        if gt == "any":
             return gt
         if gt.startswith("*") or gt.startswith("[]") or gt.startswith("map[") or gt.startswith("func("):
             return gt
         return "*" + gt
 
-    # Union type (A | B, A|B) → interface{}
+    # Union type (A | B, A|B) → any
     if "|" in resolved_type:
         parts = [part.strip() for part in resolved_type.split("|") if part.strip() != ""]
         if len(parts) > 1:
-            return "interface{}"
+            return "any"
 
     # User class → *ClassName (pointer for reference semantics)
     return "*" + _safe_go_ident(resolved_type)

@@ -291,7 +291,7 @@ def _const_string_value(node: JsonVal) -> str:
                 if "args" in d:
                     args_obj = d["args"]
                     if isinstance(args_obj, list):
-                        args = args_obj
+                        args = cast(list[JsonVal], args_obj)
                 if len(args) == 1:
                     return _const_string_value(args[0])
     return ""
@@ -449,7 +449,7 @@ def _wrap_dict_literal_for_target_type(value_expr: JsonVal, target_type: str, *,
             if not isinstance(entry, dict):
                 wrapped_entries.append(entry)
                 continue
-            entry_node: Node = entry
+            entry_node: Node = cast(dict[str, JsonVal], entry)
             entry_out: Node = _copy_node(entry_node)
             key_node = entry_node["key"] if "key" in entry_node else None
             value_node = entry_node["value"] if "value" in entry_node else None
@@ -668,7 +668,7 @@ def _resolve_assign_target_type_summary(stmt: Node, ctx: CompileContext) -> Node
         return summary
     target_obj = stmt.get("target")
     if isinstance(target_obj, dict):
-        tod: Node = target_obj
+        tod: Node = cast(dict[str, JsonVal], target_obj)
         summary = type_expr_summary_from_payload(ctx, tod.get("type_expr"), tod.get("resolved_type"))
         category = summary["category"] if "category" in summary else "unknown"
         if jv_str(category) != "unknown":
@@ -686,7 +686,7 @@ def _infer_tuple_assign_target_type(stmt: Node) -> str:
     target_obj = stmt.get("target")
     if not isinstance(target_obj, dict):
         return "unknown"
-    target: Node = target_obj
+    target: Node = cast(dict[str, JsonVal], target_obj)
     if target.get("kind") != TUPLE:
         return "unknown"
 
@@ -1002,7 +1002,7 @@ def _decorate_nominal_adt_ctor_call(call: Node, ctx: CompileContext) -> Node:
 
 
 def _decorate_nominal_adt_projection_attr(attr_expr: Node, ctx: CompileContext) -> Node:
-    attr_name = jv_str(attr_expr.get("attr", ""))
+    attr_name: str = jv_str(attr_expr.get("attr", ""))
     if attr_name == "":
         return attr_expr
     owner_summary: Node = expr_type_summary(ctx, attr_expr.get("value"))
@@ -1099,8 +1099,11 @@ def _decorate_nominal_adt_variant_pattern(pattern: Node, ctx: CompileContext) ->
         if spd.get("kind") == PATTERN_BIND:
             spd["lowered_kind"] = NOMINAL_ADT_PATTERN_BIND
             spd["semantic_tag"] = "nominal_adt.pattern_bind"
-            pb_meta: Node = {"schema_version": 1, "ir_category": NOMINAL_ADT_PATTERN_BIND,
-                             "family_name": family_name, "variant_name": variant_name}
+            pb_meta: Node = {}
+            pb_meta["schema_version"] = 1
+            pb_meta["ir_category"] = NOMINAL_ADT_PATTERN_BIND
+            pb_meta["family_name"] = family_name
+            pb_meta["variant_name"] = variant_name
             if field_name != "":
                 pb_meta["field_name"] = field_name
             if field_type != "unknown":
@@ -1113,7 +1116,7 @@ def _decorate_nominal_adt_variant_pattern(pattern: Node, ctx: CompileContext) ->
 
 
 def _decorate_nominal_adt_match_stmt(match_stmt: Node, ctx: CompileContext) -> Node:
-    subject_summary = expr_type_summary(ctx, match_stmt.get("subject"))
+    subject_summary: Node = expr_type_summary(ctx, match_stmt.get("subject"))
     family_cat = jv_str(subject_summary.get("category", "unknown")).strip()
     family_name = ""
     if family_cat == "nominal_adt":
