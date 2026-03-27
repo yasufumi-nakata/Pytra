@@ -11,10 +11,13 @@ _TYPE_ONLY_MODULES = {
     "__future__",
     "typing",
     "pytra.typing",
+    "types",
+    "pytra.types",
     "dataclasses",
     "pytra.dataclasses",
     "enum",
     "pytra.enum",
+    "pytra.std.template",
 }
 _CPP_RUNTIME_UMBRELLAS = {"pytra.std", "pytra.utils", "pytra.built_in", "pytra.core"}
 
@@ -65,11 +68,21 @@ def collect_cpp_dependency_module_ids(module_id: str, meta: dict[str, JsonVal]) 
             dep_id = _binding_cpp_dependency_module_id(binding)
             if dep_id != "":
                 dep_ids.append(dep_id)
+    import_resolution = meta.get("import_resolution")
+    if isinstance(import_resolution, dict):
+        bindings = import_resolution.get("bindings")
+        if isinstance(bindings, list):
+            for binding in bindings:
+                dep_id = _binding_cpp_dependency_module_id(binding)
+                if dep_id != "":
+                    dep_ids.append(dep_id)
 
     out: list[str] = []
     seen: set[str] = set()
     for dep_id in dep_ids:
         if dep_id == "" or dep_id == module_id or dep_id in seen:
+            continue
+        if cpp_include_for_module(dep_id) == "":
             continue
         seen.add(dep_id)
         out.append(dep_id)
@@ -85,14 +98,12 @@ def _binding_cpp_dependency_module_id(binding: JsonVal) -> str:
     host_only = binding.get("host_only") is True
 
     if isinstance(runtime_module_id, str) and runtime_module_id != "":
+        if host_only:
+            return ""
         if isinstance(runtime_group, str) and runtime_group != "":
             return runtime_module_id
         if not host_only:
             return runtime_module_id
-        if runtime_module_id.startswith("pytra."):
-            return runtime_module_id
-        if isinstance(module_id, str) and module_id.startswith("pytra."):
-            return module_id
         return ""
 
     if isinstance(module_id, str) and module_id != "":

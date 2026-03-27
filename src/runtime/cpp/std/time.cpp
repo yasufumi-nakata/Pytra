@@ -2,8 +2,6 @@
 
 #include "std/time.h"
 
-namespace pytra::std::time {
-
 float64 perf_counter() {
     using clock = ::std::chrono::steady_clock;
     const auto now = clock::now().time_since_epoch();
@@ -11,5 +9,3 @@ float64 perf_counter() {
         ::std::chrono::duration_cast<::std::chrono::duration<double>>(now).count()
     );
 }
-
-}  // namespace pytra::std::time

@@ -7,6 +7,10 @@
 #include <type_traits>
 #include <vector>
 
+#include "core/py_scalar_types.h"
+
+class str;
+
 template <typename T>
 struct Object;
 using object = Object<void>;
@@ -30,8 +34,8 @@ public:
     bool is_open() const;
     void close();
 
-    object write(const ::std::string& text);
-    object read();
+    int64 write(const ::std::string& text);
+    str read();
     iterator begin();
     iterator end();
     const_iterator begin() const;

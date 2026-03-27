@@ -360,6 +360,72 @@ def _crc32_hex(v: int) -> str:
     return f"0x{(v & 0xFFFFFFFF):08x}"
 
 
+def _run_cpp_emit_dir(
+    emit_dir: Path,
+    *,
+    cwd: Path,
+    env: dict[str, str] | None = None,
+    timeout_sec: int | None = None,
+    exe_name: str = "app.out",
+) -> subprocess.CompletedProcess[str]:
+    if not emit_dir.exists() or not emit_dir.is_dir():
+        return subprocess.CompletedProcess(
+            args=str(emit_dir),
+            returncode=1,
+            stdout="",
+            stderr="missing emit dir: " + str(emit_dir),
+        )
+
+    cpp_files: list[str] = []
+    for path in sorted(emit_dir.rglob("*.cpp")):
+        cpp_files.append(str(path))
+    if len(cpp_files) == 0:
+        return subprocess.CompletedProcess(
+            args=str(emit_dir),
+            returncode=1,
+            stdout="",
+            stderr="no .cpp files found in " + str(emit_dir),
+        )
+
+    src_dir = ROOT / "src"
+    runtime_root = src_dir / "runtime" / "cpp"
+    native_sources: list[str] = [str(runtime_root / "core" / "io.cpp")]
+    for bucket in ("std", "utils"):
+        native_dir = runtime_root / bucket
+        if not native_dir.exists():
+            continue
+        for cpp_path in sorted(native_dir.glob("*.cpp"), key=lambda p: str(p)):
+            generated_hdr = emit_dir / bucket / cpp_path.with_suffix(".h").name
+            if generated_hdr.exists():
+                native_sources.append(str(cpp_path))
+
+    exe_path = emit_dir / exe_name
+    compile_cmd = [
+        "g++",
+        "-std=c++20",
+        "-O2",
+        "-I", str(emit_dir),
+        "-I", str(src_dir),
+        "-I", str(runtime_root),
+        "-o", str(exe_path),
+    ] + cpp_files + native_sources
+    compile_cp = run_shell(
+        " ".join(shlex.quote(part) for part in compile_cmd),
+        cwd=cwd,
+        env=env,
+        timeout_sec=timeout_sec,
+    )
+    if compile_cp.returncode != 0:
+        return compile_cp
+
+    return run_shell(
+        shlex.quote(str(exe_path)),
+        cwd=cwd,
+        env=env,
+        timeout_sec=timeout_sec,
+    )
+
+
 def _purge_case_artifacts(work: Path, case_stem: str) -> None:
     # Always remove stale artifacts before each run so parity checks cannot pass
     # by reusing files left by a previous language execution.
@@ -563,7 +629,15 @@ def check_case(
             _purge_case_artifacts(work, case_stem)
             _safe_unlink(expected_artifact_path)
 
-            rr = run_shell(target.run_cmd, cwd=work, env=target_env, timeout_sec=cmd_timeout_sec)
+            if target.name == "cpp":
+                rr = _run_cpp_emit_dir(
+                    work / target.output_dir / "emit",
+                    cwd=work,
+                    env=target_env,
+                    timeout_sec=cmd_timeout_sec,
+                )
+            else:
+                rr = run_shell(target.run_cmd, cwd=work, env=target_env, timeout_sec=cmd_timeout_sec)
             if rr.returncode != 0:
                 msg = rr.stderr.strip()
                 mismatches.append(f"{case_stem}:{target.name}: run failed: {msg}")

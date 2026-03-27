@@ -147,6 +147,48 @@ class RuntimeParityCheckCliTest(unittest.TestCase):
         self.assertEqual(envs[1], {"PATH": "/tmp/go-bin"})
         self.assertEqual(envs[2], {"PATH": "/tmp/go-bin"})
 
+    def test_check_case_cpp_reuses_transpiled_emit_dir_for_run(self) -> None:
+        records: list = []
+        target = self.rpc.Target(
+            name="cpp",
+            transpile_cmd="transpile",
+            run_cmd="legacy-build-run",
+            needs=("python", "g++"),
+            output_dir="work/transpile/cpp/case_123",
+        )
+        py_success = subprocess.CompletedProcess(args="python fake.py", returncode=0, stdout="OK\n", stderr="")
+        tr_success = subprocess.CompletedProcess(args="transpile", returncode=0, stdout="", stderr="")
+        rr_success = subprocess.CompletedProcess(args="app.out", returncode=0, stdout="OK\n", stderr="")
+
+        with patch.object(self.rpc, "find_case_path", return_value=ROOT / "sample" / "py" / "01_mandelbrot.py"), patch.object(
+            self.rpc, "run_shell", side_effect=[py_success, tr_success]
+        ) as run_shell_mock, patch.object(
+            self.rpc, "build_targets", return_value=[target]
+        ), patch.object(
+            self.rpc, "can_run", return_value=True
+        ), patch.object(
+            self.rpc, "_run_cpp_emit_dir", return_value=rr_success
+        ) as run_cpp_mock, patch.object(
+            self.rpc, "_tool_env_for_target", return_value={"PATH": "/tmp/cpp-bin"}
+        ):
+            code = self.rpc.check_case(
+                "01_mandelbrot",
+                {"cpp"},
+                case_root="sample",
+                ignore_stdout=False,
+                east3_opt_level="1",
+                records=records,
+            )
+
+        self.assertEqual(code, 0)
+        self.assertEqual(run_shell_mock.call_count, 2)
+        run_cpp_mock.assert_called_once()
+        args = run_cpp_mock.call_args.args
+        kwargs = run_cpp_mock.call_args.kwargs
+        self.assertTrue(str(args[0]).endswith("work/transpile/cpp/case_123/emit"))
+        self.assertIn("01_mandelbrot_", str(kwargs["cwd"]))
+        self.assertEqual(kwargs["env"], {"PATH": "/tmp/cpp-bin"})
+
     def test_build_targets_includes_ruby_entry(self) -> None:
         case_path = ROOT / "sample" / "py" / "01_mandelbrot.py"
         targets = self.rpc.build_targets("01_mandelbrot", case_path, "1")

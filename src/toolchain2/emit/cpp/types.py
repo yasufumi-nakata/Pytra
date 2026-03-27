@@ -6,6 +6,8 @@ toolchain2 C++ backend は `src/runtime/cpp/core/*` の公開 alias (`str`,
 
 from __future__ import annotations
 
+import re
+
 
 _TYPE_MAP: dict[str, str] = {
     "int": "int64",
@@ -22,6 +24,7 @@ _TYPE_MAP: dict[str, str] = {
     "float64": "float64",
     "bool": "bool",
     "str": "str",
+    "PyFile": "pytra::runtime::cpp::base::PyFile",
     "None": "void",
     "none": "void",
     "bytes": "bytes",
@@ -198,3 +201,41 @@ def _top_level_optional_inner(resolved_type: str) -> str:
     if parts[1] in ("None", "none"):
         return parts[0]
     return ""
+
+
+_TYPE_TOKEN_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
+
+def collect_cpp_type_vars(resolved_type: str) -> list[str]:
+    """Collect generic type-variable names that should become C++ templates."""
+    if resolved_type == "":
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    for token in _TYPE_TOKEN_RE.findall(resolved_type):
+        if token in _TYPE_MAP:
+            continue
+        if token in {
+            "list",
+            "dict",
+            "set",
+            "tuple",
+            "Callable",
+            "Iterator",
+            "Iterable",
+            "Optional",
+            "None",
+            "none",
+            "object",
+            "Any",
+            "Obj",
+            "unknown",
+            "callable",
+        }:
+            continue
+        if token.upper() != token:
+            continue
+        if token not in seen:
+            seen.add(token)
+            out.append(token)
+    return out

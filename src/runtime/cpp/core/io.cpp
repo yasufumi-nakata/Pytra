@@ -96,17 +96,17 @@ void PyFile::ensure_readable() const {
     }
 }
 
-object PyFile::write(const ::std::string& text) {
+int64 PyFile::write(const ::std::string& text) {
     ensure_writable();
     ofs_ << text;
-    return object(static_cast<int64>(text.size()));
+    return static_cast<int64>(text.size());
 }
 
-object PyFile::read() {
+str PyFile::read() {
     ensure_readable();
     ::std::stringstream ss;
     ss << ifs_.rdbuf();
-    return object(str(ss.str()));
+    return str(ss.str());
 }
 
 PyFile::iterator PyFile::begin() {

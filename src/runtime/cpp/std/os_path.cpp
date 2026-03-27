@@ -1,8 +1,6 @@
 #include "std/os_path.h"
 #include <filesystem>
 
-namespace pytra::std::os_path {
-
 str join(const str& a, const str& b) {
     if (a.empty()) return b;
     if (b.empty()) return a;
@@ -41,5 +39,3 @@ str abspath(const str& p) {
 bool exists(const str& p) {
     return ::std::filesystem::exists(::std::filesystem::path(p.std()));
 }
-
-}  // namespace pytra::std::os_path

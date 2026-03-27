@@ -44,6 +44,32 @@ static inline const V& py_at(const dict<K, V>& d, const Q& key) {
     return it->second;
 }
 
+template <class K, class V, class Q, class D>
+static inline V py_dict_get(const dict<K, V>& d, const Q& key, const D& default_value) {
+    const K k = [&]() -> K {
+        if constexpr (py_is_cstr_like<Q>::value) {
+            return py_coerce_cstr_typed_value<K>(key);
+        } else if constexpr (::std::is_same_v<K, Q>) {
+            return key;
+        } else if constexpr (::std::is_convertible_v<Q, K>) {
+            return static_cast<K>(key);
+        } else {
+            return K(key);
+        }
+    }();
+    auto it = d.find(k);
+    if (it != d.end()) {
+        return it->second;
+    }
+    if constexpr (::std::is_same_v<V, D>) {
+        return default_value;
+    } else if constexpr (::std::is_convertible_v<D, V>) {
+        return static_cast<V>(default_value);
+    } else {
+        return V(default_value);
+    }
+}
+
 template <class T>
 static inline int64 py_index(const list<T>& v, const T& item) {
     return v.index(item);

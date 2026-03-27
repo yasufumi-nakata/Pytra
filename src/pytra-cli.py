@@ -151,6 +151,70 @@ def _build_go_via_toolchain2(
     return result.returncode
 
 
+def _build_cpp_via_toolchain2(
+    input_file: str, output_dir: str, emit_dir: str,
+    exe_name: str, do_run: bool, single_output: str,
+) -> int:
+    """Build C++ target via toolchain2 pipeline."""
+    src_dir = _find_src_dir()
+    cli2 = src_dir + "/pytra-cli2.py"
+
+    build_cmd = [_python(), cli2, "-build", input_file, "--target", "cpp", "-o", emit_dir]
+    result = _run(build_cmd)
+    if result.returncode != 0:
+        return result.returncode
+
+    entry_stem = Path(input_file).stem
+    generated = Path(emit_dir) / (entry_stem + ".cpp")
+    if single_output != "" and generated.exists():
+        so_path = Path(single_output)
+        so_path.parent.mkdir(parents=True, exist_ok=True)
+        so_path.write_text(generated.read_text(encoding="utf-8"), encoding="utf-8")
+
+    import os as _os
+
+    cpp_files: list[str] = []
+    for dirpath, _dirnames, filenames in _os.walk(emit_dir):
+        for name in sorted(filenames):
+            if name.endswith(".cpp"):
+                cpp_files.append(dirpath + "/" + name)
+
+    runtime_root = Path(src_dir) / "runtime" / "cpp"
+    native_sources: list[str] = [str(runtime_root / "core" / "io.cpp")]
+    for bucket in ("std", "utils"):
+        native_dir = runtime_root / bucket
+        if not native_dir.exists():
+            continue
+        for cpp_path in sorted(native_dir.glob("*.cpp"), key=lambda p: str(p)):
+            hdr_name = cpp_path.with_suffix(".h").name
+            generated_hdr = Path(emit_dir) / bucket / hdr_name
+            if generated_hdr.exists():
+                native_sources.append(str(cpp_path))
+
+    if len(cpp_files) == 0:
+        _fatal("no .cpp files found in " + emit_dir)
+
+    cpp_exe = emit_dir + "/" + exe_name
+    compile_cmd = [
+        "g++",
+        "-std=c++20",
+        "-O2",
+        "-I", emit_dir,
+        "-I", src_dir,
+        "-I", src_dir + "/runtime/cpp",
+        "-o", cpp_exe,
+    ] + cpp_files + native_sources
+    result = _run(compile_cmd)
+    if result.returncode != 0:
+        return result.returncode
+
+    if not do_run:
+        return 0
+
+    result = _run([cpp_exe])
+    return result.returncode
+
+
 # ---------- build ----------
 
 def cmd_build(argv: list[str]) -> int:
@@ -212,6 +276,8 @@ def cmd_build(argv: list[str]) -> int:
     # Go target: delegate to new toolchain2 pipeline
     if target == "go":
         return _build_go_via_toolchain2(input_file, output_dir, emit_dir, exe_name, do_run, single_output)
+    if target == "cpp":
+        return _build_cpp_via_toolchain2(input_file, output_dir, emit_dir, exe_name, do_run, single_output)
 
     # Stage 1: compile + link (writes manifest.json + east3/ into output_dir)
     link_cmd = [

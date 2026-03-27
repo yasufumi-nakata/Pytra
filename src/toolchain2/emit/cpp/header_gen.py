@@ -5,7 +5,7 @@ from __future__ import annotations
 from pytra.std.json import JsonVal
 
 from toolchain2.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids, cpp_include_for_module
-from toolchain2.emit.cpp.types import cpp_param_decl, cpp_signature_type
+from toolchain2.emit.cpp.types import cpp_param_decl, cpp_signature_type, collect_cpp_type_vars
 
 
 def build_cpp_header_from_east3(
@@ -40,6 +40,17 @@ def build_cpp_header_from_east3(
 
     body = east_doc.get("body")
     stmts = body if isinstance(body, list) else []
+    class_names: list[str] = []
+    for stmt in stmts:
+        if not isinstance(stmt, dict) or _str(stmt, "kind") != "ClassDef":
+            continue
+        name = _str(stmt, "name")
+        if name != "":
+            class_names.append(name)
+    if len(class_names) > 0:
+        for name in class_names:
+            lines.append("struct " + name + ";")
+        lines.append("")
     for stmt in stmts:
         _emit_decl(lines, stmt)
 
@@ -79,8 +90,6 @@ def _function_decl(node: dict[str, JsonVal], *, owner_name: str = "", in_class: 
     name = _str(node, "name")
     if name == "":
         return ""
-    if _has_decorator(node, "extern"):
-        return ""
     params = _function_params(node)
     if name == "__init__" and owner_name != "":
         return owner_name + "(" + ", ".join(params) + ")"
@@ -92,9 +101,13 @@ def _function_decl(node: dict[str, JsonVal], *, owner_name: str = "", in_class: 
         prefix = owner_name + "::"
     if owner_name != "" and _has_decorator(node, "staticmethod") and in_class:
         static_prefix = "static "
-    if owner_name != "" and not _has_decorator(node, "staticmethod") and name != "__init__" and not _bool(node, "mutates_self"):
+    if owner_name != "" and not _has_decorator(node, "staticmethod") and name != "__init__" and not _function_self_mutates(node):
         suffix = " const"
-    return static_prefix + ret + " " + prefix + name + "(" + ", ".join(params) + ")" + suffix
+    signature = static_prefix + ret + " " + prefix + name + "(" + ", ".join(params) + ")" + suffix
+    template_prefix = _function_template_prefix(node)
+    if template_prefix != "":
+        return template_prefix + "\n" + signature
+    return signature
 
 
 def _global_decl(node: dict[str, JsonVal]) -> str:
@@ -158,6 +171,41 @@ def _function_params(node: dict[str, JsonVal]) -> list[str]:
                 text += " = " + default_text
         params.append(text)
     return params
+
+
+def _function_template_prefix(node: dict[str, JsonVal]) -> str:
+    params = _function_template_params(node)
+    if len(params) == 0:
+        return ""
+    return "template <" + ", ".join("class " + name for name in params) + ">"
+
+
+def _function_template_params(node: dict[str, JsonVal]) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    arg_types = node.get("arg_types")
+    if isinstance(arg_types, dict):
+        for arg_type in arg_types.values():
+            if not isinstance(arg_type, str):
+                continue
+            for type_var in collect_cpp_type_vars(arg_type):
+                if type_var not in seen:
+                    seen.add(type_var)
+                    out.append(type_var)
+    for type_var in collect_cpp_type_vars(_return_type(node)):
+        if type_var not in seen:
+            seen.add(type_var)
+            out.append(type_var)
+    return out
+
+
+def _function_self_mutates(node: dict[str, JsonVal]) -> bool:
+    if _bool(node, "mutates_self"):
+        return True
+    arg_usage = node.get("arg_usage")
+    if isinstance(arg_usage, dict):
+        return arg_usage.get("self") == "reassigned"
+    return False
 
 
 def _render_default_expr(node: dict[str, JsonVal]) -> str:

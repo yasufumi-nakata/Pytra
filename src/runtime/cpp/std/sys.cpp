@@ -3,8 +3,6 @@
 
 #include "std/sys.h"
 
-namespace pytra::std::sys {
-
 list<str> argv = py_runtime_argv();
 list<str> path = {};
 
@@ -28,5 +26,3 @@ void write_stderr(const str& text) {
 void write_stdout(const str& text) {
     py_runtime_write_stdout(text);
 }
-
-}  // namespace pytra::std::sys
