@@ -2790,6 +2790,21 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("func call_via_animal(a __pytra_iface_Animal) string {", dispatch_go)
         self.assertIn("func call_via_dog(d __pytra_iface_Dog) string {", dispatch_go)
 
+    def test_cpp_emitter_drops_const_on_class_storage_mutation_and_lowers_super_calls(self) -> None:
+        class_doc = _fixture_doc("test/fixture/east3-opt/oop/class_member.east3")
+        super_doc = _fixture_doc("test/fixture/east3-opt/oop/super_init.east3")
+        dispatch_doc = _fixture_doc("test/fixture/east3-opt/oop/inheritance_virtual_dispatch_multilang.east3")
+
+        class_cpp = emit_cpp_module(class_doc)
+        super_cpp = emit_cpp_module(super_doc)
+        dispatch_cpp = emit_cpp_module(dispatch_doc)
+
+        self.assertIn("int64 Counter::inc()", class_cpp)
+        self.assertNotIn("int64 Counter::inc() const", class_cpp)
+        self.assertIn("Counter::value += int64(1);", class_cpp)
+        self.assertNotIn("super()", super_cpp)
+        self.assertIn("Dog::speak()", dispatch_cpp)
+
     def test_linker_excludes_traits_from_type_id_table_and_annotates_trait_isinstance(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             entry_path = Path(tmp) / "app.east3.json"

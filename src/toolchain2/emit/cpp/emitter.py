@@ -45,6 +45,7 @@ class CppEmitContext:
     var_types: dict[str, str] = field(default_factory=dict)
     class_names: set[str] = field(default_factory=set)
     class_field_types: dict[str, dict[str, str]] = field(default_factory=dict)
+    class_bases: dict[str, str] = field(default_factory=dict)
     class_type_ids: dict[str, int] = field(default_factory=dict)
     class_type_info: dict[str, dict[str, int]] = field(default_factory=dict)
     class_symbol_fqcns: dict[str, str] = field(default_factory=dict)
@@ -728,6 +729,12 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             runtime_call = _str(node, "runtime_call")
             resolved_runtime_call = _str(node, "resolved_runtime_call")
             builtin_name = _str(node, "builtin_name")
+            if _is_zero_arg_super_call(owner_node):
+                base_name = ctx.class_bases.get(ctx.current_class, "")
+                if base_name != "":
+                    if attr == "__init__":
+                        return ""
+                    return base_name + "::" + attr + "(" + ", ".join(call_arg_strs) + ")"
             if attr == "add_argument" and owner_type == "ArgumentParser":
                 call_arg_strs = _emit_argparse_add_argument_args(ctx, args, keywords)
             if _is_type_owner(ctx, owner_node):
@@ -1776,11 +1783,13 @@ def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner
     saved_ret = ctx.current_return_type
     saved_scope = ctx.current_function_scope
     saved_scope_locals = set(ctx.current_value_container_locals)
+    saved_current_class = ctx.current_class
     return_type = _return_type(node)
     ctx.current_return_type = return_type
     func_name = _str(node, "name")
     ctx.current_function_scope = _scope_key(ctx, func_name, owner_name)
     ctx.current_value_container_locals = _container_value_locals_for_scope(ctx, func_name, owner_name)
+    ctx.current_class = owner_name
     for arg_name, arg_type, _ in _function_param_meta(node):
         _register_local_storage(ctx, arg_name, arg_type)
     signature = _function_signature(ctx, node, owner_name=owner_name, declaration_only=False)
@@ -1790,6 +1799,7 @@ def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner
         ctx.current_return_type = saved_ret
         ctx.current_function_scope = saved_scope
         ctx.current_value_container_locals = saved_scope_locals
+        ctx.current_class = saved_current_class
         return
     template_prefix = _function_template_prefix(node)
     if template_prefix != "":
@@ -1805,6 +1815,7 @@ def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner
     ctx.current_return_type = saved_ret
     ctx.current_function_scope = saved_scope
     ctx.current_value_container_locals = saved_scope_locals
+    ctx.current_class = saved_current_class
 
 
 def _function_signature(
@@ -1837,7 +1848,7 @@ def _function_signature(
     if owner_name != "" and not declaration_only:
         qual_name = owner_name + "::" + name
     suffix = ""
-    self_mutates = _function_self_mutates(node)
+    self_mutates = _function_self_mutates(node) or _node_mutates_class_storage(ctx, _list(node, "body"), owner_name)
     if declaration_only and owner_name != "" and not is_static and not self_mutates:
         suffix = " const"
     if (not declaration_only) and owner_name != "" and not is_static and not self_mutates:
@@ -1965,6 +1976,45 @@ def _is_type_owner(ctx: CppEmitContext, owner_node: JsonVal) -> bool:
         return True
     owner_id = _str(owner_node, "id")
     return owner_id != "" and owner_id in ctx.class_names
+
+
+def _is_zero_arg_super_call(node: JsonVal) -> bool:
+    if not isinstance(node, dict) or _str(node, "kind") != "Call":
+        return False
+    func = node.get("func")
+    if not isinstance(func, dict) or _str(func, "kind") != "Name":
+        return False
+    return _str(func, "id") == "super" and len(_list(node, "args")) == 0 and len(_list(node, "keywords")) == 0
+
+
+def _node_mutates_class_storage(ctx: CppEmitContext, node: JsonVal, owner_name: str = "") -> bool:
+    if isinstance(node, dict):
+        kind = _str(node, "kind")
+        if kind in ("Assign", "AugAssign", "AnnAssign"):
+            targets: list[JsonVal] = []
+            target = node.get("target")
+            if target is not None:
+                targets.append(target)
+            targets.extend(_list(node, "targets"))
+            for candidate in targets:
+                if not isinstance(candidate, dict) or _str(candidate, "kind") != "Attribute":
+                    continue
+                value_node = candidate.get("value")
+                if _is_type_owner(ctx, value_node):
+                    return True
+                if isinstance(value_node, dict) and _str(value_node, "kind") == "Name":
+                    owner_id = _str(value_node, "id")
+                    if owner_id != "" and owner_id == owner_name:
+                        return True
+        for value in node.values():
+            if _node_mutates_class_storage(ctx, value, owner_name):
+                return True
+        return False
+    if isinstance(node, list):
+        for item in node:
+            if _node_mutates_class_storage(ctx, item, owner_name):
+                return True
+    return False
 
 
 def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonVal) -> str:
@@ -2095,6 +2145,9 @@ def emit_cpp_module(
         if isinstance(s, dict) and _str(s, "kind") == "ClassDef":
             class_name = _str(s, "name")
             ctx.class_names.add(class_name)
+            base_name = _str(s, "base")
+            if base_name != "":
+                ctx.class_bases[class_name] = base_name
             ctx.class_field_types[class_name] = {
                 k: v for k, v in _dict(s, "field_types").items() if isinstance(k, str) and isinstance(v, str)
             }
