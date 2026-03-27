@@ -38,6 +38,13 @@ static inline bool py_runtime_object_isinstance(const object& value, pytra_type_
     return py_tid_isinstance(value, static_cast<int64>(expected_type_id));
 }
 
+static inline bool py_runtime_object_has_trait(const object& value, int64 trait_id) {
+    if (!value) {
+        return false;
+    }
+    return value.has_trait(static_cast<int>(trait_id));
+}
+
 template <class Exact>
 static inline bool py_runtime_object_exact_is(const object& value) {
     if (!value) {
@@ -99,6 +106,30 @@ static inline pytra_type_id py_runtime_value_type_id(const Object<set<T>>&) { re
 template <class T>
 static inline bool py_runtime_value_isinstance(const T& value, pytra_type_id expected_type_id) {
     return py_runtime_type_id_is_subtype(py_runtime_value_type_id(value), expected_type_id);
+}
+
+template <class T, class = void>
+struct py_runtime_trait_bits_helper {
+    static constexpr uint64_t value = 0;
+};
+
+template <class T>
+struct py_runtime_trait_bits_helper<T, ::std::void_t<decltype(T::__pytra_trait_bits)>> {
+    static constexpr uint64_t value = T::__pytra_trait_bits;
+};
+
+template <class T>
+static inline bool py_runtime_value_has_trait(const T&, int64 trait_id) {
+    if (trait_id < 0 || trait_id >= 64) {
+        return false;
+    }
+    constexpr uint64_t bits = py_runtime_trait_bits_helper<::std::decay_t<T>>::value;
+    return (bits & (uint64_t(1) << trait_id)) != 0;
+}
+
+template <class T>
+static inline bool py_runtime_value_has_trait(const Object<T>& value, int64 trait_id) {
+    return value.has_trait(static_cast<int>(trait_id));
 }
 
 #endif  // PYTRA_CORE_TYPE_ID_SUPPORT_H

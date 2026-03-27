@@ -229,6 +229,127 @@ type Scalar = int | float
         self.assertEqual(east1.get("kind"), "Module")
         self.assertTrue(any(node.get("kind") == "ClassDef" and node.get("name") == "JsonValue" for node in _walk(east1)))
 
+    def test_parse_python_file_accepts_selfhost_toolchain2_source_with_typing_aliases(self) -> None:
+        east1 = parse_python_file(str(ROOT / "src" / "toolchain2" / "common" / "jv.py"))
+        self.assertEqual(east1.get("kind"), "Module")
+        self.assertTrue(any(node.get("kind") == "TypeAlias" for node in _walk(east1)))
+
+    def test_parser_keeps_trait_and_implements_class_decorators(self) -> None:
+        source = """
+@trait
+class Drawable:
+    def draw(self) -> None: ...
+
+@implements(Drawable)
+class Circle:
+    def draw(self) -> None:
+        pass
+"""
+        east1 = parse_python_source(source, "<mem>").to_jv()
+        classes = [node for node in _walk(east1) if node.get("kind") == "ClassDef"]
+        drawable = next(node for node in classes if node.get("name") == "Drawable")
+        circle = next(node for node in classes if node.get("name") == "Circle")
+
+        self.assertEqual(drawable.get("decorators"), ["trait"])
+        self.assertEqual(circle.get("decorators"), ["implements(Drawable)"])
+
+    def test_resolver_adds_trait_metadata_and_trait_impl_markers(self) -> None:
+        source = """
+@trait
+class Drawable:
+    def draw(self) -> None: ...
+
+@trait
+class Serializable:
+    def draw(self) -> None: ...
+    def serialize(self) -> str: ...
+
+@implements(Drawable, Serializable)
+class Circle:
+    def draw(self) -> None:
+        pass
+
+    def serialize(self) -> str:
+        return "circle"
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+
+        drawable = next(
+            node for node in _walk(east2)
+            if node.get("kind") == "ClassDef" and node.get("name") == "Drawable"
+        )
+        circle = next(
+            node for node in _walk(east2)
+            if node.get("kind") == "ClassDef" and node.get("name") == "Circle"
+        )
+        draw_impl = next(
+            node for node in _walk(circle)
+            if node.get("kind") == "FunctionDef" and node.get("name") == "draw"
+        )
+        serialize_impl = next(
+            node for node in _walk(circle)
+            if node.get("kind") == "FunctionDef" and node.get("name") == "serialize"
+        )
+
+        trait_meta = drawable.get("meta", {}).get("trait_v1")
+        impl_meta = circle.get("meta", {}).get("implements_v1")
+        self.assertIsInstance(trait_meta, dict)
+        self.assertEqual(trait_meta.get("extends_traits"), [])
+        self.assertEqual([row.get("name") for row in trait_meta.get("methods", [])], ["draw"])
+        self.assertEqual(impl_meta, {"schema_version": 1, "traits": ["Drawable", "Serializable"]})
+        self.assertEqual(
+            draw_impl.get("meta", {}).get("trait_impl_v1"),
+            [
+                {"schema_version": 1, "trait_name": "Drawable", "method_name": "draw"},
+                {"schema_version": 1, "trait_name": "Serializable", "method_name": "draw"},
+            ],
+        )
+        self.assertEqual(
+            serialize_impl.get("meta", {}).get("trait_impl_v1"),
+            {"schema_version": 1, "trait_name": "Serializable", "method_name": "serialize"},
+        )
+
+        east3 = lower_east2_to_east3(deep_copy_json(east2))
+        drawable3 = next(
+            node for node in _walk(east3)
+            if node.get("kind") == "ClassDef" and node.get("name") == "Drawable"
+        )
+        circle3 = next(
+            node for node in _walk(east3)
+            if node.get("kind") == "ClassDef" and node.get("name") == "Circle"
+        )
+        self.assertIn("trait_v1", drawable3.get("meta", {}))
+        self.assertIn("implements_v1", circle3.get("meta", {}))
+
+    def test_resolver_rejects_missing_trait_method(self) -> None:
+        source = """
+@trait
+class Drawable:
+    def draw(self) -> None: ...
+
+@implements(Drawable)
+class Circle:
+    def area(self) -> int:
+        return 1
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+
+        with self.assertRaisesRegex(RuntimeError, "missing trait method implementation"):
+            resolve_east1_to_east2(east2, registry=_load_registry())
+
+    def test_resolver_rejects_non_stub_trait_method_body(self) -> None:
+        source = """
+@trait
+class Drawable:
+    def draw(self) -> None:
+        pass
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+
+        with self.assertRaisesRegex(RuntimeError, "trait method body must be ellipsis-only"):
+            resolve_east1_to_east2(east2, registry=_load_registry())
+
     def test_stdlib_json_current_source_flows_through_full_pipeline(self) -> None:
         east1 = parse_python_file(str(ROOT / "src" / "pytra" / "std" / "json.py"))
 

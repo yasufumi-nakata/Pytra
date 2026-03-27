@@ -727,6 +727,7 @@ class ClassDef:
     body: list[Stmt]
     dataclass_flag: bool
     field_types: dict[str, str]
+    decorators: Optional[list[str]] = None
     node_meta: Optional[dict[str, JsonVal]] = None
     leading_trivia: Optional[list[TriviaNode]] = None
     leading_comments: Optional[list[str]] = None
@@ -738,6 +739,8 @@ class ClassDef:
             "field_types": dict(self.field_types),
             "body": [stmt_to_jv(s) for s in self.body],
         }
+        if self.decorators is not None:
+            d["decorators"] = list(self.decorators)
         if self.node_meta is not None:
             d["meta"] = dict(self.node_meta)
         if self.leading_comments is not None:

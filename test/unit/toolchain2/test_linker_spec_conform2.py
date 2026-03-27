@@ -2448,6 +2448,261 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("func call_via_animal(a __pytra_iface_Animal) string {", dispatch_go)
         self.assertIn("func call_via_dog(d __pytra_iface_Dog) string {", dispatch_go)
 
+    def test_linker_excludes_traits_from_type_id_table_and_annotates_trait_isinstance(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            entry_path = Path(tmp) / "app.east3.json"
+            entry_path.write_text(
+                json.dumps(
+                    _module_doc(
+                        "app",
+                        body=[
+                            {
+                                "kind": "ClassDef",
+                                "name": "Drawable",
+                                "decorators": ["trait"],
+                                "meta": {
+                                    "trait_v1": {
+                                        "schema_version": 1,
+                                        "methods": [{"name": "draw", "args": ["self"], "return_type": "None"}],
+                                        "extends_traits": [],
+                                    }
+                                },
+                                "body": [],
+                            },
+                            {
+                                "kind": "ClassDef",
+                                "name": "Circle",
+                                "decorators": ["implements(Drawable)"],
+                                "meta": {"implements_v1": {"schema_version": 1, "traits": ["Drawable"]}},
+                                "body": [],
+                            },
+                            {
+                                "kind": "FunctionDef",
+                                "name": "ok",
+                                "arg_types": {"d": "Drawable"},
+                                "arg_order": ["d"],
+                                "arg_defaults": {},
+                                "arg_index": {"d": 0},
+                                "return_type": "bool",
+                                "arg_usage": {},
+                                "renamed_symbols": {},
+                                "body": [
+                                    {
+                                        "kind": "Return",
+                                        "value": {
+                                            "kind": "IsInstance",
+                                            "value": {"kind": "Name", "id": "d", "resolved_type": "Drawable"},
+                                            "expected_type_id": {"kind": "Name", "id": "Drawable"},
+                                            "resolved_type": "bool",
+                                        },
+                                    }
+                                ],
+                            },
+                        ],
+                    ),
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            result = link_modules([str(entry_path)], target="cpp", dispatch_mode="native")
+
+        linked = next(module.east_doc for module in result.linked_modules if module.module_id == "app")
+        self.assertEqual(linked.get("meta", {}).get("emit_context"), {"module_id": "app", "is_entry": True})
+        linked_program = linked.get("meta", {}).get("linked_program_v1", {})
+        self.assertEqual(linked_program.get("trait_id_table_v1"), {"app.Drawable": 0})
+        self.assertEqual(linked_program.get("class_trait_masks_v1"), {"app.Circle": 1})
+        self.assertNotIn("app.Drawable", linked_program.get("type_id_resolved_v1", {}))
+        self.assertIn("app.Circle", linked_program.get("type_id_resolved_v1", {}))
+
+        trait_check = next(
+            node for node in _walk_nodes(linked)
+            if node.get("kind") == "IsInstance"
+        )
+        self.assertEqual(trait_check.get("predicate_kind"), "trait")
+        self.assertEqual(trait_check.get("expected_trait_id"), 0)
+        self.assertEqual(trait_check.get("expected_trait_fqcn"), "app.Drawable")
+
+    def test_cpp_emitter_lowers_traits_to_virtual_interfaces_and_trait_masks(self) -> None:
+        doc = _module_doc(
+            "app",
+            body=[
+                {
+                    "kind": "ClassDef",
+                    "name": "Drawable",
+                    "decorators": ["trait"],
+                    "meta": {
+                        "trait_v1": {
+                            "schema_version": 1,
+                            "methods": [{"name": "draw", "args": ["self"], "return_type": "None"}],
+                            "extends_traits": [],
+                        }
+                    },
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "draw",
+                            "arg_types": {"self": "Drawable"},
+                            "arg_order": ["self"],
+                            "arg_defaults": {},
+                            "arg_index": {"self": 0},
+                            "return_type": "None",
+                            "arg_usage": {},
+                            "renamed_symbols": {},
+                            "body": [],
+                        }
+                    ],
+                },
+                {
+                    "kind": "ClassDef",
+                    "name": "Circle",
+                    "decorators": ["implements(Drawable)"],
+                    "meta": {"implements_v1": {"schema_version": 1, "traits": ["Drawable"]}},
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "draw",
+                            "arg_types": {"self": "Circle"},
+                            "arg_order": ["self"],
+                            "arg_defaults": {},
+                            "arg_index": {"self": 0},
+                            "return_type": "None",
+                            "arg_usage": {},
+                            "renamed_symbols": {},
+                            "meta": {"trait_impl_v1": {"schema_version": 1, "trait_name": "Drawable", "method_name": "draw"}},
+                            "body": [{"kind": "Pass"}],
+                        }
+                    ],
+                },
+                {
+                    "kind": "FunctionDef",
+                    "name": "ok",
+                    "arg_types": {"d": "Drawable"},
+                    "arg_order": ["d"],
+                    "arg_defaults": {},
+                    "arg_index": {"d": 0},
+                    "return_type": "bool",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "IsInstance",
+                                "value": {"kind": "Name", "id": "d", "resolved_type": "Drawable"},
+                                "expected_type_id": {"kind": "Name", "id": "Drawable"},
+                                "expected_trait_id": 0,
+                                "expected_trait_fqcn": "app.Drawable",
+                                "resolved_type": "bool",
+                            },
+                        }
+                    ],
+                },
+            ],
+            meta_extra={
+                "linked_program_v1": {
+                    "module_id": "app",
+                    "trait_id_table_v1": {"app.Drawable": 0},
+                    "class_trait_masks_v1": {"app.Circle": 1},
+                    "type_id_resolved_v1": {"app.Circle": 1000},
+                    "type_info_table_v1": {"app.Circle": {"id": 1000, "entry": 1000, "exit": 1001}},
+                }
+            },
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("class Drawable {", cpp_code)
+        self.assertIn("virtual void draw() const = 0;", cpp_code)
+        self.assertIn("class Circle : virtual public Drawable {", cpp_code)
+        self.assertIn("void draw() const override;", cpp_code)
+        self.assertIn("static constexpr uint64_t __pytra_trait_bits = 1ULL;", cpp_code)
+        self.assertIn("return py_runtime_value_has_trait(d, 0);", cpp_code)
+
+    def test_go_emitter_lowers_traits_to_interfaces_and_trait_assertions(self) -> None:
+        doc = _module_doc(
+            "app",
+            body=[
+                {
+                    "kind": "ClassDef",
+                    "name": "Drawable",
+                    "decorators": ["trait"],
+                    "meta": {
+                        "trait_v1": {
+                            "schema_version": 1,
+                            "methods": [{"name": "draw", "args": ["self"], "return_type": "None"}],
+                            "extends_traits": [],
+                        }
+                    },
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "draw",
+                            "arg_types": {"self": "Drawable"},
+                            "arg_order": ["self"],
+                            "arg_defaults": {},
+                            "arg_index": {"self": 0},
+                            "return_type": "None",
+                            "arg_usage": {},
+                            "renamed_symbols": {},
+                            "body": [],
+                        }
+                    ],
+                },
+                {
+                    "kind": "ClassDef",
+                    "name": "Circle",
+                    "decorators": ["implements(Drawable)"],
+                    "meta": {"implements_v1": {"schema_version": 1, "traits": ["Drawable"]}},
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "draw",
+                            "arg_types": {"self": "Circle"},
+                            "arg_order": ["self"],
+                            "arg_defaults": {},
+                            "arg_index": {"self": 0},
+                            "return_type": "None",
+                            "arg_usage": {},
+                            "renamed_symbols": {},
+                            "meta": {"trait_impl_v1": {"schema_version": 1, "trait_name": "Drawable", "method_name": "draw"}},
+                            "body": [{"kind": "Pass"}],
+                        }
+                    ],
+                },
+                {
+                    "kind": "FunctionDef",
+                    "name": "ok",
+                    "arg_types": {"d": "Drawable"},
+                    "arg_order": ["d"],
+                    "arg_defaults": {},
+                    "arg_index": {"d": 0},
+                    "return_type": "bool",
+                    "arg_usage": {},
+                    "renamed_symbols": {},
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "IsInstance",
+                                "value": {"kind": "Name", "id": "d", "resolved_type": "Drawable"},
+                                "expected_type_id": {"kind": "Name", "id": "Drawable"},
+                                "expected_trait_fqcn": "app.Drawable",
+                                "resolved_type": "bool",
+                            },
+                        }
+                    ],
+                },
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("type Drawable interface {", go_code)
+        self.assertIn("\tdraw()", go_code)
+        self.assertIn("func ok(d Drawable) bool {", go_code)
+        self.assertIn("_, ok := any(d).(Drawable)", go_code)
+
     def test_go_emitter_turns_returning_try_into_return_iife(self) -> None:
         doc = _fixture_doc("test/pytra/east3-opt/utils/assertions.east3")
 

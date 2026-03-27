@@ -38,8 +38,24 @@ inline uint32_t g_type_table_size = 0;
 struct ControlBlock {
     int rc;
     uint32_t type_id;  // 実体型 — cast しても変わらない
+    uint64_t trait_bits;
     void* base_ptr;    // 常に最も派生型のポインタ
 };
+
+template<typename T, typename = void>
+struct pytra_trait_bits_for_helper {
+    static constexpr uint64_t value = 0;
+};
+
+template<typename T>
+struct pytra_trait_bits_for_helper<T, ::std::void_t<decltype(T::__pytra_trait_bits)>> {
+    static constexpr uint64_t value = T::__pytra_trait_bits;
+};
+
+template<typename T>
+static inline constexpr uint64_t pytra_trait_bits_for() {
+    return pytra_trait_bits_for_helper<T>::value;
+}
 
 // =============================
 // Object<T>
@@ -110,6 +126,9 @@ struct Object {
     uint32_t type_id() const { return cb ? cb->type_id : 0; }
 
     bool is(uint32_t expected) const { return cb && cb->type_id == expected; }
+    bool has_trait(int trait_id) const {
+        return cb && trait_id >= 0 && trait_id < 64 && ((cb->trait_bits & (uint64_t(1) << trait_id)) != 0);
+    }
 
     bool isinstance(const TypeInfo* base) const {
         return cb && base->entry <= cb->type_id && cb->type_id < base->exit;
@@ -188,6 +207,9 @@ struct Object<void> {
     explicit operator bool() const { return cb != nullptr; }
     uint32_t type_id() const { return cb ? cb->type_id : 0; }
     bool is(uint32_t expected) const { return cb && cb->type_id == expected; }
+    bool has_trait(int trait_id) const {
+        return cb && trait_id >= 0 && trait_id < 64 && ((cb->trait_bits & (uint64_t(1) << trait_id)) != 0);
+    }
     bool isinstance(const TypeInfo* base) const {
         return cb && base->entry <= cb->type_id && cb->type_id < base->exit;
     }
@@ -241,7 +263,7 @@ using object = Object<void>;
 template<typename T, typename... Args>
 Object<T> make_object(uint32_t tid, Args&&... args) {
     T* obj = new T(::std::forward<Args>(args)...);
-    ControlBlock* cb = new ControlBlock{0, tid, obj};  // retain() in Object ctor will set to 1
+    ControlBlock* cb = new ControlBlock{0, tid, pytra_trait_bits_for<T>(), obj};  // retain() in Object ctor will set to 1
     return Object<T>(cb, obj);
 }
 

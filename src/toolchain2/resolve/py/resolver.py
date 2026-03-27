@@ -369,6 +369,189 @@ def _has_inherited_field(class_name: str, field_name: str, ctx: ResolveContext) 
     return False
 
 
+def _class_decorators(node: dict[str, JsonVal]) -> list[str]:
+    decorators_raw = node.get("decorators")
+    decorators: list[str] = []
+    if isinstance(decorators_raw, list):
+        for item in decorators_raw:
+            if isinstance(item, str):
+                decorators.append(item)
+    return decorators
+
+
+def _parse_implements_decorator(decorator: str) -> list[str]:
+    if not decorator.startswith("implements(") or not decorator.endswith(")"):
+        return []
+    inner = decorator[len("implements("):-1]
+    out: list[str] = []
+    for part in inner.split(","):
+        trait_name = part.strip()
+        if trait_name != "":
+            out.append(trait_name)
+    return out
+
+
+def _trait_method_signature_tuple(sig: FuncSig) -> tuple[list[str], str]:
+    params: list[str] = []
+    idx = 0
+    while idx < len(sig.arg_names):
+        arg_name = sig.arg_names[idx]
+        if arg_name != "self":
+            params.append(sig.arg_types.get(arg_name, "unknown"))
+        idx += 1
+    return params, sig.return_type
+
+
+def _build_trait_method_meta(trait_name: str, method_name: str) -> dict[str, JsonVal]:
+    return {
+        "schema_version": 1,
+        "trait_name": trait_name,
+        "method_name": method_name,
+    }
+
+
+def _collect_trait_methods(trait_name: str, ctx: ResolveContext) -> dict[str, list[FuncSig]]:
+    out: dict[str, list[FuncSig]] = {}
+    pending: list[str] = [trait_name]
+    seen: set[str] = set()
+    while len(pending) > 0:
+        current = extract_base_type(pending.pop(0))
+        if current == "" or current in seen:
+            continue
+        seen.add(current)
+        trait_sig = _lookup_any_class(current, ctx)
+        if trait_sig is None or not trait_sig.is_trait:
+            continue
+        for method_name, method_sig in trait_sig.methods.items():
+            rows = out.get(method_name)
+            if rows is None:
+                rows = []
+                out[method_name] = rows
+            rows.append(method_sig)
+        for base_name in trait_sig.bases:
+            if isinstance(base_name, str) and base_name != "":
+                pending.append(base_name)
+    return out
+
+
+def _resolve_trait_contracts(stmt: dict[str, JsonVal], class_name: str, ctx: ResolveContext) -> None:
+    cls_sig = ctx.module_classes.get(class_name)
+    if cls_sig is None:
+        return
+    decorators = _class_decorators(stmt)
+    is_trait = cls_sig.is_trait or ("trait" in decorators)
+    implements_traits: list[str] = []
+    for decorator in decorators:
+        implements_traits.extend(_parse_implements_decorator(decorator))
+
+    meta_val = stmt.get("meta")
+    meta: dict[str, JsonVal] = meta_val if isinstance(meta_val, dict) else {}
+    stmt["meta"] = meta
+
+    if is_trait:
+        if len(cls_sig.fields) > 0:
+            raise RuntimeError("semantic_conflict: trait may not declare fields: " + class_name)
+        extends_traits: list[str] = []
+        for base_name in cls_sig.bases:
+            trait_base = extract_base_type(base_name)
+            if trait_base == "":
+                continue
+            base_sig = _lookup_any_class(trait_base, ctx)
+            if base_sig is None or not base_sig.is_trait:
+                raise RuntimeError("semantic_conflict: trait may only extend traits: " + class_name + " -> " + trait_base)
+            extends_traits.append(trait_base)
+        methods_meta: list[JsonVal] = []
+        body = stmt.get("body")
+        if isinstance(body, list):
+            for item in body:
+                if not isinstance(item, dict):
+                    continue
+                item_kind = str(item.get("kind", ""))
+                if item_kind == "FunctionDef":
+                    method_name = str(item.get("name", "")) if isinstance(item.get("name"), str) else ""
+                    if method_name == "":
+                        continue
+                    method_body = item.get("body")
+                    if isinstance(method_body, list) and len(method_body) > 0:
+                        raise RuntimeError("unsupported_syntax: trait method body must be ellipsis-only: " + class_name + "." + method_name)
+                    method_sig = cls_sig.methods.get(method_name)
+                    if method_sig is None:
+                        continue
+                    params, ret = _trait_method_signature_tuple(method_sig)
+                    methods_meta.append(
+                        {
+                            "name": method_name,
+                            "args": list(method_sig.arg_names),
+                            "param_types": params,
+                            "return_type": ret,
+                        }
+                    )
+                elif item_kind in ("Expr", "Pass"):
+                    continue
+                else:
+                    raise RuntimeError("unsupported_syntax: trait body only allows method signatures: " + class_name)
+        meta["trait_v1"] = {
+            "schema_version": 1,
+            "methods": methods_meta,
+            "extends_traits": extends_traits,
+        }
+        return
+
+    if len(implements_traits) == 0:
+        return
+
+    method_impl_map: dict[str, list[dict[str, JsonVal]]] = {}
+    idx_trait = 0
+    while idx_trait < len(implements_traits):
+        trait_name = extract_base_type(implements_traits[idx_trait])
+        idx_trait += 1
+        if trait_name == "":
+            continue
+        trait_sig = _lookup_any_class(trait_name, ctx)
+        if trait_sig is None or not trait_sig.is_trait:
+            raise RuntimeError("semantic_conflict: implements target must be a trait: " + class_name + " -> " + trait_name)
+        trait_methods = _collect_trait_methods(trait_name, ctx)
+        for method_name, trait_rows in trait_methods.items():
+            impl_sig = cls_sig.methods.get(method_name)
+            if impl_sig is None:
+                raise RuntimeError("semantic_conflict: missing trait method implementation: " + class_name + "." + method_name + " for " + trait_name)
+            impl_sig_tuple = _trait_method_signature_tuple(impl_sig)
+            matched = False
+            for trait_method_sig in trait_rows:
+                if impl_sig_tuple == _trait_method_signature_tuple(trait_method_sig):
+                    matched = True
+                    break
+            if not matched:
+                raise RuntimeError("semantic_conflict: trait signature mismatch: " + class_name + "." + method_name + " for " + trait_name)
+            rows = method_impl_map.get(method_name)
+            if rows is None:
+                rows = []
+                method_impl_map[method_name] = rows
+            rows.append(_build_trait_method_meta(trait_name, method_name))
+
+    body2 = stmt.get("body")
+    if isinstance(body2, list):
+        for item2 in body2:
+            if not isinstance(item2, dict) or item2.get("kind") != "FunctionDef":
+                continue
+            method_name2 = str(item2.get("name", "")) if isinstance(item2.get("name"), str) else ""
+            impl_rows = method_impl_map.get(method_name2)
+            if impl_rows is None or len(impl_rows) == 0:
+                continue
+            item_meta_val = item2.get("meta")
+            item_meta: dict[str, JsonVal] = item_meta_val if isinstance(item_meta_val, dict) else {}
+            item2["meta"] = item_meta
+            if len(impl_rows) == 1:
+                item_meta["trait_impl_v1"] = impl_rows[0]
+            else:
+                item_meta["trait_impl_v1"] = impl_rows
+
+    meta["implements_v1"] = {
+        "schema_version": 1,
+        "traits": implements_traits,
+    }
+
+
 def _default_collection_hint(param_type: str) -> str:
     t: str = param_type.strip()
     if t.endswith(" | None"):
@@ -3182,6 +3365,9 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Resolve a ClassDef."""
     name_val = stmt.get("name")
     class_name: str = str(name_val) if isinstance(name_val, str) else ""
+    decorators = _class_decorators(stmt)
+    if len(decorators) > 0:
+        stmt["decorators"] = decorators
 
     # Add class_storage_hint if not present
     if "class_storage_hint" not in stmt:
@@ -3298,6 +3484,8 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
                             continue
                         cls_sig_existing.fields[field_name2] = _ctx_normalize_type(field_type2, ctx)
                         ft_raw[field_name2] = cls_sig_existing.fields[field_name2]
+
+    _resolve_trait_contracts(stmt, class_name, ctx)
 
 
 def _resolve_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
@@ -4142,6 +4330,10 @@ def _extract_class_sig_for_prescan(node: dict[str, JsonVal], ctx: ResolveContext
                 bases.append(b)
     methods: dict[str, FuncSig] = {}
     fields: dict[str, str] = {}
+    decorators: list[str] = _class_decorators(node)
+    implements_traits: list[str] = []
+    for decorator in decorators:
+        implements_traits.extend(_parse_implements_decorator(decorator))
     is_enum_class: bool = any(base in ("Enum", "IntEnum", "IntFlag") for base in bases)
     body_raw = node.get("body")
     if isinstance(body_raw, list):
@@ -4173,7 +4365,15 @@ def _extract_class_sig_for_prescan(node: dict[str, JsonVal], ctx: ResolveContext
         for fk, fv in ft_raw.items():
             if isinstance(fk, str) and isinstance(fv, str) and fk not in fields:
                 fields[fk] = _ctx_normalize_type(fv, ctx)
-    return ClassSig(name=name, bases=bases, methods=methods, fields=fields)
+    return ClassSig(
+        name=name,
+        bases=bases,
+        methods=methods,
+        fields=fields,
+        decorators=decorators,
+        is_trait=("trait" in decorators),
+        implements_traits=implements_traits,
+    )
 
 
 # ---------------------------------------------------------------------------

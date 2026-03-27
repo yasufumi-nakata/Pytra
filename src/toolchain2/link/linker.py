@@ -16,6 +16,7 @@ from pytra.typing import cast
 from toolchain2.link.runtime_discovery import discover_runtime_modules
 from toolchain2.link.runtime_discovery import resolve_runtime_east_path
 from toolchain2.link.type_id import build_type_id_table
+from toolchain2.link.trait_id import build_trait_id_table
 from toolchain2.link.call_graph import build_call_graph
 from toolchain2.link.dependencies import build_all_resolved_dependencies
 from toolchain2.link.import_maps import collect_import_maps
@@ -240,6 +241,100 @@ def _docs_as_json(copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]]) ->
     for _, doc in copied_docs:
         out.append(doc)
     return out
+
+
+def _walk_nodes(node: JsonVal) -> list[dict[str, JsonVal]]:
+    out: list[dict[str, JsonVal]] = []
+    if isinstance(node, dict):
+        out.append(node)
+        for value in node.values():
+            out.extend(_walk_nodes(value))
+    elif isinstance(node, list):
+        for item in node:
+            out.extend(_walk_nodes(item))
+    return out
+
+
+def _link_resolve_trait_ref(
+    type_name: str,
+    *,
+    module_id: str,
+    local_traits: dict[str, str],
+    import_modules: dict[str, str],
+    import_symbols: dict[str, str],
+    trait_id_table: dict[str, JsonVal],
+) -> str:
+    if type_name == "":
+        return ""
+    if type_name in trait_id_table:
+        return type_name
+    if type_name in local_traits:
+        return local_traits[type_name]
+    imported_symbol = import_symbols.get(type_name, "")
+    if imported_symbol != "" and "::" in imported_symbol:
+        dep_module_id, export_name = imported_symbol.split("::", 1)
+        candidate = dep_module_id.strip() + "." + export_name.strip()
+        if candidate in trait_id_table:
+            return candidate
+    if "." in type_name:
+        owner_name, attr_name = type_name.rsplit(".", 1)
+        imported_module = import_modules.get(owner_name, "")
+        if imported_module != "":
+            candidate2 = imported_module + "." + attr_name.strip()
+            if candidate2 in trait_id_table:
+                return candidate2
+    candidate3 = module_id + "." + type_name
+    if candidate3 in trait_id_table:
+        return candidate3
+    return ""
+
+
+def _annotate_trait_predicates(
+    module_id: str,
+    doc: dict[str, JsonVal],
+    trait_id_table: dict[str, JsonVal],
+) -> None:
+    import_modules, import_symbols = collect_import_maps(doc)
+    local_traits: dict[str, str] = {}
+    body = doc.get("body")
+    if isinstance(body, list):
+        for item in body:
+            if not isinstance(item, dict) or item.get("kind") != "ClassDef":
+                continue
+            meta = item.get("meta")
+            if not isinstance(meta, dict) or not isinstance(meta.get("trait_v1"), dict):
+                continue
+            class_name = item.get("name")
+            if isinstance(class_name, str) and class_name != "":
+                local_traits[class_name] = module_id + "." + class_name
+
+    for node in _walk_nodes(doc):
+        if node.get("kind") != "IsInstance":
+            continue
+        expected = node.get("expected_type_id")
+        if not isinstance(expected, dict):
+            continue
+        expected_name = ""
+        expected_id = expected.get("id")
+        if isinstance(expected_id, str) and expected_id != "":
+            expected_name = expected_id
+        expected_repr = expected.get("repr")
+        if expected_name == "" and isinstance(expected_repr, str):
+            expected_name = expected_repr
+        trait_fqcn = _link_resolve_trait_ref(
+            expected_name,
+            module_id=module_id,
+            local_traits=local_traits,
+            import_modules=import_modules,
+            import_symbols=import_symbols,
+            trait_id_table=trait_id_table,
+        )
+        trait_id_val = trait_id_table.get(trait_fqcn)
+        if trait_fqcn == "" or not isinstance(trait_id_val, int):
+            continue
+        node["predicate_kind"] = "trait"
+        node["expected_trait_id"] = trait_id_val
+        node["expected_trait_fqcn"] = trait_fqcn
 
 
 def _copy_doc_rows(copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]]) -> list[tuple[LinkedModule, dict[str, JsonVal]]]:
@@ -587,6 +682,8 @@ def link_modules(
     # 4. type_id テーブル構築
     type_id_parts: tuple[JsonVal, JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal, JsonVal], build_type_id_table(modules))
     type_id_table, type_id_base_map, type_info_table = type_id_parts
+    trait_id_parts: tuple[JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal], build_trait_id_table(modules))
+    trait_id_table, class_trait_masks = trait_id_parts
 
     # 5. call graph 構築
     call_graph_parts: tuple[JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal], build_call_graph(modules))
@@ -624,12 +721,19 @@ def link_modules(
     for row in copied_rows:
         module = row[0]
         doc = row[1]
+        _annotate_trait_predicates(module.module_id, doc, cast(dict[str, JsonVal], trait_id_table))
         meta = _ensure_meta(doc)
+        meta["emit_context"] = {
+            "module_id": module.module_id,
+            "is_entry": module.is_entry,
+        }
         linked_meta: dict[str, JsonVal] = {
             "program_id": pid,
             "module_id": module.module_id,
             "entry_modules": entry_module_ids,
             "type_id_resolved_v1": type_id_table,
+            "trait_id_table_v1": trait_id_table,
+            "class_trait_masks_v1": class_trait_masks,
             "type_id_base_map_v1": type_id_base_map,
             "type_info_table_v1": type_info_table,
             "resolved_dependencies_v1": _dep_rows(resolved_deps, module.module_id),
@@ -673,6 +777,8 @@ def link_modules(
     # 10. manifest (link-output.v1) 構築
     global_section: dict[str, JsonVal] = {
         "type_id_table": type_id_table,
+        "trait_id_table": trait_id_table,
+        "class_trait_masks_v1": class_trait_masks,
         "type_id_base_map": type_id_base_map,
         "call_graph": cg_dict,
         "sccs": sccs_list,

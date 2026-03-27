@@ -36,6 +36,7 @@ from toolchain2.parse.py.nodes import (
     # Module
     Module,
 )
+from toolchain2.parse.py.type_resolver import default_type_aliases
 # type_resolver は EAST1 では不要 (型正規化は resolve の責務)
 
 
@@ -54,6 +55,7 @@ class ParseContext:
     import_modules: dict[str, str]
     import_bindings: list[dict[str, JsonVal]]
     qualified_refs: list[dict[str, JsonVal]]
+    type_aliases: dict[str, str] = field(default_factory=default_type_aliases)
 
 
 # ---------------------------------------------------------------------------
@@ -137,6 +139,13 @@ def _parse_extern_var_call(value_text: str) -> Optional[dict[str, str]]:
         inner = vt[len("extern_var("):-1]
         return _parse_extern_kwargs(inner)
     return None
+
+
+def _decorator_text(s: str) -> str:
+    text = s.strip()
+    if text.startswith("@"):
+        return text[1:].strip()
+    return text
 
 
 def _parse_from_import(s: str) -> tuple[str, str]:
@@ -1293,6 +1302,7 @@ def _parse_module_body(
     total = len(lines)
     pending_trivia: list[TriviaNode] = []
     pending_comments: list[str] = []
+    pending_decorators: list[str] = []
     leading_file_trivia_done = False
     pending_dataclass = False
     pending_extern_v2: Optional[dict[str, str]] = None
@@ -1331,6 +1341,7 @@ def _parse_module_body(
 
         # Decorator at module level
         if s_clean.startswith("@"):
+            pending_decorators.append(_decorator_text(s_clean))
             if s_clean == "@dataclass" or s_clean.startswith("@dataclass("):
                 pending_dataclass = True
             # v2 extern decorators
@@ -1497,6 +1508,9 @@ def _parse_module_body(
             fn_name = _parse_def_name(merged)
         if fn_name != "":
             fn_stmt, ln_no = _parse_function_def(ctx, lines, ln_no, fn_name, pending_trivia, pending_comments)
+            if len(pending_decorators) > 0:
+                fn_stmt.decorators = list(pending_decorators)
+                pending_decorators = []
             if pending_extern_v2 is not None:
                 fn_stmt.node_meta = {"extern_v2": pending_extern_v2}
                 pending_extern_v2 = None
@@ -1511,7 +1525,18 @@ def _parse_module_body(
         cls_name = _parse_class_name(s_clean)
         if cls_name != "":
             force_cls_leading = not first_nonimport_done
-            cls_stmt, ln_no = _parse_class_def(ctx, lines, ln_no, cls_name, pending_trivia, pending_comments, is_dataclass=pending_dataclass, force_leading=force_cls_leading)
+            cls_stmt, ln_no = _parse_class_def(
+                ctx,
+                lines,
+                ln_no,
+                cls_name,
+                pending_trivia,
+                pending_comments,
+                decorators=pending_decorators,
+                is_dataclass=pending_dataclass,
+                force_leading=force_cls_leading,
+            )
+            pending_decorators = []
             if pending_extern_v2 is not None:
                 cls_stmt.node_meta = {"extern_v2": pending_extern_v2}
                 pending_extern_v2 = None
@@ -1793,6 +1818,7 @@ def _parse_class_def(
     cls_name: str,
     trivia: list[TriviaNode],
     comments: list[str],
+    decorators: Optional[list[str]] = None,
     is_dataclass: bool = False,
     force_leading: bool = True,
 ) -> tuple[ClassDef, int]:
@@ -1843,6 +1869,7 @@ def _parse_class_def(
         body=body_stmts,
         dataclass_flag=is_dataclass,
         field_types=field_types,
+        decorators=list(decorators) if decorators is not None else None,
     )
     # ClassDef: 最初の body item は常に出力、2番目以降は trivia がある場合のみ
     if force_leading or len(comments) > 0 or len(trivia) > 0:
@@ -2083,15 +2110,11 @@ def _parse_block_lines(
 
         # Decorator: @name — accumulate for next def
         if s_clean.startswith("@"):
-            deco_name = s_clean[1:].strip()
+            deco_name = _decorator_text(s_clean)
             # Check for v2 extern decorator (extern_fn/extern_method/extern_class)
             block_extern_v2 = _parse_extern_v2_decorator(s_clean)
             if block_extern_v2 is not None:
                 pending_block_extern_v2 = block_extern_v2
-            # Strip arguments: @dataclass(frozen=True) → dataclass
-            paren = deco_name.find("(")
-            if paren >= 0:
-                deco_name = deco_name[:paren].strip()
             pending_decorators.append(deco_name)
             i += 1
             continue

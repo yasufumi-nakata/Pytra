@@ -58,6 +58,9 @@ class ClassSig:
     bases: list[str]
     methods: dict[str, FuncSig]
     fields: dict[str, str]  # field_name → normalized type
+    decorators: list[str] = field(default_factory=list)
+    is_trait: bool = False
+    implements_traits: list[str] = field(default_factory=list)
     template_params: list[str] = field(default_factory=list)
     extern: ExternV2 | None = None
 
@@ -247,15 +250,29 @@ def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
                             fields[field_name_val] = normalize_type(ann_val)
     # Template params from decorators
     decs_raw = node.get("decorators")
+    decorators: list[str] = []
     tparams: list[str] = []
     if isinstance(decs_raw, list):
         for d in decs_raw:
-            if isinstance(d, str) and d.startswith("template("):
+            if not isinstance(d, str):
+                continue
+            decorators.append(d)
+            if d.startswith("template("):
                 inner: str = d[9:-1] if d.endswith(")") else ""
                 for p in inner.split(","):
                     p2: str = p.strip().strip("'\"")
                     if p2 != "":
                         tparams.append(p2)
+    is_trait = "trait" in decorators
+    implements_traits: list[str] = []
+    for decorator in decorators:
+        if not decorator.startswith("implements(") or not decorator.endswith(")"):
+            continue
+        inner2 = decorator[len("implements("):-1]
+        for part in inner2.split(","):
+            name2 = part.strip()
+            if name2 != "":
+                implements_traits.append(name2)
     extern: ExternV2 | None = _extract_extern_v2(node)
     # Fallback: well-known container template params
     if len(tparams) == 0:
@@ -265,8 +282,17 @@ def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
             tparams = ["K", "V"]
         elif name == "Iterable":
             tparams = ["T"]
-    return ClassSig(name=name, bases=bases, methods=methods, fields=fields,
-                    template_params=tparams, extern=extern)
+    return ClassSig(
+        name=name,
+        bases=bases,
+        methods=methods,
+        fields=fields,
+        decorators=decorators,
+        is_trait=is_trait,
+        implements_traits=implements_traits,
+        template_params=tparams,
+        extern=extern,
+    )
 
 
 def _load_module_sig(east1_path: Path, module_id: str) -> ModuleSig:

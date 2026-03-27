@@ -1,0 +1,347 @@
+{
+  "schema": "pytra.link_output.v1",
+  "target": "cpp",
+  "dispatch_mode": "native",
+  "entry_modules": [
+    "trait_basic"
+  ],
+  "modules": [
+    {
+      "module_id": "pytra.built_in.contains",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/contains.east",
+      "output": "east3/pytra/built_in/contains.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/contains.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "pytra.built_in.io_ops",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
+      "output": "east3/pytra/built_in/io_ops.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "pytra.built_in.type_id",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/type_id.east",
+      "output": "east3/pytra/built_in/type_id.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/type_id.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "pytra.utils.assertions",
+      "input": "/workspace/Pytra/src/runtime/east/utils/assertions.east",
+      "output": "east3/pytra/utils/assertions.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/utils/assertions.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "trait_basic",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/oop/trait_basic.east3",
+      "output": "east3/trait_basic.east3.json",
+      "source_path": "test/fixture/source/py/oop/trait_basic.py",
+      "is_entry": true,
+      "module_kind": "user"
+    }
+  ],
+  "global": {
+    "type_id_table": {
+      "trait_basic.Circle": 1000,
+      "trait_basic._IdentityDecorator": 1001,
+      "trait_basic._ImplementsFactory": 1002
+    },
+    "trait_id_table": {
+      "trait_basic.Drawable": 0,
+      "trait_basic.Named": 1,
+      "trait_basic.ShapeLike": 2
+    },
+    "class_trait_masks_v1": {
+      "trait_basic._IdentityDecorator": 0,
+      "trait_basic._ImplementsFactory": 0,
+      "trait_basic.Circle": 7
+    },
+    "type_id_base_map": {
+      "trait_basic.Circle": 8,
+      "trait_basic._IdentityDecorator": 8,
+      "trait_basic._ImplementsFactory": 8
+    },
+    "call_graph": {
+      "pytra.built_in.contains::py_contains_dict_object": [],
+      "pytra.built_in.contains::py_contains_list_object": [],
+      "pytra.built_in.contains::py_contains_set_object": [],
+      "pytra.built_in.contains::py_contains_str_object": [],
+      "pytra.built_in.io_ops::py_print": [],
+      "pytra.built_in.type_id::_assign_type_ranges_dfs": [
+        "pytra.built_in.type_id::_assign_type_ranges_dfs",
+        "pytra.built_in.type_id::_sorted_child_type_ids"
+      ],
+      "pytra.built_in.type_id::_collect_root_type_ids": [
+        "pytra.built_in.type_id::_sorted_ints"
+      ],
+      "pytra.built_in.type_id::_contains_int": [],
+      "pytra.built_in.type_id::_copy_int_list": [],
+      "pytra.built_in.type_id::_ensure_builtins": [
+        "pytra.built_in.type_id::_mark_type_ranges_clean",
+        "pytra.built_in.type_id::_recompute_type_ranges",
+        "pytra.built_in.type_id::_register_type_node",
+        "pytra.built_in.type_id::_tid_bool",
+        "pytra.built_in.type_id::_tid_dict",
+        "pytra.built_in.type_id::_tid_float",
+        "pytra.built_in.type_id::_tid_int",
+        "pytra.built_in.type_id::_tid_list",
+        "pytra.built_in.type_id::_tid_none",
+        "pytra.built_in.type_id::_tid_object",
+        "pytra.built_in.type_id::_tid_set",
+        "pytra.built_in.type_id::_tid_str",
+        "pytra.built_in.type_id::_tid_user_base"
+      ],
+      "pytra.built_in.type_id::_ensure_type_ranges": [
+        "pytra.built_in.type_id::_is_type_ranges_dirty",
+        "pytra.built_in.type_id::_mark_type_ranges_clean",
+        "pytra.built_in.type_id::_recompute_type_ranges"
+      ],
+      "pytra.built_in.type_id::_is_type_ranges_dirty": [],
+      "pytra.built_in.type_id::_make_int_list_0": [],
+      "pytra.built_in.type_id::_make_int_list_1": [],
+      "pytra.built_in.type_id::_mark_type_ranges_clean": [],
+      "pytra.built_in.type_id::_mark_type_ranges_dirty": [],
+      "pytra.built_in.type_id::_normalize_base_type_id": [
+        "pytra.built_in.type_id::_ensure_builtins"
+      ],
+      "pytra.built_in.type_id::_py_reset_type_registry_for_test": [
+        "pytra.built_in.type_id::_ensure_builtins",
+        "pytra.built_in.type_id::_tid_user_base"
+      ],
+      "pytra.built_in.type_id::_recompute_type_ranges": [
+        "pytra.built_in.type_id::_assign_type_ranges_dfs",
+        "pytra.built_in.type_id::_collect_root_type_ids",
+        "pytra.built_in.type_id::_sorted_ints"
+      ],
+      "pytra.built_in.type_id::_register_type_node": [
+        "pytra.built_in.type_id::_contains_int",
+        "pytra.built_in.type_id::_make_int_list_0"
+      ],
+      "pytra.built_in.type_id::_sorted_child_type_ids": [
+        "pytra.built_in.type_id::_make_int_list_0",
+        "pytra.built_in.type_id::_sorted_ints"
+      ],
+      "pytra.built_in.type_id::_sorted_ints": [
+        "pytra.built_in.type_id::_copy_int_list"
+      ],
+      "pytra.built_in.type_id::_tid_bool": [],
+      "pytra.built_in.type_id::_tid_dict": [],
+      "pytra.built_in.type_id::_tid_float": [],
+      "pytra.built_in.type_id::_tid_int": [],
+      "pytra.built_in.type_id::_tid_list": [],
+      "pytra.built_in.type_id::_tid_none": [],
+      "pytra.built_in.type_id::_tid_object": [],
+      "pytra.built_in.type_id::_tid_set": [],
+      "pytra.built_in.type_id::_tid_str": [],
+      "pytra.built_in.type_id::_tid_user_base": [],
+      "pytra.built_in.type_id::_try_runtime_tagged_type_id": [],
+      "pytra.built_in.type_id::py_tid_is_subtype": [
+        "pytra.built_in.type_id::_ensure_builtins",
+        "pytra.built_in.type_id::_ensure_type_ranges"
+      ],
+      "pytra.built_in.type_id::py_tid_isinstance": [],
+      "pytra.built_in.type_id::py_tid_issubclass": [],
+      "pytra.built_in.type_id::py_tid_register_class_type": [
+        "pytra.built_in.type_id::_ensure_builtins",
+        "pytra.built_in.type_id::_mark_type_ranges_dirty",
+        "pytra.built_in.type_id::_normalize_base_type_id",
+        "pytra.built_in.type_id::_register_type_node"
+      ],
+      "pytra.built_in.type_id::py_tid_register_known_class_type": [
+        "pytra.built_in.type_id::_ensure_builtins",
+        "pytra.built_in.type_id::_mark_type_ranges_dirty",
+        "pytra.built_in.type_id::_normalize_base_type_id",
+        "pytra.built_in.type_id::_register_type_node",
+        "pytra.built_in.type_id::_tid_user_base"
+      ],
+      "pytra.built_in.type_id::py_tid_runtime_type_id": [
+        "pytra.built_in.type_id::_ensure_builtins",
+        "pytra.built_in.type_id::_tid_bool",
+        "pytra.built_in.type_id::_tid_dict",
+        "pytra.built_in.type_id::_tid_float",
+        "pytra.built_in.type_id::_tid_int",
+        "pytra.built_in.type_id::_tid_list",
+        "pytra.built_in.type_id::_tid_none",
+        "pytra.built_in.type_id::_tid_object",
+        "pytra.built_in.type_id::_tid_set",
+        "pytra.built_in.type_id::_tid_str",
+        "pytra.built_in.type_id::_try_runtime_tagged_type_id"
+      ],
+      "pytra.utils.assertions::_eq_any": [],
+      "pytra.utils.assertions::py_assert_all": [],
+      "pytra.utils.assertions::py_assert_eq": [
+        "pytra.utils.assertions::_eq_any"
+      ],
+      "pytra.utils.assertions::py_assert_stdout": [],
+      "pytra.utils.assertions::py_assert_true": [],
+      "trait_basic::__main__": [
+        "pytra.utils.assertions::py_assert_stdout"
+      ],
+      "trait_basic::_case_main": [
+        "trait_basic::label",
+        "trait_basic::render"
+      ],
+      "trait_basic::label": [],
+      "trait_basic::render": []
+    },
+    "sccs": [
+      [
+        "pytra.built_in.contains::py_contains_dict_object"
+      ],
+      [
+        "pytra.built_in.contains::py_contains_list_object"
+      ],
+      [
+        "pytra.built_in.contains::py_contains_set_object"
+      ],
+      [
+        "pytra.built_in.contains::py_contains_str_object"
+      ],
+      [
+        "pytra.built_in.io_ops::py_print"
+      ],
+      [
+        "pytra.built_in.type_id::_make_int_list_0"
+      ],
+      [
+        "pytra.built_in.type_id::_copy_int_list"
+      ],
+      [
+        "pytra.built_in.type_id::_sorted_ints"
+      ],
+      [
+        "pytra.built_in.type_id::_sorted_child_type_ids"
+      ],
+      [
+        "pytra.built_in.type_id::_assign_type_ranges_dfs"
+      ],
+      [
+        "pytra.built_in.type_id::_collect_root_type_ids"
+      ],
+      [
+        "pytra.built_in.type_id::_contains_int"
+      ],
+      [
+        "pytra.built_in.type_id::_mark_type_ranges_clean"
+      ],
+      [
+        "pytra.built_in.type_id::_recompute_type_ranges"
+      ],
+      [
+        "pytra.built_in.type_id::_register_type_node"
+      ],
+      [
+        "pytra.built_in.type_id::_tid_bool"
+      ],
+      [
+        "pytra.built_in.type_id::_tid_dict"
+      ],
+      [
+        "pytra.built_in.type_id::_tid_float"
+      ],
+      [
+        "pytra.built_in.type_id::_tid_int"
+      ],
+      [
+        "pytra.built_in.type_id::_tid_list"
+      ],
+      [
+        "pytra.built_in.type_id::_tid_none"
+      ],
+      [
+        "pytra.built_in.type_id::_tid_object"
+      ],
+      [
+        "pytra.built_in.type_id::_tid_set"
+      ],
+      [
+        "pytra.built_in.type_id::_tid_str"
+      ],
+      [
+        "pytra.built_in.type_id::_tid_user_base"
+      ],
+      [
+        "pytra.built_in.type_id::_ensure_builtins"
+      ],
+      [
+        "pytra.built_in.type_id::_is_type_ranges_dirty"
+      ],
+      [
+        "pytra.built_in.type_id::_ensure_type_ranges"
+      ],
+      [
+        "pytra.built_in.type_id::_make_int_list_1"
+      ],
+      [
+        "pytra.built_in.type_id::_mark_type_ranges_dirty"
+      ],
+      [
+        "pytra.built_in.type_id::_normalize_base_type_id"
+      ],
+      [
+        "pytra.built_in.type_id::_py_reset_type_registry_for_test"
+      ],
+      [
+        "pytra.built_in.type_id::_try_runtime_tagged_type_id"
+      ],
+      [
+        "pytra.built_in.type_id::py_tid_is_subtype"
+      ],
+      [
+        "pytra.built_in.type_id::py_tid_isinstance"
+      ],
+      [
+        "pytra.built_in.type_id::py_tid_issubclass"
+      ],
+      [
+        "pytra.built_in.type_id::py_tid_register_class_type"
+      ],
+      [
+        "pytra.built_in.type_id::py_tid_register_known_class_type"
+      ],
+      [
+        "pytra.built_in.type_id::py_tid_runtime_type_id"
+      ],
+      [
+        "pytra.utils.assertions::_eq_any"
+      ],
+      [
+        "pytra.utils.assertions::py_assert_all"
+      ],
+      [
+        "pytra.utils.assertions::py_assert_eq"
+      ],
+      [
+        "pytra.utils.assertions::py_assert_stdout"
+      ],
+      [
+        "pytra.utils.assertions::py_assert_true"
+      ],
+      [
+        "trait_basic::__main__"
+      ],
+      [
+        "trait_basic::label"
+      ],
+      [
+        "trait_basic::render"
+      ],
+      [
+        "trait_basic::_case_main"
+      ]
+    ],
+    "non_escape_summary": {},
+    "container_ownership_hints_v1": {}
+  },
+  "diagnostics": {
+    "warnings": [],
+    "errors": []
+  }
+}

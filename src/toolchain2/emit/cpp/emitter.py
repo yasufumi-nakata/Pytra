@@ -45,8 +45,10 @@ class CppEmitContext:
     class_names: set[str] = field(default_factory=set)
     class_field_types: dict[str, dict[str, str]] = field(default_factory=dict)
     class_type_ids: dict[str, int] = field(default_factory=dict)
+    trait_ids: dict[str, int] = field(default_factory=dict)
     class_type_info: dict[str, dict[str, int]] = field(default_factory=dict)
     class_symbol_fqcns: dict[str, str] = field(default_factory=dict)
+    class_trait_masks: dict[str, int] = field(default_factory=dict)
     current_class: str = ""
     current_return_type: str = ""
     current_function_scope: str = ""
@@ -993,6 +995,10 @@ def _emit_object_unbox(value_expr: str, target: str) -> str:
 
 def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     value = node.get("value")
+    expected_trait_id = node.get("expected_trait_id")
+    if isinstance(expected_trait_id, int):
+        value_expr_trait = _emit_expr(ctx, value)
+        return "py_runtime_value_has_trait(" + value_expr_trait + ", " + str(expected_trait_id) + ")"
     expected = node.get("expected_type_id")
     expected_name = _str(expected, "id") if isinstance(expected, dict) else ""
     value_expr = _emit_expr(ctx, value)
@@ -1415,8 +1421,11 @@ def _emit_closure_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
 
 def _emit_class_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     name = _str(node, "name")
+    base = _str(node, "base")
     body = _list(node, "body")
     is_dc = _bool(node, "dataclass")
+    is_trait = _is_trait_class(node)
+    trait_names = _trait_simple_names(node)
     ctx.class_names.add(name)
 
     fields: list[tuple[str, str]] = []
@@ -1433,19 +1442,42 @@ def _emit_class_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                 if tn != "": fields.append((tn, tr))
 
     if ctx.emit_class_decls:
-        _emit(ctx, "struct " + name + " {")
+        base_specs: list[str] = []
+        if base != "" and base not in ("object", "Exception", "BaseException") and not is_trait:
+            base_specs.append("public " + base)
+        idx_trait = 0
+        while idx_trait < len(trait_names):
+            base_specs.append("virtual public " + trait_names[idx_trait])
+            idx_trait += 1
+        header = "class " + name
+        if len(base_specs) > 0:
+            header += " : " + ", ".join(base_specs)
+        header += " {"
+        _emit(ctx, header)
+        ctx.indent_level += 1
+        _emit(ctx, "public:")
         ctx.indent_level += 1
         for fn, ftype in fields:
             _emit(ctx, cpp_signature_type(ftype) + " " + fn + ";")
         for s in body:
             if not isinstance(s, dict) or _str(s, "kind") not in ("FunctionDef", "ClosureDef"):
                 continue
-            decl = _function_signature(ctx, s, owner_name=name, declaration_only=True)
+            decl = _function_signature(ctx, s, owner_name=name, owner_is_trait=is_trait, declaration_only=True)
             if decl != "":
                 _emit(ctx, decl + ";")
+        if is_trait:
+            _emit(ctx, "virtual ~" + name + "() = default;")
+        else:
+            mask = ctx.class_trait_masks.get(ctx.class_symbol_fqcns.get(name, ctx.module_id + "." + name), 0)
+            if mask != 0:
+                _emit(ctx, "static constexpr uint64_t __pytra_trait_bits = " + str(mask) + "ULL;")
+        ctx.indent_level -= 1
         ctx.indent_level -= 1
         _emit(ctx, "};")
         _emit_blank(ctx)
+
+    if is_trait:
+        return
 
     for s in body:
         if isinstance(s, dict) and _str(s, "kind") in ("FunctionDef", "ClosureDef"):
@@ -1579,6 +1611,7 @@ def _function_signature(
     node: dict[str, JsonVal],
     *,
     owner_name: str = "",
+    owner_is_trait: bool = False,
     declaration_only: bool,
 ) -> str:
     name = _str(node, "name")
@@ -1586,8 +1619,13 @@ def _function_signature(
         return ""
     is_static = _has_decorator(node, "staticmethod")
     params = [_param_decl_text(arg_type, arg_name, mutable) for arg_name, arg_type, mutable in _function_param_meta(node)]
-    if declaration_only and owner_name != "" and is_static:
-        static_prefix = "static "
+    if declaration_only and owner_name != "":
+        if owner_is_trait and not is_static:
+            static_prefix = "virtual "
+        elif is_static:
+            static_prefix = "static "
+        else:
+            static_prefix = ""
     else:
         static_prefix = ""
     if name == "__init__" and owner_name != "":
@@ -1603,7 +1641,13 @@ def _function_signature(
         suffix = " const"
     if (not declaration_only) and owner_name != "" and not is_static and not self_mutates:
         suffix = " const"
-    return static_prefix + ret + " " + qual_name + "(" + ", ".join(params) + ")" + suffix
+    out = static_prefix + ret + " " + qual_name + "(" + ", ".join(params) + ")" + suffix
+    if declaration_only and owner_name != "":
+        if _method_trait_impl_count(node) > 0:
+            out += " override"
+        elif owner_is_trait:
+            out += " = 0"
+    return out
 
 
 def _function_template_prefix(node: dict[str, JsonVal]) -> str:
@@ -1671,6 +1715,46 @@ def _has_decorator(node: dict[str, JsonVal], name: str) -> bool:
         if isinstance(d, str) and d == name:
             return True
     return False
+
+
+def _trait_meta(node: dict[str, JsonVal]) -> dict[str, JsonVal]:
+    meta = _dict(node, "meta")
+    return _dict(meta, "trait_v1")
+
+
+def _implements_meta(node: dict[str, JsonVal]) -> dict[str, JsonVal]:
+    meta = _dict(node, "meta")
+    return _dict(meta, "implements_v1")
+
+
+def _is_trait_class(node: dict[str, JsonVal]) -> bool:
+    return len(_trait_meta(node)) > 0 or _has_decorator(node, "trait")
+
+
+def _trait_simple_names(node: dict[str, JsonVal]) -> list[str]:
+    out: list[str] = []
+    if _is_trait_class(node):
+        traits = _list(_trait_meta(node), "extends_traits")
+    else:
+        traits = _list(_implements_meta(node), "traits")
+    for item in traits:
+        if isinstance(item, str) and item != "":
+            out.append(item.rsplit(".", 1)[-1])
+    return out
+
+
+def _method_trait_impl_count(node: dict[str, JsonVal]) -> int:
+    meta = _dict(node, "meta")
+    impl = meta.get("trait_impl_v1")
+    if isinstance(impl, dict):
+        return 1
+    if isinstance(impl, list):
+        count = 0
+        for item in impl:
+            if isinstance(item, dict):
+                count += 1
+        return count
+    return 0
 
 
 def _is_type_owner(ctx: CppEmitContext, owner_node: JsonVal) -> bool:
@@ -1787,10 +1871,22 @@ def emit_cpp_module(
     type_id_table_raw = _dict(lp, "type_id_table")
     if len(type_id_table_raw) == 0:
         type_id_table_raw = _dict(lp, "type_id_resolved_v1")
+    trait_id_table_raw = _dict(lp, "trait_id_table_v1")
+    class_trait_masks_raw = _dict(lp, "class_trait_masks_v1")
     type_info_table_raw = _dict(lp, "type_info_table_v1")
     ctx.class_type_ids = {
         key: value
         for key, value in type_id_table_raw.items()
+        if isinstance(key, str) and isinstance(value, int)
+    }
+    ctx.trait_ids = {
+        key: value
+        for key, value in trait_id_table_raw.items()
+        if isinstance(key, str) and isinstance(value, int)
+    }
+    ctx.class_trait_masks = {
+        key: value
+        for key, value in class_trait_masks_raw.items()
         if isinstance(key, str) and isinstance(value, int)
     }
     ctx.class_type_info = {

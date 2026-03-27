@@ -70,6 +70,23 @@ def _iter_class_defs(east_doc: dict[str, JsonVal]) -> list[dict[str, JsonVal]]:
     return out
 
 
+def _decorators(class_def: dict[str, JsonVal]) -> list[str]:
+    raw = class_def.get("decorators")
+    out: list[str] = []
+    if isinstance(raw, list):
+        for item in raw:
+            if isinstance(item, str) and item.strip() != "":
+                out.append(item.strip())
+    return out
+
+
+def _is_trait_class(class_def: dict[str, JsonVal]) -> bool:
+    meta = class_def.get("meta")
+    if isinstance(meta, dict) and isinstance(meta.get("trait_v1"), dict):
+        return True
+    return "trait" in _decorators(class_def)
+
+
 def _input_invalid(message: str) -> RuntimeError:
     return RuntimeError("input_invalid: " + message)
 
@@ -165,6 +182,8 @@ def build_type_id_table(
         class_defs = _iter_class_defs(doc)
         module_class_defs[module.module_id] = class_defs
         for class_def in class_defs:
+            if _is_trait_class(class_def):
+                continue
             class_name = _safe_name(class_def.get("name"))
             if class_name == "":
                 continue
@@ -181,6 +200,8 @@ def build_type_id_table(
         import_modules, import_symbols = module_import_maps.get(module.module_id, ({}, {}))
 
         for class_def in class_defs:
+            if _is_trait_class(class_def):
+                continue
             class_name = _safe_name(class_def.get("name"))
             if class_name == "":
                 continue

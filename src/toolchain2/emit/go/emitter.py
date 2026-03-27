@@ -48,6 +48,7 @@ class EmitContext:
     import_alias_modules: dict[str, str] = field(default_factory=dict)
     # Class info
     class_names: set[str] = field(default_factory=set)
+    trait_names: set[str] = field(default_factory=set)
     class_bases: dict[str, str] = field(default_factory=dict)
     class_property_methods: dict[str, set[str]] = field(default_factory=dict)
     class_static_methods: dict[str, set[str]] = field(default_factory=dict)
@@ -125,10 +126,17 @@ def _go_polymorphic_iface_name(ctx: EmitContext, type_name: str) -> str:
 
 
 def _is_polymorphic_class(ctx: EmitContext, type_name: str) -> bool:
-    return type_name in ctx.class_bases.values()
+    return type_name in ctx.class_bases.values() or type_name in ctx.trait_names
+
+
+def _is_trait_class(node: dict[str, JsonVal]) -> bool:
+    meta = _dict(node, "meta")
+    return len(_dict(meta, "trait_v1")) > 0
 
 
 def _go_signature_type(ctx: EmitContext, resolved_type: str) -> str:
+    if resolved_type in ctx.trait_names:
+        return _go_symbol_name(ctx, resolved_type)
     if _is_polymorphic_class(ctx, resolved_type):
         return _go_polymorphic_iface_name(ctx, resolved_type)
     if resolved_type in ctx.class_names:
@@ -2046,6 +2054,10 @@ def _emit_lambda(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     value = _emit_expr(ctx, node.get("value"))
+    expected_trait_fqcn = _str(node, "expected_trait_fqcn")
+    if expected_trait_fqcn != "":
+        trait_name = expected_trait_fqcn.rsplit(".", 1)[-1]
+        return "func() bool { _, ok := any(" + value + ").(" + _go_symbol_name(ctx, trait_name) + "); return ok }()"
     expected = node.get("expected_type_id")
     expected_name = ""
     if isinstance(expected, dict):
@@ -2986,8 +2998,11 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     body = _list(node, "body")
     gn = _go_symbol_name(ctx, name)
     is_dataclass = _bool(node, "dataclass")
+    is_trait = _is_trait_class(node)
 
     ctx.class_names.add(name)
+    if is_trait:
+        ctx.trait_names.add(name)
     if base != "":
         ctx.class_bases[name] = base
     property_methods: set[str] = ctx.class_property_methods.setdefault(name, set())
@@ -2997,6 +3012,24 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     enum_base = ctx.enum_bases.get(name, "")
     enum_members = ctx.enum_members.get(name, {})
     field_defaults: dict[str, JsonVal] = {}
+
+    if is_trait:
+        _emit(ctx, "type " + gn + " interface {")
+        ctx.indent_level += 1
+        trait_meta = _dict(_dict(node, "meta"), "trait_v1")
+        for parent_trait in _list(trait_meta, "extends_traits"):
+            if isinstance(parent_trait, str) and parent_trait != "":
+                _emit(ctx, _go_symbol_name(ctx, parent_trait.rsplit(".", 1)[-1]))
+        for stmt in body:
+            if not isinstance(stmt, dict) or _str(stmt, "kind") not in ("FunctionDef", "ClosureDef"):
+                continue
+            sig = _interface_method_signature(ctx, stmt)
+            if sig != "":
+                _emit(ctx, sig)
+        ctx.indent_level -= 1
+        _emit(ctx, "}")
+        _emit_blank(ctx)
+        return
 
     if enum_base != "":
         _emit(ctx, "type " + gn + " int64")
@@ -3579,6 +3612,8 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef":
             class_name = _str(stmt, "name")
             ctx.class_names.add(class_name)
+            if _is_trait_class(stmt):
+                ctx.trait_names.add(class_name)
             base = _str(stmt, "base")
             if base != "":
                 ctx.class_bases[class_name] = base
