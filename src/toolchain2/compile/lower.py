@@ -137,18 +137,18 @@ def _normalize_type_name_local(value: JsonVal) -> str:
     return ""
 
 
-def normalize_type_name(value: JsonVal) -> str:
+def _normalize_type_name(value: JsonVal) -> str:
     return _normalize_type_name_local(value)
 
 
 def _canonical_type_name(ctx: CompileContext, value: JsonVal) -> str:
-    norm = normalize_type_name(value)
+    norm = _normalize_type_name(value)
     if norm in ("", "unknown"):
         return norm
     summary: Node = cast(dict[str, JsonVal], type_expr_summary_from_payload(ctx, None, norm))
     mirror = ""
     if "mirror" in summary:
-        mirror = normalize_type_name(summary["mirror"])
+        mirror = _normalize_type_name(summary["mirror"])
     if mirror not in ("", "unknown"):
         return mirror
     return norm
@@ -321,7 +321,7 @@ def _is_string_index_expr(node: JsonVal) -> bool:
     value_type: JsonVal = None
     if "resolved_type" in value_dict:
         value_type = value_dict["resolved_type"]
-    return normalize_type_name(value_type) == "str"
+    return _normalize_type_name(value_type) == "str"
 
 
 def _make_named_type_expr(name: str) -> Node:
@@ -390,7 +390,7 @@ def _optional_inner_target_type(type_name: str) -> str:
 
 
 def _split_dict_types(type_name: str) -> tuple[str, str]:
-    norm = normalize_type_name(type_name)
+    norm = _normalize_type_name(type_name)
     if not (norm.startswith("dict[") and norm.endswith("]")):
         return "", ""
     parts = _split_generic_types(_drop_last_char(norm[5:]))
@@ -400,7 +400,7 @@ def _split_dict_types(type_name: str) -> tuple[str, str]:
 
 
 def _list_inner_type(type_name: str) -> str:
-    norm = normalize_type_name(type_name)
+    norm = _normalize_type_name(type_name)
     if not (norm.startswith("list[") and norm.endswith("]")):
         return ""
     return _drop_last_char(norm[5:])
@@ -534,7 +534,7 @@ def _wrap_value_for_target_type(
 ) -> JsonVal:
     target_summary: Node = cast(dict[str, JsonVal], type_expr_summary_from_payload(ctx, target_type_expr, target_type))
     target_mirror = target_summary["mirror"] if "mirror" in target_summary else None
-    target_t = normalize_type_name(target_mirror)
+    target_t = _normalize_type_name(target_mirror)
     if target_t == "unknown":
         return value_expr
     value_summary: Node = cast(dict[str, JsonVal], expr_type_summary(ctx, value_expr))
@@ -542,7 +542,7 @@ def _wrap_value_for_target_type(
         "Any" in target_t or "object" in target_t or "unknown" in target_t
     )
     value_mirror = value_summary["mirror"] if "mirror" in value_summary else None
-    value_t = normalize_type_name(value_mirror)
+    value_t = _normalize_type_name(value_mirror)
     if target_t in ("dict", "list", "set", "tuple") and value_t.startswith(target_t + "["):
         target_t = value_t
         target_summary = cast(dict[str, JsonVal], type_expr_summary_from_payload(ctx, None, target_t))
@@ -673,7 +673,7 @@ def _resolve_assign_target_type_summary(stmt: Node, ctx: CompileContext) -> Node
         category = summary["category"] if "category" in summary else "unknown"
         if jv_str(category) != "unknown":
             mirror_val = summary["mirror"] if "mirror" in summary else None
-            mirror = normalize_type_name(mirror_val)
+            mirror = _normalize_type_name(mirror_val)
             if tod.get("kind") != TUPLE or "unknown" not in mirror:
                 return summary
         inferred_tuple_type = _infer_tuple_assign_target_type(stmt)
@@ -699,7 +699,7 @@ def _infer_tuple_assign_target_type(stmt: Node) -> str:
             if not isinstance(elem, dict):
                 elem_types.append("unknown")
                 continue
-            elem_type = normalize_type_name(elem.get("resolved_type"))
+            elem_type = _normalize_type_name(elem.get("resolved_type"))
             if elem_type != "unknown":
                 any_known = True
             elem_types.append(elem_type)
@@ -714,7 +714,7 @@ def _infer_tuple_assign_target_type(stmt: Node) -> str:
     value_obj = stmt.get("value")
     if isinstance(value_obj, dict):
         value_node: Node = cast(dict[str, JsonVal], value_obj)
-        value_type = normalize_type_name(value_node.get("resolved_type"))
+        value_type = _normalize_type_name(value_node.get("resolved_type"))
         if value_type.startswith("tuple[") and value_type.endswith("]"):
             return value_type
 
@@ -726,22 +726,22 @@ def _infer_tuple_assign_target_type(stmt: Node) -> str:
 def _resolve_assign_target_type(stmt: Node, ctx: CompileContext) -> str:
     summary = _resolve_assign_target_type_summary(stmt, ctx)
     mirror_val = summary["mirror"] if "mirror" in summary else None
-    mirror = normalize_type_name(mirror_val)
+    mirror = _normalize_type_name(mirror_val)
     if mirror != "unknown":
         return mirror
     tuple_type = _infer_tuple_assign_target_type(stmt)
     if tuple_type != "unknown":
         return tuple_type
-    decl_type = normalize_type_name(stmt.get("decl_type"))
+    decl_type = _normalize_type_name(stmt.get("decl_type"))
     if decl_type != "unknown":
         return decl_type
-    ann_type = normalize_type_name(stmt.get("annotation"))
+    ann_type = _normalize_type_name(stmt.get("annotation"))
     if ann_type != "unknown":
         return ann_type
     target_obj = stmt.get("target")
     if isinstance(target_obj, dict):
         tod: Node = cast(dict[str, JsonVal], target_obj)
-        target_t = normalize_type_name(tod.get("resolved_type"))
+        target_t = _normalize_type_name(tod.get("resolved_type"))
         if target_t != "unknown":
             return target_t
     return "unknown"
@@ -754,7 +754,7 @@ def _build_target_plan(
     lower_node_fn: Callable[[JsonVal], JsonVal],
     ctx: CompileContext,
 ) -> Node:
-    tt_norm = normalize_type_name(target_type)
+    tt_norm = _normalize_type_name(target_type)
     if isinstance(target, dict):
         td: Node = target
         kind = td.get("kind")
@@ -803,7 +803,7 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
         return out
     value_lowered = lower_node_fn(stmt.get("value"))
     target_summary = _resolve_assign_target_type_summary(stmt, ctx)
-    target_type = normalize_type_name(target_summary.get("mirror"))
+    target_type = _normalize_type_name(target_summary.get("mirror"))
     if target_type == "unknown":
         target_type = _resolve_assign_target_type(stmt, ctx)
     target_obj = stmt.get("target")
@@ -817,7 +817,7 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
     if isinstance(value_lowered, dict):
         value_lowered_node = cast(dict[str, JsonVal], value_lowered)
     if target_type_expr is None and value_lowered_node is not None and nd_kind(value_lowered_node) == UNBOX:
-        unboxed_type = normalize_type_name(value_lowered_node.get("resolved_type"))
+        unboxed_type = _normalize_type_name(value_lowered_node.get("resolved_type"))
         if unboxed_type not in ("", "unknown"):
             optional_inner = _optional_inner_target_type(target_type)
             if target_type in ("", "unknown") or optional_inner == unboxed_type:
@@ -852,7 +852,7 @@ def _lower_assignment_like_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal]
         target_dict = cast(dict[str, JsonVal], target_out)
     if target_dict is not None and nd_kind(target_dict) == NAME:
         target_name: str = jv_str(target_dict.get("id", ""))
-        storage_type = normalize_type_name(out.get("decl_type"))
+        storage_type = _normalize_type_name(out.get("decl_type"))
         if storage_type == "unknown":
             storage_type = target_type
         if storage_type != "unknown":
@@ -871,7 +871,7 @@ def _lower_return_stmt(stmt: Node, *, lower_node_fn: Callable[[JsonVal], JsonVal
     if "value" not in stmt or stmt.get("value") is None:
         return out
     value_lowered = lower_node_fn(stmt.get("value"))
-    target_type = normalize_type_name(ctx.current_return_type)
+    target_type = _normalize_type_name(ctx.current_return_type)
     if target_type not in ("", "unknown", "None"):
         value_lowered = _wrap_value_for_target_type(value_lowered, target_type, ctx=ctx)
     out["value"] = value_lowered
@@ -888,7 +888,7 @@ def _lower_function_def_stmt(
     _ = dispatch_mode
     prev_return_type: str = ctx.current_return_type
     ctx.push_storage_scope()
-    ctx.current_return_type = normalize_type_name(stmt.get("return_type"))
+    ctx.current_return_type = _normalize_type_name(stmt.get("return_type"))
     try:
         arg_types_obj = stmt.get("arg_types")
         if isinstance(arg_types_obj, dict):
@@ -919,9 +919,9 @@ def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, lower_node_fn: Callable[[
     iter_plan["dispatch_mode"] = dispatch_mode
     iter_plan["init_op"] = OBJ_ITER_INIT
     iter_plan["next_op"] = OBJ_ITER_NEXT
-    target_type = normalize_type_name(stmt.get("target_type"))
+    target_type = _normalize_type_name(stmt.get("target_type"))
     if target_type == "unknown":
-        target_type = normalize_type_name(stmt.get("iter_element_type"))
+        target_type = _normalize_type_name(stmt.get("iter_element_type"))
     out: Node = {}
     out["kind"] = FOR_CORE
     out["iter_mode"] = "runtime_protocol"
@@ -982,7 +982,7 @@ def _build_nominal_adt_ctor_meta(call: Node, ctx: CompileContext) -> JsonVal:
     func_node: Node = cast(dict[str, JsonVal], func_obj)
     if func_node.get("kind") != NAME:
         return None
-    ctor_name = normalize_type_name(func_node.get("id"))
+    ctor_name = _normalize_type_name(func_node.get("id"))
     decl_obj = lookup_nominal_adt_decl(ctx, ctor_name)
     if not isinstance(decl_obj, dict):
         return None
@@ -1022,9 +1022,9 @@ def _decorate_nominal_adt_projection_attr(attr_expr: Node, ctx: CompileContext) 
     owner_category = jv_str(owner_summary["category"] if "category" in owner_summary else "unknown")
     if owner_category != "nominal_adt":
         return attr_expr
-    variant_name = normalize_type_name(owner_summary["nominal_adt_name"] if "nominal_adt_name" in owner_summary else None)
+    variant_name = _normalize_type_name(owner_summary["nominal_adt_name"] if "nominal_adt_name" in owner_summary else None)
     if variant_name == "unknown":
-        variant_name = normalize_type_name(owner_summary["mirror"] if "mirror" in owner_summary else None)
+        variant_name = _normalize_type_name(owner_summary["mirror"] if "mirror" in owner_summary else None)
     decl_obj = lookup_nominal_adt_decl(ctx, variant_name)
     if not isinstance(decl_obj, dict):
         return attr_expr
@@ -1034,7 +1034,7 @@ def _decorate_nominal_adt_projection_attr(attr_expr: Node, ctx: CompileContext) 
         return attr_expr
     ft_obj = decl["field_types"] if "field_types" in decl else None
     ft: dict[str, JsonVal] = ft_obj if isinstance(ft_obj, dict) else {}
-    field_type = normalize_type_name(ft.get(attr_name))
+    field_type = _normalize_type_name(ft.get(attr_name))
     if field_type == "unknown":
         return attr_expr
     meta: Node = {}
@@ -1058,7 +1058,7 @@ def _decorate_nominal_adt_projection_attr(attr_expr: Node, ctx: CompileContext) 
 def _decorate_nominal_adt_variant_pattern(pattern: Node, ctx: CompileContext) -> Node:
     if pattern.get("kind") != VARIANT_PATTERN:
         return pattern
-    variant_name = normalize_type_name(pattern.get("variant_name"))
+    variant_name = _normalize_type_name(pattern.get("variant_name"))
     if variant_name == "unknown":
         return pattern
     decl_obj = lookup_nominal_adt_decl(ctx, variant_name)
@@ -1108,7 +1108,7 @@ def _decorate_nominal_adt_variant_pattern(pattern: Node, ctx: CompileContext) ->
         field_type = "unknown"
         if idx < len(field_entries):
             field_name = str(field_entries[idx][0])
-            field_type = normalize_type_name(field_entries[idx][1])
+            field_type = _normalize_type_name(field_entries[idx][1])
         if spd.get("kind") == PATTERN_BIND:
             spd["lowered_kind"] = NOMINAL_ADT_PATTERN_BIND
             spd["semantic_tag"] = "nominal_adt.pattern_bind"
@@ -1137,7 +1137,7 @@ def _decorate_nominal_adt_match_stmt(match_stmt: Node, ctx: CompileContext) -> N
         if family_name == "":
             family_name = jv_str(subject_summary.get("nominal_adt_name", ""))
         if family_name == "":
-            family_name = normalize_type_name(subject_summary.get("mirror"))
+            family_name = _normalize_type_name(subject_summary.get("mirror"))
             if family_name == "unknown":
                 family_name = ""
     if family_name == "":
@@ -1166,7 +1166,7 @@ def _decorate_nominal_adt_match_stmt(match_stmt: Node, ctx: CompileContext) -> N
         pk = jv_str(pd.get("kind", ""))
         if pk == VARIANT_PATTERN:
             vf = jv_str(pd.get("family_name", ""))
-            vn = normalize_type_name(pd.get("variant_name"))
+            vn = _normalize_type_name(pd.get("variant_name"))
             if vf != family_name or vn not in family_variants:
                 invalid = True
                 continue
@@ -1244,7 +1244,7 @@ def _decorate_nominal_adt_match_stmt(match_stmt: Node, ctx: CompileContext) -> N
         pd2: Node = cast(dict[str, JsonVal], pat2)
         if pd2.get("kind") != VARIANT_PATTERN:
             continue
-        vn2 = normalize_type_name(pd2.get("variant_name"))
+        vn2 = _normalize_type_name(pd2.get("variant_name"))
         ddecl2 = lookup_nominal_adt_decl(ctx, vn2)
         if ddecl2 is None:
             continue
@@ -1276,7 +1276,7 @@ def _decorate_nominal_adt_match_stmt(match_stmt: Node, ctx: CompileContext) -> N
             if spd2.get("kind") != PATTERN_BIND:
                 continue
             fn2 = fn_list[si] if si < len(fn_list) else ""
-            ft5 = normalize_type_name(ft4d.get(fn2)) if fn2 != "" else "unknown"
+            ft5 = _normalize_type_name(ft4d.get(fn2)) if fn2 != "" else "unknown"
             bn = jv_str(spd2.get("name", ""))
             if bn != "":
                 bnames.append(bn)
@@ -1449,7 +1449,7 @@ _POD_EXACT_TYPE_NAMES: set[str] = {
 
 
 def _normalize_type_predicate_target_name(type_name: str) -> str:
-    tn = normalize_type_name(type_name)
+    tn = _normalize_type_name(type_name)
     if tn == "int":
         return "int64"
     if tn == "float":
@@ -1488,7 +1488,7 @@ def _build_nominal_adt_type_test_meta(type_ref_expr: JsonVal, ctx: CompileContex
     trd: Node = type_ref_expr
     if trd.get("kind") != NAME:
         return None
-    tn = normalize_type_name(trd.get("id"))
+    tn = _normalize_type_name(trd.get("id"))
     decl_obj = lookup_nominal_adt_decl(ctx, tn)
     if not isinstance(decl_obj, dict):
         return None
@@ -1738,7 +1738,7 @@ def _wrap_call_args_for_target_types(call: Node, ctx: CompileContext) -> Node:
             if not isinstance(arg, dict):
                 wrapped_args.append(arg)
                 continue
-            call_arg_type = normalize_type_name(arg.get("call_arg_type"))
+            call_arg_type = _normalize_type_name(arg.get("call_arg_type"))
             if call_arg_type in ("", "unknown"):
                 wrapped_args.append(arg)
                 continue
@@ -1771,7 +1771,7 @@ def _wrap_call_args_for_target_types(call: Node, ctx: CompileContext) -> Node:
                 wrapped_keywords.append(kw_node)
                 continue
             value_node: Node = cast(dict[str, JsonVal], value)
-            call_arg_type2 = normalize_type_name(value_node.get("call_arg_type"))
+            call_arg_type2 = _normalize_type_name(value_node.get("call_arg_type"))
             if call_arg_type2 in ("", "unknown"):
                 wrapped_keywords.append(kw_node)
                 continue
@@ -1837,7 +1837,7 @@ def _expand_starred_call_args(call: Node, ctx: CompileContext) -> Node:
             raise RuntimeError("starred_call_contract_violation: requires fixed tuple TypeExpr")
         has_bad = False
         for t in tt:
-            nt = normalize_type_name(t)
+            nt = _normalize_type_name(t)
             if nt == "" or nt == "unknown" or _is_any_like_type(t, ctx):
                 has_bad = True
                 break

@@ -60,7 +60,9 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
         for item in node:
             replaced = _replace_yield_with_append(item, acc, list_type)
             if isinstance(replaced, list):
-                result.extend(replaced)
+                replaced_list: list[JsonVal] = replaced
+                for elem in replaced_list:
+                    result.append(elem)
             else:
                 result.append(replaced)
         return result
@@ -71,37 +73,60 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
     if kind == YIELD:
         value = nd.get("value")
         if value is None:
-            value = {"kind": CONSTANT, "value": None, "resolved_type": "None"}
-        ac: Node = {
-            "kind": EXPR,
-            "value": {
-                "kind": CALL,
-                "func": {"kind": ATTRIBUTE, "value": {"kind": NAME, "id": acc, "resolved_type": list_type}, "attr": "append"},
-                "args": [value],
-                "resolved_type": "None",
-            },
-        }
+            value_node: Node = {}
+            value_node["kind"] = CONSTANT
+            value_node["value"] = None
+            value_node["resolved_type"] = "None"
+            value = value_node
+        recv: Node = {}
+        recv["kind"] = NAME
+        recv["id"] = acc
+        recv["resolved_type"] = list_type
+        func_attr: Node = {}
+        func_attr["kind"] = ATTRIBUTE
+        func_attr["value"] = recv
+        func_attr["attr"] = "append"
+        call_args: list[JsonVal] = []
+        call_args.append(value)
+        call_node: Node = {}
+        call_node["kind"] = CALL
+        call_node["func"] = func_attr
+        call_node["args"] = call_args
+        call_node["resolved_type"] = "None"
+        ac: Node = {}
+        ac["kind"] = EXPR
+        ac["value"] = call_node
         span = nd.get("source_span")
         if isinstance(span, dict):
             ac["source_span"] = span
         return ac
     out: Node = {}
-    for key, val in nd.items():
-        if key == "body" or key == "orelse" or key == "finalbody":
-            out[key] = _replace_yield_with_append(val, acc, list_type)
-        elif key == "handlers" and isinstance(val, list):
+    for key in nd.keys():
+        key_s: str = key if isinstance(key, str) else ""
+        if key_s == "":
+            continue
+        val = nd[key_s]
+        if key_s == "body" or key_s == "orelse" or key_s == "finalbody":
+            out[key_s] = _replace_yield_with_append(val, acc, list_type)
+        elif key_s == "handlers" and isinstance(val, list):
+            handlers: list[JsonVal] = val
             hs: list[JsonVal] = []
-            for h in val:
+            for h in handlers:
                 if isinstance(h, dict):
-                    nh = dict(h)
+                    hd: Node = h
+                    nh: Node = {}
+                    for hk in hd.keys():
+                        hk_s: str = hk if isinstance(hk, str) else ""
+                        if hk_s != "":
+                            nh[hk_s] = hd[hk_s]
                     if "body" in nh:
                         nh["body"] = _replace_yield_with_append(nh["body"], acc, list_type)
                     hs.append(nh)
                 else:
                     hs.append(h)
-            out[key] = hs
+            out[key_s] = hs
         else:
-            out[key] = val
+            out[key_s] = val
     return out
 
 
@@ -109,7 +134,7 @@ def _lower_generator_function(func: Node) -> None:
     body = func.get("body")
     if not isinstance(body, list):
         return
-    ret_type = jv_str(func.get("return_type", "")).strip()
+    ret_type: str = jv_str(func.get("return_type", ""))
     elem_type = "unknown"
     if ret_type.startswith("list[") and ret_type.endswith("]"):
         elem_type = ret_type[5:-1]
@@ -118,16 +143,31 @@ def _lower_generator_function(func: Node) -> None:
         func["return_type"] = "list[" + ret_type + "]"
     acc = "__yield_values"
     lt = "list[" + elem_type + "]"
-    init: Node = {
-        "kind": ANN_ASSIGN,
-        "target": {"kind": NAME, "id": acc, "resolved_type": lt},
-        "annotation": lt, "decl_type": lt, "declare": True,
-        "value": {"kind": LIST, "elements": [], "resolved_type": lt},
-    }
+    target: Node = {}
+    target["kind"] = NAME
+    target["id"] = acc
+    target["resolved_type"] = lt
+    list_value: Node = {}
+    list_value["kind"] = LIST
+    list_value["elements"] = []
+    list_value["resolved_type"] = lt
+    init: Node = {}
+    init["kind"] = ANN_ASSIGN
+    init["target"] = target
+    init["annotation"] = lt
+    init["decl_type"] = lt
+    init["declare"] = True
+    init["value"] = list_value
     new_body = _replace_yield_with_append(body, acc, lt)
     if not isinstance(new_body, list):
         new_body = body
-    ret_stmt: Node = {"kind": RETURN, "value": {"kind": NAME, "id": acc, "resolved_type": lt}}
+    ret_name: Node = {}
+    ret_name["kind"] = NAME
+    ret_name["id"] = acc
+    ret_name["resolved_type"] = lt
+    ret_stmt: Node = {}
+    ret_stmt["kind"] = RETURN
+    ret_stmt["value"] = ret_name
     func["body"] = [init] + new_body + [ret_stmt]
 
 
