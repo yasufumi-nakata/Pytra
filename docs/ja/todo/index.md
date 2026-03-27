@@ -48,9 +48,10 @@
 
 文脈: [docs/ja/plans/p1-ifexp-optional-inference.md](../plans/p1-ifexp-optional-inference.md)
 
-1. [ ] [ID: P1-IFEXP-OPT-S1] resolver の IfExp 型推論で `T if cond else None` → `Optional[T]` を返すようにする
-2. [ ] [ID: P1-IFEXP-OPT-S2] 両側が異なる非 None 型の場合に `UnionType` を返すようにする
-3. [ ] [ID: P1-IFEXP-OPT-S3] fixture 追加 + golden 生成 + parity 確認
+1. [x] [ID: P1-IFEXP-OPT-S1] resolver の IfExp 型推論で `T if cond else None` → `Optional[T]` を返すようにする
+2. [x] [ID: P1-IFEXP-OPT-S2] 両側が異なる非 None 型の場合に `UnionType` を返すようにする
+3. [x] [ID: P1-IFEXP-OPT-S3] fixture 追加 + golden 生成 + parity 確認
+- 進捗メモ: resolver で `IfExp` の `Optional[T]` / `A | B` merge を実装し、`ifexp_optional_inference` fixture・golden・linked を追加。
 
 ### P2-SELFHOST: toolchain2 自身の変換テスト
 

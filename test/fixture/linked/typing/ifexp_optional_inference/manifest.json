@@ -1,0 +1,44 @@
+{
+  "schema": "pytra.link_output.v1",
+  "target": "cpp",
+  "dispatch_mode": "native",
+  "entry_modules": [
+    "ifexp_optional_inference"
+  ],
+  "modules": [
+    {
+      "module_id": "ifexp_optional_inference",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/typing/ifexp_optional_inference.east3",
+      "output": "east3/ifexp_optional_inference.east3.json",
+      "source_path": "test/fixture/source/py/typing/ifexp_optional_inference.py",
+      "is_entry": true,
+      "module_kind": "user"
+    }
+  ],
+  "global": {
+    "type_id_table": {},
+    "type_id_base_map": {},
+    "call_graph": {
+      "ifexp_optional_inference::pick_optional": [],
+      "ifexp_optional_inference::pick_optional_reverse": [],
+      "ifexp_optional_inference::pick_union": []
+    },
+    "sccs": [
+      [
+        "ifexp_optional_inference::pick_optional"
+      ],
+      [
+        "ifexp_optional_inference::pick_optional_reverse"
+      ],
+      [
+        "ifexp_optional_inference::pick_union"
+      ]
+    ],
+    "non_escape_summary": {},
+    "container_ownership_hints_v1": {}
+  },
+  "diagnostics": {
+    "warnings": [],
+    "errors": []
+  }
+}
