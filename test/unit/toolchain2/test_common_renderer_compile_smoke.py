@@ -113,6 +113,7 @@ if __name__ == "__main__":
 """
 
 FIXTURE_ADD_SOURCE = _fixture_case_source("test/fixture/source/py/core/add.py")
+FIXTURE_ASSIGN_SOURCE = _fixture_case_source("test/fixture/source/py/core/assign.py")
 FIXTURE_COMPARE_SOURCE = _fixture_case_source("test/fixture/source/py/core/compare.py")
 FIXTURE_DEFAULT_PARAM_SOURCE = _fixture_case_source("test/fixture/source/py/core/default_param.py")
 FIXTURE_IFEXP_BOOL_SOURCE = _fixture_case_source("test/fixture/source/py/control/ifexp_bool.py")
@@ -121,6 +122,7 @@ FIXTURE_IFEXP_TERNARY_REGRESSION_SOURCE = _fixture_case_source(
 )
 FIXTURE_IF_ELSE_SOURCE = _fixture_case_source("test/fixture/source/py/control/if_else.py")
 FIXTURE_NOT_SOURCE = _fixture_case_source("test/fixture/source/py/control/not.py")
+FIXTURE_TUPLE_ASSIGN_SOURCE = _fixture_case_source("test/fixture/source/py/core/tuple_assign.py")
 
 
 def _assert_go_compiles(source: str) -> None:
@@ -397,6 +399,14 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
         self.assertEqual(cpp_stdout, "7\n")
         self.assertEqual(go_stdout, cpp_stdout)
 
+    def test_common_renderer_fixture_assign_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(FIXTURE_ASSIGN_SOURCE)
+        cpp_stdout = _run_cpp(FIXTURE_ASSIGN_SOURCE)
+
+        self.assertEqual(go_stdout, "26\n")
+        self.assertEqual(cpp_stdout, "26\n")
+        self.assertEqual(go_stdout, cpp_stdout)
+
     def test_common_renderer_fixture_compare_stdout_parity_between_go_and_cpp(self) -> None:
         go_stdout = _run_go(FIXTURE_COMPARE_SOURCE)
         cpp_stdout = _run_cpp(FIXTURE_COMPARE_SOURCE)
@@ -445,6 +455,14 @@ class CommonRendererCompileSmokeTests(unittest.TestCase):
 
         self.assertEqual(go_stdout, "True\n")
         self.assertEqual(cpp_stdout, "True\n")
+        self.assertEqual(go_stdout, cpp_stdout)
+
+    def test_common_renderer_fixture_tuple_assign_stdout_parity_between_go_and_cpp(self) -> None:
+        go_stdout = _run_go(FIXTURE_TUPLE_ASSIGN_SOURCE)
+        cpp_stdout = _run_cpp(FIXTURE_TUPLE_ASSIGN_SOURCE)
+
+        self.assertEqual(go_stdout, "30\n")
+        self.assertEqual(cpp_stdout, "30\n")
         self.assertEqual(go_stdout, cpp_stdout)
 
 
