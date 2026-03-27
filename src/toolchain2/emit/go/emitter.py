@@ -118,7 +118,7 @@ class _GoStmtCommonRenderer(CommonRenderer):
 
     def emit_stmt(self, node: JsonVal) -> None:
         kind = self._str(node, "kind")
-        if kind in ("Expr", "Return", "Assign", "AnnAssign", "If", "While"):
+        if kind in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "comment", "blank", "If", "While"):
             super().emit_stmt(node)
             self.ctx.indent_level = self.state.indent_level
             return
@@ -169,7 +169,7 @@ class _GoExprCommonRenderer(CommonRenderer):
 
 def _emit_common_stmt_if_supported(ctx: EmitContext, node: dict[str, JsonVal]) -> bool:
     kind = _str(node, "kind")
-    if kind not in ("Expr", "Return", "Assign", "AnnAssign", "If", "While"):
+    if kind not in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "comment", "blank", "If", "While"):
         return False
     renderer = _GoStmtCommonRenderer(ctx)
     renderer.emit_stmt(node)

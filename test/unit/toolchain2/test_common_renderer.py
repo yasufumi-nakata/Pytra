@@ -158,6 +158,22 @@ class CommonRendererTests(unittest.TestCase):
 
         self.assertEqual(ctx.lines, ["// hello", "// cpp"])
 
+    def test_go_emitter_common_misc_stmt_hooks_preserve_pass_comment_blank(self) -> None:
+        ctx = EmitContext()
+        emit_go_stmt(ctx, {"kind": "Pass"})
+        emit_go_stmt(ctx, {"kind": "comment", "text": "note"})
+        emit_go_stmt(ctx, {"kind": "blank"})
+
+        self.assertEqual(ctx.lines, ["// pass", "// note", ""])
+
+    def test_cpp_emitter_common_misc_stmt_hooks_preserve_pass_comment_blank(self) -> None:
+        ctx = CppEmitContext()
+        emit_cpp_stmt(ctx, {"kind": "Pass"})
+        emit_cpp_stmt(ctx, {"kind": "comment", "text": "note"})
+        emit_cpp_stmt(ctx, {"kind": "blank"})
+
+        self.assertEqual(ctx.lines, ["// pass", "// note", ""])
+
 
 if __name__ == "__main__":
     unittest.main()

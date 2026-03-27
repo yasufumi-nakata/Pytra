@@ -152,6 +152,17 @@ class CommonRenderer(ABC):
     def emit_assign_stmt(self, node: dict[str, JsonVal]) -> None:
         self._emit_stmt_line(self.render_assign_stmt(node))
 
+    def emit_pass_stmt(self, node: dict[str, JsonVal]) -> None:
+        self._emit("// pass")
+
+    def emit_comment_stmt(self, node: dict[str, JsonVal]) -> None:
+        text = self._str(node, "text")
+        if text != "":
+            self._emit("// " + text)
+
+    def emit_blank_stmt(self, node: dict[str, JsonVal]) -> None:
+        self._emit_blank()
+
     def render_expr_extension(self, node: dict[str, JsonVal]) -> str:
         raise RuntimeError("unsupported expr kind in common renderer: " + self._str(node, "kind"))
 
@@ -250,6 +261,15 @@ class CommonRenderer(ABC):
             return
         if kind == "Assign" or kind == "AnnAssign":
             self.emit_assign_stmt(node)
+            return
+        if kind == "Pass":
+            self.emit_pass_stmt(node)
+            return
+        if kind == "comment":
+            self.emit_comment_stmt(node)
+            return
+        if kind == "blank":
+            self.emit_blank_stmt(node)
             return
         if kind == "If":
             test = self._format_condition(self.render_expr(node.get("test")))
