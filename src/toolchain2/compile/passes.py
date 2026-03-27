@@ -13,9 +13,9 @@ from toolchain2.compile.jv import JsonVal, Node, CompileContext, deep_copy_json
 from toolchain2.compile.jv import jv_str, jv_is_dict, jv_is_list
 from toolchain2.compile.jv import normalize_type_name
 from toolchain2.common.kinds import (
-    MODULE, FUNCTION_DEF, CLASS_DEF, VAR_DECL,
+    MODULE, FUNCTION_DEF, CLOSURE_DEF, CLASS_DEF, VAR_DECL,
     ASSIGN, ANN_ASSIGN, AUG_ASSIGN, EXPR, RETURN, YIELD,
-    IF, WHILE, FOR, FOR_RANGE, FOR_CORE, TRY, SWAP,
+    IF, WHILE, FOR, FOR_RANGE, FOR_CORE, TRY, WITH, SWAP,
     NAME, CONSTANT, CALL, ATTRIBUTE, SUBSCRIPT,
     BIN_OP, UNARY_OP, COMPARE, IF_EXP, BOOL_OP,
     LIST, DICT, SET, TUPLE, LIST_COMP,
@@ -24,6 +24,14 @@ from toolchain2.common.kinds import (
     NAME_TARGET, TUPLE_TARGET,
     ASSIGNMENT_KINDS,
 )
+
+
+def _is_function_like_kind(kind: str) -> bool:
+    return kind == FUNCTION_DEF or kind == CLOSURE_DEF
+
+
+def _is_function_like(node: JsonVal) -> bool:
+    return isinstance(node, dict) and _is_function_like_kind(jv_str(node.get("kind", "")))
 
 # Re-export stubs — these are imported by lower.py
 # Each function mutates the module in place and returns it.
@@ -132,7 +140,7 @@ def _yield_walk(node: JsonVal) -> None:
         return
     nd: Node = node
     kind = nd.get("kind", "")
-    if kind == FUNCTION_DEF:
+    if _is_function_like_kind(kind):
         body = nd.get("body")
         if isinstance(body, list) and _contains_yield(body):
             _lower_generator_function(nd)
@@ -321,6 +329,354 @@ def lower_listcomp(module: Node, ctx: CompileContext) -> Node:
 
 
 # ===========================================================================
+# nested FunctionDef -> ClosureDef lowering
+# ===========================================================================
+
+def _collect_function_locals(stmts: list[JsonVal], out: dict[str, str]) -> None:
+    for stmt in stmts:
+        if not isinstance(stmt, dict):
+            continue
+        kind = _sk(stmt)
+        if _is_function_like_kind(kind) or kind == CLASS_DEF:
+            name = jv_str(stmt.get("name", ""))
+            if name != "" and name not in out:
+                if kind == CLASS_DEF:
+                    out[name] = name
+                else:
+                    out[name] = _closure_callable_type(stmt)
+            continue
+        if kind == VAR_DECL:
+            name2 = jv_str(stmt.get("name", ""))
+            type2 = jv_str(stmt.get("type", ""))
+            if name2 != "" and name2 not in out:
+                out[name2] = type2
+        elif kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
+            _collect_assign_names(stmt, out)
+        elif kind == FOR:
+            _collect_target_local_types(stmt.get("target"), jv_str(stmt.get("target_type", "")), out)
+        elif kind == FOR_RANGE:
+            _collect_target_local_types(stmt.get("target"), jv_str(stmt.get("target_type", "int64")), out)
+        elif kind == FOR_CORE:
+            _collect_target_plan_local_types(stmt.get("target_plan"), out)
+        elif kind == WITH:
+            items = stmt.get("items")
+            if isinstance(items, list):
+                for item in items:
+                    if not isinstance(item, dict):
+                        continue
+                    _collect_target_local_types(item.get("optional_vars"), "", out)
+        for key in ("body", "orelse", "finalbody"):
+            nested = stmt.get(key)
+            if isinstance(nested, list):
+                _collect_function_locals(nested, out)
+        handlers = stmt.get("handlers")
+        if isinstance(handlers, list):
+            for handler in handlers:
+                if not isinstance(handler, dict):
+                    continue
+                name3 = jv_str(handler.get("name", ""))
+                if name3 != "" and name3 not in out:
+                    out[name3] = "BaseException"
+                hbody = handler.get("body")
+                if isinstance(hbody, list):
+                    _collect_function_locals(hbody, out)
+
+
+def _collect_target_local_types(target: JsonVal, inferred_type: str, out: dict[str, str]) -> None:
+    if not isinstance(target, dict):
+        return
+    kind = _sk(target)
+    if kind == NAME:
+        name = jv_str(target.get("id", ""))
+        if name != "" and name not in out:
+            target_type = jv_str(target.get("resolved_type", ""))
+            out[name] = target_type if target_type != "" else inferred_type
+        return
+    if kind == TUPLE:
+        elements = target.get("elements")
+        if isinstance(elements, list):
+            for elem in elements:
+                _collect_target_local_types(elem, inferred_type, out)
+
+
+def _collect_target_plan_local_types(target_plan: JsonVal, out: dict[str, str]) -> None:
+    if not isinstance(target_plan, dict):
+        return
+    kind = _sk(target_plan)
+    if kind == NAME_TARGET:
+        name = jv_str(target_plan.get("id", ""))
+        if name != "" and name not in out:
+            out[name] = jv_str(target_plan.get("target_type", ""))
+        return
+    if kind == TUPLE_TARGET:
+        elements = target_plan.get("elements")
+        if isinstance(elements, list):
+            for elem in elements:
+                _collect_target_plan_local_types(elem, out)
+
+
+def _collect_function_scope_types(func: Node) -> dict[str, str]:
+    out: dict[str, str] = {}
+    self_name = jv_str(func.get("name", ""))
+    if self_name != "":
+        out[self_name] = _closure_callable_type(func)
+    arg_types = func.get("arg_types")
+    if isinstance(arg_types, dict):
+        for name, value in arg_types.items():
+            if isinstance(name, str) and name != "" and isinstance(value, str):
+                out[name] = value
+    captures = func.get("captures")
+    if isinstance(captures, list):
+        for capture in captures:
+            if not isinstance(capture, dict):
+                continue
+            name2 = jv_str(capture.get("name", ""))
+            type2 = jv_str(capture.get("type", ""))
+            if name2 != "" and name2 not in out:
+                out[name2] = type2
+    body = func.get("body")
+    if isinstance(body, list):
+        _collect_function_locals(body, out)
+    return out
+
+
+def _collect_function_reassigned_names(func: Node) -> set[str]:
+    counts: dict[str, int] = {}
+    body = func.get("body")
+    if isinstance(body, list):
+        _collect_reassigned_lexical(body, counts)
+    out: set[str] = set()
+    arg_order = func.get("arg_order")
+    param_names: set[str] = set()
+    if isinstance(arg_order, list):
+        for arg in arg_order:
+            if isinstance(arg, str) and arg != "":
+                param_names.add(arg)
+    for name, count in counts.items():
+        if name in param_names:
+            out.add(name)
+        elif count > 1:
+            out.add(name)
+    return out
+
+
+def _bump_reassigned(out: dict[str, int], name: str) -> None:
+    out[name] = out.get(name, 0) + 1
+
+
+def _collect_reassigned_lexical(stmts: list[JsonVal], out: dict[str, int]) -> None:
+    for stmt in stmts:
+        if not isinstance(stmt, dict):
+            continue
+        kind = _sk(stmt)
+        if kind in (ASSIGN, ANN_ASSIGN):
+            target = stmt.get("target")
+            if isinstance(target, dict) and target.get("kind") == NAME:
+                name = target.get("id")
+                if isinstance(name, str) and name != "":
+                    _bump_reassigned(out, name)
+            elif isinstance(target, dict) and target.get("kind") == TUPLE:
+                _collect_target_write_counts(target, out)
+        elif kind == AUG_ASSIGN:
+            target2 = stmt.get("target")
+            if isinstance(target2, dict) and target2.get("kind") == NAME:
+                name2 = target2.get("id")
+                if isinstance(name2, str) and name2 != "":
+                    _bump_reassigned(out, name2)
+        elif kind == FOR or kind == FOR_RANGE:
+            _collect_target_write_counts(stmt.get("target"), out)
+        elif kind == FOR_CORE:
+            _collect_target_plan_write_counts(stmt.get("target_plan"), out)
+        if _is_function_like_kind(kind) or kind == CLASS_DEF:
+            continue
+        for key in ("body", "orelse", "finalbody"):
+            nested = stmt.get(key)
+            if isinstance(nested, list):
+                _collect_reassigned_lexical(nested, out)
+        handlers = stmt.get("handlers")
+        if isinstance(handlers, list):
+            for handler in handlers:
+                if isinstance(handler, dict):
+                    hbody = handler.get("body")
+                    if isinstance(hbody, list):
+                        _collect_reassigned_lexical(hbody, out)
+
+
+def _collect_target_write_counts(target: JsonVal, out: dict[str, int]) -> None:
+    if not isinstance(target, dict):
+        return
+    kind = _sk(target)
+    if kind == NAME:
+        name = jv_str(target.get("id", ""))
+        if name != "":
+            _bump_reassigned(out, name)
+        return
+    if kind == TUPLE:
+        elements = target.get("elements")
+        if isinstance(elements, list):
+            for elem in elements:
+                _collect_target_write_counts(elem, out)
+
+
+def _collect_target_plan_write_counts(target_plan: JsonVal, out: dict[str, int]) -> None:
+    if not isinstance(target_plan, dict):
+        return
+    kind = _sk(target_plan)
+    if kind == NAME_TARGET:
+        name = jv_str(target_plan.get("id", ""))
+        if name != "":
+            _bump_reassigned(out, name)
+        return
+    if kind == TUPLE_TARGET:
+        elements = target_plan.get("elements")
+        if isinstance(elements, list):
+            for elem in elements:
+                _collect_target_plan_write_counts(elem, out)
+
+
+def _collect_name_refs_lexical(node: JsonVal, out: set[str], *, descend_into_root: bool = True) -> None:
+    if isinstance(node, list):
+        for item in node:
+            _collect_name_refs_lexical(item, out, descend_into_root=True)
+        return
+    if not isinstance(node, dict):
+        return
+    kind = _sk(node)
+    if not descend_into_root and (_is_function_like_kind(kind) or kind == CLASS_DEF):
+        return
+    if kind == NAME:
+        name = jv_str(node.get("id", ""))
+        if name != "":
+            out.add(name)
+    for key, value in node.items():
+        if key == "body" and (_is_function_like_kind(kind) or kind == CLASS_DEF):
+            if descend_into_root and isinstance(value, list):
+                for item in value:
+                    _collect_name_refs_lexical(item, out, descend_into_root=False)
+            continue
+        if isinstance(value, (dict, list)):
+            _collect_name_refs_lexical(value, out, descend_into_root=True)
+
+
+def _closure_callable_type(node: Node) -> str:
+    arg_order = node.get("arg_order")
+    arg_types = node.get("arg_types")
+    params: list[str] = []
+    if isinstance(arg_order, list) and isinstance(arg_types, dict):
+        for arg in arg_order:
+            if not isinstance(arg, str) or arg == "":
+                continue
+            if arg == "self":
+                continue
+            arg_type = arg_types.get(arg)
+            params.append(arg_type if isinstance(arg_type, str) and arg_type != "" else "unknown")
+    ret = jv_str(node.get("return_type", ""))
+    if ret == "":
+        ret = "unknown"
+    return "callable[[" + ",".join(params) + "]," + ret + "]"
+
+
+def _closure_capture_entries(
+    visible_types: dict[str, str],
+    visible_mutable: set[str],
+    func: Node,
+) -> tuple[list[Node], bool]:
+    local_types = _collect_function_scope_types(func)
+    used_names: set[str] = set()
+    defaults = func.get("arg_defaults")
+    if isinstance(defaults, dict):
+        _collect_name_refs_lexical(defaults, used_names, descend_into_root=True)
+    body = func.get("body")
+    if isinstance(body, list):
+        for stmt in body:
+            _collect_name_refs_lexical(stmt, used_names, descend_into_root=False)
+    captures: list[Node] = []
+    for name in sorted(used_names):
+        if name in local_types or name not in visible_types:
+            continue
+        capture_type = visible_types.get(name, "")
+        capture_mode = "mutable" if name in visible_mutable else "readonly"
+        captures.append({"name": name, "mode": capture_mode, "type": capture_type})
+    return captures, jv_str(func.get("name", "")) in used_names
+
+
+def _lower_closure_stmt_list(
+    stmts: list[JsonVal],
+    visible_types: dict[str, str],
+    visible_mutable: set[str],
+) -> list[JsonVal]:
+    result: list[JsonVal] = []
+    for stmt in stmts:
+        if not isinstance(stmt, dict):
+            result.append(stmt)
+            continue
+        kind = _sk(stmt)
+        if kind == FUNCTION_DEF:
+            captures, is_recursive = _closure_capture_entries(visible_types, visible_mutable, stmt)
+            stmt["kind"] = CLOSURE_DEF
+            stmt["captures"] = captures
+            stmt["capture_types"] = {capture["name"]: capture["type"] for capture in captures}
+            stmt["capture_modes"] = {capture["name"]: capture["mode"] for capture in captures}
+            if is_recursive:
+                stmt["is_recursive"] = True
+            _lower_closure_function(stmt, visible_types, visible_mutable)
+            result.append(stmt)
+            continue
+        if kind == CLASS_DEF:
+            body = stmt.get("body")
+            if isinstance(body, list):
+                class_visible = dict(visible_types)
+                class_name = jv_str(stmt.get("name", ""))
+                if class_name != "":
+                    class_visible[class_name] = class_name
+                stmt["body"] = _lower_closure_stmt_list(body, class_visible, visible_mutable)
+            result.append(stmt)
+            continue
+        for key in ("body", "orelse", "finalbody"):
+            nested = stmt.get(key)
+            if isinstance(nested, list):
+                stmt[key] = _lower_closure_stmt_list(nested, visible_types, visible_mutable)
+        handlers = stmt.get("handlers")
+        if isinstance(handlers, list):
+            for handler in handlers:
+                if not isinstance(handler, dict):
+                    continue
+                hbody = handler.get("body")
+                if isinstance(hbody, list):
+                    handler["body"] = _lower_closure_stmt_list(hbody, visible_types, visible_mutable)
+        result.append(stmt)
+    return result
+
+
+def _lower_closure_function(
+    func: Node,
+    outer_visible_types: dict[str, str],
+    outer_visible_mutable: set[str],
+) -> None:
+    body = func.get("body")
+    if not isinstance(body, list):
+        return
+    current_visible = dict(outer_visible_types)
+    current_visible.update(_collect_function_scope_types(func))
+    current_mutable = set(outer_visible_mutable)
+    current_mutable.update(_collect_function_reassigned_names(func))
+    func["body"] = _lower_closure_stmt_list(body, current_visible, current_mutable)
+
+
+def lower_nested_function_defs(module: Node, ctx: CompileContext) -> Node:
+    body = module.get("body")
+    if isinstance(body, list):
+        for stmt in body:
+            if isinstance(stmt, dict) and _is_function_like_kind(_sk(stmt)):
+                _lower_closure_function(stmt, {}, set())
+            elif isinstance(stmt, dict) and _sk(stmt) == CLASS_DEF:
+                class_body = stmt.get("body")
+                if isinstance(class_body, list):
+                    stmt["body"] = _lower_closure_stmt_list(class_body, {}, set())
+    return module
+
+
+# ===========================================================================
 # default argument expansion
 # ===========================================================================
 
@@ -337,7 +693,7 @@ def _collect_fn_sigs(module: Node) -> dict[str, Node]:
 
 def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> None:
     kind = node.get("kind", "")
-    if kind == FUNCTION_DEF:
+    if _is_function_like_kind(kind):
         name = jv_str(node.get("name", ""))
         if name == "":
             return
@@ -552,7 +908,7 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
             continue
         kind = _sk(stmt)
         # Recurse into block-creating statements first
-        if kind == FUNCTION_DEF or kind == CLASS_DEF:
+        if _is_function_like_kind(kind) or kind == CLASS_DEF:
             body = stmt.get("body")
             if isinstance(body, list):
                 stmt["body"] = _expand_tuple_unpack_in_stmts(body, ctx)
@@ -1270,7 +1626,7 @@ def _hoist_walk(node: JsonVal) -> None:
         return
     nd: Node = node
     kind = _sk(nd)
-    if kind == FUNCTION_DEF:
+    if _is_function_like_kind(kind):
         body = nd.get("body")
         if isinstance(body, list):
             nd["body"] = _hoist_in_stmt_list(body, _fn_param_names(nd))
@@ -1473,10 +1829,10 @@ _TYPE_GUARD_DEFAULTS: dict[str, str] = {
     "PYTRA_TID_INT": "int64",
     "PYTRA_TID_FLOAT": "float64",
     "PYTRA_TID_STR": "str",
-    "PYTRA_TID_LIST": "list",
-    "PYTRA_TID_DICT": "dict",
-    "PYTRA_TID_SET": "set",
-    "PYTRA_TID_TUPLE": "tuple",
+    "PYTRA_TID_LIST": "list[JsonVal]",
+    "PYTRA_TID_DICT": "dict[str,JsonVal]",
+    "PYTRA_TID_SET": "set[JsonVal]",
+    "PYTRA_TID_TUPLE": "tuple[JsonVal]",
 }
 
 
@@ -1626,6 +1982,20 @@ def _invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
     if not isinstance(expr, dict):
         return {}
     nd: Node = expr
+    if nd.get("kind", "") == BOOL_OP and _tp_safe(nd.get("op")) == "Or":
+        merged: dict[str, str] = {}
+        values = nd.get("values")
+        if not isinstance(values, list):
+            return merged
+        for value in values:
+            child = _invert_guard_narrowing_from_expr(value)
+            for name, target_type in child.items():
+                cur = merged.get(name, "")
+                if cur == "" or cur == target_type:
+                    merged[name] = target_type
+                else:
+                    merged.pop(name, None)
+        return merged
     if nd.get("kind", "") != COMPARE:
         return {}
     left = nd.get("left")
@@ -1676,6 +2046,23 @@ def _make_guard_unbox(name_node: Node, target_type: str) -> Node:
     return out
 
 
+def _guard_needs_unbox(current_type: str, storage_type: str, target_type: str) -> bool:
+    if target_type == "":
+        return False
+    if storage_type != "" and storage_type != target_type:
+        if (
+            storage_type.endswith(" | None")
+            or storage_type.endswith("|None")
+            or "|" in storage_type
+            or "Any" in storage_type
+            or "object" in storage_type
+            or storage_type == "Obj"
+            or storage_type == "unknown"
+        ):
+            return True
+    return current_type != target_type
+
+
 def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
     if isinstance(node, list):
         for i in range(len(node)):
@@ -1689,10 +2076,16 @@ def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
         name = _tp_safe(nd.get("id"))
         target_type = env.get(name, "")
         current_type = _tp_safe(nd.get("resolved_type"))
-        if target_type != "" and target_type != current_type:
+        storage_type = env.get("__storage__:" + name, "")
+        if _guard_needs_unbox(current_type, storage_type, target_type):
             return _make_guard_unbox(nd, target_type)
         return nd
-    if kind in (FUNCTION_DEF, CLASS_DEF, UNBOX):
+    if kind == "IsInstance":
+        expected = nd.get("expected_type_id")
+        if isinstance(expected, (dict, list)):
+            nd["expected_type_id"] = _guard_expr(expected, env)
+        return nd
+    if kind in (FUNCTION_DEF, CLOSURE_DEF, CLASS_DEF, UNBOX):
         return nd
     for key in list(nd.keys()):
         value = nd[key]
@@ -1771,9 +2164,9 @@ def _guard_stmt_list(stmts: JsonVal, env: dict[str, str]) -> JsonVal:
             body_exits = _guard_block_guarantees_exit(body)
             orelse_exits = _guard_block_guarantees_exit(orelse)
             if body_exits and not orelse_exits:
-                local_env.update(_invert_guard_narrowing_from_expr(stmt.get("test")))
+                _guard_env_merge(local_env, _invert_guard_narrowing_from_expr(stmt.get("test")))
             elif orelse_exits and not body_exits:
-                local_env.update(_guard_narrowing_from_expr(stmt.get("test")))
+                _guard_env_merge(local_env, _guard_narrowing_from_expr(stmt.get("test")))
         if kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN, FOR, FOR_RANGE):
             for name in _target_names(stmt.get("target")):
                 local_env.pop(name, None)
@@ -1805,8 +2198,8 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
         return
     nd: Node = stmt
     kind = nd.get("kind", "")
-    if kind == FUNCTION_DEF:
-        _guard_stmt_list(nd.get("body"), {})
+    if _is_function_like_kind(kind):
+        _guard_stmt_list(nd.get("body"), _guard_function_env(nd))
         return
     if kind == CLASS_DEF:
         body = nd.get("body")
@@ -1837,7 +2230,7 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
         if isinstance(test, (dict, list)):
             nd["test"] = _guard_expr(test, env)
         body_env = dict(env)
-        body_env.update(_guard_narrowing_from_expr(nd.get("test")))
+        _guard_env_merge(body_env, _guard_narrowing_from_expr(nd.get("test")))
         _guard_stmt_list(nd.get("body"), body_env)
         _guard_stmt_list(nd.get("orelse"), env)
         return
@@ -1846,7 +2239,7 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
         if isinstance(test, (dict, list)):
             nd["test"] = _guard_expr(test, env)
         body_env = dict(env)
-        body_env.update(_guard_narrowing_from_expr(nd.get("test")))
+        _guard_env_merge(body_env, _guard_narrowing_from_expr(nd.get("test")))
         _guard_stmt_list(nd.get("body"), body_env)
         _guard_stmt_list(nd.get("orelse"), env)
         return
@@ -1904,9 +2297,132 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
 
 
 def apply_guard_narrowing(module: Node, ctx: CompileContext) -> Node:
-    _guard_stmt_list(module.get("body"), {})
-    _guard_stmt_list(module.get("main_guard_body"), {})
+    env = _guard_storage_env(module)
+    _guard_stmt_list(module.get("body"), dict(env))
+    _guard_stmt_list(module.get("main_guard_body"), dict(env))
     return module
+
+
+def _guard_env_merge(dst: dict[str, str], narrowed: dict[str, str]) -> None:
+    for name, target_type in narrowed.items():
+        dst[name] = target_type
+
+
+def _guard_storage_env(module: Node) -> dict[str, str]:
+    out: dict[str, str] = {}
+    body = module.get("body")
+    if isinstance(body, list):
+        _guard_collect_storage_types(body, out)
+    main_guard_body = module.get("main_guard_body")
+    if isinstance(main_guard_body, list):
+        _guard_collect_storage_types(main_guard_body, out)
+    return out
+
+
+def _guard_function_env(func: Node) -> dict[str, str]:
+    out: dict[str, str] = {}
+    arg_types = func.get("arg_types")
+    if isinstance(arg_types, dict):
+        for arg_name, arg_type in arg_types.items():
+            if isinstance(arg_name, str) and isinstance(arg_type, str) and arg_name != "":
+                out["__storage__:" + arg_name] = arg_type
+    body = func.get("body")
+    if isinstance(body, list):
+        _guard_collect_storage_types(body, out)
+    return out
+
+
+def _guard_collect_storage_types(stmts: list[JsonVal], out: dict[str, str]) -> None:
+    for stmt in stmts:
+        if not isinstance(stmt, dict):
+            continue
+        kind = _tp_safe(stmt.get("kind"))
+        if kind == FUNCTION_DEF or kind == CLOSURE_DEF:
+            name = _tp_safe(stmt.get("name"))
+            if name != "":
+                out["__storage__:" + name] = _closure_callable_type(stmt)
+            arg_types = stmt.get("arg_types")
+            if isinstance(arg_types, dict):
+                for arg_name, arg_type in arg_types.items():
+                    if isinstance(arg_name, str) and isinstance(arg_type, str) and arg_name != "":
+                        out["__storage__:" + arg_name] = arg_type
+            continue
+        if kind == CLASS_DEF:
+            name2 = _tp_safe(stmt.get("name"))
+            if name2 != "":
+                out["__storage__:" + name2] = name2
+            continue
+        if kind == VAR_DECL:
+            name3 = _tp_safe(stmt.get("name"))
+            type3 = _tp_safe(stmt.get("type"))
+            if name3 != "" and type3 != "":
+                out["__storage__:" + name3] = type3
+        elif kind in (ASSIGN, ANN_ASSIGN, AUG_ASSIGN):
+            _guard_collect_target_storage(stmt.get("target"), stmt, out)
+        elif kind == FOR or kind == FOR_RANGE:
+            target_type = _tp_safe(stmt.get("target_type"))
+            _guard_collect_target_storage_direct(stmt.get("target"), target_type, out)
+        elif kind == FOR_CORE:
+            _guard_collect_target_plan_storage(stmt.get("target_plan"), out)
+        for key in ("body", "orelse", "finalbody"):
+            nested = stmt.get(key)
+            if isinstance(nested, list):
+                _guard_collect_storage_types(nested, out)
+        handlers = stmt.get("handlers")
+        if isinstance(handlers, list):
+            for handler in handlers:
+                if not isinstance(handler, dict):
+                    continue
+                ex_name = _tp_safe(handler.get("name"))
+                if ex_name != "":
+                    out["__storage__:" + ex_name] = "BaseException"
+                hbody = handler.get("body")
+                if isinstance(hbody, list):
+                    _guard_collect_storage_types(hbody, out)
+
+
+def _guard_collect_target_storage(target: JsonVal, stmt: Node, out: dict[str, str]) -> None:
+    decl_type = _tp_safe(stmt.get("decl_type"))
+    if decl_type == "":
+        decl_type = _tp_safe(stmt.get("annotation"))
+    if decl_type == "":
+        value = stmt.get("value")
+        if isinstance(value, dict):
+            decl_type = _tp_safe(value.get("resolved_type"))
+    _guard_collect_target_storage_direct(target, decl_type, out)
+
+
+def _guard_collect_target_storage_direct(target: JsonVal, target_type: str, out: dict[str, str]) -> None:
+    if not isinstance(target, dict):
+        return
+    kind = _tp_safe(target.get("kind"))
+    if kind == NAME:
+        name = _tp_safe(target.get("id"))
+        if name != "" and target_type != "":
+            out["__storage__:" + name] = target_type
+        return
+    if kind == TUPLE or kind == LIST:
+        elements = target.get("elements")
+        if isinstance(elements, list):
+            for elem in elements:
+                _guard_collect_target_storage_direct(elem, target_type, out)
+
+
+def _guard_collect_target_plan_storage(target_plan: JsonVal, out: dict[str, str]) -> None:
+    if not isinstance(target_plan, dict):
+        return
+    kind = _tp_safe(target_plan.get("kind"))
+    if kind == NAME_TARGET:
+        name = _tp_safe(target_plan.get("id"))
+        target_type = _tp_safe(target_plan.get("target_type"))
+        if name != "" and target_type != "":
+            out["__storage__:" + name] = target_type
+        return
+    if kind == TUPLE_TARGET:
+        elements = target_plan.get("elements")
+        if isinstance(elements, list):
+            for elem in elements:
+                _guard_collect_target_plan_storage(elem, out)
 
 
 # ===========================================================================
@@ -1928,7 +2444,7 @@ def _tp_assign_target(node: JsonVal) -> None:
         return
     nd: Node = node
     kind = nd.get("kind", "")
-    if kind == FUNCTION_DEF:
+    if _is_function_like_kind(kind):
         rt = _tp_safe(nd.get("return_type"))
         returns = nd.get("returns")
         if returns is None and rt not in ("", "unknown"):
@@ -2105,7 +2621,7 @@ def _collect_fn_callable_types(module: Node) -> dict[str, str]:
         if not isinstance(stmt, dict):
             continue
         kind = stmt.get("kind", "")
-        if kind == FUNCTION_DEF:
+        if _is_function_like_kind(kind):
             name = _tp_safe(stmt.get("name"))
             ret = _tp_safe(stmt.get("return_type"))
             if name != "" and ret not in ("", "unknown"):
@@ -2322,7 +2838,7 @@ def _swap_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
             nested = stmt.get(key)
             if isinstance(nested, list):
                 stmt[key] = _swap_in_stmts(nested, ctx)
-        if kind == FUNCTION_DEF or kind == CLASS_DEF:
+        if _is_function_like_kind(kind) or kind == CLASS_DEF:
             body = stmt.get("body")
             if isinstance(body, list):
                 stmt["body"] = _swap_in_stmts(body, ctx)
@@ -2428,7 +2944,7 @@ def _detect_ms_class(cd: Node) -> None:
     direct: set[str] = set()
     cg: dict[str, set[str]] = {}
     for stmt in body:
-        if not isinstance(stmt, dict) or stmt.get("kind") != FUNCTION_DEF:
+        if not isinstance(stmt, dict) or not _is_function_like_kind(jv_str(stmt.get("kind", ""))):
             continue
         name = jv_str(stmt.get("name", ""))
         if name == "":
@@ -2574,7 +3090,7 @@ def _uv_walk(node: JsonVal) -> None:
     if not isinstance(node, dict):
         return
     nd: Node = node
-    if nd.get("kind") == FUNCTION_DEF:
+    if _is_function_like(nd):
         _uv_mark_fn(nd)
     for v in nd.values():
         if isinstance(v, (dict, list)):
@@ -2607,7 +3123,7 @@ def mark_main_guard_discard(module: Node, ctx: CompileContext) -> Node:
     body = module.get("body")
     if isinstance(body, list):
         for stmt in body:
-            if isinstance(stmt, dict) and stmt.get("kind") == FUNCTION_DEF:
+            if isinstance(stmt, dict) and _is_function_like(stmt):
                 name = stmt.get("name", "")
                 if name == "__pytra_main":
                     fb = stmt.get("body")
