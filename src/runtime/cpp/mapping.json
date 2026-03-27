@@ -38,6 +38,14 @@
     "str.isalpha": "py_isalpha",
     "py_write_text": "py_pathlib_write_text",
     "py_floordiv": "py_floordiv",
+    "path.join": "join",
+    "path.splitext": "splitext",
+    "path.basename": "basename",
+    "path.dirname": "dirname",
+    "path.abspath": "abspath",
+    "path.exists": "exists",
+    "glob.glob": "glob",
+    "time.perf_counter": "perf_counter",
     "math.pi": "M_PI",
     "math.e": "M_E",
     "pi": "M_PI",
@@ -66,7 +74,10 @@
     "pow": "std::pow"
   },
   "skip_modules": [
-    "pytra.core."
+    "pytra.built_in.",
+    "pytra.core.",
+    "pytra.std.",
+    "pytra.utils."
   ],
   "implicit_promotions": [
     ["uint8", "int64"],

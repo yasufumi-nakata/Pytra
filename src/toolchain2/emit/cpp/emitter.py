@@ -731,9 +731,10 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(func, dict):
         fk = _str(func, "kind")
         if fk == "Attribute":
-            owner = _emit_expr(ctx, func.get("value"))
             attr = _str(func, "attr")
             owner_node = func.get("value")
+            owner_runtime_module_id = _str(owner_node, "runtime_module_id") if isinstance(owner_node, dict) else ""
+            owner = _emit_expr(ctx, owner_node)
             owner_type = _effective_resolved_type(owner_node)
             owner_id = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
             owner_module = ctx.import_aliases.get(owner_id, "")
@@ -748,6 +749,16 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                     if attr == "__init__":
                         return ""
                     return base_name + "::" + attr + "(" + ", ".join(call_arg_strs) + ")"
+            if owner_runtime_module_id != "" and should_skip_module(owner_runtime_module_id, ctx.mapping):
+                symbol_name = _resolve_runtime_attr_symbol(
+                    ctx,
+                    runtime_module_id=owner_runtime_module_id,
+                    resolved_runtime_call=resolved_runtime_call,
+                    runtime_call=runtime_call,
+                    runtime_symbol=runtime_symbol,
+                    fallback_symbol=attr,
+                )
+                return _qualify_runtime_call_symbol(symbol_name) + "(" + ", ".join(call_arg_strs) + ")"
             if attr == "add_argument" and owner_type == "ArgumentParser":
                 call_arg_strs = _emit_argparse_add_argument_args(ctx, args, keywords)
             if _is_type_owner(ctx, owner_node):
@@ -1374,6 +1385,7 @@ def _emit_stmt(ctx: CppEmitContext, node: JsonVal) -> None:
     elif kind == "ImportFrom" or kind == "Import" or kind == "TypeAlias": pass
     elif kind == "Pass": _emit(ctx, "// pass")
     elif kind == "VarDecl": _emit_var_decl(ctx, node)
+    elif kind == "TupleUnpack": _emit_tuple_unpack(ctx, node)
     elif kind == "Swap": _emit_swap(ctx, node)
     elif kind == "Try": _emit_try(ctx, node)
     elif kind == "Raise": _emit_raise(ctx, node)
@@ -1742,6 +1754,36 @@ def _emit_var_decl(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     ct = _decl_cpp_type(ctx, rt, name)
     _register_local_storage(ctx, name, rt)
     _emit(ctx, ct + " " + name + " = " + _decl_cpp_zero_value(ctx, rt, name) + ";")
+
+
+def _emit_tuple_unpack(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
+    targets = _list(node, "targets")
+    target_types = _list(node, "target_types")
+    value = node.get("value")
+    tuple_expr = _emit_expr(ctx, value)
+    temp_name = _next_temp(ctx, "__tup")
+    tuple_type = cpp_signature_type(_effective_resolved_type(value))
+    if tuple_type == "auto":
+        tuple_type = "auto"
+    _emit(ctx, tuple_type + " " + temp_name + " = " + tuple_expr + ";")
+    declare = _bool(node, "declare")
+    for idx, target in enumerate(targets):
+        if not isinstance(target, dict) or _str(target, "kind") not in ("Name", "NameTarget"):
+            _emit_fail(ctx, "unsupported_tuple_unpack_target", repr(target))
+        name = _str(target, "id")
+        if name == "":
+            continue
+        resolved_type = _str(target, "resolved_type")
+        if resolved_type in ("", "unknown") and idx < len(target_types) and isinstance(target_types[idx], str):
+            resolved_type = target_types[idx]
+        assign_expr = "::std::get<" + str(idx) + ">(" + temp_name + ")"
+        if declare or name not in ctx.var_types:
+            decl_type = _decl_cpp_type(ctx, resolved_type, name) if resolved_type not in ("", "unknown") else "auto"
+            _emit(ctx, decl_type + " " + name + " = " + assign_expr + ";")
+        else:
+            _emit(ctx, name + " = " + assign_expr + ";")
+        if resolved_type not in ("", "unknown"):
+            _register_local_storage(ctx, name, resolved_type)
 
 
 def _emit_swap(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
