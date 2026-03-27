@@ -102,6 +102,11 @@ class _GoStmtCommonRenderer(CommonRenderer):
         _emit_return(self.ctx, node)
         self.state.indent_level = self.ctx.indent_level
 
+    def emit_expr_stmt(self, node: dict[str, JsonVal]) -> None:
+        self.ctx.indent_level = self.state.indent_level
+        _emit_expr_stmt(self.ctx, node)
+        self.state.indent_level = self.ctx.indent_level
+
     def emit_assign_stmt(self, node: dict[str, JsonVal]) -> None:
         self.ctx.indent_level = self.state.indent_level
         kind = self._str(node, "kind")

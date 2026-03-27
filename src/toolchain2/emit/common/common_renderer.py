@@ -146,6 +146,9 @@ class CommonRenderer(ABC):
         else:
             self._emit_stmt_line(self._syntax_text("return", "return"))
 
+    def emit_expr_stmt(self, node: dict[str, JsonVal]) -> None:
+        self._emit_stmt_line(self.render_expr(node.get("value")))
+
     def emit_assign_stmt(self, node: dict[str, JsonVal]) -> None:
         self._emit_stmt_line(self.render_assign_stmt(node))
 
@@ -240,7 +243,7 @@ class CommonRenderer(ABC):
             return
         kind = self._str(node, "kind")
         if kind == "Expr":
-            self._emit_stmt_line(self.render_expr(node.get("value")))
+            self.emit_expr_stmt(node)
             return
         if kind == "Return":
             self.emit_return_stmt(node)

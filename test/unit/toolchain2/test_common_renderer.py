@@ -4,7 +4,7 @@ import unittest
 
 from toolchain2.emit.common.common_renderer import CommonRenderer
 from toolchain2.emit.common.profile_loader import load_profile_doc
-from toolchain2.emit.cpp.emitter import _emit_expr as emit_cpp_expr, CppEmitContext
+from toolchain2.emit.cpp.emitter import _emit_expr as emit_cpp_expr, _emit_stmt as emit_cpp_stmt, CppEmitContext
 from toolchain2.emit.go.emitter import _emit_expr as emit_go_expr, _emit_stmt as emit_go_stmt, EmitContext
 
 
@@ -145,6 +145,18 @@ class CommonRendererTests(unittest.TestCase):
         )
 
         self.assertEqual(ctx.lines, ["return int64(1), int64(2)"])
+
+    def test_go_emitter_common_expr_stmt_hook_preserves_doc_comment(self) -> None:
+        ctx = EmitContext()
+        emit_go_stmt(ctx, {"kind": "Expr", "value": {"kind": "Constant", "value": "hello\ngo"}})
+
+        self.assertEqual(ctx.lines, ["// hello", "// go"])
+
+    def test_cpp_emitter_common_expr_stmt_hook_preserves_doc_comment(self) -> None:
+        ctx = CppEmitContext()
+        emit_cpp_stmt(ctx, {"kind": "Expr", "value": {"kind": "Constant", "value": "hello\ncpp"}})
+
+        self.assertEqual(ctx.lines, ["// hello", "// cpp"])
 
 
 if __name__ == "__main__":
