@@ -24,7 +24,9 @@
   - for-range のループ変数の型を変更する
   - mapping.json にない名前変換をハードコードする
   - 型推論を再実装する
+  - **EAST の body を走査して型を判定する**（例: Return ノードの有無で戻り値型を推測する）
 - **EAST の情報が不足している場合は、emitter にワークアラウンドを書くのではなく、EAST（resolve/compile/optimize）を修正すること。**
+- **workaround が必要に見える場合は、実装する前にまずユーザーに報告すること。** spec 違反の実装を入れてはならない。
 - 詳細は `docs/ja/spec/spec-emitter-guide.md` を参照。
 
 ## 4. runtime の禁止事項
