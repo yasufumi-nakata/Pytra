@@ -49,10 +49,10 @@
 | 実装仕様 | [spec-dev.md](./spec-dev.md) | 実装方針、モジュール構成 |
 | フォルダ責務 | [spec-folder.md](./spec-folder.md) | どのフォルダに何を置くか |
 | stdlib 正本化 | [spec-stdlib-signature-source-of-truth.md](./spec-stdlib-signature-source-of-truth.md) | pytra/std を型仕様の正本にする契約 |
-| エージェント運用 | [spec-agent.md](./spec-agent.md) | Codex / Claude Code の作業ルール、TODO 運用 |
+| AI agent 運用 | [spec-agent.md](./spec-agent.md) | Codex / Claude Code の作業ルール、TODO 運用 |
 | 開発思想 | [spec-philosophy.md](./spec-philosophy.md) | EAST 中心設計の背景 |
 | 旧仕様 | [archive/index.md](./archive/index.md) | 退役した仕様のアーカイブ |
 
-## Codex 起動時の確認先
+## AI agent 起動時の確認先
 
-- Codex は起動時に `docs/ja/spec/index.md` を入口として読み、続けて [Codex 向け運用仕様](./spec-codex.md) と [TODO](../todo/index.md) を確認します。
+- AI agent（Codex / Claude Code）は起動時に `docs/ja/spec/index.md` を入口として読み、続けて [AI agent 運用仕様](./spec-agent.md) と [TODO](../todo/index.md) を確認します。
