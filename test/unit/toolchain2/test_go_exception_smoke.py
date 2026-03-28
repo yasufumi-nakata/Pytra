@@ -13,6 +13,7 @@ from toolchain2.resolve.py.resolver import resolve_east1_to_east2
 
 
 ROOT = Path(__file__).resolve().parents[3]
+FIXTURE_ROOT = ROOT / "test" / "fixture" / "source" / "py"
 
 
 def _load_registry():
@@ -194,6 +195,10 @@ if __name__ == "__main__":
         print(err)
 """
 
+PROPAGATION_TWO_FRAMES_SOURCE = (
+    FIXTURE_ROOT / "control" / "exception_propagation_two_frames.py"
+).read_text(encoding="utf-8")
+
 
 class GoExceptionSmokeTests(unittest.TestCase):
     def test_go_emits_typed_value_error_catch_and_finally(self) -> None:
@@ -267,6 +272,10 @@ class GoExceptionSmokeTests(unittest.TestCase):
     def test_go_bare_raise_rethrows_current_exception(self) -> None:
         stdout = _run_go(BARE_RERAISE_SOURCE)
         self.assertEqual(stdout, "bad\n")
+
+    def test_go_propagates_exception_two_frames_up(self) -> None:
+        stdout = _run_go(PROPAGATION_TWO_FRAMES_SOURCE)
+        self.assertEqual(stdout, "caught boom\n")
 
 
 if __name__ == "__main__":
