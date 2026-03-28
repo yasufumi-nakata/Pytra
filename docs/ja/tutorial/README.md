@@ -46,8 +46,5 @@ Rust に変換するなら:
 
 ここまで読めば普通に使えます。以下は必要に応じて:
 
-8. [pylib モジュール一覧](../spec/spec-pylib-modules.md) — 使えるモジュールと関数の一覧
+8. [使えるモジュール](./modules.md) — よく使うモジュールと関数の紹介
 9. [アーキテクチャ](./architecture.md) — パイプラインの全体像と各段の役割
-10. [発展的な使い方](./advanced-usage.md) — `@extern`, `@abi`, `@template`, nominal ADT 等
-11. [仕様書トップ](../spec/index.md) — 言語仕様の正本
-12. [開発運用ガイド](./dev-operations.md) — parity check, local CI（開発者向け）
