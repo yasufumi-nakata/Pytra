@@ -33,6 +33,9 @@ CONTINUE: str = "Continue"
 SWAP: str = "Swap"
 TUPLE_UNPACK: str = "TupleUnpack"
 MULTI_ASSIGN: str = "MultiAssign"
+ERROR_RETURN: str = "ErrorReturn"
+ERROR_CHECK: str = "ErrorCheck"
+ERROR_CATCH: str = "ErrorCatch"
 
 # --- expressions ---
 NAME: str = "Name"

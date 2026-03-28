@@ -41,6 +41,10 @@ _VALID_SWAP_STYLES: set[str] = {
     "mem_swap",
     "temp_var",
 }
+_VALID_EXCEPTION_STYLES: set[str] = {
+    "native_throw",
+    "union_return",
+}
 
 
 @dataclass
@@ -51,6 +55,7 @@ class LoweringProfile:
     with_style: str
     property_style: str
     swap_style: str
+    exception_style: str
 
 
 def _load_json_dict(path: Path) -> dict[str, JsonVal]:
@@ -139,6 +144,11 @@ def parse_lowering_profile(doc: dict[str, JsonVal]) -> LoweringProfile:
             _require_str(lowering, "swap_style"),
             _VALID_SWAP_STYLES,
             "swap_style",
+        ),
+        exception_style=_validate_enum(
+            _require_str(lowering, "exception_style"),
+            _VALID_EXCEPTION_STYLES,
+            "exception_style",
         ),
     )
 

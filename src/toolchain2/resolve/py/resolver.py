@@ -56,6 +56,24 @@ _BUILTIN_TYPE_OBJECT_NAMES: set[str] = {
     "tuple",
 }
 
+_BUILTIN_EXCEPTION_TYPE_NAMES: set[str] = {
+    "PytraError",
+    "BaseException",
+    "Exception",
+    "RuntimeError",
+    "ValueError",
+    "TypeError",
+    "KeyError",
+    "IndexError",
+    "NameError",
+    "FileNotFoundError",
+    "PermissionError",
+    "NotImplementedError",
+    "OverflowError",
+}
+
+_BUILTIN_EXCEPTION_MODULE_ID = "pytra.built_in.error"
+
 
 @dataclass
 class ResolveResult:
@@ -1556,6 +1574,11 @@ def _resolve_name(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         expr["resolved_type"] = "type"
         expr["type_object_of"] = name
         return "type"
+    if t == "unknown" and name in _BUILTIN_EXCEPTION_TYPE_NAMES:
+        expr["resolved_type"] = "type"
+        expr["type_object_of"] = name
+        expr["runtime_module_id"] = _BUILTIN_EXCEPTION_MODULE_ID
+        return "type"
     if t == "unknown" and name in _BUILTIN_TYPE_OBJECT_NAMES:
         expr["resolved_type"] = "type"
         expr["type_object_of"] = name
@@ -1956,35 +1979,6 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
         func["resolved_type"] = "callable"
         return t
 
-    # Exception constructor? (Exception, RuntimeError, etc.)
-    exception_names: set[str] = {"Exception", "RuntimeError", "NotImplementedError", "ValueError", "TypeError", "KeyError", "IndexError"}
-    if name in exception_names:
-        expr["resolved_type"] = name
-        func["resolved_type"] = "type"
-        # Annotate as BuiltinCall
-        exc_extern: ExternV2 | None = None
-        exc_sig: FuncSig | None = ctx.registry.lookup_function(name)
-        if exc_sig is not None:
-            exc_extern = exc_sig.extern
-        if exc_extern is not None:
-            expr["lowered_kind"] = "BuiltinCall"
-            expr["builtin_name"] = name
-            expr["runtime_call"] = exc_extern.symbol
-            expr["runtime_module_id"] = exc_extern.module
-            expr["runtime_symbol"] = exc_extern.symbol
-            expr["runtime_call_adapter_kind"] = "builtin"
-            expr["semantic_tag"] = exc_extern.tag
-        else:
-            # Fallback: Exception not in registry, use defaults
-            expr["lowered_kind"] = "BuiltinCall"
-            expr["builtin_name"] = name
-            expr["runtime_call"] = "std::runtime_error"
-            expr["runtime_module_id"] = "pytra.core.py_runtime"
-            expr["runtime_symbol"] = name
-            expr["runtime_call_adapter_kind"] = "builtin"
-            expr["semantic_tag"] = "error.raise_ctor"
-        return name
-
     # Class constructor?
     local_class: ClassSig | None = ctx.lookup_local_class(name)
     if local_class is not None:
@@ -1993,6 +1987,28 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
             _apply_call_arg_hints(expr, init_sig.arg_names[1:], init_sig.arg_types, ctx)
         expr["resolved_type"] = name
         func["resolved_type"] = "type"
+        return name
+
+    # Built-in exception constructors come from pytra.built_in.error and should
+    # be treated as normal class constructors when the registry provides them.
+    builtin_exc_class: ClassSig | None = ctx.registry.lookup_stdlib_class(_BUILTIN_EXCEPTION_MODULE_ID, name)
+    if builtin_exc_class is not None and name in _BUILTIN_EXCEPTION_TYPE_NAMES:
+        init_sig2: FuncSig | None = builtin_exc_class.methods.get("__init__")
+        if init_sig2 is not None:
+            _apply_call_arg_hints(expr, init_sig2.arg_names[1:], init_sig2.arg_types, ctx)
+        expr["resolved_type"] = name
+        func["resolved_type"] = "type"
+        func["runtime_module_id"] = _BUILTIN_EXCEPTION_MODULE_ID
+        expr["runtime_module_id"] = _BUILTIN_EXCEPTION_MODULE_ID
+        return name
+
+    # Fallback compatibility: unresolved built-in exception constructor still
+    # points at the pure-Python runtime module, never std::exception aliases.
+    if name in _BUILTIN_EXCEPTION_TYPE_NAMES:
+        expr["resolved_type"] = name
+        func["resolved_type"] = "type"
+        func["runtime_module_id"] = _BUILTIN_EXCEPTION_MODULE_ID
+        expr["runtime_module_id"] = _BUILTIN_EXCEPTION_MODULE_ID
         return name
 
     bound_lambda = ctx.scope.lookup_lambda(name)
@@ -3983,10 +3999,14 @@ def _resolve_try(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     if isinstance(handlers, list):
         for h in handlers:
             if isinstance(h, dict):
-                # Resolve exception type — exception class names stay "unknown"
                 exc_type = h.get("type")
                 if isinstance(exc_type, dict) and exc_type.get("kind") == "Name":
-                    exc_type["resolved_type"] = "unknown"
+                    exc_name = exc_type.get("id")
+                    if isinstance(exc_name, str) and exc_name in _BUILTIN_EXCEPTION_TYPE_NAMES:
+                        exc_type["resolved_type"] = exc_name
+                        exc_type["runtime_module_id"] = _BUILTIN_EXCEPTION_MODULE_ID
+                    else:
+                        exc_type["resolved_type"] = "unknown"
                 handler_body = h.get("body")
                 if isinstance(handler_body, list):
                     for s in handler_body:

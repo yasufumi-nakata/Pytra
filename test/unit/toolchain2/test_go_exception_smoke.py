@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+import os
 
 from toolchain2.compile.lower import lower_east2_to_east3
 from toolchain2.emit.go.emitter import emit_go_module
@@ -51,6 +52,8 @@ def _run_go_process(
         runtime_path = ROOT / "src" / "runtime" / "go" / "built_in" / "py_runtime.go"
         bundled_runtime = Path(tmp) / "py_runtime.go"
         out_path = Path(tmp) / "app"
+        env = dict(os.environ)
+        env["PATH"] = "/home/node/.local/go/bin:" + env.get("PATH", "")
         go_path.write_text(go_code, encoding="utf-8")
         bundled_runtime.write_text(runtime_path.read_text(encoding="utf-8"), encoding="utf-8")
         build = subprocess.run(
@@ -58,10 +61,11 @@ def _run_go_process(
             cwd=tmp,
             capture_output=True,
             text=True,
+            env=env,
         )
         if build.returncode != 0:
             raise AssertionError(f"{build.stdout}\n{build.stderr}")
-        run = subprocess.run([str(out_path)], cwd=tmp, capture_output=True, text=True)
+        run = subprocess.run([str(out_path)], cwd=tmp, capture_output=True, text=True, env=env)
 
     return run
 
@@ -201,6 +205,13 @@ PROPAGATION_TWO_FRAMES_SOURCE = (
 
 
 class GoExceptionSmokeTests(unittest.TestCase):
+    def test_registry_loads_builtin_error_classes(self) -> None:
+        reg = _load_registry()
+        cls = reg.find_stdlib_class("ValueError")
+        self.assertIsNotNone(cls)
+        assert cls is not None
+        self.assertEqual(cls.name, "ValueError")
+
     def test_go_emits_typed_value_error_catch_and_finally(self) -> None:
         stdout = _run_go(SOURCE)
         self.assertEqual(stdout, "7\nbad\ndone\n")
