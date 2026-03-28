@@ -565,6 +565,10 @@ def _is_wrapper_container_expr(ctx: EmitContext, node: JsonVal, rendered: str) -
     if not isinstance(node, dict):
         return False
     kind = _str(node, "kind")
+    if kind == "Call":
+        return _is_container_resolved_type(_str(node, "resolved_type"))
+    if kind == "IfExp":
+        return _is_container_resolved_type(_str(node, "resolved_type"))
     if kind == "Attribute":
         return _is_container_resolved_type(_str(node, "resolved_type"))
     if kind != "Name":
@@ -2989,6 +2993,11 @@ def _emit_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     rt = _str(node, "resolved_type")
     body = _maybe_coerce_expr_to_type(ctx, body_node, body, rt)
     orelse = _maybe_coerce_expr_to_type(ctx, orelse_node, orelse, rt)
+    if _is_container_resolved_type(rt):
+        if isinstance(body_node, dict) and not _is_wrapper_container_expr(ctx, body_node, body):
+            body = _wrap_ref_container_value_code(ctx, body, rt)
+        if isinstance(orelse_node, dict) and not _is_wrapper_container_expr(ctx, orelse_node, orelse):
+            orelse = _wrap_ref_container_value_code(ctx, orelse, rt)
     if rt in ("int64", "int32", "int", "uint8"):
         # Ensure test is bool (int→bool: != 0)
         test_rt = _str(test_node, "resolved_type") if isinstance(test_node, dict) else ""
@@ -3002,7 +3011,7 @@ def _emit_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if rt == "str":
         return "py_ternary_str(" + test + ", " + body + ", " + orelse + ")"
     # Fallback: use func literal
-    result_gt = _go_type_with_ctx(ctx, rt)
+    result_gt = _go_signature_type(ctx, rt)
     if result_gt == "":
         result_gt = "any"
     return "func() " + result_gt + " { if " + test + " { return " + body + " }; return " + orelse + " }()"
@@ -3778,6 +3787,9 @@ def _emit_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         if ctx.current_return_type == "Exception":
             _emit(ctx, "return pytraEnsureRecoveredError(" + value_code + ")")
             return
+        if _is_container_resolved_type(ctx.current_return_type):
+            if not _is_wrapper_container_expr(ctx, value, value_code):
+                value_code = _wrap_ref_container_value_code(ctx, value_code, ctx.current_return_type)
         if ctx.current_return_type.startswith("multi_return["):
             _emit(ctx, "return " + value_code + ", nil")
             return

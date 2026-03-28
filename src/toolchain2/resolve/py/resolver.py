@@ -887,6 +887,39 @@ def _merge_ifexp_result_type(body_type: str, orelse_type: str) -> str:
     return " | ".join(merged_parts)
 
 
+def _collect_function_return_types(node: JsonVal, out: list[str]) -> None:
+    if isinstance(node, list):
+        for item in node:
+            _collect_function_return_types(item, out)
+        return
+    if not isinstance(node, dict):
+        return
+    kind = _resolve_safe_str(node.get("kind"))
+    if kind in ("FunctionDef", "ClosureDef", "Lambda"):
+        return
+    if kind == "Return":
+        value = node.get("value")
+        if isinstance(value, dict):
+            out.append(_resolve_safe_str(value.get("resolved_type")) or "unknown")
+        else:
+            out.append("None")
+        return
+    for value2 in node.values():
+        if isinstance(value2, (dict, list)):
+            _collect_function_return_types(value2, out)
+
+
+def _infer_function_return_type_from_body(body: JsonVal) -> str:
+    observed: list[str] = []
+    _collect_function_return_types(body, observed)
+    if len(observed) == 0:
+        return "None"
+    merged = observed[0]
+    for item in observed[1:]:
+        merged = _merge_ifexp_result_type(merged, item)
+    return merged
+
+
 def _is_dynamic_supertype(type_str: str) -> bool:
     return type_str == "JsonVal" or type_str == "Any" or type_str == "Obj" or type_str == "object"
 
@@ -3245,6 +3278,13 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
                 _resolve_stmt(s, ctx)
     ctx.scope = old_scope
     ctx.current_params = old_params
+
+    inferred_ret = _infer_function_return_type_from_body(body)
+    if ret in ("unknown", "None") and inferred_ret not in ("", "unknown"):
+        ret = inferred_ret
+        stmt["return_type"] = ret
+        if not ctx.in_class:
+            stmt["return_type_expr"] = make_type_expr(ret)
 
     refined_callable_params: dict[str, str] = {}
     callable_param_names: set[str] = set()
