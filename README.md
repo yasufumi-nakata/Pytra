@@ -104,20 +104,21 @@ Full data for all languages and all samples: [Sample page](sample/README.md#runt
 
 Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
 
-| Aspect | Python | C++ | Rust | Pytra |
+| Aspect | ![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white) | ![C++](https://img.shields.io/badge/-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white) | ![Rust](https://img.shields.io/badge/-Rust-F6B73C?style=flat-square&logo=rust&logoColor=black) | ![Pytra](https://img.shields.io/badge/-Pytra-10B981?style=flat-square) |
 |-|-|-|-|-|
 | Syntax | ✅ Simple | ❌ Complex | 🔶 Ownership/<br>lifetimes | ✅ Same as<br>Python |
 | Type safety | ❌ Dynamic | ✅ Static | ✅ Static | ✅ Static<br>(Python-style) |
 | Speed | ❌ Slow | ✅ Fast | ✅ Fast | ✅ Fast<br>(depends on target) |
 | Memory | ✅ GC<br>(easy but heavy) | ❌ Manual/<br>shared_ptr | 🔶 Ownership<br>(safe but hard) | ✅ RC-based<br>automatic |
 | Integers | 🔶 Arbitrary<br>only | ✅ int8–64 | ✅ i8–i64 | ✅ int8–64 |
-| Float | 🔶 64 only | ✅ 32/64 | ✅ f32/f64 | ✅ 32/64 |
+| Float | 🔶 64-bit only | ✅ 32/64-bit | ✅ f32/f64 | ✅ 32/64-bit |
 | Build | ✅ Not needed | ❌ CMake etc. | 🔶 cargo | ✅ `./pytra`<br>`--build --run` |
 | Multi-lang<br>deploy | ❌ | ❌ | ❌ | ✅ 18 languages |
 | Optimization | ❌ Limited | ✅ Extensive | ✅ Extensive | ✅ Leverages<br>target |
 | Distribution | 🔶 Requires<br>runtime | ✅ Binary | ✅ Binary | ✅ Each lang's<br>native |
 | Single<br>inheritance | ✅ | ✅ | ❌ Traits only | ✅ |
 | Multiple<br>inheritance | ✅ | 🔶 Complex | ❌ | ❌ |
+| Mix-ins | ✅ | 🔶 CRTP etc. | ❌ | ✅ |
 | Traits/<br>Interfaces | 🔶 Protocol | 🔶 virtual base | ✅ Native | ✅ `@trait` |
 | Exceptions | ✅ | ✅ | ❌ Result/panic | ✅ All languages |
 | Templates/<br>Generics | ❌ | 🔶 Unreadable<br>errors | ✅ | ✅ `@template` |
