@@ -123,6 +123,18 @@ if __name__ == "__main__":
         print("value", e)
 """
 
+CUSTOM_EXCEPTION_INIT_SOURCE = """
+class ParseError(ValueError):
+    def __init__(self, msg: str):
+        self.detail = msg
+
+if __name__ == "__main__":
+    try:
+        raise ParseError("bad parse")
+    except ValueError as e:
+        print(e)
+"""
+
 
 class GoExceptionSmokeTests(unittest.TestCase):
     def test_go_emits_typed_value_error_catch_and_finally(self) -> None:
@@ -156,6 +168,15 @@ class GoExceptionSmokeTests(unittest.TestCase):
             },
         )
         self.assertEqual(stdout, "value bad parse\n")
+
+    def test_go_custom_exception_init_preserves_message(self) -> None:
+        stdout = _run_go(
+            CUSTOM_EXCEPTION_INIT_SOURCE,
+            type_info_table={
+                "app.ParseError": {"id": 1000, "entry": 1000, "exit": 1001},
+            },
+        )
+        self.assertEqual(stdout, "bad parse\n")
 
 
 if __name__ == "__main__":

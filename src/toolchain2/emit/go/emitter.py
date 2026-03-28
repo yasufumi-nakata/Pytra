@@ -3530,7 +3530,11 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         # Emit __init__ body translated to Go (self.x = ... → obj.x = ...)
         _emit(ctx, "obj := &" + gn + "{}")
         if is_exception_class:
-            _emit(ctx, "obj.PytraError = " + _exception_struct_literal(ctx, name, _go_string_literal(name)))
+            msg_expr = _go_string_literal(name)
+            if len(ctor_params) > 0:
+                first_param_name, _ = ctor_params[0]
+                msg_expr = "py_str(" + _safe_go_ident(first_param_name) + ")"
+            _emit(ctx, "obj.PytraError = " + _exception_struct_literal(ctx, name, msg_expr))
         saved_receiver = ctx.current_receiver
         saved_ctor_target = ctx.constructor_return_target
         saved_vars = dict(ctx.var_types)
