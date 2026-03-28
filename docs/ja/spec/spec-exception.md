@@ -101,92 +101,41 @@ class ParseError(ValueError):
 - `isinstance` は `type_id` range check で判定する
 - フィールドを持てる
 
-### 5.2 runtime の例外型定義
+### 5.2 例外型の定義（pure Python、手書き runtime 不要）
 
-3言語とも runtime に `PytraError` クラス階層を用意する。
+例外型は `src/pytra/built_in/error.py` に pure Python で定義する。これが通常のパイプライン（parse → resolve → compile → link → emit）を通って全ターゲット言語に自動変換される。言語ごとの手書き runtime 例外クラスは不要。
 
-**Go:**
-```go
-type PytraError struct {
-    TypeId int32
-    Msg    string
-}
+```python
+# src/pytra/built_in/error.py
+class PytraError:
+    msg: str
+    def __init__(self, msg: str) -> None:
+        self.msg = msg
 
-type PytraValueError struct {
-    PytraError
-}
+class ValueError(PytraError):
+    def __init__(self, msg: str) -> None:
+        super().__init__(msg)
 
-type PytraRuntimeError struct {
-    PytraError
-}
+class RuntimeError(PytraError):
+    def __init__(self, msg: str) -> None:
+        super().__init__(msg)
 
-// ユーザー定義（linker が生成）
-type ParseError struct {
-    PytraValueError
-    Line int64
-}
+class FileNotFoundError(PytraError):
+    def __init__(self, msg: str) -> None:
+        super().__init__(msg)
 
-// isinstance は type_id range check
-func pytraErrorIsInstance(err *PytraError, tidMin int32, tidMax int32) bool {
-    return err.TypeId >= tidMin && err.TypeId <= tidMax
-}
+class PermissionError(PytraError):
+    def __init__(self, msg: str) -> None:
+        super().__init__(msg)
 ```
 
-**Rust:**
-```rust
-struct PytraError {
-    type_id: i32,
-    msg: String,
-}
+設計原則:
 
-struct PytraValueError {
-    base: PytraError,
-}
-
-struct PytraRuntimeError {
-    base: PytraError,
-}
-
-// ユーザー定義（linker が生成）
-struct ParseError {
-    base: PytraValueError,
-    line: i64,
-}
-
-// 全例外型は PytraErrorTrait を実装
-trait PytraErrorTrait {
-    fn type_id(&self) -> i32;
-    fn msg(&self) -> &str;
-}
-
-// isinstance は type_id range check
-fn pytra_error_is_instance(err: &dyn PytraErrorTrait, tid_min: i32, tid_max: i32) -> bool {
-    let tid = err.type_id();
-    tid >= tid_min && tid <= tid_max
-}
-```
-
-**Zig:**
-```zig
-const PytraError = struct {
-    type_id: i32,
-    msg: []const u8,
-};
-
-const PytraValueError = struct {
-    base: PytraError,
-};
-
-// ユーザー定義（linker が生成）
-const ParseError = struct {
-    base: PytraValueError,
-    line: i64,
-};
-
-fn pytraErrorIsInstance(err: *const PytraError, tid_min: i32, tid_max: i32) bool {
-    return err.type_id >= tid_min and err.type_id <= tid_max;
-}
-```
+- 例外型はただのクラス。特別な基底クラス（`std::exception`、`error` interface 等）を継承しない。
+- `type_id` は通常のクラスと同じ仕組みで linker が付与する。
+- `isinstance` は `type_id` range check で判定する（通常のクラスと同じ）。
+- ユーザー定義例外も同じファイルまたはユーザーコードで定義し、同じパイプラインで変換される。
+- 各言語固有のランタイムに例外クラスを手書きしてはならない。
 
 ### 5.3 linker のマーカー付与
 
