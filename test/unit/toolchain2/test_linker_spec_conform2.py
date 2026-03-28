@@ -1774,6 +1774,70 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("list<int64> xs = list<int64>{};", cpp_code)
         self.assertIn("Object<dict<str, int64>> env = rc_dict_new<str, int64>();", cpp_code)
 
+    def test_go_emitter_defaults_to_ref_container_locals(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "build",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_usage": {},
+                    "return_type": "None",
+                    "body": [
+                        {"kind": "VarDecl", "name": "xs", "type": "list[int64]"},
+                        {"kind": "VarDecl", "name": "env", "type": "dict[str,int64]"},
+                        {"kind": "VarDecl", "name": "seen", "type": "set[int64]"},
+                    ],
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("var xs *PyList[int64] = NewPyList[int64]()", go_code)
+        self.assertIn("var env *PyDict[string, int64] = NewPyDict[string, int64]()", go_code)
+        self.assertIn("var seen *PySet[int64] = NewPySet[int64]()", go_code)
+
+    def test_go_emitter_allows_hinted_container_value_locals(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            meta_extra={
+                "linked_program_v1": {
+                    "container_ownership_hints_v1": {
+                        "container_value_locals_v1": {
+                            "app.main::build": {
+                                "version": "1",
+                                "locals": ["xs"],
+                            }
+                        }
+                    }
+                }
+            },
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "build",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_usage": {},
+                    "return_type": "None",
+                    "body": [
+                        {"kind": "VarDecl", "name": "xs", "type": "list[int64]"},
+                        {"kind": "VarDecl", "name": "env", "type": "dict[str,int64]"},
+                    ],
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("var xs []int64 = nil", go_code)
+        self.assertIn("var env *PyDict[string, int64] = NewPyDict[string, int64]()", go_code)
+
     def test_cpp_emitter_wraps_container_builtin_results_as_ref_handles(self) -> None:
         doc = _module_doc(
             "app.main",
@@ -1823,6 +1887,57 @@ def has_key(env: dict[str, int], name: str) -> bool:
         cpp_code = emit_cpp_module(doc)
 
         self.assertIn("Object<list<str>> ks = rc_list_from_value(py_dict_keys(d));", cpp_code)
+
+    def test_go_emitter_wraps_container_builtin_results_as_ref_handles(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "run_case",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_usage": {},
+                    "return_type": "None",
+                    "body": [
+                        {
+                            "kind": "Assign",
+                            "target": {"kind": "Name", "id": "d", "resolved_type": "dict[str,int64]"},
+                            "declare": True,
+                            "decl_type": "dict[str,int64]",
+                            "declare_init": True,
+                            "value": {"kind": "Dict", "resolved_type": "dict[str,int64]", "entries": []},
+                        },
+                        {
+                            "kind": "Assign",
+                            "target": {"kind": "Name", "id": "ks", "resolved_type": "list[str]"},
+                            "declare": True,
+                            "decl_type": "list[str]",
+                            "declare_init": True,
+                            "value": {
+                                "kind": "Call",
+                                "lowered_kind": "BuiltinCall",
+                                "runtime_call": "dict.keys",
+                                "builtin_name": "keys",
+                                "resolved_type": "list[str]",
+                                "func": {
+                                    "kind": "Attribute",
+                                    "value": {"kind": "Name", "id": "d", "resolved_type": "dict[str,int64]"},
+                                    "attr": "keys",
+                                },
+                                "args": [],
+                            },
+                        },
+                    ],
+                }
+            ],
+        )
+
+        go_code = emit_go_module(doc)
+
+        self.assertIn("var d *PyDict[string, int64] = NewPyDict[string, int64]()", go_code)
+        self.assertIn("var ks *PyList[string] = PyListFromSlice[string](", go_code)
 
     def test_cpp_emitter_supports_set_literals_as_ref_wrappers(self) -> None:
         doc = _module_doc(

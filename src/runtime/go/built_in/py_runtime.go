@@ -13,6 +13,52 @@ import (
 	"strings"
 )
 
+type PyList[T any] struct {
+	items []T
+}
+
+func NewPyList[T any]() *PyList[T] {
+	return &PyList[T]{items: []T{}}
+}
+
+func PyListFromSlice[T any](items []T) *PyList[T] {
+	out := make([]T, len(items))
+	copy(out, items)
+	return &PyList[T]{items: out}
+}
+
+type PyDict[K comparable, V any] struct {
+	items map[K]V
+}
+
+func NewPyDict[K comparable, V any]() *PyDict[K, V] {
+	return &PyDict[K, V]{items: map[K]V{}}
+}
+
+func PyDictFromMap[K comparable, V any](items map[K]V) *PyDict[K, V] {
+	out := make(map[K]V, len(items))
+	for k, v := range items {
+		out[k] = v
+	}
+	return &PyDict[K, V]{items: out}
+}
+
+type PySet[T comparable] struct {
+	items map[T]struct{}
+}
+
+func NewPySet[T comparable]() *PySet[T] {
+	return &PySet[T]{items: map[T]struct{}{}}
+}
+
+func PySetFromMap[T comparable](items map[T]struct{}) *PySet[T] {
+	out := make(map[T]struct{}, len(items))
+	for k := range items {
+		out[k] = struct{}{}
+	}
+	return &PySet[T]{items: out}
+}
+
 func py_print(args ...any) {
 	parts := make([]string, len(args))
 	for i, a := range args {

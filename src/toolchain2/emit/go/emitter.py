@@ -75,6 +75,9 @@ class EmitContext:
     # Exception type ids from linked_program_v1.type_info_table_v1.
     exception_type_ids: dict[str, int] = field(default_factory=dict)
     current_exception_var: str = ""
+    current_function_scope: str = ""
+    current_value_container_locals: set[str] = field(default_factory=set)
+    container_value_locals_by_scope: dict[str, set[str]] = field(default_factory=dict)
 
 
 class _GoStmtCommonRenderer(CommonRenderer):
@@ -215,6 +218,176 @@ def _module_prefix(ctx: EmitContext) -> str:
     if ctx.module_id == "":
         return ""
     return _safe_go_ident(ctx.module_id.replace(".", "_"))
+
+
+def _scope_key(ctx: EmitContext, func_name: str, owner_name: str = "") -> str:
+    scope_name = func_name if owner_name == "" else owner_name + "." + func_name
+    if ctx.module_id == "":
+        return scope_name
+    return ctx.module_id + "::" + scope_name
+
+
+def _container_value_locals_for_scope(
+    ctx: EmitContext,
+    func_name: str,
+    owner_name: str = "",
+) -> set[str]:
+    keys = [_scope_key(ctx, func_name, owner_name)]
+    if owner_name != "":
+        keys.append(_scope_key(ctx, func_name))
+    out: set[str] = set()
+    for key in keys:
+        out.update(ctx.container_value_locals_by_scope.get(key, set()))
+    return out
+
+
+def _load_container_value_locals(
+    linked_program_meta: dict[str, JsonVal],
+) -> dict[str, set[str]]:
+    hints = _dict(linked_program_meta, "container_ownership_hints_v1")
+    raw = _dict(hints, "container_value_locals_v1")
+    out: dict[str, set[str]] = {}
+    for scope_key, payload in raw.items():
+        if not isinstance(scope_key, str) or scope_key == "":
+            continue
+        if not isinstance(payload, dict):
+            continue
+        locals_raw = payload.get("locals")
+        if not isinstance(locals_raw, list):
+            continue
+        locals_out = {
+            name
+            for name in locals_raw
+            if isinstance(name, str) and name != ""
+        }
+        if len(locals_out) != 0:
+            out[scope_key] = locals_out
+    return out
+
+
+def _is_container_resolved_type(resolved_type: str) -> bool:
+    return (
+        resolved_type == "list"
+        or resolved_type == "dict"
+        or resolved_type == "set"
+        or resolved_type.startswith("list[")
+        or resolved_type.startswith("dict[")
+        or resolved_type.startswith("set[")
+    )
+
+
+def _prefer_value_container_local(ctx: EmitContext, name: str, resolved_type: str) -> bool:
+    return (
+        name != ""
+        and (resolved_type == "list" or resolved_type.startswith("list["))
+        and name in ctx.current_value_container_locals
+    )
+
+
+def _go_ref_container_type(ctx: EmitContext, resolved_type: str) -> str:
+    if resolved_type == "list":
+        return "*PyList[any]"
+    if resolved_type == "dict":
+        return "*PyDict[string, any]"
+    if resolved_type == "set":
+        return "*PySet[any]"
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        return "*PyList[" + _go_type_with_ctx(ctx, inner) + "]"
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        parts = _split_generic_args(inner)
+        if len(parts) == 2:
+            return "*PyDict[" + _go_type_with_ctx(ctx, parts[0]) + ", " + _go_type_with_ctx(ctx, parts[1]) + "]"
+    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+        inner = resolved_type[4:-1]
+        return "*PySet[" + _go_type_with_ctx(ctx, inner) + "]"
+    return go_type(resolved_type)
+
+
+def _decl_go_type(ctx: EmitContext, resolved_type: str, name: str = "") -> str:
+    if _is_container_resolved_type(resolved_type) and not _prefer_value_container_local(ctx, name, resolved_type):
+        return _go_ref_container_type(ctx, resolved_type)
+    return _go_signature_type(ctx, resolved_type)
+
+
+def _decl_go_zero_value(ctx: EmitContext, resolved_type: str, name: str = "") -> str:
+    if _is_container_resolved_type(resolved_type) and not _prefer_value_container_local(ctx, name, resolved_type):
+        if resolved_type == "list" or resolved_type.startswith("list["):
+            return _go_ref_container_ctor(ctx, resolved_type, "[]")
+        if resolved_type == "dict" or resolved_type.startswith("dict["):
+            return _go_ref_container_ctor(ctx, resolved_type, "{}")
+        if resolved_type == "set" or resolved_type.startswith("set["):
+            return _go_ref_container_ctor(ctx, resolved_type, "{}")
+    return go_zero_value(resolved_type)
+
+
+def _go_ref_container_ctor(ctx: EmitContext, resolved_type: str, literal_suffix: str) -> str:
+    if resolved_type == "list":
+        if literal_suffix == "[]":
+            return "NewPyList[any]()"
+        return "PyListFromSlice[any]([]any{})"
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        elem_gt = _go_type_with_ctx(ctx, inner)
+        if literal_suffix == "[]":
+            return "NewPyList[" + elem_gt + "]()"
+        return "PyListFromSlice[" + elem_gt + "]([]" + elem_gt + literal_suffix + ")"
+    if resolved_type == "dict":
+        if literal_suffix == "{}":
+            return "NewPyDict[string, any]()"
+        return "PyDictFromMap[string, any](map[string]any{})"
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        inner2 = resolved_type[5:-1]
+        parts = _split_generic_args(inner2)
+        if len(parts) == 2:
+            key_gt = _go_type_with_ctx(ctx, parts[0])
+            val_gt = _go_type_with_ctx(ctx, parts[1])
+            if literal_suffix == "{}":
+                return "NewPyDict[" + key_gt + ", " + val_gt + "]()"
+            return "PyDictFromMap[" + key_gt + ", " + val_gt + "](map[" + key_gt + "]" + val_gt + literal_suffix + ")"
+    if resolved_type == "set":
+        if literal_suffix == "{}":
+            return "NewPySet[any]()"
+        return "PySetFromMap[any](map[any]struct{}{})"
+    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+        inner3 = resolved_type[4:-1]
+        elem_gt2 = _go_type_with_ctx(ctx, inner3)
+        if literal_suffix == "{}":
+            return "NewPySet[" + elem_gt2 + "]()"
+        return "PySetFromMap[" + elem_gt2 + "](map[" + elem_gt2 + "]struct{}" + literal_suffix + ")"
+    return go_zero_value(resolved_type)
+
+
+def _wrap_ref_container_value_code(ctx: EmitContext, value_code: str, resolved_type: str) -> str:
+    if value_code.startswith("NewPyList[") or value_code.startswith("PyListFromSlice["):
+        return value_code
+    if value_code.startswith("NewPyDict[") or value_code.startswith("PyDictFromMap["):
+        return value_code
+    if value_code.startswith("NewPySet[") or value_code.startswith("PySetFromMap["):
+        return value_code
+    if resolved_type == "list":
+        return "PyListFromSlice[any](" + value_code + ")"
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        elem_gt = _go_type_with_ctx(ctx, inner)
+        return "PyListFromSlice[" + elem_gt + "](" + value_code + ")"
+    if resolved_type == "dict":
+        return "PyDictFromMap[string, any](" + value_code + ")"
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        inner2 = resolved_type[5:-1]
+        parts = _split_generic_args(inner2)
+        if len(parts) == 2:
+            key_gt = _go_type_with_ctx(ctx, parts[0])
+            val_gt = _go_type_with_ctx(ctx, parts[1])
+            return "PyDictFromMap[" + key_gt + ", " + val_gt + "](" + value_code + ")"
+    if resolved_type == "set":
+        return "PySetFromMap[any](" + value_code + ")"
+    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+        inner3 = resolved_type[4:-1]
+        elem_gt2 = _go_type_with_ctx(ctx, inner3)
+        return "PySetFromMap[" + elem_gt2 + "](" + value_code + ")"
+    return value_code
 
 
 def _go_symbol_name(ctx: EmitContext, name: str) -> str:
@@ -2175,12 +2348,15 @@ def _emit_list_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     rt = _str(node, "resolved_type")
     gt = go_type(rt)
     parts = [_emit_expr(ctx, e) for e in elements]
-    return gt + "{" + ", ".join(parts) + "}"
+    literal = gt + "{" + ", ".join(parts) + "}"
+    if _is_container_resolved_type(rt):
+        return _go_ref_container_ctor(ctx, rt, "{" + ", ".join(parts) + "}")
+    return literal
 
 
 def _emit_dict_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     rt = _str(node, "resolved_type")
-    gt = _go_signature_type(ctx, rt)
+    gt = go_type(rt)
     parts: list[str] = []
     key_type = ""
     val_type = ""
@@ -2223,7 +2399,10 @@ def _emit_dict_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     v = _wrap_optional_value_code(ctx, v, val_type, value_node2)
             parts.append(k + ": " + v)
 
-    return gt + "{" + ", ".join(parts) + "}"
+    literal = gt + "{" + ", ".join(parts) + "}"
+    if _is_container_resolved_type(rt):
+        return _go_ref_container_ctor(ctx, rt, "{" + ", ".join(parts) + "}")
+    return literal
 
 
 def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -2231,7 +2410,10 @@ def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     parts = [_emit_expr(ctx, e) + ": {}" for e in elements]
     rt = _str(node, "resolved_type")
     gt = go_type(rt)
-    return gt + "{" + ", ".join(parts) + "}"
+    literal = gt + "{" + ", ".join(parts) + "}"
+    if _is_container_resolved_type(rt):
+        return _go_ref_container_ctor(ctx, rt, "{" + ", ".join(parts) + "}")
+    return literal
 
 
 def _emit_tuple_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -2723,6 +2905,8 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if value is not None:
         val_code = _emit_expr(ctx, value)
         val_code = _maybe_coerce_expr_to_type(ctx, value, val_code, rt)
+        if _is_container_resolved_type(rt) and not _prefer_value_container_local(ctx, name, rt):
+            val_code = _wrap_ref_container_value_code(ctx, val_code, rt)
         if not declare_new:
             _emit(ctx, name + " = " + val_code)
         else:
@@ -2734,7 +2918,7 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 _emit(ctx, name + " := " + val_code)
     else:
         if declare_new:
-            _emit(ctx, "var " + name + " " + gt)
+            _emit(ctx, "var " + name + " " + gt + " = " + _decl_go_zero_value(ctx, rt, name))
     if is_suppressed_unused and name != "_" and not at_module_scope:
         _emit(ctx, "_ = " + name)
 
@@ -2795,6 +2979,8 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                                 decl_type = tuple_args[idx_value]
                 decl_type = _prefer_value_type_for_none_decl(decl_type, value)
                 val_code = _maybe_coerce_expr_to_type(ctx, value, val_code, decl_type)
+                if _is_container_resolved_type(decl_type) and not _prefer_value_container_local(ctx, gn, decl_type):
+                    val_code = _wrap_ref_container_value_code(ctx, val_code, decl_type)
                 if (
                     isinstance(value, dict)
                     and _str(value, "kind") == "Name"
@@ -2804,15 +2990,18 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     source_type = ctx.var_types.get(source_name, _str(value, "resolved_type"))
                     if source_name != "" and source_type.startswith("list["):
                         ctx.var_types[gn] = decl_type
-                        ctx.list_alias_vars.add(gn)
-                        _emit(ctx, gn + " := &" + source_name)
+                        if _prefer_value_container_local(ctx, gn, decl_type):
+                            ctx.list_alias_vars.add(gn)
+                            _emit(ctx, gn + " := &" + source_name)
+                        else:
+                            _emit(ctx, "var " + gn + " " + _decl_go_type(ctx, decl_type, gn) + " = " + source_name)
                         if is_unused:
                             _emit(ctx, "_ = " + gn)
                         if gn.startswith("_") and gn != "_":
                             _emit(ctx, "_ = " + gn)
                         return
                 ctx.var_types[gn] = decl_type
-                gt = _go_signature_type(ctx, decl_type)
+                gt = _decl_go_type(ctx, decl_type, gn)
                 if gt != "":
                     _emit(ctx, "var " + gn + " " + gt + " = " + val_code)
                 else:
@@ -3239,6 +3428,8 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     # Build params
     params: list[str] = []
     saved_vars = dict(ctx.var_types)
+    saved_scope = ctx.current_function_scope
+    saved_scope_locals = set(ctx.current_value_container_locals)
     for a in arg_order:
         a_str = a if isinstance(a, str) else ""
         if a_str == "self":
@@ -3277,6 +3468,9 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     saved_ret = ctx.current_return_type
     ctx.current_return_type = return_type
+    owner_name = ctx.current_class if ctx.current_class != "" and not is_staticmethod else ""
+    ctx.current_function_scope = _scope_key(ctx, name, owner_name)
+    ctx.current_value_container_locals = _container_value_locals_for_scope(ctx, name, owner_name)
     ctx.indent_level += 1
     _emit_body(ctx, body)
     if not mutated_return and return_type != "None" and len(body) > 0:
@@ -3292,6 +3486,8 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     ctx.var_types = saved_vars
     ctx.current_return_type = saved_ret
+    ctx.current_function_scope = saved_scope
+    ctx.current_value_container_locals = saved_scope_locals
 
 
 def _closure_signature_parts(
@@ -3345,6 +3541,8 @@ def _emit_closure_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     return_type = _str(node, "return_type")
     safe_name = _go_symbol_name(ctx, name)
     params, ret_clause, saved_vars = _closure_signature_parts(ctx, node)
+    saved_scope = ctx.current_function_scope
+    saved_scope_locals = set(ctx.current_value_container_locals)
     closure_type = "func(" + ", ".join(params) + ")" + ret_clause
     is_recursive = _bool(node, "is_recursive")
     if is_recursive:
@@ -3354,6 +3552,9 @@ def _emit_closure_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, safe_name + " := func(" + ", ".join(params) + ")" + ret_clause + " {")
     saved_ret = ctx.current_return_type
     ctx.current_return_type = return_type
+    owner_name = ctx.current_class if ctx.current_class != "" else ""
+    ctx.current_function_scope = _scope_key(ctx, name, owner_name)
+    ctx.current_value_container_locals = _container_value_locals_for_scope(ctx, name, owner_name)
     ctx.indent_level += 1
     _emit_body(ctx, body)
     if return_type != "None" and len(body) > 0:
@@ -3366,6 +3567,8 @@ def _emit_closure_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     ctx.var_types = saved_vars
     ctx.var_types[safe_name] = _closure_callable_resolved_type(node)
     ctx.current_return_type = saved_ret
+    ctx.current_function_scope = saved_scope
+    ctx.current_value_container_locals = saved_scope_locals
 
 
 def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -3687,9 +3890,9 @@ def _emit_var_decl(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, "var " + gn + " any")
         _emit(ctx, "_ = " + gn)
         return
-    gt = go_type(rt)
+    gt = _decl_go_type(ctx, rt, name)
     ctx.var_types[gn] = rt
-    _emit(ctx, "var " + gn + " " + gt)
+    _emit(ctx, "var " + gn + " " + gt + " = " + _decl_go_zero_value(ctx, rt, name))
     _emit(ctx, "_ = " + gn)
 
 
@@ -4235,6 +4438,8 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
     emit_ctx_meta = _dict(meta, "emit_context")
     if emit_ctx_meta:
         module_id = _str(emit_ctx_meta, "module_id")
+    if module_id == "":
+        module_id = _str(meta, "module_id")
 
     lp = _dict(meta, "linked_program_v1")
     if module_id == "" and lp:
@@ -4257,6 +4462,7 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         is_entry=_bool(emit_ctx_meta, "is_entry") if emit_ctx_meta else False,
         mapping=mapping,
     )
+    ctx.container_value_locals_by_scope = _load_container_value_locals(lp)
 
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")
