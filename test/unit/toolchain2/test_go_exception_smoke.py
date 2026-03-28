@@ -322,11 +322,10 @@ class GoExceptionSmokeTests(unittest.TestCase):
         stdout = _run_go(BARE_RERAISE_FIXTURE_SOURCE)
         self.assertEqual(stdout, "boom\n")
 
-    def test_go_finally_fixture_runs_before_unhandled_rethrow(self) -> None:
+    def test_go_finally_fixture_runs_before_outer_catch(self) -> None:
         run = _run_go_process(FINALLY_ORDER_FIXTURE_SOURCE)
-        self.assertNotEqual(run.returncode, 0)
-        self.assertEqual(run.stdout, "cleanup\n")
-        self.assertIn("boom", run.stderr)
+        self.assertEqual(run.returncode, 0)
+        self.assertEqual(run.stdout, "cleanup\ncaught\n")
 
 
 if __name__ == "__main__":

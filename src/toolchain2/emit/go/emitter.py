@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 
+from pytra.typing import cast
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
@@ -424,17 +425,47 @@ def _assign_uses_ref_container_decl(
 
 
 def _wrapper_container_storage_expr(ctx: EmitContext, node: JsonVal, rendered: str) -> str:
+    if rendered.startswith("py_items("):
+        return rendered
+    if rendered.startswith("NewPyList[") or rendered.startswith("PyListFromSlice["):
+        return rendered + ".items"
+    if rendered.startswith("NewPyDict[") or rendered.startswith("PyDictFromMap["):
+        return rendered + ".items"
+    if rendered.startswith("NewPySet[") or rendered.startswith("PySetFromMap["):
+        return rendered + ".items"
     if not isinstance(node, dict):
         return rendered
+    node_rt = _str(node, "resolved_type")
+    if _str(node, "kind") == "Call":
+        if node_rt.startswith("list[") or node_rt == "list":
+            return rendered + ".items"
+        if node_rt.startswith("dict[") or node_rt == "dict":
+            return rendered + ".items"
+        if node_rt.startswith("set[") or node_rt == "set":
+            return rendered + ".items"
+    if _str(node, "kind") == "Attribute":
+        if node_rt.startswith("list[") or node_rt == "list":
+            return rendered + ".items"
+        if node_rt.startswith("dict[") or node_rt == "dict":
+            return rendered + ".items"
+        if node_rt.startswith("set[") or node_rt == "set":
+            return rendered + ".items"
     if _str(node, "kind") != "Name":
         return rendered
     name = _str(node, "id")
     if name == "":
         return rendered
     safe_name = _go_symbol_name(ctx, name)
-    if safe_name not in ctx.ref_container_locals:
-        return rendered
     scope_type = ctx.var_types.get(safe_name, "")
+    if (
+        safe_name not in ctx.ref_container_locals
+        and not (
+            scope_type != ""
+            and _is_container_resolved_type(scope_type)
+            and not _prefer_value_container_local(ctx, name, scope_type)
+        )
+    ):
+        return rendered
     if scope_type.startswith("list[") or scope_type == "list":
         return rendered + ".items"
     if scope_type.startswith("dict[") or scope_type == "dict":
@@ -442,6 +473,30 @@ def _wrapper_container_storage_expr(ctx: EmitContext, node: JsonVal, rendered: s
     if scope_type.startswith("set[") or scope_type == "set":
         return rendered + ".items"
     return rendered
+
+
+def _is_wrapper_container_expr(ctx: EmitContext, node: JsonVal, rendered: str) -> bool:
+    if rendered.startswith("NewPyList[") or rendered.startswith("PyListFromSlice["):
+        return True
+    if rendered.startswith("NewPyDict[") or rendered.startswith("PyDictFromMap["):
+        return True
+    if rendered.startswith("NewPySet[") or rendered.startswith("PySetFromMap["):
+        return True
+    if not isinstance(node, dict):
+        return False
+    kind = _str(node, "kind")
+    if kind == "Attribute":
+        return _is_container_resolved_type(_str(node, "resolved_type"))
+    if kind != "Name":
+        return False
+    name = _str(node, "id")
+    if name == "":
+        return False
+    safe_name = _go_symbol_name(ctx, name)
+    scope_type = ctx.var_types.get(safe_name, "")
+    if not _is_container_resolved_type(scope_type):
+        return False
+    return not _prefer_value_container_local(ctx, name, scope_type)
 
 
 def _go_symbol_name(ctx: EmitContext, name: str) -> str:
@@ -651,6 +706,8 @@ def _is_trait_class(node: dict[str, JsonVal]) -> bool:
 
 
 def _go_signature_type(ctx: EmitContext, resolved_type: str) -> str:
+    if _is_container_resolved_type(resolved_type):
+        return _go_ref_container_type(ctx, resolved_type)
     if resolved_type in ctx.trait_names:
         return _go_symbol_name(ctx, resolved_type)
     if _is_polymorphic_class(ctx, resolved_type):
@@ -939,6 +996,8 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "__pytra_main"
     safe_name = _go_symbol_name(ctx, name)
     resolved_type = _str(node, "resolved_type")
+    if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
+        return safe_name
     scope_type = ctx.var_types.get(safe_name, "")
     if (
         resolved_type != ""
@@ -1221,12 +1280,18 @@ def _emit_unbox(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(value_node, dict) and _str(value_node, "kind") == "Call" and source_type in ("", "unknown") and target_gt != "" and target_gt != "any":
         return _emit_expr(ctx, value_node)
     if isinstance(value_node, dict) and _str(value_node, "resolved_type") == target_type:
-        return _emit_expr(ctx, value_node)
+        rendered0 = _emit_expr(ctx, value_node)
+        if _is_container_resolved_type(target_type):
+            return _wrapper_container_storage_expr(ctx, value_node, rendered0)
+        return rendered0
     if isinstance(value_node, dict) and _str(value_node, "kind") == "Name":
         scope_name = _go_symbol_name(ctx, _str(value_node, "id"))
         scope_type = ctx.var_types.get(scope_name, "")
         if scope_type == target_type or (scope_type != "" and go_type(scope_type) == target_gt):
-            return _emit_expr(ctx, value_node)
+            rendered1 = _emit_expr(ctx, value_node)
+            if _is_container_resolved_type(target_type):
+                return _wrapper_container_storage_expr(ctx, value_node, rendered1)
+            return rendered1
     if target_gt == "any":
         return _emit_expr(ctx, value_node)
     if target_gt != "" and target_gt != "any" and source_gt == target_gt:
@@ -1323,6 +1388,7 @@ def _box_value_code(ctx: EmitContext, value_node: JsonVal, target_type: str) -> 
             parts = [_box_value_code(ctx, elem, inner) for elem in elems]
             return "[]" + inner_gt + "{" + ", ".join(parts) + "}"
         src = _emit_expr(ctx, value_node)
+        src = _wrapper_container_storage_expr(ctx, value_node, src)
         out_name = _next_temp(ctx, "boxed_list")
         elem_name = _next_temp(ctx, "boxed_item")
         return (
@@ -1364,6 +1430,7 @@ def _box_value_code(ctx: EmitContext, value_node: JsonVal, target_type: str) -> 
                         )
                     return "map[" + key_gt + "]" + val_gt + "{" + ", ".join(rendered_entries) + "}"
             src = _emit_expr(ctx, value_node)
+            src = _wrapper_container_storage_expr(ctx, value_node, src)
             out_name = _next_temp(ctx, "boxed_dict")
             key_name = _next_temp(ctx, "boxed_key")
             val_name = _next_temp(ctx, "boxed_val")
@@ -1641,6 +1708,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             # str methods → runtime helper functions
             if attr in _STR_METHOD_HELPERS and owner_rt == "str":
                 helper_args = [owner] + call_arg_strs
+                if attr == "join" and len(args) >= 1 and isinstance(args[0], dict) and len(helper_args) >= 2:
+                    helper_args[1] = _wrapper_container_storage_expr(ctx, args[0], helper_args[1])
                 return _STR_METHOD_HELPERS[attr] + "(" + ", ".join(helper_args) + ")"
             # dict.get → py_dict_get
             if attr == "get" and len(arg_strs) >= 1:
@@ -1677,9 +1746,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     if idx < len(sig_order):
                         expected_type = sig_types.get(sig_order[idx], "")
                     if expected_type != "" and isinstance(arg_node, dict):
-                        arg_code = _wrapper_container_storage_expr(ctx, arg_node, arg_code)
-                    if expected_type != "" and isinstance(arg_node, dict):
                         actual_type = _effective_resolved_type(ctx, arg_node)
+                        if _is_container_resolved_type(expected_type):
+                            if not _is_wrapper_container_expr(ctx, arg_node, arg_code):
+                                arg_code = _wrap_ref_container_value_code(ctx, arg_code, expected_type)
+                            adjusted_args.append(arg_code)
+                            continue
                         if go_type(actual_type) == go_type(expected_type):
                             adjusted_args.append(arg_code)
                             continue
@@ -1693,9 +1765,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         kw_code = _emit_expr(ctx, kw_node)
                         expected_type2 = sig_types.get(kw_name, "")
                         if expected_type2 != "" and isinstance(kw_node, dict):
-                            kw_code = _wrapper_container_storage_expr(ctx, kw_node, kw_code)
-                        if expected_type2 != "" and isinstance(kw_node, dict):
                             actual_type2 = _effective_resolved_type(ctx, kw_node)
+                            if _is_container_resolved_type(expected_type2):
+                                if not _is_wrapper_container_expr(ctx, kw_node, kw_code):
+                                    kw_code = _wrap_ref_container_value_code(ctx, kw_code, expected_type2)
+                                adjusted_args.append(kw_code)
+                                continue
                             if go_type(actual_type2) == go_type(expected_type2):
                                 adjusted_args.append(kw_code)
                                 continue
@@ -1812,17 +1887,21 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return arg_strs[0]
                 return "nil"
             if fn_name in _STR_METHOD_HELPERS and len(call_arg_strs) >= 1:
-                return _STR_METHOD_HELPERS[fn_name] + "(" + ", ".join(call_arg_strs) + ")"
+                helper_args2 = list(call_arg_strs)
+                if fn_name == "join" and len(args) >= 2 and isinstance(args[1], dict) and len(helper_args2) >= 2:
+                    helper_args2[1] = _wrapper_container_storage_expr(ctx, args[1], helper_args2[1])
+                return _STR_METHOD_HELPERS[fn_name] + "(" + ", ".join(helper_args2) + ")"
             if fn_name == "str" and len(call_arg_strs) >= 1:
                 return "py_str(" + call_arg_strs[0] + ")"
             if fn_name == "len" and len(call_arg_strs) >= 1:
                 arg0 = args[0] if isinstance(args[0], dict) else None
                 arg0_rt = _str(arg0, "resolved_type") if isinstance(arg0, dict) else ""
+                arg0_code = _wrapper_container_storage_expr(ctx, arg0, call_arg_strs[0])
                 if arg0_rt.startswith("list[") or arg0_rt.startswith("dict[") or arg0_rt.startswith("set["):
-                    return "int64(len(" + call_arg_strs[0] + "))"
+                    return "int64(len(" + arg0_code + "))"
                 if arg0_rt in ("str", "bytes", "bytearray"):
-                    return "int64(len(" + call_arg_strs[0] + "))"
-                return "int64(" + call_arg_strs[0] + ".__len__())"
+                    return "int64(len(" + arg0_code + "))"
+                return "int64(" + arg0_code + ".__len__())"
             if fn_name == "print":
                 return "py_print(" + ", ".join(call_arg_strs) + ")"
             if fn_name in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"):
@@ -1847,10 +1926,26 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return _safe_go_ident(runtime_symbol) + "(" + ", ".join(call_arg_strs) + ")"
             # Imported/declared class constructor: Path(...) → NewPath(...)
             if _str(func, "resolved_type") == "type" or (fn_name in ctx.import_alias_modules and fn_name[:1].isupper()):
-                return "New" + _go_symbol_name(ctx, fn_name) + "(" + ", ".join(call_arg_strs) + ")"
+                ctor_args: list[str] = []
+                for idx, arg_node in enumerate(args):
+                    arg_code = call_arg_strs[idx] if idx < len(call_arg_strs) else ""
+                    if isinstance(arg_node, dict):
+                        arg_type = _effective_resolved_type(ctx, arg_node)
+                        if _is_container_resolved_type(arg_type) and not _is_wrapper_container_expr(ctx, arg_node, arg_code):
+                            arg_code = _wrap_ref_container_value_code(ctx, arg_code, arg_type)
+                    ctor_args.append(arg_code)
+                return "New" + _go_symbol_name(ctx, fn_name) + "(" + ", ".join(ctor_args) + ")"
             # Class constructor: ClassName(...) → NewClassName(...)
             if fn_name in ctx.class_names:
-                return "New" + _go_symbol_name(ctx, fn_name) + "(" + ", ".join(call_arg_strs) + ")"
+                ctor_args2: list[str] = []
+                for idx, arg_node in enumerate(args):
+                    arg_code = call_arg_strs[idx] if idx < len(call_arg_strs) else ""
+                    if isinstance(arg_node, dict):
+                        arg_type = _effective_resolved_type(ctx, arg_node)
+                        if _is_container_resolved_type(arg_type) and not _is_wrapper_container_expr(ctx, arg_node, arg_code):
+                            arg_code = _wrap_ref_container_value_code(ctx, arg_code, arg_type)
+                    ctor_args2.append(arg_code)
+                return "New" + _go_symbol_name(ctx, fn_name) + "(" + ", ".join(ctor_args2) + ")"
             # Imported runtime function: add prefix only if not already prefixed
             if fn_name in ctx.runtime_imports:
                 return _safe_go_ident(ctx.runtime_imports[fn_name]) + "(" + ", ".join(call_arg_strs) + ")"
@@ -1943,16 +2038,17 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if len(arg_strs) >= 1:
             arg0 = args[0] if isinstance(args[0], dict) else None
             arg0_rt = _str(arg0, "resolved_type") if isinstance(arg0, dict) else ""
+            arg0_code = _wrapper_container_storage_expr(ctx, arg0, arg_strs[0])
             if isinstance(arg0, dict) and _str(arg0, "kind") == "Name":
                 arg0_name = _safe_go_ident(_str(arg0, "id"))
                 scope_type = ctx.var_types.get(arg0_name, "")
                 if scope_type != "" and arg0_rt in ("", "unknown"):
                     arg0_rt = scope_type
             if arg0_rt.startswith("list[") or arg0_rt.startswith("dict[") or arg0_rt.startswith("set["):
-                return "int64(len(" + arg_strs[0] + "))"
+                return "int64(len(" + arg0_code + "))"
             if arg0_rt in ("str", "bytes", "bytearray"):
-                return "int64(len(" + arg_strs[0] + "))"
-            return "int64(" + arg_strs[0] + ".__len__())"
+                return "int64(len(" + arg0_code + "))"
+            return "int64(" + arg0_code + ".__len__())"
 
     # Container constructors: bytes(N)/bytearray(N) → make([]byte, N)
     if dispatch == "__MAKE_BYTES__":
@@ -2628,9 +2724,9 @@ def _emit_lambda(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         a_name = a if isinstance(a, str) else ""
         a_type = arg_types.get(a_name, "")
         a_type_str = a_type if isinstance(a_type, str) else ""
-        params.append(_safe_go_ident(a_name) + " " + go_type(a_type_str))
+        params.append(_safe_go_ident(a_name) + " " + _go_signature_type(ctx, a_type_str))
 
-    return_type = go_type(rt)
+    return_type = _go_signature_type(ctx, rt)
     body_expr = _emit_expr(ctx, body)
     ret_clause = " " + return_type if return_type != "" else ""
     return "func(" + ", ".join(params) + ")" + ret_clause + " { return " + body_expr + " }"
@@ -3291,8 +3387,6 @@ def _emit_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, "return " + ", ".join(parts))
             return
         value_code = _emit_expr(ctx, value)
-        if _is_container_resolved_type(ctx.current_return_type):
-            value_code = _wrapper_container_storage_expr(ctx, value, value_code)
         if isinstance(value, dict) and _str(value, "kind") == "Name":
             scope_name = _go_symbol_name(ctx, _str(value, "id"))
             scope_type = ctx.var_types.get(scope_name, "")
@@ -3407,6 +3501,7 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 # Collection iterator: for _, item := range collection
                 iter_expr = iter_plan.get("iter_expr")
                 iter_code = _emit_expr(ctx, iter_expr) if iter_expr is not None else "nil"
+                iter_code = _wrapper_container_storage_expr(ctx, iter_expr, iter_code)
                 # Detect byte slice iteration → cast to int64
                 iter_rt = _str(iter_expr, "resolved_type") if isinstance(iter_expr, dict) else ""
                 if iter_rt in ("bytearray", "bytes", "list[uint8]"):
@@ -3642,6 +3737,8 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         if isinstance(last_stmt, dict) and _str(last_stmt, "kind") == "While":
             _emit(ctx, "panic(\"unreachable\")")
             _emit(ctx, "return " + go_zero_value(return_type))
+    if return_type == "Exception":
+        _emit(ctx, "return nil")
     if mutated_return:
         _emit(ctx, "return " + _safe_go_ident(mutated_arg_name))
     ctx.indent_level -= 1
@@ -3895,7 +3992,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     elif base != "" and base not in ("object", "Exception", "BaseException"):
         _emit(ctx, _go_symbol_name(ctx, base))  # embed base
     for fname, ftype in fields:
-        _emit(ctx, _safe_go_ident(fname) + " " + _go_type_with_ctx(ctx, ftype))
+        _emit(ctx, _safe_go_ident(fname) + " " + _go_signature_type(ctx, ftype))
     ctx.indent_level -= 1
     _emit(ctx, "}")
     _emit_blank(ctx)
@@ -3909,7 +4006,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         default_code = go_zero_value(var_type)
         if isinstance(default_node, dict):
             default_code = _emit_expr(ctx, default_node)
-        _emit(ctx, "var " + _safe_go_ident(name + "_" + var_name) + " " + _go_type_with_ctx(ctx, var_type) + " = " + default_code)
+        _emit(ctx, "var " + _safe_go_ident(name + "_" + var_name) + " " + _go_signature_type(ctx, var_type) + " = " + default_code)
     if len(class_vars) > 0:
         _emit_blank(ctx)
 
@@ -3945,7 +4042,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     for i, (fname, ftype) in enumerate(ctor_params):
         if i >= first_default_index:
             break
-        ctor_sig_parts.append(_safe_go_ident(fname) + " " + _go_type_with_ctx(ctx, ftype))
+        ctor_sig_parts.append(_safe_go_ident(fname) + " " + _go_signature_type(ctx, ftype))
     if first_default_index < len(ctor_params):
         ctor_sig_parts.append("__opt_args ...any")
 
@@ -3998,7 +4095,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if isinstance(default_node, dict):
                     default_code = _dataclass_default_code(ctx, default_node, ftype)
                 local_name = _safe_go_ident(fname)
-                _emit(ctx, "var " + local_name + " " + _go_type_with_ctx(ctx, ftype) + " = " + default_code)
+                _emit(ctx, "var " + local_name + " " + _go_signature_type(ctx, ftype) + " = " + default_code)
                 opt_index = i - first_default_index
                 _emit(ctx, "if len(__opt_args) > " + str(opt_index) + " {")
                 ctx.indent_level += 1
@@ -4374,6 +4471,8 @@ def _error_return_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     value = node.get("value")
     if isinstance(value, dict):
         return "pytraEnsureRecoveredError(" + _emit_expr(ctx, value) + ")"
+    if ctx.current_exception_var != "":
+        return ctx.current_exception_var
     return "pytraNewRuntimeError(\"raise\")"
 
 
@@ -4434,7 +4533,14 @@ def _emit_error_check(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         _emit_assign(ctx, assign_node)
 
 
-def _emit_error_handlers(ctx: EmitContext, err_name: str, handlers: list[JsonVal]) -> None:
+def _emit_error_handlers(
+    ctx: EmitContext,
+    err_name: str,
+    handlers: list[JsonVal],
+    result_sink: str = "",
+    *,
+    defer_context: bool = False,
+) -> None:
     first = True
     for handler in handlers:
         if not isinstance(handler, dict):
@@ -4450,8 +4556,29 @@ def _emit_error_handlers(ctx: EmitContext, err_name: str, handlers: list[JsonVal
             saved_type = ctx.var_types.get(safe_name, "")
             _emit(ctx, safe_name + " := " + err_name)
             ctx.var_types[safe_name] = "*PytraErrorCarrier"
-        _emit_body(ctx, _list(handler, "body"))
-        _emit(ctx, "return")
+            _emit(ctx, "_ = " + safe_name)
+        handler_body = _list(handler, "body")
+        saved_exc_var = ctx.current_exception_var
+        ctx.current_exception_var = err_name
+        if (
+            len(handler_body) == 1
+            and isinstance(handler_body[0], dict)
+            and _str(handler_body[0], "kind") == "ErrorReturn"
+        ):
+            err_expr = _error_return_expr(ctx, cast(dict[str, JsonVal], handler_body[0]))
+            if result_sink != "":
+                _emit(ctx, result_sink + " = " + err_expr)
+                if defer_context:
+                    _emit(ctx, "return")
+                else:
+                    _emit(ctx, "return " + result_sink)
+            else:
+                _emit(ctx, "panic(" + err_expr + ")")
+            ctx.current_exception_var = saved_exc_var
+        else:
+            _emit_body(ctx, handler_body)
+            ctx.current_exception_var = saved_exc_var
+            _emit(ctx, "return")
         if handler_name != "":
             safe_name2 = _safe_go_ident(handler_name)
             if saved_type != "":
@@ -4464,9 +4591,16 @@ def _emit_error_handlers(ctx: EmitContext, err_name: str, handlers: list[JsonVal
 
 
 def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
-    _emit(ctx, "func() {")
+    if ctx.current_return_type == "Exception":
+        _emit(ctx, "return func() *PytraErrorCarrier {")
+    else:
+        _emit(ctx, "func() {")
     ctx.indent_level += 1
     finalbody = _list(node, "finalbody")
+    catch_result = ""
+    if ctx.current_return_type == "Exception":
+        catch_result = _next_temp(ctx, "catch_result")
+        _emit(ctx, "var " + catch_result + " *PytraErrorCarrier = nil")
     if len(finalbody) > 0:
         _emit(ctx, "defer func() {")
         ctx.indent_level += 1
@@ -4474,6 +4608,21 @@ def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         ctx.indent_level -= 1
         _emit(ctx, "}()")
     handlers = _list(node, "handlers")
+    if len(handlers) > 0:
+        recovered_name = _next_temp(ctx, "recovered")
+        err_name = _next_temp(ctx, "err")
+        _emit(ctx, "defer func() {")
+        ctx.indent_level += 1
+        _emit(ctx, recovered_name + " := recover()")
+        _emit(ctx, "if " + recovered_name + " == nil {")
+        ctx.indent_level += 1
+        _emit(ctx, "return")
+        ctx.indent_level -= 1
+        _emit(ctx, "}")
+        _emit(ctx, err_name + " := pytraEnsureRecoveredError(" + recovered_name + ")")
+        _emit_error_handlers(ctx, err_name, handlers, catch_result, defer_context=True)
+        ctx.indent_level -= 1
+        _emit(ctx, "}()")
     for stmt in _list(node, "body"):
         if isinstance(stmt, dict) and _str(stmt, "kind") == "ErrorCheck" and _str(stmt, "on_error") == "catch":
             call_node = stmt.get("call")
@@ -4490,7 +4639,7 @@ def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 _emit(ctx, ok_tmp + ", " + err_tmp + " := " + call_code)
             _emit(ctx, "if " + err_tmp + " != nil {")
             ctx.indent_level += 1
-            _emit_error_handlers(ctx, err_tmp, handlers)
+            _emit_error_handlers(ctx, err_tmp, handlers, catch_result, defer_context=False)
             ctx.indent_level -= 1
             _emit(ctx, "}")
             if ok_target is not None and ok_type not in ("", "None"):
@@ -4506,11 +4655,18 @@ def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         if isinstance(stmt, dict) and _str(stmt, "kind") == "ErrorReturn":
             err_tmp2 = _next_temp(ctx, "err")
             _emit(ctx, err_tmp2 + " := " + _error_return_expr(ctx, stmt))
-            _emit_error_handlers(ctx, err_tmp2, handlers)
+            _emit_error_handlers(ctx, err_tmp2, handlers, catch_result, defer_context=False)
             continue
         _emit_stmt(ctx, stmt)
+    if catch_result != "":
+        _emit(ctx, "return " + catch_result)
+    elif ctx.current_return_type == "Exception":
+        _emit(ctx, "return nil")
     ctx.indent_level -= 1
-    _emit(ctx, "}()")
+    if ctx.current_return_type == "Exception":
+        _emit(ctx, "}()")
+    else:
+        _emit(ctx, "}()")
 
 
 def _emit_raise(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
