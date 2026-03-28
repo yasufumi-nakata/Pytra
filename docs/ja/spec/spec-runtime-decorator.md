@@ -34,6 +34,7 @@
 ### 3.1 クラス宣言
 
 ```python
+# 手書き runtime に実装がある例（list.append は各言語の runtime に手書き）
 @runtime("pytra.core")
 class list(Generic[T]):
     def append(self, x: T) -> None: ...
@@ -41,18 +42,32 @@ class list(Generic[T]):
     def pop(self, index: int = -1) -> T: ...
     def sort(self) -> None: ...
     def clear(self) -> None: ...
+
+# pure Python に本体がある例（Path は src/pytra/std/pathlib.py にある）
+@runtime("pytra.std.pathlib")
+class Path:
+    def __init__(self, value: str) -> None: ...
+    def read_text(self) -> str: ...
+    def write_text(self, content: str) -> None: ...
+    def __truediv__(self, rhs: str) -> Path: ...
 ```
 
-- `@runtime("pytra.core")` の引数は namespace。class名と合わせて module が決まる（`pytra.core.list`）
-- クラス内のメソッドは全て runtime 実装。個別にデコレータを付ける必要はない
+- `@runtime("namespace")` の引数は namespace。class名と合わせて module が決まる（`pytra.core.list`、`pytra.std.pathlib.Path`）
+- クラス内のメソッドは全て runtime 側に存在する。個別にデコレータを付ける必要はない
 - メソッドの symbol は `class名.メソッド名` から自動導出（`list.append`）
 - tag は `stdlib.method.メソッド名` から自動導出（`stdlib.method.append`）
 - runtime 関数名の変換（`list.append` → `py_list_append_mut` 等）は mapping.json の責務
-- 本体は `...`（シグネチャのみ）。実装は `src/pytra/` の pure Python 本体、または各言語の runtime
+- 本体は `...`（シグネチャのみ）
+- **実装が手書き runtime にあるか、pure Python（パイプライン自動変換）にあるかは区別しない。** resolve と emitter にとっては同じ扱い。ビルド時にどちらのファイルが使われるかは linker / build system の責務
 
 ### 3.2 関数宣言
 
 ```python
+# 手書き runtime の例
+@runtime("pytra.built_in.io_ops")
+def len(x: object) -> int: ...
+
+# pure Python 本体がある例
 @runtime("pytra.built_in.sequence")
 def py_range(start: int, stop: int, step: int) -> list[int]: ...
 ```
@@ -60,6 +75,7 @@ def py_range(start: int, stop: int, step: int) -> list[int]: ...
 - namespace + 関数名で module が決まる（`pytra.built_in.sequence.py_range`）
 - symbol は関数名から自動導出（`py_range`）
 - 本体は `...`（シグネチャのみ）
+- クラスと同様、手書き runtime か pure Python かは区別しない
 
 ### 3.3 自動導出ルール
 
