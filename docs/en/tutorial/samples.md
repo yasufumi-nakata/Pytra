@@ -103,3 +103,8 @@ For full benchmarks across all languages and samples, see the [detailed sample l
 ## Source Code
 
 All Python sources are in `sample/py/`. Transpiled results are in `sample/cpp/`, `sample/go/`, `sample/rs/`, etc.
+
+## Related specifications
+
+- [User specification](../spec/spec-user.md) — Build option details
+- [Available modules](./modules.md) — Guide to pytra.std.* modules used in the samples

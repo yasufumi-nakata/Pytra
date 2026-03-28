@@ -62,39 +62,7 @@ For all languages, multi-file output with `--output-dir` is the canonical path.
 | `--exe <name>` | Executable name to generate under `--output-dir` |
 | `--help` | Show help |
 
-## Input-code constraints
+## Related specifications
 
-Pytra transpiles a subset of Python. The main constraints are:
-
-- Write type annotations. Function arguments and return values must be annotated.
-- Use `pytra.std.*`. You cannot directly import the Python standard library. Use shim modules under `pytra.std.*` instead.
-
-```python
-from pytra.std import math
-from pytra.std.time import perf_counter
-from pytra.std.pathlib import Path
-```
-
-- `typing` and `dataclasses` are exceptions. They may be imported directly when used only for annotations and decorators.
-- Write `if __name__ == "__main__":`. Pytra requires it as the entry point.
-
-See the [Python Compatibility Guide](../spec/spec-python-compat.md) for details.
-See the [pylib module list](../spec/spec-pylib-modules.md) for supported modules.
-
-## A slightly larger example
-
-There are 18 samples under `sample/py/`, including practical programs such as Mandelbrot, ray tracing, and Game of Life.
-
-```bash
-# Transpile + build + run a sample in C++
-./pytra sample/py/01_mandelbrot.py --output-dir out/mandelbrot --build --run --exe mandelbrot.out
-```
-
-## What to read next
-
-- [Python Compatibility Guide](../spec/spec-python-compat.md) - unsupported syntax and differences from Python
-- [Specification Index](../spec/index.md) - entry point into the language specification
-- [How to Use `@extern`](./extern.md) - calling external functions
-- [Troubleshooting](./troubleshooting.md) - when you get stuck
-- [Advanced Usage](./advanced-usage.md) - `@abi`, `@template`, and more
-- [Development Operations Guide](./dev-operations.md) - parity checks, local CI, and related workflows for developers
+- [User specification](../spec/spec-user.md) — Input constraints and test execution details
+- [Differences from Python](./python-differences.md) — Type annotations, import rules, unsupported syntax
