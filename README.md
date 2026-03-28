@@ -124,8 +124,6 @@ Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
 | Templates/<br>Generics | ❌ | 🔶 Unreadable<br>errors | ✅ | ✅ `@template` |
 | Self-hosting | ❌ | ❌ | ❌ | ✅ |
 
-⚠ This project is still under active development and may be far from practical use. Review the sample code and use it at your own risk.
-
 <a id="read-the-docs"></a>
 
 ## Read the Docs
