@@ -2315,9 +2315,24 @@ def _parse_block_lines(
             continue
         if s_clean.startswith("raise "):
             expr_text = s_clean[6:].strip()
-            expr = _parse_expr_text(ctx, expr_text, abs_ln, _find_expr_col(ctx, expr_text, abs_ln, indent + 6), name_types)
+            cause_expr = None
+            exc_text = expr_text
+            cause_marker = " from "
+            if cause_marker in expr_text:
+                exc_text, cause_text = expr_text.split(cause_marker, 1)
+                exc_text = exc_text.strip()
+                cause_text = cause_text.strip()
+                if cause_text != "":
+                    cause_expr = _parse_expr_text(
+                        ctx,
+                        cause_text,
+                        abs_ln,
+                        _find_expr_col(ctx, cause_text, abs_ln, indent + 6 + len(exc_text) + len(cause_marker)),
+                        name_types,
+                    )
+            expr = _parse_expr_text(ctx, exc_text, abs_ln, _find_expr_col(ctx, exc_text, abs_ln, indent + 6), name_types)
             span = make_span(abs_ln, indent, abs_ln, indent + len(s_clean))
-            stmts.append(Raise(source_span=span, exc=expr, cause=None))
+            stmts.append(Raise(source_span=span, exc=expr, cause=cause_expr))
             i += 1
             pending_trivia = []
             pending_comments = []

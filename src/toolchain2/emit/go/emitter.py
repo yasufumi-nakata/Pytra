@@ -3928,20 +3928,34 @@ def _extract_single_return_expr(body: list[JsonVal]) -> str:
 
 def _emit_raise(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     exc = node.get("exc")
+    cause = node.get("cause")
+    cause_code = ""
+    if isinstance(cause, dict):
+        cause_code = _emit_expr(ctx, cause)
     if isinstance(exc, dict):
         bn = _str(exc, "builtin_name")
         rc = _str(exc, "runtime_call")
         if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "std::runtime_error":
+            panic_expr = ""
             exc_args = _list(exc, "args")
             if len(exc_args) >= 1:
-                _emit(ctx, "panic(" + _exception_ctor_expr(bn if bn != "" else "RuntimeError", _emit_expr(ctx, exc_args[0])) + ")")
+                panic_expr = _exception_ctor_expr(bn if bn != "" else "RuntimeError", _emit_expr(ctx, exc_args[0]))
             else:
                 name = bn if bn != "" else "RuntimeError"
-                _emit(ctx, "panic(" + _exception_ctor_expr(name, _go_string_literal(name)) + ")")
+                panic_expr = _exception_ctor_expr(name, _go_string_literal(name))
+            if cause_code != "":
+                panic_expr = "pytraAttachCause(" + panic_expr + ", " + cause_code + ")"
+            _emit(ctx, "panic(" + panic_expr + ")")
         else:
-            _emit(ctx, "panic(pytraEnsureRecoveredError(" + _emit_expr(ctx, exc) + "))")
+            panic_expr2 = "pytraEnsureRecoveredError(" + _emit_expr(ctx, exc) + ")"
+            if cause_code != "":
+                panic_expr2 = "pytraAttachCause(" + panic_expr2 + ", " + cause_code + ")"
+            _emit(ctx, "panic(" + panic_expr2 + ")")
     elif exc is not None:
-        _emit(ctx, "panic(pytraEnsureRecoveredError(" + _emit_expr(ctx, exc) + "))")
+        panic_expr3 = "pytraEnsureRecoveredError(" + _emit_expr(ctx, exc) + ")"
+        if cause_code != "":
+            panic_expr3 = "pytraAttachCause(" + panic_expr3 + ", " + cause_code + ")"
+        _emit(ctx, "panic(" + panic_expr3 + ")")
     else:
         if ctx.current_exception_var != "":
             _emit(ctx, "panic(" + ctx.current_exception_var + ")")

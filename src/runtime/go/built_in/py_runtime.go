@@ -152,6 +152,7 @@ type PytraError struct {
 	TypeMax int64
 	Name    string
 	Msg     string
+	Cause   *PytraError
 }
 
 type PytraBaseException struct{ PytraError }
@@ -231,6 +232,14 @@ func pytraErrorIsInstance(err *PytraError, tidMin int64, tidMax int64) bool {
 		return false
 	}
 	return err.TypeId >= tidMin && err.TypeId <= tidMax
+}
+
+func pytraAttachCause(err *PytraError, cause any) *PytraError {
+	if err == nil {
+		return nil
+	}
+	err.Cause = pytraEnsureRecoveredError(cause)
+	return err
 }
 
 func py_open(path string, mode string, _kwargs ...any) *PyFile {
