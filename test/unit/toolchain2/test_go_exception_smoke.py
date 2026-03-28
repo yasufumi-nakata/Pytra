@@ -135,6 +135,32 @@ if __name__ == "__main__":
         print(e)
 """
 
+CUSTOM_EXCEPTION_RERAISE_SOURCE = """
+class ParseError(ValueError):
+    pass
+
+if __name__ == "__main__":
+    err = ParseError("bad parse")
+    try:
+        raise err
+    except ValueError as e:
+        print(e)
+"""
+
+CUSTOM_EXCEPTION_CUSTOM_BASE_SOURCE = """
+class ParseBase(Exception):
+    pass
+
+class ParseError(ParseBase):
+    pass
+
+if __name__ == "__main__":
+    try:
+        raise ParseError("bad parse")
+    except ParseBase as e:
+        print(e)
+"""
+
 
 class GoExceptionSmokeTests(unittest.TestCase):
     def test_go_emits_typed_value_error_catch_and_finally(self) -> None:
@@ -174,6 +200,25 @@ class GoExceptionSmokeTests(unittest.TestCase):
             CUSTOM_EXCEPTION_INIT_SOURCE,
             type_info_table={
                 "app.ParseError": {"id": 1000, "entry": 1000, "exit": 1001},
+            },
+        )
+        self.assertEqual(stdout, "bad parse\n")
+
+    def test_go_reraise_custom_exception_instance(self) -> None:
+        stdout = _run_go(
+            CUSTOM_EXCEPTION_RERAISE_SOURCE,
+            type_info_table={
+                "app.ParseError": {"id": 1000, "entry": 1000, "exit": 1001},
+            },
+        )
+        self.assertEqual(stdout, "bad parse\n")
+
+    def test_go_custom_base_handler_catches_custom_descendant(self) -> None:
+        stdout = _run_go(
+            CUSTOM_EXCEPTION_CUSTOM_BASE_SOURCE,
+            type_info_table={
+                "app.ParseBase": {"id": 1000, "entry": 1000, "exit": 1002},
+                "app.ParseError": {"id": 1001, "entry": 1001, "exit": 1002},
             },
         )
         self.assertEqual(stdout, "bad parse\n")
