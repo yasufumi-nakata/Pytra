@@ -140,6 +140,7 @@ linker は type_id の割り当てが完了した後、仮想モジュール `py
 - 定数名は FQCN の `.` を `_` に置換し、末尾に `_TID` を付与する（例: `pytra.built_in.error.ValueError` → `VALUE_ERROR_TID`）。
 - 配列の並び順は linker の DFS 割り当て順と一致させる。
 - emitter はこのモジュールを通常の EAST3 として写像する。特別なロジックは不要。
+- **`id_table` の値と TID 定数は `build_type_id_table()` の結果から動的に生成すること。linker のソースコードに type_id の番号や min/max の値をハードコードしてはならない。** ユーザーがクラスを追加・変更するたびに linker のコードを手修正する設計は禁止。
 
 import 挿入規則:
 
