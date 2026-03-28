@@ -43,7 +43,7 @@ To faithfully reproduce this behavior, Pytra wraps containers in **reference-typ
 | Language | Typing | GC | list Type | Pytra Memory Management |
 |---|---|---|---|---|
 | C++ | Static | None | `Object<list<int64>>` | Manual RC |
-| Rust | Static | None | `Rc<RefCell<Vec<i64>>>` | Manual RC + interior mutability |
+| Rust | Static | None | `Object<Vec<i64>>` | Manual RC (internally `Rc<RefCell<T>>`) |
 | Go | Static | Yes | `*PyList[int64]` | GC handles it (pointer sharing) |
 | Java | Static | Yes | `ArrayList<Long>` | GC handles it (reference types by default) |
 | C# | Static | Yes | `List<long>` | GC handles it (reference types by default) |
