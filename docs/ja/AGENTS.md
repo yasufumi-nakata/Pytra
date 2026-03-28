@@ -5,12 +5,12 @@
 # エージェント運用ルール（ブートストラップ）
 
 このファイルは最初に読む入口だけを定義します。  
-詳細ルールの正本は `docs/ja/spec/spec-codex.md` です。
+詳細ルールの正本は `docs/ja/spec/spec-agent.md` です。
 
 ## 起動時に読む順序
 
 1. `docs/ja/spec/index.md`
-2. `docs/ja/spec/spec-codex.md`
+2. `docs/ja/spec/spec-agent.md`
 3. `docs/ja/todo/index.md`
 
 ## 最小ルール
@@ -43,6 +43,6 @@
 
 ## 参照先
 
-- Codex 運用ルール本体: `docs/ja/spec/spec-codex.md`
+- エージェント運用ルール本体: `docs/ja/spec/spec-agent.md`
 - TODO 運用: `docs/ja/todo/index.md`
 - TODO 履歴: `docs/ja/todo/archive/index.md`

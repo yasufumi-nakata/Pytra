@@ -1,29 +1,27 @@
-<a href="../../en/spec/spec-codex.md">
+<a href="../../en/spec/spec-agent.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-# Codex 向け運用仕様（Pytra）— 旧名
+# エージェント運用仕様（Pytra）
 
-> **このファイルは旧名です。正本は [spec-agent.md](./spec-agent.md) に移動しました。**
-
-このドキュメントは、Codex が作業時に従う運用ルールです。
+このドキュメントは、Codex および Claude Code（以下「エージェント」）が作業時に従う運用ルールです。
 
 ## 1. 起動時チェック
 
-- Codex 起動時は、まず `docs/ja/spec/index.md` と `docs/ja/todo/index.md` を確認します。
+- エージェント起動時は、まず `docs/ja/spec/index.md` と `docs/ja/todo/index.md` を確認します。
 - `docs/ja/todo/index.md` の未完了（`[ ]`）項目から、現在の依頼と整合するタスクを作業対象に含めます。
 
 ## 1.1 ドキュメント言語運用ルール
 
 - `docs/ja/` を正本（source of truth）として扱い、日本語版を先に更新します。
 - 通常運用では `docs/en/`（英語版）を先に直接編集せず、まず `docs/ja/` を更新します。
-- ユーザー指示は日本語を基本とし、Codex は日本語での作業指示を前提に運用します。
+- ユーザー指示は日本語を基本とし、エージェントは日本語での作業指示を前提に運用します。
 - `docs/en/`（英語版）は必要に応じて後追い翻訳で更新してよく、同期が一時的に遅れることを許容します。
 - 日本語版と英語版で記述差分がある場合は、`docs/ja/` の内容を正として判断します。
 - `docs/ja/` 直下（トップレベル）への新規ファイル追加は原則禁止とし、必要時は同一ターンでの明示指示を必須とします。
 - 例外として `docs/ja/AGENTS.md` は運用ブートストラップ入口として常設を許可します。
 - ルート `AGENTS.md` はローカル専用ポインタ（`.gitignore` 対象）とし、Git 管理しません。
-- 例外として、`docs/ja/plans/`、`docs/ja/language/`、`docs/ja/todo/archive/`、`docs/ja/spec/` 配下は、運用ルールに沿う範囲で Codex が自律的に新規ファイルを作成してよいものとします。
+- 例外として、`docs/ja/plans/`、`docs/ja/language/`、`docs/ja/todo/archive/`、`docs/ja/spec/` 配下は、運用ルールに沿う範囲でエージェントが自律的に新規ファイルを作成してよいものとします。
 
 ## 2. TODO 実施ルール
 
@@ -54,13 +52,13 @@
 ## 4. コミット運用
 
 - 作業内容が論理的にまとまった時点で、ユーザーの都度許可なしにコミットしてよいものとします。
-- コミット前の「commitしてよいか」の確認は不要とし、Codex が自己判断で実施します。
+- コミット前の「commitしてよいか」の確認は不要とし、エージェントが自己判断で実施します。
 - コミットは論理単位で分割し、変更意図が分かるメッセージを付けます。
 - TODO 消化コミットはメッセージに `ID` を含めます（例: ``[ID: P0-XXX-01] ...``）。
 
 ## 4.1 禁止 git 操作（複数インスタンス環境）
 
-複数の Codex / Claude Code インスタンスが同一ワーキングツリーで同時に動作するため、他インスタンスの未コミット変更を破壊する以下の git 操作を**禁止**する。
+複数のエージェントインスタンス（Codex / Claude Code）が同一ワーキングツリーで同時に動作するため、他インスタンスの未コミット変更を破壊する以下の git 操作を**禁止**する。
 
 - `git stash` — 全未コミット変更を退避し、他インスタンスの作業を巻き戻す
 - `git checkout -- <file>` — ファイルの未コミット変更を破棄する
@@ -138,6 +136,6 @@
 
 - 対外リリース版の正本は `docs/VERSION` とし、形式は `MAJOR.MINOR.PATCH`（SemVer）を使います。
 - 現在の対外リリース版は `0.7.0` です。
-- `PATCH` の更新は Codex が実施してよいものとします。
+- `PATCH` の更新はエージェントが実施してよいものとします。
 - `MAJOR` / `MINOR` の更新は、ユーザーの明示指示がある場合のみ実施します。
 - `src/toolchain/misc/transpiler_versions.json` は再生成トリガー用の内部バージョンであり、対外リリース版（`docs/VERSION`）とは別管理です。

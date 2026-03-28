@@ -49,7 +49,7 @@
 | 実装仕様 | [spec-dev.md](./spec-dev.md) | 実装方針、モジュール構成 |
 | フォルダ責務 | [spec-folder.md](./spec-folder.md) | どのフォルダに何を置くか |
 | stdlib 正本化 | [spec-stdlib-signature-source-of-truth.md](./spec-stdlib-signature-source-of-truth.md) | pytra/std を型仕様の正本にする契約 |
-| Codex 運用 | [spec-codex.md](./spec-codex.md) | Codex の作業ルール、TODO 運用 |
+| エージェント運用 | [spec-agent.md](./spec-agent.md) | Codex / Claude Code の作業ルール、TODO 運用 |
 | 開発思想 | [spec-philosophy.md](./spec-philosophy.md) | EAST 中心設計の背景 |
 | 旧仕様 | [archive/index.md](./archive/index.md) | 退役した仕様のアーカイブ |
 
