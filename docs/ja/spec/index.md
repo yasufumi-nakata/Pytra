@@ -44,15 +44,6 @@
 | C++ Optimizer | [spec-cpp-optimizer.md](./spec-cpp-optimizer.md) | C++ backend 後段最適化 |
 | C++ list 参照 | [spec-cpp-list-reference-semantics.md](./spec-cpp-list-reference-semantics.md) | C++ list の alias/共有/破壊的更新 |
 
-### 言語別 Backend 契約
-
-| 内容 | リンク | 説明 |
-|---|---|---|
-| Java | [spec-java-native-backend.md](./spec-java-native-backend.md) | Java native backend 契約 |
-| Lua | [spec-lua-native-backend.md](./spec-lua-native-backend.md) | Lua native backend 契約 |
-| Zig | [spec-zig-native-backend.md](./spec-zig-native-backend.md) | Zig native backend 契約 |
-| 言語別一覧 | [language/index.md](../language/index.md) | 言語ごとの機能対応状況 |
-
 ### 開発者向け
 
 | 内容 | リンク | 説明 |
