@@ -21,6 +21,11 @@
 | Trait | [spec-trait.md](./spec-trait.md) | `@trait` / `@implements`、pure interface |
 | 例外処理 | [spec-exception.md](./spec-exception.md) | raise/try/except、native_throw と union_return |
 | Boxing/Unboxing | [spec-boxing.md](./spec-boxing.md) | Any/object 境界の型変換 |
+| Object\<T\> | [spec-object.md](./spec-object.md) | 参照型ラッパーの設計仕様 |
+| import | [spec-import.md](./spec-import.md) | import の解決規則 |
+| built-in 関数 | [spec-builtin-functions.md](./spec-builtin-functions.md) | built-in 関数の宣言仕様 |
+| @template | [spec-template.md](./spec-template.md) | テンプレート（ジェネリクス）仕様 |
+| Iterable/Iterator | [spec-iterable.md](./spec-iterable.md) | for 文の反復契約、動的プロトコル |
 | GC | [spec-gc.md](./spec-gc.md) | RC ベースの GC 方針 |
 
 ### EAST（中間表現）
@@ -49,6 +54,7 @@
 | 実装仕様 | [spec-dev.md](./spec-dev.md) | 実装方針、モジュール構成 |
 | フォルダ責務 | [spec-folder.md](./spec-folder.md) | どのフォルダに何を置くか |
 | stdlib 正本化 | [spec-stdlib-signature-source-of-truth.md](./spec-stdlib-signature-source-of-truth.md) | pytra/std を型仕様の正本にする契約 |
+| tools 一覧 | [spec-tools.md](./spec-tools.md) | tools/ スクリプトの一覧と用途 |
 | AI agent 運用 | [spec-agent.md](./spec-agent.md) | Codex / Claude Code の作業ルール、TODO 運用 |
 | 開発思想 | [spec-philosophy.md](./spec-philosophy.md) | EAST 中心設計の背景 |
 | 旧仕様 | [archive/index.md](./archive/index.md) | 退役した仕様のアーカイブ |

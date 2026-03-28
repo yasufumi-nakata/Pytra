@@ -18,6 +18,13 @@
 
 ## アーカイブ一覧
 
+- 2026-03-28（toolchain1 その他の旧仕様）:
+  - [20260328-spec-abi.md](./20260328-spec-abi.md) — @extern/@abi C++ 固有 ABI 型
+  - [20260328-spec-any-prohibition.md](./20260328-spec-any-prohibition.md) — Any 禁止ガイド
+  - [20260328-spec-gsk-native-backend.md](./20260328-spec-gsk-native-backend.md) — Go/Swift/Kotlin 個別 backend 契約
+  - [20260328-spec-ruby-native-backend.md](./20260328-spec-ruby-native-backend.md) — Ruby 個別 backend 契約
+  - [20260328-spec-options.md](./20260328-spec-options.md) — 旧オプション仕様
+  - [20260328-spec-make.md](./20260328-spec-make.md) — Makefile 生成仕様
 - 2026-03-28（toolchain1 C++ 固有仕様 → toolchain2 では EAST3 Optimizer / CommonRenderer / spec-emitter-guide §10 に統合）:
   - [20260328-spec-cpp-optimizer.md](./20260328-spec-cpp-optimizer.md)
   - [20260328-spec-cpp-list-reference-semantics.md](./20260328-spec-cpp-list-reference-semantics.md)
