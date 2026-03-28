@@ -20,6 +20,18 @@
 
 ## 未完了タスク
 
+### P1-INCLUDE-RUNTIME-MIGRATION: include/ の旧デコレータを @runtime / runtime_var に書き換える
+
+文脈: [docs/ja/spec/spec-runtime-decorator.md](../spec/spec-runtime-decorator.md)
+
+1. [ ] [ID: P1-INCLUDE-S1] `include/py/pytra/built_in/builtins.py` を `@runtime` 記法に書き換える
+2. [ ] [ID: P1-INCLUDE-S2] `include/py/pytra/std/pathlib.py` を `@runtime` 記法に書き換える（`@extern_fn` / `@extern_class` を廃止）
+3. [ ] [ID: P1-INCLUDE-S3] `include/py/pytra/std/math.py` を `@runtime` + `runtime_var` 記法に書き換える
+4. [ ] [ID: P1-INCLUDE-S4] `include/py/pytra/std/sys.py`, `os.py`, `os_path.py`, `glob.py`, `time.py`, `subprocess.py` を書き換える
+5. [ ] [ID: P1-INCLUDE-S5] `include/py/pytra/std/__init__.py` から `extern_fn`, `extern_class`, `extern_var` の定義を削除し、`runtime`, `runtime_var`, `extern` のみ残す
+6. [ ] [ID: P1-INCLUDE-S6] include EAST1 を再生成し、resolve が新記法で型解決できることを確認する
+7. [ ] [ID: P1-INCLUDE-S7] fixture の C++/Go parity に影響がないことを確認する
+
 ### P1-GO-CONTAINER-WRAPPER: Go emitter の container 既定表現を spec 準拠に修正する
 
 文脈: `docs/ja/spec/spec-emitter-guide.md` §10
