@@ -2059,6 +2059,41 @@ def _split_type_args_outer(text: str) -> list[str]:
     return args
 
 
+def _split_raise_from_outer(text: str) -> tuple[str, str]:
+    depth = 0
+    quote = ""
+    i = 0
+    marker = " from "
+    marker_len = len(marker)
+    while i < len(text):
+        ch = text[i]
+        if quote != "":
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == quote:
+                quote = ""
+            i += 1
+            continue
+        if ch == "'" or ch == '"':
+            quote = ch
+            i += 1
+            continue
+        if ch == "(" or ch == "[" or ch == "{":
+            depth += 1
+            i += 1
+            continue
+        if ch == ")" or ch == "]" or ch == "}":
+            if depth > 0:
+                depth -= 1
+            i += 1
+            continue
+        if depth == 0 and text[i:i + marker_len] == marker:
+            return text[:i], text[i + marker_len:]
+        i += 1
+    return text, ""
+
+
 # ---------------------------------------------------------------------------
 # Block-level statement parser
 # ---------------------------------------------------------------------------
@@ -2317,9 +2352,8 @@ def _parse_block_lines(
             expr_text = s_clean[6:].strip()
             cause_expr = None
             exc_text = expr_text
-            cause_marker = " from "
-            if cause_marker in expr_text:
-                exc_text, cause_text = expr_text.split(cause_marker, 1)
+            exc_text, cause_text = _split_raise_from_outer(expr_text)
+            if cause_text != "":
                 exc_text = exc_text.strip()
                 cause_text = cause_text.strip()
                 if cause_text != "":
@@ -2327,7 +2361,7 @@ def _parse_block_lines(
                         ctx,
                         cause_text,
                         abs_ln,
-                        _find_expr_col(ctx, cause_text, abs_ln, indent + 6 + len(exc_text) + len(cause_marker)),
+                        _find_expr_col(ctx, cause_text, abs_ln, indent + 6),
                         name_types,
                     )
             expr = _parse_expr_text(ctx, exc_text, abs_ln, _find_expr_col(ctx, exc_text, abs_ln, indent + 6), name_types)
