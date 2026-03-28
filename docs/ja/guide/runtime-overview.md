@@ -40,13 +40,18 @@ print(items)  # [1, 2, 3, 4] — 変更が反映される
 
 Pytra はこれを忠実に再現するため、コンテナを **参照型ラッパー** で保持します。
 
-| 言語 | list の型 | メモリ管理 |
-|---|---|---|
-| C++ | `Object<list<int64>>` | RC（参照カウント）。GC がないので自前で管理 |
-| Go | `*PyList[int64]` | GC。Go は GC 言語なのでポインタ共有だけで済む。RC 不要 |
-| Rust | `Rc<RefCell<Vec<i64>>>` | RC + 内部可変性。GC がないので自前で管理 |
-| Java/C# | `ArrayList<Long>` 等 | GC。参照型が既定 |
-| Swift | `[Int64]` (class wrapper) | ARC（コンパイラが自動挿入する RC） |
+| 言語 | 型付け | GC | list の型 | Pytra のメモリ管理 |
+|---|---|---|---|---|
+| C++ | 静的 | なし | `Object<list<int64>>` | RC を自前管理 |
+| Rust | 静的 | なし | `Rc<RefCell<Vec<i64>>>` | RC + 内部可変性を自前管理 |
+| Go | 静的 | あり | `*PyList[int64]` | GC に任せる（ポインタ共有） |
+| Java | 静的 | あり | `ArrayList<Long>` | GC に任せる（参照型が既定） |
+| C# | 静的 | あり | `List<long>` | GC に任せる（参照型が既定） |
+| Swift | 静的 | ARC | class wrapper | ARC（コンパイラが自動挿入する RC） |
+| JS/TS | 動的 | あり | `Array` | GC に任せる（全て参照型） |
+| Ruby/Lua/PHP | 動的 | あり | 言語ネイティブ配列 | GC に任せる |
+
+RC が必要なのは **GC がない C++ と Rust だけ** です。他の言語は GC または ARC があるため、Pytra が自前でメモリ管理する必要はありません。
 
 ### 値型への縮退
 

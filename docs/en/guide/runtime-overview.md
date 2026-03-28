@@ -40,13 +40,18 @@ print(items)  # [1, 2, 3, 4] -- the change is reflected
 
 To faithfully reproduce this behavior, Pytra wraps containers in **reference-type wrappers**.
 
-| Language | list Type | Contents |
-|---|---|---|
-| C++ | `Object<list<int64>>` | RC (reference counting). No GC, so managed manually |
-| Go | `*PyList[int64]` | GC. Go has a garbage collector, so pointer sharing suffices. No RC needed |
-| Rust | `Rc<RefCell<Vec<i64>>>` | RC + interior mutability. No GC, so managed manually |
-| Java/C# | `ArrayList<Long>` etc. | GC. Reference types by default |
-| Swift | `[Int64]` (class wrapper) | ARC (compiler-inserted RC) |
+| Language | Typing | GC | list Type | Pytra Memory Management |
+|---|---|---|---|---|
+| C++ | Static | None | `Object<list<int64>>` | Manual RC |
+| Rust | Static | None | `Rc<RefCell<Vec<i64>>>` | Manual RC + interior mutability |
+| Go | Static | Yes | `*PyList[int64]` | GC handles it (pointer sharing) |
+| Java | Static | Yes | `ArrayList<Long>` | GC handles it (reference types by default) |
+| C# | Static | Yes | `List<long>` | GC handles it (reference types by default) |
+| Swift | Static | ARC | class wrapper | ARC (compiler-inserted RC) |
+| JS/TS | Dynamic | Yes | `Array` | GC handles it (everything is reference) |
+| Ruby/Lua/PHP | Dynamic | Yes | Native array | GC handles it |
+
+RC is only needed for **C++ and Rust**, which have no GC. All other languages have GC or ARC, so Pytra does not need to manage memory manually.
 
 ### Degeneracy to Value Types
 
