@@ -20,18 +20,6 @@
 
 ## 未完了タスク
 
-### P0-RUNTIME-DECORATOR: @runtime / @extern デコレータの導入
-
-文脈: [docs/ja/plans/p6-extern-method-redesign.md](../plans/p6-extern-method-redesign.md)
-仕様: [docs/ja/spec/spec-opaque-type.md](../spec/spec-opaque-type.md)
-
-1. [ ] [ID: P0-RTDEC-S1] `@runtime("namespace")` デコレータを parser に実装し、自動導出ルール（module/symbol/tag）を組み込む
-2. [ ] [ID: P0-RTDEC-S2] `containers.py` を `@runtime` 記法に書き換える
-3. [ ] [ID: P0-RTDEC-S3] `@extern_method` を廃止する（parser からの受理を停止）
-4. [ ] [ID: P0-RTDEC-S4] `@abi` を廃止する + spec-east.md の `meta.runtime_abi_v1` を廃止する
-5. [ ] [ID: P0-RTDEC-S5] チュートリアル・ガイド・emitter guide の `@abi` / `@extern_method` 言及を `@runtime` / `@extern` に更新する
-6. [ ] [ID: P0-RTDEC-S6] fixture の container 系テスト（list/dict/set の append/extend/get/items 等）が `@runtime` 記法で C++/Go の compile + run parity を通ることを確認する
-
 ### P1-GO-CONTAINER-WRAPPER: Go emitter の container 既定表現を spec 準拠に修正する
 
 文脈: `docs/ja/spec/spec-emitter-guide.md` §10
