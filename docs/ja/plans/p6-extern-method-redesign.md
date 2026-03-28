@@ -4,7 +4,7 @@
 
 # P6-EXTERN-METHOD-REDESIGN: @extern_method / @abi の再設計
 
-最終更新: 2026-03-28
+最終更新: 2026-03-29
 ステータス: 案
 
 ## 背景
@@ -12,65 +12,14 @@
 現在 `containers.py` 等の built_in 宣言は `@extern_method` + `@abi` の2デコレータを使うが:
 
 - `@extern_method` の引数が冗長（module, symbol, tag の3つ）
-- `@abi` は未使用（実装もテストもない）だが、escape 解析に必要な arg_usage 情報を持つ予定だった
-- `@abi` の名前が「ABI 境界」を想起させ、実際の用途（readonly/mutable 宣言）と乖離
+- `@abi` は未使用（実装もテストもない）
+- module / symbol / tag に重複情報がある
 
-## 現状
+## 結論
 
-```python
-@extern_method(module="pytra.core.list", symbol="list.extend", tag="stdlib.method.extend")
-@abi(args={"x": "value"})
-def extend(self, x: list[T]) -> None: ...
-```
-
-問題:
-- 1行が長い
-- `@abi` は未実装で、使っているコードがない
-- `module` と `symbol` と `tag` に重複情報がある（`list.extend` が2回出現）
-
-## 提案
-
-### 案A: `@method` に統合、tag 自動導出
+### `@namespace` + `@method` に統合、arg mode 廃止
 
 ```python
-@method("pytra.core.list.extend")
-def extend(self, x: list[T]) -> None: ...
-```
-
-- module + symbol を1引数にまとめる（`pytra.core.list.extend` → module は `pytra.core.list`、symbol は `extend`、最後の `.` で分割）
-- tag は `module + "." + symbol` から自動導出（`stdlib.method.extend` 相当）。明示が必要な場合だけ `tag=` で上書き
-- arg_usage が必要な場合:
-
-```python
-@method("pytra.core.list.extend", x="readonly")
-def extend(self, x: list[T]) -> None: ...
-```
-
-### 案B: `@method` + `@usage` の2デコレータ
-
-```python
-@method("pytra.core.list.extend")
-@usage(x="readonly")
-def extend(self, x: list[T]) -> None: ...
-```
-
-- `@abi` を `@usage` にリネーム。意味が明確
-- arg_usage がないメソッドは `@method` だけで済む
-
-### 案C: `@method` に kwargs で arg_usage 統合
-
-```python
-@method("pytra.core.list.extend", args={"x": "readonly"})
-def extend(self, x: list[T]) -> None: ...
-```
-
-- 1デコレータで完結
-- ただし `args={"x": "readonly"}` が冗長
-
-### 案D: `@namespace` + `@method` 最小記述（class名・メソッド名から自動導出）
-
-```python
-# containers.py 冒頭
 @namespace("pytra.core")
 
 class list(Generic[T]):
@@ -78,14 +27,17 @@ class list(Generic[T]):
     @method
     def append(self, x: T) -> None: ...
 
-    @method(x="readonly")
+    @method
     def extend(self, x: list[T]) -> None: ...
 
     @method
     def pop(self, index: int = -1) -> T: ...
 
-    @method(key="readonly")
-    def sort(self, key: str = "") -> None: ...
+    @method
+    def sort(self) -> None: ...
+
+    @method
+    def clear(self) -> None: ...
 
 class dict(Generic[K, V]):
 
@@ -96,129 +48,50 @@ class dict(Generic[K, V]):
     def items(self) -> list[tuple[K, V]]: ...
 ```
 
-自動導出ルール:
+### 自動導出ルール
+
 - module: `@namespace` + class名 → `pytra.core.list`
 - symbol: class名 + メソッド名 → `list.extend`
-- tag: `stdlib.method.` + メソッド名 → `stdlib.method.extend`（自動導出）
-- arg_usage: `@method` の kwargs で指定。指定なしはデフォルト mutable
+- tag: 自動導出（`stdlib.method.extend` 相当）
+- runtime 側の関数名変換（`list.extend` → `py_list_extend_mut` 等）は mapping.json の責務
 
-runtime 側の関数名変換（`list.extend` → `py_list_extend_mut` 等）は mapping.json の責務。`@method` には書かない。
+### `@abi` 廃止
 
-## 比較
+`@abi` は廃止する。理由:
 
-現状と各案の `containers.py` の書き味:
+- 未実装・未使用なので影響ゼロ
+- arg mode（`ref` / `ref_readonly` / `value` / `value_readonly`）は不要と判断
 
-### append（self=mutable, arg_usage なし）
+### arg mode が不要な理由
 
-| 方式 | 記述 |
-|---|---|
-| 現状 | `@extern_method(module="pytra.core.list", symbol="list.append", tag="stdlib.method.append")` |
-| 案A | `@method("pytra.core.list.append")` |
-| 案B | `@method("pytra.core.list.append")` |
-| 案C | `@method("pytra.core.list.append")` |
-| **案D** | **`@method`** |
+議論の経緯:
 
-### extend（x=readonly）
+1. 当初、escape 解析のヒントとして `ref_readonly`（この引数は変更しない）が必要と考えた
+2. しかし `ref_readonly` でも関数に渡した時点で呼び出し元から追跡できなくなるため、escape 解析は「escape する」と判断せざるを得ない
+3. `ref_readonly` は「この関数の中では変更しない」という局所情報であって、「この値は今後変わらない」という保証ではない。escape 解析にとって役に立たない
+4. `value` / `value_readonly`（rc を剥がしてコピーで渡す）は外部 FFI 用に検討したが、runtime のラッパー関数が deref してから外部 API に渡せば済む。呼び出し側が rc を剥がす必要がない
 
-| 方式 | 記述 |
-|---|---|
-| 現状 | `@extern_method(...)` + `@abi(args={"x": "value"})` |
-| 案A | `@method("pytra.core.list.extend", x="readonly")` |
-| 案B | `@method("pytra.core.list.extend")` + `@usage(x="readonly")` |
-| 案C | `@method("pytra.core.list.extend", args={"x": "readonly"})` |
-| **案D** | **`@method(x="readonly")`** |
+結論: arg mode は `ref`（rc のまま渡す）の1種類だけで十分。明示する必要がないので、`@method` に引数を取らない。
 
-### sort（self=mutable, key=readonly）
+### runtime ヘルパーの引数は全て rc 前提
 
-| 方式 | 記述 |
-|---|---|
-| 現状 | `@extern_method(...)` + `@abi(args={"key": "value"})` |
-| 案A | `@method("pytra.core.list.sort", key="readonly")` |
-| 案B | `@method("pytra.core.list.sort")` + `@usage(key="readonly")` |
-| 案C | `@method("pytra.core.list.sort", args={"key": "readonly"})` |
-| **案D** | **`@method(key="readonly")`** |
-
-## 推奨
-
-**案D** が最も簡潔。
-
-- arg_usage がないメソッド（大半）は `@method` の1語だけ
-- arg_usage があるメソッドは `@method(x="readonly")` だけ
-- module / symbol / tag はクラス名・メソッド名・`@namespace` から全自動導出
-- パス指定が一切不要
-- runtime 関数名の変換は mapping.json の責務（`@method` には書かない）
-- `@abi` は廃止（未実装・未使用なので影響ゼロ）
-- `@extern_method` は `@method` + `@namespace` に置き換え
-
-### 引数の渡し方（arg mode）
-
-ref / value の軸と readonly / mutable の軸の直交で4種類:
-
-| mode | rc | 変更 | 用途 |
-|---|---|---|---|
-| `ref`（既定） | rc のまま | 可 | 通常の引数。Python の参照渡しと同じ |
-| `ref_readonly` | rc のまま | 不可 | escape しない（escape 解析ヒント）。`extend(x)` の `x` 等 |
-| `value` | 剥がす | 可 | FFI で可変な値渡しが必要な場合 |
-| `value_readonly` | 剥がす | 不可 | FFI で読み取り専用の値渡しが必要な場合 |
-
-デフォルトは `ref`。指定なし = `ref` なので、大半のメソッドは `@method` だけで済む:
-
-```python
-@method                           # 全引数 ref（既定）
-def append(self, x: T) -> None: ...
-
-@method(x="ref_readonly")         # x だけ ref_readonly
-def extend(self, x: list[T]) -> None: ...
-```
-
-`self` は常に `ref`（mutable）。明示不要。
-
-旧 `@abi` との対応:
-- `@abi(args={"x": "value"})` → `@method(x="value")`
-- `@abi(args={"x": "value_readonly"})` → `@method(x="value_readonly")`
-- `@abi` は廃止
-
-注意:
-- `@namespace` はファイル冒頭に1回だけ書く
-- parser が `@namespace` + class名 + メソッド名から module / symbol / tag を自動導出する実装が必要
-
-## @abi の廃止
-
-- `@abi` は未実装・未使用なので、廃止しても影響ゼロ
-- spec-east.md の `meta.runtime_abi_v1` は `meta.arg_usage_v1` にリネーム
-- チュートリアル・ガイドの `@abi` 言及を削除
-
-## escape 解析との連携
-
-- `@method` の arg_usage（`readonly` / デフォルト mutable）を EAST3 の `FunctionDef.meta.arg_usage_v1` に保持
-- escape 解析は `arg_usage_v1` を見て「この引数は readonly なので、渡しても escape しない」と判断
-- 非 extern 関数は resolve が本体を解析して `arg_usage` を自動算出（既存の仕組み）
-- extern 関数だけ `@method` の宣言から取得
-
-## rc と arg mode の設計議論
-
-### runtime ヘルパーは rc 前提の1パターンだけ実装する
-
-runtime ヘルパー（`PyListExtend`, `PyListConcat` 等）は全て rc 付き（`Object<list<T>>` / `*PyList[T]`）を引数に取る。rc を剥がした `list<T>` / `[]T` を受け取るパターンは用意しない。
+runtime ヘルパー（`PyListExtend`, `PyListConcat` 等）は全て rc 付き（`Object<list<T>>` / `*PyList[T]`）を引数に取る。
 
 理由:
-- デフォルトが `ref`（rc のまま）なので、ほとんどの呼び出しは rc 付きで渡される
-- `@method` で `ref` を要求している関数に渡す → escape 解析は「escape する」と判断 → rc を剥がさない
-- `ref_readonly` でも rc のまま渡す（下記「エイリアス問題」参照）
-- テンプレート/ジェネリクスがない言語（Go 等）で rc あり/なしの 2^N パターンを実装するのは非現実的
 
-### `ref_readonly` でも rc を剥がせない（エイリアス問題）
+- デフォルトが rc なので、ほとんどの呼び出しは rc 付きで渡される
+- テンプレート/ジェネリクスがない言語（Go 等）で rc あり/なしの複数パターンを実装するのは非現実的
+- エイリアス問題（`a.extend(a)` で self と引数が同じオブジェクト）があるため、rc を剥がして生の参照で渡すと dangling reference になる
 
-`ref_readonly` の引数は「読むだけ」だが、rc を剥がして生の参照で渡すと壊れるケースがある:
+エイリアス問題の具体例:
 
 ```python
 a: list[int] = [1, 2, 3]
 a.extend(a)  # self と x が同じオブジェクト
 ```
 
-rc を剥がして渡した場合の C++:
-
 ```cpp
+// rc を剥がして渡すと壊れる
 void extend(Object<list<int>>& self, const list<int>& x) {
     // self と x が同じ list を指している
     // extend が self に要素を追加 → 内部配列が再確保
@@ -229,44 +102,44 @@ void extend(Object<list<int>>& self, const list<int>& x) {
 }
 ```
 
-rc のまま渡せば、rc が生存を保証するのでこの問題は起きない。
-
-結論: **4 つの arg mode は全て rc のまま渡す。rc を剥がすのは呼び出し側の escape 解析最適化の判断であり、runtime ヘルパーの引数型には影響しない。**
-
-| mode | runtime ヘルパーの引数型 | escape 解析への効果 |
-|---|---|---|
-| `ref`（既定） | rc のまま | escape する |
-| `ref_readonly` | rc のまま | escape しない（呼び出し元の変数の rc を他の箇所で剥がせる可能性） |
-| `value` | rc のまま（呼び出し側でコピーしてから渡す） | escape しない |
-| `value_readonly` | rc のまま（呼び出し側でコピーしてから渡す） | escape しない |
-
-注: `value` / `value_readonly` は「rc を剥がす」のではなく「コピーを作って渡す」。呼び出し側が `rc<list<T>>` を deref してコピーを作り、そのコピーを新しい `rc<list<T>>` で包んで渡す。runtime ヘルパーは常に rc を受け取る。
-
-### `ref_readonly` の実際の効果
-
-`ref_readonly` は runtime ヘルパーの引数型を変えない。効果は escape 解析へのヒントのみ:
-
-```python
-buf: list[int] = [1, 2, 3]   # buf はこの関数内でしか使われない
-other.extend(buf)              # extend の x は ref_readonly
-# → escape 解析: buf は extend に渡されるが、extend は x を変更しない
-# → buf が他の箇所で escape していなければ、buf の rc を剥がせる
-# → ただし extend に渡すときは rc のまま渡す（エイリアス安全のため）
-```
-
-「rc を剥がせる」のは変数の**ストレージ**であり、関数への**受け渡し**ではない。ローカル変数がスタック上の値型になるだけで、関数に渡すときは一時的に rc で包む。
+rc のまま渡せば rc が生存を保証するのでこの問題は起きない。
 
 ### concat (`a + b`) の扱い
 
-`list + list` の concat は `PyListConcat(a, b)` のような rc 前提の runtime ヘルパーで処理する。emitter が rc を剥がして素のスライスを操作するのは禁止。
+`list + list` の concat は `PyListConcat(a, b)` のような rc 前提の runtime ヘルパーで処理する。
 
 - emitter は `BinOp(Add, list, list)` を mapping.json で `PyListConcat` に写像するだけ
-- `PyListConcat` は `rc<list<T>>` を受けて `rc<list<T>>` を返す
-- rc の wrap/unwrap は emitter の責務ではない
+- emitter が rc を剥がして素のスライスを操作するのは禁止
+- `PyListConcat` は rc を受けて rc を返す
+
+## 現状との比較
+
+| | 現状 | 新設計 |
+|---|---|---|
+| append | `@extern_method(module="pytra.core.list", symbol="list.append", tag="stdlib.method.append")` | `@method` |
+| extend | 上記 + `@abi(args={"x": "value"})` | `@method` |
+| sort | 上記 + `@abi(args={"key": "value"})` | `@method` |
+
+## サブタスク
+
+1. [ID: P6-REDESIGN-S1] `@namespace` と `@method` を parser に実装し、自動導出ルールを組み込む
+2. [ID: P6-REDESIGN-S2] `containers.py` を新記法に書き換える
+3. [ID: P6-REDESIGN-S3] `@extern_method` と `@abi` を廃止する（旧記法の parser 受理を停止）
+4. [ID: P6-REDESIGN-S4] spec-east.md の `meta.runtime_abi_v1` を廃止する
+5. [ID: P6-REDESIGN-S5] チュートリアル・ガイドの `@abi` 言及を削除する
+6. [ID: P6-REDESIGN-S6] emitter guide を更新し、`@method` で宣言されたメソッドの runtime 実装ルールを記載する
 
 ## 未決事項
 
 - `@method` と `@extern` の関係整理（`@extern` は関数用、`@method` はメソッド用？ それとも統合？）
 - `@extern` も同様に短縮できるか
 - 既存の `containers.py` の書き換え量
-- `ref_readonly` で rc のまま渡すが、呼び出し元の変数のストレージは最適化で値型にできるという二重構造をどこまで spec に書くか
+
+## 決定ログ
+
+- 2026-03-28: 案A〜D を検討。案D（`@namespace` + `@method` 最小記述、自動導出）を推奨とした。
+- 2026-03-28: arg mode（ref / ref_readonly / value / value_readonly）の4種類を検討。
+- 2026-03-28: エイリアス問題（`a.extend(a)`）を発見。`ref_readonly` でも rc を剥がせないことを確認。
+- 2026-03-29: `ref_readonly` は「この関数の中では変更しない」の局所情報でしかなく、escape 解析に役立たないと判断。arg mode は不要と結論。
+- 2026-03-29: 外部 FFI でも runtime ラッパーが deref すればよく、`value` / `value_readonly` も不要と判断。
+- 2026-03-29: `@abi` 廃止、arg mode 廃止、`@method` は引数なしのマーカーのみ、に決定。
