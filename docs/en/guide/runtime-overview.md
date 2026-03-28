@@ -42,9 +42,11 @@ To faithfully reproduce this behavior, Pytra wraps containers in **reference-typ
 
 | Language | list Type | Contents |
 |---|---|---|
-| C++ | `Object<list<int64>>` | RC wrapper equivalent to `shared_ptr` |
-| Go | `*PyList[int64]` | pointer |
-| Rust | `Rc<RefCell<Vec<i64>>>` | RC + interior mutability |
+| C++ | `Object<list<int64>>` | RC (reference counting). No GC, so managed manually |
+| Go | `*PyList[int64]` | GC. Go has a garbage collector, so pointer sharing suffices. No RC needed |
+| Rust | `Rc<RefCell<Vec<i64>>>` | RC + interior mutability. No GC, so managed manually |
+| Java/C# | `ArrayList<Long>` etc. | GC. Reference types by default |
+| Swift | `[Int64]` (class wrapper) | ARC (compiler-inserted RC) |
 
 ### Degeneracy to Value Types
 

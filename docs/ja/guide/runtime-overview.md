@@ -40,11 +40,13 @@ print(items)  # [1, 2, 3, 4] — 変更が反映される
 
 Pytra はこれを忠実に再現するため、コンテナを **参照型ラッパー** で保持します。
 
-| 言語 | list の型 | 中身 |
+| 言語 | list の型 | メモリ管理 |
 |---|---|---|
-| C++ | `Object<list<int64>>` | `shared_ptr` 相当の RC ラッパー |
-| Go | `*PyList[int64]` | ポインタ |
-| Rust | `Rc<RefCell<Vec<i64>>>` | RC + 内部可変性 |
+| C++ | `Object<list<int64>>` | RC（参照カウント）。GC がないので自前で管理 |
+| Go | `*PyList[int64]` | GC。Go は GC 言語なのでポインタ共有だけで済む。RC 不要 |
+| Rust | `Rc<RefCell<Vec<i64>>>` | RC + 内部可変性。GC がないので自前で管理 |
+| Java/C# | `ArrayList<Long>` 等 | GC。参照型が既定 |
+| Swift | `[Int64]` (class wrapper) | ARC（コンパイラが自動挿入する RC） |
 
 ### 値型への縮退
 
