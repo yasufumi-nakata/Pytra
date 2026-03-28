@@ -4,6 +4,21 @@
 
 # Changelog
 
+## 2026-03-28
+
+- **Go exception handling completed (P0-EXCEPTION-GO)**: Typed catch, accurate catch/rethrow for custom exceptions, `raise ... from ...`, bare rethrow, and union-return vertical slice implemented. Builtin exceptions consolidated into `pytra.built_in.error`.
+- **C++ native exception lowering (P0-EXCEPTION-CPP)**: Native exception lowering implemented for the C++ backend.
+- **Go selfhost progress (P2-SELFHOST)**: Lowering profile support, reference wrapper default for container locals, `yields_dynamic`-based type assertion, Go mapping dispatch + parity coverage completed. P2-LOWERING-PROFILE-GO completed.
+- **CommonRenderer extensions**: elif chain rendering moved to common renderer. C++ common renderer parity regressions fixed.
+- **type_id table linker generation (P0-TYPE-ID-TABLE)**: Spec and implementation for linker-generated `pytra.built_in.type_id_table`. Hardcoded type_id deprecation policy finalized.
+- **@runtime / @extern decorator design completed (P0-RUNTIME-DECORATOR)**: Unified to `@runtime("namespace")` + `@extern` + `runtime_var("namespace")`. Auto-derivation rules, `symbol=` / `tag=` optional overrides, and include file structure specified in spec-runtime-decorator.md. Legacy `@extern_method` / `@abi` abolished.
+- **P0-CPP-INCLUDE-PATH-FIX**: Fixed runtime include path inconsistency in C++ emitter.
+- **P0-GO-PATHLIB-FIX**: Fixed Go emitter pathlib signature issues (joinpath vararg, read_text/write_text).
+- **Spec restructuring**: 12 legacy specs archived. spec-codex.md renamed to spec-agent.md. spec/index.md reorganized into categorized tables. 6 previously unlinked specs added. spec-opaque-type.md (`@extern class` type contract) created.
+- **Guide section added**: 5 guide pages (EAST, emitter, type system, runtime, extern/FFI) added to docs/guide/. Guide section positioned between Tutorial and Specification.
+- **Tutorial expansion**: Exception handling, Python differences, module reference (argparse/glob/re/enum/timeit), and samples pages added. Reading order restructured.
+- **AGENTS.md split**: Separated into planner / coder role-specific specs. Minimized bootstrap entry.
+
 ## 2026-03-27
 
 - **C++ emitter spec compliance (S1-S15)**: Fail-fast, mapping.json unification, container reference wrappers (`Object<list<T>>` etc.), implicit_promotions, is_entry/main_guard_body, @property support, shared runtime path resolution.

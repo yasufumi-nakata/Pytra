@@ -4,6 +4,21 @@
 
 # 更新履歴
 
+## 2026-03-28
+
+- **Go 例外処理完成 (P0-EXCEPTION-GO)**: typed catch、custom exception の正確な catch/rethrow、`raise ... from ...`、bare rethrow、union-return 垂直スライスを実装。builtin exception を `pytra.built_in.error` に統合。
+- **C++ 例外 native lowering (P0-EXCEPTION-CPP)**: C++ backend で native exception lowering を実装。
+- **Go selfhost 進捗 (P2-SELFHOST)**: lowering profile 対応、container locals の参照型ラッパー既定化、`yields_dynamic` による型アサーション判定、Go mapping dispatch + parity カバレッジ完了。P2-LOWERING-PROFILE-GO 完了。
+- **CommonRenderer 拡張**: elif chain レンダリングを共通化。C++ common renderer の parity 回帰修正。
+- **type_id table linker 生成 (P0-TYPE-ID-TABLE)**: linker が `pytra.built_in.type_id_table` を生成する仕様を策定・実装。ハードコード type_id の廃止方針を確定。
+- **@runtime / @extern デコレータ設計完了 (P0-RUNTIME-DECORATOR)**: `@runtime("namespace")` + `@extern` + `runtime_var("namespace")` の3本立てに統一。自動導出ルール、`symbol=` / `tag=` オプション上書き、include ファイル構成を spec-runtime-decorator.md に策定。旧 `@extern_method` / `@abi` を廃止。
+- **P0-CPP-INCLUDE-PATH-FIX**: C++ emitter の runtime include パス不整合を修正。
+- **P0-GO-PATHLIB-FIX**: Go emitter の pathlib 署名崩れ（joinpath vararg、read_text/write_text）を修正。
+- **spec 再編**: legacy 仕様 12 件をアーカイブ。spec-codex.md → spec-agent.md に改名。spec/index.md をカテゴリ別テーブルに再構成。未リンク仕様 6 件を追加。spec-opaque-type.md（`@extern class` の型契約）を新設。
+- **ガイド新設**: docs/ja/guide/ に EAST・emitter・型システム・runtime・extern/FFI の 5 ページを追加。Tutorial と Specification の間に Guide セクションを配置。
+- **チュートリアル拡充**: 例外処理、Python との違い、モジュール一覧（argparse/glob/re/enum/timeit）、サンプル集のページを追加。読み順を再構成。
+- **AGENTS.md 分割**: planner / coder の役割別仕様に分離。最小ブートストラップ化。
+
 ## 2026-03-27
 
 - **C++ emitter spec 準拠完了 (S1〜S15)**: fail-fast 化、mapping.json 一本化、container 参照型ラッパー（`Object<list<T>>` 等）、implicit_promotions、is_entry/main_guard_body、@property 対応、runtime パス解決の共通化。
