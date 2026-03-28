@@ -18,6 +18,9 @@
 
 ## アーカイブ一覧
 
+- 2026-03-28（toolchain1 C++ 固有仕様 → toolchain2 では EAST3 Optimizer / CommonRenderer / spec-emitter-guide §10 に統合）:
+  - [20260328-spec-cpp-optimizer.md](./20260328-spec-cpp-optimizer.md)
+  - [20260328-spec-cpp-list-reference-semantics.md](./20260328-spec-cpp-list-reference-semantics.md)
 - 2026-03-28（toolchain1 言語別 backend 契約 → toolchain2 では spec-emitter-guide.md + profiles に統合）:
   - [20260328-spec-java-native-backend.md](./20260328-spec-java-native-backend.md)
   - [20260328-spec-lua-native-backend.md](./20260328-spec-lua-native-backend.md)

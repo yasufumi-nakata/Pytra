@@ -41,8 +41,6 @@
 | 言語プロファイル | [spec-language-profile.md](./spec-language-profile.md) | Lowering プロファイル、CommonRenderer |
 | runtime mapping | [spec-runtime-mapping.md](./spec-runtime-mapping.md) | mapping.json のフォーマット |
 | ランタイム | [spec-runtime.md](./spec-runtime.md) | ランタイム配置、include 規約 |
-| C++ Optimizer | [spec-cpp-optimizer.md](./spec-cpp-optimizer.md) | C++ backend 後段最適化 |
-| C++ list 参照 | [spec-cpp-list-reference-semantics.md](./spec-cpp-list-reference-semantics.md) | C++ list の alias/共有/破壊的更新 |
 
 ### 開発者向け
 
