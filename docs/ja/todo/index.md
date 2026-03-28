@@ -20,6 +20,17 @@
 
 ## 未完了タスク
 
+### P0-RUNTIME-DECORATOR: @runtime / @extern デコレータの導入
+
+文脈: [docs/ja/plans/p6-extern-method-redesign.md](../plans/p6-extern-method-redesign.md)
+仕様: [docs/ja/spec/spec-opaque-type.md](../spec/spec-opaque-type.md)
+
+1. [ ] [ID: P0-RTDEC-S1] `@runtime("namespace")` デコレータを parser に実装し、自動導出ルール（module/symbol/tag）を組み込む
+2. [ ] [ID: P0-RTDEC-S2] `containers.py` を `@runtime` 記法に書き換える
+3. [ ] [ID: P0-RTDEC-S3] `@extern_method` を廃止する（parser からの受理を停止）
+4. [ ] [ID: P0-RTDEC-S4] `@abi` を廃止する + spec-east.md の `meta.runtime_abi_v1` を廃止する
+5. [ ] [ID: P0-RTDEC-S5] チュートリアル・ガイド・emitter guide の `@abi` / `@extern_method` 言及を `@runtime` / `@extern` に更新する
+
 ### P0-TYPE-ID-TABLE: linker による type_id テーブル仮想モジュール生成
 
 文脈: [docs/ja/plans/p0-type-id-table.md](../plans/p0-type-id-table.md)
