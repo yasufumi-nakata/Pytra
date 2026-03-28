@@ -165,7 +165,7 @@ path: list[str] = runtime_var("pytra.std.sys")
 
 ## 5. `@extern` の仕様
 
-### 4.1 opaque クラス
+### 5.1 opaque クラス
 
 ```python
 @extern
@@ -180,7 +180,7 @@ class Window:
 - isinstance の対象外
 - 詳細は spec-opaque-type.md を参照
 
-### 4.2 外部関数
+### 5.2 外部関数
 
 ```python
 @extern
@@ -194,7 +194,7 @@ def sdl_create_window(title: str, w: int, h: int, flags: int) -> int: ...
 - Pytra はシグネチャだけ知っている
 - emitter は委譲コード（ネイティブ関数への薄いラッパー）を生成する
 
-### 4.3 `@extern` クラス内のメソッドに個別 symbol を指定する
+### 5.3 `@extern` クラス内のメソッドに個別 symbol を指定する
 
 大半のケースでは不要だが、外部ライブラリの API 名が Pytra のメソッド名と異なる場合:
 
@@ -204,6 +204,25 @@ class Window:
     @extern(symbol="SDL_SetWindowTitle")
     def set_title(self, title: str) -> None: ...
 ```
+
+### 5.4 外部変数（`extern_var`）
+
+外部ライブラリの定数・変数を宣言する。`runtime_var` と対称の関数形式。
+
+```python
+from pytra.std import extern_var
+
+# Python 名 == 外部シンボル名
+WINDOW_SHOWN: int = extern_var()
+
+# 外部シンボル名を明示
+SDL_INIT_VIDEO: int = extern_var("SDL_INIT_VIDEO")
+```
+
+- 引数は 0〜1 個（シンボル名のみ。namespace は不要）
+- 引数なしの場合、Python の変数名をそのまま外部シンボル名として使う
+- 旧形式 `extern_var(module=..., symbol=..., tag=...)` は parser が fail-closed で拒否する
+- EAST 表現は既存の `extern_var_v1`（`symbol` + `same_name`）をそのまま利用する
 
 ## 5. `include/` ファイルの構成
 
@@ -235,7 +254,7 @@ src/include/py/pytra/
 | `@extern_method(module=..., symbol=..., tag=...)` | `@runtime` クラス内のメソッド（自動導出） | P0-RUNTIME-DECORATOR で廃止 |
 | `@extern_fn(module=..., symbol=..., tag=...)` | `@runtime("ns") def ...` または `@extern def ...` | 同上 |
 | `@extern_class(module=..., symbol=..., tag=...)` | `@runtime("ns") class ...` または `@extern class ...` | 同上 |
-| `extern_var(module=..., symbol=..., tag=...)` | `runtime_var("ns")`（namespace + 変数名で自動導出） | 同上 |
+| `extern_var(module=..., symbol=..., tag=...)` | `runtime_var("ns")` または `extern_var("sym")` | 同上 |
 | `@abi(args={...})` | 廃止（arg mode 不要） | 同上 |
 
 parser は旧デコレータを受理した場合 fail-closed で停止する。
@@ -310,7 +329,60 @@ parser は旧デコレータを受理した場合 fail-closed で停止する。
 }
 ```
 
-## 8. 関連
+### extern_var
+
+```json
+{
+  "kind": "AnnAssign",
+  "target": {"kind": "Name", "id": "WINDOW_SHOWN"},
+  "annotation": "int64",
+  "meta": {
+    "extern_var_v1": {
+      "schema_version": 1,
+      "symbol": "SDL_WINDOW_SHOWN",
+      "same_name": 0
+    }
+  }
+}
+```
+
+- `extern_var()` の場合は `symbol == target_name` かつ `same_name == 1`
+- `extern_var("sym")` の場合は `symbol == <literal>` で、`same_name` は target 名との一致で決まる
+- `runtime_var` の EAST 表現（§4）とは `module_id` / `tag` の有無で区別される
+
+## 8. パイプラインにおける解決フロー
+
+`include/` 配下の宣言ファイルは、以下のフローで処理される。
+
+```
+src/include/py/pytra/**/*.py
+    ↓ parser（EAST1 生成）
+test/include/east1/py/**/*.east1    ← golden として保管
+    ↓ resolve 段で load_builtin_registry() が読み込み
+builtin registry（型シグネチャ辞書）
+    ↓ EAST1 → EAST2 の型解決で参照
+EAST2（runtime_call, runtime_module_id, semantic_tag 付与済み）
+```
+
+責務境界:
+
+- **parser**: `.py` → `.east1` の構文変換のみ。decorator は raw 文字列としてノードに付与し、意味解釈しない
+- **resolve**: `.east1` を読み込み、`@runtime` / `@extern` / `runtime_var` / `extern_var` の意味を解釈して builtin registry に登録する。ユーザーコードの EAST1 → EAST2 変換時にこの registry を参照し、`runtime_module_id`, `runtime_symbol`, `semantic_tag` 等を付与する
+- **emitter**: EAST3 の解決済み情報を描画するだけ。decorator の再解釈は禁止
+
+## 9. 宣言一覧（早見表）
+
+| | runtime（Pytra 内部） | extern（外部ライブラリ） |
+|---|---|---|
+| **クラス** | `@runtime("ns") class X:` | `@extern class X:` |
+| **メソッド** | 暗黙（デコレータ不要） | 暗黙（`@extern(symbol=)` で上書き可） |
+| **関数** | `@runtime("ns") def f():` | `@extern def f():` |
+| **変数** | `x: T = runtime_var("ns")` | `x: T = extern_var("sym")` |
+| rc | あり | なし |
+| type_id | あり | なし |
+| isinstance | 可 | 不可 |
+
+## 10. 関連
 
 - [spec-opaque-type.md](./spec-opaque-type.md) — opaque 型（`@extern class`）の詳細
 - [spec-emitter-guide.md](./spec-emitter-guide.md) — emitter の写像規約
