@@ -13,40 +13,27 @@
 2. `docs/ja/spec/spec-agent.md`
 3. `docs/ja/todo/index.md`
 
-## 最小ルール
+## 最小ルール（全員共通）
 
-- `docs/ja/` を正本（source of truth）とし、`docs/en/` は翻訳ミラーとして扱う。
-- `docs/ja/` 直下（トップレベル）への新規ファイル追加は原則禁止（同一ターンの明示依頼がある場合のみ許可）。
-- `docs/ja/plans/`、`docs/ja/language/`、`docs/ja/todo/archive/`、`docs/ja/spec/` 配下は、運用ルールに沿う範囲で作成可。
-- 作業生成物は `work/tmp/` を使用する。selfhost テストは `work/selfhost/` を使用する。
-- **以下への出力は禁止**: `out/`, `selfhost/`, `sample/obj/`, `/tmp/`。
-- `sample/out/` は sample/py の出力見本（PNG/GIF/TXT）専用。それ以外の用途での出力禁止。
-- リポジトリ直下に一時出力ディレクトリを作成してはならない。
-- `materials/` はユーザー資料置き場として扱い、Codex は read-only（明示指示がある場合のみ編集可）。
-- `materials/Yanesdk/` と `materials/microgpt/` はユーザー管理資料として扱う。
-- 変換互換性テストの原本（例: `materials/microgpt/microgpt-20260222.py`）は改変禁止とし、変換器都合の回避版が必要な場合は `work/tmp/*-lite.py` を別名で作成して分離する。
+- `docs/ja/` を正本（source of truth）とし、`docs/en/` は翻訳ミラー。
+- 作業生成物は `work/tmp/`、selfhost テストは `work/selfhost/`。
+- **出力禁止先**: `out/`, `selfhost/`, `sample/obj/`, `/tmp/`。
+- `materials/` は read-only（明示指示がある場合のみ編集可）。
 
-## git 操作の禁止事項（複数インスタンス環境）
+## git 禁止事項（全員共通）
 
-複数の Codex / Claude Code インスタンスが同一ワーキングツリーで同時に動作する。以下を厳守すること。
+- **`git stash` / `git checkout --` / `git restore` / `git reset --hard` / `git clean -f` は禁止。**
+- **`.git/index.lock` を削除してはならない。** 他のインスタンスが操作中なので **待つ**。
 
-- **`git stash` / `git checkout -- <file>` / `git restore` / `git reset --hard` / `git clean -f` は禁止**。他インスタンスの未コミット変更を破壊する。
-- **`.git/index.lock` を削除してはならない**。このファイルが存在するときは他のインスタンスが git 操作中である。削除すると index が壊れる。ロックが残っている場合は **待つ**こと。
-- 変更を取り消したい場合は、Edit/Write で手動で元に戻すか、`git diff <file>` で差分を確認してから対処する。
+## 役割別の詳細ルール
 
-## TODO 起票のルール
-
-- **新機能の導入タスクには、旧機能の撤去タスクも必ずセットで含めること**。新しい仕組みを入れるだけで旧い仕組みの撤去を忘れると、旧コードが残り続けて二重管理やバグの原因になる。
-
-## golden / テスト生成の禁止事項
-
-- **golden ファイル（east1/east2/east3/east3-opt/linked）は `python3 tools/regenerate_golden.py` でのみ生成すること**。`pytra-cli2` を直接叩いて手動で出力先を指定してはならない。手動生成はパスの間違い（`test/fixtures/` や `test/pytra/east1/built_in/` のような誤ったディレクトリ）の原因になる。
-- **sample の再生成は `python3 tools/regenerate_samples.py` でのみ行うこと**。
-- **`test/fixture/` 配下のディレクトリ構造を勝手に作らないこと**。既存のディレクトリ構成（`source/py/`, `east1/py/`, `east2/`, `east3/`, `east3-opt/`, `linked/`）に従う。
-- **`test/` 直下に新しいサブディレクトリを作らないこと**（`test/fixtures/` のような typo ディレクトリを防ぐ）。
+| 役割 | ファイル | 内容 |
+|---|---|---|
+| プランニング担当 | [spec-agent-planner.md](./spec/spec-agent-planner.md) | TODO 起票、計画書、撤去タスク義務、バージョン運用 |
+| コード担当 | [spec-agent-coder.md](./spec/spec-agent-coder.md) | golden 生成、test 配置、emitter/runtime 禁止事項、コミット運用 |
+| 共通詳細 | [spec-agent.md](./spec/spec-agent.md) | ドキュメント言語運用、全般ルール |
 
 ## 参照先
 
-- エージェント運用ルール本体: `docs/ja/spec/spec-agent.md`
-- TODO 運用: `docs/ja/todo/index.md`
+- TODO: `docs/ja/todo/index.md`
 - TODO 履歴: `docs/ja/todo/archive/index.md`
