@@ -19,146 +19,146 @@
 
 ## 2026-03-26
 
-- **パイプライン再設計完了**: parse → resolve → compile → optimize → link → emit の 6 段パイプライン（`pytra-cli2`）が全段動作。toolchain2 は toolchain に一切依存しない独立実装。
-- **Go backend 新パイプライン移行**: Go emitter + runtime を新パイプラインで実装。sample 18/18 emit 成功。旧 Go emitter/runtime を削除。
-- **C++ emitter 新規実装**: `toolchain2/emit/cpp/` に新パイプライン用 C++ emitter を実装。fixture 132/132, sample 18/18 emit 成功。
-- **CodeEmitter 基底クラス**: `mapping.json` による runtime_call 写像を全 emitter で共有。ハードコード除去。
-- **仕様整合 (Codex-review)**: resolve/parser/validator/linker/emitter の仕様違反 20 件以上を修正。
-- **spec-east1.md / spec-east2.md**: EAST1（型未解決）と EAST2（型確定）の出力契約を正式定義。
-- **spec-builtin-functions.md**: built-in 関数の宣言仕様。POD/Obj 型分類、dunder 委譲、extern_fn/extern_var/extern_class/extern_method。
-- **spec-runtime-mapping.md**: mapping.json のフォーマット仕様。implicit_promotions テーブル。
-- **integer promotion**: C++ usual arithmetic conversion に準拠した数値昇格 cast を resolve で挿入。
-- **bytearray 対応**: `pytra/utils/png.py` / `gif.py` を `list[int]` → `bytearray` に書き換え。Go で `[]byte` に写像。
+- **Pipeline redesign completed**: All 6 stages of the pipeline (`parse → resolve → compile → optimize → link → emit`) via `pytra-cli2` are fully operational. toolchain2 is a completely independent implementation with no dependency on toolchain.
+- **Go backend migrated to new pipeline**: Go emitter + runtime implemented on the new pipeline. 18/18 samples emit success. Legacy Go emitter/runtime removed.
+- **C++ emitter new implementation**: New pipeline C++ emitter implemented in `toolchain2/emit/cpp/`. fixture 132/132, sample 18/18 emit success.
+- **CodeEmitter base class**: runtime_call mapping via `mapping.json` shared across all emitters. Hardcoding removed.
+- **Spec conformance (Codex-review)**: 20+ spec violations fixed across resolve/parser/validator/linker/emitter.
+- **spec-east1.md / spec-east2.md**: EAST1 (type-unresolved) and EAST2 (type-determined) output contracts formally defined.
+- **spec-builtin-functions.md**: Built-in function declaration spec. POD/Obj type classification, dunder delegation, extern_fn/extern_var/extern_class/extern_method.
+- **spec-runtime-mapping.md**: mapping.json format spec. implicit_promotions table.
+- **Integer promotion**: Numeric promotion casts conforming to C++ usual arithmetic conversion inserted at resolve.
+- **bytearray support**: `pytra/utils/png.py` / `gif.py` rewritten from `list[int]` to `bytearray`. Maps to `[]byte` in Go.
 
 ## 2026-03-25
 
-- **P0 全完了**: parse/resolve/compile/optimize/link/emit の全段が golden file テストと一致。
-- **test/ ディレクトリ再編**: fixture/sample/include/pytra/selfhost の 5 カテゴリに整理。
-- **golden file 自動再生成**: `tools/regenerate_golden.py` で全段 golden を一括再生成。
-- **Go emitter**: お手本 emitter として実装。fixture 132/132, sample 18/18 emit 成功。
-- **Go runtime + parity**: sample 18/18 で `go run` + stdout 一致。Go は Python の 63x 高速。
-- **Go runtime 分解**: `pytra_runtime.go` 全部入り → `built_in/` + `std/` + `utils/` に分離。
+- **All P0 tasks completed**: All stages (parse/resolve/compile/optimize/link/emit) match golden file tests.
+- **test/ directory reorganization**: Organized into 5 categories: fixture/sample/include/pytra/selfhost.
+- **Automatic golden file regeneration**: `tools/regenerate_golden.py` for batch regeneration of all golden files.
+- **Go emitter**: Implemented as the reference emitter. fixture 132/132, sample 18/18 emit success.
+- **Go runtime + parity**: 18/18 samples pass `go run` + stdout match. Go is 63x faster than Python.
+- **Go runtime decomposition**: Split `pytra_runtime.go` monolith into `built_in/` + `std/` + `utils/`.
 
 ## 2026-03-24
 
-- **パイプライン再設計着手**: parse/resolve/compile/optimize/emit の 5 段（後に link 追加で 6 段）パイプラインを設計。
-- **toolchain2/ 新規作成**: 現行 toolchain/ とは独立した新パイプライン実装。selfhost 対象（Any/object 禁止、pytra.std のみ）。
-- **pytra-cli2**: 新 CLI。-parse/-resolve/-compile/-optimize/-link/-emit/-build サブコマンド。
-- **EAST1 golden file**: spec-east1 準拠で golden を strip（型情報除去）。150 件。
-- **built-in 関数宣言**: `src/include/py/pytra/built_in/builtins.py` + `containers.py`。v2 extern（extern_fn/extern_var/extern_class/extern_method）。
-- **stdlib 宣言**: `src/include/py/pytra/std/` に math/time/glob/os/sys 等の v2 extern 宣言。
+- **Pipeline redesign started**: Designed 5-stage pipeline (parse/resolve/compile/optimize/emit), later expanded to 6 stages with link.
+- **toolchain2/ created**: New pipeline implementation independent of existing toolchain/. Selfhost-ready (no Any/object, pytra.std only).
+- **pytra-cli2**: New CLI with -parse/-resolve/-compile/-optimize/-link/-emit/-build subcommands.
+- **EAST1 golden files**: Golden files stripped (type info removed) conforming to spec-east1. 150 files.
+- **Built-in function declarations**: `src/include/py/pytra/built_in/builtins.py` + `containers.py`. v2 extern (extern_fn/extern_var/extern_class/extern_method).
+- **stdlib declarations**: v2 extern declarations for math/time/glob/os/sys etc. in `src/include/py/pytra/std/`.
 
 ## 2026-03-23
 
-- Dart emitter デッドコード除去（14 関数削除）。ランタイムヘルパー重複排除。18/18 parity。
-- Nim emitter spec-emitter-guide 準拠改善。`build_import_alias_map` 導入、`yields_dynamic` 対応。
-- 全 backend 共通テストスイート整備。`runtime_parity_check.py` で fixture 131 件を全言語実行可能に。
-- EAST3 型推論バグ修正 4 件（Nim 担当報告: Swap, returns, VarDecl, list[unknown]）。
-- ContainerValueLocalHintPass を全 backend 共通化。
-- Swap ノードを Name 限定に制約し、Subscript swap を Assign 展開。
-- tuple 分割代入の `_` 要素に `unused: true` 付与。
-- cast() の resolved_type 修正 + list.pop() の generic 解決。
-- C++ multi-file emit の runtime east パス解決修正。
-- C++ test_py2cpp_features.py テストパス率 64% → 95%。
+- Dart emitter dead code removal (14 functions deleted). Runtime helper dedup. 18/18 parity.
+- Nim emitter spec-emitter-guide compliance improvements. Introduced `build_import_alias_map`, `yields_dynamic` support.
+- Common test suite for all backends. `runtime_parity_check.py` enables fixture 131 execution across all languages.
+- EAST3 type inference bug fixes x4 (reported by Nim: Swap, returns, VarDecl, list[unknown]).
+- ContainerValueLocalHintPass generalized to all backends.
+- Swap node constrained to Name-only, Subscript swap expanded to Assign.
+- `unused: true` added to `_` elements in tuple destructuring.
+- cast() resolved_type fix + list.pop() generic resolution.
+- C++ multi-file emit runtime east path resolution fix.
+- C++ test_py2cpp_features.py pass rate 64% → 95%.
 
 ## 2026-03-22
 
-- REPO_ROOT 修正 + import alias 解決 + conftest extern 関数修正。
-- `build_multi_cpp.py` の generated source を include 追跡ベースの自動リンクに変更。
-- Object<T> 移行フェーズ 1〜4 完了（ControlBlock, emitter, list/dict, 旧型撤去）。
+- REPO_ROOT fix + import alias resolution + conftest extern function fix.
+- `build_multi_cpp.py` generated source changed to include-tracking-based auto-linking.
+- Object<T> migration phases 1–4 completed (ControlBlock, emitter, list/dict, legacy type removal).
 
 ## 2026-03-21
 
-- EAST1 パーサーから `noncpp_runtime_call` / `noncpp_module_id` を除去（EAST1 責務逸脱の解消）。
-- py_runtime.h を 6 ファイルに分解・ファサード化。
-- runtime .east を link パイプラインに自動統合。
-- object = tagged value 統一。tagged union を PyTaggedValue (object+tag) に統一。
-- 旧 object API 一掃（make_object, obj_to_rc_or_raise 等）。
-- escape 解析結果を class_storage_hint に反映。union type パラメータを ref (gc_managed) に強制。
-- self-contained C++ output: extern モジュールの宣言ヘッダー自動生成。
+- Removed `noncpp_runtime_call` / `noncpp_module_id` from EAST1 parser (resolving EAST1 responsibility violation).
+- Decomposed py_runtime.h into 6 files with facade pattern.
+- Runtime .east auto-integrated into link pipeline.
+- Unified object = tagged value. Tagged union unified to PyTaggedValue (object+tag).
+- Removed all legacy object APIs (make_object, obj_to_rc_or_raise, etc.).
+- Escape analysis results reflected in class_storage_hint. Union type parameters forced to ref (gc_managed).
+- Self-contained C++ output: auto-generated declaration headers for extern modules.
 
 ## 2026-03-20 | v0.15.0
 
-- backend として PowerShell をサポート。ネイティブ PowerShell コードを直接生成。
-- Zig backend: pathlib native 実装 + 汎用 native re-export 機構 → 18/18 parity 達成。
-- Go/Lua fixture parity 改善（第 2 弾）。
-- Ruby emitter: fixture parity 改善（Is/IsNot, lambda, str iteration, dunder methods, runtime 拡張）。
-- C# emitter: @extern 委譲コード生成 + ビルドパイプライン修正。
+- PowerShell backend added. Generates native PowerShell code directly.
+- Zig backend: pathlib native implementation + generic native re-export mechanism → 18/18 parity achieved.
+- Go/Lua fixture parity improvements (wave 2).
+- Ruby emitter: fixture parity improvements (Is/IsNot, lambda, str iteration, dunder methods, runtime extensions).
+- C# emitter: @extern delegation code generation + build pipeline fixes.
 
 ## 2026-03-18 | v0.14.0
 
-- 再帰的 union type（tagged union）をサポート。spec-tagged-union.md 策定。
-- nominal ADT: parser → EAST3 lowering → C++ backend まで一貫実装。
-- Match/case の exhaustiveness check（closed nominal ADT family）。
-- 非 C++ backend は nominal ADT lane を fail-closed。
+- Recursive union types (tagged unions) supported. spec-tagged-union.md established.
+- Nominal ADT: parser → EAST3 lowering → C++ backend implemented end-to-end.
+- Match/case exhaustiveness check (closed nominal ADT family).
+- Non-C++ backends fail-closed on nominal ADT lane.
 
-## 2026-03-14〜17
+## 2026-03-14–17
 
-- EAST core モジュール分割（core.py 8000 行 → 20+ ファイルに分解）。
-- IR core decomposition: builder, expr, stmt, call metadata, type parser 等を個別モジュールに。
-- backend registry selfhost parity 強化。local CI reentry guard。
+- EAST core module decomposition (core.py 8000 lines → 20+ files).
+- IR core decomposition: builder, expr, stmt, call metadata, type parser etc. into individual modules.
+- Backend registry selfhost parity strengthening. Local CI reentry guard.
 
-## 2026-03-11〜13 | v0.13.0
+## 2026-03-11–13 | v0.13.0
 
-- NES(ファミコン)のエミュレーターを Python + SDL3 で作成。C++ に変換できるよう Pytra 側を改良中。
-- Linker 仕様策定（spec-linker.md）。compile / link パイプライン計画。
-- 全 backend 共通の smoke テスト基盤整備。`test_py2x_smoke_common.py` を正本化。
-- non-C++ backend health gate を family 単位で集約。
+- Built an NES (Famicom) emulator in Python + SDL3. Improving Pytra to enable C++ transpilation.
+- Linker spec established (spec-linker.md). Compile / link pipeline plan.
+- Common smoke test infrastructure for all backends. `test_py2x_smoke_common.py` as source of truth.
+- Non-C++ backend health gate aggregated by family.
 
 ## 2026-03-10 | v0.12.0
 
-- Runtime 整理の大工事。C++ generated runtime ヘッダー生成パイプライン整備。
-- `src/runtime/cpp/{generated,native}` の責務分離を確立。
-- runtime .east ファイルを正本化し、C++ ヘッダーを自動生成する仕組みを構築。
+- Major runtime reorganization. C++ generated runtime header generation pipeline established.
+- `src/runtime/cpp/{generated,native}` responsibility separation established.
+- Runtime .east files as source of truth, with automatic C++ header generation.
 
 ## 2026-03-09 | v0.11.0
 
-- object 境界を見直し。selfhost stage2 parity (pass=18 fail=0) 達成。
-- チュートリアル整備（tutorial/README.md, how-to-use.md）。
+- Object boundary redesign. Selfhost stage2 parity (pass=18 fail=0) achieved.
+- Tutorial setup (tutorial/README.md, how-to-use.md).
 
 ## 2026-03-08 | v0.10.0
 
-- `@template` を使えるようになった。linked runtime helper 向け v1。
-- 各言語の runtime を整備中。Debian 12 parity bootstrap。
-- 全 target sample parity の完了条件を定義。
+- `@template` now usable. v1 for linked runtime helpers.
+- Runtime for each language under development. Debian 12 parity bootstrap.
+- Completion criteria defined for all-target sample parity.
 
 ## 2026-03-07 | v0.9.0
 
-- 大規模リファクタリング完了。全言語で再び使えるようになった。
-- `@extern` と `@abi` を使えるようになり、変換後のコードを他言語からも呼び出せるようになった。
-- selfhost stage1 build + direct .py route が green。
+- Major refactoring completed. All languages usable again.
+- `@extern` and `@abi` now usable, enabling transpiled code to be called from other languages.
+- Selfhost stage1 build + direct .py route green.
 
 ## 2026-03-06 | v0.8.0
 
-- ABI 境界を定義しなおして大規模リファクタリング実施中。
-- spec-abi.md 策定（@extern / @abi の固定 ABI 型）。
-- C++ 変換器以外は一時的に壊れていた。
+- ABI boundary redefined, major refactoring in progress.
+- spec-abi.md established (@extern / @abi fixed ABI types).
+- Non-C++ transpilers temporarily broken.
 
 ## 2026-03-04 | v0.7.0
 
-- 変換対象として PHP を追加。Nim 正式対応作業中。
+- PHP added as a transpilation target. Nim formal support in progress.
 
 ## 2026-03-02 | v0.6.0
 
-- 変換対象として Scala を追加。
+- Scala added as a transpilation target.
 
 ## 2026-03-01 | v0.5.0
 
-- 変換対象として Lua を追加。
+- Lua added as a transpilation target.
 
 ## 2026-02-28 | v0.4.0
 
-- 変換対象として Ruby を追加。
+- Ruby added as a transpilation target.
 
 ## 2026-02-27 | v0.3.0
 
-- EAST（中間表現）を段階処理（EAST1→EAST2→EAST3）へ整理。
-- C++ CodeEmitter の大規模分割・縮退。
+- EAST (intermediate representation) reorganized into staged processing (EAST1 → EAST2 → EAST3).
+- Major decomposition / reduction of C++ CodeEmitter.
 
 ## 2026-02-25 | v0.2.0
 
-- 全言語（C++, Rust, C#, JS, TS, Go, Java, Kotlin, Swift）について元ソースコードに近い形で出力されるようになった。
+- All languages (C++, Rust, C#, JS, TS, Go, Java, Kotlin, Swift) now output code closely resembling the original source.
 
 ## 2026-02-23 | v0.1.0
 
-- Pytra 初版リリース。Python の元ソースコードに極めて近いスタイルで、読みやすい C++ コードを生成できるようになった。
+- Pytra initial release. Generates highly readable C++ code that closely mirrors the original Python source style.
