@@ -96,7 +96,7 @@ def cmd_emit(argv: list[str]) -> int:
 
 def _build_go_via_toolchain2(
     input_file: str, output_dir: str, emit_dir: str,
-    exe_name: str, do_run: bool, single_output: str,
+    exe_name: str, do_build: bool, do_run: bool, single_output: str,
 ) -> int:
     """Build Go target via toolchain2 pipeline (parse→resolve→compile→optimize→link→emit)."""
     import sys as _sys
@@ -126,7 +126,7 @@ def _build_go_via_toolchain2(
             so_path.parent.mkdir(parents=True, exist_ok=True)
             so_path.write_text(generated.read_text(encoding="utf-8"), encoding="utf-8")
 
-    if not do_run:
+    if not do_build and not do_run:
         return 0
 
     # go build + run: write go.mod, build, execute
@@ -153,7 +153,7 @@ def _build_go_via_toolchain2(
 
 def _build_cpp_via_toolchain2(
     input_file: str, output_dir: str, emit_dir: str,
-    exe_name: str, do_run: bool, single_output: str,
+    exe_name: str, do_build: bool, do_run: bool, single_output: str,
 ) -> int:
     """Build C++ target via toolchain2 pipeline."""
     src_dir = _find_src_dir()
@@ -170,6 +170,9 @@ def _build_cpp_via_toolchain2(
         so_path = Path(single_output)
         so_path.parent.mkdir(parents=True, exist_ok=True)
         so_path.write_text(generated.read_text(encoding="utf-8"), encoding="utf-8")
+
+    if not do_build and not do_run:
+        return 0
 
     import os as _os
 
@@ -198,7 +201,7 @@ def _build_cpp_via_toolchain2(
     compile_cmd = [
         "g++",
         "-std=c++20",
-        "-O2",
+        "-O0",
         "-I", emit_dir,
         "-I", src_dir,
         "-I", src_dir + "/runtime/cpp",
@@ -217,7 +220,7 @@ def _build_cpp_via_toolchain2(
 
 # ---------- build ----------
 
-def cmd_build(argv: list[str]) -> int:
+def cmd_build(argv: list[str], *, default_build: bool = True) -> int:
     """pytra build INPUT.py --output-dir DIR [--target TARGET] [--exe NAME] [--run] [-o FILE]"""
     # Parse args
     input_file = ""
@@ -225,6 +228,7 @@ def cmd_build(argv: list[str]) -> int:
     single_output = ""
     target = "cpp"
     exe_name = "app.out"
+    do_build = default_build
     do_run = False
     passthrough: list[str] = []
     i = 0
@@ -248,6 +252,11 @@ def cmd_build(argv: list[str]) -> int:
             continue
         if tok == "--run":
             do_run = True
+            do_build = True
+            i += 1
+            continue
+        if tok == "--build":
+            do_build = True
             i += 1
             continue
         if tok.startswith("-"):
@@ -275,9 +284,9 @@ def cmd_build(argv: list[str]) -> int:
 
     # Go target: delegate to new toolchain2 pipeline
     if target == "go":
-        return _build_go_via_toolchain2(input_file, output_dir, emit_dir, exe_name, do_run, single_output)
+        return _build_go_via_toolchain2(input_file, output_dir, emit_dir, exe_name, do_build, do_run, single_output)
     if target == "cpp":
-        return _build_cpp_via_toolchain2(input_file, output_dir, emit_dir, exe_name, do_run, single_output)
+        return _build_cpp_via_toolchain2(input_file, output_dir, emit_dir, exe_name, do_build, do_run, single_output)
 
     # Stage 1: compile + link (writes manifest.json + east3/ into output_dir)
     link_cmd = [
@@ -566,10 +575,10 @@ def main() -> int:
     if cmd == "emit":
         return cmd_emit(rest)
     if cmd == "build":
-        return cmd_build(rest)
+        return cmd_build(rest, default_build=True)
 
-    # Default: treat as build (backward compat with ./pytra INPUT.py --build)
-    return cmd_build(argv)
+    # Default: treat as transpile-only unless --build/--run is requested.
+    return cmd_build(argv, default_build=False)
 
 
 if __name__ == "__main__":

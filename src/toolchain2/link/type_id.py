@@ -41,6 +41,28 @@ _BUILTIN_TYPE_IDS: dict[str, int] = {
     "KeyError": 15,
 }
 
+_BUILTIN_CLASS_IDS: dict[str, int] = {
+    "object": _BUILTIN_TYPE_IDS["object"],
+    "BaseException": _BUILTIN_TYPE_IDS["BaseException"],
+    "Exception": _BUILTIN_TYPE_IDS["Exception"],
+    "RuntimeError": _BUILTIN_TYPE_IDS["RuntimeError"],
+    "ValueError": _BUILTIN_TYPE_IDS["ValueError"],
+    "TypeError": _BUILTIN_TYPE_IDS["TypeError"],
+    "IndexError": _BUILTIN_TYPE_IDS["IndexError"],
+    "KeyError": _BUILTIN_TYPE_IDS["KeyError"],
+}
+
+_BUILTIN_CLASS_CHILDREN: dict[str, list[str]] = {
+    "object": ["BaseException"],
+    "BaseException": ["Exception"],
+    "Exception": ["IndexError", "KeyError", "RuntimeError", "TypeError", "ValueError"],
+    "RuntimeError": [],
+    "ValueError": [],
+    "TypeError": [],
+    "IndexError": [],
+    "KeyError": [],
+}
+
 _ROOT_BASE_NAMES: set[str] = set(_BUILTIN_TYPE_IDS.keys()) | {
     "Enum",
     "IntEnum",
@@ -264,20 +286,13 @@ def build_type_id_table(
 
     # Build children map
     for fqcn, base_fqcn in sorted(class_bases.items()):
-        if base_fqcn in class_bases:
-            if base_fqcn not in children:
-                children[base_fqcn] = []
-            children[base_fqcn].append(fqcn)
+        if base_fqcn not in children:
+            children[base_fqcn] = []
+        children[base_fqcn].append(fqcn)
 
     # Sort children for determinism
     for parent in list(children.keys()):
         children[parent] = sorted(children[parent])
-
-    # Find roots (classes whose base is not in class_bases)
-    roots: list[str] = []
-    for fqcn, base_fqcn in sorted(class_bases.items()):
-        if base_fqcn not in class_bases:
-            roots.append(fqcn)
 
     # DFS assignment
     next_id_holder: list[int] = [_USER_TYPE_ID_BASE]
@@ -293,19 +308,53 @@ def build_type_id_table(
         exit_val = next_id_holder[0]
         type_info_table[fqcn] = {"id": entry, "entry": entry, "exit": exit_val}
 
-    for fqcn in sorted(roots):
-        _assign(fqcn)
+    for builtin_name, builtin_id in sorted(_BUILTIN_CLASS_IDS.items(), key=lambda item: item[1]):
+        type_id_table[builtin_name] = builtin_id
 
-    if len(type_id_table) != len(class_bases):
+    def _walk_builtin(name: str) -> None:
+        for builtin_child in _BUILTIN_CLASS_CHILDREN.get(name, []):
+            _walk_builtin(builtin_child)
+        for child_fqcn in children.get(name, []):
+            _assign(child_fqcn)
+        exit_val = next_id_holder[0]
+        next_builtin_id = _BUILTIN_CLASS_IDS[name] + 1
+        if len(_BUILTIN_CLASS_CHILDREN.get(name, [])) == 0 and len(children.get(name, [])) == 0:
+            exit_val = next_builtin_id
+        elif exit_val < next_builtin_id:
+            exit_val = next_builtin_id
+        type_info_table[name] = {"id": _BUILTIN_CLASS_IDS[name], "entry": _BUILTIN_CLASS_IDS[name], "exit": exit_val}
+
+    _walk_builtin("object")
+
+    for fqcn, base_fqcn in sorted(class_bases.items()):
+        if base_fqcn == "object" and fqcn not in type_info_table:
+            _assign(fqcn)
+
+    object_info = type_info_table.get("object")
+    if isinstance(object_info, dict):
+        object_info["exit"] = next_id_holder[0]
+
+    if len(type_id_table) != len(class_bases) + len(_BUILTIN_CLASS_IDS):
         raise _input_invalid(
             "failed to assign type_id to all classes: "
             + str(len(type_id_table))
             + "/"
-            + str(len(class_bases))
+            + str(len(class_bases) + len(_BUILTIN_CLASS_IDS))
         )
 
     # Build base type_id map
     type_id_base_map: dict[str, int] = {}
+    for builtin_name, builtin_id in sorted(_BUILTIN_CLASS_IDS.items(), key=lambda item: item[1]):
+        builtin_base = ""
+        for candidate, children_list in _BUILTIN_CLASS_CHILDREN.items():
+            if builtin_name in children_list:
+                builtin_base = candidate
+                break
+        if builtin_base != "":
+            type_id_base_map[builtin_name] = _BUILTIN_CLASS_IDS[builtin_base]
+        else:
+            type_id_base_map[builtin_name] = builtin_id
+
     for fqcn, base_fqcn in class_bases.items():
         if base_fqcn in type_id_table:
             type_id_base_map[fqcn] = type_id_table[base_fqcn]

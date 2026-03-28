@@ -277,7 +277,7 @@ def resolve_runtime_call(
 
 def should_skip_module(module_id: str, mapping: RuntimeMapping) -> bool:
     """Check if a module should be skipped (provided by native runtime)."""
-    if module_id == "pytra.built_in.error":
+    if module_id == "pytra.built_in.error" or module_id == "pytra.built_in.type_id_table":
         return False
     for prefix in mapping.skip_module_prefixes:
         if module_id.startswith(prefix):

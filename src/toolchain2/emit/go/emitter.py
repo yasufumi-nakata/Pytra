@@ -75,6 +75,7 @@ class EmitContext:
     exception_type_bounds: dict[str, tuple[int, int]] = field(default_factory=dict)
     # Exception type ids from linked_program_v1.type_info_table_v1.
     exception_type_ids: dict[str, int] = field(default_factory=dict)
+    class_type_ids: dict[str, int] = field(default_factory=dict)
     current_exception_var: str = ""
     current_function_scope: str = ""
     current_value_container_locals: set[str] = field(default_factory=set)
@@ -97,6 +98,15 @@ class _GoStmtCommonRenderer(CommonRenderer):
 
     def render_expr(self, node: JsonVal) -> str:
         return _emit_expr(self.ctx, node)
+
+    def render_condition_expr(self, node: JsonVal) -> str:
+        if isinstance(node, dict):
+            rt = _effective_resolved_type(self.ctx, node)
+            rendered = _emit_expr(self.ctx, node)
+            rendered = _wrapper_container_storage_expr(self.ctx, node, rendered)
+            if rt.startswith("list[") or rt.startswith("dict[") or rt.startswith("set[") or rt in ("str", "bytes", "bytearray"):
+                return self._format_condition("len(" + rendered + ") > 0")
+        return super().render_condition_expr(node)
 
     def render_attribute(self, node: dict[str, JsonVal]) -> str:
         return _emit_attribute(self.ctx, node)
@@ -624,6 +634,17 @@ def _exception_type_id(ctx: EmitContext, type_name: str) -> int:
     return bounds[0]
 
 
+def _linked_type_id(ctx: EmitContext, type_name: str) -> int | None:
+    exact = ctx.class_type_ids.get(type_name)
+    if exact is not None:
+        return exact
+    short_name = _short_type_name(type_name)
+    for fqcn, type_id in ctx.class_type_ids.items():
+        if _short_type_name(fqcn) == short_name:
+            return type_id
+    return None
+
+
 def _exception_struct_literal(ctx: EmitContext, type_name: str, message_code: str) -> str:
     type_id = _exception_type_id(ctx, type_name)
     bounds = _exception_bounds(ctx, type_name)
@@ -914,6 +935,12 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if kind == "ObjBool":
         arg = node.get("value")
         return "py_bool(" + _emit_expr(ctx, arg) + ")"
+    if kind == "ObjTypeId":
+        return _emit_obj_type_id(ctx, node)
+    if kind == "IsSubtype":
+        return _emit_issubtype(ctx, node)
+    if kind == "IsSubclass":
+        return _emit_issubclass(ctx, node)
     if kind == "ListComp":
         return _emit_list_comp(ctx, node)
     if kind == "SetComp":
@@ -922,6 +949,34 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return _emit_dict_comp(ctx, node)
 
     raise RuntimeError("unsupported_expr_kind: " + kind)
+
+
+def _emit_obj_type_id(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    value = node.get("value")
+    value_expr = _emit_expr(ctx, value)
+    value_type = _str(value, "resolved_type") if isinstance(value, dict) else ""
+    linked = _linked_type_id(ctx, value_type)
+    if linked is not None:
+        return "int64(" + str(linked) + ")"
+    if _is_exception_type_name(ctx, value_type):
+        return "int64(" + str(_exception_type_id(ctx, value_type)) + ")"
+    return "py_runtime_object_type_id(" + value_expr + ")"
+
+
+def _emit_issubtype(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    actual = _emit_expr(ctx, node.get("actual_type_id"))
+    expected = _emit_expr(ctx, node.get("expected_type_id"))
+    if actual == "" or expected == "":
+        return "false"
+    return "py_runtime_type_id_is_subtype(" + actual + ", " + expected + ")"
+
+
+def _emit_issubclass(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    actual = _emit_expr(ctx, node.get("actual_type_id"))
+    expected = _emit_expr(ctx, node.get("expected_type_id"))
+    if actual == "" or expected == "":
+        return "false"
+    return "py_runtime_type_id_issubclass(" + actual + ", " + expected + ")"
 
 
 def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -1528,8 +1583,12 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             right = "int64(" + right + ")"
 
         if op_str == "In":
+            if isinstance(comp_node, dict):
+                right = _wrapper_container_storage_expr(ctx, comp_node, right)
             parts.append("py_contains(" + right + ", " + prev + ")")
         elif op_str == "NotIn":
+            if isinstance(comp_node, dict):
+                right = _wrapper_container_storage_expr(ctx, comp_node, right)
             parts.append("!py_contains(" + right + ", " + prev + ")")
         elif op_str == "Is":
             parts.append("(" + prev + " == " + right + ")")
@@ -2517,7 +2576,48 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         vt = _str(value_node, "resolved_type")
         if vt == "str":
             return "py_byte_to_string(" + value + "[" + idx + "])"
+        if vt.startswith("list[") or vt in ("bytes", "bytearray", "list[uint8]"):
+            int_idx = _emit_index_int_expr(ctx, slice_node)
+            if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Constant":
+                idx_val2 = slice_node.get("value")
+                if isinstance(idx_val2, int) and idx_val2 < 0:
+                    int_idx = idx
+            if isinstance(slice_node, dict) and _str(slice_node, "kind") == "UnaryOp" and _str(slice_node, "op") == "USub":
+                int_idx = idx
+            return value + "[int(" + int_idx + ")]"
     return value + "[" + idx + "]"
+
+
+def _emit_index_int_expr(ctx: EmitContext, node: JsonVal) -> str:
+    if not isinstance(node, dict):
+        return _emit_expr(ctx, node)
+    kind = _str(node, "kind")
+    if kind == "Constant":
+        value = node.get("value")
+        if isinstance(value, int):
+            return str(value)
+    if kind == "UnaryOp" and _str(node, "op") == "USub":
+        return "-" + _emit_index_int_expr(ctx, node.get("operand"))
+    if kind == "BinOp":
+        op = _str(node, "op")
+        if op in ("Add", "Sub"):
+            left = _emit_index_int_expr(ctx, node.get("left"))
+            right = _emit_index_int_expr(ctx, node.get("right"))
+            symbol = "+" if op == "Add" else "-"
+            return "(" + left + " " + symbol + " " + right + ")"
+    if kind == "Call":
+        func = node.get("func")
+        if isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == "len":
+            args = _list(node, "args")
+            if len(args) >= 1:
+                arg0 = args[0]
+                return "len(" + _wrapper_container_storage_expr(ctx, arg0, _emit_expr(ctx, arg0)) + ")"
+    code = _emit_expr(ctx, node)
+    if code.startswith("int64(") and code.endswith(")"):
+        return code[6:-1]
+    if code.startswith("int(") and code.endswith(")"):
+        return code[4:-1]
+    return code
 
 
 def _emit_raw_string_subscript(ctx: EmitContext, node: JsonVal) -> str:
@@ -4849,6 +4949,7 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
             exit_val = info.get("exit")
             if isinstance(type_id_val, int):
                 ctx.exception_type_ids[fqcn] = type_id_val
+                ctx.class_type_ids[fqcn] = type_id_val
             if isinstance(entry_val, int) and isinstance(exit_val, int):
                 ctx.exception_type_bounds[fqcn] = (entry_val, exit_val - 1)
 

@@ -28,7 +28,11 @@ static inline int64 py_len(const Object<set<T>>& v) {
 
 template <class T>
 static inline int64 py_len(const T& v) {
-    return static_cast<int64>(v.size());
+    if constexpr (requires(const T& x) { x.__len__(); }) {
+        return static_cast<int64>(v.__len__());
+    } else {
+        return static_cast<int64>(v.size());
+    }
 }
 
 template <class T>

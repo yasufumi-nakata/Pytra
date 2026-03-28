@@ -39,6 +39,7 @@ from toolchain2.emit.cpp.runtime_bundle import emit_runtime_module_artifacts
 from toolchain2.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids
 from toolchain2.emit.cpp.runtime_paths import cpp_include_for_module
 from toolchain2.emit.cpp.runtime_paths import runtime_rel_tail_for_module
+from toolchain2.emit.cpp.types import cpp_signature_type
 from toolchain2.emit.common.code_emitter import RuntimeMapping
 from toolchain2.emit.common.code_emitter import load_runtime_mapping
 
@@ -1472,6 +1473,34 @@ def has_key(env: dict[str, int], name: str) -> bool:
         )
 
         self.assertEqual(dep_ids, ["pytra.built_in.contains"])
+
+    def test_cpp_runtime_paths_skip_jsonval_type_only_symbol_imports(self) -> None:
+        dep_ids = collect_cpp_dependency_module_ids(
+            "app.main",
+            {
+                "import_bindings": [
+                    {
+                        "module_id": "pytra.std.json",
+                        "runtime_module_id": "pytra.std.json",
+                        "binding_kind": "symbol",
+                        "export_name": "JsonVal",
+                        "local_name": "JsonVal",
+                    },
+                    {
+                        "module_id": "pytra.built_in.type_id",
+                        "runtime_module_id": "pytra.built_in.type_id",
+                        "binding_kind": "implicit_builtin",
+                        "runtime_group": "built_in",
+                    },
+                ]
+            },
+        )
+
+        self.assertEqual(dep_ids, ["pytra.built_in.type_id"])
+
+    def test_cpp_signature_type_maps_jsonval_alias_to_object(self) -> None:
+        self.assertEqual(cpp_signature_type("JsonVal"), "object")
+        self.assertEqual(cpp_signature_type("dict[str,JsonVal]"), "Object<dict<str, object>>")
 
     def test_cpp_runtime_bundle_keeps_template_runtime_helpers_header_only(self) -> None:
         doc = _fixture_doc("src/runtime/east/built_in/numeric_ops.east")
@@ -3222,6 +3251,56 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertEqual(trait_check.get("value"), True)
         self.assertEqual(trait_check.get("resolved_type"), "bool")
 
+    def test_linker_generates_type_id_table_helper_module(self) -> None:
+        result = link_modules(
+            [str(ROOT / "test/fixture/east3-opt/oop/class_inherit_basic.east3")],
+            target="go",
+        )
+
+        helper = next(module for module in result.linked_modules if module.module_id == "pytra.built_in.type_id_table")
+        self.assertEqual(helper.module_kind, "helper")
+        meta = helper.east_doc.get("meta", {})
+        self.assertEqual(meta.get("synthetic_helper_v1", {}).get("helper_id"), "pytra.built_in.type_id_table")
+        body = helper.east_doc.get("body", [])
+        self.assertEqual(body[0].get("target", {}).get("id"), "id_table")
+        self.assertTrue(any(stmt.get("target", {}).get("id") == "CLASS_INHERIT_BASIC_BASE_TID" for stmt in body if isinstance(stmt, dict)))
+
+    def test_linker_rewrites_nominal_isinstance_to_pytra_isinstance_call(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            entry_path = Path(tmp) / "app.main.east3.json"
+            entry_path.write_text(
+                json.dumps(
+                    _module_doc(
+                        "app.main",
+                        body=[
+                            {"kind": "ClassDef", "name": "Path", "body": []},
+                            {
+                                "kind": "Expr",
+                                "value": {
+                                    "kind": "IsInstance",
+                                    "value": {"kind": "Name", "id": "dyn", "resolved_type": "object"},
+                                    "expected_type_id": {"kind": "Name", "id": "Path", "resolved_type": "type"},
+                                    "resolved_type": "bool",
+                                },
+                            },
+                        ],
+                    ),
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            result = link_modules([str(entry_path)], target="cpp", dispatch_mode="native")
+
+        linked = next(module.east_doc for module in result.linked_modules if module.module_id == "app.main")
+        call = next(node for node in _walk_nodes(linked) if node.get("kind") == "Call" and node.get("func", {}).get("id") == "pytra_isinstance")
+        args = call.get("args", [])
+        self.assertEqual(args[0].get("kind"), "ObjTypeId")
+        self.assertEqual(args[1].get("id"), "APP_MAIN_PATH_TID")
+        bindings = linked.get("meta", {}).get("import_bindings", [])
+        self.assertTrue(any(b.get("module_id") == "pytra.built_in.type_id_table" and b.get("export_name") == "APP_MAIN_PATH_TID" for b in bindings))
+        self.assertTrue(any(b.get("module_id") == "pytra.built_in.type_id" and b.get("export_name") == "pytra_isinstance" for b in bindings))
+
     def test_cpp_emitter_lowers_traits_to_virtual_interfaces_and_trait_masks(self) -> None:
         doc = _module_doc(
             "app",
@@ -4185,7 +4264,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         cpp_code = emit_cpp_module(doc)
 
-        self.assertIn("py_runtime_object_isinstance(dyn, PYTRA_TID_LIST)", cpp_code)
+        self.assertIn("py_runtime_object_isinstance(dyn, static_cast<pytra_type_id>(PYTRA_TID_LIST))", cpp_code)
         self.assertIn("py_runtime_value_isinstance(items, PYTRA_TID_DICT)", cpp_code)
 
     def test_cpp_emitter_iterates_dicts_as_keys_for_direct_for_loops(self) -> None:
@@ -4283,7 +4362,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("py_runtime_object_type_id(dyn)", cpp_code)
         self.assertIn("py_runtime_type_id_is_subtype(int64(1001), int64(1000))", cpp_code)
         self.assertIn("py_runtime_type_id_issubclass(int64(1001), int64(1000))", cpp_code)
-        self.assertIn("state.clear();", cpp_code)
+        self.assertIn("py_dict_clear_mut(state);", cpp_code)
 
     def test_cpp_emitter_uses_linked_type_ids_for_nominal_classes(self) -> None:
         doc = _module_doc(

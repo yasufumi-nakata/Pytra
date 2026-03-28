@@ -10,6 +10,7 @@ _TYPE_ORDER: dict[int, int] = {}
 _TYPE_MIN: dict[int, int] = {}
 _TYPE_MAX: dict[int, int] = {}
 _TYPE_STATE: dict[str, int] = {}
+id_table: list[int] = []
 
 
 def _tid_none() -> int:
@@ -355,6 +356,10 @@ def py_tid_issubclass(actual_type_id: int, expected_type_id: int) -> bool:
 
 def py_tid_isinstance(value: Any, expected_type_id: int) -> bool:
     return py_tid_is_subtype(py_tid_runtime_type_id(value), expected_type_id)
+
+
+def pytra_isinstance(actual_type_id: int, tid: int) -> bool:
+    return id_table[tid * 2] <= actual_type_id and actual_type_id <= id_table[tid * 2 + 1]
 
 
 def _py_reset_type_registry_for_test() -> None:

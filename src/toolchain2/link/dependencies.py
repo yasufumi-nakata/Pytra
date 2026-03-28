@@ -27,15 +27,28 @@ _TYPE_ONLY_MODULE_IDS: set[str] = {
     "pytra.std.template",
 }
 
+_TYPE_ONLY_SYMBOL_BINDINGS: set[tuple[str, str]] = {
+    ("pytra.std.json", "JsonVal"),
+}
+
 _TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
     "IsInstance",
     "IsSubclass",
     "IsSubtype",
+    "ClassDef",
 }
 
 
 def is_type_only_dependency_module_id(module_id: str) -> bool:
     return module_id in _TYPE_ONLY_MODULE_IDS
+
+
+def _is_type_only_symbol_binding(binding: JsonVal) -> bool:
+    if not isinstance(binding, dict):
+        return False
+    module_id = binding.get("module_id")
+    export_name = binding.get("export_name")
+    return isinstance(module_id, str) and isinstance(export_name, str) and (module_id, export_name) in _TYPE_ONLY_SYMBOL_BINDINGS
 
 
 def _scan_runtime_refs(node: JsonVal, out: set[str]) -> None:
@@ -62,6 +75,8 @@ def _scan_runtime_refs(node: JsonVal, out: set[str]) -> None:
 
 def _binding_dependency_module_id(binding: JsonVal) -> str:
     if not isinstance(binding, dict):
+        return ""
+    if _is_type_only_symbol_binding(binding):
         return ""
 
     runtime_module_id = binding.get("runtime_module_id")

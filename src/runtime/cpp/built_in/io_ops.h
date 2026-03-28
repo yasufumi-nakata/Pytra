@@ -16,7 +16,7 @@ inline void py_print(bool v) {
 
 template <class T, ::std::enable_if_t<!::std::is_same_v<T, object> && !::std::is_same_v<T, bool>, int> = 0>
 inline void py_print(const T& v) {
-    ::std::cout << v << ::std::endl;
+    ::std::cout << py_to_string(v) << ::std::endl;
 }
 
 template <class T, class... Rest>

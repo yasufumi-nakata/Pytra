@@ -32,6 +32,11 @@ _TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
     "IsInstance",
     "IsSubclass",
     "IsSubtype",
+    "ClassDef",
+}
+
+_TYPE_ONLY_SYMBOL_BINDINGS: set[tuple[str, str]] = {
+    ("pytra.std.json", "JsonVal"),
 }
 
 
@@ -131,6 +136,26 @@ def _append_runtime_dep(
         new_deps.append((east_path, east_path))
 
 
+def _is_type_only_symbol_binding(module_id: str, export_name: str) -> bool:
+    return (module_id, export_name) in _TYPE_ONLY_SYMBOL_BINDINGS
+
+
+def _import_from_is_type_only(module_id: str, names_val: JsonVal) -> bool:
+    if not isinstance(names_val, list) or len(names_val) == 0:
+        return False
+    saw_symbol = False
+    for ent in names_val:
+        if not isinstance(ent, dict):
+            return False
+        sym = ent.get("name")
+        if not isinstance(sym, str) or sym == "":
+            return False
+        saw_symbol = True
+        if not _is_type_only_symbol_binding(module_id, sym):
+            return False
+    return saw_symbol
+
+
 def _scan_runtime_refs(node: JsonVal, out: set[str]) -> None:
     """Collect embedded runtime_module_id references from lowered nodes."""
     if isinstance(node, list):
@@ -179,8 +204,17 @@ def discover_runtime_modules(
                     for binding in bindings_val:
                         if not isinstance(binding, dict):
                             continue
+                        export_name = binding.get("export_name")
                         mod_id = binding.get("module_id")
-                        if isinstance(mod_id, str) and mod_id != "":
+                        if (
+                            isinstance(mod_id, str)
+                            and mod_id != ""
+                            and not (
+                                isinstance(export_name, str)
+                                and export_name != ""
+                                and _is_type_only_symbol_binding(mod_id, export_name)
+                            )
+                        ):
                             _append_runtime_dep(new_deps, seen_paths, mod_id, required=True)
 
             # Scan body for Import/ImportFrom
@@ -193,9 +227,11 @@ def discover_runtime_modules(
                     if kind == "ImportFrom":
                         mod = stmt.get("module")
                         if isinstance(mod, str) and mod != "":
+                            names_val = stmt.get("names")
+                            if _import_from_is_type_only(mod, names_val):
+                                continue
                             _append_runtime_dep(new_deps, seen_paths, mod, required=True)
                             # Sub-module imports: from pytra.utils import png → pytra.utils.png
-                            names_val = stmt.get("names")
                             if isinstance(names_val, list):
                                 for ent in names_val:
                                     if isinstance(ent, dict):

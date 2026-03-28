@@ -4,6 +4,9 @@ def leaf() -> None:
 
 if __name__ == "__main__":
     try:
-        leaf()
-    finally:
-        print("cleanup")
+        try:
+            leaf()
+        finally:
+            print("cleanup")
+    except ValueError:
+        print("caught")

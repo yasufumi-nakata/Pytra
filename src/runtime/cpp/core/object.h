@@ -9,6 +9,7 @@
 #include <iostream>
 #include <optional>
 #include <type_traits>
+#include <unordered_map>
 
 #include "core/py_scalar_types.h"
 
@@ -28,8 +29,7 @@ struct TypeInfo {
 
 // Global type table — populated by linker-generated init code.
 // Default weak definition: programs that don't use Object<T> can link without providing these.
-inline TypeInfo* g_type_table[4096] = {};
-inline uint32_t g_type_table_size = 0;
+inline ::std::unordered_map<uint32_t, TypeInfo*> g_type_table = {};
 
 // =============================
 // ControlBlock
@@ -130,7 +130,8 @@ private:
     void release() {
         if (!cb) return;
         if (--cb->rc == 0) {
-            auto* ti = g_type_table[cb->type_id];
+            auto it = g_type_table.find(cb->type_id);
+            auto* ti = it != g_type_table.end() ? it->second : nullptr;
             if (ti && ti->deleter) {
                 ti->deleter(cb->base_ptr);
             }
@@ -210,7 +211,8 @@ private:
     void release() {
         if (!cb) return;
         if (--cb->rc == 0) {
-            auto* ti = g_type_table[cb->type_id];
+            auto it = g_type_table.find(cb->type_id);
+            auto* ti = it != g_type_table.end() ? it->second : nullptr;
             if (ti && ti->deleter) ti->deleter(cb->base_ptr);
             delete cb;
         }

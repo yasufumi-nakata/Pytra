@@ -32,6 +32,7 @@ _TYPE_MAP: dict[str, str] = {
     "Any": "object",
     "Obj": "object",
     "object": "object",
+    "JsonVal": "object",
 }
 
 

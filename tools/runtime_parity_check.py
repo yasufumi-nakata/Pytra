@@ -559,6 +559,18 @@ def check_case(
         print(f"[ERROR] missing case: {case_stem}")
         _record("-", "case_missing", "missing case")
         return 1
+
+    enabled_supported_targets = [
+        target_name
+        for target_name in enabled_targets
+        if case_stem not in _LANG_UNSUPPORTED_FIXTURES.get(target_name, set())
+    ]
+    if len(enabled_supported_targets) == 0:
+        for target_name in sorted(enabled_targets):
+            print(f"[SKIP] {case_stem}:{target_name} (unsupported feature)")
+            _record(target_name, "unsupported_feature", "unsupported feature")
+        return 0
+
     work = ROOT / "work" / "transpile" / "parity" / (case_stem + "_" + str(os.getpid()))
     if work.exists():
         shutil.rmtree(work)

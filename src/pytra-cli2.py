@@ -24,6 +24,7 @@ from pytra.std.pathlib import Path
 from toolchain2.common.jv import deep_copy_json
 from toolchain2.compile.lower import lower_east2_to_east3
 from toolchain2.emit.cpp.emitter import emit_cpp_module
+from toolchain2.emit.cpp.header_gen import build_cpp_header_from_east3
 from toolchain2.emit.cpp.runtime_bundle import emit_runtime_module_artifacts
 from toolchain2.emit.go.emitter import emit_go_module
 from toolchain2.link.linker import LinkResult
@@ -79,6 +80,12 @@ def _module_source_path(module_id: str) -> Path:
     if package_init.exists():
         return package_init
     return Path("")
+
+
+def _helper_cpp_rel_path(module_id: str) -> str:
+    if module_id.startswith("pytra."):
+        return module_id[len("pytra."):].replace(".", "/")
+    return module_id.replace(".", "/")
 
 
 def _collect_build_sources(inputs: list[str]) -> list[tuple[str, dict]]:
@@ -682,6 +689,23 @@ def _emit_cpp(manifest_path: Path, output_dir: Path) -> int:
                 written += 1
             if rel[1] != "":
                 written += 1
+                continue
+        if module.module_kind == "helper":
+            rel = _helper_cpp_rel_path(module.module_id)
+            cpp_path = output_dir.joinpath(rel + ".cpp")
+            h_path = output_dir.joinpath(rel + ".h")
+            cpp_path.parent.mkdir(parents=True, exist_ok=True)
+            h_path.parent.mkdir(parents=True, exist_ok=True)
+            cpp_path.write_text(emit_cpp_module(module.east_doc), encoding="utf-8")
+            h_path.write_text(
+                build_cpp_header_from_east3(
+                    module.module_id,
+                    module.east_doc,
+                    rel_header_path=rel + ".h",
+                ),
+                encoding="utf-8",
+            )
+            written += 2
             continue
         code = emit_cpp_module(module.east_doc)
         if code.strip() == "":
@@ -837,6 +861,23 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str) -> int
                     written += 1
                 if rel[1] != "":
                     written += 1
+                continue
+            if m.module_kind == "helper":
+                rel = _helper_cpp_rel_path(m.module_id)
+                cpp_path = output_dir.joinpath(rel + ".cpp")
+                h_path = output_dir.joinpath(rel + ".h")
+                cpp_path.parent.mkdir(parents=True, exist_ok=True)
+                h_path.parent.mkdir(parents=True, exist_ok=True)
+                cpp_path.write_text(emit_cpp_module(m.east_doc), encoding="utf-8")
+                h_path.write_text(
+                    build_cpp_header_from_east3(
+                        m.module_id,
+                        m.east_doc,
+                        rel_header_path=rel + ".h",
+                    ),
+                    encoding="utf-8",
+                )
+                written += 2
                 continue
             code = emit_cpp_module(m.east_doc)
             if code.strip() == "":

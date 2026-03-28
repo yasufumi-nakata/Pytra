@@ -67,14 +67,26 @@ def _run_go_process(
         runtime_path = ROOT / "src" / "runtime" / "go" / "built_in" / "py_runtime.go"
         bundled_runtime = Path(tmp) / "py_runtime.go"
         bundled_errors = Path(tmp) / "pytra_built_in_error.go"
+        bundled_type_ids = Path(tmp) / "pytra_type_id_table.go"
         out_path = Path(tmp) / "app"
         env = dict(os.environ)
         env["PATH"] = "/home/node/.local/go/bin:" + env.get("PATH", "")
         go_path.write_text(go_code, encoding="utf-8")
         bundled_runtime.write_text(runtime_path.read_text(encoding="utf-8"), encoding="utf-8")
         bundled_errors.write_text(_emit_builtin_error_go(), encoding="utf-8")
+        helper_type_info: dict[str, object] = {
+            "object": {"id": 8, "entry": 8, "exit": 16},
+            "BaseException": {"id": 9, "entry": 9, "exit": 16},
+            "Exception": {"id": 10, "entry": 10, "exit": 16},
+            "RuntimeError": {"id": 11, "entry": 11, "exit": 12},
+            "ValueError": {"id": 12, "entry": 12, "exit": 13},
+            "TypeError": {"id": 13, "entry": 13, "exit": 14},
+            "IndexError": {"id": 14, "entry": 14, "exit": 15},
+            "KeyError": {"id": 15, "entry": 15, "exit": 16},
+        }
+        bundled_type_ids.write_text(_go_type_id_table_source(helper_type_info), encoding="utf-8")
         build = subprocess.run(
-            ["go", "build", "-o", str(out_path), str(bundled_runtime), str(bundled_errors), str(go_path)],
+            ["go", "build", "-o", str(out_path), str(bundled_runtime), str(bundled_errors), str(bundled_type_ids), str(go_path)],
             cwd=tmp,
             capture_output=True,
             text=True,
@@ -85,6 +97,52 @@ def _run_go_process(
         run = subprocess.run([str(out_path)], cwd=tmp, capture_output=True, text=True, env=env)
 
     return run
+
+
+def _go_type_id_table_source(type_info_table: dict[str, object]) -> str:
+    rows: list[tuple[str, dict[str, int]]] = []
+    for fqcn, info in type_info_table.items():
+        if not isinstance(fqcn, str) or not isinstance(info, dict):
+            continue
+        id_val = info.get("id")
+        entry = info.get("entry")
+        exit_val = info.get("exit")
+        if isinstance(id_val, int) and isinstance(entry, int) and isinstance(exit_val, int):
+            rows.append((fqcn, {"id": id_val, "entry": entry, "exit": exit_val}))
+    rows.sort(key=lambda item: item[1]["id"])
+
+    table_values: list[str] = []
+    const_rows: list[str] = []
+    tid = 0
+    for fqcn, info in rows:
+        table_values.append(str(info["entry"]))
+        table_values.append(str(info["exit"] - 1))
+        name = fqcn
+        snake: list[str] = []
+        prev_lower = False
+        for ch in name:
+            if ch == ".":
+                snake.append("_")
+                prev_lower = False
+                continue
+            is_upper = "A" <= ch and ch <= "Z"
+            is_lower = "a" <= ch and ch <= "z"
+            if is_upper and prev_lower:
+                snake.append("_")
+            snake.append(ch.upper())
+            prev_lower = is_lower
+        const_rows.append("var " + "".join(snake) + "_TID int64 = " + str(tid))
+        tid += 1
+
+    lines = [
+        "package main",
+        "",
+        "var id_table *PyList[int64] = PyListFromSlice[int64]([]int64{" + ", ".join(table_values) + "})",
+        "",
+    ]
+    lines.extend(const_rows)
+    lines.append("")
+    return "\n".join(lines)
 
 
 SOURCE = """

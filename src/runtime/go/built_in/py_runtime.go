@@ -168,30 +168,6 @@ type PyFile struct {
 
 type SystemExit int64
 
-const (
-	PYTRA_TID_BASE_EXCEPTION     int64 = 9
-	PYTRA_TID_BASE_EXCEPTION_MIN int64 = 9
-	PYTRA_TID_BASE_EXCEPTION_MAX int64 = 15
-	PYTRA_TID_EXCEPTION          int64 = 10
-	PYTRA_TID_EXCEPTION_MIN      int64 = 10
-	PYTRA_TID_EXCEPTION_MAX      int64 = 15
-	PYTRA_TID_RUNTIME_ERROR      int64 = 11
-	PYTRA_TID_RUNTIME_ERROR_MIN  int64 = 11
-	PYTRA_TID_RUNTIME_ERROR_MAX  int64 = 11
-	PYTRA_TID_VALUE_ERROR        int64 = 12
-	PYTRA_TID_VALUE_ERROR_MIN    int64 = 12
-	PYTRA_TID_VALUE_ERROR_MAX    int64 = 12
-	PYTRA_TID_TYPE_ERROR         int64 = 13
-	PYTRA_TID_TYPE_ERROR_MIN     int64 = 13
-	PYTRA_TID_TYPE_ERROR_MAX     int64 = 13
-	PYTRA_TID_INDEX_ERROR        int64 = 14
-	PYTRA_TID_INDEX_ERROR_MIN    int64 = 14
-	PYTRA_TID_INDEX_ERROR_MAX    int64 = 14
-	PYTRA_TID_KEY_ERROR          int64 = 15
-	PYTRA_TID_KEY_ERROR_MIN      int64 = 15
-	PYTRA_TID_KEY_ERROR_MAX      int64 = 15
-)
-
 type PytraErrorCarrier struct {
 	TypeId  int64
 	TypeMin int64
@@ -215,32 +191,44 @@ func (e *PytraErrorCarrier) __str__() string {
 	return e.Msg
 }
 
+func pytraTypeRangeMin(tid int64) int64 {
+	return id_table.items[int(tid*2)]
+}
+
+func pytraTypeRangeMax(tid int64) int64 {
+	return id_table.items[int(tid*2+1)]
+}
+
+func pytra_isinstance(actualTypeId int64, tid int64) bool {
+	return pytraTypeRangeMin(tid) <= actualTypeId && actualTypeId <= pytraTypeRangeMax(tid)
+}
+
 func pytraNewBaseException(msg string) *PytraErrorCarrier {
-	return &PytraErrorCarrier{TypeId: PYTRA_TID_BASE_EXCEPTION, TypeMin: PYTRA_TID_BASE_EXCEPTION_MIN, TypeMax: PYTRA_TID_BASE_EXCEPTION_MAX, Name: "BaseException", Msg: msg}
+	return &PytraErrorCarrier{TypeId: pytraTypeRangeMin(BASE_EXCEPTION_TID), TypeMin: pytraTypeRangeMin(BASE_EXCEPTION_TID), TypeMax: pytraTypeRangeMax(BASE_EXCEPTION_TID), Name: "BaseException", Msg: msg}
 }
 
 func pytraNewException(msg string) *PytraErrorCarrier {
-	return &PytraErrorCarrier{TypeId: PYTRA_TID_EXCEPTION, TypeMin: PYTRA_TID_EXCEPTION_MIN, TypeMax: PYTRA_TID_EXCEPTION_MAX, Name: "Exception", Msg: msg}
+	return &PytraErrorCarrier{TypeId: pytraTypeRangeMin(EXCEPTION_TID), TypeMin: pytraTypeRangeMin(EXCEPTION_TID), TypeMax: pytraTypeRangeMax(EXCEPTION_TID), Name: "Exception", Msg: msg}
 }
 
 func pytraNewRuntimeError(msg string) *PytraErrorCarrier {
-	return &PytraErrorCarrier{TypeId: PYTRA_TID_RUNTIME_ERROR, TypeMin: PYTRA_TID_RUNTIME_ERROR_MIN, TypeMax: PYTRA_TID_RUNTIME_ERROR_MAX, Name: "RuntimeError", Msg: msg}
+	return &PytraErrorCarrier{TypeId: pytraTypeRangeMin(RUNTIME_ERROR_TID), TypeMin: pytraTypeRangeMin(RUNTIME_ERROR_TID), TypeMax: pytraTypeRangeMax(RUNTIME_ERROR_TID), Name: "RuntimeError", Msg: msg}
 }
 
 func pytraNewValueError(msg string) *PytraErrorCarrier {
-	return &PytraErrorCarrier{TypeId: PYTRA_TID_VALUE_ERROR, TypeMin: PYTRA_TID_VALUE_ERROR_MIN, TypeMax: PYTRA_TID_VALUE_ERROR_MAX, Name: "ValueError", Msg: msg}
+	return &PytraErrorCarrier{TypeId: pytraTypeRangeMin(VALUE_ERROR_TID), TypeMin: pytraTypeRangeMin(VALUE_ERROR_TID), TypeMax: pytraTypeRangeMax(VALUE_ERROR_TID), Name: "ValueError", Msg: msg}
 }
 
 func pytraNewTypeError(msg string) *PytraErrorCarrier {
-	return &PytraErrorCarrier{TypeId: PYTRA_TID_TYPE_ERROR, TypeMin: PYTRA_TID_TYPE_ERROR_MIN, TypeMax: PYTRA_TID_TYPE_ERROR_MAX, Name: "TypeError", Msg: msg}
+	return &PytraErrorCarrier{TypeId: pytraTypeRangeMin(TYPE_ERROR_TID), TypeMin: pytraTypeRangeMin(TYPE_ERROR_TID), TypeMax: pytraTypeRangeMax(TYPE_ERROR_TID), Name: "TypeError", Msg: msg}
 }
 
 func pytraNewIndexError(msg string) *PytraErrorCarrier {
-	return &PytraErrorCarrier{TypeId: PYTRA_TID_INDEX_ERROR, TypeMin: PYTRA_TID_INDEX_ERROR_MIN, TypeMax: PYTRA_TID_INDEX_ERROR_MAX, Name: "IndexError", Msg: msg}
+	return &PytraErrorCarrier{TypeId: pytraTypeRangeMin(INDEX_ERROR_TID), TypeMin: pytraTypeRangeMin(INDEX_ERROR_TID), TypeMax: pytraTypeRangeMax(INDEX_ERROR_TID), Name: "IndexError", Msg: msg}
 }
 
 func pytraNewKeyError(msg string) *PytraErrorCarrier {
-	return &PytraErrorCarrier{TypeId: PYTRA_TID_KEY_ERROR, TypeMin: PYTRA_TID_KEY_ERROR_MIN, TypeMax: PYTRA_TID_KEY_ERROR_MAX, Name: "KeyError", Msg: msg}
+	return &PytraErrorCarrier{TypeId: pytraTypeRangeMin(KEY_ERROR_TID), TypeMin: pytraTypeRangeMin(KEY_ERROR_TID), TypeMax: pytraTypeRangeMax(KEY_ERROR_TID), Name: "KeyError", Msg: msg}
 }
 
 func pytraEnsureRecoveredError(value any) *PytraErrorCarrier {
@@ -263,6 +251,32 @@ func pytraErrorIsInstance(err *PytraErrorCarrier, tidMin int64, tidMax int64) bo
 		return false
 	}
 	return err.TypeId >= tidMin && err.TypeId <= tidMax
+}
+
+func py_runtime_object_type_id(value any) int64 {
+	switch t := value.(type) {
+	case *PytraErrorCarrier:
+		return t.TypeId
+	case interface{ pytraErrorBase() *PytraErrorCarrier }:
+		base := t.pytraErrorBase()
+		if base != nil {
+			return base.TypeId
+		}
+	}
+	return pytraEnsureRecoveredError(value).TypeId
+}
+
+func py_runtime_type_id_is_subtype(actualTypeId int64, expectedTypeId int64) bool {
+	for i := 0; i+1 < len(id_table.items); i += 2 {
+		if id_table.items[i] == expectedTypeId {
+			return actualTypeId >= expectedTypeId && actualTypeId <= id_table.items[i+1]
+		}
+	}
+	return actualTypeId == expectedTypeId
+}
+
+func py_runtime_type_id_issubclass(actualTypeId int64, expectedTypeId int64) bool {
+	return py_runtime_type_id_is_subtype(actualTypeId, expectedTypeId)
 }
 
 func pytraAttachCause(err *PytraErrorCarrier, cause any) *PytraErrorCarrier {

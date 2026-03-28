@@ -228,7 +228,47 @@ def _function_self_mutates(node: dict[str, JsonVal]) -> bool:
         return True
     arg_usage = node.get("arg_usage")
     if isinstance(arg_usage, dict):
-        return arg_usage.get("self") == "reassigned"
+        if arg_usage.get("self") == "reassigned":
+            return True
+    return _node_mutates_self_fields(node.get("body"))
+
+
+def _node_mutates_self_fields(node: JsonVal) -> bool:
+    mutating_methods = {
+        "append", "appendleft", "pop", "popleft", "clear",
+        "remove", "discard", "add", "update", "extend",
+    }
+    if isinstance(node, dict):
+        kind = _str(node, "kind")
+        if kind in ("Assign", "AugAssign", "AnnAssign"):
+            target = node.get("target")
+            targets = [target] if target is not None else []
+            extra_targets = node.get("targets")
+            if isinstance(extra_targets, list):
+                targets.extend(extra_targets)
+            for candidate in targets:
+                if not isinstance(candidate, dict) or _str(candidate, "kind") != "Attribute":
+                    continue
+                owner = candidate.get("value")
+                if isinstance(owner, dict) and _str(owner, "kind") == "Name" and _str(owner, "id") == "self":
+                    return True
+        if kind == "Call":
+            func = node.get("func")
+            if isinstance(func, dict) and _str(func, "kind") == "Attribute":
+                owner = func.get("value")
+                if isinstance(owner, dict) and _str(owner, "kind") == "Attribute":
+                    base = owner.get("value")
+                    if isinstance(base, dict) and _str(base, "kind") == "Name" and _str(base, "id") == "self":
+                        if _str(func, "attr") in mutating_methods:
+                            return True
+        for value in node.values():
+            if _node_mutates_self_fields(value):
+                return True
+        return False
+    if isinstance(node, list):
+        for item in node:
+            if _node_mutates_self_fields(item):
+                return True
     return False
 
 

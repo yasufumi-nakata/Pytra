@@ -29,11 +29,15 @@ from toolchain2.resolve.py.type_norm import normalize_type
 # ---------------------------------------------------------------------------
 
 LINK_OUTPUT_SCHEMA = "pytra.link_output.v1"
+TYPE_ID_TABLE_MODULE_ID = "pytra.built_in.type_id_table"
+TYPE_ID_TABLE_INPUT_PATH = "__linked_helper__/pytra/built_in/type_id_table.east3.json"
+TYPE_ID_TABLE_SOURCE_PATH = "src/pytra/built_in/type_id_table.py"
+TYPE_ID_TABLE_HELPER_ID = "pytra.built_in.type_id_table"
+TYPE_ID_RUNTIME_MODULE_ID = "pytra.built_in.type_id"
 
 _LINK_EXTERNAL_MODULE_PREFIXES: tuple[str, ...] = (
     "pytra.",
 )
-
 
 # ---------------------------------------------------------------------------
 # Result types
@@ -47,7 +51,7 @@ class LinkedModule:
     source_path: str
     is_entry: bool
     east_doc: dict[str, JsonVal]
-    module_kind: str  # "user" | "runtime"
+    module_kind: str  # "user" | "runtime" | "helper"
 
 
 @dataclass
@@ -510,6 +514,253 @@ def _copy_doc_rows(copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]]) -
     return out
 
 
+def _type_id_const_name(fqcn: str) -> str:
+    dotted = fqcn.replace(".", "_")
+    chars: list[str] = []
+    prev_is_lower = False
+    for ch in dotted:
+        is_upper = "A" <= ch and ch <= "Z"
+        is_lower = "a" <= ch and ch <= "z"
+        if is_upper and prev_is_lower:
+            chars.append("_")
+        chars.append(ch.upper())
+        prev_is_lower = is_lower
+    return "".join(chars) + "_TID"
+
+
+def _make_name(id_value: str, resolved_type: str = "") -> dict[str, JsonVal]:
+    node: dict[str, JsonVal] = {"kind": "Name", "id": id_value}
+    if resolved_type != "":
+        node["resolved_type"] = resolved_type
+    return node
+
+
+def _make_constant(value: JsonVal, resolved_type: str) -> dict[str, JsonVal]:
+    return {"kind": "Constant", "value": value, "resolved_type": resolved_type}
+
+
+def _make_list(elements: list[dict[str, JsonVal]], resolved_type: str) -> dict[str, JsonVal]:
+    return {"kind": "List", "elements": elements, "resolved_type": resolved_type}
+
+
+def _collect_local_class_names(doc: dict[str, JsonVal], module_id: str) -> dict[str, str]:
+    out: dict[str, str] = {}
+    body = doc.get("body")
+    if not isinstance(body, list):
+        return out
+    for item in body:
+        if not isinstance(item, dict) or item.get("kind") != "ClassDef":
+            continue
+        name = item.get("name")
+        if isinstance(name, str) and name != "":
+            out[name] = module_id + "." + name
+    return out
+
+
+def _resolve_type_id_target(
+    expected_name: str,
+    *,
+    module_id: str,
+    local_classes: dict[str, str],
+    import_modules: dict[str, str],
+    import_symbols: dict[str, str],
+    type_id_table: dict[str, JsonVal],
+) -> str:
+    if expected_name == "":
+        return ""
+    if expected_name in type_id_table:
+        return expected_name
+    local_fqcn = local_classes.get(expected_name, "")
+    if local_fqcn != "" and local_fqcn in type_id_table:
+        return local_fqcn
+    imported_symbol = import_symbols.get(expected_name, "")
+    if imported_symbol != "" and "::" in imported_symbol:
+        dep_module_id, export_name = imported_symbol.split("::", 1)
+        candidate = dep_module_id.strip() + "." + export_name.strip()
+        if candidate in type_id_table:
+            return candidate
+    if "." in expected_name:
+        owner_name, attr_name = expected_name.rsplit(".", 1)
+        imported_module = import_modules.get(owner_name, "")
+        if imported_module != "":
+            candidate2 = imported_module + "." + attr_name
+            if candidate2 in type_id_table:
+                return candidate2
+    candidate3 = module_id + "." + expected_name
+    if candidate3 in type_id_table:
+        return candidate3
+    return ""
+
+
+def _ensure_symbol_import(meta: dict[str, JsonVal], module_id: str, export_name: str, local_name: str) -> None:
+    bindings = meta.get("import_bindings")
+    if not isinstance(bindings, list):
+        bindings = []
+        meta["import_bindings"] = bindings
+    for binding in bindings:
+        if not isinstance(binding, dict):
+            continue
+        if binding.get("module_id") == module_id and binding.get("export_name") == export_name and binding.get("local_name") == local_name:
+            break
+    else:
+        bindings.append({
+            "module_id": module_id,
+            "runtime_module_id": module_id,
+            "export_name": export_name,
+            "local_name": local_name,
+            "binding_kind": "symbol",
+        })
+
+    import_symbols = meta.get("import_symbols")
+    if not isinstance(import_symbols, dict):
+        import_symbols = {}
+        meta["import_symbols"] = import_symbols
+    import_symbols[local_name] = {"module": module_id, "name": export_name}
+
+
+def _rewrite_type_id_isinstance(
+    module_id: str,
+    doc: dict[str, JsonVal],
+    type_id_table: dict[str, JsonVal],
+) -> None:
+    import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
+    import_modules = cast(dict[str, str], import_parts[0])
+    import_symbols = cast(dict[str, str], import_parts[1])
+    local_classes = _collect_local_class_names(doc, module_id)
+    meta = _ensure_meta(doc)
+    for node in _walk_nodes(doc):
+        if node.get("kind") != "IsInstance":
+            continue
+        expected = node.get("expected_type_id")
+        if not isinstance(expected, dict):
+            continue
+        expected_name = ""
+        expected_id = expected.get("id")
+        if isinstance(expected_id, str) and expected_id != "":
+            expected_name = expected_id
+        if expected_name == "":
+            expected_repr = expected.get("repr")
+            if isinstance(expected_repr, str):
+                expected_name = expected_repr
+        target_fqcn = _resolve_type_id_target(
+            expected_name,
+            module_id=module_id,
+            local_classes=local_classes,
+            import_modules=import_modules,
+            import_symbols=import_symbols,
+            type_id_table=type_id_table,
+        )
+        if target_fqcn == "":
+            continue
+        if target_fqcn == "RuntimeError" or target_fqcn == "ValueError" or target_fqcn == "TypeError" or target_fqcn == "IndexError" or target_fqcn == "KeyError":
+            pass
+        const_name = _type_id_const_name(target_fqcn)
+        value_node = node.get("value")
+        new_node: dict[str, JsonVal] = {
+            "kind": "Call",
+            "resolved_type": "bool",
+            "func": _make_name("pytra_isinstance", "callable"),
+            "args": [
+                {"kind": "ObjTypeId", "value": _copy_json(value_node), "resolved_type": "int64"},
+                _make_name(const_name, "int64"),
+            ],
+            "keywords": [],
+        }
+        for key in list(node.keys()):
+            del node[key]
+        for key2, value2 in new_node.items():
+            node[key2] = value2
+        _ensure_symbol_import(meta, TYPE_ID_RUNTIME_MODULE_ID, "pytra_isinstance", "pytra_isinstance")
+        _ensure_symbol_import(meta, TYPE_ID_TABLE_MODULE_ID, const_name, const_name)
+
+
+def _rewrite_type_id_runtime_id_table(doc: dict[str, JsonVal]) -> None:
+    body = doc.get("body")
+    if not isinstance(body, list):
+        return
+    new_body: list[JsonVal] = []
+    removed = False
+    for stmt in body:
+        if not isinstance(stmt, dict):
+            new_body.append(stmt)
+            continue
+        kind = stmt.get("kind")
+        if kind != "AnnAssign" and kind != "Assign":
+            new_body.append(stmt)
+            continue
+        target = stmt.get("target")
+        if isinstance(target, dict) and target.get("kind") == "Name" and target.get("id") == "id_table":
+            removed = True
+            continue
+        new_body.append(stmt)
+    if removed:
+        doc["body"] = new_body
+        meta = _ensure_meta(doc)
+        _ensure_symbol_import(meta, TYPE_ID_TABLE_MODULE_ID, "id_table", "id_table")
+
+
+def _build_type_id_table_helper_doc(
+    dispatch_mode: str,
+    type_info_table: dict[str, JsonVal],
+) -> dict[str, JsonVal]:
+    rows: list[tuple[str, dict[str, int]]] = []
+    for fqcn, raw_info in type_info_table.items():
+        if not isinstance(fqcn, str) or not isinstance(raw_info, dict):
+            continue
+        id_val = raw_info.get("id")
+        entry = raw_info.get("entry")
+        exit_val = raw_info.get("exit")
+        if isinstance(id_val, int) and isinstance(entry, int) and isinstance(exit_val, int):
+            rows.append((fqcn, {"id": id_val, "entry": entry, "exit": exit_val}))
+    rows.sort(key=lambda item: item[1]["id"])
+
+    body: list[dict[str, JsonVal]] = []
+    id_table_elements: list[dict[str, JsonVal]] = []
+    tid_index = 0
+    for fqcn, info in rows:
+        id_table_elements.append(_make_constant(info["entry"], "int64"))
+        id_table_elements.append(_make_constant(info["exit"] - 1, "int64"))
+        body.append({
+            "kind": "AnnAssign",
+            "target": _make_name(_type_id_const_name(fqcn), "int64"),
+            "annotation": "int64",
+            "declare": True,
+            "decl_type": "int64",
+            "value": _make_constant(tid_index, "int64"),
+        })
+        tid_index += 1
+
+    body.insert(0, {
+        "kind": "AnnAssign",
+        "target": _make_name("id_table", "list[int64]"),
+        "annotation": "list[int64]",
+        "declare": True,
+        "decl_type": "list[int64]",
+        "value": _make_list(id_table_elements, "list[int64]"),
+    })
+
+    return {
+        "kind": "Module",
+        "east_stage": 3,
+        "schema_version": 1,
+        "source_path": TYPE_ID_TABLE_SOURCE_PATH,
+        "body": body,
+        "main_guard_body": [],
+        "meta": {
+            "module_id": TYPE_ID_TABLE_MODULE_ID,
+            "dispatch_mode": dispatch_mode,
+            "import_bindings": [],
+            "import_modules": {},
+            "import_symbols": {},
+            "synthetic_helper_v1": {
+                "helper_id": TYPE_ID_TABLE_HELPER_ID,
+                "owner_module_id": "",
+                "generated_by": "linked_optimizer",
+            },
+        },
+    }
+
+
 def _iter_declared_import_module_ids(doc: dict[str, JsonVal]) -> list[str]:
     meta_val = doc.get("meta")
     if not isinstance(meta_val, dict):
@@ -855,12 +1106,7 @@ def link_modules(
     call_graph_parts: tuple[JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal], build_call_graph(modules))
     call_graph, sccs = call_graph_parts
 
-    # 6. dependency table 構築
-    dependency_parts: tuple[JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal], build_all_resolved_dependencies(modules))
-    resolved_deps = cast(dict[str, list[str]], dependency_parts[0])
-    user_deps = cast(dict[str, list[str]], dependency_parts[1])
-
-    # 7. program_id 生成
+    # 6. program_id 生成
     pid = _program_id(target, dispatch_mode, all_module_ids)
 
     # 8. Deep copy all modules
@@ -883,6 +1129,39 @@ def link_modules(
     direct_raise_markers = _collect_direct_raise_markers(modules)
     propagated_raise_markers = _propagate_can_raise(call_graph, direct_raise_markers)
     _attach_can_raise_markers(copied_docs, propagated_raise_markers)
+
+    helper_doc = _build_type_id_table_helper_doc(dispatch_mode, type_info_table)
+    helper_module = LinkedModule(
+        module_id=TYPE_ID_TABLE_MODULE_ID,
+        input_path=TYPE_ID_TABLE_INPUT_PATH,
+        source_path=TYPE_ID_TABLE_SOURCE_PATH,
+        is_entry=False,
+        east_doc=helper_doc,
+        module_kind="helper",
+    )
+    copied_docs.append((helper_module, helper_doc))
+
+    for module, doc in copied_docs:
+        if module.module_id == TYPE_ID_TABLE_MODULE_ID:
+            continue
+        _rewrite_type_id_isinstance(module.module_id, doc, type_id_table)
+        if module.module_id == TYPE_ID_RUNTIME_MODULE_ID:
+            _rewrite_type_id_runtime_id_table(doc)
+
+    linked_input_modules: list[LinkedModule] = []
+    for module, doc in copied_docs:
+        linked_input_modules.append(LinkedModule(
+            module_id=module.module_id,
+            input_path=module.input_path,
+            source_path=module.source_path,
+            is_entry=module.is_entry,
+            east_doc=doc,
+            module_kind=module.module_kind,
+        ))
+
+    dependency_parts: tuple[JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal], build_all_resolved_dependencies(linked_input_modules))
+    resolved_deps = cast(dict[str, list[str]], dependency_parts[0])
+    user_deps = cast(dict[str, list[str]], dependency_parts[1])
 
     # 10. 各 module に linked_program_v1 を注入
     linked_modules: list[LinkedModule] = []
@@ -930,6 +1209,17 @@ def link_modules(
             "is_entry": module.is_entry,
             "module_kind": module.module_kind,
         }
+        helper_meta = meta.get("synthetic_helper_v1")
+        if module.module_kind == "helper" and isinstance(helper_meta, dict):
+            helper_id = helper_meta.get("helper_id")
+            owner_module_id = helper_meta.get("owner_module_id")
+            generated_by = helper_meta.get("generated_by")
+            if isinstance(helper_id, str) and helper_id != "":
+                me["helper_id"] = helper_id
+            if isinstance(owner_module_id, str):
+                me["owner_module_id"] = owner_module_id
+            if isinstance(generated_by, str) and generated_by != "":
+                me["generated_by"] = generated_by
         module_entries.append(me)
 
     # 9. call_graph dict 変換

@@ -5,6 +5,7 @@ Backends with native deque (C++ std::deque, Rust VecDeque, etc.)
 can override this with emitter-level optimization.
 """
 
+from pytra.built_in.error import IndexError
 
 
 class deque:

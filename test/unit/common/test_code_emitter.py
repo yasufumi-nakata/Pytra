@@ -394,7 +394,7 @@ class CodeEmitterTest(unittest.TestCase):
             )
             fake_anchor = str(src / "backends" / "x" / "emitter.py")
             merged = CodeEmitter.load_profile_with_includes(
-                "src/toolchain/emit/x/profiles/profile.json",
+                "src/backends/x/profiles/profile.json",
                 anchor_file=fake_anchor,
             )
         self.assertEqual(merged.get("types"), {"int64": "long"})
@@ -410,7 +410,7 @@ class CodeEmitterTest(unittest.TestCase):
             (prof_dir / "profile.json").write_text('["not-an-object"]', encoding="utf-8")
             fake_anchor = str(src / "backends" / "x" / "emitter.py")
             merged = CodeEmitter.load_profile_with_includes(
-                "src/toolchain/emit/x/profiles/profile.json",
+                "src/backends/x/profiles/profile.json",
                 anchor_file=fake_anchor,
             )
         self.assertEqual(merged, {})
@@ -584,6 +584,7 @@ class CodeEmitterTest(unittest.TestCase):
                 "runtime_symbol": "pi",
                 "runtime_symbol_kind": "const",
                 "runtime_symbol_dispatch": "value",
+                "runtime_call_adapter_kind": "math.value_getter",
                 "runtime_extern_kind": "value",
                 "runtime_semantic_tag": "stdlib.symbol.pi",
             },

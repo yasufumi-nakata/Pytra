@@ -12,6 +12,9 @@ from toolchain2.link.runtime_discovery import resolve_runtime_module_rel_tail
 
 
 _RUNTIME_CPP_ROOT = Path(__file__).resolve().parents[3] / "runtime" / "cpp"
+_TYPE_ONLY_SYMBOL_BINDINGS: set[tuple[str, str]] = {
+    ("pytra.std.json", "JsonVal"),
+}
 
 
 def runtime_rel_tail_for_module(module_id: str) -> str:
@@ -76,9 +79,12 @@ def collect_cpp_dependency_module_ids(module_id: str, meta: dict[str, JsonVal]) 
 def _binding_cpp_dependency_module_id(binding: JsonVal) -> str:
     if not isinstance(binding, dict):
         return ""
+    module_id = binding.get("module_id")
+    export_name = binding.get("export_name")
+    if isinstance(module_id, str) and isinstance(export_name, str) and (module_id, export_name) in _TYPE_ONLY_SYMBOL_BINDINGS:
+        return ""
     runtime_module_id = binding.get("runtime_module_id")
     runtime_group = binding.get("runtime_group")
-    module_id = binding.get("module_id")
     host_only = binding.get("host_only") is True
 
     if isinstance(runtime_module_id, str) and runtime_module_id != "":
