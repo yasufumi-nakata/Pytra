@@ -123,6 +123,24 @@ backend 側の禁止事項:
 
 - 未定義基底型、継承循環、同名衝突を検出したら `input_invalid` で停止する。
 
+### 6.4 `pytra.built_in.type_id_table` 仮想モジュール生成
+
+linker は type_id の割り当てが完了した後、仮想モジュール `pytra.built_in.type_id_table` を EAST3 として link-output に追加する。
+
+このモジュールは実際の `.py` ソースファイルを持たず、linker が動的に生成する。`meta.synthetic_helper_v1` を持つ synthetic module として扱う。
+
+生成内容:
+
+- `id_table: list[int]` — 一次元配列。`[min, max, min, max, ...]` の繰り返し。index = TID 定数 * 2 で min、TID 定数 * 2 + 1 で max を引く。
+- 型ごとの TID 定数（`int`）— `id_table` の index / 2 に対応。クラスの FQCN から命名する（例: `VALUE_ERROR_TID = 3`）。
+
+生成規則:
+
+- 全クラス（built-in + ユーザー定義）を含める。
+- 定数名は FQCN の `.` を `_` に置換し、末尾に `_TID` を付与する（例: `pytra.built_in.error.ValueError` → `VALUE_ERROR_TID`）。
+- 配列の並び順は linker の DFS 割り当て順と一致させる。
+- emitter はこのモジュールを通常の EAST3 として写像する。特別なロジックは不要。
+
 ## 7. 入出力契約
 
 ### 7.1 raw `EAST3` document の前提

@@ -118,80 +118,124 @@ POD 型の規則:
 - 開発・デバッグ時にのみ、`base_type_id` 追跡または `ancestor_closure` を追加計算して差分監査に使ってよい。
 - 本番観測は `type_id_min/max` が真実。
 
-## 7. Runtime API 契約
+## 7. type_id テーブル（`pytra.built_in.type_id_table`）
 
-最低限次の API を全ターゲットで揃える。
+### 7.1 概要
 
-- `py_is_subtype(actual_type_id: int, expected_type_id: int) -> bool`
-- `py_isinstance(obj: object, expected_type_id: int) -> bool`
-- `py_issubclass(actual_type_id: int, expected_type_id: int) -> bool`
+linker が全クラスの type_id を確定した後、仮想モジュール `pytra.built_in.type_id_table` を EAST3 として link-output に追加する。このモジュールは実際の `.py` ファイルを持たず、linker が動的に生成する。
 
-適用範囲:
-- `--object-dispatch-mode=type_id` では上記 3 API を判定の正規経路として必須化する。
-- `--object-dispatch-mode=native` では target 固有機構で同じ観測結果を満たす（必要なら互換 API 層を提供してよい）。
+emitter はこのモジュールを通常の EAST3 として写像するだけであり、type_id に関する特別なロジックを持たない。
 
-規約:
-- `py_isinstance` は `obj.type_id` を取得し `py_is_subtype` を呼ぶだけにする。
-- 判定失敗は `false` を返し、例外は投げない。
-- `expected_type_id` が未知なら開発時は fail-fast、運用時は `false` を返す。
+### 7.2 生成されるモジュールの内容
+
+```python
+# pytra.built_in.type_id_table（linker が生成する仮想モジュール）
+
+# 一次元配列: [min, max, min, max, ...] の繰り返し
+# index = TID 定数 * 2 で min、TID 定数 * 2 + 1 で max を引く
+id_table: list[int] = [
+    1000, 1015,  # index 0: PytraError
+    1001, 1015,  # index 2: BaseException
+    1002, 1015,  # index 4: Exception
+    1003, 1003,  # index 6: ValueError
+    1004, 1004,  # index 8: RuntimeError
+    # ... linker が全クラス分を生成
+]
+
+# 型ごとの定数（id_table の index / 2）
+PYTRA_ERROR_TID: int = 0
+BASE_EXCEPTION_TID: int = 1
+EXCEPTION_TID: int = 2
+VALUE_ERROR_TID: int = 3
+RUNTIME_ERROR_TID: int = 4
+# ... linker が全クラス分を生成
+```
+
+### 7.3 isinstance の判定
+
+```python
+def pytra_isinstance(actual_type_id: int, tid: int) -> bool:
+    return id_table[tid * 2] <= actual_type_id and actual_type_id <= id_table[tid * 2 + 1]
+```
+
+この関数は `pytra/built_in/` に pure Python で定義し、パイプラインで全言語に変換する。
+
+EAST3 の isinstance ノードでは `tid` 定数を参照する:
+
+```python
+# ユーザーが書くコード
+isinstance(x, ValueError)
+
+# EAST3 lowering 後
+pytra_isinstance(x.type_id, VALUE_ERROR_TID)
+```
+
+### 7.4 各言語への写像例
+
+**C++:**
+```cpp
+constexpr int64 id_table[] = {1000,1015, 1001,1015, 1002,1015, 1003,1003, ...};
+constexpr int VALUE_ERROR_TID = 3;
+
+inline bool pytra_isinstance(int64 actual_type_id, int tid) {
+    return id_table[tid * 2] <= actual_type_id && actual_type_id <= id_table[tid * 2 + 1];
+}
+```
+
+**Go:**
+```go
+var idTable = []int64{1000,1015, 1001,1015, 1002,1015, 1003,1003, ...}
+const ValueErrorTid = 3
+
+func pytraIsInstance(actualTypeId int64, tid int) bool {
+    return idTable[tid*2] <= actualTypeId && actualTypeId <= idTable[tid*2+1]
+}
+```
+
+**Rust:**
+```rust
+static ID_TABLE: &[i64] = &[1000,1015, 1001,1015, 1002,1015, 1003,1003, ...];
+const VALUE_ERROR_TID: usize = 3;
+
+fn pytra_isinstance(actual_type_id: i64, tid: usize) -> bool {
+    ID_TABLE[tid * 2] <= actual_type_id && actual_type_id <= ID_TABLE[tid * 2 + 1]
+}
+```
+
+### 7.5 設計原則
+
+- linker が `pytra.built_in.type_id_table` を仮想モジュールとして link-output に含める。
+- emitter は通常の EAST3 モジュールとして写像するだけ。type_id に関する特別なロジックを emitter に持たせない。
+- runtime ヘッダーに type_id テーブルのサイズや値をハードコードしてはならない（C++ の `g_type_table[4096]` のような固定サイズ配列は禁止）。
+- Go の `PYTRA_TID_VALUE_ERROR = 12` のような手書き定数は禁止。linker が生成した `pytra.built_in.type_id_table` の定数を使う。
+- `pytra_isinstance` 関数は `pytra/built_in/` に pure Python で定義し、パイプラインで全言語に変換する。
 
 ## 8. 判定アルゴリズム
 
 ### 8.1 既定（推奨）
 
-- 区間判定を採用する。
-- 例: `return expected_min <= actual_id <= expected_max;`
+- `pytra.built_in.type_id_table` の `id_table` を参照した区間判定を採用する。
+- 例: `return id_table[tid * 2] <= actual_id && actual_id <= id_table[tid * 2 + 1];`
 
 ### 8.2 フォールバック
 
-- 開発時の検証では `base_type_id` 追跡（O(depth)）で同値性を再検証する。
-- いずれも `--object-dispatch-mode=type_id` と一致する結果を返すこと。
+- 開発・デバッグ時の検証では `base_type_id` 追跡（O(depth)）で同値性を再検証する。
 
 ## 9. ディスパッチモードとの関係
 
 - 共通 CLI: `--object-dispatch-mode {type_id,native}`（既定: `native`）。
-- 切替対象は `isinstance` / `issubclass` に加えて、boxing・iterable・`bool/len/str` を含む `Any/object` 境界全体とする。
 - `--object-dispatch-mode=type_id`:
-  - `Any/object` 境界の `isinstance` / `issubclass` を `type_id` API で判定する。
-  - boxing / iterable / truthy などの object 境界処理も同一モードで解決する（個別混在禁止）。
+  - `Any/object` 境界の `isinstance` / `issubclass` を `pytra_isinstance` で判定する。
 - `--object-dispatch-mode=native`:
   - ターゲット固有のネイティブ機構で解決してよい。
   - ただし名前文字列依存 dispatch は禁止。
-- 禁止事項: 一部機能だけ `type_id`、他を `native` にする hybrid 運用。
 
-## 10. ターゲット別要求
+## 10. Codegen 規約
 
-### 10.1 C++
-
-- `PyObj` が `type_id` を保持する。
-- runtime に `type_id` 範囲テーブル（`name/min/max/traits`）を保持する。
-- `py_is_subtype` は `type_id_min/max` で O(1) 判定。
-
-### 10.2 JS/TS
-
-- 各 object は `pyTypeId`（`symbol` キー推奨）を保持する。
-- minify 対応のため判定は `type_id` のみで行う。
-- `constructor.name` などの文字列判定を禁止する。
-
-### 10.3 Rust
-
-- runtime で `type_id` と範囲判定テーブルを持つ。
-- `enum`/`trait` 実装都合に関係なく、外部契約は `py_is_subtype` で固定する。
-
-## 11. Codegen 規約
-
-- 変換器の `isinstance` lower は runtime API 呼び出しへ統一する。
-- built-in 特例分岐は段階的に縮退する。
-- target 固有最適化を入れても、観測可能な判定結果は API 契約に一致させる。
-- `type_id` 判定 lower は原則 `EAST3` で命令化し、backend はその命令を runtime API へ写像するだけにする。
-- backend（例: C++ emitter）で `type_id` 判定ロジックを直接文字列生成する経路は、移行期間の互換層を除き禁止する。
-- `meta.east_stage=3` では未 lower の `isinstance` / `issubclass` / builtin call を backend で受理しない（fail-fast）。
-- 互換層（`east_stage=2` かつ `parser_backend=self_hosted`）は段階移行のためにのみ許可し、最終的な判定経路は同一 runtime API（`py_isinstance` / `py_is_subtype`）へ収束させる。
-
-EAST3 連携規約:
-- `meta.dispatch_mode`（`native | type_id`）はルートスキーマから受け取り、backend/hook で再決定しない。
-- dispatch mode の意味論適用点は `EAST2 -> EAST3` の lowering 1 回のみとする。
-- `type_id` 判定命令の連結・ID 確定は `spec-linker` の契約に従う。
+- `isinstance` は EAST3 で `pytra_isinstance(x.type_id, TID定数)` に lower する。
+- emitter は lower 済みの呼び出しを言語構文に写像するだけ。
+- emitter が type_id 判定ロジックを直接生成してはならない。
+- runtime ヘッダーに type_id テーブルをハードコードしてはならない。
 
 ## 12. テスト観点
 

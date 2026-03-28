@@ -776,6 +776,23 @@ xs := make([]int64, 0)  # []int64（値型スライス）
 - ヒントが存在しない変数は**必ず参照型**で保持する（fail-closed）。
 - ヒントは list のみが対象（dict / set は将来拡張）。
 
+## 10.2 type_id テーブルの扱い
+
+linker が生成する仮想モジュール `pytra.built_in.type_id_table` は、通常の EAST3 モジュールとして link-output に含まれる。
+
+emitter の責務:
+
+- `pytra.built_in.type_id_table` を通常の EAST3 モジュールとして写像する。特別なロジックは不要。
+- `isinstance` は EAST3 で `pytra_isinstance(x.type_id, TID定数)` に lower 済み。emitter はこの関数呼び出しを言語構文に写像するだけ。
+
+禁止事項:
+
+- runtime ヘッダーに type_id テーブルのサイズや値をハードコードしてはならない（C++ の `g_type_table[4096]` のような固定サイズ配列は禁止）。
+- Go の `PYTRA_TID_VALUE_ERROR = 12` のような手書き定数は禁止。linker が生成した `pytra.built_in.type_id_table` の定数を使う。
+- emitter が type_id の判定ロジックを直接生成してはならない。
+
+詳細は `spec-type_id.md` §7 を参照。
+
 ## 11. `yields_dynamic` 契約
 
 コンテナ要素を抽出するメソッド呼び出し（`dict.get`, `dict.pop`, `dict.setdefault`, `list.pop`）では、Python 意味論上の型（`resolved_type`）は具象型（例: `int64`）だが、非テンプレート言語（Go, Java 等）の runtime 実装は動的型（`any` / `interface{}` / `Object`）を返す場合がある。
