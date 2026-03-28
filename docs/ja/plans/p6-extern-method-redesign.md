@@ -195,8 +195,78 @@ def extend(self, x: list[T]) -> None: ...
 - 非 extern 関数は resolve が本体を解析して `arg_usage` を自動算出（既存の仕組み）
 - extern 関数だけ `@method` の宣言から取得
 
+## rc と arg mode の設計議論
+
+### runtime ヘルパーは rc 前提の1パターンだけ実装する
+
+runtime ヘルパー（`PyListExtend`, `PyListConcat` 等）は全て rc 付き（`Object<list<T>>` / `*PyList[T]`）を引数に取る。rc を剥がした `list<T>` / `[]T` を受け取るパターンは用意しない。
+
+理由:
+- デフォルトが `ref`（rc のまま）なので、ほとんどの呼び出しは rc 付きで渡される
+- `@method` で `ref` を要求している関数に渡す → escape 解析は「escape する」と判断 → rc を剥がさない
+- `ref_readonly` でも rc のまま渡す（下記「エイリアス問題」参照）
+- テンプレート/ジェネリクスがない言語（Go 等）で rc あり/なしの 2^N パターンを実装するのは非現実的
+
+### `ref_readonly` でも rc を剥がせない（エイリアス問題）
+
+`ref_readonly` の引数は「読むだけ」だが、rc を剥がして生の参照で渡すと壊れるケースがある:
+
+```python
+a: list[int] = [1, 2, 3]
+a.extend(a)  # self と x が同じオブジェクト
+```
+
+rc を剥がして渡した場合の C++:
+
+```cpp
+void extend(Object<list<int>>& self, const list<int>& x) {
+    // self と x が同じ list を指している
+    // extend が self に要素を追加 → 内部配列が再確保
+    // → x の参照が無効になる（dangling reference → UB）
+    for (auto& elem : x) {  // UB!
+        self->push_back(elem);
+    }
+}
+```
+
+rc のまま渡せば、rc が生存を保証するのでこの問題は起きない。
+
+結論: **4 つの arg mode は全て rc のまま渡す。rc を剥がすのは呼び出し側の escape 解析最適化の判断であり、runtime ヘルパーの引数型には影響しない。**
+
+| mode | runtime ヘルパーの引数型 | escape 解析への効果 |
+|---|---|---|
+| `ref`（既定） | rc のまま | escape する |
+| `ref_readonly` | rc のまま | escape しない（呼び出し元の変数の rc を他の箇所で剥がせる可能性） |
+| `value` | rc のまま（呼び出し側でコピーしてから渡す） | escape しない |
+| `value_readonly` | rc のまま（呼び出し側でコピーしてから渡す） | escape しない |
+
+注: `value` / `value_readonly` は「rc を剥がす」のではなく「コピーを作って渡す」。呼び出し側が `rc<list<T>>` を deref してコピーを作り、そのコピーを新しい `rc<list<T>>` で包んで渡す。runtime ヘルパーは常に rc を受け取る。
+
+### `ref_readonly` の実際の効果
+
+`ref_readonly` は runtime ヘルパーの引数型を変えない。効果は escape 解析へのヒントのみ:
+
+```python
+buf: list[int] = [1, 2, 3]   # buf はこの関数内でしか使われない
+other.extend(buf)              # extend の x は ref_readonly
+# → escape 解析: buf は extend に渡されるが、extend は x を変更しない
+# → buf が他の箇所で escape していなければ、buf の rc を剥がせる
+# → ただし extend に渡すときは rc のまま渡す（エイリアス安全のため）
+```
+
+「rc を剥がせる」のは変数の**ストレージ**であり、関数への**受け渡し**ではない。ローカル変数がスタック上の値型になるだけで、関数に渡すときは一時的に rc で包む。
+
+### concat (`a + b`) の扱い
+
+`list + list` の concat は `PyListConcat(a, b)` のような rc 前提の runtime ヘルパーで処理する。emitter が rc を剥がして素のスライスを操作するのは禁止。
+
+- emitter は `BinOp(Add, list, list)` を mapping.json で `PyListConcat` に写像するだけ
+- `PyListConcat` は `rc<list<T>>` を受けて `rc<list<T>>` を返す
+- rc の wrap/unwrap は emitter の責務ではない
+
 ## 未決事項
 
 - `@method` と `@extern` の関係整理（`@extern` は関数用、`@method` はメソッド用？ それとも統合？）
 - `@extern` も同様に短縮できるか
 - 既存の `containers.py` の書き換え量
+- `ref_readonly` で rc のまま渡すが、呼び出し元の変数のストレージは最適化で値型にできるという二重構造をどこまで spec に書くか
