@@ -1158,6 +1158,10 @@ def _coerce_from_any(val_code: str, target_type: str) -> str:
 def _maybe_coerce_expr_to_type(ctx: EmitContext, value_node: JsonVal, value_code: str, target_type: str) -> str:
     if not isinstance(value_node, dict):
         return value_code
+    if _is_container_resolved_type(target_type):
+        if _is_wrapper_container_expr(ctx, value_node, value_code):
+            return value_code
+        return _wrap_ref_container_value_code(ctx, value_code, target_type)
     source_type = _str(value_node, "resolved_type")
     if _str(value_node, "kind") == "Call" and source_type in ("", "unknown"):
         target_gt = go_type(target_type)
@@ -1684,11 +1688,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return _safe_go_ident(runtime_symbol) + "(" + ", ".join(call_arg_strs) + ")"
             # .append() on non-BuiltinCall (plain method call)
             if attr == "append" and len(arg_strs) >= 1:
+                owner_storage = _wrapper_container_storage_expr(ctx, owner_node, owner)
                 # If owner is bytes/bytearray or unknown bytes-like, use append_byte
                 if owner_rt in ("bytes", "bytearray", "list[uint8]", "unknown"):
-                    return owner + " = py_append_byte(" + owner + ", " + arg_strs[0] + ")"
+                    return owner_storage + " = py_append_byte(" + owner_storage + ", " + arg_strs[0] + ")"
                 if owner_rt.startswith("list["):
-                    return owner + " = append(" + owner + ", " + arg_strs[0] + ")"
+                    return owner_storage + " = append(" + owner_storage + ", " + arg_strs[0] + ")"
             if attr in ("keys", "values") and ((owner_rt.startswith("dict[") and owner_rt.endswith("]")) or owner_rt in ("Node", "dict[str,Any]")):
                 if owner_rt in ("Node", "dict[str,Any]"):
                     if attr == "keys":
@@ -2806,7 +2811,10 @@ def _emit_list_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     gt = go_type(rt)
     elt = node.get("elt")
     generators = _list(node, "generators")
-    return _emit_comp_iife(ctx, gt, elt, None, None, generators, "list")
+    rendered = _emit_comp_iife(ctx, gt, elt, None, None, generators, "list")
+    if _is_container_resolved_type(rt):
+        return _wrap_ref_container_value_code(ctx, rendered, rt)
+    return rendered
 
 
 def _emit_set_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -2814,7 +2822,10 @@ def _emit_set_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     gt = go_type(rt)
     elt = node.get("elt")
     generators = _list(node, "generators")
-    return _emit_comp_iife(ctx, gt, elt, None, None, generators, "set")
+    rendered = _emit_comp_iife(ctx, gt, elt, None, None, generators, "set")
+    if _is_container_resolved_type(rt):
+        return _wrap_ref_container_value_code(ctx, rendered, rt)
+    return rendered
 
 
 def _emit_dict_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -2823,7 +2834,10 @@ def _emit_dict_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     key = node.get("key")
     value = node.get("value")
     generators = _list(node, "generators")
-    return _emit_comp_iife(ctx, gt, None, key, value, generators, "dict")
+    rendered = _emit_comp_iife(ctx, gt, None, key, value, generators, "dict")
+    if _is_container_resolved_type(rt):
+        return _wrap_ref_container_value_code(ctx, rendered, rt)
+    return rendered
 
 
 def _emit_comp_iife(
@@ -2872,6 +2886,7 @@ def _emit_comp_iife(
         t_type = _str(target, "resolved_type") if isinstance(target, dict) else ""
 
         iter_code = _emit_expr(ctx, iter_expr)
+        iter_code = _wrapper_container_storage_expr(ctx, iter_expr, iter_code)
         iter_rt = _str(iter_expr, "resolved_type") if isinstance(iter_expr, dict) else ""
         pad = indent * depth
         if iter_rt in ("bytearray", "bytes", "list[uint8]"):
