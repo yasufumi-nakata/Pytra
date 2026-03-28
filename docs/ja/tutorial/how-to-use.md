@@ -61,3 +61,7 @@ Rust に変換するなら `--target` を変えるだけ:
 | `--exe <name>` | 実行ファイル名（`--output-dir` 配下に生成） |
 | `--help` | ヘルプ表示 |
 
+## 関連する仕様
+
+- [利用仕様](../spec/spec-user.md) — 入力制約、テスト実行方法の詳細
+- [Python との違い](./python-differences.md) — 型注釈、import ルール、使えない構文
