@@ -20,12 +20,12 @@
 
 ## 領域別 TODO
 
-| 領域 | ファイル | 主なタスク |
-|---|---|---|
-| C++ backend | [cpp.md](./cpp.md) | P3-CR-CPP, P4-CPP-SELFHOST |
-| Go backend | [go.md](./go.md) | P1-GO-CONTAINER, P5-CR-GO, P6-GO-SELFHOST |
-| Rust backend | [rust.md](./rust.md) | P7-RS-EMITTER |
-| TS/JS backend | [ts.md](./ts.md) | P8-TS-EMITTER |
-| インフラ・ツール | [infra.md](./infra.md) | P10-REORG, P11-VERSION-GATE, P20-INT32 |
+| 領域 | ファイル |
+|---|---|
+| C++ backend | [cpp.md](./cpp.md) |
+| Go backend | [go.md](./go.md) |
+| Rust backend | [rust.md](./rust.md) |
+| TS/JS backend | [ts.md](./ts.md) |
+| インフラ・ツール | [infra.md](./infra.md) |
 
 注: 完了済みタスクは [アーカイブ](archive/index.md) に移動済み。
