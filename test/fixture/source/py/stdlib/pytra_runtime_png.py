@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import pytra.std.env as env
 import pytra.std.os as os
 import pytra.utils.png as png
 from pytra.utils.assertions import py_assert_all, py_assert_eq, py_assert_true
 
 
 def run_case() -> None:
-    os.makedirs("test_png_out", exist_ok=True)
-    out_path = "test_png_out/pytra_runtime_png.png"
+    out_dir: str = "work/tmp/test_png_out" if env.target == "python" else "test_png_out"
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = out_dir + "/pytra_runtime_png.png"
     pixels = bytearray([
         255, 0, 0,
         0, 255, 0,
