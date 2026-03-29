@@ -93,4 +93,4 @@ EAST3 では既に正規化済みの Python 構文が emitter に残っている
 ## 決定ログ
 
 - 2026-03-30: grep ベースで6カテゴリの責務違反を検出する方針に決定。型名の文字列マッチ（`resolved_type == "list"` 等）や属性名での分岐（`attr == "append"` 等）は誤検知が多いため、grep ベースの検出対象から除外。将来 AST ベースの lint に移行する候補とする。
-- 2026-03-30: `run_local_ci.py` への組み込みではなく、`runtime_parity_check.py` のついでに実行する方針に変更。違反は違反マトリクスに記録するだけで、parity check の exit code には影響しない。各 backend が parity check を日常的に回しているため、実質的なカバレッジが高い。
+- 2026-03-30: `run_local_ci.py` への組み込みを取り消し。`runtime_parity_check.py` への組み込みも取り消し（parity check が重くなるため）。単独手動実行スクリプトとして完結させる方針に変更。実行タイミングは別途検討。
