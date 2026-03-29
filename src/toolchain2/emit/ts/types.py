@@ -1,0 +1,234 @@
+"""TypeScript type mapping from EAST3 resolved types.
+
+§5 準拠: Any/object 禁止, pytra.std.* のみ, selfhost 対象。
+"""
+
+from __future__ import annotations
+
+
+# EAST3 resolved_type → TypeScript type
+_TYPE_MAP: dict[str, str] = {
+    "int": "number",
+    "int8": "number",
+    "int16": "number",
+    "int32": "number",
+    "int64": "number",
+    "uint8": "number",
+    "uint16": "number",
+    "uint32": "number",
+    "uint64": "number",
+    "float": "number",
+    "float32": "number",
+    "float64": "number",
+    "bool": "boolean",
+    "str": "string",
+    "None": "void",
+    "none": "void",
+    "bytes": "number[]",
+    "bytearray": "number[]",
+    "list": "any[]",
+    "dict": "Map<any, any>",
+    "set": "Set<any>",
+    "tuple": "any[]",
+    "object": "any",
+    "Obj": "any",
+    "Any": "any",
+    "JsonVal": "any",
+    "Node": "Map<string, any>",
+    "Callable": "(...args: any[]) => any",
+    "callable": "(...args: any[]) => any",
+    "Exception": "Error",
+    "BaseException": "Error",
+    "RuntimeError": "Error",
+    "ValueError": "Error",
+    "TypeError": "Error",
+    "IndexError": "Error",
+    "KeyError": "Error",
+    "Path": "string",
+}
+
+_TS_KEYWORDS: set[str] = {
+    "break", "case", "catch", "class", "const", "continue", "debugger",
+    "default", "delete", "do", "else", "enum", "export", "extends",
+    "false", "finally", "for", "function", "if", "import", "in",
+    "instanceof", "new", "null", "return", "super", "switch", "this",
+    "throw", "true", "try", "typeof", "var", "void", "while", "with",
+    "implements", "interface", "let", "package", "private", "protected",
+    "public", "static", "yield", "abstract", "any", "as", "async",
+    "await", "boolean", "constructor", "declare", "from", "get", "is",
+    "keyof", "module", "namespace", "never", "number", "object", "of",
+    "override", "readonly", "require", "set", "string", "symbol", "type",
+    "undefined", "unique", "unknown",
+}
+
+
+def _safe_ts_ident(name: str) -> str:
+    """Make a string safe as a TypeScript identifier."""
+    chars: list[str] = []
+    for ch in name:
+        if ch.isalnum() or ch == "_":
+            chars.append(ch)
+        else:
+            chars.append("_")
+    out = "".join(chars)
+    if out == "":
+        return "_unnamed"
+    if out[0].isdigit():
+        out = "_" + out
+    if out in _TS_KEYWORDS:
+        out = out + "_"
+    return out
+
+
+def _split_generic_args(s: str) -> list[str]:
+    """Split comma-separated generic type args respecting angle brackets."""
+    parts: list[str] = []
+    depth = 0
+    current: list[str] = []
+    for ch in s:
+        if ch == "<" or ch == "[":
+            depth += 1
+            current.append(ch)
+        elif ch == ">" or ch == "]":
+            depth -= 1
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(ch)
+    tail = "".join(current).strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
+def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
+    """Parse a callable[...] or Callable[...] resolved type into (params, return_type)."""
+    if not (
+        (resolved_type.startswith("callable[") or resolved_type.startswith("Callable["))
+        and resolved_type.endswith("]")
+    ):
+        return ([], "unknown")
+    prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
+    inner = resolved_type[prefix_len:-1].strip()
+    if inner == "":
+        return ([], "unknown")
+    if inner.startswith("["):
+        depth = 0
+        close_idx = -1
+        i = 0
+        while i < len(inner):
+            ch = inner[i]
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+                if depth == 0:
+                    close_idx = i
+                    break
+            i += 1
+        if close_idx >= 0 and close_idx + 1 < len(inner) and inner[close_idx + 1] == ",":
+            params_text = inner[1:close_idx].strip()
+            ret_text = inner[close_idx + 2:].strip()
+            params: list[str] = []
+            if params_text != "":
+                params = _split_generic_args(params_text)
+            return (params, ret_text if ret_text != "" else "unknown")
+    arrow_idx = inner.find("->")
+    if arrow_idx >= 0:
+        params_text2 = inner[:arrow_idx].strip()
+        ret_text2 = inner[arrow_idx + 2:].strip()
+        params2: list[str] = []
+        if params_text2 != "":
+            for part in params_text2.split(","):
+                item = part.strip()
+                if item != "":
+                    params2.append(item)
+        return (params2, ret_text2 if ret_text2 != "" else "unknown")
+    return ([], inner)
+
+
+def ts_type(resolved_type: str, *, for_return: bool = False) -> str:
+    """Convert an EAST3 resolved_type to a TypeScript type string.
+
+    Args:
+        resolved_type: EAST3 resolved type string.
+        for_return: If True, map None → void instead of null.
+    """
+    if resolved_type == "" or resolved_type == "unknown":
+        return "any"
+
+    # Callable types
+    if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
+        params, ret = _parse_callable_signature(resolved_type)
+        param_parts: list[str] = []
+        for idx, param in enumerate(params):
+            param_parts.append("arg" + str(idx) + ": " + ts_type(param))
+        ret_ts = ts_type(ret, for_return=True)
+        return "(" + ", ".join(param_parts) + ") => " + ret_ts
+
+    # multi_return → tuple
+    if resolved_type.startswith("multi_return[") and resolved_type.endswith("]"):
+        inner = resolved_type[len("multi_return["):-1]
+        parts = _split_generic_args(inner)
+        return "[" + ", ".join(ts_type(p) for p in parts) + "]"
+
+    # Direct mapping
+    if resolved_type in _TYPE_MAP:
+        mapped = _TYPE_MAP[resolved_type]
+        if resolved_type == "None" and not for_return:
+            return "null"
+        return mapped
+
+    # list[T] → T[]
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        return ts_type(inner) + "[]"
+
+    # dict[K, V] → Map<K, V>
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        parts = _split_generic_args(inner)
+        if len(parts) == 2:
+            return "Map<" + ts_type(parts[0]) + ", " + ts_type(parts[1]) + ">"
+        return "Map<any, any>"
+
+    # set[T] → Set<T>
+    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+        inner = resolved_type[4:-1]
+        return "Set<" + ts_type(inner) + ">"
+
+    # tuple[A, B, ...] → [A, B, ...]
+    if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
+        inner = resolved_type[6:-1]
+        parts = _split_generic_args(inner)
+        return "[" + ", ".join(ts_type(p) for p in parts) + "]"
+
+    # Optional: T | None → T | null
+    if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):
+        inner = resolved_type[:-7] if resolved_type.endswith(" | None") else resolved_type[:-5]
+        return ts_type(inner) + " | null"
+
+    # Union type (A | B, A|B) → A | B
+    if "|" in resolved_type:
+        parts = [part.strip() for part in resolved_type.split("|") if part.strip() != ""]
+        if len(parts) > 1:
+            return " | ".join(ts_type(p) for p in parts)
+
+    # User class → ClassName
+    return _safe_ts_ident(resolved_type)
+
+
+def ts_zero_value(resolved_type: str) -> str:
+    """Return a TypeScript zero/default value for a type."""
+    tt = ts_type(resolved_type)
+    if tt == "number":
+        return "0"
+    if tt == "boolean":
+        return "false"
+    if tt == "string":
+        return '""'
+    if tt == "void":
+        return ""
+    return "null"

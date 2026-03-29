@@ -27,6 +27,7 @@ from toolchain2.emit.cpp.emitter import emit_cpp_module
 from toolchain2.emit.cpp.header_gen import build_cpp_header_from_east3
 from toolchain2.emit.cpp.runtime_bundle import emit_runtime_module_artifacts
 from toolchain2.emit.go.emitter import emit_go_module
+from toolchain2.emit.ts.emitter import emit_ts_module
 from toolchain2.link.linker import LinkResult
 from toolchain2.link.linker import link_modules
 from toolchain2.link.manifest_loader import load_linked_output
@@ -667,8 +668,33 @@ def cmd_emit(args: list[str]) -> int:
     if target == "cpp":
         return _emit_cpp(manifest_path, Path(output_dir_text))
 
-    print("error: unsupported target: " + target + " (available: cpp, go)")
+    if target == "ts" or target == "js":
+        return _emit_ts(manifest_path, Path(output_dir_text), strip_types=(target == "js"))
+
+    print("error: unsupported target: " + target + " (available: cpp, go, ts, js)")
     return 1
+
+
+def _emit_ts(manifest_path: Path, output_dir: Path, *, strip_types: bool = False) -> int:
+    """TypeScript/JavaScript emit: linked output → TS/JS source files."""
+    manifest_doc, linked_modules = load_linked_output(manifest_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    ext = ".js" if strip_types else ".ts"
+    written = 0
+    for module in linked_modules:
+        code = emit_ts_module(module.east_doc, strip_types=strip_types)
+        if code.strip() == "":
+            continue
+        mid = module.module_id
+        fname = mid.replace(".", "_") + ext
+        out_path = output_dir.joinpath(fname)
+        out_path.write_text(code, encoding="utf-8")
+        written += 1
+
+    lang = "JS" if strip_types else "TS"
+    print("emitted: " + str(output_dir) + " (" + str(written) + " " + lang + " files)")
+    return 0
 
 
 def _emit_cpp(manifest_path: Path, output_dir: Path) -> int:
@@ -758,8 +784,8 @@ def cmd_build(args: list[str]) -> int:
         print("error: at least one input .py file is required")
         return 1
 
-    if target not in ("cpp", "go"):
-        print("error: unsupported target: " + target + " (available: cpp, go)")
+    if target not in ("cpp", "go", "ts", "js"):
+        print("error: unsupported target: " + target + " (available: cpp, go, ts, js)")
         return 1
 
     try:
@@ -848,6 +874,15 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str) -> int
             output_dir.joinpath(m.module_id.replace(".", "_") + ".go").write_text(code, encoding="utf-8")
             written += 1
         written += _copy_go_runtime_files(output_dir)
+    elif target == "ts" or target == "js":
+        strip = (target == "js")
+        ext = ".js" if strip else ".ts"
+        for m in link_result.linked_modules:
+            code = emit_ts_module(m.east_doc, strip_types=strip)
+            if code.strip() == "":
+                continue
+            output_dir.joinpath(m.module_id.replace(".", "_") + ext).write_text(code, encoding="utf-8")
+            written += 1
     elif target == "cpp":
         for m in link_result.linked_modules:
             if m.module_kind == "runtime":
