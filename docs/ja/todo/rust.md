@@ -25,3 +25,12 @@
 3. [ ] [ID: P7-RS-EMITTER-S3] fixture 132 件 + sample 18 件の Rust emit 成功を確認する
 4. [ ] [ID: P7-RS-EMITTER-S4] Rust runtime を toolchain2 の emit 出力と整合させる（旧 toolchain1 runtime の引き継ぎ or 再実装）
 5. [ ] [ID: P7-RS-EMITTER-S5] fixture + sample の Rust compile + run parity を通す
+
+### P9-RS-SELFHOST: Rust emitter で toolchain2 を Rust に変換し cargo build を通す
+
+前提: P7-RS-EMITTER 完了後に着手。
+
+1. [ ] [ID: P9-RS-SELFHOST-S0] selfhost 対象コード（`src/toolchain2/` 全 .py）で戻り値型の注釈が欠けている関数に型注釈を追加する — resolve が `inference_failure` にならない状態にする（P4/P6 と共通。先に完了した側の成果を共有）
+2. [ ] [ID: P9-RS-SELFHOST-S1] toolchain2 全 .py を Rust に emit し、cargo build が通ることを確認する
+3. [ ] [ID: P9-RS-SELFHOST-S2] cargo build 失敗ケースを emitter/runtime の修正で解消する（EAST の workaround 禁止）
+4. [ ] [ID: P9-RS-SELFHOST-S3] selfhost 用 Rust golden を配置し、回帰テストとして維持する
