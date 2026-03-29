@@ -133,10 +133,7 @@ Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
 | Getting started | [Tutorial](docs/en/tutorial/README.md) | [チュートリアル](docs/ja/tutorial/README.md) |
 | Guide | [Guides](docs/en/guide/README.md) | [ガイド](docs/ja/guide/README.md) |
 | Specification | [Spec index](docs/en/spec/index.md) | [仕様書](docs/ja/spec/index.md) |
-
-## Backend Progress
-
-[fixture / sample / selfhost の進捗マトリクス](docs/ja/language/backend-progress.md) — [English](docs/en/language/backend-progress.md)
+| Backend | [Progress](docs/en/language/backend-progress.md) | [進捗](docs/ja/language/backend-progress.md) |
 
 ## Changelog
 
