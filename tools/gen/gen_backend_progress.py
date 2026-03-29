@@ -331,14 +331,34 @@ def _build_selfhost_matrix(selfhost_data: dict[str, dict[str, object]]) -> list[
         return "🟥"
 
     # Python (source)
+    all_rows_icons: list[list[str]] = []
     cells = ["🟩" if lang in ("cpp", "go") else "🟥" for lang in emit_langs]
+    all_rows_icons.append(cells)
     lines.append(f"| Python (原本) | {' | '.join(cells)} |")
 
     for sh_lang in SELFHOST_LANGS:
         doc = selfhost_data.get(sh_lang, {})
         label = lang_labels.get(sh_lang, sh_lang) + " selfhost"
         cells = [_stage_icon(doc, emit_lang) for emit_lang in emit_langs]
+        all_rows_icons.append(cells)
         lines.append(f"| {label} | {' | '.join(cells)} |")
+
+    # Summary
+    total_rows = len(all_rows_icons)
+    ok_cells = []
+    fail_cells = []
+    untested_cells = []
+    for col in range(len(emit_langs)):
+        ok = sum(1 for row in all_rows_icons if row[col] == "🟩")
+        fail = sum(1 for row in all_rows_icons if row[col] == "🟥")
+        untested = total_rows - ok - fail
+        ok_cells.append(str(ok) if ok > 0 else "—")
+        fail_cells.append(str(fail) if fail > 0 else "—")
+        untested_cells.append(str(untested) if untested > 0 else "—")
+    lines.append(f"| **🟩 PASS** | {' | '.join(ok_cells)} |")
+    lines.append(f"| **🟥 FAIL** | {' | '.join(fail_cells)} |")
+    lines.append(f"| **⬜ 未実行** | {' | '.join(untested_cells)} |")
+
     return lines
 
 
@@ -373,14 +393,34 @@ def _build_selfhost_matrix_en(selfhost_data: dict[str, dict[str, object]]) -> li
             return "🟩"
         return "🟥"
 
+    all_rows_icons: list[list[str]] = []
     cells = ["🟩" if lang in ("cpp", "go") else "🟥" for lang in emit_langs]
+    all_rows_icons.append(cells)
     lines.append(f"| Python (source) | {' | '.join(cells)} |")
 
     for sh_lang in SELFHOST_LANGS:
         doc = selfhost_data.get(sh_lang, {})
         label = lang_labels.get(sh_lang, sh_lang) + " selfhost"
         cells = [_stage_icon(doc, emit_lang) for emit_lang in emit_langs]
+        all_rows_icons.append(cells)
         lines.append(f"| {label} | {' | '.join(cells)} |")
+
+    # Summary
+    total_rows = len(all_rows_icons)
+    ok_cells = []
+    fail_cells = []
+    untested_cells = []
+    for col in range(len(emit_langs)):
+        ok = sum(1 for row in all_rows_icons if row[col] == "🟩")
+        fail = sum(1 for row in all_rows_icons if row[col] == "🟥")
+        untested = total_rows - ok - fail
+        ok_cells.append(str(ok) if ok > 0 else "—")
+        fail_cells.append(str(fail) if fail > 0 else "—")
+        untested_cells.append(str(untested) if untested > 0 else "—")
+    lines.append(f"| **🟩 PASS** | {' | '.join(ok_cells)} |")
+    lines.append(f"| **🟥 FAIL** | {' | '.join(fail_cells)} |")
+    lines.append(f"| **⬜ Untested** | {' | '.join(untested_cells)} |")
+
     return lines
 
 

@@ -5,7 +5,7 @@
 # Fixture parity matrix
 
 > Machine-generated file. Run `python3 tools/gen/gen_backend_progress.py` to update.
-> Generated at: 2026-03-30T08:28:02
+> Generated at: 2026-03-30T08:30:16
 > [Links](./index.md)
 
 | Icon | Meaning |
