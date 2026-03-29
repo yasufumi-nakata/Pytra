@@ -1050,17 +1050,13 @@ sample/py の全 18 ケースについて、Python 実行結果（stdout + artif
 
 ### 正本ツール
 
-**`tools/check/runtime_parity_check.py`（slow 版）と `tools/check/runtime_parity_check_fast.py`（fast 版）が全言語共通の parity check 正本ツール** である。言語別に独自の検証スクリプトを作成してはならない。
+**`tools/check/runtime_parity_check_fast.py` が全言語共通の parity check 正本ツール** である。言語別に独自の検証スクリプトを作成してはならない。
 
-fast 版は transpile 段を toolchain2 Python API のインメモリ呼び出しで実行し、プロセス起動 + disk I/O を省略する。開発中のイテレーションでは fast 版を推奨する。
+transpile 段を toolchain2 Python API のインメモリ呼び出しで実行し、プロセス起動 + disk I/O を省略する。
 
 ```bash
-# fast 版（推奨。PYTHONPATH の設定が必要）
+# sample parity
 PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
-  --targets <lang> --case-root sample --all-samples
-
-# slow 版（従来互換。PYTHONPATH 不要）
-python3 tools/check/runtime_parity_check.py \
   --targets <lang> --case-root sample --all-samples
 ```
 
@@ -1069,21 +1065,18 @@ python3 tools/check/runtime_parity_check.py \
 `test/fixture/source/py/` の全テストケース（146+ 件）も同じツールで全言語検証できる。`ng_*`（negative test）は自動スキップされる。`--category` でカテゴリ単位の部分実行も可能。
 
 ```bash
-# fixture parity（fast 版、カテゴリ指定）
+# fixture parity（カテゴリ指定）
 PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
   --targets <lang> --category oop
 
-# fixture parity（fast 版、全件）
+# fixture parity（全件）
 PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
   --targets <lang>
-
-# fixture parity（slow 版、全件）
-python3 tools/check/runtime_parity_check.py --targets <lang>
 ```
 
 emitter 開発時は **sample と fixture の両方** で parity check を実行すること。sample は実用的な大きいプログラム（18 件）、fixture は言語機能の網羅テスト（146+ 件）。
 
-両版とも実行結果を `.parity-results/` に自動蓄積し、`tools/gen/gen_backend_progress.py` の進捗マトリクスに反映される。
+実行結果は `.parity-results/` に自動蓄積され、`tools/gen/gen_backend_progress.py` の進捗マトリクスに反映される。
 
 ### unsupported feature の skip 管理
 
