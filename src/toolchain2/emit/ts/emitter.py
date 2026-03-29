@@ -392,6 +392,59 @@ def _resolve_runtime_call_name(ctx: EmitContext, node: dict[str, JsonVal], func:
     return name
 
 
+def _translate_method_name(owner_rt: str, attr: str) -> str:
+    """Translate Python method names to TS equivalents for known container types."""
+    is_list_type = (
+        owner_rt.startswith("list[") or owner_rt == "list"
+        or owner_rt in ("bytes", "bytearray")
+    )
+    is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict"
+    is_set_type = owner_rt.startswith("set[") or owner_rt == "set"
+    is_str_type = owner_rt == "str" or owner_rt == "string"
+
+    if is_list_type:
+        _LIST_MAP: dict[str, str] = {
+            "append": "push",
+            "pop": "pop",
+            "clear": "splice(0)",
+            "copy": "slice",
+            "index": "indexOf",
+            "count": "filter",
+            "reverse": "reverse",
+            "sort": "sort",
+            "extend": "push",
+            "insert": "splice",
+            "remove": "splice",
+        }
+        return _LIST_MAP.get(attr, attr)
+    if is_dict_type:
+        _DICT_MAP: dict[str, str] = {
+            "get": "get",
+            "set": "set",
+            "has": "has",
+            "delete": "delete",
+            "clear": "clear",
+            "items": "entries",
+            "keys": "keys",
+            "values": "values",
+            "pop": "delete",
+            "update": "set",
+        }
+        return _DICT_MAP.get(attr, attr)
+    if is_set_type:
+        _SET_MAP: dict[str, str] = {
+            "add": "add",
+            "discard": "delete",
+            "remove": "delete",
+            "pop": "values",
+            "clear": "clear",
+            "union": "union",
+            "intersection": "intersection",
+        }
+        return _SET_MAP.get(attr, attr)
+    return attr
+
+
 def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     func = node.get("func")
     args = _list(node, "args")
@@ -406,6 +459,14 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # BuiltinCall: runtime function
     lowered = _str(node, "lowered_kind")
     if lowered == "BuiltinCall" or lowered == "RuntimeCall":
+        # When func is Attribute (e.g., checks.append), prepend owner to args
+        method_owner = ""
+        builtin_arg_strs = list(all_arg_strs)
+        if isinstance(func, dict) and _str(func, "kind") == "Attribute":
+            owner_val = func.get("value")
+            method_owner = _emit_expr(ctx, owner_val)
+            builtin_arg_strs = [method_owner] + list(arg_strs)
+
         fn_name = _resolve_runtime_call_name(ctx, node, func)
         if fn_name != "" and fn_name != "__CAST__" and fn_name != "__PANIC__":
             if fn_name == "__LIST_CTOR__":
@@ -423,36 +484,36 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return "new Set<" + elem_type + ">([" + ", ".join(all_arg_strs) + "])"
                 return "new Set([" + ", ".join(all_arg_strs) + "])"
             if fn_name == "__LIST_APPEND__":
-                owner = _emit_expr(ctx, args[0]) if len(args) >= 1 else "null"
-                item = arg_strs[1] if len(arg_strs) >= 2 else "null"
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                item = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
                 return owner + ".push(" + item + ")"
             if fn_name == "__LIST_POP__":
-                owner = _emit_expr(ctx, args[0]) if len(args) >= 1 else "null"
-                if len(arg_strs) >= 2:
-                    return owner + ".splice(" + arg_strs[1] + ", 1)[0]"
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                if len(builtin_arg_strs) >= 2:
+                    return owner + ".splice(" + builtin_arg_strs[1] + ", 1)[0]"
                 return owner + ".pop()"
             if fn_name == "__LIST_CLEAR__":
-                owner = _emit_expr(ctx, args[0]) if len(args) >= 1 else "null"
-                return owner + ".length = 0"
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                return owner + ".splice(0)"
             if fn_name == "__DICT_GET__":
-                owner = _emit_expr(ctx, args[0]) if len(args) >= 1 else "null"
-                key = arg_strs[1] if len(arg_strs) >= 2 else "null"
-                default = arg_strs[2] if len(arg_strs) >= 3 else "null"
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                key = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
+                default = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else "null"
                 return "(" + owner + ".has(" + key + ") ? " + owner + ".get(" + key + ") : " + default + ")"
             if fn_name == "__DICT_ITEMS__":
-                owner = _emit_expr(ctx, args[0]) if len(args) >= 1 else "null"
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 return owner + ".entries()"
             if fn_name == "__DICT_KEYS__":
-                owner = _emit_expr(ctx, args[0]) if len(args) >= 1 else "null"
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 return owner + ".keys()"
             if fn_name == "__DICT_VALUES__":
-                owner = _emit_expr(ctx, args[0]) if len(args) >= 1 else "null"
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 return owner + ".values()"
             if fn_name == "__SET_ADD__":
-                owner = _emit_expr(ctx, args[0]) if len(args) >= 1 else "null"
-                item = arg_strs[1] if len(arg_strs) >= 2 else "null"
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                item = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
                 return owner + ".add(" + item + ")"
-            return _safe_ts_ident(fn_name) + "(" + ", ".join(all_arg_strs) + ")"
+            return _safe_ts_ident(fn_name) + "(" + ", ".join(builtin_arg_strs) + ")"
         if fn_name == "__CAST__":
             if len(all_arg_strs) >= 1:
                 return all_arg_strs[0]
@@ -505,7 +566,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
             # Regular method call: obj.method(...)
             owner_code = _emit_expr(ctx, owner_node)
-            return owner_code + "." + _safe_ts_ident(attr) + "(" + ", ".join(all_arg_strs) + ")"
+            owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+            # TS-specific: Python list methods → JS array methods
+            ts_attr = _translate_method_name(owner_rt, attr)
+            return owner_code + "." + ts_attr + "(" + ", ".join(all_arg_strs) + ")"
 
         if func_kind == "Name":
             fn_id = _str(func, "id")
@@ -1097,16 +1161,62 @@ def _emit_multi_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 _emit(ctx, "let " + name + t_ann + " = " + tmp + "[" + str(idx) + "];")
 
 
+def _for_target_name_and_type(target_node: JsonVal) -> tuple[str, str]:
+    """Extract (identifier, resolved_type) from a ForCore target_plan node."""
+    if not isinstance(target_node, dict):
+        return ("_item", "")
+    tk = _str(target_node, "kind")
+    if tk in ("Name", "NameTarget"):
+        name = _str(target_node, "id")
+        rt = _str(target_node, "target_type")
+        if rt == "":
+            rt = _str(target_node, "resolved_type")
+        return (name, rt)
+    # Tuple unpack target — just use _item
+    return ("_item", "")
+
+
 def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
-    target_node = node.get("target")
-    iter_node = node.get("iter")
+    """ForCore: outer for-loop node. Dispatches to iter_plan."""
+    # EAST3 ForCore uses target_plan and iter_plan
+    target_node = node.get("target_plan")
+    if target_node is None:
+        target_node = node.get("target")
+    iter_plan = node.get("iter_plan")
     body = _list(node, "body")
     orelse = _list(node, "orelse")
 
-    target_code = _emit_expr(ctx, target_node) if isinstance(target_node, dict) else "_item"
-    iter_code = _emit_expr(ctx, iter_node) if isinstance(iter_node, dict) else "[]"
+    target_name, target_rt = _for_target_name_and_type(target_node)
+    safe_target = _safe_ts_ident(target_name) if target_name not in ("_item", "") else "_item"
+    ann = _type_annotation(ctx, target_rt)
+    if safe_target != "_item" and safe_target != "_":
+        ctx.var_types[safe_target] = target_rt
 
-    _emit(ctx, "for (const " + target_code + " of " + iter_code + ") {")
+    if isinstance(iter_plan, dict):
+        plan_kind = _str(iter_plan, "kind")
+        if plan_kind == "StaticRangeForPlan":
+            _emit_static_range_for_plan(ctx, iter_plan, safe_target, ann, body)
+            if len(orelse) > 0:
+                _emit_body(ctx, orelse)
+            return
+        if plan_kind == "RuntimeIterForPlan":
+            iter_node = iter_plan.get("iter_expr")
+            iter_code = _emit_expr(ctx, iter_node) if isinstance(iter_node, dict) else "[]"
+            _emit(ctx, "for (const " + safe_target + " of " + iter_code + ") {")
+            ctx.indent_level += 1
+            _emit_body(ctx, body)
+            ctx.indent_level -= 1
+            _emit(ctx, "}")
+            if len(orelse) > 0:
+                _emit_body(ctx, orelse)
+            return
+
+    # Fallback: check direct iter
+    iter_node = node.get("iter")
+    if iter_node is None:
+        iter_node = iter_plan
+    iter_code = _emit_expr(ctx, iter_node) if isinstance(iter_node, dict) else "[]"
+    _emit(ctx, "for (const " + safe_target + " of " + iter_code + ") {")
     ctx.indent_level += 1
     _emit_body(ctx, body)
     ctx.indent_level -= 1
@@ -1115,53 +1225,80 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         _emit_body(ctx, orelse)
 
 
-def _emit_static_range_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
-    """StaticRangeForPlan: for i in range(start, stop, step) — emit as C-style for loop."""
-    target_node = node.get("target")
-    start_node = node.get("start")
-    stop_node = node.get("stop")
-    step_node = node.get("step")
-    body = _list(node, "body")
+def _emit_static_range_for_plan(
+    ctx: EmitContext,
+    iter_plan: dict[str, JsonVal],
+    target_code: str,
+    ann: str,
+    body: list[JsonVal],
+) -> None:
+    """Emit a StaticRangeForPlan as a C-style for loop."""
+    start_node = iter_plan.get("start")
+    stop_node = iter_plan.get("stop")
+    step_node = iter_plan.get("step")
+    range_mode = _str(iter_plan, "range_mode")
 
-    target_code = _emit_expr(ctx, target_node) if isinstance(target_node, dict) else "_i"
-    target_rt = _str(target_node, "resolved_type") if isinstance(target_node, dict) else "int64"
-    ann = _type_annotation(ctx, target_rt)
     start_code = _emit_expr(ctx, start_node) if isinstance(start_node, dict) else "0"
     stop_code = _emit_expr(ctx, stop_node) if isinstance(stop_node, dict) else "0"
     step_code = _emit_expr(ctx, step_node) if isinstance(step_node, dict) else "1"
     step_is_one = isinstance(step_node, dict) and _str(step_node, "kind") == "Constant" and step_node.get("value") == 1
 
-    # Register loop variable in var_types
-    if isinstance(target_node, dict):
-        name = _str(target_node, "id")
-        if name != "":
-            ctx.var_types[_ts_symbol_name(ctx, name)] = target_rt
+    # When start expr mentions the target variable, use a temp to avoid mutation
+    start_mentions_target = isinstance(start_node, dict) and (
+        _str(start_node, "id") == target_code or _str(start_node, "repr") == target_code
+    )
+    if start_mentions_target:
+        start_tmp = _next_temp(ctx, "start")
+        _emit(ctx, "const " + start_tmp + " = " + start_code + ";")
+        start_code = start_tmp
 
-    if step_is_one:
-        _emit(ctx, "for (let " + target_code + ann + " = " + start_code + "; " + target_code + " < " + stop_code + "; " + target_code + "++) {")
+    descending = range_mode == "descending" or (
+        isinstance(step_node, dict) and _str(step_node, "kind") == "Constant" and isinstance(step_node.get("value"), int) and step_node.get("value", 1) < 0
+    )
+
+    if descending:
+        cmp_op = " > "
     else:
-        _emit(ctx, "for (let " + target_code + ann + " = " + start_code + "; " + target_code + " < " + stop_code + "; " + target_code + " += " + step_code + ") {")
+        cmp_op = " < "
+
+    if step_is_one and not descending:
+        _emit(ctx, "for (let " + target_code + ann + " = " + start_code + ";" + target_code + cmp_op + stop_code + "; " + target_code + "++) {")
+    else:
+        _emit(ctx, "for (let " + target_code + ann + " = " + start_code + ";" + target_code + cmp_op + stop_code + "; " + target_code + " += " + step_code + ") {")
     ctx.indent_level += 1
     _emit_body(ctx, body)
     ctx.indent_level -= 1
     _emit(ctx, "}")
 
 
-def _emit_runtime_iter_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
-    """RuntimeIterForPlan: for x in container."""
+def _emit_static_range_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    """StaticRangeForPlan at top-level body (legacy, should be wrapped in ForCore)."""
+    # This shouldn't normally be at the top level, but handle it anyway
     target_node = node.get("target")
-    iter_node = node.get("iter")
+    body = _list(node, "body")
+    target_name, target_rt = _for_target_name_and_type(target_node)
+    safe_target = _safe_ts_ident(target_name) if target_name not in ("_item", "") else "_i"
+    ann = _type_annotation(ctx, target_rt)
+    if safe_target != "_i":
+        ctx.var_types[safe_target] = target_rt
+    _emit_static_range_for_plan(ctx, node, safe_target, ann, body)
+
+
+def _emit_runtime_iter_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    """RuntimeIterForPlan at top-level body (legacy, should be wrapped in ForCore)."""
+    target_node = node.get("target")
+    iter_node = node.get("iter_expr")
+    if iter_node is None:
+        iter_node = node.get("iter")
     body = _list(node, "body")
 
-    target_code = _emit_expr(ctx, target_node) if isinstance(target_node, dict) else "_item"
-    target_rt = _str(target_node, "resolved_type") if isinstance(target_node, dict) else ""
-    if isinstance(target_node, dict):
-        name = _str(target_node, "id")
-        if name != "":
-            ctx.var_types[_ts_symbol_name(ctx, name)] = target_rt
+    target_name, target_rt = _for_target_name_and_type(target_node)
+    safe_target = _safe_ts_ident(target_name) if target_name not in ("_item", "") else "_item"
+    if safe_target != "_item":
+        ctx.var_types[safe_target] = target_rt
     iter_code = _emit_expr(ctx, iter_node) if isinstance(iter_node, dict) else "[]"
 
-    _emit(ctx, "for (const " + target_code + " of " + iter_code + ") {")
+    _emit(ctx, "for (const " + safe_target + " of " + iter_code + ") {")
     ctx.indent_level += 1
     _emit_body(ctx, body)
     ctx.indent_level -= 1

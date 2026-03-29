@@ -87,6 +87,20 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
     if optional_inner != "":
         return "::std::optional<" + cpp_signature_type(optional_inner) + ">"
 
+    # callable[[P1, P2, ...], RetType] → ::std::function<RetType(P1, P2, ...)>
+    if resolved_type.startswith("callable[") and resolved_type.endswith("]"):
+        inner = resolved_type[9:-1]  # strip "callable[" and "]"
+        parts = _split_generic_args(inner)
+        if len(parts) == 2:
+            params_raw = parts[0].strip()
+            ret_raw = parts[1].strip()
+            if params_raw.startswith("[") and params_raw.endswith("]"):
+                params_inner = params_raw[1:-1].strip()
+                param_types = _split_generic_args(params_inner) if params_inner else []
+                cpp_params = ", ".join(cpp_signature_type(p) for p in param_types)
+                cpp_ret = cpp_signature_type(ret_raw)
+                return "::std::function<" + cpp_ret + "(" + cpp_params + ")>"
+
     # General union → object (variant 導入までは fail-closed)
     if _is_top_level_union(resolved_type):
         return "object"

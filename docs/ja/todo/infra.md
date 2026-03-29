@@ -20,6 +20,8 @@
 
 ### P5-BACKEND-PROGRESS: parity 結果の自動蓄積 + 進捗ページ自動生成
 
+文脈: [docs/ja/plans/p5-backend-progress.md](../plans/p5-backend-progress.md)
+
 1. [ ] [ID: P5-PROGRESS-S1] `runtime_parity_check.py` / `runtime_parity_check_fast.py` が実行終了時に `work/parity-results/<target>_<case-root>.json` へ結果を無条件で書き出すようにする — 既存ファイルがあればケース単位でマージし、各ケースにタイムスタンプを付与する。`--summary-json` は追加出力先として残す
 2. [ ] [ID: P5-PROGRESS-S2] `tools/gen_backend_progress.py` を作成する — `work/parity-results/*.json` を読み、fixture 一覧・sample 一覧と突き合わせて進捗ページを生成する。表示:
    - fixture parity マトリクス: 全ケース × 全言語。状態は 🟩 PASS / 🟥 FAIL / 🟨 TM (toolchain_missing) / 🟪 TO (timeout) / ⬜ 未実行

@@ -510,14 +510,18 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         mapped2 = resolve_runtime_call(runtime_sym, builtin_name, adapter_kind, ctx.mapping)
         if mapped2 != "" and not mapped2.startswith("__"):
             return _emit_runtime_call(ctx, mapped2, func, args, keywords, node)
-        # Fallthrough to normal call with builtin_name or runtime_sym
-        call_name = mapped2 if mapped2 != "" else (runtime_sym if runtime_sym != "" else builtin_name)
-        rendered_args = [_emit_expr(ctx, a) for a in args]
-        for kw in keywords:
-            if isinstance(kw, dict):
-                kw_val = kw.get("value")
-                rendered_args.append(_emit_expr(ctx, kw_val))
-        return call_name + "(" + ", ".join(rendered_args) + ")"
+        # If mapped to a __ placeholder, fall through to Attribute/func handling below
+        # (method calls like list.append are handled in _emit_method_call)
+        if mapped2 == "" or mapped2.startswith("__"):
+            pass  # fall through
+        else:
+            call_name = mapped2
+            rendered_args = [_emit_expr(ctx, a) for a in args]
+            for kw in keywords:
+                if isinstance(kw, dict):
+                    kw_val = kw.get("value")
+                    rendered_args.append(_emit_expr(ctx, kw_val))
+            return call_name + "(" + ", ".join(rendered_args) + ")"
 
     if not isinstance(func, dict):
         rendered_args = [_emit_expr(ctx, a) for a in args]
@@ -1822,6 +1826,11 @@ def _emit_module_body(ctx: RsEmitContext, body: list[JsonVal]) -> None:
 
 def _collect_uses(ctx: RsEmitContext) -> list[str]:
     """Determine which `use` statements are needed."""
+    # Entry files use include!("py_runtime.rs") which already imports
+    # HashMap and HashSet via `use std::{...HashMap, HashSet}`.
+    # Emitting them again causes "defined multiple times" compile errors.
+    if ctx.is_entry:
+        return []
     uses: list[str] = [
         "use std::collections::HashMap;",
         "use std::collections::HashSet;",

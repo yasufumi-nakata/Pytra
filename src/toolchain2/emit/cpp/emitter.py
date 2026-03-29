@@ -380,6 +380,17 @@ def _attribute_static_type(ctx: CppEmitContext, node: JsonVal) -> str:
 
 
 def _expr_static_type(ctx: CppEmitContext, node: JsonVal) -> str:
+    if isinstance(node, dict):
+        kind = _str(node, "kind")
+        # Prefer the actual storage type from context for Name nodes
+        if kind in ("Name", "NameTarget"):
+            name = _str(node, "id")
+            if name != "" and name in ctx.var_types:
+                return ctx.var_types[name]
+        if kind == "Attribute":
+            attr_type = _attribute_static_type(ctx, node)
+            if attr_type not in ("", "unknown"):
+                return attr_type
     inferred = _effective_resolved_type(node)
     if inferred not in ("", "unknown"):
         return inferred
@@ -494,6 +505,11 @@ def _register_local_storage(ctx: CppEmitContext, name: str, resolved_type: str) 
 
 
 def _decl_cpp_type(ctx: CppEmitContext, resolved_type: str, name: str = "") -> str:
+    if resolved_type.startswith("callable["):
+        ctx.includes_needed.add("functional")
+    # User class names that shadow reserved type aliases (e.g., "Obj" from pytra.typing)
+    if resolved_type in ctx.class_names and resolved_type in ("Obj",):
+        return resolved_type
     return cpp_signature_type(
         resolved_type,
         prefer_value_container=_prefer_value_container_local(ctx, name, resolved_type),
@@ -1049,12 +1065,22 @@ def _emit_binop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         ln = node.get("left")
         rn = node.get("right")
         if isinstance(ln, dict) and _str(ln, "kind") == "List":
+            elems = _list(ln, "elements")
             value_ct = cpp_type(rt, prefer_value_container=True)
-            repeated = value_ct + "(" + right + ", " + (_emit_expr(ctx, _list(ln, "elements")[0]) if len(_list(ln, "elements")) == 1 else "0") + ")"
+            if len(elems) == 1:
+                repeated = value_ct + "(::std::size_t(" + right + "), " + _emit_expr(ctx, elems[0]) + ")"
+            else:
+                elem_strs = [_emit_expr(ctx, e) for e in elems]
+                repeated = "py_repeat(" + value_ct + "{" + ", ".join(elem_strs) + "}, " + right + ")"
             return _wrap_container_value_expr(rt, repeated) if is_container_resolved_type(rt) else repeated
         if isinstance(rn, dict) and _str(rn, "kind") == "List":
+            elems = _list(rn, "elements")
             value_ct = cpp_type(rt, prefer_value_container=True)
-            repeated = value_ct + "(" + left + ", " + (_emit_expr(ctx, _list(rn, "elements")[0]) if len(_list(rn, "elements")) == 1 else "0") + ")"
+            if len(elems) == 1:
+                repeated = value_ct + "(::std::size_t(" + left + "), " + _emit_expr(ctx, elems[0]) + ")"
+            else:
+                elem_strs = [_emit_expr(ctx, e) for e in elems]
+                repeated = "py_repeat(" + value_ct + "{" + ", ".join(elem_strs) + "}, " + left + ")"
             return _wrap_container_value_expr(rt, repeated) if is_container_resolved_type(rt) else repeated
     if op == "FloorDiv": return "py_floordiv(" + left + ", " + right + ")"
     if op == "Mod": return "py_mod(" + left + ", " + right + ")"
@@ -1121,6 +1147,12 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                     prev_cmp = "static_cast<int64>(" + prev + ")"
                 elif _is_int_like_enum(ctx, comp_type) and prev_type in ("int", "int64"):
                     right_cmp = "static_cast<int64>(" + right + ")"
+                # Incompatible type comparison (e.g. str vs numeric): box to object
+                _numeric = {"int", "int64", "int32", "int8", "uint8", "uint32", "uint64", "float64", "float32"}
+                if (prev_type == "str" and comp_type in _numeric) or (comp_type == "str" and prev_type in _numeric):
+                    if op_str in ("Eq", "NotEq"):
+                        prev_cmp = "object(" + prev_cmp + ")"
+                        right_cmp = "object(" + right_cmp + ")"
                 parts.append("(" + prev_cmp + " " + cmp + " " + right_cmp + ")")
         prev = right
         prev_node = comp
@@ -1394,6 +1426,28 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return "bytes{}"
     if rc in ("py_print", "py_len") and len(arg_strs) >= 1:
         return rc + "(" + ", ".join(arg_strs) + ")"
+    # Container constructor builtins: list(), dict(), set()
+    if rc == "list_ctor" or (bn == "list" and len(arg_strs) == 0):
+        rt = _str(node, "resolved_type")
+        if rt.startswith("list[") and rt.endswith("]"):
+            inner = cpp_signature_type(rt[5:-1])
+            return "rc_list_new<" + inner + ">()"
+        return "rc_list_new<object>()"
+    if rc == "set_ctor" or (bn == "set" and len(arg_strs) == 0):
+        rt = _str(node, "resolved_type")
+        if rt.startswith("set[") and rt.endswith("]"):
+            inner = cpp_signature_type(rt[4:-1])
+            return "rc_set_from_value(set<" + inner + ">{})"
+        return "rc_set_new<object>()"
+    if rc == "dict_ctor" or (bn == "dict" and len(arg_strs) == 0):
+        rt = _str(node, "resolved_type")
+        if rt.startswith("dict[") and rt.endswith("]"):
+            dparts = _container_type_args(rt)
+            if len(dparts) == 2:
+                k = cpp_signature_type(dparts[0])
+                v = cpp_signature_type(dparts[1])
+                return "rc_dict_new<" + k + ", " + v + ">()"
+        return "rc_dict_new<str, object>()"
     if bn in ("RuntimeError", "ValueError", "TypeError") or rc == "std::runtime_error":
         if len(arg_strs) >= 1: return "throw std::runtime_error(" + arg_strs[0] + ")"
         return 'throw std::runtime_error("' + bn + '")'
@@ -2098,7 +2152,9 @@ def _emit_ann_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     _declare_local_visible(ctx, name)
     ct = _decl_cpp_type(ctx, rt, name)
     if value is not None:
-        _emit(ctx, ct + " " + name + " = " + _emit_expr(ctx, value) + ";")
+        val_expr = _emit_expr(ctx, value)
+        val_expr = _wrap_expr_for_target_type(ctx, rt, val_expr)
+        _emit(ctx, ct + " " + name + " = " + val_expr + ";")
     else:
         _emit(ctx, ct + " " + name + " = " + _decl_cpp_zero_value(ctx, rt, name) + ";")
 
@@ -2225,6 +2281,14 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                 if isinstance(step_node, dict) and _str(step_node, "kind") == "Constant":
                     sv = step_node.get("value")
                     if isinstance(sv, int): step = str(sv); neg = sv < 0
+                elif (isinstance(step_node, dict) and _str(step_node, "kind") == "UnaryOp"
+                      and _str(step_node, "op") == "USub"):
+                    operand = step_node.get("operand")
+                    if isinstance(operand, dict) and _str(operand, "kind") == "Constant":
+                        sv2 = operand.get("value")
+                        if isinstance(sv2, (int, float)) and sv2 > 0:
+                            neg = True
+                    step = _emit_expr(ctx, step_node)
                 elif step_node is not None: step = _emit_expr(ctx, step_node)
                 cmp = " > " if neg else " < "
                 decl = ""

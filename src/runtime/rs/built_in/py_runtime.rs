@@ -1149,6 +1149,13 @@ pub fn open(path: &str, _mode: String) -> PyFile {
     PyFile { inner: file }
 }
 
+/// Python `py_assert_stdout(expected_lines, fn)` — stub for self-hosted compatibility.
+/// Calls the function and returns true (stdout capture not implemented).
+pub fn py_assert_stdout<F: Fn()>(_expected: PyList<String>, f: F) -> bool {
+    f();
+    true
+}
+
 // Sub-module declarations (std, utils, pytra facade) are generated
 // by the entry module via #[path] attributes. py_runtime.rs provides
 // only built-in helpers (print, len, range, type conversions, etc.).

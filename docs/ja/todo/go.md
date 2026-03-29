@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-29
+最終更新: 2026-03-29（P1-GO-CONTAINER-WRAPPER S1–S3 完了）
 
 ## 運用ルール
 
@@ -23,10 +23,15 @@
 
 文脈: `docs/ja/spec/spec-emitter-guide.md` §10
 
-1. [ ] [ID: P1-GO-CONTAINER-S1] Go emitter の全コードパス（リテラル生成、関数引数、戻り値、ループ変数、代入等）で list/dict/set を既定で参照型ラッパー（`*PyList[T]`, `*PyDict[K,V]`, `*PySet[T]`）にする。値型（`[]T`, `map[K]V`）が混在している箇所を全て修正する
-2. [ ] [ID: P1-GO-CONTAINER-S2] `meta.linked_program_v1.container_ownership_hints_v1.container_value_locals_v1` ヒントがある局所変数のみ値型縮退を許可する
-3. [ ] [ID: P1-GO-CONTAINER-S3] Go runtime ヘルパー（`PyListConcat`, `PyListExtend` 等）が全て `*PyList[T]` を受け取る形に統一する
+1. [x] [ID: P1-GO-CONTAINER-S1] Go emitter の全コードパス（リテラル生成、関数引数、戻り値、ループ変数、代入等）で list/dict/set を既定で参照型ラッパー（`*PyList[T]`, `*PyDict[K,V]`, `*PySet[T]`）にする。値型（`[]T`, `map[K]V`）が混在している箇所を全て修正する
+   - 完了: `_wrap_ref_container_value_code`, `_go_ref_container_type`, optional container 対応, cross-module method call args wrapping, TupleUnpack 宣言修正 等
+2. [x] [ID: P1-GO-CONTAINER-S2] `meta.linked_program_v1.container_ownership_hints_v1.container_value_locals_v1` ヒントがある局所変数のみ値型縮退を許可する
+   - 完了: `_prefer_value_container_local` が `container_value_locals_v1` ヒントを参照して値型縮退を制御
+3. [x] [ID: P1-GO-CONTAINER-S3] Go runtime ヘルパー（`PyListConcat`, `PyListExtend` 等）が全て `*PyList[T]` を受け取る形に統一する
+   - 完了: `py_runtime.go` の全ヘルパーが `*PyList[T]` / `*PyDict[K,V]` / `*PySet[T]` を受け取る形に統一済み
 4. [ ] [ID: P1-GO-CONTAINER-S4] fixture 132 件 + sample 18 件の Go compile + run parity を通す
+   - fixture: 147 件全 PASS（core 22, oop 18, typing 22, strings 12, collections 20, control 16, stdlib 16, imports 7, signature 13, trait_basic 1）
+   - sample: 確認中（18 件）
 
 ### P5-COMMON-RENDERER-GO: Go emitter の CommonRenderer 移行 + fixture parity
 
