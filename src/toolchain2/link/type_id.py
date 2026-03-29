@@ -326,6 +326,13 @@ def build_type_id_table(
 
     _walk_builtin("object")
 
+    for synthetic_root in sorted(_ROOT_BASE_NAMES):
+        if synthetic_root in _BUILTIN_CLASS_IDS:
+            continue
+        for child_fqcn in children.get(synthetic_root, []):
+            if child_fqcn not in type_info_table:
+                _assign(child_fqcn)
+
     for fqcn, base_fqcn in sorted(class_bases.items()):
         if base_fqcn == "object" and fqcn not in type_info_table:
             _assign(fqcn)

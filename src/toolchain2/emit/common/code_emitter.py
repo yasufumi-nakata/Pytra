@@ -175,7 +175,7 @@ def resolve_runtime_symbol_name(
     if symbol == "":
         return ""
     if symbol.startswith(mapping.builtin_prefix):
-        return symbol
+        return symbol[len(mapping.builtin_prefix):]
     return mapping.builtin_prefix + symbol
 
 
@@ -222,12 +222,21 @@ def build_runtime_import_map(
         symbol_name = export_symbol
         if isinstance(runtime_symbol, str) and runtime_symbol != "":
             symbol_name = runtime_symbol
-        resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping)
-        if (
+        is_native_runtime = (
             is_runtime_namespace
-            and symbol_name not in mapping.calls
-            and not symbol_name.startswith(mapping.builtin_prefix)
-        ):
+            and (
+                should_skip_module(module_id, mapping)
+                or should_skip_module(full_module_id, mapping)
+            )
+        )
+        if is_native_runtime:
+            resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping)
+            if (
+                symbol_name not in mapping.calls
+                and not symbol_name.startswith(mapping.builtin_prefix)
+            ):
+                resolved_symbol = symbol_name
+        else:
             resolved_symbol = symbol_name
         runtime_imports[local_name] = resolved_symbol
 

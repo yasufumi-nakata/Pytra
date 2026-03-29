@@ -404,7 +404,56 @@ def _expr_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
             return ctx.var_types.get(name, "")
     if kind == "Attribute":
         return _attribute_static_type(ctx, node)
+    if kind == "Subscript":
+        value_node = node.get("value")
+        container_type = _effective_resolved_type(value_node)
+        if container_type in ("", "unknown"):
+            container_type = _expr_storage_type(ctx, value_node)
+        if container_type.startswith("list[") or container_type.startswith("set["):
+            parts = _container_type_args(container_type)
+            return parts[0] if len(parts) == 1 else ""
+        if container_type.startswith("dict["):
+            parts = _container_type_args(container_type)
+            return parts[1] if len(parts) == 2 else ""
+        if container_type.startswith("tuple["):
+            parts = _container_type_args(container_type)
+            slice_node = node.get("slice")
+            if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Constant":
+                idx = slice_node.get("value")
+                if isinstance(idx, int) and 0 <= idx < len(parts):
+                    return parts[idx]
+    if kind == "Call":
+        func = node.get("func")
+        if isinstance(func, dict) and _str(func, "kind") == "Name":
+            func_name = _str(func, "id")
+            func_type = ctx.var_types.get(func_name, "")
+            ret = _extract_std_function_return_type(func_type)
+            if ret not in ("", "unknown"):
+                return ret
+    if kind == "BinOp":
+        left_type = _expr_storage_type(ctx, node.get("left"))
+        right_type = _expr_storage_type(ctx, node.get("right"))
+        if (
+            left_type not in ("", "unknown")
+            and left_type == right_type
+            and not _needs_object_cast(left_type)
+        ):
+            return left_type
     return ""
+
+
+def _extract_std_function_return_type(func_type: str) -> str:
+    """Extract return type from ::std::function<RetType(Params)> string."""
+    prefix = "::std::function<"
+    if not func_type.startswith(prefix):
+        return ""
+    inner = func_type[len(prefix):]
+    if inner.endswith(">"):
+        inner = inner[:-1]
+    paren = inner.find("(")
+    if paren < 0:
+        return ""
+    return inner[:paren].strip()
 
 
 def _scope_key(ctx: CppEmitContext, func_name: str, owner_name: str = "") -> str:
@@ -612,15 +661,21 @@ def _emit_set_literal_for_target_type(
 
 def _optional_inner_type(type_name: str) -> str:
     t = type_name.strip()
+    inner = ""
     if t.endswith(" | None"):
-        return t[:-7].strip()
-    if t.endswith("|None"):
-        return t[:-6].strip()
-    if t.startswith("None | "):
-        return t[7:].strip()
-    if t.startswith("None|"):
-        return t[5:].strip()
-    return ""
+        inner = t[:-7].strip()
+    elif t.endswith("|None"):
+        inner = t[:-6].strip()
+    elif t.startswith("None | "):
+        inner = t[7:].strip()
+    elif t.startswith("None|"):
+        inner = t[5:].strip()
+    if inner == "":
+        return ""
+    cpp_t = cpp_signature_type(t)
+    if not cpp_t.startswith("::std::optional<"):
+        return ""
+    return inner
 
 
 def _node_type_mirror(node: JsonVal) -> str:
@@ -655,6 +710,20 @@ def _resolve_runtime_attr_symbol(
     symbol_name = runtime_symbol if runtime_symbol != "" else fallback_symbol
     if symbol_name == "":
         return ""
+    if (
+        runtime_module_id.startswith("pytra.")
+        and symbol_name == fallback_symbol
+        and symbol_name not in ctx.mapping.calls
+    ):
+        return symbol_name
+    if (
+        runtime_module_id.startswith("pytra.")
+        and runtime_symbol != ""
+        and fallback_symbol != ""
+        and symbol_name not in ctx.mapping.calls
+        and symbol_name.startswith(ctx.mapping.builtin_prefix)
+    ):
+        symbol_name = fallback_symbol
     if runtime_module_id != "" and should_skip_module(runtime_module_id, ctx.mapping):
         return resolve_runtime_symbol_name(
             symbol_name,
@@ -925,7 +994,7 @@ def _emit_name(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     ):
         if optional_storage_inner != "" and optional_storage_inner == resolved_type:
             return "(*" + name + ")"
-        if storage_type in ("Any", "Obj", "object", "JsonVal"):
+        if _needs_object_cast(storage_type):
             if resolved_type in ("str", "int", "int64", "float", "float64", "bool"):
                 return _emit_object_unbox(name, resolved_type)
             if resolved_type in ctx.class_names:
@@ -934,6 +1003,27 @@ def _emit_name(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 return "(" + name + ").as<" + cpp_container_value_type(resolved_type) + ">()"
             if resolved_type.startswith("tuple[") or resolved_type in ("bytes", "bytearray"):
                 return "(*(" + name + ").as<" + cpp_signature_type(resolved_type) + ">())"
+    return name
+
+
+def _emit_name_storage(node: dict[str, JsonVal]) -> str:
+    name = _str(node, "id")
+    if name == "":
+        name = _str(node, "repr")
+    if name == "True":
+        return "true"
+    if name == "False":
+        return "false"
+    if name == "None":
+        return "::std::nullopt"
+    if name == "self":
+        return "this"
+    if name == "continue":
+        return "continue"
+    if name == "break":
+        return "break"
+    if name == "main":
+        return "__pytra_main"
     return name
 
 
@@ -1146,6 +1236,10 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         if fk == "Name":
             fn = _str(func, "id")
             if fn == "": fn = _str(func, "repr")
+            runtime_call = _str(node, "runtime_call")
+            resolved_runtime_call = _str(node, "resolved_runtime_call")
+            builtin_name = _str(node, "builtin_name")
+            func_runtime_module_id = _str(func, "runtime_module_id")
             if fn == "cast" and len(args) >= 2:
                 return _emit_cast_expr(ctx, args[0], args[1])
             if fn in ("bytearray", "bytes"):
@@ -1163,7 +1257,18 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 return "bytes{}"
             if fn in ctx.class_names: return fn + "(" + ", ".join(call_arg_strs) + ")"
             if fn in ctx.runtime_imports: return ctx.runtime_imports[fn] + "(" + ", ".join(call_arg_strs) + ")"
+            if func_runtime_module_id == "pytra.built_in.error":
+                return fn + "(" + ", ".join(call_arg_strs) + ")"
             if fn == "main": return "__pytra_main(" + ", ".join(call_arg_strs) + ")"
+            if runtime_call != "" or resolved_runtime_call != "" or builtin_name != "":
+                mapped_name = resolve_runtime_call(
+                    resolved_runtime_call if resolved_runtime_call != "" else runtime_call,
+                    builtin_name if builtin_name != "" else fn,
+                    adapter,
+                    ctx.mapping,
+                )
+                if mapped_name != "":
+                    return _qualify_runtime_call_symbol(mapped_name) + "(" + ", ".join(call_arg_strs) + ")"
             return fn + "(" + ", ".join(call_arg_strs) + ")"
     return _emit_expr(ctx, func) + "(" + ", ".join(call_arg_strs) + ")"
 
@@ -1260,10 +1365,19 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             if arg_kind == "Unbox":
                 unbox_value = args[0].get("value")
                 unbox_storage_type = _expr_storage_type(ctx, unbox_value)
+                if isinstance(unbox_value, dict) and _str(unbox_value, "kind") == "Name":
+                    unbox_value_expr = _emit_name_storage(unbox_value)
+                else:
+                    unbox_value_expr = _emit_expr(ctx, unbox_value)
                 if unbox_storage_type not in ("", "unknown") and not _needs_object_cast(unbox_storage_type):
-                    return "str(py_to_string(" + _emit_expr(ctx, unbox_value) + "))"
+                    return "str(py_to_string(" + unbox_value_expr + "))"
             if arg_kind == "Unbox" and arg_type in ("Obj", "Any", "object", "unknown"):
-                return _emit_object_unbox(arg_strs[0], "str")
+                unbox_value = args[0].get("value")
+                if isinstance(unbox_value, dict) and _str(unbox_value, "kind") == "Name":
+                    unbox_value_expr = _emit_name_storage(unbox_value)
+                else:
+                    unbox_value_expr = _emit_expr(ctx, unbox_value)
+                return "str(py_to_string(" + unbox_value_expr + "))"
         return "str(py_to_string(" + arg_strs[0] + "))"
     if rc in ("bytearray_ctor", "bytes_ctor"):
         if len(args) >= 1 and isinstance(args[0], dict):
@@ -1611,7 +1725,10 @@ def _emit_covariant_copy(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
 def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     value = node.get("value")
-    value_expr = _emit_expr(ctx, value)
+    if isinstance(value, dict) and _str(value, "kind") == "Name":
+        value_expr = _emit_name_storage(value)
+    else:
+        value_expr = _emit_expr(ctx, value)
     value_type = _effective_resolved_type(value)
     storage_type = _expr_storage_type(ctx, value)
     target = _str(node, "target")
@@ -1638,8 +1755,7 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         and storage_type != target
         and (
             _needs_object_cast(storage_type)
-            or storage_type.endswith(" | None")
-            or storage_type.endswith("|None")
+            or _optional_inner_type(storage_type) != ""
         )
     )
     value_cpp = cpp_signature_type(value_type) if value_type not in ("", "unknown") else ""
@@ -2789,6 +2905,12 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
     storage_type = _expr_storage_type(ctx, value_node)
     value_kind = _str(value_node, "kind") if isinstance(value_node, dict) else ""
     if target_name == "":
+        return value_expr
+    if (
+        value_kind == "Unbox"
+        and value_type not in ("", "unknown")
+        and cpp_signature_type(value_type) == cpp_signature_type(target_name)
+    ):
         return value_expr
     if _optional_inner_type(storage_type) == target_name:
         return "(*(" + value_expr + "))"
