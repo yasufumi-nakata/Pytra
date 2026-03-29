@@ -20,6 +20,12 @@
 
 ## 未完了タスク
 
+### P3-SAMPLE-AUTO-COPY: sample parity PASS 時に sample/<lang>/ へ自動コピー
+
+1. [ ] [ID: P3-SAMPLE-COPY-S1] parity check（fast 版）で sample の parity PASS 時に、emit されたソースコードを `sample/<lang>/` にコピーするロジックを追加する — PASS したケースのみコピーし、FAIL のケースは既存ファイルを維持する
+2. [ ] [ID: P3-SAMPLE-COPY-S2] コピー先のファイル名が既存の `sample/<lang>/` の命名規則（`01_mandelbrot.cpp` 等）と一致することを確認する
+3. [ ] [ID: P3-SAMPLE-COPY-S3] `regenerate_samples.py` との責務整理 — parity check が自動コピーするなら `regenerate_samples.py` は不要になる可能性がある。廃止するか、手動再生成用として残すか判断する
+
 ### P20-INT32: int のデフォルトサイズを int64 → int32 に変更
 
 文脈: [docs/ja/plans/p4-int32-default.md](../plans/p4-int32-default.md)
