@@ -143,7 +143,7 @@ Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
 
 > **2026-03-27** - C++ emitter spec compliance completed (S1-S15). Introduced Traits (pure interface, multiple implementation) with C++/Go parity. Completed isinstance narrowing (if/elif/early return guard/ternary), ternary Optional type inference, and pytra.std.json parser support. Started Lowering Profile + CommonRenderer design.
 
-Full history: [docs/en/changelog.md](docs/en/changelog.md)
+[![Full changelog](https://img.shields.io/badge/full_changelog-→-blue?style=flat-square)](docs/en/changelog.md)
 
 ## License
 
