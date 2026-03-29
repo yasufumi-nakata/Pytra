@@ -12,7 +12,7 @@
 2. [emitter の仕組み](./emitter-overview.md) — EAST3 がどう C++/Go/Rust 等のコードに変換されるか、変換前後を並べて解説
 3. [型システム](./type-system.md) — type_id、isinstance、ナローイング、union 型が内部でどう動くか
 4. [runtime の仕組み](./runtime-overview.md) — `Object<T>`、参照カウント、コンテナの参照セマンティクスがどう動くか
-5. [@extern と FFI](./extern-ffi.md) — 外部関数の呼び出し、@abi、@template の使い方と仕組み
+5. [@extern と FFI](./extern-ffi.md) — 外部関数の呼び出し、@runtime / @extern / @template の使い方と仕組み
 
 ## このガイドの位置づけ
 

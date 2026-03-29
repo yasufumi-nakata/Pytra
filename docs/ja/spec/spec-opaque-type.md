@@ -170,4 +170,4 @@ opaque 型のメソッドは通常の `Call` + `Attribute` として表現。`@e
 - [spec-type_id.md](./spec-type_id.md) — type_id 仕様（opaque 型は type_id を持たない）
 - [spec-east.md](./spec-east.md) — EAST ノード仕様
 - [spec-emitter-guide.md](./spec-emitter-guide.md) — emitter の写像規約
-- [plans/p6-extern-method-redesign.md](../plans/p6-extern-method-redesign.md) — @extern_method / @abi 再設計
+- [plans/p6-extern-method-redesign.md](../plans/p6-extern-method-redesign.md) — @runtime / @extern 再設計

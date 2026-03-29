@@ -4,7 +4,7 @@
 
 # 発展的な使い方
 
-このページは、[how-to-use.md](./how-to-use.md) には載せない高度な変換ルートと runtime helper 注釈（主に `@abi`）をまとめたものです。
+このページは、[how-to-use.md](./how-to-use.md) には載せない高度な変換ルートと runtime 宣言まわりの注意点をまとめたものです。
 
 ## C++ max-opt route
 
@@ -35,19 +35,11 @@ python3 tools/runtime_parity_check.py \
   --east3-opt-level 2
 ```
 
-## runtime helper での `@abi`
+## runtime 宣言
 
-- `@abi` は runtime helper の境界 ABI を固定するための注釈です。一般 user code へ広げる前提ではありません。
-- canonical mode は `args` 側が `default` / `value` / `value_mut`、`ret` 側が `default` / `value` です。
-- 引数側 `value` は read-only value ABI を意味します。旧 `value_readonly` は移行期 alias で、metadata では `value` に正規化されます。
-
-```python
-from pytra.std import abi
-
-@abi(args={"parts": "value"}, ret="value")
-def py_join(sep: str, parts: list[str]) -> str:
-    ...
-```
+- runtime 実装クラスは `@runtime("namespace")` を使います。
+- 外部実装の関数・メソッド・クラスは `@extern` を使います。
+- `@abi` は廃止済みで、self-hosted pipeline の入力としては受理しません。
 
 ## `pytra-cli.py` / `pytra-cli.py` の使い分け
 

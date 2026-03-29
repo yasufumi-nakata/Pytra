@@ -168,7 +168,7 @@ def f(*args: int) -> None:
 | リスト内包表記 | 使える（単一ジェネレータのみ） |
 | `for/else` | 使えない |
 | `while/else` | 使えない |
-| デコレータ | `@property`, `@staticmethod`, `@trait`, `@implements`, `@extern`, `@abi`, `@template` が使える |
+| デコレータ | `@property`, `@staticmethod`, `@trait`, `@implements`, `@extern`, `@runtime`, `@template` が使える |
 | `global` / `nonlocal` | 使えない |
 | `yield` / ジェネレータ | 使えない |
 

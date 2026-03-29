@@ -43,25 +43,20 @@ if __name__ == "__main__":
 
 ターゲット言語側で `sdl_init`, `sdl_create_window`, `sdl_destroy_window` を C の SDL3 API にバインドする実装を用意します。
 
-## @abi — ABI 境界の型制御
+## @runtime — runtime 実装クラス
 
-`@abi` は関数の引数の受け渡し方法を制御します。
+`@runtime("namespace")` は、Pytra runtime 側に実装があるクラスを宣言します。主に built-in / std の宣言に使います。
 
 ```python
-from pytra.std import abi
+from pytra.std import runtime
 
-@abi(args={"data": "value_mut"})
-def process(data: list[int]) -> None:
-    data.append(42)
+@runtime("pytra.core")
+class list:
+    def append(self, x: int) -> None: ...
+    def pop(self, index: int = -1) -> int: ...
 ```
 
-| mode | 意味 |
-|---|---|
-| `default` | 言語の既定方式 |
-| `value` | 値渡し（読み取り専用） |
-| `value_mut` | 値渡し（変更可能） |
-
-通常は `default` で十分ですが、FFI で C ライブラリとやりとりするときに明示制御が必要な場合があります。
+class 自体の namespace だけを書けば、各メソッドの `module` / `symbol` / `tag` は parser が自動導出します。
 
 ## @template — ジェネリック関数
 
@@ -96,6 +91,8 @@ class NativeWindow:
 ```
 
 ターゲット言語側で `NativeWindow` クラスの実装を用意します。Pytra 側はインターフェース（シグネチャ）だけを知っています。
+
+method ごとに個別 symbol を指定したい場合は、class 内の method に `@extern(module=..., symbol=..., tag=...)` を付けます。
 
 ## extern の仕組み
 
