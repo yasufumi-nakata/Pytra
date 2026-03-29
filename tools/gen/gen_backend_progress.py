@@ -31,28 +31,14 @@ PARITY_DIR = ROOT / "work" / "parity-results"
 PARITY_LANGS = ["cpp", "go", "rs", "ts"]
 SELFHOST_LANGS = ["cpp", "go", "rs", "ts"]
 
-STALE_DAYS = 7
-
-
 # ---------------------------------------------------------------------------
-# Icons
+# Icons — only PASS / FAIL / untested
 # ---------------------------------------------------------------------------
 
 _CATEGORY_ICON: dict[str, str] = {
     "ok": "🟩",
-    "run_failed": "🟥",
-    "transpile_failed": "🟥",
-    "output_mismatch": "🟥",
-    "artifact_size_mismatch": "🟥",
-    "artifact_crc32_mismatch": "🟥",
-    "artifact_missing": "🟥",
-    "artifact_presence_mismatch": "🟥",
-    "python_failed": "🟥",
-    "case_missing": "🟥",
-    "unsupported_feature": "🟥",
-    "toolchain_missing": "🟨",
-    "timeout": "🟪",
 }
+# Everything else (run_failed, transpile_failed, toolchain_missing, timeout, etc.) → 🟥
 
 _SELFHOST_STAGE_ICON: dict[str, str] = {
     "not_reached": "⬜",
@@ -66,17 +52,6 @@ def _case_icon(category: str | None) -> str:
     if category is None:
         return "⬜"
     return _CATEGORY_ICON.get(category, "🟥")
-
-
-def _is_stale(timestamp: str) -> bool:
-    if not timestamp:
-        return False
-    try:
-        ts = datetime.fromisoformat(timestamp)
-        now = datetime.now()
-        return (now - ts).days >= STALE_DAYS
-    except ValueError:
-        return False
 
 
 # ---------------------------------------------------------------------------
@@ -372,11 +347,8 @@ def _render_ja_fixture(fixture_cases: list[tuple[str, str]], fixture_results: di
         "| アイコン | 意味 |",
         "|---|---|",
         "| 🟩 | PASS（emit + compile + run + stdout 一致） |",
-        "| 🟥 | FAIL（transpile_failed / run_failed / output_mismatch 等） |",
-        "| 🟨 | TM（toolchain_missing） |",
-        "| 🟪 | TO（timeout） |",
+        "| 🟥 | FAIL |",
         "| ⬜ | 未実行 |",
-        "| ⚠ | 結果が 7 日以上古い |",
         "",
     ]
     lines += _build_parity_matrix(fixture_cases, fixture_results, "fixture")  # type: ignore[arg-type]
@@ -399,11 +371,8 @@ def _render_ja_sample(sample_cases: list[str], sample_results: dict, generated_a
         "| アイコン | 意味 |",
         "|---|---|",
         "| 🟩 | PASS（emit + compile + run + stdout 一致） |",
-        "| 🟥 | FAIL（transpile_failed / run_failed / output_mismatch 等） |",
-        "| 🟨 | TM（toolchain_missing） |",
-        "| 🟪 | TO（timeout） |",
+        "| 🟥 | FAIL |",
         "| ⬜ | 未実行 |",
-        "| ⚠ | 結果が 7 日以上古い |",
         "",
     ]
     lines += _build_parity_matrix(sample_cases, sample_results, "sample")  # type: ignore[arg-type]
@@ -468,11 +437,8 @@ def _render_en_fixture(fixture_cases: list[tuple[str, str]], fixture_results: di
         "| Icon | Meaning |",
         "|---|---|",
         "| 🟩 | PASS (emit + compile + run + stdout match) |",
-        "| 🟥 | FAIL (transpile_failed / run_failed / output_mismatch etc.) |",
-        "| 🟨 | TM (toolchain_missing) |",
-        "| 🟪 | TO (timeout) |",
+        "| 🟥 | FAIL |",
         "| ⬜ | Not run |",
-        "| ⚠ | Result is more than 7 days old |",
         "",
     ]
     lines += _build_parity_matrix_en(fixture_cases, fixture_results, "fixture")  # type: ignore[arg-type]
@@ -495,11 +461,8 @@ def _render_en_sample(sample_cases: list[str], sample_results: dict, generated_a
         "| Icon | Meaning |",
         "|---|---|",
         "| 🟩 | PASS (emit + compile + run + stdout match) |",
-        "| 🟥 | FAIL (transpile_failed / run_failed / output_mismatch etc.) |",
-        "| 🟨 | TM (toolchain_missing) |",
-        "| 🟪 | TO (timeout) |",
+        "| 🟥 | FAIL |",
         "| ⬜ | Not run |",
-        "| ⚠ | Result is more than 7 days old |",
         "",
     ]
     lines += _build_parity_matrix_en(sample_cases, sample_results, "sample")  # type: ignore[arg-type]

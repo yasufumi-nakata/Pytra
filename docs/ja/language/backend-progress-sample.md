@@ -5,17 +5,14 @@
 # sample parity マトリクス
 
 > 機械生成ファイル。`python3 tools/gen/gen_backend_progress.py` で更新する。
-> 生成日時: 2026-03-30T05:22:52
+> 生成日時: 2026-03-30T05:25:24
 > [関連リンク](./progress.md)
 
 | アイコン | 意味 |
 |---|---|
 | 🟩 | PASS（emit + compile + run + stdout 一致） |
-| 🟥 | FAIL（transpile_failed / run_failed / output_mismatch 等） |
-| 🟨 | TM（toolchain_missing） |
-| 🟪 | TO（timeout） |
+| 🟥 | FAIL |
 | ⬜ | 未実行 |
-| ⚠ | 結果が 7 日以上古い |
 
 | ケース | cpp | go | rs | ts |
 |---|---|---|---|---|
