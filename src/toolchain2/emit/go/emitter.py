@@ -40,6 +40,8 @@ class EmitContext:
     imports_needed: set[str] = field(default_factory=set)
     # Variable types in current scope
     var_types: dict[str, str] = field(default_factory=dict)
+    # indent_level at which each variable was first declared (for block-scope tracking)
+    var_decl_depth: dict[str, int] = field(default_factory=dict)
     # Current function return type (for empty list literal type inference)
     current_return_type: str = ""
     # Imported runtime symbols mapped to emitted helper names.
@@ -919,7 +921,7 @@ def _go_type_with_ctx(ctx: EmitContext, resolved_type: str) -> str:
     if resolved_type.startswith("multi_return[") and resolved_type.endswith("]"):
         inner = resolved_type[len("multi_return["):-1]
         parts = _split_generic_args(inner)
-        return "(" + ", ".join(_go_type_with_ctx(ctx, part) for part in parts) + ")"
+        return "(" + ", ".join(_go_signature_type(ctx, part) for part in parts) + ")"
 
     if resolved_type.startswith("list[") and resolved_type.endswith("]"):
         inner = resolved_type[5:-1]
@@ -3557,8 +3559,12 @@ def _emit_expr_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     call_code = _emit_call(ctx, value)
                     _emit(ctx, first_code + " = " + call_code)
                     return
+    import re
     code = _emit_expr(ctx, value)
     if code != "":
+        # Go type assertions `expr.(T)` cannot stand alone as statements; discard with `_ = `.
+        if re.search(r'\.\([^)]*\)$', code):
+            code = "_ = " + code
         _emit(ctx, code)
 
 
@@ -3599,7 +3605,13 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if target_type != "":
                     val_code = _maybe_coerce_expr_to_type(ctx, value, val_code, target_type)
                     if _is_container_resolved_type(target_type):
-                        val_code = _wrap_ref_container_value_code(ctx, val_code, target_type)
+                        val_rtype = _str(value, "resolved_type") if isinstance(value, dict) else ""
+                        val_kind = _str(value, "kind") if isinstance(value, dict) else ""
+                        is_call_returning_container = (
+                            val_kind == "Call" and _is_container_resolved_type(val_rtype)
+                        )
+                        if not is_call_returning_container:
+                            val_code = _wrap_ref_container_value_code(ctx, val_code, target_type)
             _emit(ctx, lhs + " = " + val_code)
         return
 
@@ -3607,6 +3619,7 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     declare_new = name not in ctx.var_types and not _bool(node, "is_reassign")
     if declare_new:
         ctx.var_types[name] = rt
+        ctx.var_decl_depth[name] = ctx.indent_level
     is_suppressed_unused = _bool(node, "unused") or name.startswith("_")
     at_module_scope = ctx.indent_level == 0 and ctx.current_class == "" and ctx.current_return_type == ""
 
@@ -3677,7 +3690,14 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if existing_type != "":
                     val_code = _maybe_coerce_expr_to_type(ctx, value, val_code, existing_type)
                     if _is_container_resolved_type(existing_type):
-                        val_code = _wrap_ref_container_value_code(ctx, val_code, existing_type)
+                        # Skip wrapping for function/method calls that already return a ref-container type.
+                        val_rtype = _str(value, "resolved_type") if isinstance(value, dict) else ""
+                        val_kind = _str(value, "kind") if isinstance(value, dict) else ""
+                        is_call_returning_container = (
+                            val_kind == "Call" and _is_container_resolved_type(val_rtype)
+                        )
+                        if not is_call_returning_container:
+                            val_code = _wrap_ref_container_value_code(ctx, val_code, existing_type)
                 _emit(ctx, gn + " = " + val_code)
                 if is_unused:
                     _emit(ctx, "_ = " + gn)
@@ -3732,6 +3752,7 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                             ctx.ref_container_locals.discard(gn)
                         return
                 ctx.var_types[gn] = decl_type
+                ctx.var_decl_depth[gn] = ctx.indent_level
                 if use_ref_decl:
                     gt = _decl_go_type(ctx, decl_type, gn)
                 else:
@@ -3847,7 +3868,13 @@ def _emit_multi_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 ctx.var_types[name] = resolved_type
     if len(lhs_parts) == 0:
         return
-    if not value_type.startswith("multi_return["):
+    # A Call returning tuple[...] is also a Go multi-return function: use direct multi-assign.
+    is_tuple_call = (
+        value_type.startswith("tuple[")
+        and isinstance(value_node, dict)
+        and _str(value_node, "kind") == "Call"
+    )
+    if not value_type.startswith("multi_return[") and not is_tuple_call:
         tmp_name = _next_temp(ctx, "multi")
         _emit(ctx, tmp_name + " := " + _emit_expr(ctx, value_node))
         if value_type != "":
@@ -3877,7 +3904,23 @@ def _emit_multi_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit_assign(ctx, assign_node)
         return
     assign_op = ":=" if _bool(node, "declare") else "="
+    if is_tuple_call:
+        # Use = only if all pre-existing targets were declared at an outer (shallower) scope.
+        # Variables declared in a sibling if/else branch are block-scoped in Go and
+        # must be re-declared with := rather than assigned with =.
+        all_outer_scope = all(
+            existing_targets.get(n, False)
+            and ctx.var_decl_depth.get(n, ctx.indent_level) < ctx.indent_level
+            for n in lhs_parts if n != "_"
+        )
+        assign_op = "=" if all_outer_scope else ":="
     _emit(ctx, ", ".join(lhs_parts) + " " + assign_op + " " + _emit_expr(ctx, node.get("value")))
+    if is_tuple_call and assign_op == ":=":
+        # Suppress Go "declared and not used" errors — the variable may only be used later
+        # in certain branches, so preemptively discard all newly-declared names.
+        for n in lhs_parts:
+            if n != "_" and not existing_targets.get(n, False):
+                _emit(ctx, "_ = " + n)
     # Register newly-declared variables in var_types for subsequent statements.
     for idx2, target2 in enumerate(targets):
         if not isinstance(target2, dict):
@@ -3892,6 +3935,7 @@ def _emit_multi_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 rt2 = to2
         if rt2 not in ("", "unknown"):
             ctx.var_types[tname2] = rt2
+            ctx.var_decl_depth[tname2] = ctx.indent_level
 
 
 def _emit_aug_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -3961,6 +4005,13 @@ def _emit_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if not _is_wrapper_container_expr(ctx, value, value_code):
                 value_code = _wrap_ref_container_value_code(ctx, value_code, ctx.current_return_type)
         if ctx.current_return_type.startswith("multi_return["):
+            # If the value is a Call that already returns the same multi_return type,
+            # pass through directly — adding ", nil" would create too many return values.
+            if isinstance(value, dict) and _str(value, "kind") == "Call":
+                val_rt = _str(value, "resolved_type")
+                if val_rt == ctx.current_return_type or val_rt.startswith("tuple["):
+                    _emit(ctx, "return " + value_code)
+                    return
             _emit(ctx, "return " + value_code + ", nil")
             return
         _emit(ctx, "return " + value_code)
@@ -4277,10 +4328,12 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     # Build params
     params: list[str] = []
     saved_vars = dict(ctx.var_types)
+    saved_decl_depth = dict(ctx.var_decl_depth)
     saved_scope = ctx.current_function_scope
     saved_scope_locals = set(ctx.current_value_container_locals)
     saved_ref_locals = set(ctx.ref_container_locals)
     saved_vararg_params = set(ctx.go_vararg_params)
+    ctx.var_decl_depth = {}
     for a in arg_order:
         a_str = a if isinstance(a, str) else ""
         if a_str == "self":
@@ -4354,6 +4407,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     _emit_blank(ctx)
 
     ctx.var_types = saved_vars
+    ctx.var_decl_depth = saved_decl_depth
     ctx.current_return_type = saved_ret
     ctx.current_function_scope = saved_scope
     ctx.current_value_container_locals = saved_scope_locals

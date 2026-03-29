@@ -29,9 +29,10 @@
    - 完了: `_prefer_value_container_local` が `container_value_locals_v1` ヒントを参照して値型縮退を制御
 3. [x] [ID: P1-GO-CONTAINER-S3] Go runtime ヘルパー（`PyListConcat`, `PyListExtend` 等）が全て `*PyList[T]` を受け取る形に統一する
    - 完了: `py_runtime.go` の全ヘルパーが `*PyList[T]` / `*PyDict[K,V]` / `*PySet[T]` を受け取る形に統一済み
-4. [ ] [ID: P1-GO-CONTAINER-S4] fixture 132 件 + sample 18 件の Go compile + run parity を通す
+4. [x] [ID: P1-GO-CONTAINER-S4] fixture 132 件 + sample 18 件の Go compile + run parity を通す
    - fixture: 147 件全 PASS（core 22, oop 18, typing 22, strings 12, collections 20, control 16, stdlib 16, imports 7, signature 13, trait_basic 1）
-   - sample: 確認中（18 件）
+   - sample: 18 件全 PASS（2026-03-29 確認）
+   - 完了: `_wrap_ref_container_value_code` を Call が container 型を返す場合はスキップ、`_emit_return` の multi_return pass-through、`_emit_multi_assign` の `tuple[...]` Call 対応、`var_decl_depth` による Go ブロックスコープ変数宣言追跡、type assertion statement の `_ = ` 前置
 
 ### P5-COMMON-RENDERER-GO: Go emitter の CommonRenderer 移行 + fixture parity
 
