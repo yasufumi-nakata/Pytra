@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 BACKENDS_ROOT = ROOT / "src" / "backends"
-ALLOWLIST_PATH = ROOT / "tools" / "emitter_forbidden_runtime_symbols_allowlist.txt"
+ALLOWLIST_PATH = ROOT / "tools" / "check" / "emitter_forbidden_runtime_symbols_allowlist.txt"
 
 IGNORED_BACKENDS = {"common"}
 FORBIDDEN_SYMBOLS = (

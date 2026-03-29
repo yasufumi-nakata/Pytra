@@ -11,7 +11,7 @@ import unittest
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
 SCRIPT = ROOT / "tools" / "check_py2x_transpile.py"
-PROFILE_PATH = ROOT / "tools" / "check_py2x_profiles.json"
+PROFILE_PATH = ROOT / "tools" / "check" / "check_py2x_profiles.json"
 
 SPEC = importlib.util.spec_from_file_location("check_py2x_transpile", SCRIPT)
 if SPEC is None or SPEC.loader is None:

@@ -85,7 +85,7 @@ class CheckRuntimePytraGenNamingTest(unittest.TestCase):
             _write(root / "src" / "pytra" / "utils" / "gif.py", "def save_gif():\n    return None\n")
             bad_file = root / "src" / "runtime" / "php" / "pytra-gen" / "runtime" / "gif.php"
             _write(bad_file, "<?php\n")
-            allowlist_path = root / "tools" / "runtime_pytra_gen_naming_allowlist.txt"
+            allowlist_path = root / "tools" / "check" / "runtime_pytra_gen_naming_allowlist.txt"
             key = "src/runtime/php/pytra-gen/runtime/gif.php:invalid_bucket"
             _write_allowlist(allowlist_path, [key])
             with patch.object(naming_mod, "ROOT", root), patch.object(

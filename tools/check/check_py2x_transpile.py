@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PY2X = ROOT / "src" / "pytra-cli.py"
-PROFILE_PATH = ROOT / "tools" / "check_py2x_profiles.json"
+PROFILE_PATH = ROOT / "tools" / "check" / "check_py2x_profiles.json"
 USER_ERROR_RE = re.compile(r"__PYTRA_USER_ERROR__\|([^|]+)\|([^\r\n]+)")
 STAGE2_REMOVED_FRAGMENT = "--east-stage 2 is no longer supported; use EAST3 (default)."
 PHP_SAMPLE18_REL = "sample/py/18_mini_language_interpreter.py"

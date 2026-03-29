@@ -34,7 +34,7 @@ class CheckEmitterRuntimecallGuardrailsTest(unittest.TestCase):
             root = Path(td)
             emitter = root / "src" / "backends" / "scala" / "emitter" / "scala_native_emitter.py"
             _write_text(emitter, 'if module_name == "math":\n    return "x"\n')
-            allowlist_path = root / "tools" / "emitter_runtimecall_guardrails_allowlist.txt"
+            allowlist_path = root / "tools" / "check" / "emitter_runtimecall_guardrails_allowlist.txt"
             _write_allowlist(allowlist_path, [])
             with patch.object(guard_mod, "ROOT", root), patch.object(
                 guard_mod, "BACKENDS_ROOT", root / "src" / "backends"
@@ -47,7 +47,7 @@ class CheckEmitterRuntimecallGuardrailsTest(unittest.TestCase):
             root = Path(td)
             emitter = root / "src" / "backends" / "swift" / "emitter" / "swift_native_emitter.py"
             _write_text(emitter, 'if runtime_symbol.startswith("pyMath"):\n    return "x"\n')
-            allowlist_path = root / "tools" / "emitter_runtimecall_guardrails_allowlist.txt"
+            allowlist_path = root / "tools" / "check" / "emitter_runtimecall_guardrails_allowlist.txt"
             _write_allowlist(allowlist_path, [])
             with patch.object(guard_mod, "ROOT", root), patch.object(
                 guard_mod, "BACKENDS_ROOT", root / "src" / "backends"
@@ -60,7 +60,7 @@ class CheckEmitterRuntimecallGuardrailsTest(unittest.TestCase):
             root = Path(td)
             emitter = root / "src" / "backends" / "java" / "emitter" / "java_native_emitter.py"
             _write_text(emitter, 'if binding_module.startswith("pytra.utils."):\n    return "x"\n')
-            allowlist_path = root / "tools" / "emitter_runtimecall_guardrails_allowlist.txt"
+            allowlist_path = root / "tools" / "check" / "emitter_runtimecall_guardrails_allowlist.txt"
             _write_allowlist(allowlist_path, [])
             with patch.object(guard_mod, "ROOT", root), patch.object(
                 guard_mod, "BACKENDS_ROOT", root / "src" / "backends"
@@ -73,7 +73,7 @@ class CheckEmitterRuntimecallGuardrailsTest(unittest.TestCase):
             root = Path(td)
             emitter = root / "src" / "backends" / "java" / "emitter" / "java_native_emitter.py"
             _write_text(emitter, 'if runtime_module.startswith("pytra.utils."):\n    return "x"\n')
-            allowlist_path = root / "tools" / "emitter_runtimecall_guardrails_allowlist.txt"
+            allowlist_path = root / "tools" / "check" / "emitter_runtimecall_guardrails_allowlist.txt"
             _write_allowlist(allowlist_path, [])
             with patch.object(guard_mod, "ROOT", root), patch.object(
                 guard_mod, "BACKENDS_ROOT", root / "src" / "backends"
@@ -91,7 +91,7 @@ class CheckEmitterRuntimecallGuardrailsTest(unittest.TestCase):
                 '    "write_rgb_png": "PngHelper.pyWriteRGBPNG",\n'
                 "}\n",
             )
-            allowlist_path = root / "tools" / "emitter_runtimecall_guardrails_allowlist.txt"
+            allowlist_path = root / "tools" / "check" / "emitter_runtimecall_guardrails_allowlist.txt"
             _write_allowlist(allowlist_path, [])
             with patch.object(guard_mod, "ROOT", root), patch.object(
                 guard_mod, "BACKENDS_ROOT", root / "src" / "backends"
@@ -108,7 +108,7 @@ class CheckEmitterRuntimecallGuardrailsTest(unittest.TestCase):
             emitter = root / "src" / "backends" / "java" / "emitter" / "java_native_emitter.py"
             _write_text(emitter, 'if module_name == "math":\n    return "x"\n')
             key = "src/toolchain/emit/java/emitter/java_native_emitter.py:1:math"
-            allowlist_path = root / "tools" / "emitter_runtimecall_guardrails_allowlist.txt"
+            allowlist_path = root / "tools" / "check" / "emitter_runtimecall_guardrails_allowlist.txt"
             _write_allowlist(allowlist_path, [key])
 
             with patch.object(guard_mod, "ROOT", root), patch.object(
@@ -129,7 +129,7 @@ class CheckEmitterRuntimecallGuardrailsTest(unittest.TestCase):
             emitter = root / "src" / "backends" / "ruby" / "emitter" / "ruby_native_emitter.py"
             _write_text(emitter, 'if runtime_call == "perf_counter":\n    return "x"\n')
             key = "src/toolchain/emit/ruby/emitter/ruby_native_emitter.py:1:perf_counter"
-            allowlist_path = root / "tools" / "emitter_runtimecall_guardrails_allowlist.txt"
+            allowlist_path = root / "tools" / "check" / "emitter_runtimecall_guardrails_allowlist.txt"
             _write_allowlist(allowlist_path, [key])
 
             with patch.object(guard_mod, "ROOT", root), patch.object(

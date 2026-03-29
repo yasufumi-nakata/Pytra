@@ -36,6 +36,7 @@ tools/
 | `check_east_stage_boundary.py` | EAST ステージ境界の依存チェック |
 | `check_emitter_forbidden_runtime_symbols.py` | emitter 禁止 runtime 実装シンボルガード |
 | `check_emitter_runtimecall_guardrails.py` | emitter runtime-call 直書きガード |
+| `check_py2x_profiles.json` | check_py2x_transpile.py 用プロファイル設定 |
 | `check_jsonvalue_decode_boundaries.py` | JSON artifact 境界の正本検証 |
 | `check_jsonvalue_typeexpr_contract.py` | JSONValue 型式コントラクト検証 |
 | `check_legacy_cli_references.py` | 旧 CLI 参照の混入チェック |
@@ -49,6 +50,10 @@ tools/
 | `check_runtime_core_gen_markers.py` | generated marker 検証 |
 | `check_runtime_legacy_shims.py` | legacy shim 混入チェック |
 | `check_runtime_pytra_gen_naming.py` | generated 命名検証 |
+| `emitter_forbidden_runtime_symbols_allowlist.txt` | emitter 禁止シンボル allowlist |
+| `emitter_runtimecall_guardrails_allowlist.txt` | emitter runtime-call guardrail allowlist |
+| `runtime_core_gen_markers_allowlist.txt` | runtime core generated marker allowlist |
+| `runtime_pytra_gen_naming_allowlist.txt` | runtime pytra-gen 命名 allowlist |
 | `check_runtime_special_generators_absent.py` | 特殊 generator 不在確認 |
 | `check_runtime_std_sot_guard.py` | stdlib 正本ガード |
 | `check_sample_regen_clean.py` | sample 再生成クリーン確認 |
@@ -107,13 +112,8 @@ pytest で実行するテストファイル群。サブディレクトリ構成:
 
 | ファイル | 目的 |
 |---|---|
-| `check_py2x_profiles.json` | check_py2x_transpile.py 用プロファイル設定 |
-| `emitter_forbidden_runtime_symbols_allowlist.txt` | emitter 禁止シンボル allowlist |
-| `emitter_runtimecall_guardrails_allowlist.txt` | emitter runtime-call guardrail allowlist |
-| `runtime_core_gen_markers_allowlist.txt` | runtime core generated marker allowlist |
-| `runtime_generation_manifest.json` | runtime 生成マニフェスト |
-| `runtime_pytra_gen_naming_allowlist.txt` | runtime pytra-gen 命名 allowlist |
-| `runtime_symbol_index.json` | runtime シンボルインデックス（gen_runtime_symbol_index.py が生成） |
+| `runtime_generation_manifest.json` | runtime 生成マニフェスト（unregistered/ および unittest/tooling/ から参照） |
+| `runtime_symbol_index.json` | runtime シンボルインデックス（gen_runtime_symbol_index.py が生成、src/ からも参照） |
 
 ## tools/unregistered/ — 旧ツール・実験的ツール
 

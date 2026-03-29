@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_ROOT = ROOT / "src" / "runtime"
 PYTRA_STD_ROOT = ROOT / "src" / "pytra" / "std"
 PYTRA_UTILS_ROOT = ROOT / "src" / "pytra" / "utils"
-ALLOWLIST_PATH = ROOT / "tools" / "runtime_pytra_gen_naming_allowlist.txt"
+ALLOWLIST_PATH = ROOT / "tools" / "check" / "runtime_pytra_gen_naming_allowlist.txt"
 
 TARGET_SUFFIXES = {
     ".c",
