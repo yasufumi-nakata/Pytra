@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-29（P1-GO-CONTAINER-WRAPPER S1–S3 完了）
+最終更新: 2026-03-30（P0-GO-ENV-TARGET S1–S2 完了）
 
 ## 運用ルール
 
@@ -18,6 +18,14 @@
 - **parity テストは「emit + compile + run + stdout 一致」を完了条件とする。**
 
 ## 未完了タスク
+
+### P0-GO-TYPE-MAPPING: Go emitter の型写像を mapping.json に移行する
+
+仕様: [spec-runtime-mapping.md](../spec/spec-runtime-mapping.md) §7
+
+1. [ ] [ID: P0-GO-TYPEMAP-S1] `src/runtime/go/mapping.json` に `types` テーブルを追加する — POD 型（`int64` → `int64` 等）とクラス型（`Exception` → `*PytraErrorCarrier` 等）の全写像を定義する
+2. [ ] [ID: P0-GO-TYPEMAP-S2] Go emitter の型名ハードコード（`types.py` 含む）を `resolve_type()` 呼び出しに置換する
+3. [ ] [ID: P0-GO-TYPEMAP-S3] fixture parity に影響がないことを確認する
 
 ### P1-GO-CONTAINER-WRAPPER: Go emitter の container 既定表現を spec 準拠に修正する
 
@@ -46,8 +54,10 @@
 
 ### P0-GO-ENV-TARGET: Go emitter の extern_var インライン置換を修正する
 
-1. [ ] [ID: P0-GO-ENV-S1] Go emitter が `extern_var_v1` メタデータ付きの変数参照を、mapping.json の `calls` テーブルから値を取得してインラインリテラルとして出力するよう修正する — 現状は `env` をモジュールとして import しようとして `undefined: env` エラーになる
-2. [ ] [ID: P0-GO-ENV-S2] `pytra_runtime_png` fixture が Go で compile + run parity PASS することを確認する
+1. [x] [ID: P0-GO-ENV-S1] Go emitter が `extern_var_v1` メタデータ付きの変数参照を、mapping.json の `calls` テーブルから値を取得してインラインリテラルとして出力するよう修正する — 現状は `env` をモジュールとして import しようとして `undefined: env` エラーになる
+   - 完了: `mapping.json` に `pytra.std.env` を `skip_modules` 追加、`_emit_attribute` で `owner_id + "." + attr` を `mapping.calls` から直接ルックアップするよう修正
+2. [x] [ID: P0-GO-ENV-S2] `pytra_runtime_png` fixture が Go で compile + run parity PASS することを確認する
+   - 完了: stdlib/pytra_runtime_png:go PASS（2026-03-30）
 
 ### P6-GO-SELFHOST: Go emitter で toolchain2 を Go に変換し go build を通す
 

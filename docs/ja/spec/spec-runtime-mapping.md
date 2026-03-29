@@ -29,6 +29,10 @@ src/runtime/<lang>/mapping.json
     "<runtime_call>": "<target_function_name>",
     ...
   },
+  "types": {
+    "<east3_type>": "<target_type_name>",
+    ...
+  },
   "skip_modules": [
     "<module_id_prefix>",
     ...
@@ -118,7 +122,62 @@ emit をスキップするモジュール ID の prefix リスト。これらの
 
 詳細: `docs/ja/plans/plan-pipeline-redesign.md` §3.4
 
-## 7. 暗黙型変換テーブル (`implicit_promotions`)
+## 7. 型写像テーブル (`types`)
+
+EAST3 の `resolved_type` / `type_expr` に現れる型名をターゲット言語の型名に写像する。
+
+### 7.1 フォーマット
+
+```json
+{
+  "types": {
+    "int64": "int64_t",
+    "float64": "double",
+    "bool": "bool",
+    "str": "str",
+    "None": "void",
+    "Path": "PyPath",
+    "Exception": "std::runtime_error",
+    "list": "list",
+    "dict": "dict",
+    "set": "set"
+  }
+}
+```
+
+key は EAST3 の型名、value はターゲット言語の型名。
+
+### 7.2 POD 型
+
+| EAST3 型 | C++ | Go | Rust | TS |
+|---|---|---|---|---|
+| `int8` | `int8_t` | `int8` | `i8` | `number` |
+| `int16` | `int16_t` | `int16` | `i16` | `number` |
+| `int32` | `int32_t` | `int32` | `i32` | `number` |
+| `int64` | `int64_t` | `int64` | `i64` | `number` |
+| `uint8` | `uint8_t` | `uint8` | `u8` | `number` |
+| `float32` | `float` | `float32` | `f32` | `number` |
+| `float64` | `double` | `float64` | `f64` | `number` |
+| `bool` | `bool` | `bool` | `bool` | `boolean` |
+| `str` | `str` | `string` | `String` | `string` |
+| `None` | `void` | _(empty return)_ | `()` | `void` |
+
+### 7.3 クラス / 例外型
+
+| EAST3 型 | C++ | Go | Rust | TS |
+|---|---|---|---|---|
+| `Exception` | `std::runtime_error` | `*PytraErrorCarrier` | `Box<dyn std::error::Error>` | `Error` |
+| `Path` | `PyPath` | `PyPath` | `PyPath` | `PyPath` |
+| `ArgumentParser` | `PyArgParser` | `PyArgParser` | `PyArgParser` | `PyArgParser` |
+
+### 7.4 ルール
+
+- emitter は型名のハードコードを持たず、`types` テーブルから解決する
+- `types` に一致しない型名はそのまま出力する（ユーザー定義クラス）
+- `CodeEmitter` 基底クラスが `resolve_type(east3_type)` メソッドを提供する
+- 各言語の `types.py` は廃止し、mapping.json に統合する
+
+## 8. 暗黙型変換テーブル (`implicit_promotions`)
 
 EAST は数値型の混合演算で常に明示的な cast ノードを挿入する（spec-east2.md §2.5）。
 しかしターゲット言語によっては暗黙の型変換（implicit promotion）が行われるため、
@@ -178,7 +237,7 @@ class CodeEmitter:
 - `implicit_promotions` が空の言語は全 cast を出力する（安全側に倒す）
 - `implicit_promotions` に載っていない cast は常に出力する
 
-## 8. 実装
+## 9. 実装
 
 - `toolchain2/emit/common/code_emitter.py` の `load_runtime_mapping()` が読み込む
 - `RuntimeMapping` dataclass に格納される

@@ -25,6 +25,14 @@
 
 ## 未完了タスク
 
+### P0-RS-TYPE-MAPPING: Rust emitter の型写像を mapping.json に移行する
+
+仕様: [spec-runtime-mapping.md](../spec/spec-runtime-mapping.md) §7
+
+1. [ ] [ID: P0-RS-TYPEMAP-S1] `src/runtime/rs/mapping.json` に `types` テーブルを追加する — POD 型（`int64` → `i64` 等）とクラス型（`Exception` → `Box<dyn std::error::Error>` 等）の全写像を定義する
+2. [ ] [ID: P0-RS-TYPEMAP-S2] Rust emitter の型名ハードコード（`types.py` 含む）を `resolve_type()` 呼び出しに置換する
+3. [ ] [ID: P0-RS-TYPEMAP-S3] fixture emit に影響がないことを確認する
+
 ### P7-RS-EMITTER: Rust emitter を toolchain2 に新規実装する
 
 前提: Go emitter（参照実装）と CommonRenderer が安定してから着手。
