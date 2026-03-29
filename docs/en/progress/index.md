@@ -35,7 +35,7 @@ An overview of Pytra's development status. Links to test results, tasks, changel
 
 ## Changelog
 
-[Changelog](../changelog.md)
+[Detailed changelog](../changelog.md)
 — Daily record of changes including spec updates, new features, bug fixes, and documentation.
 
 ## Documentation
