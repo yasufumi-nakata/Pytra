@@ -20,6 +20,13 @@
 
 ## 未完了タスク
 
+### P0-CLI2-RS-TS: pytra-cli2 -build の Rust / TS ターゲット対応
+
+1. [ ] [ID: P0-CLI2-RS-TS-S1] `pytra-cli2 -build --target rs` を実装する — `_build_pipeline` に Rust emitter（`emit_rs_module`）の呼び出しパスを追加。emit ディレクトリに `.rs` ファイルを出力する
+2. [ ] [ID: P0-CLI2-RS-TS-S2] `pytra-cli2 -build --target ts` を実装する — 同上で TS emitter（`emit_ts_module`）。emit ディレクトリに `.ts` ファイルを出力する
+3. [ ] [ID: P0-CLI2-RS-TS-S3] `runtime_parity_check.py` / `runtime_parity_check_fast.py` が `--targets rs,ts` で動作することを確認する — 結果が `.parity-results/` に蓄積され、進捗マトリクスに反映される
+4. [ ] [ID: P0-CLI2-RS-TS-S4] 各担当の独自 parity スクリプトを廃止し、共通 parity check に統一する
+
 ### P10-REORG: tools/ と tools/unittest/ の棚卸し・統合・管理台帳
 
 文脈: [docs/ja/plans/p10-tools-test-reorg.md](../plans/p10-tools-test-reorg.md)
