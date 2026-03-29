@@ -41,5 +41,5 @@
 
 ## 6. バージョン運用
 
-- `src/toolchain/misc/transpiler_versions.json` の `PATCH` の更新はエージェントが実施してよい。
-- `MAJOR` / `MINOR` の更新は、ユーザーの明示指示がある場合のみ実施する。
+- 内部バージョンゲート（`transpiler_versions.json`）は廃止済み。
+- 対外リリース版は `docs/VERSION` で管理する。`PATCH` はエージェントが更新してよい。`MAJOR` / `MINOR` はユーザーの明示指示がある場合のみ。

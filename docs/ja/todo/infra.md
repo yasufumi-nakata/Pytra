@@ -20,17 +20,6 @@
 
 ## 未完了タスク
 
-### P11-VERSION-GATE: toolchain2 用バージョンチェッカーの新設
-
-文脈: [docs/ja/plans/p11-version-gate.md](../plans/p11-version-gate.md)
-
-前提: toolchain2 への完全移行後に着手。
-
-1. [ ] [ID: P11-VERGATE-S1] `src/toolchain2/` 向けの `transpiler_versions.json` を新設する（toolchain1 の `src/toolchain/misc/transpiler_versions.json` は廃止）
-2. [ ] [ID: P11-VERGATE-S2] toolchain2 のディレクトリ構成に合わせた shared / 言語別の依存パスを定義する
-3. [ ] [ID: P11-VERGATE-S3] バージョンチェッカーを新しく書く（PATCH 以上の bump で OK とする。MINOR/MAJOR はユーザーの明示指示がある場合のみ）
-4. [ ] [ID: P11-VERGATE-S4] 旧チェッカー（`tools/check/check_transpiler_version_gate.py`）と旧バージョンファイルを廃止する
-
 ### P20-INT32: int のデフォルトサイズを int64 → int32 に変更
 
 文脈: [docs/ja/plans/p4-int32-default.md](../plans/p4-int32-default.md)

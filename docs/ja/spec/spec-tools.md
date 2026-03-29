@@ -32,7 +32,6 @@
 | `check_todo_priority.py` | TODO 優先度逸脱の検証 |
 | `check_jsonvalue_decode_boundaries.py` | JSON artifact 境界の正本検証 |
 | `check_py2x_transpile.py` | 全言語統一 transpile チェック |
-| `check_transpiler_version_gate.py` | バージョン更新検証 |
 | `check_east3_golden.py` | EAST3 golden スナップショット |
 | `verify_image_runtime_parity.py` | 画像 runtime 一致確認 |
 | `check_runtime_std_sot_guard.py` | stdlib 正本ガード |

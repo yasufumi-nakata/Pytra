@@ -113,8 +113,7 @@
 - `src/toolchain/emit/common/emitter/code_emitter.py` を変更した場合は `tools/unittest/common/test_code_emitter.py` を必ず実行し、共通ユーティリティ回帰を先に確認します。
 - `CodeEmitter` / `py2cpp` 系の変更では、最低限 `python3 tools/check/check_py2cpp_transpile.py` と `python3 tools/build_selfhost.py` の両方を通過させてからコミットします。
 - 上記 2 コマンドのいずれかが失敗した状態でのコミットは禁止します。
-- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**`, `src/toolchain/emit/**/profiles/**`）を変更する場合は、`src/toolchain/misc/transpiler_versions.json` の対応バージョンを minor 以上で更新し、`python3 tools/check/check_transpiler_version_gate.py` を通過させます。
-- sample 再生成は `python3 tools/run/run_regen_on_version_bump.py --verify-cpp-on-diff` を使用し、バージョン更新で差分が出た C++ ケースを compile/run 検証します。
+- 内部バージョンゲート（`transpiler_versions.json`）は廃止済み。変更の検証は parity check で行う。
 - アドホックな C++ コンパイル実験（デバッグ・調査目的）を行う場合は、ソースと成果物をリポジトリ直下ではなく `/tmp/` または `work/tmp/` 以下に置いて実行します（`tempfile.TemporaryDirectory()` パターンを参照）。
 - GCC ダンプフラグ（`-fdump-tree-all` 等）はカレントディレクトリに出力するため、リポジトリ直下では使用しません。使う場合は `-dumpdir /tmp/` を明示します。
 - コンパイルを伴う実験の後は `git status --short` でリポジトリ直下に意図しない生成物が残っていないことを確認します。
@@ -137,4 +136,4 @@
 - 現在の対外リリース版は `0.7.0` です。
 - `PATCH` の更新はエージェントが実施してよいものとします。
 - `MAJOR` / `MINOR` の更新は、ユーザーの明示指示がある場合のみ実施します。
-- `src/toolchain/misc/transpiler_versions.json` は再生成トリガー用の内部バージョンであり、対外リリース版（`docs/VERSION`）とは別管理です。
+- 内部バージョンゲート（`transpiler_versions.json`）は廃止済み。対外リリース版（`docs/VERSION`）のみ管理する。

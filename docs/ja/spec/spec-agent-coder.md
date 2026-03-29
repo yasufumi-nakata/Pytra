@@ -51,8 +51,8 @@
 
 ## 7. バージョン更新
 
-- 変換器関連ファイル（`src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**` 等）を変更する場合は、`src/toolchain/misc/transpiler_versions.json` の対応バージョンを **PATCH** で更新する。
-- MINOR / MAJOR はユーザーの明示指示がある場合のみ。
+- 内部バージョンゲート（`transpiler_versions.json`）は廃止済み。変更の検証は parity check で行う。
+- 対外リリース版は `docs/VERSION` で管理する。`PATCH` はエージェントが更新してよい。`MINOR` / `MAJOR` はユーザーの明示指示がある場合のみ。
 
 ## 8. selfhost 運用
 

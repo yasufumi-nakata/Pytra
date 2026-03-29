@@ -5,7 +5,7 @@
 # P11-VERSION-GATE: toolchain2 用バージョンチェッカーの新設
 
 最終更新: 2026-03-30
-ステータス: 未着手
+ステータス: 廃止 — parity check + 進捗マトリクスが代替するため、内部バージョンゲートは不要と判断。旧チェッカー・旧バージョンファイルも廃止済み。
 
 ## 背景
 
@@ -23,15 +23,30 @@ toolchain2 に合わせたバージョンチェッカーを新設し、旧チェ
 {
   "shared": {"version": "1.0.0"},
   "cpp": {"version": "1.0.0"},
-  "go": {"version": "1.0.0"},
   "rs": {"version": "1.0.0"},
-  "ts": {"version": "1.0.0"}
+  "cs": {"version": "1.0.0"},
+  "powershell": {"version": "1.0.0"},
+  "js": {"version": "1.0.0"},
+  "ts": {"version": "1.0.0"},
+  "dart": {"version": "1.0.0"},
+  "go": {"version": "1.0.0"},
+  "java": {"version": "1.0.0"},
+  "swift": {"version": "1.0.0"},
+  "kotlin": {"version": "1.0.0"},
+  "ruby": {"version": "1.0.0"},
+  "lua": {"version": "1.0.0"},
+  "scala": {"version": "1.0.0"},
+  "php": {"version": "1.0.0"},
+  "nim": {"version": "1.0.0"},
+  "julia": {"version": "1.0.0"},
+  "zig": {"version": "1.0.0"}
 }
 ```
 
-- コンポーネントは `shared`（共通パイプライン）+ 言語別
+- コンポーネントは `shared`（共通パイプライン）+ 18 言語別
 - `shared` は `src/toolchain2/parse/`, `src/toolchain2/resolve/`, `src/toolchain2/compile/`, `src/toolchain2/optimize/`, `src/toolchain2/link/`, `src/toolchain2/emit/common/` をカバー
 - 言語別は `src/toolchain2/emit/<lang>/` をカバー
+- toolchain2 に emitter がまだない言語も `1.0.0` で初期化しておく（emitter 新設時に PATCH bump）
 
 ### 2. 依存パスの定義
 

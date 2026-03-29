@@ -22,8 +22,6 @@
   - 目的: `test/fixtures/` と `sample/py` を `pytra-cli.py --target <lang>` で一括変換し、失敗ケースを検出する。全言語統一の transpile チェッカー。
   - 主要オプション: `--target <lang>`（`cpp`, `rs`, `js`, `cs`, `go`, `java`, `ts`, `swift`, `kotlin`, `scala` 等）
   - 補足: 旧言語別スクリプト（`check_py2cpp_transpile.py` 等 10 件）は廃止し `tools/unregistered/` に退避済み。
-- `tools/check/check_transpiler_version_gate.py`
-  - 目的: 変換器関連ファイルが変更されたとき、`src/toolchain/misc/transpiler_versions.json` の対応コンポーネント（`shared` / 言語別）で minor 以上のバージョン更新が行われているかを検証する。
 - `tools/check/check_east3_golden.py`
   - 目的: EAST3 スナップショットテスト（`test/east3_fixtures/` の golden file と EAST3 出力の差分チェック）。`--check-runtime-east` で `src/runtime/east/` の `.east` ファイル鮮度チェック。`--update` で再生成。
 - `tools/check/verify_image_runtime_parity.py`
@@ -58,10 +56,10 @@
 - `tools/gen/gen_makefile_from_manifest.py`
   - 目的: `manifest.json` を受け取り、`all`, `run`, `clean` を含む `Makefile` を生成する。
 - `tools/gen/regenerate_samples.py`
-  - 目的: `sample/py` から各 `sample/<lang>` を再生成し、`src/toolchain/misc/transpiler_versions.json` のバージョン・トークンが変わらない限り再生成を skip する。
+  - 目的: `sample/py` から各 `sample/<lang>` を再生成する。
   - 主要オプション: `--verify-cpp-on-diff`（C++ 生成差分が出たケースだけ `runtime_parity_check.py --targets cpp` で compile/run 検証）
 - `tools/run/run_regen_on_version_bump.py`
-  - 目的: `transpiler_versions.json` の minor 以上の更新を検出したときだけ `regenerate_samples.py` を起動し、影響言語のみ再生成する。
+  - 目的: sample を再生成し、影響言語のみ再生成する。
 - `tools/run/sync_todo_history_translation.py`
   - 目的: `docs/ja/todo/archive` を正本として `docs/en/todo/archive` の日付ファイル雛形と index を同期し、`--check` で同期漏れを検出する。
 

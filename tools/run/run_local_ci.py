@@ -21,7 +21,6 @@ def build_steps() -> list[list[str]]:
     return [
         ["python3", "tools/check/check_tools_ledger.py"],
         ["python3", "tools/check/check_mapping_json.py"],
-        ["python3", "tools/check/check_transpiler_version_gate.py"],
         ["python3", "tools/check/check_legacy_cli_references.py"],
         ["python3", "tools/check/check_legacy_transpile_checkers_absent.py"],
         ["python3", "tools/check/check_todo_priority.py"],
