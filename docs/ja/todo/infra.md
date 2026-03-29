@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-30（P0-CLI2-RS-TS S1〜S3、P0-PARITY-JS S1〜S3 完了）
+最終更新: 2026-03-30
 
 ## 運用ルール
 
@@ -20,20 +20,6 @@
 
 ## 未完了タスク
 
-### P0-CLI2-RS-TS: pytra-cli2 -build の Rust / TS ターゲット対応
-
-1. [x] [ID: P0-CLI2-RS-TS-S1] `pytra-cli2 -build --target rs` を実装する — `_build_pipeline` に Rust emitter（`emit_rs_module`）の呼び出しパスを追加。emit ディレクトリに `.rs` ファイルを出力する（`src/pytra-cli2.py` 実装済み確認）
-2. [x] [ID: P0-CLI2-RS-TS-S2] `pytra-cli2 -build --target ts` を実装する — 同上で TS emitter（`emit_ts_module`）。emit ディレクトリに `.ts` ファイルを出力する（`src/pytra-cli2.py` 実装済み確認）
-3. [x] [ID: P0-CLI2-RS-TS-S3] `runtime_parity_check_fast.py` が `--targets rs,ts` で動作することを確認する — `tools/check/runtime_parity_check_fast.py` に rs/ts ブランチを追加（emit + compile/run）。core fixture 22 件で ts 全件 OK、rs は output_mismatch のみ（emitter 側既知問題）
-
-### P0-PARITY-JS: parity check の JS ターゲット対応
-
-前提: P8-TS-EMITTER-S6（`--strip-types` / `--target js` フラグ）が TS 担当により実装された後に着手。
-
-1. [x] [ID: P0-PARITY-JS-S1] `runtime_parity_check_fast.py` に `--targets js` の compile + run パスを追加する — TS emitter（`strip_types=True`）で `.js` 生成、`node` で実行。pipeline target は `ts` プロファイル使用
-2. [x] [ID: P0-PARITY-JS-S2] `pytra-cli2 -build --target js` を実装する — `_copy_js_runtime_files()` 追加（`py_runtime.js` → `pytra_built_in_py_runtime.js`、std/*.js 同名コピー）。`_build_pipeline` / `_emit_ts` の JS ブランチも同様に修正
-3. [x] [ID: P0-PARITY-JS-S3] `--targets js` で fixture parity が動作し、結果が `.parity-results/js_fixture.json` に蓄積されることを確認する — core fixture 22 件全件 OK（unsupported_feature 4 件を除く）。TS emitter の JS import 構文を `require()` → ESM `import` に修正（`src/toolchain2/emit/ts/emitter.py`）、`py_runtime.js` に不足関数を追加
-
 ### P2-SAMPLE-BENCHMARK: sample parity check で実行時間を自動計測し README に反映する
 
 文脈: [docs/ja/plans/p2-sample-benchmark.md](../plans/p2-sample-benchmark.md)
@@ -43,21 +29,6 @@
 3. [ ] [ID: P2-BENCH-S3] `tools/gen/gen_sample_benchmark.py` を作成する — `.parity-results/*_sample.json` を読み、`sample/README-ja.md` と `sample/README.md` の「実行速度の比較」テーブルを自動更新する（日英同時生成）
 4. [ ] [ID: P2-BENCH-S4] 計測プロトコルを既存の計測条件（warmup=1, repeat=5, 中央値）に合わせるか、新しいプロトコルを定義する
 5. [ ] [ID: P2-BENCH-S5] parity check の末尾で、前回生成から10分以上経過していれば `gen_sample_benchmark.py` を自動実行する（進捗マトリクスと同じ仕組み）
-
-### P10-REORG: tools/ と tools/unittest/ の棚卸し・統合・管理台帳
-
-文脈: [docs/ja/plans/p10-tools-test-reorg.md](../plans/p10-tools-test-reorg.md)
-
-前提: P0〜P4 の主要タスクが全て落ち着いてから着手。
-
-1. [x] [ID: P10-REORG-S1] tools/ 全スクリプトの棚卸し（27+9+3 件整理）
-2. [x] [ID: P10-REORG-S2] tools/check/, tools/gen/, tools/run/ にフォルダ分け（git mv 完了）
-3. [x] [ID: P10-REORG-S3] tools/unittest/ 全テストの棚卸し（267 件確認）
-4. [x] [ID: P10-REORG-S4] test/unit/ → tools/unittest/ に統合・再編（backends/ → emit/ 含む）
-5. [x] [ID: P10-REORG-S5] 全パス参照の更新（src/, docs/, tools/ 内部パス全更新）
-6. [x] [ID: P10-REORG-S6] tools/README.md 管理台帳を作成（全サブディレクトリ・全ファイル記載）
-7. [x] [ID: P10-REORG-S7] CI で台帳突合チェックを追加（tools/check/check_tools_ledger.py、run_local_ci.py 組み込み済み）
-8. [x] [ID: P10-REORG-S8] AGENTS.md に tools/ 直下禁止・台帳同時更新ルールを追加（spec-agent-coder.md §2）
 
 ### P6-EMITTER-LINT: emitter 責務違反チェッカーの新設
 
