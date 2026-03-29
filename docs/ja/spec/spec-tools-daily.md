@@ -10,6 +10,8 @@
 
 - `tools/run_local_ci.py`
   - 目的: ローカル最小 CI（version gate + todo 優先度ガード + runtime 層分離ガード + non-C++ emitter runtime-call 直書きガード + emitter 禁止 runtime 実装シンボルガード + non-C++ backend health gate + 条件付き sample 再生成 + transpile 回帰 + unit + selfhost build + diff）を一括実行する。
+- `tools/check_mapping_json.py`
+  - 目的: 全言語の `src/runtime/<lang>/mapping.json` を検証する（valid JSON・`calls` キー存在・`builtin_prefix` 存在・必須エントリ `env.target` 存在・空文字エントリなし）。`run_local_ci.py` に組み込み済み。
 - `tools/check_todo_priority.py`
   - 目的: `docs/ja/todo/index.md` / `docs/ja/plans/*.md` の差分に追加した進捗 `ID` が、未完了の最上位 `ID`（またはその子 `ID`）と一致するかを検証し、優先度逸脱を防止する。`plans` 側は `決定ログ`（`- YYYY-MM-DD: ...`）行のみを進捗判定対象にし、構造整理の ID 列挙は対象外とする。
 - `tools/check_jsonvalue_decode_boundaries.py`

@@ -1,6 +1,7 @@
 {
   "builtin_prefix": "py_",
   "calls": {
+    "env.target": "\"go\"",
     "py_print": "py_print",
     "py_len": "py_len",
     "py_to_string": "py_str",

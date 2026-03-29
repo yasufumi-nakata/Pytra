@@ -26,6 +26,8 @@
 | ツール | 目的 |
 |---|---|
 | `run_local_ci.py` | ローカル最小 CI 一括実行 |
+| `check_mapping_json.py` | mapping.json 妥当性チェック（全言語） |
+| `gen_backend_progress.py` | バックエンド進捗ページ生成 |
 | `check_todo_priority.py` | TODO 優先度逸脱の検証 |
 | `check_jsonvalue_decode_boundaries.py` | JSON artifact 境界の正本検証 |
 | `check_py2x_transpile.py` | 全言語統一 transpile チェック |
