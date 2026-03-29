@@ -22,6 +22,8 @@
 
 ### P11-VERSION-GATE: toolchain2 用バージョンチェッカーの新設
 
+文脈: [docs/ja/plans/p11-version-gate.md](../plans/p11-version-gate.md)
+
 前提: toolchain2 への完全移行後に着手。
 
 1. [ ] [ID: P11-VERGATE-S1] `src/toolchain2/` 向けの `transpiler_versions.json` を新設する（toolchain1 の `src/toolchain/misc/transpiler_versions.json` は廃止）
