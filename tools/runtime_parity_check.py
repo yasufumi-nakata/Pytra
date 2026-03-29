@@ -455,10 +455,20 @@ def collect_sample_case_stems() -> list[str]:
     return out
 
 
-def collect_fixture_case_stems() -> list[str]:
-    """Collect all fixture case stems, excluding negative tests (ng_*) and __init__."""
+def collect_fixture_case_stems(category: str = "") -> list[str]:
+    """Collect fixture case stems, excluding negative tests (ng_*) and __init__.
+
+    If *category* is non-empty, only stems under that subdirectory are returned.
+    """
+    if category != "":
+        cat_dir = FIXTURE_ROOT / category
+        if not cat_dir.is_dir():
+            return []
+        search_root = cat_dir
+    else:
+        search_root = FIXTURE_ROOT
     seen: set[str] = set()
-    for p in sorted(FIXTURE_ROOT.rglob("*.py")):
+    for p in sorted(search_root.rglob("*.py")):
         stem = p.stem
         if stem == "__init__":
             continue
@@ -468,13 +478,22 @@ def collect_fixture_case_stems() -> list[str]:
     return sorted(seen)
 
 
-def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool) -> tuple[list[str], str]:
+def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool, category: str = "") -> tuple[list[str], str]:
     if all_samples:
         if len(cases) > 0:
             return [], "--all-samples cannot be combined with positional cases"
         if case_root != "sample":
             return [], "--all-samples requires --case-root sample"
         return collect_sample_case_stems(), ""
+    if category != "":
+        if len(cases) > 0:
+            return [], "--category cannot be combined with positional cases"
+        if case_root != "fixture":
+            return [], "--category requires --case-root fixture"
+        stems = collect_fixture_case_stems(category)
+        if len(stems) == 0:
+            return [], f"no cases found in category '{category}'"
+        return stems, ""
     if len(cases) > 0:
         return cases, ""
     if case_root == "sample":
@@ -782,6 +801,11 @@ def main() -> int:
         help="run all cases under sample/py (requires --case-root sample)",
     )
     parser.add_argument(
+        "--category",
+        default="",
+        help="run only fixtures in this subdirectory (e.g. oop, control, typing). requires --case-root fixture",
+    )
+    parser.add_argument(
         "--summary-json",
         default="",
         help="optional path to write machine-readable summary json",
@@ -816,7 +840,7 @@ def main() -> int:
         print("[ERROR] --targets must include at least one target")
         return 1
 
-    stems, err = resolve_case_stems(args.cases, args.case_root, args.all_samples)
+    stems, err = resolve_case_stems(args.cases, args.case_root, args.all_samples, args.category)
     if err != "":
         print(f"[ERROR] {err}")
         return 2
