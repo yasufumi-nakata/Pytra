@@ -1,0 +1,481 @@
+#!/usr/bin/env python3
+"""Generate backend progress matrices from accumulated parity results.
+
+Reads work/parity-results/*.json and fixture/sample lists, then writes:
+  docs/ja/language/backend-progress.md
+  docs/en/language/backend-progress.md
+
+Usage:
+    python3 tools/gen_backend_progress.py
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURE_ROOT = ROOT / "test" / "fixture" / "source" / "py"
+SAMPLE_ROOT = ROOT / "sample" / "py"
+PARITY_DIR = ROOT / "work" / "parity-results"
+
+PARITY_LANGS = ["cpp", "go", "rs", "ts"]
+SELFHOST_LANGS = ["cpp", "go", "rs", "ts"]
+
+STALE_DAYS = 7
+
+
+# ---------------------------------------------------------------------------
+# Icons
+# ---------------------------------------------------------------------------
+
+_CATEGORY_ICON: dict[str, str] = {
+    "ok": "🟩",
+    "run_failed": "🟥",
+    "transpile_failed": "🟥",
+    "output_mismatch": "🟥",
+    "artifact_size_mismatch": "🟥",
+    "artifact_crc32_mismatch": "🟥",
+    "artifact_missing": "🟥",
+    "artifact_presence_mismatch": "🟥",
+    "python_failed": "🟥",
+    "case_missing": "🟥",
+    "unsupported_feature": "🟥",
+    "toolchain_missing": "🟨",
+    "timeout": "🟪",
+}
+
+_SELFHOST_STAGE_ICON: dict[str, str] = {
+    "not_reached": "⬜",
+    "not_tested": "⬜",
+    "fail": "🟥",
+    "ok": "🟩",
+}
+
+
+def _case_icon(category: str | None) -> str:
+    if category is None:
+        return "⬜"
+    return _CATEGORY_ICON.get(category, "🟥")
+
+
+def _is_stale(timestamp: str) -> bool:
+    if not timestamp:
+        return False
+    try:
+        ts = datetime.fromisoformat(timestamp)
+        now = datetime.now()
+        return (now - ts).days >= STALE_DAYS
+    except ValueError:
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Case collection
+# ---------------------------------------------------------------------------
+
+def _collect_fixture_cases() -> list[tuple[str, str]]:
+    """Return (category, stem) pairs sorted by category then stem."""
+    out: list[tuple[str, str]] = []
+    for cat_dir in sorted(FIXTURE_ROOT.iterdir()):
+        if not cat_dir.is_dir():
+            continue
+        for f in sorted(cat_dir.rglob("*.py")):
+            stem = f.stem
+            if stem == "__init__" or stem.startswith("ng_"):
+                continue
+            out.append((cat_dir.name, stem))
+    return out
+
+
+def _collect_sample_cases() -> list[str]:
+    out: list[str] = []
+    for p in sorted(SAMPLE_ROOT.glob("*.py")):
+        stem = p.stem
+        if stem == "__init__":
+            continue
+        out.append(stem)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Load parity results
+# ---------------------------------------------------------------------------
+
+def _load_results(case_root: str) -> dict[str, dict[str, dict[str, object]]]:
+    """Return {target: {case_stem: {category, timestamp, detail?}}}."""
+    data: dict[str, dict[str, dict[str, object]]] = {}
+    for lang in PARITY_LANGS:
+        path = PARITY_DIR / f"{lang}_{case_root}.json"
+        if not path.exists():
+            data[lang] = {}
+            continue
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            results = doc.get("results", {})
+            data[lang] = {k: v for k, v in results.items() if isinstance(v, dict)}
+        except Exception:
+            data[lang] = {}
+    return data
+
+
+def _load_selfhost_results() -> dict[str, dict[str, object]]:
+    """Return {selfhost_lang: selfhost_doc}."""
+    data: dict[str, dict[str, object]] = {}
+    for lang in SELFHOST_LANGS:
+        path = PARITY_DIR / f"selfhost_{lang}.json"
+        if not path.exists():
+            data[lang] = {}
+            continue
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            data[lang] = doc if isinstance(doc, dict) else {}
+        except Exception:
+            data[lang] = {}
+    return data
+
+
+# ---------------------------------------------------------------------------
+# Matrix builders
+# ---------------------------------------------------------------------------
+
+def _build_parity_matrix(cases: list[tuple[str, str] | str], results: dict[str, dict[str, dict[str, object]]], case_root: str) -> list[str]:
+    """Build markdown table rows for fixture or sample parity matrix."""
+    lines: list[str] = []
+    lang_list = PARITY_LANGS
+
+    if case_root == "fixture":
+        lines.append(f"| カテゴリ | ケース | {' | '.join(lang_list)} |")
+        lines.append(f"|{'|'.join(['---'] * (len(lang_list) + 2))}|")
+        for item in cases:
+            cat, stem = item  # type: ignore[misc]
+            cells = []
+            for lang in lang_list:
+                entry = results.get(lang, {}).get(stem)
+                if entry is None:
+                    cells.append("⬜")
+                else:
+                    icon = _case_icon(str(entry.get("category", "")))
+                    stale = _is_stale(str(entry.get("timestamp", "")))
+                    cells.append(icon + (" ⚠" if stale else ""))
+            lines.append(f"| {cat} | {stem} | {' | '.join(cells)} |")
+    else:
+        lines.append(f"| ケース | {' | '.join(lang_list)} |")
+        lines.append(f"|{'|'.join(['---'] * (len(lang_list) + 1))}|")
+        for item in cases:
+            stem = item  # type: ignore[assignment]
+            cells = []
+            for lang in lang_list:
+                entry = results.get(lang, {}).get(stem)  # type: ignore[arg-type]
+                if entry is None:
+                    cells.append("⬜")
+                else:
+                    icon = _case_icon(str(entry.get("category", "")))
+                    stale = _is_stale(str(entry.get("timestamp", "")))
+                    cells.append(icon + (" ⚠" if stale else ""))
+            lines.append(f"| {stem} | {' | '.join(cells)} |")
+
+    # Summary row
+    summary_cells = []
+    for lang in lang_list:
+        counts: dict[str, int] = {}
+        for entry in results.get(lang, {}).values():
+            cat = str(entry.get("category", "")) if isinstance(entry, dict) else ""
+            icon = _case_icon(cat)
+            counts[icon] = counts.get(icon, 0) + 1
+        parts = " ".join(f"{icon}{n}" for icon, n in sorted(counts.items()))
+        summary_cells.append(parts or "—")
+
+    if case_root == "fixture":
+        lines.append(f"| | **合計** | {' | '.join(summary_cells)} |")
+    else:
+        lines.append(f"| **合計** | {' | '.join(summary_cells)} |")
+
+    return lines
+
+
+def _build_parity_matrix_en(cases: list[tuple[str, str] | str], results: dict[str, dict[str, dict[str, object]]], case_root: str) -> list[str]:
+    """English version of _build_parity_matrix."""
+    lines: list[str] = []
+    lang_list = PARITY_LANGS
+
+    if case_root == "fixture":
+        lines.append(f"| Category | Case | {' | '.join(lang_list)} |")
+        lines.append(f"|{'|'.join(['---'] * (len(lang_list) + 2))}|")
+        for item in cases:
+            cat, stem = item  # type: ignore[misc]
+            cells = []
+            for lang in lang_list:
+                entry = results.get(lang, {}).get(stem)
+                if entry is None:
+                    cells.append("⬜")
+                else:
+                    icon = _case_icon(str(entry.get("category", "")))
+                    stale = _is_stale(str(entry.get("timestamp", "")))
+                    cells.append(icon + (" ⚠" if stale else ""))
+            lines.append(f"| {cat} | {stem} | {' | '.join(cells)} |")
+    else:
+        lines.append(f"| Case | {' | '.join(lang_list)} |")
+        lines.append(f"|{'|'.join(['---'] * (len(lang_list) + 1))}|")
+        for item in cases:
+            stem = item  # type: ignore[assignment]
+            cells = []
+            for lang in lang_list:
+                entry = results.get(lang, {}).get(stem)  # type: ignore[arg-type]
+                if entry is None:
+                    cells.append("⬜")
+                else:
+                    icon = _case_icon(str(entry.get("category", "")))
+                    stale = _is_stale(str(entry.get("timestamp", "")))
+                    cells.append(icon + (" ⚠" if stale else ""))
+            lines.append(f"| {stem} | {' | '.join(cells)} |")
+
+    summary_cells = []
+    for lang in lang_list:
+        counts: dict[str, int] = {}
+        for entry in results.get(lang, {}).values():
+            cat = str(entry.get("category", "")) if isinstance(entry, dict) else ""
+            icon = _case_icon(cat)
+            counts[icon] = counts.get(icon, 0) + 1
+        parts = " ".join(f"{icon}{n}" for icon, n in sorted(counts.items()))
+        summary_cells.append(parts or "—")
+
+    if case_root == "fixture":
+        lines.append(f"| | **Total** | {' | '.join(summary_cells)} |")
+    else:
+        lines.append(f"| **Total** | {' | '.join(summary_cells)} |")
+
+    return lines
+
+
+def _build_selfhost_matrix(selfhost_data: dict[str, dict[str, object]]) -> list[str]:
+    lang_labels = {"cpp": "C++", "go": "Go", "rs": "Rust", "ts": "TS"}
+    lines: list[str] = []
+    emit_langs = PARITY_LANGS
+    lines.append(f"| selfhost 言語 \\ emit 先 | {' | '.join(emit_langs)} |")
+    lines.append(f"|{'|'.join(['---'] * (len(emit_langs) + 1))}|")
+
+    def _stage_icon(doc: dict[str, object], emit_lang: str) -> str:
+        stages = doc.get("stages", {})
+        emit_targets = doc.get("emit_targets", {})
+        if not stages and not emit_targets:
+            return "⬜"
+        # Check emit_targets for this specific emit lang
+        et = emit_targets.get(emit_lang, {}) if isinstance(emit_targets, dict) else {}
+        et_status = str(et.get("status", "")) if isinstance(et, dict) else ""
+        if et_status == "not_tested" or et_status == "":
+            return "⬜"
+        if et_status == "fail":
+            return "🟥"
+        # emit OK — check build/parity of overall stages
+        build = stages.get("build", {}) if isinstance(stages, dict) else {}
+        build_status = str(build.get("status", "")) if isinstance(build, dict) else ""
+        if build_status == "ok":
+            parity = stages.get("parity", {}) if isinstance(stages, dict) else {}
+            parity_status = str(parity.get("status", "")) if isinstance(parity, dict) else ""
+            if parity_status == "ok":
+                return "🟩"
+            return "🟧"
+        return "🟨"
+
+    # Python (source)
+    cells = ["🟩" if lang in ("cpp", "go") else "🟨" for lang in emit_langs]
+    lines.append(f"| Python (原本) | {' | '.join(cells)} |")
+
+    for sh_lang in SELFHOST_LANGS:
+        doc = selfhost_data.get(sh_lang, {})
+        label = lang_labels.get(sh_lang, sh_lang) + " selfhost"
+        cells = [_stage_icon(doc, emit_lang) for emit_lang in emit_langs]
+        lines.append(f"| {label} | {' | '.join(cells)} |")
+    return lines
+
+
+def _build_selfhost_matrix_en(selfhost_data: dict[str, dict[str, object]]) -> list[str]:
+    lang_labels = {"cpp": "C++", "go": "Go", "rs": "Rust", "ts": "TS"}
+    lines: list[str] = []
+    emit_langs = PARITY_LANGS
+    lines.append(f"| selfhost lang \\ emit target | {' | '.join(emit_langs)} |")
+    lines.append(f"|{'|'.join(['---'] * (len(emit_langs) + 1))}|")
+
+    def _stage_icon(doc: dict[str, object], emit_lang: str) -> str:
+        stages = doc.get("stages", {})
+        emit_targets = doc.get("emit_targets", {})
+        if not stages and not emit_targets:
+            return "⬜"
+        et = emit_targets.get(emit_lang, {}) if isinstance(emit_targets, dict) else {}
+        et_status = str(et.get("status", "")) if isinstance(et, dict) else ""
+        if et_status == "not_tested" or et_status == "":
+            return "⬜"
+        if et_status == "fail":
+            return "🟥"
+        build = stages.get("build", {}) if isinstance(stages, dict) else {}
+        build_status = str(build.get("status", "")) if isinstance(build, dict) else ""
+        if build_status == "ok":
+            parity = stages.get("parity", {}) if isinstance(stages, dict) else {}
+            parity_status = str(parity.get("status", "")) if isinstance(parity, dict) else ""
+            if parity_status == "ok":
+                return "🟩"
+            return "🟧"
+        return "🟨"
+
+    cells = ["🟩" if lang in ("cpp", "go") else "🟨" for lang in emit_langs]
+    lines.append(f"| Python (source) | {' | '.join(cells)} |")
+
+    for sh_lang in SELFHOST_LANGS:
+        doc = selfhost_data.get(sh_lang, {})
+        label = lang_labels.get(sh_lang, sh_lang) + " selfhost"
+        cells = [_stage_icon(doc, emit_lang) for emit_lang in emit_langs]
+        lines.append(f"| {label} | {' | '.join(cells)} |")
+    return lines
+
+
+# ---------------------------------------------------------------------------
+# Document generation
+# ---------------------------------------------------------------------------
+
+def _render_ja(
+    fixture_cases: list[tuple[str, str]],
+    sample_cases: list[str],
+    fixture_results: dict[str, dict[str, dict[str, object]]],
+    sample_results: dict[str, dict[str, dict[str, object]]],
+    selfhost_data: dict[str, dict[str, object]],
+    generated_at: str,
+) -> str:
+    lines: list[str] = [
+        '<a href="../../../en/language/backend-progress.md">',
+        '  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">',
+        "</a>",
+        "",
+        "# バックエンド進捗マトリクス",
+        "",
+        "> 機械生成ファイル。`python3 tools/gen_backend_progress.py` で更新する。",
+        f"> 生成日時: {generated_at}",
+        "",
+        "## アイコン凡例",
+        "",
+        "| アイコン | 意味 |",
+        "|---|---|",
+        "| 🟩 | PASS（emit + compile + run + stdout 一致） |",
+        "| 🟥 | FAIL（transpile_failed / run_failed / output_mismatch 等） |",
+        "| 🟨 | TM（toolchain_missing） |",
+        "| 🟪 | TO（timeout） |",
+        "| ⬜ | 未実行 |",
+        "| ⚠ | 結果が 7 日以上古い |",
+        "",
+        "## fixture parity マトリクス",
+        "",
+    ]
+    lines += _build_parity_matrix(fixture_cases, fixture_results, "fixture")  # type: ignore[arg-type]
+    lines += [
+        "",
+        "## sample parity マトリクス",
+        "",
+    ]
+    lines += _build_parity_matrix(sample_cases, sample_results, "sample")  # type: ignore[arg-type]
+    lines += [
+        "",
+        "## selfhost マトリクス",
+        "",
+        "| アイコン | 意味 |",
+        "|---|---|",
+        "| ⬜ | 未着手 |",
+        "| 🟨 | emit OK |",
+        "| 🟧 | build OK |",
+        "| 🟩 | parity PASS |",
+        "",
+    ]
+    lines += _build_selfhost_matrix(selfhost_data)
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _render_en(
+    fixture_cases: list[tuple[str, str]],
+    sample_cases: list[str],
+    fixture_results: dict[str, dict[str, dict[str, object]]],
+    sample_results: dict[str, dict[str, dict[str, object]]],
+    selfhost_data: dict[str, dict[str, object]],
+    generated_at: str,
+) -> str:
+    lines: list[str] = [
+        '<a href="../../../ja/language/backend-progress.md">',
+        '  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">',
+        "</a>",
+        "",
+        "# Backend Progress Matrix",
+        "",
+        "> Machine-generated file. Run `python3 tools/gen_backend_progress.py` to update.",
+        f"> Generated at: {generated_at}",
+        "",
+        "## Icon legend",
+        "",
+        "| Icon | Meaning |",
+        "|---|---|",
+        "| 🟩 | PASS (emit + compile + run + stdout match) |",
+        "| 🟥 | FAIL (transpile_failed / run_failed / output_mismatch etc.) |",
+        "| 🟨 | TM (toolchain_missing) |",
+        "| 🟪 | TO (timeout) |",
+        "| ⬜ | Not run |",
+        "| ⚠ | Result is more than 7 days old |",
+        "",
+        "## Fixture parity matrix",
+        "",
+    ]
+    lines += _build_parity_matrix_en(fixture_cases, fixture_results, "fixture")  # type: ignore[arg-type]
+    lines += [
+        "",
+        "## Sample parity matrix",
+        "",
+    ]
+    lines += _build_parity_matrix_en(sample_cases, sample_results, "sample")  # type: ignore[arg-type]
+    lines += [
+        "",
+        "## Selfhost matrix",
+        "",
+        "| Icon | Meaning |",
+        "|---|---|",
+        "| ⬜ | Not started |",
+        "| 🟨 | emit OK |",
+        "| 🟧 | build OK |",
+        "| 🟩 | parity PASS |",
+        "",
+    ]
+    lines += _build_selfhost_matrix_en(selfhost_data)
+    lines.append("")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main() -> int:
+    fixture_cases = _collect_fixture_cases()
+    sample_cases = _collect_sample_cases()
+    fixture_results = _load_results("fixture")
+    sample_results = _load_results("sample")
+    selfhost_data = _load_selfhost_results()
+
+    generated_at = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+    ja_content = _render_ja(fixture_cases, sample_cases, fixture_results, sample_results, selfhost_data, generated_at)
+    en_content = _render_en(fixture_cases, sample_cases, fixture_results, sample_results, selfhost_data, generated_at)
+
+    ja_out = ROOT / "docs" / "ja" / "language" / "backend-progress.md"
+    en_out = ROOT / "docs" / "en" / "language" / "backend-progress.md"
+
+    ja_out.parent.mkdir(parents=True, exist_ok=True)
+    en_out.parent.mkdir(parents=True, exist_ok=True)
+
+    ja_out.write_text(ja_content, encoding="utf-8")
+    en_out.write_text(en_content, encoding="utf-8")
+
+    print(f"[OK] {ja_out}")
+    print(f"[OK] {en_out}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

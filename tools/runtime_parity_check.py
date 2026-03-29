@@ -771,6 +771,54 @@ def check_case(
     return 0
 
 
+import datetime
+
+
+def _save_parity_results(records: list[CheckRecord], case_root: str, targets: set[str]) -> None:
+    """Save parity check results to work/parity-results/<target>_<case-root>.json.
+
+    Existing files are merged on a per-case basis so partial runs accumulate.
+    Each case entry carries a timestamp.
+    """
+    parity_dir = ROOT / "work" / "parity-results"
+    parity_dir.mkdir(parents=True, exist_ok=True)
+
+    # Group records by target
+    by_target: dict[str, list[CheckRecord]] = {t: [] for t in targets}
+    for rec in records:
+        if rec.target in by_target:
+            by_target[rec.target].append(rec)
+
+    now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+    for target, recs in by_target.items():
+        out_path = parity_dir / f"{target}_{case_root}.json"
+
+        # Load existing data for merge
+        existing: dict[str, object] = {}
+        if out_path.exists():
+            try:
+                loaded = json.loads(out_path.read_text(encoding="utf-8"))
+                if isinstance(loaded, dict) and "results" in loaded:
+                    existing = loaded["results"]  # type: ignore[assignment]
+            except Exception:
+                pass
+
+        results: dict[str, object] = dict(existing)
+        for rec in recs:
+            entry: dict[str, object] = {"category": rec.category, "timestamp": now}
+            if rec.detail:
+                entry["detail"] = rec.detail
+            results[rec.case_stem] = entry
+
+        doc = {
+            "target": target,
+            "case_root": case_root,
+            "results": results,
+        }
+        out_path.write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run runtime parity checks for stdlib/runtime cases")
     parser.add_argument(
@@ -907,6 +955,8 @@ def main() -> int:
         out_path = Path(args.summary_json)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(summary_obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    _save_parity_results(records, args.case_root, enabled_targets)
     return exit_code
 
 

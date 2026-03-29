@@ -134,6 +134,10 @@ Legend: ✅ = Good / 🔶 = Partial / ❌ = Unsupported or difficult
 | Guide | [Guides](docs/en/guide/README.md) | [ガイド](docs/ja/guide/README.md) |
 | Specification | [Spec index](docs/en/spec/index.md) | [仕様書](docs/ja/spec/index.md) |
 
+## Backend Progress
+
+[fixture / sample / selfhost の進捗マトリクス](docs/ja/language/backend-progress.md) — [English](docs/en/language/backend-progress.md)
+
 ## Changelog
 
 > **2026-03-28** - Go/C++ exception handling completed. `@runtime` / `@extern` decorator design finalized. Linker-generated type_id table implemented. Added 5 guide pages and 4 tutorial pages. Spec restructuring (12 legacy specs archived).

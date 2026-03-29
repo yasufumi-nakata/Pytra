@@ -491,6 +491,8 @@ def main() -> int:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
+    from runtime_parity_check import _save_parity_results  # type: ignore
+    _save_parity_results(records, args.case_root, enabled_targets)
     return exit_code
 
 
