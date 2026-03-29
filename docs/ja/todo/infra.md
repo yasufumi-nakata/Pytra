@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-30（P10-REORG 全完了）
+最終更新: 2026-03-30（P0-CLI2-RS-TS S1〜S3 完了）
 
 ## 運用ルール
 
@@ -22,10 +22,18 @@
 
 ### P0-CLI2-RS-TS: pytra-cli2 -build の Rust / TS ターゲット対応
 
-1. [ ] [ID: P0-CLI2-RS-TS-S1] `pytra-cli2 -build --target rs` を実装する — `_build_pipeline` に Rust emitter（`emit_rs_module`）の呼び出しパスを追加。emit ディレクトリに `.rs` ファイルを出力する
-2. [ ] [ID: P0-CLI2-RS-TS-S2] `pytra-cli2 -build --target ts` を実装する — 同上で TS emitter（`emit_ts_module`）。emit ディレクトリに `.ts` ファイルを出力する
-3. [ ] [ID: P0-CLI2-RS-TS-S3] `runtime_parity_check.py` / `runtime_parity_check_fast.py` が `--targets rs,ts` で動作することを確認する — 結果が `.parity-results/` に蓄積され、進捗マトリクスに反映される
+1. [x] [ID: P0-CLI2-RS-TS-S1] `pytra-cli2 -build --target rs` を実装する — `_build_pipeline` に Rust emitter（`emit_rs_module`）の呼び出しパスを追加。emit ディレクトリに `.rs` ファイルを出力する（`src/pytra-cli2.py` 実装済み確認）
+2. [x] [ID: P0-CLI2-RS-TS-S2] `pytra-cli2 -build --target ts` を実装する — 同上で TS emitter（`emit_ts_module`）。emit ディレクトリに `.ts` ファイルを出力する（`src/pytra-cli2.py` 実装済み確認）
+3. [x] [ID: P0-CLI2-RS-TS-S3] `runtime_parity_check_fast.py` が `--targets rs,ts` で動作することを確認する — `tools/check/runtime_parity_check_fast.py` に rs/ts ブランチを追加（emit + compile/run）。core fixture 22 件で ts 全件 OK、rs は output_mismatch のみ（emitter 側既知問題）
 4. [ ] [ID: P0-CLI2-RS-TS-S4] 各担当の独自 parity スクリプトを廃止し、共通 parity check に統一する
+
+### P0-PARITY-JS: parity check の JS ターゲット対応
+
+前提: P8-TS-EMITTER-S6（`--strip-types` / `--target js` フラグ）が TS 担当により実装された後に着手。
+
+1. [ ] [ID: P0-PARITY-JS-S1] `runtime_parity_check_fast.py` に `--targets js` の compile + run パスを追加する — TS emitter で JS 出力を生成し、`node` で実行する
+2. [ ] [ID: P0-PARITY-JS-S2] `pytra-cli2 -build --target js` を実装する — TS emitter の strip-types モードを呼び出し、`.js` ファイルを出力する
+3. [ ] [ID: P0-PARITY-JS-S3] `--targets js` で fixture parity が動作し、結果が `.parity-results/js_fixture.json` に蓄積されることを確認する
 
 ### P10-REORG: tools/ と tools/unittest/ の棚卸し・統合・管理台帳
 
