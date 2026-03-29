@@ -912,12 +912,13 @@ func py_enumerate(seq any, start ...int64) *PyList[[]any] {
 	return out
 }
 
-func py_reversed[T any](seq []T) []T {
-	out := make([]T, len(seq))
-	for i := range seq {
-		out[len(seq)-1-i] = seq[i]
+func py_reversed[T any](seq *PyList[T]) *PyList[T] {
+	src := seq.items
+	out := make([]T, len(src))
+	for i := range src {
+		out[len(src)-1-i] = src[i]
 	}
-	return out
+	return &PyList[T]{items: out}
 }
 
 func py_discard[K comparable](s any, key K) {
