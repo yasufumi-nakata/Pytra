@@ -37,6 +37,8 @@
 
 ### P6-EMITTER-LINT: emitter 責務違反チェッカーの新設
 
+文脈: [docs/ja/plans/p6-emitter-lint.md](../plans/p6-emitter-lint.md)
+
 1. [ ] [ID: P6-EMITTER-LINT-S1] `tools/check/check_emitter_hardcode_lint.py` を作成する — 全言語の `src/toolchain2/emit/*/` を対象に、以下のカテゴリの禁止パターンを grep で検出する:
    - モジュール名のハードコード（`"math"`, `"pathlib"`, `"json"`, `"sys"`, `"os"`, `"glob"`, `"time"`, `"subprocess"`, `"re"`, `"argparse"` 等）
    - runtime 関数名のハードコード（`"perf_counter"`, `"py_len"`, `"write_rgb_png"`, `"save_gif"` 等）
