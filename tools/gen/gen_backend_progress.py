@@ -188,8 +188,8 @@ def _build_parity_matrix(cases: list[tuple[str, str] | str], results: dict[str, 
             fail_cells.append("—")
             untested_cells.append(str(total_cases))
         else:
-            ok_cells.append(str(ok_count))
-            fail_cells.append(str(fail_count))
+            ok_cells.append(str(ok_count) if ok_count > 0 else "—")
+            fail_cells.append(str(fail_count) if fail_count > 0 else "—")
             untested_cells.append(str(untested_count) if untested_count > 0 else "—")
 
     if case_root == "fixture":
@@ -255,8 +255,8 @@ def _build_parity_matrix_en(cases: list[tuple[str, str] | str], results: dict[st
             fail_cells.append("—")
             untested_cells.append(str(total_cases))
         else:
-            ok_cells.append(str(ok_count))
-            fail_cells.append(str(fail_count))
+            ok_cells.append(str(ok_count) if ok_count > 0 else "—")
+            fail_cells.append(str(fail_count) if fail_count > 0 else "—")
             untested_cells.append(str(untested_count) if untested_count > 0 else "—")
 
     if case_root == "fixture":
