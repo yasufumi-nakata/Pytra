@@ -75,6 +75,30 @@ static inline V py_dict_get(const Object<dict<K, V>>& d, const Q& key) {
     return py_dict_get(*d, key);
 }
 
+// py_dict_get_opt: dict.get(key) with no default → returns None (empty optional) if key absent.
+template <class K, class V, class Q>
+static inline ::std::optional<V> py_dict_get_opt(const dict<K, V>& d, const Q& key) {
+    const K k = [&]() -> K {
+        if constexpr (py_is_cstr_like<Q>::value) {
+            return py_coerce_cstr_typed_value<K>(key);
+        } else if constexpr (::std::is_same_v<K, Q>) {
+            return key;
+        } else if constexpr (::std::is_convertible_v<Q, K>) {
+            return static_cast<K>(key);
+        } else {
+            return K(key);
+        }
+    }();
+    auto it = d.find(k);
+    if (it == d.end()) return ::std::nullopt;
+    return it->second;
+}
+
+template <class K, class V, class Q>
+static inline ::std::optional<V> py_dict_get_opt(const Object<dict<K, V>>& d, const Q& key) {
+    return py_dict_get_opt(*d, key);
+}
+
 template <class K, class V, class Q, class D>
 static inline V py_dict_get(const dict<K, V>& d, const Q& key, const D& default_value) {
     const K k = [&]() -> K {

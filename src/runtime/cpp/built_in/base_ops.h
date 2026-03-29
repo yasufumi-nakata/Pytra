@@ -1,6 +1,7 @@
 #ifndef PYTRA_NATIVE_BUILT_IN_BASE_OPS_H
 #define PYTRA_NATIVE_BUILT_IN_BASE_OPS_H
 
+#include <sstream>
 #include "core/py_types.h"
 
 // 基本スカラー長さ演算・文字列スライス。
@@ -88,6 +89,24 @@ static inline ::std::string py_to_string(const ::std::string& v) {
     return v;
 }
 
+// Python-like float formatting: whole numbers print as "2.0" not "2".
+static inline ::std::string py_to_string(double v) {
+    ::std::ostringstream oss;
+    oss << v;
+    ::std::string s = oss.str();
+    if (s.find('.') == ::std::string::npos &&
+        s.find('e') == ::std::string::npos &&
+        s.find('n') == ::std::string::npos &&
+        s.find('i') == ::std::string::npos) {
+        s += ".0";
+    }
+    return s;
+}
+
+static inline ::std::string py_to_string(float v) {
+    return py_to_string(static_cast<double>(v));
+}
+
 static inline ::std::string py_to_string(const object& v) {
     if (!v) return "";
     if (v.type_id() == PYTRA_TID_STR)
@@ -95,7 +114,7 @@ static inline ::std::string py_to_string(const object& v) {
     if (v.type_id() == PYTRA_TID_INT)
         return ::std::to_string(static_cast<PyBoxedValue<int64>*>(v.get())->value);
     if (v.type_id() == PYTRA_TID_FLOAT)
-        return ::std::to_string(static_cast<PyBoxedValue<float64>*>(v.get())->value);
+        return py_to_string(static_cast<PyBoxedValue<float64>*>(v.get())->value);
     if (v.type_id() == PYTRA_TID_BOOL)
         return static_cast<PyBoxedValue<bool>*>(v.get())->value ? "True" : "False";
     return "<object>";
@@ -117,6 +136,64 @@ template <class T>
 static inline ::std::string py_to_string(const ::std::optional<T>& v) {
     if (!v.has_value()) return "None";
     return py_to_string(*v);
+}
+
+// py_repr: Python repr()-like formatting for collection elements.
+// Used by py_to_string for containers.
+static inline ::std::string py_repr(const str& v) {
+    return "'" + v.std() + "'";
+}
+static inline ::std::string py_repr(bool v) {
+    return v ? "True" : "False";
+}
+template <class T>
+static inline ::std::string py_repr(const T& v) {
+    return py_to_string(v);
+}
+
+// py_to_string for Object<list<T>>: Python-like "[a, b, c]" format.
+template <class T>
+static inline ::std::string py_to_string(const Object<list<T>>& v) {
+    if (!v) return "[]";
+    ::std::string result = "[";
+    bool first = true;
+    for (const auto& elem : *v) {
+        if (!first) result += ", ";
+        result += py_repr(elem);
+        first = false;
+    }
+    result += "]";
+    return result;
+}
+
+// py_to_string for Object<set<T>>: Python-like "{a, b, c}" format.
+template <class T>
+static inline ::std::string py_to_string(const Object<set<T>>& v) {
+    if (!v || v->empty()) return "set()";
+    ::std::string result = "{";
+    bool first = true;
+    for (const auto& elem : *v) {
+        if (!first) result += ", ";
+        result += py_repr(elem);
+        first = false;
+    }
+    result += "}";
+    return result;
+}
+
+// py_to_string for Object<dict<K,V>>: Python-like "{k: v, ...}" format.
+template <class K, class V>
+static inline ::std::string py_to_string(const Object<dict<K, V>>& d) {
+    if (!d) return "{}";
+    ::std::string result = "{";
+    bool first = true;
+    for (const auto& kv : *d) {
+        if (!first) result += ", ";
+        result += py_repr(kv.first) + ": " + py_repr(kv.second);
+        first = false;
+    }
+    result += "}";
+    return result;
 }
 
 #endif  // PYTRA_NATIVE_BUILT_IN_BASE_OPS_H

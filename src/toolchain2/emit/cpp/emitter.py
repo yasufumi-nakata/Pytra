@@ -22,6 +22,8 @@ from toolchain2.emit.cpp.types import (
     collect_cpp_type_vars,
     cpp_container_value_type,
     is_container_resolved_type,
+    _top_level_optional_inner,
+    _split_generic_args,
 )
 from toolchain2.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
@@ -338,6 +340,45 @@ def _sanitize_ident(text: str) -> str:
     return "".join(out)
 
 
+# C++ reserved keywords that valid Python identifiers may shadow.
+_CPP_RESERVED_KEYWORDS: set[str] = {
+    "alignas", "alignof", "and", "and_eq", "asm", "auto",
+    "bitand", "bitor", "bool", "break",
+    "case", "catch", "char", "char8_t", "char16_t", "char32_t", "class",
+    "compl", "concept", "const", "consteval", "constexpr", "constinit",
+    "const_cast", "continue", "co_await", "co_return", "co_yield",
+    "decltype", "default", "delete", "do", "double", "dynamic_cast",
+    "else", "enum", "explicit", "export", "extern",
+    "false", "float", "for", "friend",
+    "goto",
+    "if", "inline", "int",
+    "long",
+    "mutable",
+    "namespace", "new", "noexcept", "not", "not_eq", "nullptr",
+    "operator", "or", "or_eq",
+    "private", "protected", "public",
+    "register", "reinterpret_cast", "requires", "return",
+    "short", "signed", "sizeof", "static", "static_assert", "static_cast",
+    "struct", "switch",
+    "template", "this", "thread_local", "throw", "true", "try", "typedef",
+    "typeid", "typename",
+    "union", "unsigned", "using",
+    "virtual", "void", "volatile",
+    "wchar_t", "while",
+    "xor", "xor_eq",
+}
+
+
+def _safe_cpp_ident(name: str) -> str:
+    """Rename C++ reserved-keyword identifiers to avoid compile errors.
+
+    Appends ``_`` suffix (mirrors Go emitter's ``_safe_go_ident``).
+    """
+    if name in _CPP_RESERVED_KEYWORDS:
+        return name + "_"
+    return name
+
+
 def _lookup_explicit_runtime_symbol_mapping(
     ctx: CppEmitContext,
     *,
@@ -565,6 +606,14 @@ def _wrap_container_result_if_needed(node: dict[str, JsonVal], value_expr: str) 
 
 def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr: str) -> str:
     if not is_container_resolved_type(target_type):
+        # When assigning dict.get(no-default) to an optional variable, use py_dict_get_opt
+        # so that missing keys produce an empty optional (None), not a zero-valued optional.
+        optional_inner = _top_level_optional_inner(target_type)
+        if optional_inner not in ("", "unknown") and value_expr.startswith("py_dict_get("):
+            # Only for the 2-arg version (no default); 3-arg keeps py_dict_get.
+            inner = value_expr[len("py_dict_get("):-1]
+            if len(_split_generic_args(inner)) == 2:
+                return "py_dict_get_opt(" + inner + ")"
         return value_expr
     trimmed = value_expr.strip()
     if trimmed in ctx.var_types and ctx.var_types.get(trimmed, "") == target_type:
@@ -1228,7 +1277,7 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             if attr == "add_argument" and owner_type == "ArgumentParser":
                 call_arg_strs = _emit_argparse_add_argument_args(ctx, args, keywords)
             if _is_type_owner(ctx, owner_node):
-                return owner + "::" + attr + "(" + ", ".join(call_arg_strs) + ")"
+                return owner + "::" + _safe_cpp_ident(attr) + "(" + ", ".join(call_arg_strs) + ")"
             if owner_module != "":
                 symbol_name = _resolve_runtime_attr_symbol(
                     ctx,
@@ -1262,9 +1311,9 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                         _qualify_runtime_call_symbol(mapped_name) + "(" + ", ".join([owner] + call_arg_strs) + ")",
                     )
             if owner == "this":
-                return "this->" + attr + "(" + ", ".join(call_arg_strs) + ")"
+                return "this->" + _safe_cpp_ident(attr) + "(" + ", ".join(call_arg_strs) + ")"
             member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
-            return owner + member_sep + attr + "(" + ", ".join(call_arg_strs) + ")"
+            return owner + member_sep + _safe_cpp_ident(attr) + "(" + ", ".join(call_arg_strs) + ")"
         if fk == "Name":
             fn = _str(func, "id")
             if fn == "": fn = _str(func, "repr")
@@ -1301,7 +1350,7 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 )
                 if mapped_name != "":
                     return _qualify_runtime_call_symbol(mapped_name) + "(" + ", ".join(call_arg_strs) + ")"
-            return fn + "(" + ", ".join(call_arg_strs) + ")"
+            return _safe_cpp_ident(fn) + "(" + ", ".join(call_arg_strs) + ")"
     return _emit_expr(ctx, func) + "(" + ", ".join(call_arg_strs) + ")"
 
 
@@ -1906,6 +1955,10 @@ def _emit_box(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             + value_expr
             + "))"
         )
+    # Handle optional (T | None) types → box ::std::optional<T> to object
+    optional_inner = _top_level_optional_inner(value_type)
+    if optional_inner not in ("", "unknown"):
+        return "(" + value_expr + ".has_value() ? object(*" + value_expr + ") : object())"
     return value_expr
 
 
@@ -2669,7 +2722,7 @@ def _function_signature(
     owner_is_trait: bool = False,
     declaration_only: bool,
 ) -> str:
-    name = _str(node, "name")
+    name = _safe_cpp_ident(_str(node, "name"))
     if name == "":
         return ""
     is_static = _has_decorator(node, "staticmethod")
