@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-30（P0-CLI2-RS-TS S1〜S3 完了）
+最終更新: 2026-03-30（P0-CLI2-RS-TS S1〜S3、P0-PARITY-JS S1〜S3 完了）
 
 ## 運用ルール
 
@@ -31,9 +31,17 @@
 
 前提: P8-TS-EMITTER-S6（`--strip-types` / `--target js` フラグ）が TS 担当により実装された後に着手。
 
-1. [ ] [ID: P0-PARITY-JS-S1] `runtime_parity_check_fast.py` に `--targets js` の compile + run パスを追加する — TS emitter で JS 出力を生成し、`node` で実行する
-2. [ ] [ID: P0-PARITY-JS-S2] `pytra-cli2 -build --target js` を実装する — TS emitter の strip-types モードを呼び出し、`.js` ファイルを出力する
-3. [ ] [ID: P0-PARITY-JS-S3] `--targets js` で fixture parity が動作し、結果が `.parity-results/js_fixture.json` に蓄積されることを確認する
+1. [x] [ID: P0-PARITY-JS-S1] `runtime_parity_check_fast.py` に `--targets js` の compile + run パスを追加する — TS emitter（`strip_types=True`）で `.js` 生成、`node` で実行。pipeline target は `ts` プロファイル使用
+2. [x] [ID: P0-PARITY-JS-S2] `pytra-cli2 -build --target js` を実装する — `_copy_js_runtime_files()` 追加（`py_runtime.js` → `pytra_built_in_py_runtime.js`、std/*.js 同名コピー）。`_build_pipeline` / `_emit_ts` の JS ブランチも同様に修正
+3. [x] [ID: P0-PARITY-JS-S3] `--targets js` で fixture parity が動作し、結果が `.parity-results/js_fixture.json` に蓄積されることを確認する — core fixture 22 件全件 OK（unsupported_feature 4 件を除く）。TS emitter の JS import 構文を `require()` → ESM `import` に修正（`src/toolchain2/emit/ts/emitter.py`）、`py_runtime.js` に不足関数を追加
+
+### P2-SAMPLE-BENCHMARK: sample parity check で実行時間を自動計測し README に反映する
+
+1. [ ] [ID: P2-BENCH-S1] parity check（fast 版）の sample 実行時に、Python と各ターゲットの実行時間（秒）を計測し `.parity-results/<target>_sample.json` の各ケースに `elapsed_sec` フィールドとして記録する
+2. [ ] [ID: P2-BENCH-S2] Python 実行の計測結果を `.parity-results/python_sample.json` に記録する（比較基準）
+3. [ ] [ID: P2-BENCH-S3] `tools/gen/gen_sample_benchmark.py` を作成する — `.parity-results/*_sample.json` を読み、`sample/README-ja.md` と `sample/README.md` の「実行速度の比較」テーブルを自動更新する（日英同時生成）
+4. [ ] [ID: P2-BENCH-S4] 計測プロトコルを既存の計測条件（warmup=1, repeat=5, 中央値）に合わせるか、新しいプロトコルを定義する
+5. [ ] [ID: P2-BENCH-S5] parity check の末尾で、前回生成から10分以上経過していれば `gen_sample_benchmark.py` を自動実行する（進捗マトリクスと同じ仕組み）
 
 ### P10-REORG: tools/ と tools/unittest/ の棚卸し・統合・管理台帳
 
