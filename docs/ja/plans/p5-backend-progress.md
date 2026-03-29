@@ -79,7 +79,7 @@ JSON 形式:
 
 `tools/gen_backend_progress.py` が `work/parity-results/*.json` を読み、fixture 一覧・sample 一覧と突き合わせて Markdown を生成する。
 
-出力先: `docs/ja/language/backend-progress.md`
+出力先: `docs/ja/language/backend-progress.md` と `docs/en/language/backend-progress.md` を同時生成する。テーブルはほぼ同一で、見出しとサマリ行だけ日英で切り替える。機械生成物を手動翻訳するのは非効率なため、スクリプトが両言語を直接出力する。
 
 #### fixture parity マトリクス
 
