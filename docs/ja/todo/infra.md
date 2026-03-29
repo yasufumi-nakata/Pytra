@@ -46,7 +46,7 @@
    - runtime プレフィックスマッチ（`"pytra.std."`, `"pytra.core."`, `"pytra.built_in."` の文字列直書き）
    - クラス名のハードコード（`"Path"`, `"ArgumentParser"`, `"Exception"` 等）
    - Python 構文の残留（`"__main__"`, `"super()"` 等）
-2. [ ] [ID: P6-EMITTER-LINT-S2] allowlist 機構を用意する — C++ emitter は歴史的にハードコードが多いので、既存違反を allowlist に入れて新規増分だけ FAIL にする
+2. ~~[ID: P6-EMITTER-LINT-S2] allowlist 機構を用意する~~ — **削除**: toolchain2 の C++ emitter は書き直しのため歴史的負債がなく、allowlist 不要。
 3. [ ] [ID: P6-EMITTER-LINT-S3] 結果を言語 × カテゴリのマトリクスとして出力する（進捗ページの一部として利用可能にする）
 4. [ ] [ID: P6-EMITTER-LINT-S4] `tools/run/run_local_ci.py` に組み込む
 

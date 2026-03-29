@@ -9,7 +9,7 @@
 
 ## 背景
 
-emitter は EAST3 の情報だけを使ってコードを生成すべきだが（spec-emitter-guide §1）、歴史的にモジュール名や runtime 関数名をハードコードしている箇所がある。特に C++ emitter は toolchain1 時代からの debt が多い。
+emitter は EAST3 の情報だけを使ってコードを生成すべきだが（spec-emitter-guide §1）、歴史的にモジュール名や runtime 関数名をハードコードしている箇所がある。toolchain1 の C++ emitter は debt が多かったが、toolchain2 では C++ emitter を丸ごと書き直しているため、debt は存在しない。
 
 これらの責務違反は parity check では検出できない（ハードコードでも正しい名前なら動いてしまう）。emitter ソースコード自体を grep して違反を検出するチェッカーが必要。
 
@@ -62,9 +62,7 @@ EAST3 では既に正規化済みの Python 構文が emitter に残っている
 
 ### allowlist
 
-C++ emitter は歴史的にハードコードが多いため、既存違反を allowlist（`tools/check/emitter_hardcode_lint_allowlist.txt`）に入れる。チェッカーは allowlist 外の **新規増分だけ** を FAIL にする。
-
-allowlist は `ファイル:行番号:パターン` 形式で管理し、違反を修正するたびに行を削除していく。
+~~C++ emitter の allowlist~~ — **不要**: toolchain2 の C++ emitter は書き直しのため既存違反がなく、allowlist は作成しない。チェッカーは全違反をそのまま FAIL にする。
 
 ### 出力形式
 
