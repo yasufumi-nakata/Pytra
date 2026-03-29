@@ -581,6 +581,9 @@ def _is_wrapper_container_expr(ctx: EmitContext, node: JsonVal, rendered: str) -
         return True
     if rendered.startswith("NewPySet[") or rendered.startswith("PySetFromMap["):
         return True
+    # Type assertions to wrapper types (from _coerce_from_any for container types)
+    if ".(*PyList[" in rendered or ".(*PyDict[" in rendered or ".(*PySet[" in rendered:
+        return True
     if not isinstance(node, dict):
         return False
     kind = _str(node, "kind")
@@ -1210,7 +1213,10 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         and resolved_type == scope_optional_inner
         and go_type(scope_type).startswith("*")
     ):
-        return "(*(" + safe_name + "))"
+        if not go_type(resolved_type).startswith("*"):
+            # Scalar optional (e.g. *int64 → int64): dereference to get value
+            return "(*(" + safe_name + "))"
+        # Pointer types (user classes): optional and non-optional share same Go repr
     if (
         resolved_type != ""
         and resolved_type != scope_type
@@ -1300,6 +1306,13 @@ def _effective_resolved_type(ctx: EmitContext, node: JsonVal) -> str:
 
 
 def _coerce_from_any(val_code: str, target_type: str) -> str:
+    # Container types: actual runtime values are *PyList/PyDict/PySet, not native slices/maps.
+    # Generate type assertions to wrapper types so the cast succeeds at runtime.
+    if _is_container_resolved_type(target_type):
+        wrapper_gt = _container_wrapper_go_type(target_type)
+        if val_code.endswith(".(" + wrapper_gt + ")"):
+            return val_code
+        return val_code + ".(" + wrapper_gt + ")"
     target_gt = go_type(target_type)
     if target_gt == "":
         return val_code
@@ -1336,6 +1349,28 @@ def _coerce_from_any(val_code: str, target_type: str) -> str:
     return val_code + ".(" + target_gt + ")"
 
 
+def _container_wrapper_go_type(resolved_type: str) -> str:
+    """Return the Go wrapper type for a container type (no ctx needed for common cases)."""
+    if resolved_type == "list":
+        return "*PyList[any]"
+    if resolved_type == "dict":
+        return "*PyDict[string, any]"
+    if resolved_type == "set":
+        return "*PySet[any]"
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        return "*PyList[" + go_type(inner) + "]"
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        parts = _split_generic_args(inner)
+        if len(parts) == 2:
+            return "*PyDict[" + go_type(parts[0]) + ", " + go_type(parts[1]) + "]"
+    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+        inner = resolved_type[4:-1]
+        return "*PySet[" + go_type(inner) + "]"
+    return go_type(resolved_type)
+
+
 def _maybe_coerce_expr_to_type(ctx: EmitContext, value_node: JsonVal, value_code: str, target_type: str) -> str:
     if not isinstance(value_node, dict):
         return value_code
@@ -1357,8 +1392,12 @@ def _maybe_coerce_expr_to_type(ctx: EmitContext, value_node: JsonVal, value_code
     if target_gt == "" or target_gt == "any" or source_gt == target_gt:
         return value_code
     source_optional_inner = _optional_inner_type(source_type)
-    if source_optional_inner != "" and go_type(source_optional_inner) == target_gt and source_gt.startswith("*"):
-        return "(*(" + value_code + "))"
+    if source_optional_inner != "" and go_type(source_optional_inner) == target_gt:
+        if source_gt.startswith("*") and not target_gt.startswith("*"):
+            # Scalar optional (e.g. *int64 → int64): dereference to get value
+            return "(*(" + value_code + "))"
+        # Pointer/interface types: optional and non-optional share same Go repr (nil = None)
+        return value_code
     optional_inner = _optional_inner_type(target_type)
     if optional_inner != "":
         if source_type in ("JsonVal", "Any", "Obj", "object", "unknown") or source_gt == "any":
@@ -1498,8 +1537,12 @@ def _emit_unbox(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if target_gt != "" and target_gt != "any" and source_gt == target_gt:
         return _emit_expr(ctx, value_node)
     source_optional_inner = _optional_inner_type(source_type)
-    if source_optional_inner != "" and go_type(source_optional_inner) == target_gt and source_gt.startswith("*"):
-        return "(*(" + _emit_expr(ctx, value_node) + "))"
+    if source_optional_inner != "" and go_type(source_optional_inner) == target_gt:
+        if source_gt.startswith("*") and not target_gt.startswith("*"):
+            # Scalar optional (e.g. *int64 → int64): dereference to get value
+            return "(*(" + _emit_expr(ctx, value_node) + "))"
+        # Pointer/interface types: optional and non-optional share same Go repr (nil = None)
+        return _emit_expr(ctx, value_node)
     if isinstance(value_node, dict):
         if _str(value_node, "kind") == "Subscript" and target_type == "str":
             return _emit_expr(ctx, value_node)
@@ -1541,12 +1584,21 @@ def _box_dynamic_value_code(ctx: EmitContext, value_node: JsonVal) -> str:
         return "int64(" + value_code + ")"
     if source_type in ("float", "float64", "float32"):
         return "float64(" + value_code + ")"
-    if source_type.startswith("list["):
-        return _box_value_code(ctx, value_node, "list[Any]")
-    if source_type.startswith("dict["):
-        parts = _split_generic_args(source_type[5:-1])
-        key_type = parts[0] if len(parts) >= 1 else "Any"
-        return _box_value_code(ctx, value_node, "dict[" + key_type + ",Any]")
+    if source_type.startswith("list[") or source_type == "list":
+        # Box to *PyList[T] (not native []T) so type assertions from any use wrapper types.
+        # List literals emit []T{...} and need wrapping; Call/Name expressions already return *PyList[T].
+        if isinstance(value_node, dict) and _str(value_node, "kind") == "List":
+            return _wrap_ref_container_value_code(ctx, value_code, source_type if source_type != "list" else "list")
+        return value_code  # Already *PyList[T] (Call, Name, Attribute, etc.)
+    if source_type.startswith("dict[") or source_type == "dict":
+        # Box to *PyDict[K,V] (not native map) so type assertions from any use wrapper types.
+        if isinstance(value_node, dict) and _str(value_node, "kind") == "Dict":
+            return _wrap_ref_container_value_code(ctx, value_code, source_type if source_type != "dict" else "dict")
+        return value_code  # Already *PyDict[K,V]
+    if source_type.startswith("set[") or source_type == "set":
+        if isinstance(value_node, dict) and _str(value_node, "kind") == "Set":
+            return _wrap_ref_container_value_code(ctx, value_code, source_type if source_type != "set" else "set")
+        return value_code  # Already *PySet[T]
     if source_type.startswith("tuple["):
         return _box_value_code(ctx, value_node, source_type)
     return value_code
@@ -2072,7 +2124,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         scope_type = ctx.var_types.get(scope_name, "")
                         scope_optional_inner = _optional_inner_type(scope_type)
                         if scope_optional_inner != "" and target_name == scope_optional_inner and go_type(scope_type).startswith("*"):
-                            return "(*(" + arg_strs[1] + "))"
+                            target_gt2 = go_type(target_name)
+                            if not target_gt2.startswith("*"):
+                                return "(*(" + arg_strs[1] + "))"
+                            return arg_strs[1]
                     if isinstance(value_node, dict):
                         if _str(value_node, "kind") == "Unbox":
                             unbox_target = _str(value_node, "target")
@@ -2092,7 +2147,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                             and go_type(source_optional_inner) == target_gt
                             and source_gt.startswith("*")
                         ):
-                            return "(*(" + arg_strs[1] + "))"
+                            if not target_gt.startswith("*"):
+                                return "(*(" + arg_strs[1] + "))"
+                            return arg_strs[1]
                     if isinstance(value_node, dict) and _str(value_node, "kind") == "Unbox":
                         unbox_target = _str(value_node, "target")
                         if unbox_target == "":
@@ -3821,7 +3878,7 @@ def _emit_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if (
                     source_type in ("JsonVal", "Any", "Obj", "object", "unknown")
                     or go_type(source_type) == "any"
-                    or go_type(scope_type) == "any"
+                    or (go_type(scope_type) == "any" and scope_type != "")
                 ):
                     value_code = _coerce_from_any(value_code, optional_inner)
             value_code = _wrap_optional_value_code(ctx, value_code, ctx.current_return_type, value)

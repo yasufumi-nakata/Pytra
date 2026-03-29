@@ -242,8 +242,10 @@ def _doc_map_get(module_map: dict[str, dict[str, JsonVal]], path_str: str) -> di
 
 def _docs_as_json(copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]]) -> list[JsonVal]:
     out: list[JsonVal] = []
-    for _, doc in copied_docs:
-        out.append(doc)
+    for module, doc in copied_docs:
+        # Pass (module_id, doc) tuples so expand_cross_module_defaults can resolve
+        # module IDs for runtime modules that don't have meta.module_id set.
+        out.append((module.module_id, doc))
     return out
 
 
