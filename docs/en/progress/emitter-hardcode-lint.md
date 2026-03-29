@@ -5,7 +5,7 @@
 # Emitter hardcode violation matrix
 
 > Machine-generated file. Run `python3 tools/check/check_emitter_hardcode_lint.py` to update.
-> Generated at: 2026-03-30T06:55:02
+> Generated at: 2026-03-30T06:58:15
 > [Links](./index.md)
 
 Matrix of grep-detected violations where the emitter hardcodes module names, runtime symbols, or class names instead of using EAST3 data.
@@ -16,14 +16,14 @@ Fewer violations means the emitter is more faithfully following the EAST3 source
 | 🟩 | No violations (0) |
 | 🟥 | Violations found (count shown) |
 
-| Category | common | cpp | go | rs | ts |
-|--- | --- | --- | --- | --- | --- |
-| module name | 🟥1 | 🟩0 | 🟥6 | 🟥2 | 🟥1 |
-| runtime symbol | 🟥2 | 🟥1 | 🟥2 | 🟥3 | 🟥1 |
-| target const | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
-| prefix match | 🟥1 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
-| class name | 🟩0 | 🟥3 | 🟥20 | 🟥1 | 🟥6 |
-| Python syntax | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
+| Category | cpp | rs | cs | ps1 | js | ts | dart | go | java | swift | kotlin | ruby | lua | scala | php | nim | julia | zig |
+|--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| module name | 🟩0 | 🟥2 | 🟩0 | 🟩0 | 🟩0 | 🟥1 | 🟩0 | 🟥6 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
+| runtime symbol | 🟥1 | 🟥3 | 🟩0 | 🟩0 | 🟩0 | 🟥1 | 🟩0 | 🟥2 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
+| target const | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
+| prefix match | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
+| class name | 🟥3 | 🟥1 | 🟩0 | 🟩0 | 🟩0 | 🟥6 | 🟩0 | 🟥20 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
+| Python syntax | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 | 🟩0 |
 
 ## Details
 
@@ -69,7 +69,7 @@ src/toolchain2/emit/rs/types.py:41: "Exception": "Box<dyn std::error::Error>",
 ### class_name / ts (6)
 
 ```
-src/toolchain2/emit/ts/emitter.py:111: "Path", "PyPath", "py_math_tau",
+src/toolchain2/emit/ts/emitter.py:111: "Path", "PyPath", "py_math_tau", "py_env_target",
 src/toolchain2/emit/ts/emitter.py:116: "ArgumentParser",
 src/toolchain2/emit/ts/emitter.py:224: "Exception", "BaseException", "RuntimeError", "ValueError",
 src/toolchain2/emit/ts/emitter.py:1576: "Exception": "Error",
@@ -97,8 +97,8 @@ src/toolchain2/emit/go/emitter.py:4904: ctx.imports_needed.add("os")
 ### module_name / rs (2)
 
 ```
-src/toolchain2/emit/rs/emitter.py:3301: "math": "math_native.rs",
-src/toolchain2/emit/rs/emitter.py:3302: "time": "time_native.rs",
+src/toolchain2/emit/rs/emitter.py:3308: "math": "math_native.rs",
+src/toolchain2/emit/rs/emitter.py:3309: "time": "time_native.rs",
 ```
 
 ### module_name / ts (1)
@@ -136,9 +136,9 @@ src/toolchain2/emit/go/emitter.py:2387: if dispatch == "py_len" or bn == "len":
 ### runtime_symbol / rs (3)
 
 ```
-src/toolchain2/emit/rs/emitter.py:919: if mapped == "py_len" and len(rendered_args) == 1:
-src/toolchain2/emit/rs/emitter.py:947: if mapped == "py_print" and len(rendered_args) >= 1 and all(a.startswith("todo!(") for a in rendered_args):
-src/toolchain2/emit/rs/emitter.py:951: if mapped == "py_print" and len(rendered_args) > 1:
+src/toolchain2/emit/rs/emitter.py:926: if mapped == "py_len" and len(rendered_args) == 1:
+src/toolchain2/emit/rs/emitter.py:954: if mapped == "py_print" and len(rendered_args) >= 1 and all(a.startswith("todo!(") for a in rendered_args):
+src/toolchain2/emit/rs/emitter.py:958: if mapped == "py_print" and len(rendered_args) > 1:
 ```
 
 ### runtime_symbol / ts (1)

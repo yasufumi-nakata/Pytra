@@ -21,6 +21,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 EMIT_DIR = ROOT / "src" / "toolchain2" / "emit"
 
+# README バッジ順の全18言語（表示名 → emit サブディレクトリ名）
+ALL_LANGS_ORDERED: list[tuple[str, str]] = [
+    ("cpp",    "cpp"),
+    ("rs",     "rs"),
+    ("cs",     "cs"),
+    ("ps1",    "ps1"),
+    ("js",     "js"),
+    ("ts",     "ts"),
+    ("dart",   "dart"),
+    ("go",     "go"),
+    ("java",   "java"),
+    ("swift",  "swift"),
+    ("kotlin", "kotlin"),
+    ("ruby",   "ruby"),
+    ("lua",    "lua"),
+    ("scala",  "scala"),
+    ("php",    "php"),
+    ("nim",    "nim"),
+    ("julia",  "julia"),
+    ("zig",    "zig"),
+]
+ALL_LANG_KEYS = [k for k, _ in ALL_LANGS_ORDERED]
+
 # ---------------------------------------------------------------------------
 # 検出カテゴリ定義
 # ---------------------------------------------------------------------------
@@ -102,10 +125,13 @@ def collect_hits(
         if "__pycache__" not in str(f) and f.name != "__init__.py"
     )
 
+    # emit サブディレクトリ名 → 表示キー（ALL_LANG_KEYS に含まれないものは common 扱い）
+    dir_to_key = {d: k for k, d in ALL_LANGS_ORDERED}
+
     for fpath in files:
-        # ファイルの言語を parts から取得（emit/<lang>/...）
         rel = fpath.relative_to(EMIT_DIR)
-        lang = rel.parts[0] if len(rel.parts) > 1 else "common"
+        dir_name = rel.parts[0] if len(rel.parts) > 1 else "common"
+        lang = dir_to_key.get(dir_name, "common")
 
         if filter_lang and lang != filter_lang:
             continue
@@ -144,7 +170,7 @@ def build_matrix(
         for cat in CATEGORIES
     }
     for lang, cat, _f, _ln, _line in hits:
-        if lang in mat[cat]:
+        if cat in mat and lang in mat[cat]:
             mat[cat][lang] += 1
     return mat
 
@@ -303,13 +329,11 @@ def main() -> int:
 
     hits = collect_hits(args.lang, args.category)
 
-    # 対象言語一覧（common 含む）
-    all_langs = sorted(set(h[0] for h in hits) | {
-        p.name for p in EMIT_DIR.iterdir()
-        if p.is_dir() and p.name not in ("__pycache__", "profiles")
-    })
+    # 全18言語を README バッジ順で固定（toolchain2 未実装言語は 🟩0 で表示）
     if args.lang:
-        all_langs = [l for l in all_langs if l == args.lang]
+        all_langs = [args.lang] if args.lang in ALL_LANG_KEYS else [args.lang]
+    else:
+        all_langs = ALL_LANG_KEYS
 
     import datetime
     now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
