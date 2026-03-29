@@ -5,8 +5,17 @@
 # Fixture parity matrix
 
 > Machine-generated file. Run `python3 tools/gen/gen_backend_progress.py` to update.
-> Generated at: 2026-03-30T05:21:19
-> [Legend & links](./progress.md)
+> Generated at: 2026-03-30T05:22:52
+> [Links](./progress.md)
+
+| Icon | Meaning |
+|---|---|
+| 🟩 | PASS (emit + compile + run + stdout match) |
+| 🟥 | FAIL (transpile_failed / run_failed / output_mismatch etc.) |
+| 🟨 | TM (toolchain_missing) |
+| 🟪 | TO (timeout) |
+| ⬜ | Not run |
+| ⚠ | Result is more than 7 days old |
 
 | Category | Case | cpp | go | rs | ts |
 |---|---|---|---|---|---|
