@@ -33,6 +33,17 @@
 7. [ ] [ID: P10-REORG-S7] CI で台帳突合チェックを追加
 8. [ ] [ID: P10-REORG-S8] AGENTS.md にファイル追加禁止ルールを追加
 
+### P10.5-MAPPING-VALIDATE: mapping.json 妥当性チェッカーの新設
+
+1. [ ] [ID: P10.5-MAPVAL-S1] `tools/check_mapping_json.py` を作成する — 全言語の `src/runtime/<lang>/mapping.json` を対象に以下を検証する:
+   - valid JSON であること
+   - `calls` キーが存在すること
+   - `builtin_prefix` が定義されていること
+   - 必須エントリ（`env.target`）が `calls` に存在すること
+   - `calls` の値に空文字がないこと
+2. [ ] [ID: P10.5-MAPVAL-S2] `tools/run_local_ci.py` に組み込む
+3. [ ] [ID: P10.5-MAPVAL-S3] 既存の全 mapping.json に `env.target` エントリを追加する
+
 ### P11-VERSION-GATE: toolchain2 用バージョンチェッカーの新設
 
 前提: toolchain2 への完全移行後に着手。
