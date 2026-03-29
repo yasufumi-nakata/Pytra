@@ -25,7 +25,6 @@
 1. [x] [ID: P0-CLI2-RS-TS-S1] `pytra-cli2 -build --target rs` を実装する — `_build_pipeline` に Rust emitter（`emit_rs_module`）の呼び出しパスを追加。emit ディレクトリに `.rs` ファイルを出力する（`src/pytra-cli2.py` 実装済み確認）
 2. [x] [ID: P0-CLI2-RS-TS-S2] `pytra-cli2 -build --target ts` を実装する — 同上で TS emitter（`emit_ts_module`）。emit ディレクトリに `.ts` ファイルを出力する（`src/pytra-cli2.py` 実装済み確認）
 3. [x] [ID: P0-CLI2-RS-TS-S3] `runtime_parity_check_fast.py` が `--targets rs,ts` で動作することを確認する — `tools/check/runtime_parity_check_fast.py` に rs/ts ブランチを追加（emit + compile/run）。core fixture 22 件で ts 全件 OK、rs は output_mismatch のみ（emitter 側既知問題）
-4. [ ] [ID: P0-CLI2-RS-TS-S4] 各担当の独自 parity スクリプトを廃止し、共通 parity check に統一する
 
 ### P0-PARITY-JS: parity check の JS ターゲット対応
 
