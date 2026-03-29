@@ -5,7 +5,7 @@
 # Emitter hardcode violation matrix
 
 > Machine-generated file. Run `python3 tools/check/check_emitter_hardcode_lint.py` to update.
-> Generated at: 2026-03-30T06:59:55
+> Generated at: 2026-03-30T07:05:28
 > [Links](./index.md)
 
 Matrix of grep-detected violations where the emitter hardcodes module names, runtime symbols, or class names instead of using EAST3 data.
@@ -13,18 +13,18 @@ Fewer violations means the emitter is more faithfully following the EAST3 source
 
 | Icon | Meaning |
 |---|---|
-| 🟩 | No violations (0) |
+| 🟩 | No violations |
 | 🟥 | Violations found (count shown) |
 | ⬜ | Not implemented (no emitter in toolchain2) |
 
 | Category | cpp | rs | cs | ps1 | js | ts | dart | go | java | swift | kotlin | ruby | lua | scala | php | nim | julia | zig |
 |--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| module name | 🟩0 | 🟥2 | ⬜ | ⬜ | ⬜ | 🟥1 | ⬜ | 🟥6 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| module name | 🟩 | 🟥2 | ⬜ | ⬜ | ⬜ | 🟥1 | ⬜ | 🟥6 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | runtime symbol | 🟥1 | 🟥3 | ⬜ | ⬜ | ⬜ | 🟥1 | ⬜ | 🟥2 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| target const | 🟩0 | 🟩0 | ⬜ | ⬜ | ⬜ | 🟩0 | ⬜ | 🟩0 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| prefix match | 🟩0 | 🟩0 | ⬜ | ⬜ | ⬜ | 🟩0 | ⬜ | 🟩0 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| class name | 🟥3 | 🟥1 | ⬜ | ⬜ | ⬜ | 🟥6 | ⬜ | 🟥20 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| Python syntax | 🟩0 | 🟩0 | ⬜ | ⬜ | ⬜ | 🟩0 | ⬜ | 🟩0 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| target const | 🟩 | 🟩 | ⬜ | ⬜ | ⬜ | 🟩 | ⬜ | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| prefix match | 🟩 | 🟩 | ⬜ | ⬜ | ⬜ | 🟩 | ⬜ | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| class name | 🟥3 | 🟩 | ⬜ | ⬜ | ⬜ | 🟥4 | ⬜ | 🟥19 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Python syntax | 🟩 | 🟩 | ⬜ | ⬜ | ⬜ | 🟩 | ⬜ | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Details
 
@@ -36,7 +36,7 @@ src/toolchain2/emit/cpp/emitter.py:1277: if attr == "add_argument" and owner_typ
 src/toolchain2/emit/cpp/emitter.py:2650: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
 ```
 
-### class_name / go (20)
+### class_name / go (19)
 
 ```
 src/toolchain2/emit/go/emitter.py:102: "ArgumentParser",
@@ -58,30 +58,15 @@ src/toolchain2/emit/go/emitter.py:5377: if ctx.current_return_type == "Exception
 src/toolchain2/emit/go/emitter.py:5439: elif ctx.current_return_type == "Exception":
 src/toolchain2/emit/go/emitter.py:5442: if ctx.current_return_type == "Exception":
 src/toolchain2/emit/go/emitter.py:5457: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
-src/toolchain2/emit/go/types.py:39: "Exception": "*PytraErrorCarrier",
 ```
 
-### class_name / rs (1)
-
-```
-src/toolchain2/emit/rs/types.py:41: "Exception": "Box<dyn std::error::Error>",
-```
-
-### class_name / ts (6)
+### class_name / ts (4)
 
 ```
 src/toolchain2/emit/ts/emitter.py:111: "Path", "PyPath", "py_math_tau", "py_env_target",
 src/toolchain2/emit/ts/emitter.py:116: "ArgumentParser",
 src/toolchain2/emit/ts/emitter.py:224: "Exception", "BaseException", "RuntimeError", "ValueError",
 src/toolchain2/emit/ts/emitter.py:1576: "Exception": "Error",
-src/toolchain2/emit/ts/types.py:41: "Exception": "Error",
-src/toolchain2/emit/ts/types.py:48: "Path": "PyPath",
-```
-
-### module_name / common (1)
-
-```
-src/toolchain2/emit/common/code_emitter.py:128: e.g., {"math": "pytra.std.math", "path": "pytra.std.os_path"}
 ```
 
 ### module_name / go (6)
@@ -106,19 +91,6 @@ src/toolchain2/emit/rs/emitter.py:3309: "time": "time_native.rs",
 
 ```
 src/toolchain2/emit/ts/emitter.py:122: "sys", "pyset_argv", "pyset_path",
-```
-
-### prefix_match / common (1)
-
-```
-src/toolchain2/emit/common/code_emitter.py:41: "skip_modules": ["pytra.built_in.", "pytra.std.", "pytra.utils.", "pytra.core."]
-```
-
-### runtime_symbol / common (2)
-
-```
-src/toolchain2/emit/common/code_emitter.py:36: "py_print": "__pytra_print",
-src/toolchain2/emit/common/code_emitter.py:37: "py_len": "__pytra_len",
 ```
 
 ### runtime_symbol / cpp (1)

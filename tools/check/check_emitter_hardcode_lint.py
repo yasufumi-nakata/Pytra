@@ -120,9 +120,14 @@ def collect_hits(
 ) -> list[tuple[str, str, Path, int, str]]:
     hits: list[tuple[str, str, Path, int, str]] = []
 
+    # 除外ファイル:
+    #   code_emitter.py  — mapping 読み込み共通基盤（禁止パターンの定義場所）
+    #   types.py         — 型写像テーブル（"Exception": "Error" 等は正当）
+    EXCLUDE_NAMES = {"code_emitter.py", "types.py", "__init__.py"}
+
     files = sorted(
         f for f in EMIT_DIR.rglob("*.py")
-        if "__pycache__" not in str(f) and f.name != "__init__.py"
+        if "__pycache__" not in str(f) and f.name not in EXCLUDE_NAMES
     )
 
     # emit サブディレクトリ名 → 表示キー（ALL_LANG_KEYS に含まれないものは common 扱い）
@@ -190,7 +195,7 @@ def build_matrix(
 def _cell(n: int | None) -> str:
     if n is None:
         return "⬜"
-    return f"🟥{n}" if n else "🟩0"
+    return f"🟥{n}" if n else "🟩"
 
 
 def print_matrix(mat: dict[str, dict[str, int | None]], langs: list[str]) -> None:
@@ -252,7 +257,7 @@ def _render_md(
         lines.append("")
         lines.append("| アイコン | 意味 |")
         lines.append("|---|---|")
-        lines.append("| 🟩 | 違反なし（0件） |")
+        lines.append("| 🟩 | 違反なし |")
         lines.append("| 🟥 | 違反あり（件数を表示） |")
         lines.append("| ⬜ | 未実装（toolchain2 に emitter なし） |")
         lines.append("")
@@ -270,7 +275,7 @@ def _render_md(
         lines.append("")
         lines.append("| Icon | Meaning |")
         lines.append("|---|---|")
-        lines.append("| 🟩 | No violations (0) |")
+        lines.append("| 🟩 | No violations |")
         lines.append("| 🟥 | Violations found (count shown) |")
         lines.append("| ⬜ | Not implemented (no emitter in toolchain2) |")
         lines.append("")
