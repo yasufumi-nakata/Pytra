@@ -5,7 +5,7 @@
 # sample parity マトリクス
 
 > 機械生成ファイル。`python3 tools/gen/gen_backend_progress.py` で更新する。
-> [凡例・関連リンク](./backend-progress.md)
+> [凡例・関連リンク](./progress.md)
 
 | ケース | cpp | go | rs | ts |
 |---|---|---|---|---|
