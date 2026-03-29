@@ -41,6 +41,7 @@ from toolchain2.emit.cpp.header_gen import build_cpp_header_from_east3  # type: 
 from toolchain2.emit.cpp.runtime_bundle import emit_runtime_module_artifacts  # type: ignore
 from toolchain2.emit.go.emitter import emit_go_module  # type: ignore
 from toolchain2.link.linker import link_modules  # type: ignore
+from toolchain2.emit.cpp.runtime_paths import runtime_rel_tail_for_module  # type: ignore
 from toolchain2.optimize.optimizer import optimize_east3_document  # type: ignore
 from toolchain2.parse.py.parse_python import parse_python_file  # type: ignore
 from toolchain2.resolve.py.builtin_registry import load_builtin_registry  # type: ignore
@@ -175,21 +176,20 @@ def _transpile_in_memory(
 
 
 def _copy_go_runtime(emit_dir: Path) -> None:
-    """Copy Go runtime files to emit directory."""
+    """Copy Go runtime files to emit directory (flat, all in same package dir)."""
     go_runtime = ROOT / "src" / "runtime" / "go"
     if not go_runtime.exists():
         return
     for f in sorted(go_runtime.rglob("*.go")):
-        rel = f.relative_to(go_runtime)
-        dest = emit_dir / rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest = emit_dir / f.name
         shutil.copy2(f, dest)
 
 
 def _emit_helper_cpp(m, emit_dir: Path) -> None:
     """Emit a C++ helper module (header + source)."""
-    parts = m.module_id.split(".")
-    rel = "/".join(parts)
+    rel = runtime_rel_tail_for_module(m.module_id)
+    if rel == "":
+        rel = "/".join(m.module_id.split("."))
     cpp_path = emit_dir / (rel + ".cpp")
     h_path = emit_dir / (rel + ".h")
     cpp_path.parent.mkdir(parents=True, exist_ok=True)

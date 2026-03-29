@@ -20,15 +20,6 @@
 
 ## 未完了タスク
 
-### P0-FAST-PARITY-CPP-BUILD: 高速 parity check の C++ ビルドパスを修正する
-
-文脈: [docs/ja/spec/spec-tools-parity.md](../spec/spec-tools-parity.md) §2
-
-1. [ ] [ID: P0-FAST-PARITY-S1] `runtime_parity_check_fast.py` のインメモリ emit が生成する C++ ディレクトリ構成で、`type_id_table.h` 等の linker 生成ヘッダが正しく配置されるよう修正する
-2. [ ] [ID: P0-FAST-PARITY-S2] `_run_cpp_emit_dir` の include パス（`-I`）が emit ディレクトリ構成と一致するよう調整する
-3. [ ] [ID: P0-FAST-PARITY-S3] `runtime_parity_check_fast.py --category oop --targets cpp` で 18 件全件 PASS を確認する
-4. [ ] [ID: P0-FAST-PARITY-S4] `runtime_parity_check_fast.py --targets cpp` で全 fixture の parity 結果が従来版（`runtime_parity_check.py`）と一致することを確認する
-
 ### P1-GO-CONTAINER-WRAPPER: Go emitter の container 既定表現を spec 準拠に修正する
 
 文脈: `docs/ja/spec/spec-emitter-guide.md` §10
