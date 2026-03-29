@@ -13,7 +13,7 @@
 - **C++ runtime 例外安全性 (P3-CR-CPP-S4)**: py_types.h の `Object<void>` コンストラクタ5箇所を `make_unique` + `release` パターンに書き換え。
 - **runtime_parity_check 高速版**: `runtime_parity_check_fast.py` を新設。transpile 段を toolchain2 Python API のインメモリ呼び出しに置き換え、プロセス起動 + disk I/O を省略。
 - **runtime_parity_check に `--category` オプション追加**: fixture サブディレクトリ単位（oop, control, typing 等）で部分実行可能に。
-- **parity 結果の自動蓄積 + 進捗ページ自動生成 (P5-BACKEND-PROGRESS)**: parity check 実行時に `work/parity-results/` へ結果を自動蓄積（タイムスタンプ付きマージ）。`tools/gen/gen_backend_progress.py` で fixture/sample/selfhost の3マトリクスを日英同時生成。
+- **parity 結果の自動蓄積 + 進捗ページ自動生成 (P5-BACKEND-PROGRESS)**: parity check 実行時に `.parity-results/` へ結果を自動蓄積（タイムスタンプ付きマージ）。`tools/gen/gen_backend_progress.py` で fixture/sample/selfhost の3マトリクスを日英同時生成。
 - **mapping.json 妥当性チェッカー (P10.5-MAPPING-VALIDATE)**: `tools/check/check_mapping_json.py` を新設。全言語の mapping.json に対して必須エントリ（`env.target`）、フォーマット検証を実施。`run_local_ci.py` に組み込み。
 - **spec-runtime-decorator 拡張**: `extern_var` セクション追加、パイプライン解決フロー（parser → resolve → emitter の責務境界）追記、早見表追加。
 - **spec-emitter-guide 拡張**: §1.4 生成コード品質要件（例外安全性、予約語エスケープ、`rc_from_value<T>` 汎用化）、§7.1〜7.3 mapping.json の定数置換・リテラル埋め込み・`env.target` 必須エントリ。

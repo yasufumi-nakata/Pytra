@@ -775,12 +775,12 @@ import datetime
 
 
 def _save_parity_results(records: list[CheckRecord], case_root: str, targets: set[str]) -> None:
-    """Save parity check results to work/parity-results/<target>_<case-root>.json.
+    """Save parity check results to .parity-results/<target>_<case-root>.json.
 
     Existing files are merged on a per-case basis so partial runs accumulate.
     Each case entry carries a timestamp.
     """
-    parity_dir = ROOT / "work" / "parity-results"
+    parity_dir = ROOT / ".parity-results"
     parity_dir.mkdir(parents=True, exist_ok=True)
 
     # Group records by target

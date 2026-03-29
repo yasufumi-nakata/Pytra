@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate backend progress matrices from accumulated parity results.
 
-Reads work/parity-results/*.json and fixture/sample lists, then writes:
+Reads .parity-results/*.json and fixture/sample lists, then writes:
   docs/ja/progress/backend-progress-fixture.md
   docs/ja/progress/backend-progress-sample.md
   docs/ja/progress/backend-progress-selfhost.md
@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_ROOT = ROOT / "test" / "fixture" / "source" / "py"
 SAMPLE_ROOT = ROOT / "sample" / "py"
-PARITY_DIR = ROOT / "work" / "parity-results"
+PARITY_DIR = ROOT / ".parity-results"
 
 PARITY_LANGS = [
     "cpp", "rs", "cs", "powershell", "js", "ts", "dart", "go", "java",

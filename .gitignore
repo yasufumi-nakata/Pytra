@@ -17,6 +17,7 @@ __pycache__/
 /selfhost/
 /tmp/
 /test_png_out/
+/.parity-results/
 
 # user materials (read-only for Codex)
 /materials/
