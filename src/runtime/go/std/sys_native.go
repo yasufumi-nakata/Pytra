@@ -12,12 +12,12 @@ func py_exit(code int64) {
 	os.Exit(int(code))
 }
 
-func py_set_argv(values []string) {
-	py_argv = PyListFromSlice(append([]string{}, values...))
+func py_set_argv(values *PyList[string]) {
+	py_argv = PyListFromSlice(append([]string{}, values.items...))
 }
 
-func py_set_path(values []string) {
-	py_path = PyListFromSlice(append([]string{}, values...))
+func py_set_path(values *PyList[string]) {
+	py_path = PyListFromSlice(append([]string{}, values.items...))
 }
 
 func py_write_stderr(text string) {

@@ -480,6 +480,19 @@ def _wrap_ref_container_value_code(ctx: EmitContext, value_code: str, resolved_t
     return value_code
 
 
+def _wrap_container_call_args(ctx: EmitContext, args: list[JsonVal], arg_strs: list[str]) -> list[str]:
+    """Wrap container-typed call arguments to reference wrapper types (*PyList[T] etc.)."""
+    result: list[str] = []
+    for i, code in enumerate(arg_strs):
+        arg_node = args[i] if i < len(args) and isinstance(args[i], dict) else None
+        if isinstance(arg_node, dict):
+            arg_rt = _str(arg_node, "resolved_type")
+            if _is_container_resolved_type(arg_rt) and not _is_wrapper_container_expr(ctx, arg_node, code):
+                code = _wrap_ref_container_value_code(ctx, code, arg_rt)
+        result.append(code)
+    return result
+
+
 def _assign_uses_ref_container_decl(
     ctx: EmitContext,
     name: str,
@@ -897,7 +910,7 @@ def _go_type_with_ctx(ctx: EmitContext, resolved_type: str) -> str:
         return _go_symbol_name(ctx, resolved_type)
 
     if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):
-        inner4 = resolved_type[:-7] if resolved_type.endswith(" | None") else resolved_type[:-6]
+        inner4 = resolved_type[:-7] if resolved_type.endswith(" | None") else resolved_type[:-5]
         inner4 = inner4.strip()
         gt = _go_signature_type(ctx, inner4)
         if gt.startswith("*") or gt == "any" or gt.startswith("[]") or gt.startswith("map[") or gt.startswith("func("):
@@ -1861,8 +1874,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     )
                     if resolved_name == "":
                         resolved_name = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping)
-                    return _safe_go_ident(resolved_name) + "(" + ", ".join(call_arg_strs) + ")"
-                return _safe_go_ident(runtime_symbol) + "(" + ", ".join(call_arg_strs) + ")"
+                    wrapped_args = _wrap_container_call_args(ctx, args, call_arg_strs)
+                    return _safe_go_ident(resolved_name) + "(" + ", ".join(wrapped_args) + ")"
+                wrapped_args = _wrap_container_call_args(ctx, args, call_arg_strs)
+                return _safe_go_ident(runtime_symbol) + "(" + ", ".join(wrapped_args) + ")"
             # .append() on non-BuiltinCall (plain method call)
             if attr == "append" and len(arg_strs) >= 1:
                 owner_storage = _wrapper_container_storage_expr(ctx, owner_node, owner)
@@ -1994,12 +2009,16 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         adjusted_args[spread_index] = adjusted_args[spread_index] + "..."
                 call_arg_strs = adjusted_args
             if fn_name == "set":
-                if _str(node, "resolved_type") == "set[str]" and len(call_arg_strs) == 1:
+                set_rt = _str(node, "resolved_type")
+                if len(call_arg_strs) == 0:
+                    return _go_ref_container_ctor(ctx, set_rt if set_rt != "" else "set", "{}")
+                if set_rt == "set[str]" and len(call_arg_strs) == 1:
                     arg0_node = args[0] if len(args) >= 1 and isinstance(args[0], dict) else None
                     if isinstance(arg0_node, dict) and _str(arg0_node, "resolved_type") == "set[str]":
                         return call_arg_strs[0]
-                    return "py_set_str(" + call_arg_strs[0] + ")"
-                return "py_set(" + ", ".join(call_arg_strs) + ")"
+                    return "PySetFromMap[string](py_set_str(" + call_arg_strs[0] + "))"
+                wrapped_set = "py_set(" + ", ".join(call_arg_strs) + ")"
+                return _wrap_ref_container_value_code(ctx, wrapped_set, set_rt) if set_rt != "" else wrapped_set
             # bytearray/bytes constructor
             if fn_name in ("bytearray", "bytes"):
                 if len(args) == 0:
@@ -2286,13 +2305,13 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "[]byte{}"
 
     if dispatch == "py_set":
+        result_type_set = _str(node, "resolved_type")
         if len(args) == 0:
-            result_gt = _go_signature_type(ctx, _str(node, "resolved_type"))
-            if result_gt.startswith("map["):
-                return result_gt + "{}"
-        if _str(node, "resolved_type") == "set[str]" and len(arg_strs) == 1:
-            return "py_set_str(" + arg_strs[0] + ")"
-        return "py_set(" + ", ".join(arg_strs) + ")"
+            return _go_ref_container_ctor(ctx, result_type_set if result_type_set != "" else "set", "{}")
+        if result_type_set == "set[str]" and len(arg_strs) == 1:
+            return "PySetFromMap[string](py_set_str(" + arg_strs[0] + "))"
+        wrapped = "py_set(" + ", ".join(arg_strs) + ")"
+        return _wrap_ref_container_value_code(ctx, wrapped, result_type_set) if result_type_set != "" else wrapped
 
     if dispatch == "__TUPLE_CTOR__":
         if len(args) == 0:
@@ -2892,24 +2911,35 @@ def _emit_list_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     elements = _list(node, "elements")
     rt = _str(node, "resolved_type")
     gt = go_type(rt)
+    elem_type = ""
     if rt.startswith("list[") and rt.endswith("]"):
-        gt = "[]" + _go_signature_type(ctx, rt[5:-1])
-    parts = [_emit_expr(ctx, e) for e in elements]
+        elem_type = rt[5:-1]
+        gt = "[]" + _go_signature_type(ctx, elem_type)
+    parts = []
+    for e in elements:
+        code = _emit_expr(ctx, e)
+        if elem_type != "" and _is_container_resolved_type(elem_type) and not _is_wrapper_container_expr(ctx, e, code):
+            code = _wrap_ref_container_value_code(ctx, code, elem_type)
+        parts.append(code)
     literal = gt + "{" + ", ".join(parts) + "}"
     return literal
 
 
 def _emit_dict_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     rt = _str(node, "resolved_type")
-    gt = go_type(rt)
     parts: list[str] = []
     key_type = ""
     val_type = ""
+    key_gt = ""
+    val_gt = ""
     if rt.startswith("dict[") and rt.endswith("]"):
         type_parts = _split_generic_args(rt[5:-1])
         if len(type_parts) == 2:
             key_type = type_parts[0]
             val_type = type_parts[1]
+            key_gt = _go_type_with_ctx(ctx, key_type)
+            val_gt = _go_signature_type(ctx, val_type)
+    gt = ("map[" + key_gt + "]" + val_gt) if (key_gt != "" and val_gt != "") else go_type(rt)
 
     # EAST3 uses "entries" list of {key, value} dicts
     entries_list = _list(node, "entries")
@@ -2926,6 +2956,8 @@ def _emit_dict_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if val_type != "" and isinstance(value_node, dict):
                     if _optional_inner_type(val_type) != "":
                         v = _wrap_optional_value_code(ctx, v, val_type, value_node)
+                    elif _is_container_resolved_type(val_type) and not _is_wrapper_container_expr(ctx, value_node, v):
+                        v = _wrap_ref_container_value_code(ctx, v, val_type)
                 parts.append(k + ": " + v)
     else:
         # Fallback: separate keys/values lists
@@ -2942,6 +2974,8 @@ def _emit_dict_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if val_type != "" and isinstance(value_node2, dict):
                 if _optional_inner_type(val_type) != "":
                     v = _wrap_optional_value_code(ctx, v, val_type, value_node2)
+                elif _is_container_resolved_type(val_type) and not _is_wrapper_container_expr(ctx, value_node2, v):
+                    v = _wrap_ref_container_value_code(ctx, v, val_type)
             parts.append(k + ": " + v)
 
     return gt + "{" + ", ".join(parts) + "}"
@@ -2951,8 +2985,9 @@ def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     elements = _list(node, "elements")
     parts = [_emit_expr(ctx, e) + ": {}" for e in elements]
     rt = _str(node, "resolved_type")
-    gt = go_type(rt)
-    return gt + "{" + ", ".join(parts) + "}"
+    native = go_type(rt)
+    native_literal = native + "{" + ", ".join(parts) + "}"
+    return _wrap_ref_container_value_code(ctx, native_literal, rt)
 
 
 def _emit_tuple_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -3890,6 +3925,12 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 iter_code = _wrapper_container_storage_expr(ctx, iter_expr, iter_code)
                 # Detect byte slice iteration → cast to int64
                 iter_rt = _str(iter_expr, "resolved_type") if isinstance(iter_expr, dict) else ""
+                # If wrapper extraction added .items, the result is a native Go slice — treat as list type
+                if iter_rt in ("unknown", "", "Any", "Obj", "object", "JsonVal") and iter_code.endswith(".items"):
+                    scope_name = iter_code[:-6]
+                    scope_type = ctx.var_types.get(scope_name, "")
+                    if scope_type != "" and _is_container_resolved_type(scope_type):
+                        iter_rt = scope_type
                 if iter_rt in ("bytearray", "bytes", "list[uint8]"):
                     _emit(ctx, "for _, _byte_ := range " + iter_code + " {")
                     ctx.indent_level += 1

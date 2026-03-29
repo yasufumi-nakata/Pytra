@@ -137,7 +137,7 @@ def go_type(resolved_type: str) -> str:
 
     # Optional[T] / T | None → *T (pointer for nilability)
     if resolved_type.endswith(" | None") or resolved_type.endswith("|None"):
-        inner = resolved_type[: -7] if resolved_type.endswith(" | None") else resolved_type[: -6]
+        inner = resolved_type[: -7] if resolved_type.endswith(" | None") else resolved_type[: -5]
         gt = go_type(inner)
         if gt == "any":
             return gt

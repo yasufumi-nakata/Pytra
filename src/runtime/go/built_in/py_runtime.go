@@ -438,22 +438,22 @@ type pyNumber interface {
 		~float32 | ~float64
 }
 
-func py_sum[T pyNumber](values []T) T {
+func py_sum[T pyNumber](values *PyList[T]) T {
 	var acc T
-	for _, value := range values {
+	for _, value := range values.items {
 		acc += value
 	}
 	return acc
 }
 
-func py_zip[A any, B any](lhs []A, rhs []B) [][]any {
-	n := len(lhs)
-	if len(rhs) < n {
-		n = len(rhs)
+func py_zip[A any, B any](lhs *PyList[A], rhs *PyList[B]) *PyList[[]any] {
+	n := len(lhs.items)
+	if len(rhs.items) < n {
+		n = len(rhs.items)
 	}
-	out := make([][]any, 0, n)
+	out := NewPyList[[]any]()
 	for i := 0; i < n; i++ {
-		out = append(out, []any{lhs[i], rhs[i]})
+		out.items = append(out.items, []any{lhs.items[i], rhs.items[i]})
 	}
 	return out
 }
@@ -609,6 +609,9 @@ func py_is_str(v any) bool {
 }
 
 func py_is_list(v any) bool {
+	if _, ok := v.(pyListView); ok {
+		return true
+	}
 	rv := goreflect.ValueOf(v)
 	if !rv.IsValid() {
 		return false
