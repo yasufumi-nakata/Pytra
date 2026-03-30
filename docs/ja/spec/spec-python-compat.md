@@ -61,7 +61,7 @@ Pytra は「型注釈付きの Python サブセット」をソース言語とし
 | class 本体でのメンバー宣言 | クラス変数として扱われる | ⚠️ C++ では `inline static`、C# では `static` に変換される |
 | `super().__init__()` | 動作する | ✅ 動作する |
 | `@dataclass` | 動作する | ✅ `field(default=...)` / `field(default_factory=...)` の代表的な使い方に対応 |
-| `isinstance(x, T)` | 動作する | ✅ 動作する |
+| `isinstance(x, T)` | 動作する | ✅ 動作する（ただし下記の `bool`/`int` 非互換を参照） |
 | `@sealed` による sealed family 宣言 | ❌ | ✅ Pytra 固有。nominal ADT の family クラスを宣言するデコレータ |
 | `getattr(obj, "name")` | 動的に属性を取得する | ❌ 設計上非対応。動的属性参照は unsupported by design |
 | `setattr(obj, "name", val)` | 動的に属性を設定する | ❌ 設計上非対応 |
@@ -91,7 +91,7 @@ Pytra は「型注釈付きの Python サブセット」をソース言語とし
 | `uint64`, `uint32`, `uint16`, `uint8` | ❌ | ✅ Pytra 固有の符号なし固定幅整数型 |
 | `float` | 64ビット浮動小数点 | ✅ `float64` として動作する |
 | `float32` | ❌ | ✅ Pytra 固有の 32ビット浮動小数点型。`from pytra.types import float32` で使える |
-| `bool` | 動作する | ✅ 動作する |
+| `bool` | 動作する | ✅ 動作する（ただし `int` のサブタイプではない。下記参照） |
 | `str` | 動作する | ✅ スライス・for-each・f-string 等に対応 |
 | `list[T]` | 動作する | ✅ 動作する |
 | `dict[K, V]` | 動作する | ✅ 動作する |
@@ -100,6 +100,24 @@ Pytra は「型注釈付きの Python サブセット」をソース言語とし
 | `bytes` / `bytearray` | 動作する | ✅ 基本操作に対応 |
 | `None` | 動作する | ✅ 動作する |
 | `Any` | 動作する | ✅ 基本的な使い方に対応 |
+
+### `bool` は `int` のサブタイプではない（Python 非互換）
+
+Python では歴史的経緯により `bool` は `int` のサブクラスであり、`isinstance(True, int)` は `True` を返す。Pytra ではこの関係を **採用しない**。
+
+| isinstance | Python | Pytra |
+|---|---|---|
+| `isinstance(True, bool)` | `True` | `True` |
+| `isinstance(True, int)` | `True` | **`False`** |
+| `isinstance(Color.RED, Color)` | `True` | `True` |
+| `isinstance(Color.RED, IntEnum)` | `True` | `True` |
+| `isinstance(Color.RED, int)` | `True` | **`False`** |
+
+理由:
+- Python の `bool` が `int` のサブクラスなのは Python 2.3 で `bool` を後付けした歴史的経緯であり、言語設計としては失敗と広く認識されている
+- Pytra は型注釈ベースの静的型付けを前提とするため、`bool` を `int` として算術演算に使うケースは想定しない
+- `IntEnum` / `IntFlag` の値は `int` として使えるが、`isinstance` で `int` 判定する必要性は薄い
+- この非互換により、型判定の実装が全ターゲット言語で大幅に簡素化される
 
 ---
 
