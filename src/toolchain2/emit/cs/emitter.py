@@ -753,6 +753,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return container_call
     if isinstance(func, dict) and _str(func, "kind") == "Name":
         func_name = _str(func, "id")
+        if func_name == "cast":
+            if len(args) >= 2:
+                return "((" + _render_type(ctx, _str(node, "resolved_type")) + ")" + args[1] + ")"
+            return args[-1] if len(args) > 0 else ""
         if func_name in ctx.runtime_imports and "." in ctx.runtime_imports[func_name]:
             return _maybe_cast_dynamic_call(ctx, node, ctx.runtime_imports[func_name] + "(" + ", ".join(args) + ")")
         if func_name == "str":
