@@ -14,6 +14,8 @@
 | Go backend | [go.md](./go.md) |
 | Rust backend | [rust.md](./rust.md) |
 | TS/JS backend | [ts.md](./ts.md) |
+| C# backend | [cs.md](./cs.md) |
+| Java backend | [java.md](./java.md) |
 | インフラ・ツール | [infra.md](./infra.md) |
 
 完了済みタスクは [アーカイブ](archive/index.md) に移動済み。
