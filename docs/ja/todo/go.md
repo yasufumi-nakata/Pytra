@@ -91,13 +91,15 @@
 2. [x] [ID: P0-GO-ENV-S2] `pytra_runtime_png` fixture が Go で compile + run parity PASS することを確認する
    - 完了: stdlib/pytra_runtime_png:go PASS（2026-03-30）
 
-### P0-RESOLVE-INT-PROMOTION: BinOp の整数昇格 cast が結果型ではなくオペランド型に付くよう修正する
+### P0-RESOLVE-INT-PROMOTION: BinOp の全演算子で整数昇格 cast がオペランドに付くよう修正する
 
-`m8: int8 = 100; m16: int16 = 100; r5: int32 = m8 * m16` で、現在の resolve は `left` に `int8 → int16` の cast を付けた上で結果を `int32` にしているが、`int16 * int16` の結果に `int32` への cast がない。Go では `int16 * int16 = int16` なのでコンパイルエラーになる。
+全ての BinOp（`+`, `-`, `*`, `/`, `//`, `%`, `&`, `|`, `^`, `<<`, `>>`）で、異なるサイズの整数型が混在する場合に、resolve が **演算の前に** 両オペランドを結果型に cast すべき。現状は小さい側を相手のサイズに cast するだけで、結果型への昇格 cast が付かない。Go/Rust は暗黙昇格がないのでコンパイルエラーになる。
 
-正しくは **掛け算の前に** 両オペランドを結果型（`int32`）に cast すべき。`int32(m8) * int32(m16)` なら Go でもコンパイルが通り、overflow もしない。
+例: `m8: int8 = 100; m16: int16 = 100; r5: int32 = m8 * m16`
+- NG: `int16(m8) * m16` → 結果は int16（overflow あり）、int32 への cast なし
+- OK: `int32(m8) * int32(m16)` → 結果は int32、overflow なし
 
-1. [ ] [ID: P0-RESOLVE-INTPROMO-S1] resolve の BinOp 整数昇格で、cast を「結果型にまで昇格」に修正する — `int8 * int16 → int32` なら left に `int8 → int32`、right に `int16 → int32` の cast を付ける
+1. [ ] [ID: P0-RESOLVE-INTPROMO-S1] resolve の BinOp 整数昇格で、全演算子について cast を「結果型にまで昇格」に修正する — 両オペランドに結果型への cast を付ける
 2. [ ] [ID: P0-RESOLVE-INTPROMO-S2] `integer_promotion` fixture が Go で compile + run parity PASS することを確認する
 3. [ ] [ID: P0-RESOLVE-INTPROMO-S3] 他の fixture に影響がないことを確認する（golden 再生成）
 
