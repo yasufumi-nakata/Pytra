@@ -5,7 +5,7 @@
 # emitter ハードコード違反マトリクス
 
 > 機械生成ファイル。`python3 tools/check/check_emitter_hardcode_lint.py` で更新する。
-> 生成日時: 2026-03-30T07:24:17
+> 生成日時: 2026-03-30T07:44:50
 > [関連リンク](./index.md)
 
 emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名・クラス名等を文字列で直書きしている箇所を grep で検出したマトリクス。
@@ -32,8 +32,8 @@ emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名
 
 ```
 src/toolchain2/emit/cpp/emitter.py:72: "BaseException", "Exception", "ValueError", "TypeError", "IndexError",
-src/toolchain2/emit/cpp/emitter.py:1288: if attr == "add_argument" and owner_type == "ArgumentParser":
-src/toolchain2/emit/cpp/emitter.py:2661: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
+src/toolchain2/emit/cpp/emitter.py:1296: if attr == "add_argument" and owner_type == "ArgumentParser":
+src/toolchain2/emit/cpp/emitter.py:2669: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
 ```
 
 ### class_name / go (19)
@@ -45,19 +45,19 @@ src/toolchain2/emit/go/emitter.py:702: "Exception",
 src/toolchain2/emit/go/emitter.py:1281: if op == "Div" and left_rt == "Path" and right_rt == "str":
 src/toolchain2/emit/go/emitter.py:2252: if fn_name in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"):
 src/toolchain2/emit/go/emitter.py:2718: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"):
-src/toolchain2/emit/go/emitter.py:3965: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:4006: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:4026: if return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:4361: if return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:4624: elif base != "" and base not in ("object", "Exception", "BaseException"):
-src/toolchain2/emit/go/emitter.py:5128: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5157: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5248: elif ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5370: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5377: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5439: elif ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5442: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5457: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
+src/toolchain2/emit/go/emitter.py:3969: if ctx.current_return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:4010: if ctx.current_return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:4030: if return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:4365: if return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:4628: elif base != "" and base not in ("object", "Exception", "BaseException"):
+src/toolchain2/emit/go/emitter.py:5132: if ctx.current_return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:5161: if ctx.current_return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:5252: elif ctx.current_return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:5374: if ctx.current_return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:5381: if ctx.current_return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:5443: elif ctx.current_return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:5446: if ctx.current_return_type == "Exception":
+src/toolchain2/emit/go/emitter.py:5461: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
 ```
 
 ### class_name / ts (4)
@@ -75,9 +75,9 @@ src/toolchain2/emit/ts/emitter.py:1576: "Exception": "Error",
 src/toolchain2/emit/go/emitter.py:1169: ctx.imports_needed.add("math")
 src/toolchain2/emit/go/emitter.py:1172: ctx.imports_needed.add("math")
 src/toolchain2/emit/go/emitter.py:1324: ctx.imports_needed.add("math")
-src/toolchain2/emit/go/emitter.py:4883: ctx.imports_needed.add("os")
-src/toolchain2/emit/go/emitter.py:4889: ctx.imports_needed.add("os")
-src/toolchain2/emit/go/emitter.py:4904: ctx.imports_needed.add("os")
+src/toolchain2/emit/go/emitter.py:4887: ctx.imports_needed.add("os")
+src/toolchain2/emit/go/emitter.py:4893: ctx.imports_needed.add("os")
+src/toolchain2/emit/go/emitter.py:4908: ctx.imports_needed.add("os")
 ```
 
 ### module_name / rs (2)
@@ -96,7 +96,7 @@ src/toolchain2/emit/ts/emitter.py:122: "sys", "pyset_argv", "pyset_path",
 ### runtime_symbol / cpp (1)
 
 ```
-src/toolchain2/emit/cpp/emitter.py:1487: if rc in ("py_print", "py_len") and len(arg_strs) >= 1:
+src/toolchain2/emit/cpp/emitter.py:1495: if rc in ("py_print", "py_len") and len(arg_strs) >= 1:
 ```
 
 ### runtime_symbol / go (2)
