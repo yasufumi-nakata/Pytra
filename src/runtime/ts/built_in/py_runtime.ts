@@ -290,6 +290,7 @@ export function pyTruthy(value: unknown): boolean {
 
 /** len 境界の共通 try helper（未対応は null）。 */
 export function pyTryLen(value: unknown): number | null {
+  if (value instanceof Uint8Array) return value.length;
   const typeId = pyTypeId(value);
   switch (typeId) {
     case PY_TYPE_STRING:
@@ -298,8 +299,18 @@ export function pyTryLen(value: unknown): number | null {
     case PY_TYPE_MAP:
     case PY_TYPE_SET:
       return (value as Map<unknown, unknown> | Set<unknown>).size;
-    case PY_TYPE_OBJECT:
+    case PY_TYPE_OBJECT: {
+      // Check PYTRA_TRY_LEN hook first (e.g. _GrowBytes Proxy)
+      const tagged = asTagged(value);
+      if (tagged !== null) {
+        const hook = tagged[PYTRA_TRY_LEN];
+        if (typeof hook === "function") {
+          const out = hook.call(tagged);
+          if (typeof out === "number" && Number.isFinite(out)) return Math.trunc(out);
+        }
+      }
       return Object.keys(value as Record<string, unknown>).length;
+    }
     default:
       break;
   }
@@ -425,6 +436,11 @@ export function pyMod(a: number, b: number): number {
 
 /** Python の in 相当。 */
 export function pyIn(item: unknown, container: unknown): boolean {
+  if (container instanceof Uint8Array) {
+    const v = typeof item === 'number' ? item : Number(item);
+    for (let i = 0; i < container.length; i++) { if (container[i] === v) return true; }
+    return false;
+  }
   const typeId = pyTypeId(container);
   switch (typeId) {
     case PY_TYPE_STRING:
@@ -476,19 +492,89 @@ export function pyChr(code: number): string {
   return String.fromCodePoint(code);
 }
 
+// ---------------------------------------------------------------------------
+// Efficient byte buffer (Uint8Array-based to reduce memory usage 8x vs number[])
+// ---------------------------------------------------------------------------
+
+/** Growable byte buffer backed by Uint8Array (1 byte per element). */
+class _GrowBytes {
+  _d: Uint8Array;
+  _n: number;
+  constructor(init?: ArrayLike<number>) {
+    if (init && init.length > 0) {
+      this._d = new Uint8Array(init);
+      this._n = init.length;
+    } else {
+      this._d = new Uint8Array(16);
+      this._n = 0;
+    }
+  }
+  get length(): number { return this._n; }
+  push(v: number): number {
+    if (this._n === this._d.length) {
+      const nd = new Uint8Array(this._d.length << 1);
+      nd.set(this._d);
+      this._d = nd;
+    }
+    this._d[this._n++] = v & 255;
+    return this._n;
+  }
+  [Symbol.iterator]() { return this._d.subarray(0, this._n).values(); }
+  /** Snapshot current content as a Uint8Array view (no copy). */
+  _snap(): Uint8Array { return this._d.subarray(0, this._n); }
+  [PYTRA_TRY_LEN]() { return this._n; }
+}
+
+const _gbHandler: ProxyHandler<_GrowBytes> = {
+  get(t, p) {
+    if (typeof p === 'string' && p.length > 0) {
+      const c = p.charCodeAt(0);
+      if (c >= 48 && c <= 57) { // digit
+        const n = +p;
+        if (Number.isInteger(n) && n >= 0) return t._d[n];
+      }
+    }
+    const v = (t as unknown as Record<string | symbol, unknown>)[p];
+    return typeof v === 'function' ? (v as Function).bind(t) : v;
+  },
+  set(t, p, v) {
+    if (typeof p === 'string' && p.length > 0) {
+      const c = p.charCodeAt(0);
+      if (c >= 48 && c <= 57) {
+        const n = +p;
+        if (Number.isInteger(n) && n >= 0) { t._d[n] = v & 255; return true; }
+      }
+    }
+    (t as unknown as Record<string | symbol, unknown>)[p] = v;
+    return true;
+  },
+};
+
+function _mkGrowBuf(init?: ArrayLike<number>): number[] {
+  return new Proxy(new _GrowBytes(init), _gbHandler) as unknown as number[];
+}
+
 /** Python の bytearray 相当。size または number[] を受け取る。 */
 export function pyBytearray(arg: number | number[] = 0): number[] {
   if (typeof arg === 'number') {
     if (arg < 0) throw new Error("negative count");
-    return new Array<number>(arg).fill(0);
+    if (arg === 0) return _mkGrowBuf();
+    // Pre-sized: plain Uint8Array (supports indexed read/write and iteration natively)
+    return new Uint8Array(arg) as unknown as number[];
   }
-  return Array.from(arg);
+  // From array literal: convert to Uint8Array
+  return new Uint8Array(arg) as unknown as number[];
 }
 
 /** Python の bytes 相当。引数なし or ArrayLike<number> を受け取る。 */
 export function pyBytes(value?: ArrayLike<number>): number[] {
-  if (!value) return [];
-  return Array.from(value);
+  if (!value) return _mkGrowBuf();
+  if (value instanceof Uint8Array) return value as unknown as number[];
+  // Proxy over _GrowBytes: extract snapshot
+  const snap = (value as unknown as { _snap?: () => Uint8Array })._snap;
+  if (typeof snap === 'function') return snap.call(value) as unknown as number[];
+  // Regular number[] or other ArrayLike
+  return new Uint8Array(Array.from(value as unknown as Iterable<number>)) as unknown as number[];
 }
 
 /** Python の sep.join(items) 相当。 */
@@ -817,20 +903,34 @@ export function open(filePath: string, _mode?: string): { write(data: number[]):
   if (dir !== "" && dir !== ".") {
     mkdirSync(dir, { recursive: true });
   }
-  const buf: number[] = [];
+  const chunks: Uint8Array[] = [];
   return {
     write(data: number[]): void {
-      if (Array.isArray(data)) {
-        for (let i = 0; i < data.length; i++) {
-          buf.push(data[i] & 0xFF);
+      if (data instanceof Uint8Array) {
+        chunks.push(data);
+      } else {
+        // Check for Proxy over _GrowBytes (has _snap method)
+        const snap = (data as unknown as { _snap?: () => Uint8Array })._snap;
+        if (typeof snap === 'function') {
+          chunks.push(snap.call(data));
+        } else if (Array.isArray(data)) {
+          chunks.push(new Uint8Array(data));
         }
       }
     },
     close(): void {
-      writeFileSync(filePath, Buffer.from(buf));
+      const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+      const out = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const chunk of chunks) { out.set(chunk, offset); offset += chunk.length; }
+      writeFileSync(filePath, Buffer.from(out.buffer, out.byteOffset, out.byteLength));
     },
   };
 }
+
+/** Alias for open(), used by compiled pytra.utils modules. */
+export const pyopen = open;
+export type PyFile = ReturnType<typeof open>;
 
 // ---------------------------------------------------------------------------
 // Python math module wrappers (py-prefixed for emitter mapping)
@@ -1063,7 +1163,7 @@ export class PyPath {
     }
   }
   write_text(data: string): void { require("fs").writeFileSync(this._p, data, "utf8"); }
-  read_text(): string { return require("fs").readFileSync(this._p, "utf8"); }
+  read_text(encoding: string = "utf8"): string { return require("fs").readFileSync(this._p, "utf8"); }
 }
 
 export function Path(p: string | PyPath): PyPath {
@@ -1328,4 +1428,95 @@ export function pyglob(pattern: string): string[] {
     const entries: string[] = fs.readdirSync(dir);
     return entries.filter((e: string) => re.test(e)).map((e: string) => dir === "." ? e : dir + "/" + e);
   } catch { return []; }
+}
+
+// ---------------------------------------------------------------------------
+// Python dict/list builtin helpers
+// ---------------------------------------------------------------------------
+/** Python dict.update(other) — merge other into d in-place. */
+export function pyupdate<K, V>(d: Map<K, V>, other: Map<K, V>): void {
+  for (const [k, v] of other) d.set(k, v);
+}
+
+/** Python dict.pop(key, default?) — remove key from d and return its value. */
+export function pypop<K, V>(d: Map<K, V>, key: K, def: V | null = null): V | null {
+  const v = d.has(key) ? (d.get(key) as V) : def;
+  d.delete(key);
+  return v;
+}
+
+/** Python list.extend(other) — append all items from other to lst. */
+export function pyextend<T>(lst: T[], other: T[]): void {
+  for (const item of other) lst.push(item);
+}
+
+/** Python list.sort() — sort lst in-place. */
+export function pysort<T>(lst: T[]): void {
+  lst.sort((a: any, b: any) => a < b ? -1 : a > b ? 1 : 0);
+}
+
+/** Python list.clear() or dict.clear() — clear container in-place. */
+export function pyclear(c: Map<any, any> | any[]): void {
+  if (Array.isArray(c)) c.splice(0); else c.clear();
+}
+
+/** Python del d[key] — delete key from Map. */
+export function pydel<K>(d: Map<K, unknown>, key: K): void {
+  d.delete(key);
+}
+
+// ---------------------------------------------------------------------------
+// Python built-in constructors / dataclass helpers
+// ---------------------------------------------------------------------------
+/** Python dict() constructor — create empty Map. */
+export function dict<K = any, V = any>(): Map<K, V> { return new Map<K, V>(); }
+
+/** Python list() constructor — create empty array. */
+export function list<T = any>(): T[] { return []; }
+
+/** Python set() constructor — create empty Set (set_ to avoid JS reserved words). */
+export function set_<T = any>(): Set<T> { return new Set<T>(); }
+
+/** Python dataclasses.field(default_factory) — call factory and return value. */
+export function field<T>(factory: (() => T) | T): T {
+  return typeof factory === "function" ? (factory as () => T)() : factory;
+}
+
+/** Placeholder for Python Ellipsis (...) in type annotations like tuple[str, ...]. */
+export type ___ = any;
+
+// Python built-in type aliases for isinstance checks and type annotations
+// Each is both a callable value (for use as key= functions) and a type alias.
+export const bool = Boolean;
+export const str = String;
+export type str = string;
+export const int = Number;
+export type int = number;
+export const float = Number;
+export type float = number;
+
+// Python list.insert(i, val)
+export function pyinsert<T>(lst: T[], index: number, item: T): void {
+  lst.splice(index, 0, item);
+}
+// Python bool(x)
+export function pybool(x: any): boolean {
+  if (x === null || x === undefined || x === false || x === 0 || x === "") return false;
+  if (Array.isArray(x)) return x.length > 0;
+  if (x instanceof Map) return x.size > 0;
+  if (x instanceof Set) return x.size > 0;
+  return true;
+}
+// Python repr(x)
+export function pyrepr(x: any): string {
+  if (x === null) return "None";
+  if (x === true) return "True";
+  if (x === false) return "False";
+  if (typeof x === "string") return JSON.stringify(x);
+  if (Array.isArray(x)) return "[" + x.map(pyrepr).join(", ") + "]";
+  if (x instanceof Map) {
+    const entries = Array.from(x.entries()).map(([k, v]) => pyrepr(k) + ": " + pyrepr(v));
+    return "{" + entries.join(", ") + "}";
+  }
+  return String(x);
 }
