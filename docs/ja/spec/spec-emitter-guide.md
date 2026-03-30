@@ -1328,6 +1328,17 @@ Python の `>>` は常に符号なし右シフトとして動作する（Python 
 
 実例: TS emitter が `src/pytra/utils/png.py` の CRC32 計算で `>>` → `>>>` に変換して解決した（2026-03-30）。
 
+### npm / pip / cargo 等のパッケージマネージャ依存は禁止？
+
+**禁止。** 生成コードも runtime もビルドツールも、外部パッケージマネージャへの依存を持ってはならない。
+
+- `npm install` / `npx` 禁止。`tsc` と `node` はシステムにグローバルインストール済みのものを使う
+- `pip install` 禁止。Python 標準ライブラリと `pytra.std.*` のみ使用可
+- `cargo add` 禁止。Rust 標準ライブラリのみ
+- 生成コードが外部クレート / npm パッケージ / pip パッケージに依存する場合は設計が間違っている
+
+parity check も同様。`runtime_parity_check_fast.py` は `tsc` + `node`、`g++`、`go`、`rustc` 等のシステムツールのみ使用する。
+
 ### sample の生成コードが汚い。どこまで品質を気にすべき？
 
 `sample/<lang>/` は Pytra の展示物。§1.4 の NG パターンを全て排除し、ターゲット言語のプログラマが読んで違和感がないレベルを目指すこと。具体的には:
