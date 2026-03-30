@@ -559,11 +559,11 @@ export function pyBytearray(arg: number | number[] = 0): number[] {
   if (typeof arg === 'number') {
     if (arg < 0) throw new Error("negative count");
     if (arg === 0) return _mkGrowBuf();
-    // Pre-sized: plain Uint8Array (supports indexed read/write and iteration natively)
-    return new Uint8Array(arg) as unknown as number[];
+    // Pre-sized: use growable buffer so push/indexed-write work
+    return _mkGrowBuf(new Uint8Array(arg));
   }
-  // From array literal: convert to Uint8Array
-  return new Uint8Array(arg) as unknown as number[];
+  // From array literal: use growable buffer so push/indexed-write work
+  return _mkGrowBuf(arg);
 }
 
 /** Python の bytes 相当。引数なし or ArrayLike<number> を受け取る。 */
