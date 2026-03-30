@@ -103,6 +103,54 @@ rc_from_value(dict<str, int64>{...})
 rc_from_value(Foo{...})
 ```
 
+**冗長な出力の禁止:**
+
+生成コードはターゲット言語のプログラマが読んで違和感がないレベルの品質を維持すること。`sample/` に出力されるコードは Pytra の展示物であり、冗長な記述は印象を損なう。
+
+各 emitter 担当は `sample/<lang>/` の生成コードを目視確認し、以下の NG パターンを除去すること。
+
+```cpp
+// NG: POD 型リテラルに explicit cast
+int64 row_sum = int64(0);
+float64 x = float64(1.5);
+bool flag = bool(true);
+
+// OK: リテラルをそのまま出力
+int64 row_sum = 0;
+float64 x = 1.5;
+bool flag = true;
+```
+
+```cpp
+// NG: 不要な str() ラッパー
+str name = str("hello");
+
+// OK: 文字列リテラルをそのまま出力
+str name = "hello";
+```
+
+```go
+// NG: 不要な型変換
+var count int64 = int64(0)
+
+// OK: リテラルをそのまま出力
+var count int64 = 0
+```
+
+```typescript
+// NG: 不要な Number() ラッパー
+let x: number = Number(0);
+
+// OK: リテラルをそのまま出力
+let x: number = 0;
+```
+
+一般規則:
+- EAST3 の `Call(Name("<pod_type>"), [Constant(value)])` は、引数がリテラル1つの場合、型コンストラクタ呼び出しではなくリテラルそのものを出力する
+- `str(literal)` は文字列リテラルとして出力する
+- `bool(True)` / `bool(False)` は `true` / `false` として出力する
+- 上記はターゲット言語の型推論で曖昧にならない場合のみ。型注釈が必要な言語では注釈で型を示し、リテラルは素で出力する
+
 ### runtime_call_adapter_kind
 
 Call ノードの `runtime_call_adapter_kind` は、runtime 関数の呼び出し規約を示す。EAST3 が `runtime_module_id` の所属グループから自動導出する。
