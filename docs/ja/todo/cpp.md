@@ -24,10 +24,11 @@
 
 文脈: [docs/ja/plans/plan-cpp-literal-cast.md](../plans/plan-cpp-literal-cast.md)
 
-`_emit_constant` が整数リテラルを常に `int64(0)` のようにキャスト付きで出力している。C++ の integer promotion 規則を考慮し、安全な場合のみキャストを省略する。
+`_emit_constant` が整数リテラルを常に `int64(0)` のようにキャスト付きで出力している。CommonRenderer に `literal_nowrap_ranges` テーブルを追加し、各言語共通で判定する仕組みにする。
 
-1. [ ] [ID: P0-CPP-LITERAL-S1] `_emit_constant` でリテラル値と代入先型を考慮し、安全な場合のみキャストを省略する — `int32`/`int64` かつ `int` 範囲内は省略、それ以外（`int8`/`int16`/`uint*`/大きな値）は維持
-2. [ ] [ID: P0-CPP-LITERAL-S2] fixture + sample parity に影響がないことを確認する
+1. [ ] [ID: P0-CPP-LITERAL-S1] CommonRenderer に `literal_nowrap_ranges` テーブル読み込み + `render_constant` 拡張を実装する
+2. [ ] [ID: P0-CPP-LITERAL-S2] C++ の profile/mapping に `literal_nowrap_ranges` を設定し、`_emit_constant` の整数キャストロジックを CommonRenderer へ委譲する
+3. [ ] [ID: P0-CPP-LITERAL-S3] fixture + sample parity に影響がないことを確認する
 
 ### P5-CPP-PARENS: C++ emitter に演算子優先順位テーブルを追加する
 
@@ -41,11 +42,16 @@
 
 文脈: [docs/ja/plans/p6-cpp-fixture-parity-failures.md](../plans/p6-cpp-fixture-parity-failures.md)
 
-1. [ ] [ID: P6-CPP-FIXPAR-S1] `any_none` の `output mismatch` を解消する
-2. [ ] [ID: P6-CPP-FIXPAR-S2] `integer_promotion` の `output mismatch` を解消する
-3. [ ] [ID: P6-CPP-FIXPAR-S3] `nested_closure_def` の closure 参照解決を修正する
-4. [ ] [ID: P6-CPP-FIXPAR-S4] `ok_generator_tuple_target` の `py_zip` / `py_sum` 再定義を解消する
-5. [ ] [ID: P6-CPP-FIXPAR-S5] `ok_typed_varargs_representative` の const 修飾不整合を解消する
+1. [x] [ID: P6-CPP-FIXPAR-S1] `any_none` の `output mismatch` を解消する
+   - 完了: `is None` / `is not None` の C++ emit を `py_is_none(...)` ベースへ修正し、`PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --targets cpp --case-root fixture --east3-opt-level 2 any_none` で PASS を確認
+2. [x] [ID: P6-CPP-FIXPAR-S2] `integer_promotion` の `output mismatch` を解消する
+   - 完了: stale な integer `numeric_promotion` cast を C++ emitter 側で無視し、`PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --targets cpp --case-root fixture --east3-opt-level 2 integer_promotion` で PASS を確認
+3. [x] [ID: P6-CPP-FIXPAR-S3] `nested_closure_def` の closure 参照解決を修正する
+   - 完了: local closure 名を visible local scope に登録し、再帰 closure と sibling closure 呼び出しで `::rec` / `::inner` を出さないよう修正。`runtime_parity_check_fast.py ... nested_closure_def` で PASS を確認
+4. [x] [ID: P6-CPP-FIXPAR-S4] `ok_generator_tuple_target` の `py_zip` / `py_sum` 再定義を解消する
+   - 完了: `src/runtime/cpp/built_in/zip_ops.h` を `list_ops.h` への互換 shim に変更し、重複定義を解消。`runtime_parity_check_fast.py ... ok_generator_tuple_target` で PASS を確認
+5. [x] [ID: P6-CPP-FIXPAR-S5] `ok_typed_varargs_representative` の const 修飾不整合を解消する
+   - 完了: call graph を見て mutable param を signature へ反映するよう C++ emitter を補正し、`runtime_parity_check_fast.py ... ok_typed_varargs_representative` で PASS を確認
 
 ### P10-CPP-TYPETABLE-REDESIGN: g_type_table と destructor dispatch の再設計
 
