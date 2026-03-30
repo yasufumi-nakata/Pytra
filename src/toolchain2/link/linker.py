@@ -71,21 +71,31 @@ def _module_id_from_doc(
     runtime_east_root: Path,
 ) -> str:
     """EAST3 doc から module_id を導出する。"""
+    def _normalize_package_module_id(module_id: str) -> str:
+        if module_id.endswith(".__init__"):
+            return module_id[: -len(".__init__")]
+        return module_id
+
     meta_val = east_doc.get("meta")
     if isinstance(meta_val, dict):
         mid_val = meta_val.get("module_id")
         if isinstance(mid_val, str) and mid_val.strip() != "":
-            return mid_val.strip()
+            return _normalize_package_module_id(mid_val.strip())
 
     source_path_val = east_doc.get("source_path")
     if isinstance(source_path_val, str) and source_path_val.strip() != "":
         source_path_norm = source_path_val.strip().replace("\\", "/")
-        if source_path_norm.startswith("src/toolchain2/") and source_path_norm.endswith(".py"):
-            rel = source_path_norm.replace("src/", "").replace(".py", "")
-            module_id = rel.replace("/", ".")
-            if module_id != "":
-                return module_id
-        if source_path_norm == "src/pytra-cli2.py":
+        # Handle both relative (src/toolchain2/...) and absolute (/path/to/src/toolchain2/...) paths
+        _tc2_markers = ("src/toolchain2/",)
+        for marker in _tc2_markers:
+            idx = source_path_norm.find(marker)
+            if idx >= 0 and source_path_norm.endswith(".py"):
+                rel = source_path_norm[idx + len("src/"):].replace(".py", "")
+                module_id = rel.replace("/", ".")
+                module_id = _normalize_package_module_id(module_id)
+                if module_id != "":
+                    return module_id
+        if source_path_norm.endswith("src/pytra-cli2.py") or source_path_norm == "src/pytra-cli2.py":
             return "pytra_cli2"
 
     # Runtime .east ファイルの場合はパスから導出
@@ -97,6 +107,7 @@ def _module_id_from_doc(
         if rel_str.endswith(".east"):
             rel_str = rel_str.replace(".east", "")
         module_id = "pytra." + rel_str.replace("/", ".")
+        module_id = _normalize_package_module_id(module_id)
         if module_id != "":
             return module_id
     except ValueError:
@@ -115,6 +126,7 @@ def _module_id_from_doc(
     elif name.endswith(".json"):
         name = name.replace(".json", "")
     name = name.replace("-", "_").strip()
+    name = _normalize_package_module_id(name)
     if name == "":
         raise RuntimeError("failed to infer module_id from path: " + file_path)
     return name
@@ -187,6 +199,9 @@ def _is_whitelisted_missing_dependency(module: LinkedModule, module_id: str) -> 
     if _is_link_external_module(module_id):
         return True
     if module.module_kind == "runtime" and not module_id.startswith("toolchain2."):
+        return True
+    # Python stdlib modules (no dot → top-level package, not toolchain2/pytra)
+    if "." not in module_id and not module_id.startswith("toolchain2"):
         return True
     return False
 
@@ -527,7 +542,11 @@ def _type_id_const_name(fqcn: str) -> str:
             chars.append("_")
         chars.append(ch.upper())
         prev_is_lower = is_lower
-    return "".join(chars) + "_TID"
+    result = "".join(chars) + "_TID"
+    # C++ identifiers must not start with a digit (e.g. module "18_foo" → "18_FOO_TID").
+    if result and "0" <= result[0] and result[0] <= "9":
+        result = "_" + result
+    return result
 
 
 def _make_name(id_value: str, resolved_type: str = "") -> dict[str, JsonVal]:
