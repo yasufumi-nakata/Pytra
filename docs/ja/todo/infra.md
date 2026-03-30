@@ -20,13 +20,4 @@
 
 ## 未完了タスク
 
-### P20-INT32: int のデフォルトサイズを int64 → int32 に変更
-
-文脈: [docs/ja/plans/p4-int32-default.md](../plans/p4-int32-default.md)
-
-前提: Go selfhost 完了後に着手。影響範囲が大きいため P4 → P20 に降格。
-
-1. [ ] [ID: P20-INT32-S1] spec-east.md / spec-east2.md の `int` → `int32` 正規化ルール変更
-2. [ ] [ID: P20-INT32-S2] resolve の型正規化を修正
-3. [ ] [ID: P20-INT32-S3] sample 18 件のオーバーフロー確認 + 必要な箇所を `int64` に明示
-4. [ ] [ID: P20-INT32-S4] golden 再生成 + 全 emitter parity 確認
+（現在未完了タスクなし。P20-INT32 は [plans/p4-int32-default.md](../plans/p4-int32-default.md) に保留中。再開時にここへ戻す。）
