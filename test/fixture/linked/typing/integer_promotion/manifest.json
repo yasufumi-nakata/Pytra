@@ -1,0 +1,83 @@
+{
+  "schema": "pytra.link_output.v1",
+  "target": "cpp",
+  "dispatch_mode": "native",
+  "entry_modules": [
+    "integer_promotion"
+  ],
+  "modules": [
+    {
+      "module_id": "integer_promotion",
+      "input": "/workspace/Pytra/test/fixture/east3-opt/typing/integer_promotion.east3",
+      "output": "east3/integer_promotion.east3.json",
+      "source_path": "test/fixture/source/py/typing/integer_promotion.py",
+      "is_entry": true,
+      "module_kind": "user"
+    },
+    {
+      "module_id": "pytra.built_in.io_ops",
+      "input": "/workspace/Pytra/src/runtime/east/built_in/io_ops.east",
+      "output": "east3/pytra/built_in/io_ops.east3.json",
+      "source_path": "/workspace/Pytra/src/pytra/built_in/io_ops.py",
+      "is_entry": false,
+      "module_kind": "runtime"
+    },
+    {
+      "module_id": "pytra.built_in.type_id_table",
+      "input": "__linked_helper__/pytra/built_in/type_id_table.east3.json",
+      "output": "east3/pytra/built_in/type_id_table.east3.json",
+      "source_path": "src/pytra/built_in/type_id_table.py",
+      "is_entry": false,
+      "module_kind": "helper",
+      "helper_id": "pytra.built_in.type_id_table",
+      "owner_module_id": "",
+      "generated_by": "linked_optimizer"
+    }
+  ],
+  "global": {
+    "type_id_table": {
+      "BaseException": 9,
+      "Exception": 10,
+      "IndexError": 14,
+      "KeyError": 15,
+      "RuntimeError": 11,
+      "TypeError": 13,
+      "ValueError": 12,
+      "object": 8
+    },
+    "type_id_base_map": {
+      "BaseException": 8,
+      "Exception": 9,
+      "IndexError": 10,
+      "KeyError": 10,
+      "RuntimeError": 10,
+      "TypeError": 10,
+      "ValueError": 10,
+      "object": 8
+    },
+    "call_graph": {
+      "integer_promotion::__main__": [
+        "integer_promotion::_case_main"
+      ],
+      "integer_promotion::_case_main": [],
+      "pytra.built_in.io_ops::py_print": []
+    },
+    "sccs": [
+      [
+        "integer_promotion::_case_main"
+      ],
+      [
+        "integer_promotion::__main__"
+      ],
+      [
+        "pytra.built_in.io_ops::py_print"
+      ]
+    ],
+    "non_escape_summary": {},
+    "container_ownership_hints_v1": {}
+  },
+  "diagnostics": {
+    "warnings": [],
+    "errors": []
+  }
+}
