@@ -5,7 +5,7 @@
 # P1-PHP-EMITTER: Php emitter を toolchain2 に新規実装する
 
 最終更新: 2026-03-31
-ステータス: 未着手
+ステータス: S1〜S4 完了、S5（parity）未着手
 
 ## 背景
 

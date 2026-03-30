@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "language": "php",
+
+  "types": {
+    "int8": "int",
+    "uint8": "int",
+    "int16": "int",
+    "uint16": "int",
+    "int32": "int",
+    "uint32": "int",
+    "int64": "int",
+    "uint64": "int",
+    "float32": "float",
+    "float64": "float",
+    "bool": "bool",
+    "str": "string",
+    "None": "void",
+    "Any": "mixed",
+    "Path": "string"
+  },
+
+  "generic_types": {
+    "list": "array",
+    "dict": "array",
+    "set": "array",
+    "tuple": "array",
+    "optional": "?{T}"
+  },
+
+  "operators": {
+    "bin": {
+      "FloorDiv": "__floordiv",
+      "Pow": "**",
+      "Add": "+",
+      "Sub": "-",
+      "Mult": "*",
+      "Div": "/",
+      "Mod": "%",
+      "BitAnd": "&",
+      "BitOr": "|",
+      "BitXor": "^",
+      "LShift": "<<",
+      "RShift": ">>"
+    },
+    "cmp": {
+      "Eq": "===",
+      "NotEq": "!==",
+      "Lt": "<",
+      "LtE": "<=",
+      "Gt": ">",
+      "GtE": ">="
+    },
+    "bool": {
+      "And": "&&",
+      "Or": "||"
+    },
+    "unary": {
+      "Not": "!",
+      "USub": "-",
+      "UAdd": "+",
+      "Invert": "~"
+    }
+  },
+
+  "syntax": {
+    "if": "if ({cond}) {",
+    "elif": "} elseif ({cond}) {",
+    "else": "} else {",
+    "while": "while ({cond}) {",
+    "block_close": "}",
+    "return": "return",
+    "break": "break",
+    "continue": "continue",
+    "try": "try {",
+    "raise": "throw",
+    "comment_prefix": "//"
+  },
+
+  "lowering": {
+    "tuple_unpack_style": "individual_temps",
+    "container_covariance": false,
+    "closure_style": "closure_syntax",
+    "with_style": "try_finally",
+    "property_style": "method_call",
+    "swap_style": "temp_var",
+    "none_literal": "null",
+    "bool_literals": ["true", "false"],
+    "self_keyword": "$this",
+    "type_position": "prefix",
+    "condition_parens": true,
+    "block_braces": "braces",
+    "stmt_terminator": ";",
+    "string_type_owned": true,
+    "exception_style": "native_throw"
+  }
+}
