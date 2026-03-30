@@ -635,6 +635,12 @@ namespace Pytra.CsModule
             return new PyFile(path, mode);
         }
 
+        public static PyFile open(object pathLike, object modeLike, object encoding)
+        {
+            _ = encoding;
+            return open(pathLike, modeLike);
+        }
+
         public static PyFile open(object pathLike)
         {
             return open(pathLike, "r");
@@ -1106,7 +1112,7 @@ namespace Pytra.CsModule
 
         private static string py_format_float(double value)
         {
-            string text = value.ToString("G15", CultureInfo.InvariantCulture);
+            string text = value.ToString("G17", CultureInfo.InvariantCulture).Replace("E", "e");
             if (!text.Contains(".") && !text.Contains("E") && !text.Contains("e"))
             {
                 return text + ".0";
@@ -1154,6 +1160,15 @@ namespace Pytra.CsModule
             {
                 return text;
             }
+            MethodInfo strMethod = value.GetType().GetMethod("__str__", BindingFlags.Instance | BindingFlags.Public, null, Type.EmptyTypes, null);
+            if (strMethod != null && strMethod.ReturnType == typeof(string))
+            {
+                object rendered = strMethod.Invoke(value, Array.Empty<object>());
+                if (rendered is string renderedText)
+                {
+                    return renderedText;
+                }
+            }
             if (value is Array array)
             {
                 return py_format_sequence(array);
@@ -1168,6 +1183,121 @@ namespace Pytra.CsModule
         public static string py_to_string(object value)
         {
             return py_display(value);
+        }
+
+        public static string lstrip(string value, string chars)
+        {
+            string text = value ?? "";
+            if (string.IsNullOrEmpty(chars))
+            {
+                return text.TrimStart();
+            }
+            return text.TrimStart(chars.ToCharArray());
+        }
+
+        public static Exception SystemExit(object code)
+        {
+            string text = py_to_string(code);
+            return new Exception(text);
+        }
+
+        public static string py_chr(object codeLike)
+        {
+            int code = Convert.ToInt32(codeLike, CultureInfo.InvariantCulture);
+            return char.ConvertFromUtf32(code);
+        }
+
+        public static string repeat_string(string text, object timesLike)
+        {
+            int times = Math.Max(0, Convert.ToInt32(timesLike, CultureInfo.InvariantCulture));
+            if (times == 0 || string.IsNullOrEmpty(text))
+            {
+                return "";
+            }
+            return string.Concat(System.Linq.Enumerable.Repeat(text, times));
+        }
+
+        public static long find(string text, string needle)
+        {
+            return find(text, needle, 0L);
+        }
+
+        public static long find(string text, string needle, object startLike)
+        {
+            string haystack = text ?? "";
+            string target = needle ?? "";
+            int start = Math.Max(0, Convert.ToInt32(startLike, CultureInfo.InvariantCulture));
+            if (start > haystack.Length)
+            {
+                return -1L;
+            }
+            return haystack.IndexOf(target, start, StringComparison.Ordinal);
+        }
+
+        public static long rfind(string text, string needle)
+        {
+            string haystack = text ?? "";
+            string target = needle ?? "";
+            return haystack.LastIndexOf(target, StringComparison.Ordinal);
+        }
+
+        public static long rfind(string text, string needle, object startLike)
+        {
+            string haystack = text ?? "";
+            string target = needle ?? "";
+            int start = Math.Max(0, Convert.ToInt32(startLike, CultureInfo.InvariantCulture));
+            if (start >= haystack.Length)
+            {
+                return haystack.LastIndexOf(target, StringComparison.Ordinal);
+            }
+            return haystack.LastIndexOf(target, start, StringComparison.Ordinal);
+        }
+
+        public static List<string> split(string text)
+        {
+            return split(text, null);
+        }
+
+        public static List<string> split(string text, string sep)
+        {
+            string source = text ?? "";
+            if (string.IsNullOrEmpty(sep))
+            {
+                return new List<string>(source.Split((char[])null, StringSplitOptions.RemoveEmptyEntries));
+            }
+            return new List<string>(source.Split(new[] { sep }, StringSplitOptions.None));
+        }
+
+        public static bool isspace(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return false;
+            }
+            foreach (char ch in value)
+            {
+                if (!char.IsWhiteSpace(ch))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public static bool isalnum(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return false;
+            }
+            foreach (char ch in value)
+            {
+                if (!char.IsLetterOrDigit(ch))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public static string py_format(object value, string spec)

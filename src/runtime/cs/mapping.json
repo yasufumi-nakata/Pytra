@@ -21,6 +21,8 @@
     "py_float_from_str": "double.Parse",
     "static_cast": "__CAST__",
     "cast": "__CAST__",
+    "lstrip": "py_runtime.lstrip",
+    "SystemExit": "py_runtime.SystemExit",
     "bytearray_ctor": "py_runtime.py_bytearray",
     "bytes_ctor": "py_runtime.py_bytes",
     "sum": "py_runtime.sum",
@@ -96,6 +98,7 @@
     "IndexError": "Exception",
     "KeyError": "Exception",
     "NameError": "Exception",
+    "SystemExit": "Exception",
     "Path": "string"
   },
   "skip_modules": [
