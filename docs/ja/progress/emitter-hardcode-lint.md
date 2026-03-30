@@ -5,7 +5,7 @@
 # emitter ハードコード違反マトリクス
 
 > 機械生成ファイル。`python3 tools/check/check_emitter_hardcode_lint.py` で更新する。
-> 生成日時: 2026-03-30T16:04:20
+> 生成日時: 2026-03-31T05:00:13
 > [関連リンク](./index.md)
 
 emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名・クラス名等を文字列で直書きしている箇所を grep で検出したマトリクス。
@@ -21,16 +21,16 @@ emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名
 
 | カテゴリ | cpp | rs | cs | ps1 | js | ts | dart | go | java | swift | kotlin | ruby | lua | scala | php | nim | julia | zig |
 |--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| module name | 🟩 | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | 🟥 | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| runtime symbol | 🟥 | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | 🟥 | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| target const | 🟩 | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| prefix match | 🟩 | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| class name | 🟥 | 🟥 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | 🟥 | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| Python syntax | 🟩 | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| type_id | 🟥 | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| **🟩 PASS** | 4 | 6 | 6 | — | 7 | 7 | — | 4 | 7 | — | — | — | — | — | — | — | — | — |
-| **🟥 FAIL** | 3 | 1 | 1 | — | — | — | — | 3 | — | — | — | — | — | — | — | — | — | — |
-| **⬜ 未実装** | — | — | — | 7 | — | — | 7 | — | — | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 |
+| module name | 🟩 | 🟩 | 🟩 | ⬜ | 🟥 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ |
+| runtime symbol | 🟥 | 🟩 | 🟩 | ⬜ | 🟥 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ |
+| target const | 🟩 | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ |
+| prefix match | 🟩 | 🟩 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟩 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ |
+| class name | 🟥 | 🟩 | 🟥 | ⬜ | 🟥 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟥 | 🟥 | ⬜ | 🟥 | 🟥 | ⬜ | ⬜ |
+| Python syntax | 🟩 | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟥 | 🟩 | ⬜ | 🟩 | 🟥 | ⬜ | ⬜ |
+| type_id | 🟥 | 🟩 | 🟥 | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ | 🟩 | 🟩 | ⬜ | 🟩 | 🟩 | ⬜ | ⬜ |
+| **🟩 PASS** | 4 | 7 | 4 | — | 4 | 4 | — | 7 | 7 | — | — | 5 | 5 | — | 6 | 5 | — | — |
+| **🟥 FAIL** | 3 | — | 3 | — | 3 | 3 | — | — | — | — | — | 2 | 2 | — | 1 | 2 | — | — |
+| **⬜ 未実装** | — | — | — | 7 | — | — | 7 | — | — | 7 | 7 | — | — | 7 | — | — | 7 | 7 |
 
 ## 詳細
 
@@ -38,72 +38,115 @@ emitter が EAST3 の情報を使わず、モジュール名・runtime 関数名
 
 ```
 src/toolchain2/emit/cpp/emitter.py:73: "BaseException", "Exception", "ValueError", "TypeError", "IndexError",
-src/toolchain2/emit/cpp/emitter.py:1324: if attr == "add_argument" and owner_type == "ArgumentParser":
-src/toolchain2/emit/cpp/emitter.py:2717: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
+src/toolchain2/emit/cpp/emitter.py:1307: if attr == "add_argument" and owner_type == "ArgumentParser":
+src/toolchain2/emit/cpp/emitter.py:2665: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
 ```
 
-### class_name / cs (1)
+### class_name / cs (7)
 
 ```
-src/toolchain2/emit/cs/emitter.py:295: type_name = "Exception"
+src/toolchain2/emit/cs/emitter.py:263: if resolved_type == "Path" and resolved_type in ctx.import_alias_modules:
+src/toolchain2/emit/cs/emitter.py:573: if owner_type == "Path" and attr_name in ("parent", "parents", "name", "suffix", "stem"):
+src/toolchain2/emit/cs/emitter.py:718: if func_name in ("Exception", "BaseException", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError", "Nam
+src/toolchain2/emit/cs/emitter.py:807: if attr_name == "Path":
+src/toolchain2/emit/cs/emitter.py:831: if func_name == "Path" and func_name in ctx.import_alias_modules:
+src/toolchain2/emit/cs/emitter.py:1234: type_name = "Exception"
+src/toolchain2/emit/cs/emitter.py:1590: if ctx.current_class_name == "Path" and _str(node, "name") == "joinpath":
 ```
 
-### class_name / go (19)
+### class_name / lua (5)
 
 ```
-src/toolchain2/emit/go/emitter.py:107: "ArgumentParser",
-src/toolchain2/emit/go/emitter.py:681: "Exception": (10, 15),
-src/toolchain2/emit/go/emitter.py:731: "Exception",
-src/toolchain2/emit/go/emitter.py:1317: if op == "Div" and left_rt == "Path" and right_rt == "str":
-src/toolchain2/emit/go/emitter.py:2314: if fn_name in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"):
-src/toolchain2/emit/go/emitter.py:2787: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"):
-src/toolchain2/emit/go/emitter.py:4111: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:4152: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:4172: if return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:4507: if return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:4770: elif base != "" and base not in ("object", "Exception", "BaseException"):
-src/toolchain2/emit/go/emitter.py:5302: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5331: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5422: elif ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5544: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5551: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5613: elif ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5616: if ctx.current_return_type == "Exception":
-src/toolchain2/emit/go/emitter.py:5631: if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "s
+src/toolchain2/emit/lua/emitter.py:145: "Exception", "BaseException", "RuntimeError", "ValueError",
+src/toolchain2/emit/lua/emitter.py:273: if owner_rt == "Path":
+src/toolchain2/emit/lua/emitter.py:466: if owner_rt == "Path":
+src/toolchain2/emit/lua/emitter.py:588: if op == "Div" and (left_rt == "Path" or right_rt == "Path"):
+src/toolchain2/emit/lua/emitter.py:1339: if base_name != "" and base_name not in ("object", "Exception", "BaseException"):
 ```
 
-### class_name / rs (1)
+### class_name / nim (1)
 
 ```
-src/toolchain2/emit/rs/emitter.py:653: if obj_type == "Path" and attr in ("name", "stem", "suffix"):
+src/toolchain2/emit/nim/emitter.py:154: "Exception", "BaseException", "RuntimeError", "ValueError",
 ```
 
-### module_name / go (6)
+### class_name / php (2)
 
 ```
-src/toolchain2/emit/go/emitter.py:1200: ctx.imports_needed.add("math")
-src/toolchain2/emit/go/emitter.py:1203: ctx.imports_needed.add("math")
-src/toolchain2/emit/go/emitter.py:1360: ctx.imports_needed.add("math")
-src/toolchain2/emit/go/emitter.py:5057: ctx.imports_needed.add("os")
-src/toolchain2/emit/go/emitter.py:5063: ctx.imports_needed.add("os")
-src/toolchain2/emit/go/emitter.py:5078: ctx.imports_needed.add("os")
+src/toolchain2/emit/php/emitter.py:143: "Exception", "BaseException", "RuntimeError", "ValueError",
+src/toolchain2/emit/php/emitter.py:1178: if exc_rt in ("Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"):
+```
+
+### class_name / ruby (1)
+
+```
+src/toolchain2/emit/ruby/emitter.py:131: "Exception", "RuntimeError", "ValueError", "TypeError",
+```
+
+### class_name / ts (4)
+
+```
+src/toolchain2/emit/ts/emitter.py:109: "Path", "PyPath", "py_math_tau",
+src/toolchain2/emit/ts/emitter.py:112: "ArgumentParser",
+src/toolchain2/emit/ts/emitter.py:232: "Exception", "BaseException", "RuntimeError", "ValueError",
+src/toolchain2/emit/ts/emitter.py:1987: _BUILTIN_EXC_MAP["Exception"] = "Error"
+```
+
+### module_name / ts (1)
+
+```
+src/toolchain2/emit/ts/emitter.py:116: "sys", "pyset_argv", "pyset_path",
+```
+
+### prefix_match / cs (3)
+
+```
+src/toolchain2/emit/cs/emitter.py:140: module_id[len("pytra.std."):] if module_id.startswith("pytra.std.") else "",
+src/toolchain2/emit/cs/emitter.py:141: module_id[len("pytra.built_in."):] if module_id.startswith("pytra.built_in.") else "",
+src/toolchain2/emit/cs/emitter.py:163: if module_id.startswith("pytra.std."):
+```
+
+### prefix_match / lua (2)
+
+```
+src/toolchain2/emit/lua/emitter.py:1645: if module_id.startswith("pytra.built_in."):
+src/toolchain2/emit/lua/emitter.py:1730: if isinstance(module_id, str) and module_id.startswith("pytra.built_in."):
+```
+
+### python_syntax / nim (1)
+
+```
+src/toolchain2/emit/nim/emitter.py:891: if attr == "__init__" and isinstance(owner_node, dict) and _str(owner_node, "repr") == "super()":
+```
+
+### python_syntax / ruby (2)
+
+```
+src/toolchain2/emit/ruby/emitter.py:757: if isinstance(owner_node, dict) and _str(owner_node, "repr") == "super()":
+src/toolchain2/emit/ruby/emitter.py:1644: _emit(ctx, "super()")
 ```
 
 ### runtime_symbol / cpp (1)
 
 ```
-src/toolchain2/emit/cpp/emitter.py:1539: if rc in ("py_print", "py_len") and len(arg_strs) >= 1:
+src/toolchain2/emit/cpp/emitter.py:1532: if rc in ("py_print", "py_len") and len(arg_strs) >= 1:
 ```
 
-### runtime_symbol / go (2)
+### runtime_symbol / ts (1)
 
 ```
-src/toolchain2/emit/go/emitter.py:2447: if dispatch == "py_print" or bn == "print":
-src/toolchain2/emit/go/emitter.py:2451: if dispatch == "py_len" or bn == "len":
+src/toolchain2/emit/ts/emitter.py:115: "perf_counter",
 ```
 
 ### type_id / cpp (1)
 
 ```
-src/toolchain2/emit/cpp/emitter.py:2122: if tid == "" and expected_name.startswith("PYTRA_TID_"):
+src/toolchain2/emit/cpp/emitter.py:2084: if tid == "" and expected_name.startswith("PYTRA_TID_"):
+```
+
+### type_id / cs (2)
+
+```
+src/toolchain2/emit/cs/emitter.py:328: if type_name.startswith("PYTRA_TID_"):
+src/toolchain2/emit/cs/emitter.py:373: if ident.startswith("PYTRA_TID_"):
 ```
