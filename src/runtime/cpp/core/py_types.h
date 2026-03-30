@@ -143,6 +143,33 @@ static inline set<T> rc_set_copy_value(const Object<set<T>>& values) {
     return *values;
 }
 
+// rc_from_value: 汎用コンテナ RC ラッパー (P3-CR-CPP-S7)。
+// emitter は型に関わらず rc_from_value(...) のみを使い、型ごとの分岐を持たない。
+template <class T>
+static inline Object<list<T>> rc_from_value(list<T> values) {
+    return make_object<list<T>>(PYTRA_TID_LIST, ::std::move(values));
+}
+template <class T>
+static inline Object<list<T>> rc_from_value(Object<list<T>> v) {
+    return v;
+}
+template <class K, class V>
+static inline Object<dict<K, V>> rc_from_value(dict<K, V> values) {
+    return make_object<dict<K, V>>(PYTRA_TID_DICT, ::std::move(values));
+}
+template <class K, class V>
+static inline Object<dict<K, V>> rc_from_value(Object<dict<K, V>> v) {
+    return v;
+}
+template <class T>
+static inline Object<set<T>> rc_from_value(set<T> values) {
+    return make_object<set<T>>(PYTRA_TID_SET, ::std::move(values));
+}
+template <class T>
+static inline Object<set<T>> rc_from_value(Object<set<T>> v) {
+    return v;
+}
+
 // POD boxing for Object<void> (= object)
 // These create a heap-allocated boxed value wrapped in ControlBlock.
 template<typename T>

@@ -581,12 +581,8 @@ def _uses_ref_container_storage(ctx: CppEmitContext, node: JsonVal) -> bool:
 
 
 def _wrap_container_value_expr(resolved_type: str, value_expr: str) -> str:
-    if resolved_type.startswith("list["):
-        return "rc_list_from_value(" + value_expr + ")"
-    if resolved_type.startswith("dict["):
-        return "rc_dict_from_value(" + value_expr + ")"
-    if resolved_type.startswith("set["):
-        return "rc_set_from_value(" + value_expr + ")"
+    if resolved_type.startswith("list[") or resolved_type.startswith("dict[") or resolved_type.startswith("set["):
+        return "rc_from_value(" + value_expr + ")"
     return value_expr
 
 
@@ -596,7 +592,8 @@ def _wrap_container_result_if_needed(node: dict[str, JsonVal], value_expr: str) 
         return value_expr
     trimmed = value_expr.strip()
     if (
-        trimmed.startswith("rc_list_from_value(")
+        trimmed.startswith("rc_from_value(")
+        or trimmed.startswith("rc_list_from_value(")
         or trimmed.startswith("rc_dict_from_value(")
         or trimmed.startswith("rc_set_from_value(")
         or ".as<" in trimmed
@@ -620,7 +617,8 @@ def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr
     if trimmed in ctx.var_types and ctx.var_types.get(trimmed, "") == target_type:
         return value_expr
     if (
-        trimmed.startswith("rc_list_from_value(")
+        trimmed.startswith("rc_from_value(")
+        or trimmed.startswith("rc_list_from_value(")
         or trimmed.startswith("rc_dict_from_value(")
         or trimmed.startswith("rc_set_from_value(")
         or ".as<" in trimmed
@@ -1411,7 +1409,7 @@ def _emit_argparse_add_argument_args(
     return positional + [
         keyword_map.get("help", 'str("")'),
         keyword_map.get("action", 'str("")'),
-        keyword_map.get("choices", "rc_list_from_value(list<str>{})"),
+        keyword_map.get("choices", "rc_from_value(list<str>{})"),
         keyword_map.get("default", "object()"),
     ]
 
@@ -1522,7 +1520,7 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         rt = _str(node, "resolved_type")
         if rt.startswith("set[") and rt.endswith("]"):
             inner = cpp_signature_type(rt[4:-1])
-            return "rc_set_from_value(set<" + inner + ">{})"
+            return "rc_from_value(set<" + inner + ">{})"
         return "rc_set_new<object>()"
     if rc == "dict_ctor" or (bn == "dict" and len(arg_strs) == 0):
         rt = _str(node, "resolved_type")
@@ -1946,11 +1944,11 @@ def _emit_box(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         value_kind = _str(value, "kind")
         value_type = _effective_resolved_type(value)
         if value_kind == "Dict" and value_type == "dict[unknown,unknown]" and len(_list(value, "entries")) == 0:
-            return "object(rc_dict_from_value(dict<str, object>{}))"
+            return "object(rc_from_value(dict<str, object>{}))"
         if value_kind == "List" and value_type == "list[unknown]" and len(_list(value, "elements")) == 0:
-            return "object(rc_list_from_value(list<object>{}))"
+            return "object(rc_from_value(list<object>{}))"
         if value_kind == "Set" and value_type == "set[unknown]" and len(_list(value, "elements")) == 0:
-            return "object(rc_set_from_value(set<object>{}))"
+            return "object(rc_from_value(set<object>{}))"
     value_expr = _emit_expr(ctx, value)
     value_type = _effective_resolved_type(value)
     if is_container_resolved_type(target_type):
