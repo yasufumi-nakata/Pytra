@@ -26,6 +26,7 @@ from toolchain.misc.pytra_cli_profiles import get_target_profile, list_parity_ta
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_ROOT = ROOT / "test" / "fixture" / "source" / "py"
 SAMPLE_ROOT = ROOT / "sample" / "py"
+STDLIB_ROOT = ROOT / "test" / "stdlib" / "source" / "py"
 ARTIFACT_OPTIONAL_TARGETS: set[str] = set()
 _LOCAL_TOOL_FALLBACKS: dict[str, tuple[Path, ...]] = {
     "go": (ROOT / "work" / "tmp" / "go-toolchain" / "bin" / "go",),
@@ -305,7 +306,12 @@ def _purge_case_artifacts(work: Path, case_stem: str) -> None:
 
 
 def find_case_path(case_stem: str, case_root: str) -> Path | None:
-    root = SAMPLE_ROOT if case_root == "sample" else FIXTURE_ROOT
+    if case_root == "sample":
+        root = SAMPLE_ROOT
+    elif case_root == "stdlib":
+        root = STDLIB_ROOT
+    else:
+        root = FIXTURE_ROOT
     matches = sorted(root.rglob(f"{case_stem}.py"))
     if not matches:
         return None
@@ -345,6 +351,19 @@ def collect_fixture_case_stems(category: str = "") -> list[str]:
     return sorted(seen)
 
 
+def collect_stdlib_case_stems() -> list[str]:
+    """Return all stdlib case stems (from test/stdlib/source/py/<module>/*.py)."""
+    seen: set[str] = set()
+    if not STDLIB_ROOT.exists():
+        return []
+    for p in sorted(STDLIB_ROOT.rglob("*.py")):
+        stem = p.stem
+        if stem == "__init__":
+            continue
+        seen.add(stem)
+    return sorted(seen)
+
+
 def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool = False, category: str = "") -> tuple[list[str], str]:
     if category != "":
         if len(cases) > 0:
@@ -361,6 +380,8 @@ def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool = Fal
         return collect_sample_case_stems(), ""
     if case_root == "fixture":
         return collect_fixture_case_stems(), ""
+    if case_root == "stdlib":
+        return collect_stdlib_case_stems(), ""
     return [], "no cases specified"
 
 
@@ -693,8 +714,8 @@ def main() -> int:
     parser.add_argument(
         "--case-root",
         default="fixture",
-        choices=("fixture", "sample"),
-        help="source root to read cases from (fixture: test/fixture/source/py, sample: sample/py)",
+        choices=("fixture", "sample", "stdlib"),
+        help="source root to read cases from (fixture: test/fixture/source/py, sample: sample/py, stdlib: test/stdlib/source/py)",
     )
     parser.add_argument(
         "--ignore-unstable-stdout",

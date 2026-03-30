@@ -198,6 +198,17 @@ def _cell(n: int | None) -> str:
     return "🟥" if n else "🟩"
 
 
+def lang_total(mat: dict[str, dict[str, int | None]], lang: str) -> int | None:
+    """Sum of all category violation counts for one language. None if unimplemented."""
+    total: int | None = None
+    for cat_data in mat.values():
+        v = cat_data.get(lang)
+        if v is None:
+            continue
+        total = (total or 0) + v
+    return total
+
+
 def print_matrix(mat: dict[str, dict[str, int | None]], langs: list[str]) -> None:
     header = "| カテゴリ           | " + " | ".join(langs) + " |"
     sep    = "|" + "-" * (len(header) - 2) + "|"
@@ -206,6 +217,10 @@ def print_matrix(mat: dict[str, dict[str, int | None]], langs: list[str]) -> Non
     for cat, label in CATEGORY_LABELS.items():
         cells = [_cell(mat[cat][l]) for l in langs]
         print(f"| {label} | " + " | ".join(cells) + " |")
+    # Totals row
+    totals = [lang_total(mat, l) for l in langs]
+    total_cells = [_cell(t) for t in totals]
+    print(f"| **🟩 PASS / 🟥 FAIL** | " + " | ".join(total_cells) + " |")
 
 
 def print_verbose(
@@ -290,6 +305,11 @@ def _render_md(
     for cat, label in CATEGORY_LABELS.items():
         cells = [_cell(mat[cat][l]) for l in langs]
         lines.append(f"| {label.strip()} | " + " | ".join(cells) + " |")
+    # Totals row [P0-PROGRESS-SUMMARY-S3]
+    pass_label = "**🟩 PASS / 🟥 FAIL**" if is_ja else "**🟩 PASS / 🟥 FAIL**"
+    totals = [lang_total(mat, l) for l in langs]
+    total_cells = [_cell(t) for t in totals]
+    lines.append(f"| {pass_label} | " + " | ".join(total_cells) + " |")
     lines.append("")
 
     # 詳細セクション
@@ -327,6 +347,20 @@ def write_progress_pages(
         content = _render_md(mat, hits, langs, now, lang_code)
         out_path.write_text(content, encoding="utf-8")
         print(f"  -> {out_path.relative_to(ROOT)}")
+    # Write JSON summary for gen_backend_progress.py [P0-PROGRESS-SUMMARY-S3]
+    import json
+    parity_dir = ROOT / ".parity-results"
+    parity_dir.mkdir(parents=True, exist_ok=True)
+    json_path = parity_dir / "emitter_lint.json"
+    json_data = {
+        "timestamp": now,
+        "langs": {
+            lang: lang_total(mat, lang)
+            for lang in langs
+        },
+    }
+    json_path.write_text(json.dumps(json_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"  -> {json_path.relative_to(ROOT)}")
 
 
 # ---------------------------------------------------------------------------

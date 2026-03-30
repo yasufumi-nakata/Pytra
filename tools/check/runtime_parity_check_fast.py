@@ -53,6 +53,7 @@ from toolchain2.resolve.py.resolver import resolve_east1_to_east2  # type: ignor
 from runtime_parity_check import (  # type: ignore
     FIXTURE_ROOT,
     SAMPLE_ROOT,
+    STDLIB_ROOT,
     CheckRecord,
     _LANG_UNSUPPORTED_FIXTURES,
     _crc32_hex,
@@ -69,6 +70,7 @@ from runtime_parity_check import (  # type: ignore
     can_run,
     collect_fixture_case_stems,
     collect_sample_case_stems,
+    collect_stdlib_case_stems,
     find_case_path,
     normalize,
     run_shell,
@@ -411,6 +413,69 @@ def _copy_sample_emit(target: str, emit_dir: Path, case_stem: str) -> None:
     shutil.copy2(src, dest_dir / src.name)
 
 
+def _acquire_gen_lock(max_age: float = 120.0) -> bool:
+    """Acquire .parity-results/.gen.lock for exclusive post-run generation.
+
+    Returns True if the lock was acquired, False if already held by another process.
+    Removes stale locks older than max_age seconds.
+    [P0-PROGRESS-SUMMARY-S1]
+    """
+    lock_path = ROOT / ".parity-results" / ".gen.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    if lock_path.exists():
+        try:
+            age = time.time() - lock_path.stat().st_mtime
+            if age > max_age:
+                lock_path.unlink(missing_ok=True)
+            else:
+                return False
+        except Exception:
+            pass
+    try:
+        fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.write(fd, str(os.getpid()).encode())
+        os.close(fd)
+        return True
+    except (FileExistsError, OSError):
+        return False
+
+
+def _release_gen_lock() -> None:
+    """Release .parity-results/.gen.lock."""
+    try:
+        (ROOT / ".parity-results" / ".gen.lock").unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
+def _maybe_refresh_selfhost_python() -> None:
+    """Auto-re-aggregate selfhost_python.json if >30 minutes since last update.
+
+    Reads existing .parity-results/*.json and writes selfhost_python.json so
+    that gen_backend_progress.py always has up-to-date selfhost matrix data.
+    [P0-SELFHOST-REFRESH-S1]
+    """
+    marker = ROOT / ".parity-results" / "selfhost_python.json"
+    if marker.exists() and (time.time() - marker.stat().st_mtime) < 1800:
+        return
+    run_script = ROOT / "tools" / "run" / "run_selfhost_parity.py"
+    if not run_script.exists():
+        return
+    # Only run if at least one parity result file exists to aggregate
+    parity_dir = ROOT / ".parity-results"
+    if not parity_dir.exists() or not any(parity_dir.glob("*_sample.json")):
+        return
+    try:
+        subprocess.run(
+            ["python3", str(run_script), "--selfhost-lang", "python"],
+            cwd=str(ROOT),
+            timeout=60,
+            capture_output=True,
+        )
+    except Exception:
+        pass
+
+
 def _maybe_regenerate_benchmark() -> None:
     """Auto-run gen_sample_benchmark.py if >10 minutes since last generation."""
     marker = ROOT / "sample" / "README-ja.md"
@@ -427,6 +492,29 @@ def _maybe_regenerate_benchmark() -> None:
             ["python3", str(gen_script)],
             cwd=str(ROOT),
             timeout=30,
+            capture_output=True,
+        )
+    except Exception:
+        pass
+
+
+def _maybe_run_emitter_lint() -> None:
+    """Auto-run check_emitter_hardcode_lint.py if >1 hour since last run.
+
+    Updates emitter-hardcode-lint.md and .parity-results/emitter_lint.json.
+    [P0-PROGRESS-SUMMARY-S4]
+    """
+    marker = ROOT / "docs" / "ja" / "progress" / "emitter-hardcode-lint.md"
+    if marker.exists() and (time.time() - marker.stat().st_mtime) < 3600:
+        return
+    lint_script = ROOT / "tools" / "check" / "check_emitter_hardcode_lint.py"
+    if not lint_script.exists():
+        return
+    try:
+        subprocess.run(
+            ["python3", str(lint_script)],
+            cwd=str(ROOT),
+            timeout=60,
             capture_output=True,
         )
     except Exception:
@@ -617,7 +705,7 @@ def main() -> int:
         description="Fast runtime parity check (in-memory pipeline, no CLI subprocess for transpile)"
     )
     parser.add_argument("cases", nargs="*", default=[], help="case stems (without .py)")
-    parser.add_argument("--case-root", default="fixture", choices=("fixture", "sample"))
+    parser.add_argument("--case-root", default="fixture", choices=("fixture", "sample", "stdlib"))
     parser.add_argument("--targets", default="cpp", help="comma separated targets (default: cpp)")
     parser.add_argument("--category", default="", help="fixture subdirectory (e.g. oop, control)")
     parser.add_argument("--east3-opt-level", default=1, type=int, choices=(0, 1, 2))
@@ -711,8 +799,15 @@ def main() -> int:
     _save_parity_results(records, args.case_root, enabled_targets)
     if args.case_root == "sample":
         _save_python_results(records, args.case_root)
-    _maybe_regenerate_progress()
-    _maybe_regenerate_benchmark()
+    # Acquire exclusive lock before running generation scripts [P0-PROGRESS-SUMMARY-S1]
+    if _acquire_gen_lock():
+        try:
+            _maybe_refresh_selfhost_python()
+            _maybe_run_emitter_lint()
+            _maybe_regenerate_progress()
+            _maybe_regenerate_benchmark()
+        finally:
+            _release_gen_lock()
     return exit_code
 
 
