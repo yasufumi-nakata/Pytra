@@ -1303,6 +1303,17 @@ EAST3 のノードをそのまま写像すること。emitter が独自の継承
 
 `-> None` は省略可能。body に `return <値>` がなければ resolve が `None` と推論する。emitter に到達する時点では `return_type` は必ず確定している（§1.2 参照）。
 
+### `dict.get()` や `list.pop()` の戻り値が Any/object のとき、どう cast する？
+
+EAST3 の `yields_dynamic: true` フラグを見て型アサーションを生成するだけ（§11 参照）。emitter が「この呼び出しは Any を返すから cast が必要」と自前で判断してはならない。`yields_dynamic` が付いていなければ cast は不要。付いていれば `resolved_type` へのダウンキャストを出力する。
+
+```java
+// yields_dynamic: true, resolved_type: int64 の場合
+// Java: (long) dict.get(key)
+// Go: dict.Get(key).(int64)
+// TS: dict.get(key) as number
+```
+
 ### sample の生成コードが汚い。どこまで品質を気にすべき？
 
 `sample/<lang>/` は Pytra の展示物。§1.4 の NG パターンを全て排除し、ターゲット言語のプログラマが読んで違和感がないレベルを目指すこと。具体的には:
