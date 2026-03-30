@@ -1127,7 +1127,15 @@ Go / Rust は `implicit_promotions` が空なので全 cast を出力する。C+
 
 ## 13. parity check の実施
 
-sample/py の全 18 ケースについて、Python 実行結果（stdout + artifact）とターゲット言語の実行結果が一致することを検証する。
+### 初回セットアップ（git clone 直後）
+
+golden ファイル（east1/east2/east3/east3-opt/linked）は git 管理していない。clone 直後はローカルに存在しないので、以下を実行して生成する:
+
+```bash
+PYTHONPATH=src python3 tools/gen/regenerate_golden.py
+```
+
+これで fixture / sample / stdlib / pytra の全段 golden が生成される。parity check はこの golden に依存するため、先に実行すること。
 
 ### 正本ツール
 
