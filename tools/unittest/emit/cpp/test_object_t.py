@@ -57,9 +57,6 @@ TypeInfo ti_base    = {TID_BASE,    0, 2, &deleter_impl<Base>};
 TypeInfo ti_derived = {TID_DERIVED, 1, 2, &deleter_impl<Derived>};
 
 int main() {
-    g_type_table[TID_BASE] = &ti_base;
-    g_type_table[TID_DERIVED] = &ti_derived;
-
     Object<Derived> d = make_object<Derived>(TID_DERIVED, 42);
     Object<Base> b = d;  // implicit upcast
 
@@ -96,10 +93,6 @@ TypeInfo ti_dog    = {TID_DOG,    1, 2, &deleter_impl<Dog>};
 TypeInfo ti_cat    = {TID_CAT,    2, 3, &deleter_impl<Cat>};
 
 int main() {
-    g_type_table[TID_ANIMAL] = &ti_animal;
-    g_type_table[TID_DOG] = &ti_dog;
-    g_type_table[TID_CAT] = &ti_cat;
-
     Object<Animal> animal = make_object<Dog>(TID_DOG);
 
     // downcast to Dog succeeds
@@ -133,10 +126,6 @@ TypeInfo ti_b = {TID_B, 1, 3, &deleter_impl<B>};
 TypeInfo ti_c = {TID_C, 2, 3, &deleter_impl<C>};
 
 int main() {
-    g_type_table[TID_A] = &ti_a;
-    g_type_table[TID_B] = &ti_b;
-    g_type_table[TID_C] = &ti_c;
-
     Object<C> c = make_object<C>(TID_C);
     Object<A> a = c;  // upcast to A
 
@@ -172,8 +161,6 @@ enum { TID_WIDGET = 0 };
 TypeInfo ti_widget = {TID_WIDGET, 0, 1, &deleter_impl<Widget>};
 
 int main() {
-    g_type_table[TID_WIDGET] = &ti_widget;
-
     Object<Widget> a = make_object<Widget>(TID_WIDGET);
     assert(a.cb->rc == 1);
 
@@ -207,9 +194,6 @@ TypeInfo ti_list = {TID_LIST_INT, 0, 1, &deleter_impl<list<int64>>};
 TypeInfo ti_dict = {TID_DICT_STR_INT, 1, 2, &deleter_impl<dict<str, int64>>};
 
 int main() {
-    g_type_table[TID_LIST_INT] = &ti_list;
-    g_type_table[TID_DICT_STR_INT] = &ti_dict;
-
     auto lst = make_object<list<int64>>(TID_LIST_INT, ::std::initializer_list<int64>{10, 20, 30});
     assert(lst->size() == 3);
     lst->append(40);

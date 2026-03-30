@@ -9,8 +9,6 @@
 #include <iostream>
 #include <optional>
 #include <type_traits>
-#include <unordered_map>
-
 #include "core/py_scalar_types.h"
 
 // Forward declarations for POD boxing constructors.
@@ -27,9 +25,8 @@ struct TypeInfo {
     void (*deleter)(void*);
 };
 
-// Global type table — populated by linker-generated init code.
-// Default weak definition: programs that don't use Object<T> can link without providing these.
-inline ::std::unordered_map<uint32_t, TypeInfo*> g_type_table = {};
+template<typename T>
+void deleter_impl(void* p);
 
 // =============================
 // ControlBlock
@@ -39,6 +36,7 @@ struct ControlBlock {
     int rc;
     uint32_t type_id;  // 実体型 — cast しても変わらない
     void* base_ptr;    // 常に最も派生型のポインタ
+    void (*deleter)(void*);
 };
 
 // =============================
@@ -130,10 +128,8 @@ private:
     void release() {
         if (!cb) return;
         if (--cb->rc == 0) {
-            auto it = g_type_table.find(cb->type_id);
-            auto* ti = it != g_type_table.end() ? it->second : nullptr;
-            if (ti && ti->deleter) {
-                ti->deleter(cb->base_ptr);
+            if (cb->deleter) {
+                cb->deleter(cb->base_ptr);
             }
             delete cb;
         }
@@ -211,9 +207,7 @@ private:
     void release() {
         if (!cb) return;
         if (--cb->rc == 0) {
-            auto it = g_type_table.find(cb->type_id);
-            auto* ti = it != g_type_table.end() ? it->second : nullptr;
-            if (ti && ti->deleter) ti->deleter(cb->base_ptr);
+            if (cb->deleter) cb->deleter(cb->base_ptr);
             delete cb;
         }
         cb = nullptr;
@@ -242,7 +236,7 @@ using object = Object<void>;
 template<typename T, typename... Args>
 Object<T> make_object(uint32_t tid, Args&&... args) {
     T* obj = new T(::std::forward<Args>(args)...);
-    ControlBlock* cb = new ControlBlock{0, tid, obj};  // retain() in Object ctor will set to 1
+    ControlBlock* cb = new ControlBlock{0, tid, obj, &deleter_impl<T>};  // retain() in Object ctor will set to 1
     return Object<T>(cb, obj);
 }
 

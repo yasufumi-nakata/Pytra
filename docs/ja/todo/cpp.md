@@ -55,12 +55,18 @@
 
 ### P10-CPP-TYPETABLE-REDESIGN: g_type_table と destructor dispatch の再設計
 
+文脈: [docs/ja/plans/p10-cpp-typetable-redesign.md](../plans/p10-cpp-typetable-redesign.md)
+
 `object.h` の `g_type_table[4096]` は RC のオブジェクト破棄時に destructor を呼ぶために使われている。isinstance の一本化（P3-CR-CPP-S6）とは別問題。`g_type_table` を撤去するには destructor dispatch の仕組みを再設計する必要がある。
 
-1. [ ] [ID: P10-CPP-TYPETABLE-S1] `g_type_table` が destructor 以外にどこで使われているか棚卸しする
-2. [ ] [ID: P10-CPP-TYPETABLE-S2] destructor dispatch を `g_type_table` なしで実現する設計を策定する（vtable、template 特殊化、`ControlBlock` に destructor ポインタを持たせる等）
-3. [ ] [ID: P10-CPP-TYPETABLE-S3] `g_type_table`、`py_tid_register_known_class_type`、`PYTRA_TID_*` 定数を撤去する
-4. [ ] [ID: P10-CPP-TYPETABLE-S4] fixture + sample parity に影響がないことを確認する
+1. [x] [ID: P10-CPP-TYPETABLE-S1] `g_type_table` が destructor 以外にどこで使われているか棚卸しする
+   - 完了: 実利用は `Object<T>::release()` / `Object<void>::release()` の destructor dispatch と C++ unit test の初期化だけで、toolchain2 の user class subtype 判定は generated `built_in/type_id.*` の `id_table` と `py_runtime_object_type_id(...)` で完結していることを確認
+2. [x] [ID: P10-CPP-TYPETABLE-S2] destructor dispatch を `g_type_table` なしで実現する設計を策定する（vtable、template 特殊化、`ControlBlock` に destructor ポインタを持たせる等）
+   - 完了: `ControlBlock` に `void (*deleter)(void*)` を保持し、`make_object<T>` と POD boxing constructor が concrete deleter を焼き込む設計へ変更。release 時は `cb->deleter` を直接呼ぶ形にした
+3. [x] [ID: P10-CPP-TYPETABLE-S3] `g_type_table` と `py_tid_register_known_class_type` を撤去し、built-in `PYTRA_TID_*` 定数は維持対象として整理する
+   - 完了: `src/runtime/cpp/core/object.h` から `g_type_table` 参照を撤去し、`src/toolchain2/emit/cpp/emitter.py` から local `py_tid_register_known_class_type(...)` helper を撤去。`src/pytra/built_in/type_id.py` と再生成した `src/runtime/east/built_in/type_id.east` から known-registration API を削除した。`PYTRA_TID_*` は built-in scalar/container/object の runtime 定数として広く使われるため撤去対象外と明記
+4. [x] [ID: P10-CPP-TYPETABLE-S4] fixture + sample parity に影響がないことを確認する
+   - 完了: `PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --targets cpp --case-root fixture --east3-opt-level 2` で `131/131 PASS`、`PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --targets cpp --case-root sample --east3-opt-level 2` で `18/18 PASS` を確認
 
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す
 

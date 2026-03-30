@@ -16,6 +16,8 @@ _GEN_DIR = os.environ.get("PYTRA_GENERATED_CPP_DIR", "work/out/_test_generated_c
 CPP_RUNTIME_SRCS = [
     "src/runtime/cpp/core/io.cpp",
     os.path.join(_GEN_DIR, "built_in", "type_id.cpp"),
+    os.path.join(_GEN_DIR, "built_in", "type_id_table.cpp"),
+    os.path.join(_GEN_DIR, "built_in", "error.cpp"),
 ]
 
 
@@ -52,9 +54,6 @@ TypeInfo ti_base   = {TID_BASE,  100, 102, &deleter_impl<Base>};
 TypeInfo ti_child  = {TID_CHILD, 101, 102, &deleter_impl<Child>};
 
 int main() {
-    g_type_table[TID_BASE]  = &ti_base;
-    g_type_table[TID_CHILD] = &ti_child;
-
     // Object<T> isinstance via TypeInfo interval check
     Object<Child> child_obj = make_object<Child>(TID_CHILD);
     Object<Base>  base_obj  = make_object<Base>(TID_BASE);
@@ -131,17 +130,17 @@ struct ChildObj : public BaseObj {
 };
 
 int main() {
-    g_type_table[1400] = new TypeInfo{1400, 1400, 1402, &deleter_impl<BaseObj>};
-    g_type_table[1401] = new TypeInfo{1401, 1401, 1402, &deleter_impl<ChildObj>};
+    TypeInfo ti_base = {1400, 1400, 1402, &deleter_impl<BaseObj>};
+    TypeInfo ti_child = {1401, 1401, 1402, &deleter_impl<ChildObj>};
 
-    assert(is_subtype(1401, g_type_table[1400]));
+    assert(is_subtype(1401, &ti_base));
 
     Object<ChildObj> child_obj = make_object<ChildObj>(ChildObj::TYPE_ID);
     assert(child_obj.type_id() == 1401);
 
     Object<BaseObj> base_view = child_obj;
     assert(base_view.type_id() == 1401);
-    assert(is_subtype(base_view.type_id(), g_type_table[1400]));
+    assert(is_subtype(base_view.type_id(), &ti_base));
 
     std::cout << "generated type_id ok" << std::endl;
     return 0;
@@ -204,9 +203,6 @@ struct ChildObj : public BaseObj {
 };
 
 int main() {
-    g_type_table[1500] = new TypeInfo{1500, 1500, 1502, &deleter_impl<BaseObj>};
-    g_type_table[1501] = new TypeInfo{1501, 1501, 1502, &deleter_impl<ChildObj>};
-
     Object<ChildObj> child = make_object<ChildObj>(ChildObj::TYPE_ID);
     Object<BaseObj> base_copy = child;
     assert(base_copy);
