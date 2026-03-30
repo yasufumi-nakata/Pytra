@@ -196,6 +196,14 @@ class _CppStmtCommonRenderer(CommonRenderer):
         finally:
             _pop_local_scope(self.ctx)
 
+    def emit_raise_stmt(self, node: dict[str, JsonVal]) -> None:
+        self.ctx.indent_level = self.state.indent_level
+        value = _render_raise_value(self.ctx, node)
+        if value != "":
+            self._emit("throw " + value + ";")
+        else:
+            self._emit("throw;")
+
     def render_raise_value(self, node: dict[str, JsonVal]) -> str:
         return _render_raise_value(self.ctx, node)
 
@@ -1374,6 +1382,16 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             if func_runtime_module_id == "pytra.built_in.error":
                 return fn + "(" + ", ".join(call_arg_strs) + ")"
             if fn == "main": return "__pytra_main(" + ", ".join(call_arg_strs) + ")"
+            # Transpiled (non-native) pytra.* modules: use bare function name without builtin prefix.
+            call_runtime_module_id = _str(node, "runtime_module_id")
+            if call_runtime_module_id == "":
+                call_runtime_module_id = func_runtime_module_id
+            if (
+                call_runtime_module_id != ""
+                and call_runtime_module_id.startswith("pytra.")
+                and not should_skip_module(call_runtime_module_id, ctx.mapping)
+            ):
+                return "::" + _safe_cpp_ident(fn) + "(" + ", ".join(call_arg_strs) + ")"
             if runtime_call != "" or resolved_runtime_call != "" or builtin_name != "":
                 mapped_name = resolve_runtime_call(
                     resolved_runtime_call if resolved_runtime_call != "" else runtime_call,
@@ -2881,7 +2899,8 @@ def _function_param_meta(node: dict[str, JsonVal]) -> list[tuple[str, str, bool]
         arg_type = arg_types.get(arg_name, "")
         arg_type_str = arg_type if isinstance(arg_type, str) else "object"
         mutable = (arg_usage.get(arg_name) == "reassigned"
-                   or _is_user_class_param_type(arg_type_str))
+                   or (_is_user_class_param_type(arg_type_str)
+                       and arg_usage.get(arg_name) != "readonly"))
         out.append((arg_name, arg_type_str, mutable))
     vararg_name = node.get("vararg_name")
     if isinstance(vararg_name, str) and vararg_name != "":
