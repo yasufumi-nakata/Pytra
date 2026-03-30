@@ -20,6 +20,15 @@
 
 ## 未完了タスク
 
+### P0-GO-BOOLOP-BOOL-SHORTCIRCUIT: bool 型の and/or を && / || で出力する
+
+`if t > 0.0 and t < t_min:` のように両辺が比較式で期待型が `bool` の場合、Go では `if t > 0.0 && t < t_min {` と出力すべき。現状は値選択式として即時実行クロージャに展開しており、コードが著しく読みにくい。
+
+spec-east.md §7: 「期待型が `bool` のときは真偽演算（`&&`/`||`）として出力する。期待型が `bool` 以外のときは値選択式として出力する。」
+
+1. [ ] [ID: P0-GO-BOOLOP-S1] Go emitter の BoolOp emit で、`resolved_type` が `bool` の場合は `&&` / `||` で出力するよう修正する
+2. [ ] [ID: P0-GO-BOOLOP-S2] `boolop_value_select` fixture + sample 02/全件で Go parity PASS を確認する
+
 ### P0-GO-TUPLE-MULTIRETURN: tuple multi-return 展開の不完全さを修正する
 
 Review 指摘: `py_splitext` を多値返却にした後、emitter の `_emit_assign`（`emitter.py:3780`）は `tuple[...] = Call(...)` を `name_0, name_1 := ...` に展開するが、元の `name` 自体は束縛しないため `return name` / `f(name)` が未定義参照になる。さらに `_emit_subscript`（`emitter.py:2915`）は `ctx.tup_multi_vars` に載った Name しか救済しないため、`os.path.splitext(p)[0]` のような直接添字が不正コードになる。
