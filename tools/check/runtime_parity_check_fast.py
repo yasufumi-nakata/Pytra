@@ -707,9 +707,9 @@ def _maybe_refresh_selfhost_python() -> None:
 
 
 def _maybe_regenerate_benchmark() -> None:
-    """Auto-run gen_sample_benchmark.py if >10 minutes since last generation."""
-    marker = ROOT / "sample" / "README-ja.md"
-    if marker.exists() and (time.time() - marker.stat().st_mtime) < 600:
+    """Auto-run gen_sample_benchmark.py if >3 minutes since last generation."""
+    marker = ROOT / "sample-preview" / "README-ja.md"
+    if marker.exists() and (time.time() - marker.stat().st_mtime) < 180:
         return
     gen_script = ROOT / "tools" / "gen" / "gen_sample_benchmark.py"
     if not gen_script.exists():

@@ -1,7 +1,7 @@
 """
 gen_sample_benchmark.py  (P2-BENCH-S3)
 
-.parity-results/*_sample.json を読み、sample/README-ja.md と sample/README.md の
+.parity-results/*_sample.json を読み、sample-preview/README-ja.md と sample-preview/README.md の
 「実行速度の比較」テーブルを自動更新する。
 
 計測されていない言語/ケースは元の値をそのまま維持する（—に変えない）。
@@ -236,8 +236,20 @@ def main() -> int:
     measured = sum(len(v) for v in timing.values())
     print(f"[INFO] loaded timing for {len(timing)} cases, {measured} measurements total")
 
-    update_readme(ROOT / "sample" / "README-ja.md", timing, "ja", args.dry_run)
-    update_readme(ROOT / "sample" / "README.md",    timing, "en", args.dry_run)
+    # Write to sample-preview/ (git-ignored) instead of sample/ directly.
+    # Copy the original README if not yet present in sample-preview/.
+    preview_dir = ROOT / "sample-preview"
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    for name in ("README-ja.md", "README.md"):
+        preview = preview_dir / name
+        if not preview.exists():
+            original = ROOT / "sample" / name
+            if original.exists():
+                import shutil
+                shutil.copy2(original, preview)
+    lang_code = "ja"
+    update_readme(preview_dir / "README-ja.md", timing, lang_code, args.dry_run)
+    update_readme(preview_dir / "README.md",    timing, "en", args.dry_run)
 
     return 0
 
