@@ -26,6 +26,13 @@
 
 ## 未完了タスク
 
+### P0-RS-NARROWED-BINOP: narrowing 済み union 型の BinOp が todo!() に落ちる
+
+Review 指摘: `emitter.py:411` で被演算子の格納型が `Box<dyn Any>` だと `todo!()` に落としている。EAST3 で isinstance narrowing 後の `a + b` は合法なのに、Rust backend だけ実行時 panic。`type_alias_pep695` fixture の `Scalar = int | float` の int 分岐が該当。
+
+1. [ ] [ID: P0-RS-NARROWED-BINOP-S1] EAST3 の narrowing 済み `resolved_type` を参照して正しい型で演算を emit する — `Box<dyn Any>` fallback ではなく narrowing 後の具象型を使う
+2. [ ] [ID: P0-RS-NARROWED-BINOP-S2] `type_alias_pep695` fixture が Rust で compile + run parity PASS することを確認する
+
 ### P0-RS-TYPE-MAPPING: Rust emitter の型写像を mapping.json に移行する
 
 仕様: [spec-runtime-mapping.md](../spec/spec-runtime-mapping.md) §7

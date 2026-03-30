@@ -20,6 +20,13 @@
 
 ## 未完了タスク
 
+### P0-GO-TUPLE-MULTIRETURN: tuple multi-return 展開の不完全さを修正する
+
+Review 指摘: `py_splitext` を多値返却にした後、emitter の `_emit_assign`（`emitter.py:3780`）は `tuple[...] = Call(...)` を `name_0, name_1 := ...` に展開するが、元の `name` 自体は束縛しないため `return name` / `f(name)` が未定義参照になる。さらに `_emit_subscript`（`emitter.py:2915`）は `ctx.tup_multi_vars` に載った Name しか救済しないため、`os.path.splitext(p)[0]` のような直接添字が不正コードになる。
+
+1. [ ] [ID: P0-GO-TUPLE-MR-S1] tuple multi-return 展開で元の変数名も束縛するか、直接添字（`Call(...)[0]`）を multi-return の要素選択として emit する
+2. [ ] [ID: P0-GO-TUPLE-MR-S2] `os_glob_extended` / `pathlib_extended` fixture が Go で compile + run parity PASS することを確認する
+
 ### P0-RESOLVE-INT-PROMOTION: BinOp の全演算子で整数昇格 cast がオペランドに付くよう修正する
 
 全ての BinOp（`+`, `-`, `*`, `/`, `//`, `%`, `&`, `|`, `^`, `<<`, `>>`）で、異なるサイズの整数型が混在する場合に、resolve が **演算の前に** 両オペランドを結果型に cast すべき。現状は小さい側を相手のサイズに cast するだけで、結果型への昇格 cast が付かない。Go/Rust は暗黙昇格がないのでコンパイルエラーになる。
