@@ -26,6 +26,16 @@
 
 ## 未完了タスク
 
+### P0-EAST3-NARROWING-CAST: isinstance narrowing 後に Cast/Unbox ノードを挿入する
+
+EAST3 は isinstance narrowing 後に `resolved_type` を更新するが、明示的な Cast/Unbox ノードを挿入しない。Rust のように PyAny から具象型へのダウンキャストが必要な言語では、emitter が自前で narrowing 判定するしかなく、§1.1 違反になる。
+
+修正箇所: `src/toolchain2/compile/east2_to_east3_lowering.py` または `src/toolchain2/resolve/`
+
+1. [ ] [ID: P0-EAST3-NARROW-S1] isinstance narrowing で `resolved_type` が変わった Name 参照に Cast/Unbox ノードを挿入する — 元の型と narrowing 後の型が異なる場合のみ
+2. [ ] [ID: P0-EAST3-NARROW-S2] Rust emitter の `_emit_name` workaround（`EAST3 DEFICIENCY WORKAROUND` コメント）を削除し、Cast/Unbox ノードをレンダリングするだけにする
+3. [ ] [ID: P0-EAST3-NARROW-S3] 全言語の fixture parity に影響がないことを確認する
+
 ### P0-RS-NARROWED-BINOP: narrowing 済み union 型の BinOp が todo!() に落ちる
 
 Review 指摘: `emitter.py:411` で被演算子の格納型が `Box<dyn Any>` だと `todo!()` に落としている。EAST3 で isinstance narrowing 後の `a + b` は合法なのに、Rust backend だけ実行時 panic。`type_alias_pep695` fixture の `Scalar = int | float` の int 分岐が該当。
