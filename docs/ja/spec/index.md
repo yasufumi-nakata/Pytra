@@ -53,6 +53,7 @@
 
 | 内容 | リンク | 説明 |
 |---|---|---|
+| 開発環境セットアップ | [spec-setup.md](./spec-setup.md) | clone 直後の golden / runtime east 生成手順 |
 | 実装仕様 | [spec-dev.md](./spec-dev.md) | 実装方針、モジュール構成 |
 | フォルダ責務 | [spec-folder.md](./spec-folder.md) | どのフォルダに何を置くか |
 | stdlib 正本化 | [spec-stdlib-signature-source-of-truth.md](./spec-stdlib-signature-source-of-truth.md) | pytra/std を型仕様の正本にする契約 |

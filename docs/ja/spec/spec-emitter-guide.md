@@ -1129,15 +1129,7 @@ Go / Rust は `implicit_promotions` が空なので全 cast を出力する。C+
 
 ### 初回セットアップ（git clone 直後）
 
-golden ファイル（east1/east2/east3/east3-opt/linked）は git 管理していない。clone 直後はローカルに存在しないので、以下を実行して生成する:
-
-```bash
-PYTHONPATH=src python3 tools/gen/regenerate_golden.py
-```
-
-これで fixture / sample / stdlib / pytra の全段 golden が生成される。parity check はこの golden に依存するため、先に実行すること。
-
-**注意: golden が既に存在する場合は再生成してはならない。** 他の agent が作業中に再生成すると golden が上書きされ、テスト結果が変わる。再生成が必要な場合はユーザーの指示を受けること。
+golden ファイルと runtime east キャッシュは git 管理していない。clone 直後の生成手順は **[開発環境セットアップ](./spec-setup.md)** を参照。
 
 ### 正本ツール
 

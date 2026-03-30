@@ -11,6 +11,9 @@ __pycache__/
 /sample/obj/
 /sample/out/
 /sample/java/*.class
+/sample-preview/
+/docs/ja/progress-preview/
+/docs/en/progress-preview/
 
 # legacy output paths (avoid accidental tracking if recreated)
 /out/
@@ -54,6 +57,10 @@ __pycache__/
 
 # Node.js
 /node_modules/
+
+# Runtime EAST cache — regenerable by: python3 tools/check/check_east3_golden.py --check-runtime-east --update
+# Generated from src/pytra/{built_in,std,utils}/*.py. Do NOT commit.
+/src/runtime/east/
 
 # Deprecated generated runtime directory (must not be used)
 src/runtime/cpp/generated/
