@@ -243,8 +243,21 @@ class _CppStmtCommonRenderer(CommonRenderer):
         self.state.indent_level = self.ctx.indent_level
 
     def emit_stmt_extension(self, node: dict[str, JsonVal]) -> None:
+        # P3-CR-CPP-S1: C++ 固有ノードの直接ディスパッチ。
+        # _emit_stmt を経由しないことで循環を回避する。
         self.ctx.indent_level = self.state.indent_level
-        _emit_stmt(self.ctx, node)
+        kind = self._str(node, "kind")
+        if kind == "AugAssign": _emit_aug_assign(self.ctx, node)
+        elif kind == "ForCore": _emit_for_core(self.ctx, node)
+        elif kind == "FunctionDef": _emit_function_def(self.ctx, node)
+        elif kind == "ClosureDef": _emit_closure_def(self.ctx, node)
+        elif kind == "ClassDef": _emit_class_def(self.ctx, node)
+        elif kind in ("ImportFrom", "Import", "TypeAlias"): pass
+        elif kind == "VarDecl": _emit_var_decl(self.ctx, node)
+        elif kind == "TupleUnpack": _emit_tuple_unpack(self.ctx, node)
+        elif kind == "Swap": _emit_swap(self.ctx, node)
+        elif kind == "With": _emit_with(self.ctx, node)
+        else: _emit_fail(self.ctx, "unsupported_stmt_kind", kind)
         self.state.indent_level = self.ctx.indent_level
 
 
@@ -295,15 +308,6 @@ class _CppExprCommonRenderer(CommonRenderer):
     def render_expr_extension(self, node: dict[str, JsonVal]) -> str:
         return _emit_expr_extension(self.ctx, node)
 
-
-def _emit_common_stmt_if_supported(ctx: CppEmitContext, node: dict[str, JsonVal]) -> bool:
-    kind = _str(node, "kind")
-    if kind not in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "comment", "blank", "If", "While", "Raise", "Try"):
-        return False
-    renderer = _CppStmtCommonRenderer(ctx)
-    renderer.emit_stmt(node)
-    ctx.indent_level = renderer.state.indent_level
-    return True
 
 
 # ---------------------------------------------------------------------------
@@ -2195,37 +2199,25 @@ def _emit_lambda(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 # ---------------------------------------------------------------------------
 
 def _emit_stmt(ctx: CppEmitContext, node: JsonVal) -> None:
+    """Emit a single statement via _CppStmtCommonRenderer (P3-CR-CPP-S1).
+
+    All dispatch goes through the renderer: common nodes are handled by
+    CommonRenderer base; C++ specific nodes by emit_stmt_extension.
+    """
     if not isinstance(node, dict):
         _emit_fail(ctx, "invalid_stmt", "expected dict statement node")
-    if _emit_common_stmt_if_supported(ctx, node):
         return
-    kind = _str(node, "kind")
-
-    if kind == "AnnAssign": _emit_ann_assign(ctx, node)
-    elif kind == "Assign": _emit_assign(ctx, node)
-    elif kind == "AugAssign": _emit_aug_assign(ctx, node)
-    elif kind == "ForCore": _emit_for_core(ctx, node)
-    elif kind == "FunctionDef": _emit_function_def(ctx, node)
-    elif kind == "ClosureDef": _emit_closure_def(ctx, node)
-    elif kind == "ClassDef": _emit_class_def(ctx, node)
-    elif kind == "ImportFrom" or kind == "Import" or kind == "TypeAlias": pass
-    elif kind == "Pass": _emit(ctx, "// pass")
-    elif kind == "VarDecl": _emit_var_decl(ctx, node)
-    elif kind == "TupleUnpack": _emit_tuple_unpack(ctx, node)
-    elif kind == "Swap": _emit_swap(ctx, node)
-    elif kind == "Try": _emit_try(ctx, node)
-    elif kind == "Raise": _emit_raise(ctx, node)
-    elif kind == "With": _emit_with(ctx, node)
-    elif kind == "comment":
-        t = _str(node, "text")
-        if t != "": _emit(ctx, "// " + t)
-    elif kind == "blank": _emit_blank(ctx)
-    else:
-        _emit_fail(ctx, "unsupported_stmt_kind", kind)
+    renderer = _CppStmtCommonRenderer(ctx)
+    renderer.emit_stmt(node)
+    ctx.indent_level = renderer.state.indent_level
 
 
 def _emit_body(ctx: CppEmitContext, body: list[JsonVal]) -> None:
-    for s in body: _emit_stmt(ctx, s)
+    """Emit a list of statements via _CppStmtCommonRenderer (P3-CR-CPP-S1)."""
+    renderer = _CppStmtCommonRenderer(ctx)
+    for s in body:
+        renderer.emit_stmt(s)
+        ctx.indent_level = renderer.state.indent_level
 
 
 def _emit_expr_stmt(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
@@ -2345,35 +2337,6 @@ def _emit_return(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, "return;")
     else:
         _emit(ctx, "return " + _emit_expr(ctx, value) + ";")
-
-
-def _emit_if(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
-    test = _emit_condition_expr(ctx, node.get("test"))
-    _emit(ctx, "if (" + test + ") {")
-    ctx.indent_level += 1
-    _emit_body(ctx, _list(node, "body"))
-    ctx.indent_level -= 1
-    orelse = _list(node, "orelse")
-    if len(orelse) > 0:
-        if len(orelse) == 1 and isinstance(orelse[0], dict) and _str(orelse[0], "kind") == "If":
-            _emit(ctx, "} else ")
-            ctx.lines[-1] = ctx.lines[-1].rstrip()
-            _emit_if(ctx, orelse[0])
-            return
-        _emit(ctx, "} else {")
-        ctx.indent_level += 1
-        _emit_body(ctx, orelse)
-        ctx.indent_level -= 1
-    _emit(ctx, "}")
-
-
-def _emit_while(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
-    test = _emit_condition_expr(ctx, node.get("test"))
-    _emit(ctx, "while (" + test + ") {")
-    ctx.indent_level += 1
-    _emit_body(ctx, _list(node, "body"))
-    ctx.indent_level -= 1
-    _emit(ctx, "}")
 
 
 def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
@@ -3291,7 +3254,7 @@ def emit_cpp_module(
         _emit_class_type_registration_block(ctx)
 
     # Emit body
-    for s in body: _emit_stmt(ctx, s)
+    _emit_body(ctx, body)
 
     # Main guard
     if ctx.is_entry and len(main_guard) > 0:
@@ -3300,7 +3263,7 @@ def emit_cpp_module(
         ctx.indent_level += 1
         if needs_class_type_registration:
             _emit(ctx, _local_type_registration_helper_name(ctx) + "();")
-        for s in main_guard: _emit_stmt(ctx, s)
+        _emit_body(ctx, main_guard)
         ctx.indent_level -= 1
         _emit(ctx, "}")
 

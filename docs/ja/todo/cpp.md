@@ -38,7 +38,8 @@
 文脈: [docs/ja/plans/p2-lowering-profile-common-renderer.md](../plans/p2-lowering-profile-common-renderer.md)
 仕様: [docs/ja/spec/spec-language-profile.md](../spec/spec-language-profile.md) §8
 
-1. [ ] [ID: P3-CR-CPP-S1] C++ emitter を CommonRenderer + override 構成に移行する — `src/toolchain2/emit/profiles/cpp.json` のプロファイルに従い、CommonRenderer の共通ノード走査を使う構成にする。C++ 固有のノード（ClassDef, FunctionDef, ForCore, With 等）だけ override として残す
+1. [x] [ID: P3-CR-CPP-S1] C++ emitter を CommonRenderer + override 構成に移行する — `src/toolchain2/emit/profiles/cpp.json` のプロファイルに従い、CommonRenderer の共通ノード走査を使う構成にする。C++ 固有のノード（ClassDef, FunctionDef, ForCore, With 等）だけ override として残す
+   - 完了: emit_stmt_extension を直接ディスパッチに変更、_emit_body/_emit_stmt を renderer 経由に統一、_emit_common_stmt_if_supported 削除、dead code (_emit_if/_emit_while) 削除。parity: for_range/if_else/exception/dataclass OK
 2. [x] [ID: P3-CR-CPP-S2] fixture 132 件 + sample 18 件の C++ compile + run parity を通す — collections 20/20, imports 7/7, stdlib 16/16 を含む全カテゴリ通過
    - 完了: commit 6e4ff3b1c — ヘッダシャドウイング修正、sys.h Object<list<str>>型修正、emitter :: 修飾、JsonValue IsNot None 修正、str.isalnum/str.index 追加、float 精度修正
 3. [x] [ID: P3-CR-CPP-S3] C++ runtime の dict_ops.h インクルードガード外コードを修正する — タプル用 `py_at` の実装が `#endif` の外に置かれており、多重インクルードで再定義エラーになる
