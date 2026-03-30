@@ -16,49 +16,51 @@ _active_mapping_types: dict[str, str] = {}
 
 def set_mapping_types(types: dict[str, str]) -> None:
     """Set the active mapping types dict from mapping.json."""
-    global _active_mapping_types
-    _active_mapping_types = types
+    _active_mapping_types.clear()
+    for name, mapped in types.items():
+        _active_mapping_types[name] = mapped
 
 
 # Fallback type map — used only when mapping.json types table is not available.
-_FALLBACK_TYPE_MAP: dict[str, str] = {}
-_FALLBACK_TYPE_MAP["int"] = "i64"
-_FALLBACK_TYPE_MAP["int8"] = "i8"
-_FALLBACK_TYPE_MAP["int16"] = "i16"
-_FALLBACK_TYPE_MAP["int32"] = "i32"
-_FALLBACK_TYPE_MAP["int64"] = "i64"
-_FALLBACK_TYPE_MAP["uint8"] = "u8"
-_FALLBACK_TYPE_MAP["uint16"] = "u16"
-_FALLBACK_TYPE_MAP["uint32"] = "u32"
-_FALLBACK_TYPE_MAP["uint64"] = "u64"
-_FALLBACK_TYPE_MAP["float"] = "f64"
-_FALLBACK_TYPE_MAP["float32"] = "f32"
-_FALLBACK_TYPE_MAP["float64"] = "f64"
-_FALLBACK_TYPE_MAP["bool"] = "bool"
-_FALLBACK_TYPE_MAP["str"] = "String"
-_FALLBACK_TYPE_MAP["None"] = "()"
-_FALLBACK_TYPE_MAP["none"] = "()"
-_FALLBACK_TYPE_MAP["bytes"] = "PyList<i64>"
-_FALLBACK_TYPE_MAP["bytearray"] = "PyList<i64>"
-_FALLBACK_TYPE_MAP["list"] = "PyList<PyAny>"
-_FALLBACK_TYPE_MAP["dict"] = "HashMap<String, PyAny>"
-_FALLBACK_TYPE_MAP["set"] = "HashSet<String>"
-_FALLBACK_TYPE_MAP["tuple"] = "Vec<PyAny>"
-_FALLBACK_TYPE_MAP["object"] = "PyAny"
-_FALLBACK_TYPE_MAP["Obj"] = "PyAny"
-_FALLBACK_TYPE_MAP["Any"] = "PyAny"
-_FALLBACK_TYPE_MAP["JsonVal"] = "PyAny"
-_FALLBACK_TYPE_MAP["Node"] = "HashMap<String, PyAny>"
-_FALLBACK_TYPE_MAP["Callable"] = "Box<dyn Fn()>"
-_FALLBACK_TYPE_MAP["callable"] = "Box<dyn Fn()>"
-_FALLBACK_TYPE_MAP["deque"] = "VecDeque<PyAny>"
-_FALLBACK_TYPE_MAP["Exception"] = "Box<dyn std::error::Error>"
-_FALLBACK_TYPE_MAP["BaseException"] = "Box<dyn std::error::Error>"
-_FALLBACK_TYPE_MAP["RuntimeError"] = "Box<dyn std::error::Error>"
-_FALLBACK_TYPE_MAP["ValueError"] = "Box<dyn std::error::Error>"
-_FALLBACK_TYPE_MAP["TypeError"] = "Box<dyn std::error::Error>"
-_FALLBACK_TYPE_MAP["IndexError"] = "Box<dyn std::error::Error>"
-_FALLBACK_TYPE_MAP["KeyError"] = "Box<dyn std::error::Error>"
+_FALLBACK_TYPE_MAP: dict[str, str] = {
+    "int": "i64",
+    "int8": "i8",
+    "int16": "i16",
+    "int32": "i32",
+    "int64": "i64",
+    "uint8": "u8",
+    "uint16": "u16",
+    "uint32": "u32",
+    "uint64": "u64",
+    "float": "f64",
+    "float32": "f32",
+    "float64": "f64",
+    "bool": "bool",
+    "str": "String",
+    "None": "()",
+    "none": "()",
+    "bytes": "PyList<i64>",
+    "bytearray": "PyList<i64>",
+    "list": "PyList<PyAny>",
+    "dict": "HashMap<String, PyAny>",
+    "set": "HashSet<String>",
+    "tuple": "Vec<PyAny>",
+    "object": "PyAny",
+    "Obj": "PyAny",
+    "Any": "PyAny",
+    "JsonVal": "PyAny",
+    "Node": "HashMap<String, PyAny>",
+    "Callable": "Box<dyn Fn()>",
+    "callable": "Box<dyn Fn()>",
+    "deque": "VecDeque<PyAny>",
+    "Exception": "Box<dyn std::error::Error>",
+    "BaseException": "Box<dyn std::error::Error>",
+    "RuntimeError": "Box<dyn std::error::Error>",
+    "ValueError": "Box<dyn std::error::Error>",
+    "TypeError": "Box<dyn std::error::Error>",
+    "IndexError": "Box<dyn std::error::Error>",
+    "KeyError": "Box<dyn std::error::Error>",
+}
 
 
 def _split_generic_args(s: str) -> list[str]:

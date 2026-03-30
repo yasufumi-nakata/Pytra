@@ -222,7 +222,8 @@ def emit_runtime_module_artifacts(
     if "meta" not in emit_doc or not isinstance(emit_doc["meta"], dict):
         emit_doc["meta"] = {}
     meta = emit_doc["meta"]
-    assert isinstance(meta, dict)
+    if not isinstance(meta, dict):
+        raise RuntimeError("emit_doc.meta must be a dict")
     linked = meta.get("linked_program_v1")
     if not isinstance(linked, dict):
         linked = {"module_id": module_id}

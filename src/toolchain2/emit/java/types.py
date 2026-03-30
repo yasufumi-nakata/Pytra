@@ -13,6 +13,8 @@ _JAVA_KEYWORDS: set[str] = {
     "transient", "try", "void", "volatile", "while",
 }
 
+_SAFE_JAVA_IDENT_CACHE: dict[str, str] = {}
+
 
 def _split_generic_args(text: str) -> list[str]:
     parts: list[str] = []
@@ -41,6 +43,9 @@ def _split_generic_args(text: str) -> list[str]:
 
 
 def _safe_java_ident(name: str) -> str:
+    cached = _SAFE_JAVA_IDENT_CACHE.get(name, "")
+    if cached != "":
+        return cached
     chars: list[str] = []
     for ch in name:
         if ch.isalnum() or ch == "_":
@@ -56,6 +61,7 @@ def _safe_java_ident(name: str) -> str:
         out = "_" + out
     if out in _JAVA_KEYWORDS:
         out = out + "_"
+    _SAFE_JAVA_IDENT_CACHE[name] = out
     return out
 
 

@@ -247,7 +247,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
             if had_saved_type:
                 self.ctx.var_types[handler_name] = saved_type
             elif handler_name in self.ctx.var_types:
-                del self.ctx.var_types[handler_name]
+                self.ctx.var_types.pop(handler_name, None)
         self.state.indent_level = self.ctx.indent_level
 
     def emit_stmt_extension(self, node: dict[str, JsonVal]) -> None:

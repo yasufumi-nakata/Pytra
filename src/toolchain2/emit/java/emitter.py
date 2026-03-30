@@ -58,6 +58,7 @@ class EmitContext:
     active_varargs: set[str] = field(default_factory=set)
     expr_renderer: object | None = None
     stmt_renderer: object | None = None
+    symbol_name_cache: dict[str, str] = field(default_factory=dict)
 
 
 def _emit(ctx: EmitContext, line: str) -> None:
@@ -119,20 +120,34 @@ def _fqcn_to_tid_const(fqcn: str) -> str:
 
 
 def _java_symbol_name(ctx: EmitContext, name: str) -> str:
+    cached = ctx.symbol_name_cache.get(name, "")
+    if cached != "":
+        return cached
     if name == "self":
+        ctx.symbol_name_cache[name] = "this"
         return "this"
     mapped = ctx.renamed_symbols.get(name, "")
     if mapped != "":
-        return _safe_java_ident(mapped)
+        resolved = _safe_java_ident(mapped)
+        ctx.symbol_name_cache[name] = resolved
+        return resolved
     if ctx.module_id != "pytra.built_in.type_id_table":
         if name.find(_TYPE_ID_ALIAS_PREFIX) == 0:
             alias = name[len(_TYPE_ID_ALIAS_PREFIX):] + "_TID"
-            return _module_class_name("pytra.built_in.type_id_table") + "." + _safe_java_ident(alias)
+            resolved = _module_class_name("pytra.built_in.type_id_table") + "." + _safe_java_ident(alias)
+            ctx.symbol_name_cache[name] = resolved
+            return resolved
         if name.endswith("_TID"):
-            return _module_class_name("pytra.built_in.type_id_table") + "." + _safe_java_ident(name)
+            resolved = _module_class_name("pytra.built_in.type_id_table") + "." + _safe_java_ident(name)
+            ctx.symbol_name_cache[name] = resolved
+            return resolved
     if name in ctx.runtime_imports:
-        return ctx.runtime_imports[name]
-    return _safe_java_ident(name)
+        resolved = ctx.runtime_imports[name]
+        ctx.symbol_name_cache[name] = resolved
+        return resolved
+    resolved = _safe_java_ident(name)
+    ctx.symbol_name_cache[name] = resolved
+    return resolved
 
 
 def _tid_symbol_name(ctx: EmitContext, type_name: str) -> str:
@@ -438,6 +453,16 @@ def _emit_comp_expr(ctx: EmitContext, node: dict[str, JsonVal], result_type: str
     return "((java.util.function.Supplier<" + supplier_type + ">) () -> { " + supplier_type + " " + result_name + " = " + init_expr + "; " + body + " return " + result_name + "; }).get()"
 
 
+def _emit_range_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    start = node.get("start")
+    stop = node.get("stop")
+    step = node.get("step")
+    start_code = _emit_cast_expr(ctx, "int64", _emit_expr(ctx, start)) if isinstance(start, dict) else "0L"
+    stop_code = _emit_cast_expr(ctx, "int64", _emit_expr(ctx, stop)) if isinstance(stop, dict) else "0L"
+    step_code = _emit_cast_expr(ctx, "int64", _emit_expr(ctx, step)) if isinstance(step, dict) else "1L"
+    return "PyRuntime.pyRange((int) (" + start_code + "), (int) (" + stop_code + "), (int) (" + step_code + "))"
+
+
 def _call_yields_dynamic(node: dict[str, JsonVal]) -> bool:
     return _bool(node, "yields_dynamic")
 
@@ -582,7 +607,8 @@ class _JavaExprRenderer(CommonRenderer):
                 return "PyRuntime.__pytra_repeat_list(" + left + ", " + right + ")"
             if _is_list_type(right_type) and _is_int_type(left_type):
                 return "PyRuntime.__pytra_repeat_list(" + right + ", " + left + ")"
-        return super().render_binop(node)
+        op_text = self._operator_text("bin", op, op)
+        return "(" + left + " " + op_text + " " + right + ")"
 
     def render_attribute(self, node: dict[str, JsonVal]) -> str:
         return _emit_attribute(self.ctx, node)
@@ -766,7 +792,7 @@ def _emit_constant(node: dict[str, JsonVal]) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, str):
-        return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
+        return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t") + '"'
     if isinstance(value, int):
         return str(value) + "L"
     return str(value)
@@ -960,6 +986,8 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             "new HashMap<>()",
             "__RESULT__.put(" + _emit_expr(ctx, node.get("key")) + ", " + _emit_expr(ctx, node.get("value")) + ");",
         )
+    if kind == "RangeExpr":
+        return _emit_range_expr(ctx, node)
     raise RuntimeError("unsupported_expr_kind_java: " + kind)
 
 
@@ -1860,7 +1888,28 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
     if _emit_common_stmt_if_supported(ctx, node):
         return
     kind = _str(node, "kind")
-    if kind in ("Import", "ImportFrom", "TypeAlias"):
+    if kind in ("Import", "ImportFrom", "TypeAlias", "Global"):
+        return
+    if kind == "Delete":
+        for target in _list(node, "targets"):
+            if not isinstance(target, dict):
+                continue
+            target_kind = _str(target, "kind")
+            if target_kind == "Subscript":
+                owner_node = target.get("value")
+                slice_node = target.get("slice")
+                owner = _emit_expr(ctx, owner_node)
+                index = _emit_expr(ctx, slice_node)
+                owner_type = _node_type(ctx, owner_node)
+                if _is_dict_type(owner_type):
+                    _emit(ctx, owner + ".remove(" + index + ");")
+                    continue
+                if _is_list_type(owner_type):
+                    _emit(ctx, owner + ".remove((int) PyRuntime.pyToLong(" + index + "));")
+                    continue
+            elif target_kind in ("Name", "NameTarget"):
+                _emit(ctx, _java_symbol_name(ctx, _str(target, "id")) + " = null;")
+                continue
         return
     if kind == "VarDecl":
         name = _str(node, "name")

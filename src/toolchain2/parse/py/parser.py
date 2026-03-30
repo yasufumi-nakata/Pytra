@@ -299,6 +299,57 @@ def _parse_range_call(s: str) -> Optional[str]:
     return s[6:-1]
 
 
+def _split_header_inline_suite(s: str) -> tuple[str, str]:
+    """Split `if cond: stmt` style headers into (`if cond:`, `stmt`).
+
+    Only the first top-level colon counts; colons inside strings or nested
+    delimiters are ignored.
+    """
+    depth = 0
+    in_single = False
+    in_double = False
+    escaped = False
+    for idx, ch in enumerate(s):
+        if escaped:
+            escaped = False
+            continue
+        if ch == "\\" and (in_single or in_double):
+            escaped = True
+            continue
+        if ch == "'" and not in_double:
+            in_single = not in_single
+            continue
+        if ch == '"' and not in_single:
+            in_double = not in_double
+            continue
+        if in_single or in_double:
+            continue
+        if ch in "([{":
+            depth += 1
+            continue
+        if ch in ")]}":
+            if depth > 0:
+                depth -= 1
+            continue
+        if ch == ":" and depth == 0:
+            return s[: idx + 1].strip(), s[idx + 1 :].strip()
+    return s.strip(), ""
+
+
+def _parse_inline_suite(
+    ctx: ParseContext,
+    inline_text: str,
+    abs_ln: int,
+    indent: int,
+    name_types: dict[str, str],
+    scope_label: str,
+) -> list[Stmt]:
+    if inline_text == "":
+        return []
+    synthetic_line = (" " * indent) + inline_text
+    return _parse_block_lines(ctx, [synthetic_line], dict(name_types), scope_label, start_hint=abs_ln - 1)
+
+
 # ---------------------------------------------------------------------------
 # Expression tokenizer
 # ---------------------------------------------------------------------------
@@ -1942,7 +1993,8 @@ def _parse_class_def(
             if stmt.node_meta is None:
                 stmt.node_meta = {}
             meta = stmt.node_meta
-            assert isinstance(meta, dict)
+            if not isinstance(meta, dict):
+                continue
             if "extern_v2" in meta:
                 continue
             meta["extern_v2"] = _runtime_method_extern_v2(runtime_ns, cls_name, stmt.name)
@@ -3080,11 +3132,12 @@ def _parse_for_stmt(
     """for 文をパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
+    header, inline_suite = _split_header_inline_suite(s)
     indent = len(ln) - len(ln.lstrip(" "))
     abs_ln = _find_abs_line(ctx.lines, ln, 0)
 
     # Parse: for TARGET in ITER:
-    target_name, iter_text = _parse_for_header(s)
+    target_name, iter_text = _parse_for_header(header)
     if target_name == "":
         # Fallback
         span = make_span(abs_ln, indent, abs_ln, indent + len(s))
@@ -3092,8 +3145,13 @@ def _parse_for_stmt(
         return ExprStmt(source_span=span, value=dummy), start_i + 1
 
     # Collect body
-    sub_lines, end_i = _collect_sub_block(block_lines, start_i + 1, indent)
-    body_stmts = _parse_block_lines(ctx, sub_lines, name_types, "for")
+    sub_lines: list[str] = []
+    end_i = start_i + 1
+    if inline_suite != "":
+        body_stmts = _parse_inline_suite(ctx, inline_suite, abs_ln, indent + 4, name_types, "for")
+    else:
+        sub_lines, end_i = _collect_sub_block(block_lines, start_i + 1, indent)
+        body_stmts = _parse_block_lines(ctx, sub_lines, name_types, "for")
 
     # Determine end span
     end_ln = abs_ln
@@ -3143,15 +3201,21 @@ def _parse_while_stmt(
     """while 文をパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
+    header, inline_suite = _split_header_inline_suite(s)
     indent = len(ln) - len(ln.lstrip(" "))
     abs_ln = _find_abs_line(ctx.lines, ln, 0)
 
     # Parse: while COND:
-    cond_text = s[6:].rstrip(":").strip()
+    cond_text = header[6:].rstrip(":").strip()
     test = _parse_expr_text(ctx, cond_text, abs_ln, _find_expr_col(ctx, cond_text, abs_ln, indent + 6), name_types)
 
-    sub_lines, end_i = _collect_sub_block(block_lines, start_i + 1, indent)
-    body_stmts = _parse_block_lines(ctx, sub_lines, name_types, "while")
+    sub_lines: list[str] = []
+    end_i = start_i + 1
+    if inline_suite != "":
+        body_stmts = _parse_inline_suite(ctx, inline_suite, abs_ln, indent + 4, name_types, "while")
+    else:
+        sub_lines, end_i = _collect_sub_block(block_lines, start_i + 1, indent)
+        body_stmts = _parse_block_lines(ctx, sub_lines, name_types, "while")
 
     end_ln = abs_ln
     end_col = indent + len(s)
@@ -3178,11 +3242,12 @@ def _parse_with_stmt(
     """with 文をパースする。with EXPR as VAR:"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
+    header, inline_suite = _split_header_inline_suite(s)
     indent = len(ln) - len(ln.lstrip(" "))
     abs_ln = _find_abs_line(ctx.lines, ln, 0)
 
     # Parse: with EXPR as VAR:
-    inner = s[5:].rstrip(":").strip()  # strip "with " prefix and trailing ":"
+    inner = header[5:].rstrip(":").strip()  # strip "with " prefix and trailing ":"
     var_name: str = ""
     ctx_text: str = inner
     if " as " in inner:
@@ -3192,8 +3257,13 @@ def _parse_with_stmt(
 
     context_expr = _parse_expr_text(ctx, ctx_text, abs_ln, _find_expr_col(ctx, ctx_text, abs_ln, indent + 5), name_types)
 
-    sub_lines, end_i = _collect_sub_block(block_lines, start_i + 1, indent)
-    body_stmts = _parse_block_lines(ctx, sub_lines, name_types, "with")
+    sub_lines: list[str] = []
+    end_i = start_i + 1
+    if inline_suite != "":
+        body_stmts = _parse_inline_suite(ctx, inline_suite, abs_ln, indent + 4, name_types, "with")
+    else:
+        sub_lines, end_i = _collect_sub_block(block_lines, start_i + 1, indent)
+        body_stmts = _parse_block_lines(ctx, sub_lines, name_types, "with")
 
     end_ln = abs_ln
     end_col = indent + len(s)
@@ -3221,16 +3291,22 @@ def _parse_if_stmt(
     """if/elif/else 文をパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
+    header, inline_suite = _split_header_inline_suite(s)
     indent = len(ln) - len(ln.lstrip(" "))
     abs_ln = _find_abs_line(ctx.lines, ln, 0)
 
     # Parse condition
-    cond_text = s[3:].rstrip(":").strip()
+    cond_text = header[3:].rstrip(":").strip()
     test = _parse_expr_text(ctx, cond_text, abs_ln, _find_expr_col(ctx, cond_text, abs_ln, indent + 3), name_types)
 
     # Collect then block
-    then_lines, next_i = _collect_sub_block(block_lines, start_i + 1, indent)
-    then_stmts = _parse_block_lines(ctx, then_lines, name_types, "if")
+    then_lines: list[str] = []
+    next_i = start_i + 1
+    if inline_suite != "":
+        then_stmts = _parse_inline_suite(ctx, inline_suite, abs_ln, indent + 4, name_types, "if")
+    else:
+        then_lines, next_i = _collect_sub_block(block_lines, start_i + 1, indent)
+        then_stmts = _parse_block_lines(ctx, then_lines, name_types, "if")
 
     # Check for elif / else
     orelse: list[Stmt] = []
@@ -3244,8 +3320,13 @@ def _parse_if_stmt(
                 elif_stmt, next_i = _parse_elif_stmt(ctx, block_lines, next_i, indent, name_types)
                 orelse = [elif_stmt]
             elif next_s.startswith("else:") or next_s == "else:":
-                else_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
-                orelse = _parse_block_lines(ctx, else_lines, name_types, "else")
+                else_header, else_inline_suite = _split_header_inline_suite(_strip_inline_comment(next_s))
+                if else_inline_suite != "":
+                    orelse = _parse_inline_suite(ctx, else_inline_suite, _find_abs_line(ctx.lines, next_ln, 0), indent + 4, name_types, "else")
+                    next_i += 1
+                else:
+                    else_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
+                    orelse = _parse_block_lines(ctx, else_lines, name_types, "else")
 
     end_ln = abs_ln
     end_col = indent + len(s)
@@ -3283,14 +3364,20 @@ def _parse_elif_stmt(
     """elif 節を If ノードとしてパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
+    header, inline_suite = _split_header_inline_suite(s)
     indent = len(ln) - len(ln.lstrip(" "))
     abs_ln = _find_abs_line(ctx.lines, ln, 0)
 
-    cond_text = s[5:].rstrip(":").strip()
+    cond_text = header[5:].rstrip(":").strip()
     test = _parse_expr_text(ctx, cond_text, abs_ln, _find_expr_col(ctx, cond_text, abs_ln, indent + 5), name_types)
 
-    then_lines, next_i = _collect_sub_block(block_lines, start_i + 1, indent)
-    then_stmts = _parse_block_lines(ctx, then_lines, name_types, "elif")
+    then_lines: list[str] = []
+    next_i = start_i + 1
+    if inline_suite != "":
+        then_stmts = _parse_inline_suite(ctx, inline_suite, abs_ln, indent + 4, name_types, "elif")
+    else:
+        then_lines, next_i = _collect_sub_block(block_lines, start_i + 1, indent)
+        then_stmts = _parse_block_lines(ctx, then_lines, name_types, "elif")
 
     orelse: list[Stmt] = []
     if next_i < len(block_lines):
@@ -3302,8 +3389,13 @@ def _parse_elif_stmt(
                 elif_stmt, next_i = _parse_elif_stmt(ctx, block_lines, next_i, indent, name_types)
                 orelse = [elif_stmt]
             elif next_s.startswith("else:"):
-                else_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
-                orelse = _parse_block_lines(ctx, else_lines, name_types, "else")
+                else_header, else_inline_suite = _split_header_inline_suite(_strip_inline_comment(next_s))
+                if else_inline_suite != "":
+                    orelse = _parse_inline_suite(ctx, else_inline_suite, _find_abs_line(ctx.lines, next_ln, 0), indent + 4, name_types, "else")
+                    next_i += 1
+                else:
+                    else_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
+                    orelse = _parse_block_lines(ctx, else_lines, name_types, "else")
 
     end_ln = abs_ln
     end_col = indent + len(s)

@@ -3942,7 +3942,7 @@ def _convert_for_to_forrange(
 
     # Remove iter (no longer needed)
     if "iter" in stmt:
-        del stmt["iter"]
+        stmt.pop("iter", None)
 
     # Define loop variable
     target = stmt.get("target")

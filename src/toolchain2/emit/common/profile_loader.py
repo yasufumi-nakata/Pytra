@@ -12,7 +12,7 @@ from pathlib import Path
 from pytra.std import json
 from pytra.std.json import JsonVal
 
-_PROFILES_ROOT: Path | None = None
+_PROFILES_ROOT_BOX: dict[str, Path | None] = {"value": None}
 _PROFILE_DOC_CACHE: dict[str, dict[str, JsonVal]] = {}
 
 _VALID_TUPLE_UNPACK_STYLES: set[str] = {
@@ -84,10 +84,11 @@ def _merge_profile_dict(base: dict[str, JsonVal], override: dict[str, JsonVal]) 
 
 
 def _profiles_root() -> Path:
-    global _PROFILES_ROOT
-    if _PROFILES_ROOT is None:
-        _PROFILES_ROOT = Path(__file__).resolve().parents[1] / "profiles"
-    return _PROFILES_ROOT
+    cached = _PROFILES_ROOT_BOX.get("value")
+    if cached is None:
+        cached = Path(__file__).resolve().parents[1] / "profiles"
+        _PROFILES_ROOT_BOX["value"] = cached
+    return cached
 
 
 def load_profile_with_includes(profile_path: Path) -> dict[str, JsonVal]:

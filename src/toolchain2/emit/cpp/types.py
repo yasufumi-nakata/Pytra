@@ -18,8 +18,9 @@ _g_types: dict[str, str] = {}
 
 def init_types_mapping(types: dict[str, str]) -> None:
     """mapping.json の types テーブルを注入する。emit_module() 呼び出し前に一度だけ呼ぶ。"""
-    global _g_types
-    _g_types = types
+    _g_types.clear()
+    for name, mapped in types.items():
+        _g_types[name] = mapped
 
 
 # フォールバック: mapping.json が空の場合に使うハードコード表。

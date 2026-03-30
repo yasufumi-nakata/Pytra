@@ -5098,7 +5098,7 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if saved_handler_type != "":
                     ctx.var_types[safe_name2] = saved_handler_type
                 elif safe_name2 in ctx.var_types:
-                    del ctx.var_types[safe_name2]
+                    ctx.var_types.pop(safe_name2, None)
             ctx.indent_level -= 1
             _emit(ctx, "}")
         _emit(ctx, "if !__handled {")
@@ -5156,7 +5156,7 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if saved_handler_type != "":
                 ctx.var_types[safe_name2] = saved_handler_type
             elif safe_name2 in ctx.var_types:
-                del ctx.var_types[safe_name2]
+                ctx.var_types.pop(safe_name2, None)
         ctx.indent_level -= 1
         _emit(ctx, "}")
     _emit(ctx, "if !__handled {")
@@ -5332,7 +5332,7 @@ def _emit_error_handlers(
             if saved_type != "":
                 ctx.var_types[safe_name2] = saved_type
             elif safe_name2 in ctx.var_types:
-                del ctx.var_types[safe_name2]
+                ctx.var_types.pop(safe_name2, None)
         ctx.indent_level -= 1
     if emitted_any:
         _emit(ctx, "}")
@@ -5421,7 +5421,7 @@ def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     if saved_type != "":
                         ctx.var_types[safe_name2] = saved_type
                     elif safe_name2 in ctx.var_types:
-                        del ctx.var_types[safe_name2]
+                        ctx.var_types.pop(safe_name2, None)
                 ctx.indent_level -= 1
             if not first:
                 _emit(ctx, "}")
@@ -5774,7 +5774,8 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
                             is_staticmethod = True
                             break
                     if not is_staticmethod:
-                        ctx.method_signatures.setdefault(class_name, {})[fn_name] = {
+                        method_bucket = ctx.method_signatures.setdefault(class_name, {})
+                        method_bucket[fn_name] = {
                             "arg_order": _list(class_stmt, "arg_order"),
                             "arg_types": _dict(class_stmt, "arg_types"),
                             "arg_defaults": _dict(class_stmt, "arg_defaults"),

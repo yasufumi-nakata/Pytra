@@ -518,7 +518,7 @@ def _fold_trait_predicates(
         implemented = trait_impls.get(value_fqcn, set())
         folded = trait_fqcn in implemented
         for key in list(node.keys()):
-            del node[key]
+            node.pop(key, None)
         node["kind"] = "Constant"
         node["value"] = folded
         node["resolved_type"] = "bool"
@@ -688,7 +688,7 @@ def _rewrite_type_id_isinstance(
             "keywords": [],
         }
         for key in list(node.keys()):
-            del node[key]
+            node.pop(key, None)
         for key2, value2 in new_node.items():
             node[key2] = value2
         _ensure_symbol_import(meta, TYPE_ID_RUNTIME_MODULE_ID, "pytra_isinstance", "pytra_isinstance")
