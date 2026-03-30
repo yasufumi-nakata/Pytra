@@ -370,3 +370,94 @@ class IntFlag < IntEnum
     IntFlag.new("#{@name}&#{other.is_a?(IntFlag) ? other.name : v}", @value & v)
   end
 end
+
+# Floor division (Python semantics: floor toward negative infinity)
+def __pytra_floordiv(a, b)
+  af = __pytra_float(a)
+  bf = __pytra_float(b)
+  raise ZeroDivisionError, "division by zero" if bf == 0.0
+  (af / bf).floor
+end
+
+# Math helpers
+def __pytra_floor(v)
+  __pytra_float(v).floor
+end
+
+def __pytra_ceil(v)
+  __pytra_float(v).ceil
+end
+
+def __pytra_pow(base, exp)
+  __pytra_float(base) ** __pytra_float(exp)
+end
+
+def __pytra_round(v, ndigits = 0)
+  __pytra_float(v).round(ndigits)
+end
+
+def __pytra_trunc(v)
+  __pytra_float(v).truncate
+end
+
+def __pytra_isfinite(v)
+  __pytra_float(v).finite?
+end
+
+def __pytra_isinf(v)
+  __pytra_float(v).infinite? != nil
+end
+
+def __pytra_isnan(v)
+  __pytra_float(v).nan?
+end
+
+def __pytra_perf_counter
+  Process.clock_gettime(Process::CLOCK_MONOTONIC)
+end
+
+def __pytra_zip(*args)
+  return [] if args.empty?
+  arrays = args.map { |a| __pytra_as_list(a) }
+  min_len = arrays.map(&:length).min
+  result = []
+  i = 0
+  while i < min_len
+    tuple = arrays.map { |a| a[i] }
+    result << tuple
+    i += 1
+  end
+  result
+end
+
+def __pytra_sorted(v)
+  __pytra_as_list(v).sort
+end
+
+def __pytra_makedirs(path, *args)
+  require 'fileutils'
+  FileUtils.mkdir_p(__pytra_str(path))
+end
+
+def __pytra_isinstance(obj, type_cls)
+  obj.is_a?(type_cls)
+end
+
+# sum built-in
+def __pytra_sum(iterable, start = 0)
+  __pytra_as_list(iterable).inject(start) { |s, x| s + x }
+end
+
+# type() built-in
+def __pytra_type(obj)
+  obj.class
+end
+
+# delete from dict/list
+def __pytra_del(container, key)
+  if container.is_a?(Hash)
+    container.delete(key)
+  elsif container.is_a?(Array)
+    container.delete_at(__pytra_int(key))
+  end
+end
