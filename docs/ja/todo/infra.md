@@ -20,4 +20,9 @@
 
 ## 未完了タスク
 
-（現在未完了タスクなし。P20-INT32 は [plans/p4-int32-default.md](../plans/p4-int32-default.md) に保留中。再開時にここへ戻す。）
+### P0-SELFHOST-MATRIX-AUTO-REFRESH: parity check 末尾で selfhost マトリクスを自動再集約する
+
+1. [ ] [ID: P0-SELFHOST-REFRESH-S1] parity check（fast 版）の末尾に `_maybe_refresh_selfhost_python()` を追加する — `selfhost_python.json` の mtime が 30 分以上古ければ `run_selfhost_parity.py --selfhost-lang python` を自動実行して `.parity-results/selfhost_python.json` を再集約する
+2. [ ] [ID: P0-SELFHOST-REFRESH-S2] 再集約後に `gen_backend_progress.py` が selfhost マトリクスに反映することを確認する（既存の `_maybe_regenerate_progress` の 10 分ルールで自動実行される）
+
+（P20-INT32 は [plans/p4-int32-default.md](../plans/p4-int32-default.md) に保留中。再開時にここへ戻す。）
