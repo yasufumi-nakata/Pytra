@@ -31,6 +31,7 @@ from toolchain2.emit.go.emitter import emit_go_module
 from toolchain2.emit.java.emitter import emit_java_module
 from toolchain2.emit.java.types import java_module_class_name
 from toolchain2.emit.rs.emitter import emit_rs_module
+from toolchain2.emit.nim.emitter import emit_nim_module
 from toolchain2.emit.ts.emitter import emit_ts_module
 from toolchain2.link.linker import LinkResult
 from toolchain2.link.linker import link_modules
@@ -760,7 +761,10 @@ def cmd_emit(args: list[str]) -> int:
     if target == "ts" or target == "js":
         return _emit_ts(manifest_path, Path(output_dir_text), strip_types=(target == "js"))
 
-    print("error: unsupported target: " + target + " (available: cpp, go, rs, cs, java, ts, js)")
+    if target == "nim":
+        return _emit_nim(manifest_path, Path(output_dir_text))
+
+    print("error: unsupported target: " + target + " (available: cpp, go, rs, cs, java, ts, js, nim)")
     return 1
 
 
@@ -828,6 +832,36 @@ def _emit_rs(manifest_path: Path, output_dir: Path) -> int:
                 written += 1
 
     print("emitted: " + str(output_dir) + " (" + str(written) + " Rust files)")
+    return 0
+
+
+def _emit_nim(manifest_path: Path, output_dir: Path) -> int:
+    """Nim emit: linked output -> Nim source files."""
+    manifest_doc, linked_modules = load_linked_output(manifest_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    written = 0
+    for module in linked_modules:
+        code = emit_nim_module(module.east_doc)
+        if code.strip() == "":
+            continue
+        mid = module.module_id
+        fname = mid.replace(".", "_") + ".nim"
+        out_path = output_dir.joinpath(fname)
+        out_path.write_text(code, encoding="utf-8")
+        written += 1
+
+    # Copy Nim runtime files
+    nim_runtime = _repo_root().joinpath("src").joinpath("runtime").joinpath("nim")
+    for bucket in ("built_in", "std"):
+        bucket_dir = nim_runtime.joinpath(bucket)
+        if bucket_dir.exists():
+            for nim_file in bucket_dir.glob("*.nim"):
+                dst = output_dir.joinpath(nim_file.name)
+                dst.write_text(nim_file.read_text(encoding="utf-8"), encoding="utf-8")
+                written += 1
+
+    print("emitted: " + str(output_dir) + " (" + str(written) + " Nim files)")
     return 0
 
 
@@ -1023,6 +1057,18 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str) -> int
         east3_opt_paths.append(str(out_path))
 
     link_result = link_modules(east3_opt_paths, target=target, dispatch_mode="native")
+    # Only the first input is the actual entry module; demote others
+    if len(inputs) >= 1:
+        entry_abs = str(Path(inputs[0]).resolve())
+        for m in link_result.linked_modules:
+            sp_abs = str(Path(m.source_path).resolve()) if m.source_path else ""
+            if m.is_entry and sp_abs != entry_abs:
+                m.is_entry = False
+                meta = m.east_doc.get("meta")
+                if isinstance(meta, dict):
+                    ec = meta.get("emit_context")
+                    if isinstance(ec, dict):
+                        ec["is_entry"] = False
     print("build: linked " + str(len(link_result.linked_modules)) + " modules")
 
     # 6. Emit
@@ -1086,6 +1132,21 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str) -> int
                     output_dir.joinpath(rs_file.name).write_text(rs_file.read_text(encoding="utf-8"), encoding="utf-8")
                     written += 1
         print("emitted: " + str(output_dir) + " (" + str(written) + " Rust files)")
+    elif target == "nim":
+        for m in link_result.linked_modules:
+            code = emit_nim_module(m.east_doc)
+            if code.strip() == "":
+                continue
+            output_dir.joinpath(m.module_id.replace(".", "_") + ".nim").write_text(code, encoding="utf-8")
+            written += 1
+        nim_runtime = _repo_root().joinpath("src").joinpath("runtime").joinpath("nim")
+        for bucket in ("built_in", "std"):
+            bucket_dir = nim_runtime.joinpath(bucket)
+            if bucket_dir.exists():
+                for nim_file in bucket_dir.glob("*.nim"):
+                    output_dir.joinpath(nim_file.name).write_text(nim_file.read_text(encoding="utf-8"), encoding="utf-8")
+                    written += 1
+        print("emitted: " + str(output_dir) + " (" + str(written) + " Nim files)")
     elif target == "ts" or target == "js":
         strip = (target == "js")
         ext = ".js" if strip else ".ts"

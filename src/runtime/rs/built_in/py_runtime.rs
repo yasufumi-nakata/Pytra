@@ -242,7 +242,7 @@ impl PyStringify for isize {
         format!("{}", self)
     }
 }
-impl<T: PyStringify + Copy> PyStringify for &T {
+impl<T: PyStringify> PyStringify for &T {
     fn py_stringify(&self) -> String {
         (**self).py_stringify()
     }
@@ -545,7 +545,10 @@ pub fn py_slice_str(s: &str, start: Option<i64>, end: Option<i64>) -> String {
 }
 
 pub fn py_print<T: PyStringify>(v: T) {
-    println!("{}", v.py_stringify());
+    let s = v.py_stringify();
+    if !_capture_print_line(&s) {
+        println!("{}", s);
+    }
 }
 
 pub trait PyContains<K: ?Sized> {
@@ -664,6 +667,20 @@ pub fn py_any_as_dict(v: PyAny) -> BTreeMap<String, PyAny> {
     match v {
         PyAny::Dict(d) => d,
         _ => BTreeMap::new(),
+    }
+}
+
+pub fn py_any_as_hashmap(v: PyAny) -> HashMap<String, PyAny> {
+    match v {
+        PyAny::Dict(d) => d.into_iter().collect(),
+        _ => HashMap::new(),
+    }
+}
+
+pub fn py_any_as_list(v: PyAny) -> PyList<PyAny> {
+    match v {
+        PyAny::List(items) => PyList::from_vec(items),
+        _ => PyList::new(),
     }
 }
 
@@ -1406,10 +1423,40 @@ pub fn py_assert_all(results: PyList<bool>, _label: String) -> bool {
     true
 }
 
-/// Python `py_assert_stdout(expected_lines, fn)` — stub for self-hosted compatibility.
-/// Calls the function and returns true (stdout capture not implemented).
-pub fn py_assert_stdout<F: Fn()>(_expected: PyList<String>, f: F) -> bool {
+// Global stdout capture buffer for py_assert_stdout
+thread_local! {
+    static CAPTURE_BUF: RefCell<Option<Vec<String>>> = RefCell::new(None);
+}
+
+/// Internal: if capturing, push line to buffer and return true; else return false.
+fn _capture_print_line(line: &str) -> bool {
+    CAPTURE_BUF.with(|buf| {
+        let mut b = buf.borrow_mut();
+        if let Some(ref mut v) = *b {
+            v.push(line.to_string());
+            true
+        } else {
+            false
+        }
+    })
+}
+
+/// Python `py_assert_stdout(expected_lines, fn)` — capture stdout and compare with expected lines.
+pub fn py_assert_stdout<F: Fn()>(expected: PyList<String>, f: F) -> bool {
+    // Start capturing
+    CAPTURE_BUF.with(|buf| { *buf.borrow_mut() = Some(Vec::new()); });
     f();
+    // Stop capturing and compare
+    let captured = CAPTURE_BUF.with(|buf| { buf.borrow_mut().take().unwrap_or_default() });
+    let expected_vec = expected.py_borrow();
+    if captured.len() != expected_vec.len() {
+        return false;
+    }
+    for (a, e) in captured.iter().zip(expected_vec.iter()) {
+        if a != e {
+            return false;
+        }
+    }
     true
 }
 

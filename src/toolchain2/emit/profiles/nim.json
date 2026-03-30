@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "language": "nim",
+
+  "types": {
+    "int8": "int8",
+    "uint8": "uint8",
+    "int16": "int16",
+    "uint16": "uint16",
+    "int32": "int32",
+    "uint32": "uint32",
+    "int64": "int64",
+    "uint64": "uint64",
+    "float32": "float32",
+    "float64": "float64",
+    "bool": "bool",
+    "str": "string",
+    "None": "void",
+    "Any": "PyObj",
+    "Path": "PyPath"
+  },
+
+  "generic_types": {
+    "list": "seq[{T}]",
+    "dict": "Table[{K}, {V}]",
+    "set": "HashSet[{T}]",
+    "tuple": "({...})",
+    "optional": "Option[{T}]"
+  },
+
+  "operators": {
+    "bin": {
+      "FloorDiv": "div",
+      "Mod": "mod",
+      "Pow": "__pow",
+      "BitAnd": "and",
+      "BitOr": "or",
+      "BitXor": "xor",
+      "LShift": "shl",
+      "RShift": "shr"
+    },
+    "cmp": {
+      "Eq": "==",
+      "NotEq": "!=",
+      "Lt": "<",
+      "LtE": "<=",
+      "Gt": ">",
+      "GtE": ">="
+    },
+    "bool": {
+      "And": "and",
+      "Or": "or"
+    },
+    "unary": {
+      "Not": "not ",
+      "Invert": "not "
+    }
+  },
+
+  "syntax": {
+    "if": "if {cond}:",
+    "elif": "elif {cond}:",
+    "else": "else:",
+    "while": "while {cond}:",
+    "block_close": "",
+    "return": "return",
+    "break": "break",
+    "continue": "continue",
+    "pass": "discard",
+    "comment_prefix": "#",
+    "docstring_open": "##",
+    "docstring_close": ""
+  },
+
+  "lowering": {
+    "tuple_unpack_style": "individual_temps",
+    "container_covariance": false,
+    "closure_style": "closure_syntax",
+    "with_style": "defer",
+    "property_style": "method_call",
+    "swap_style": "swap_call",
+    "none_literal": "nil",
+    "bool_literals": ["true", "false"],
+    "self_keyword": "self",
+    "type_position": "postfix_colon",
+    "condition_parens": false,
+    "block_braces": "indent",
+    "stmt_terminator": "",
+    "string_type_owned": true,
+    "exception_style": "native_throw"
+  }
+}
