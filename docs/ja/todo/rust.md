@@ -20,11 +20,23 @@
 
 ## 現状
 
-- toolchain2 に Rust emitter は未実装（`src/toolchain2/emit/rs/` が存在しない）
-- runtime は `src/runtime/rs/` に存在する（旧 toolchain1 時代の実装）
-- 旧 toolchain1 の Rust emitter は `src/toolchain/emit/rs/` に存在するが、toolchain2 への移行が必要
+- toolchain2 の Rust emitter は `src/toolchain2/emit/rs/` に実装済み（fixture 131/131 + sample 18/18 emit 成功）
+- runtime は `src/runtime/rs/` に存在（toolchain2 向けに拡張中）
+- compile + run parity は一部 fixture で PASS（class_instance, dataclass, class_tuple_assign, nested_types, str_index_char_compare 等）
+- 残ブロッカー: 継承 + ref セマンティクスの EAST3 側問題（P0-EAST3-INHERIT）
 
 ## 未完了タスク
+
+### P0-EAST3-INHERIT: 継承クラスの ref 一貫性 + super() 解決
+
+文脈: [docs/ja/plans/plan-east3-inheritance-ref-super.md](../plans/plan-east3-inheritance-ref-super.md)
+
+EAST3 lowering の問題。継承階層の基底クラスが `class_storage_hint: "value"` のまま、派生クラスだけ `"ref"` になるため、Rust emitter で `Rc<RefCell<T>>` と `Box<dyn Trait>` が衝突する。また `super()` が `resolved_type: "unknown"` のまま未解決。emitter のワークアラウンドではなく EAST3 側の修正が必要。
+
+1. [ ] [ID: P0-EAST3-INHERIT-S1] EAST3 lowering で、派生クラスが存在する基底クラスの `class_storage_hint` を `"ref"` に昇格する（推移的に適用）
+2. [ ] [ID: P0-EAST3-INHERIT-S2] EAST3 lowering（または EAST2 resolve）で `super()` の型を解決する — receiver type を base class に、method call の戻り値型を base class のメソッド定義から確定
+3. [ ] [ID: P0-EAST3-INHERIT-S3] 全言語の fixture parity に回帰がないことを確認する
+4. [ ] [ID: P0-EAST3-INHERIT-S4] Rust の `inheritance_virtual_dispatch_multilang` が compile + run parity PASS することを確認する
 
 ### P7-RS-EMITTER: Rust emitter を toolchain2 に新規実装する
 
