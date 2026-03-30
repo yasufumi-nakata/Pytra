@@ -252,6 +252,23 @@ impl PyStringify for () {
         "None".to_string()
     }
 }
+impl PyStringify for PyAny {
+    fn py_stringify(&self) -> String {
+        match self {
+            PyAny::Int(n) => n.to_string(),
+            PyAny::Float(f) => {
+                let s = f.to_string();
+                if !s.contains('.') { format!("{}.0", s) } else { s }
+            }
+            PyAny::Bool(b) => if *b { "True".to_string() } else { "False".to_string() },
+            PyAny::Str(s) => s.clone(),
+            PyAny::Dict(_) => "<dict>".to_string(),
+            PyAny::List(_) => "<list>".to_string(),
+            PyAny::Set(_) => "<set>".to_string(),
+            PyAny::None => "None".to_string(),
+        }
+    }
+}
 
 pub trait PyBool {
     fn py_bool(&self) -> bool;

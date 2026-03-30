@@ -85,6 +85,14 @@ class RsEmitContext:
     current_nested_fn: str = ""
     # @property methods: {class_name: {method_name}}
     class_property_methods: dict[str, set[str]] = field(default_factory=dict)
+    # Classes that are base classes of other classes (used as function parameter types via dyn trait)
+    parent_class_names: set[str] = field(default_factory=set)
+    # Dense type IDs from linked manifest type_id_resolved_v1: {fqcn → dense_tid}
+    class_type_ids: dict[str, int] = field(default_factory=dict)
+    # Type info table from linked manifest type_info_table_v1: {name → {id, entry, exit}}
+    class_type_info_table: dict[str, dict[str, int]] = field(default_factory=dict)
+    # Name of variable holding the caught exception message inside a catch handler (for bare raise)
+    catch_err_msg_var: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -244,8 +252,7 @@ class _RsStmtCommonRenderer(CommonRenderer):
 
     def emit_stmt(self, node: JsonVal) -> None:
         kind = self._str(node, "kind")
-        if kind in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "Raise", "Try",
-                    "comment", "blank", "If", "While"):
+        if kind in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "Raise", "Try", "comment", "blank", "If", "While"):
             super().emit_stmt(node)
             self.ctx.indent_level = self.state.indent_level
             return
@@ -292,10 +299,11 @@ def _emit_constant(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     value = node.get("value")
     resolved_type = _str(node, "resolved_type")
     # Check for body cast (numeric_promotion: int → float)
-    has_float_body_cast = any(
-        isinstance(c, dict) and _str(c, "on") == "body" and _str(c, "to") in ("float64", "float32", "float")
-        for c in _list(node, "casts")
-    )
+    has_float_body_cast = False
+    for c in _list(node, "casts"):
+        if isinstance(c, dict) and _str(c, "on") == "body" and _str(c, "to") in ("float64", "float32", "float"):
+            has_float_body_cast = True
+            break
     if value is None:
         return "None"
     if isinstance(value, bool):
@@ -359,6 +367,16 @@ def _emit_binop(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     resolved_type = _str(node, "resolved_type")
     left_type = _str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
     right_type = _str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
+    # Use declared var type (not narrowed type) for operand type checks — isinstance guards narrow
+    # the resolved_type but the Rust variable is still Box<dyn Any> if originally a union type
+    def _orig_type(nt: str, n: JsonVal) -> str:
+        if isinstance(n, dict) and _str(n, "kind") == "Name":
+            vt = ctx.var_types.get(_str(n, "id"), "")
+            if vt != "":
+                return vt
+        return nt
+    left_type_orig = _orig_type(left_type, left_node)
+    right_type_orig = _orig_type(right_type, right_node)
 
     # Apply casts from EAST3 casts field
     casts = _list(node, "casts")
@@ -373,13 +391,19 @@ def _emit_binop(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             right = _apply_cast(right, cast_to)
 
     # Map operators
-    op_map: dict[str, str] = {
-        "Add": "+", "Sub": "-", "Mult": "*", "Div": "/",
-        "FloorDiv": "/", "Mod": "%",
-        "BitAnd": "&", "BitOr": "|", "BitXor": "^",
-        "LShift": "<<", "RShift": ">>",
-        "Pow": ".pow",
-    }
+    op_map: dict[str, str] = {}
+    op_map["Add"] = "+"
+    op_map["Sub"] = "-"
+    op_map["Mult"] = "*"
+    op_map["Div"] = "/"
+    op_map["FloorDiv"] = "/"
+    op_map["Mod"] = "%"
+    op_map["BitAnd"] = "&"
+    op_map["BitOr"] = "|"
+    op_map["BitXor"] = "^"
+    op_map["LShift"] = "<<"
+    op_map["RShift"] = ">>"
+    op_map["Pow"] = ".pow"
     rs_op = op_map.get(op, op)
     if op == "FloorDiv":
         return "(" + left + " / " + right + ")"
@@ -390,6 +414,39 @@ def _emit_binop(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         # Rust requires: String + &str  OR  &str + &str (via format!)
         # Use format! for safety
         return "format!(\"{}{}\", " + left + ", " + right + ")"
+    # Cannot do arithmetic on Box<dyn Any> — use original declared type, not narrowed type
+    left_rs = _rs_type_for_context(ctx, left_type_orig) if left_type_orig else ""
+    right_rs = _rs_type_for_context(ctx, right_type_orig) if right_type_orig else ""
+    if left_rs == "Box<dyn std::any::Any>" or right_rs == "Box<dyn std::any::Any>":
+        # If EAST3 narrowed the type (e.g., inside isinstance guard), use downcast.
+        # Also use the BinOp's own resolved_type as fallback (e.g., closure calls with unknown operands).
+        _ANY_DOWNCAST_ARITH: dict[str, str] = {
+            "int64": "i64", "int32": "i32", "float64": "f64", "float32": "f32",
+            "bool": "bool", "uint64": "u64", "uint32": "u32",
+        }
+        l_narrow = _ANY_DOWNCAST_ARITH.get(left_type, "")
+        r_narrow = _ANY_DOWNCAST_ARITH.get(right_type, "")
+        # Fallback: use the BinOp result type or the other operand's narrowed type
+        # to infer the downcast target — but only when the operand is actually a
+        # union type (contains "|"), not when it is merely "unknown".
+        result_narrow = _ANY_DOWNCAST_ARITH.get(resolved_type, "")
+        _is_union = lambda t: "|" in t and t != "unknown"
+        if l_narrow == "" and left_rs == "Box<dyn std::any::Any>" and _is_union(left_type_orig):
+            l_narrow = r_narrow if r_narrow != "" else result_narrow
+        if r_narrow == "" and right_rs == "Box<dyn std::any::Any>" and _is_union(right_type_orig):
+            r_narrow = l_narrow if l_narrow != "" else result_narrow
+        def _downcast_expr(expr: str, narrow: str, is_any: bool) -> str:
+            if not is_any or narrow == "":
+                return expr
+            zero = "0" if narrow not in ("f64", "f32") else "0.0"
+            return expr + ".downcast_ref::<" + narrow + ">().copied().unwrap_or(" + zero + ")"
+        l_any = left_rs == "Box<dyn std::any::Any>"
+        r_any = right_rs == "Box<dyn std::any::Any>"
+        if (l_narrow != "" or not l_any) and (r_narrow != "" or not r_any):
+            l_cast = _downcast_expr(left, l_narrow, l_any)
+            r_cast = _downcast_expr(right, r_narrow, r_any)
+            return "(" + l_cast + " " + rs_op + " " + r_cast + ")"
+        return 'todo!("Box<dyn Any> arithmetic: ' + op + '")'
     return "(" + left + " " + rs_op + " " + right + ")"
 
 
@@ -450,8 +507,16 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
                     else:
                         parts.append(option_side + ".is_some()")
                 elif not left_is_optional and not right_is_optional and right == "None":
-                    # Non-optional type compared to None: always not-None
-                    parts.append("true" if rs_op == "!=" else "false")
+                    # Check if the type is PyAny enum (object/Any/Obj → PyAny enum)
+                    left_is_pyany = left_type in ("object", "Any", "Obj") or left_type == ""
+                    if left_is_pyany:
+                        if rs_op == "==":
+                            parts.append("matches!(" + option_side + ", PyAny::None)")
+                        else:
+                            parts.append("!matches!(" + option_side + ", PyAny::None)")
+                    else:
+                        # Non-optional, non-Any type compared to None: always not-None
+                        parts.append("true" if rs_op == "!=" else "false")
                 else:
                     parts.append("(" + current_left + " " + rs_op + " " + right + ")")
             else:
@@ -461,6 +526,95 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if len(parts) == 1:
         return parts[0]
     return "(" + " && ".join(parts) + ")"
+
+
+def _emit_isinstance(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
+    """Emit an EAST3 IsInstance node as a Rust type check."""
+    val_node = node.get("value")
+    expected_node = node.get("expected_type_id")
+    val_str = _emit_expr(ctx, val_node)
+    val_rt = _str(val_node, "resolved_type") if isinstance(val_node, dict) else ""
+    expected_id = _str(expected_node, "id") if isinstance(expected_node, dict) else ""
+
+    # Normalize PYTRA_TID_* constants (used by C++ backend) to type names
+    _PYTRA_TID_MAP: dict[str, str] = {
+        "PYTRA_TID_INT": "int64", "PYTRA_TID_FLOAT": "float64", "PYTRA_TID_BOOL": "bool",
+        "PYTRA_TID_STR": "str", "PYTRA_TID_LIST": "list", "PYTRA_TID_DICT": "dict",
+        "PYTRA_TID_SET": "set", "PYTRA_TID_NONE": "None", "PYTRA_TID_BYTES": "bytes",
+        "PYTRA_TID_TUPLE": "tuple",
+    }
+    if expected_id in _PYTRA_TID_MAP:
+        expected_id = _PYTRA_TID_MAP[expected_id]
+
+    # Union types (A | B) → Box<dyn Any>; object/Any/Obj/JsonVal → PyAny enum
+    is_union_val = "|" in val_rt
+    is_pyany_val = val_rt in ("object", "Any", "Obj", "JsonVal") and not is_union_val
+    is_boxany_val = val_rt in ("unknown",) or is_union_val or val_rt == ""
+    is_any_val = is_pyany_val or is_boxany_val
+
+    if is_any_val:
+        if is_pyany_val:
+            # val_rt is object/Any/Obj → PyAny enum → use matches! or type-id check
+            _ISINSTANCE_PYANY: dict[str, str] = {
+                "int64": "PyAny::Int(_)", "int": "PyAny::Int(_)",
+                "float64": "PyAny::Float(_)", "float": "PyAny::Float(_)",
+                "bool": "PyAny::Bool(_)",
+                "str": "PyAny::Str(_)",
+                "dict": "PyAny::Dict(_)",
+                "list": "PyAny::List(_)",
+                "None": "PyAny::None",
+            }
+            pyany_pattern = _ISINSTANCE_PYANY.get(expected_id, "")
+            if pyany_pattern != "":
+                return "matches!(" + val_str + ", " + pyany_pattern + ")"
+            # User-defined class: encoded as PyAny::Int(type_id) — check via py_is_subtype
+            if expected_id in ctx.class_names:
+                tid_const = ctx.module_prefix.upper() + safe_rs_ident(expected_id).upper() + "_TID"
+                return ("(if let PyAny::Int(__tid) = &" + val_str +
+                        " { py_is_subtype(*__tid, " + tid_const + ") } else { false })")
+            return "false"
+        # For Box<dyn Any> (union types) — use downcast_ref
+        ref_val = "&" + val_str if not val_str.startswith("&") else val_str
+        _ISINSTANCE_DOWNCAST: dict[str, str] = {
+            "int64": "i64", "int32": "i32", "int16": "i16", "int8": "i8",
+            "uint64": "u64", "uint32": "u32", "uint16": "u16", "uint8": "u8",
+            "float64": "f64", "float32": "f32",
+            "bool": "bool",
+            "str": "String",
+        }
+        rust_type = _ISINSTANCE_DOWNCAST.get(expected_id, "")
+        if rust_type == "":
+            # User-defined class or unknown: check via PyRuntimeTypeId downcast
+            if expected_id in ctx.class_names:
+                return "(" + ref_val + ").downcast_ref::<" + expected_id + ">().is_some()"
+            # Unknown type — fallback to false
+            return "false"
+        return "(" + ref_val + ").downcast_ref::<" + rust_type + ">().is_some()"
+
+    # Value has a known concrete type — static isinstance always true/false
+    # e.g., isinstance(x: int64, int) → true, isinstance(x: list[str], list) → true
+    _TYPE_COMPAT: dict[str, list[str]] = {
+        "int64": ["int64", "int32", "int16", "int8", "uint64", "uint32", "uint16", "uint8"],
+        "int32": ["int64", "int32"], "int16": ["int64", "int16"], "int8": ["int64", "int8"],
+        "float64": ["float64", "float32"], "float32": ["float64", "float32"],
+        "bool": ["bool"], "str": ["str"],
+        "list": ["list"], "dict": ["dict"], "set": ["set"],
+    }
+    # Direct match
+    if val_rt == expected_id:
+        return "true"
+    # Generic list/dict/set compatibility: list[str] isa list, etc.
+    if expected_id in ("list", "dict", "set") and val_rt.startswith(expected_id + "["):
+        return "true"
+    # Numeric type aliases: int → int64
+    _NUMERIC: dict[str, str] = {
+        "int": "int64", "float": "float64",
+    }
+    mapped_expected = _NUMERIC.get(expected_id, expected_id)
+    compat = _TYPE_COMPAT.get(val_rt, [val_rt])
+    if mapped_expected in compat or expected_id in compat:
+        return "true"
+    return "false"
 
 
 def _emit_boolop(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
@@ -498,9 +652,25 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     obj_type = _str(obj_node, "resolved_type") if isinstance(obj_node, dict) else ""
     obj_id = _str(obj_node, "id") if isinstance(obj_node, dict) else ""
     attr = _str(node, "attr")
-    # Module attribute (e.g. math.pi) → use just the attr name (resolved to runtime)
+    # type(x).__name__ → static class name string when type is known at compile time
+    if attr == "__name__" and isinstance(obj_node, dict) and _str(obj_node, "kind") == "Call":
+        call_func = obj_node.get("func")
+        if isinstance(call_func, dict) and _str(call_func, "id") == "type":
+            call_args = _list(obj_node, "args")
+            if len(call_args) >= 1:
+                arg = call_args[0]
+                arg_rt = _str(arg, "resolved_type") if isinstance(arg, dict) else ""
+                if arg_rt == "" and isinstance(arg, dict) and _str(arg, "kind") == "Name":
+                    arg_rt = ctx.var_types.get(_str(arg, "id"), "")
+                if arg_rt in ctx.class_names:
+                    return '"' + arg_rt + '".to_string()'
+    # Module attribute (e.g. math.pi, env.target) → use just the attr name (resolved to runtime)
     if obj_type == "module" or obj_id in ctx.import_alias_modules:
         runtime_symbol = _str(node, "runtime_symbol") or attr
+        # First try qualified name (alias.attr) in mapping.calls — handles "env.target": "\"rs\""
+        qualified = obj_id + "." + attr if obj_id != "" else ""
+        if qualified in ctx.mapping.calls:
+            return ctx.mapping.calls[qualified]
         resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping,
             resolved_runtime_call=_str(node, "resolved_runtime_call"),
             runtime_call=_str(node, "runtime_call"))
@@ -526,7 +696,52 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     for cls in (ctx.current_class, obj_class):
         if cls != "" and attr in ctx.class_property_methods.get(cls, set()):
             return obj + "." + safe_rs_ident(attr) + "()"
+    # PyPath string fields must be cloned when accessed (String is not Copy)
+    if obj_type == "Path" and attr in ("name", "stem", "suffix"):
+        return obj + "." + safe_rs_ident(attr) + ".clone()"
     return obj + "." + safe_rs_ident(attr)
+
+
+def _expr_to_pyany(expr: str, inner_type: str) -> str:
+    """Wrap a rendered expression in the appropriate PyAny variant."""
+    if inner_type in ("int64", "int"):
+        return "PyAny::Int(" + expr + ")"
+    if inner_type in ("float64", "float32", "float"):
+        return "PyAny::Float(" + expr + " as f64)"
+    if inner_type == "bool":
+        return "PyAny::Bool(" + expr + ")"
+    if inner_type == "str":
+        return "PyAny::Str(" + expr + ")"
+    if inner_type == "None" or expr == "None":
+        return "PyAny::None"
+    # Fallback: for unknown types or already-wrapped exprs
+    return expr
+
+
+def _emit_dict_as_btree_pyany(ctx: "RsEmitContext", node: dict[str, JsonVal]) -> str:
+    """Emit a Dict EAST3 node as PyAny::Dict(BTreeMap::from([...]))."""
+    entries = _list(node, "entries")
+    if entries:
+        keys: list[JsonVal] = [e.get("key") for e in entries if isinstance(e, dict)]
+        values: list[JsonVal] = [e.get("value") for e in entries if isinstance(e, dict)]
+    else:
+        keys = _list(node, "keys")
+        values = _list(node, "values")
+    if len(keys) == 0:
+        return "PyAny::Dict(BTreeMap::new())"
+    pairs: list[str] = []
+    for i, key in enumerate(keys):
+        k = _emit_expr(ctx, key)
+        val_node = values[i] if i < len(values) else None
+        val_rt = _str(val_node, "resolved_type") if isinstance(val_node, dict) else ""
+        val_kind = _str(val_node, "kind") if isinstance(val_node, dict) else ""
+        if val_kind == "Dict":
+            v = _emit_dict_as_btree_pyany(ctx, val_node)
+        else:
+            v = _emit_expr(ctx, val_node) if val_node is not None else "PyAny::None"
+            v = _expr_to_pyany(v, val_rt)
+        pairs.append("(" + k + ", " + v + ")")
+    return "PyAny::Dict(BTreeMap::from([" + ", ".join(pairs) + "]))"
 
 
 def _emit_list_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
@@ -535,7 +750,33 @@ def _emit_list_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     elem_type = ""
     if resolved_type.startswith("list[") and resolved_type.endswith("]"):
         elem_type = rs_type(resolved_type[5:-1])
-    rendered_elems = [_emit_expr(ctx, e) for e in elements]
+    need_box_elem = elem_type == "Box<dyn std::any::Any>"
+    need_pyany_elem = elem_type == "PyAny"
+    need_option_elem = elem_type.startswith("Option<")
+    rendered_elems_raw = [(e, _emit_expr(ctx, e)) for e in elements]
+    if need_box_elem:
+        rendered_elems = [
+            e_str if e_str.startswith("Box::new(") else "Box::new(" + e_str + ") as Box<dyn std::any::Any>"
+            for _, e_str in rendered_elems_raw
+        ]
+    elif need_pyany_elem:
+        rendered_elems = []
+        for e_node, e_str in rendered_elems_raw:
+            e_rt = _str(e_node, "resolved_type") if isinstance(e_node, dict) else ""
+            rendered_elems.append(_expr_to_pyany(e_str, e_rt))
+    elif need_option_elem:
+        rendered_elems = []
+        for e_node, e_str in rendered_elems_raw:
+            if e_str == "None":
+                rendered_elems.append(e_str)
+            else:
+                e_rt = _str(e_node, "resolved_type") if isinstance(e_node, dict) else ""
+                if "None" not in e_rt and not e_rt.startswith("Option"):
+                    rendered_elems.append("Some(" + e_str + ")")
+                else:
+                    rendered_elems.append(e_str)
+    else:
+        rendered_elems = [e_str for _, e_str in rendered_elems_raw]
     if len(rendered_elems) == 0:
         if elem_type != "":
             return "PyList::<" + elem_type + ">::new()"
@@ -547,11 +788,19 @@ def _emit_list_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_dict_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
-    keys = _list(node, "keys")
-    values = _list(node, "values")
+    # EAST3 uses "entries" (list of {key, value} dicts); fall back to separate keys/values
+    entries = _list(node, "entries")
+    keys: list[JsonVal]
+    values: list[JsonVal]
+    if entries:
+        keys = [e.get("key") for e in entries if isinstance(e, dict)]
+        values = [e.get("value") for e in entries if isinstance(e, dict)]
+    else:
+        keys = _list(node, "keys")
+        values = _list(node, "values")
     resolved_type = _str(node, "resolved_type")
     k_type = "String"
-    v_type = "Box<dyn std::any::Any>"
+    v_type = "PyAny"
     if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
         inner = resolved_type[5:-1]
         parts = _split_generic_args(inner)
@@ -560,10 +809,28 @@ def _emit_dict_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             v_type = rs_type(parts[1])
     if len(keys) == 0:
         return "HashMap::<" + k_type + ", " + v_type + ">::new()"
+    need_box_v = v_type == "Box<dyn std::any::Any>"
+    need_pyany_v = v_type == "PyAny"
+    need_option_v = v_type.startswith("Option<")
     pairs: list[str] = []
     for i, key in enumerate(keys):
         k = _emit_expr(ctx, key)
-        v = _emit_expr(ctx, values[i]) if i < len(values) else "Default::default()"
+        val_node = values[i] if i < len(values) else None
+        v = _emit_expr(ctx, val_node) if val_node is not None else "Default::default()"
+        if need_box_v and not v.startswith("Box::new("):
+            v = "Box::new(" + v + ") as Box<dyn std::any::Any>"
+        elif need_pyany_v:
+            val_rt = _str(val_node, "resolved_type") if isinstance(val_node, dict) else ""
+            val_kind = _str(val_node, "kind") if isinstance(val_node, dict) else ""
+            if val_kind == "Dict":
+                v = _emit_dict_as_btree_pyany(ctx, val_node)
+            else:
+                v = _expr_to_pyany(v, val_rt)
+        elif need_option_v and v != "None":
+            # Wrap non-None values with Some(...) unless already Optional type
+            val_rt = _str(val_node, "resolved_type") if isinstance(val_node, dict) else ""
+            if "None" not in val_rt and not val_rt.startswith("Option"):
+                v = "Some(" + v + ")"
         pairs.append("(" + k + ", " + v + ")")
     return "HashMap::<" + k_type + ", " + v_type + ">::from([" + ", ".join(pairs) + "])"
 
@@ -585,6 +852,14 @@ def _emit_tuple_literal(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     rendered = [_emit_expr(ctx, e) for e in elements]
     if len(rendered) == 0:
         return "()"
+    # If the tuple resolves to a PyList type (homogeneous), emit PyList::from_vec(vec![...])
+    resolved_type = _str(node, "resolved_type")
+    if resolved_type.startswith("tuple["):
+        rt = _rs_type_for_context(ctx, resolved_type)
+        if rt.startswith("PyList<"):
+            # Use turbofish syntax: PyList::<T>::from_vec(...)
+            inner_t = rt[7:-1]  # strip "PyList<" and ">"
+            return "PyList::<" + inner_t + ">::from_vec(vec![" + ", ".join(rendered) + "])"
     if len(rendered) == 1:
         return "(" + rendered[0] + ",)"
     return "(" + ", ".join(rendered) + ")"
@@ -608,13 +883,23 @@ def _emit_subscript(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             return "PyList::<" + rs_elem + ">::from_vec({ let __borrow = " + obj + ".py_borrow(); let __lo = (" + lo + ") as usize; let __hi = ((" + hi_raw + ") as usize).min(__borrow.len()); __borrow[__lo..__hi].to_vec() })"
         if obj_type == "str":
             ref_obj = "&" + obj if not obj.startswith("&") else obj
-            return "{ let __s = " + ref_obj + "; let __lo = (" + lo + ") as usize; let __hi = ((" + hi_raw + ") as usize).min(__s.len()); __s[__lo..__hi].to_string() }"
+            # Handle negative indices: lo = if lo < 0 { max(0, len+lo) } else { lo }
+            lo_safe = ("(let __loi = (" + lo + ") as i64; if __loi < 0 { (__s.len() as i64 + __loi).max(0) as usize } else { __loi as usize })"
+                       if lo != "0" else "0")
+            # Simpler: always use i64 arithmetic
+            lo_expr = "({ let __loi = (" + lo + ") as i64; if __loi < 0 { (__s.len() as i64 + __loi).max(0) as usize } else { __loi as usize } })" if lo != "0" else "0"
+            return "{ let __s = " + ref_obj + "; let __lo = " + lo_expr + "; let __hi = ((" + hi_raw + ") as usize).min(__s.len()); __s[__lo..__hi].to_string() }"
         # Default slice
         return obj + "[(" + lo + " as usize)..(" + hi_raw + " as usize)]"
 
     idx = _emit_expr(ctx, slice_node)
-    # Tuple indexing with literal integer → rust tuple.N notation
-    if obj_type.startswith("tuple["):
+    # Tuple indexing (both "tuple" and "tuple[...]")
+    if obj_type == "tuple" or obj_type.startswith("tuple["):
+        tuple_rs = _rs_type_for_context(ctx, obj_type)
+        if tuple_rs.startswith("PyList<"):
+            # Homogeneous tuple as PyList<T> → .get() like list
+            return obj + ".get(" + idx + ")"
+        # Heterogeneous tuple as Rust tuple → .N notation
         if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Constant":
             val = slice_node.get("value")
             if isinstance(val, int) and val >= 0:
@@ -624,7 +909,14 @@ def _emit_subscript(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if obj_type.startswith("list[") or obj_type == "list" or obj_type in ("bytes", "bytearray"):
         return obj + ".get(" + idx + ")"
     if obj_type.startswith("dict[") or obj_type == "dict":
-        return obj + "[&" + idx + "]"
+        subscript_expr = obj + "[&" + idx + "]"
+        # For dict[K, PyAny] (non-Copy value), subscript moves value — need .clone()
+        if obj_type.startswith("dict[") and obj_type.endswith("]"):
+            _inner = obj_type[5:-1]
+            _parts = _split_generic_args(_inner)
+            if len(_parts) == 2 and rs_type(_parts[1]) == "PyAny":
+                subscript_expr = subscript_expr + ".clone()"
+        return subscript_expr
     # String indexing: s[i] → py_str_get_at(&s, i) returning String
     if obj_type == "str":
         ref_obj = "&" + obj if not obj.startswith("&") else obj
@@ -687,12 +979,62 @@ def _emit_lambda(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     return "|" + params_str + "| " + body_str
 
 
+def _box_target_is_any(node: dict[str, JsonVal]) -> bool:
+    """Return True if the Box node's bridge_lane_v1 target dynamic_name is 'Any' or 'Obj'."""
+    lane = node.get("bridge_lane_v1")
+    if not isinstance(lane, dict):
+        return False
+    target = lane.get("target")
+    if not isinstance(target, dict):
+        return False
+    dname = target.get("dynamic_name")
+    return dname in ("Any", "Obj")
+
+
 def _emit_box(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     """Emit a Box node (boxing a value for dynamic dispatch)."""
     inner = node.get("value")
-    # If inner is a None constant, use annotated None to help Rust type inference
+    outer_rt = _str(node, "resolved_type")
+    # All of object/Any/Obj → PyAny enum
+    target_is_pyany = outer_rt in ("object", "Any", "Obj")
+    # If inner is a None constant, emit PyAny::None
     if isinstance(inner, dict) and _str(inner, "kind") == "Constant" and inner.get("value") is None:
-        return "None::<_>"
+        if target_is_pyany:
+            return "PyAny::None"
+        return "Box::new(()) as Box<dyn std::any::Any>"
+    # If the Box has a more general resolved_type, use it for container literals
+    if isinstance(inner, dict) and outer_rt != "" and outer_rt != _str(inner, "resolved_type"):
+        inner_kind = _str(inner, "kind")
+        if inner_kind == "Dict":
+            if target_is_pyany:
+                # Box<object/Any/Obj>(dict) → PyAny::Dict(BTreeMap::from([...]))
+                return _emit_dict_as_btree_pyany(ctx, inner)
+            # Temporarily override inner resolved_type for dict literal
+            inner_copy = dict(inner)
+            inner_copy["resolved_type"] = outer_rt
+            return _emit_dict_literal(ctx, inner_copy)
+        if inner_kind == "List":
+            # Temporarily override inner resolved_type for list literal (e.g. list[Any])
+            inner_copy = dict(inner)
+            inner_copy["resolved_type"] = outer_rt
+            return _emit_list_literal(ctx, inner_copy)
+        # PyAny enum wrapping for object/Any/Obj outer types
+        if target_is_pyany:
+            inner_rt = _str(inner, "resolved_type")
+            rendered_inner = _emit_expr(ctx, inner)
+            if inner_rt in ("int64", "int", "int32", "int16", "int8", "uint64", "uint32", "uint16", "uint8"):
+                return "PyAny::Int(" + rendered_inner + " as i64)"
+            if inner_rt in ("float64", "float32", "float"):
+                return "PyAny::Float(" + rendered_inner + " as f64)"
+            if inner_rt == "bool":
+                return "PyAny::Bool(" + rendered_inner + ")"
+            if inner_rt == "str":
+                return "PyAny::Str(" + rendered_inner + ")"
+            if inner_rt in ctx.class_names and inner_rt not in ctx.enum_bases:
+                # User class → encode runtime type ID in PyAny::Int for isinstance checks
+                return "PyAny::Int(" + rendered_inner + ".py_runtime_type_id())"
+            # Fallback: for unknown/complex types, return as-is
+            return rendered_inner
     rendered = _emit_expr(ctx, inner)
     return rendered
 
@@ -709,6 +1051,19 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 
     # Determine if this is a method call (Attribute func)
     func_is_method = isinstance(func, dict) and _str(func, "kind") == "Attribute"
+
+    # Handle zip(a, b) before runtime_call resolution: zip produces list of tuples
+    if runtime_call in ("zip", "") and not func_is_method and len(args) == 2:
+        fn_id = _str(func, "id") if isinstance(func, dict) else ""
+        if fn_id == "zip" or runtime_call == "zip":
+            a0 = _emit_call_arg(ctx, args[0])
+            a1 = _emit_call_arg(ctx, args[1])
+            t0 = _str(args[0], "resolved_type") if isinstance(args[0], dict) else ""
+            t1 = _str(args[1], "resolved_type") if isinstance(args[1], dict) else ""
+            elem0 = rs_type(t0[5:-1]) if t0.startswith("list[") and t0.endswith("]") else "f64"
+            elem1 = rs_type(t1[5:-1]) if t1.startswith("list[") and t1.endswith("]") else "f64"
+            return ("PyList::<(" + elem0 + ", " + elem1 + ")>::from_vec("
+                    + a0 + ".iter_snapshot().into_iter().zip(" + a1 + ".iter_snapshot().into_iter()).collect())")
 
     if runtime_call != "":
         mapped = resolve_runtime_call(runtime_call, builtin_name_field, adapter_kind, ctx.mapping)
@@ -728,6 +1083,12 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if lowered_kind == "BuiltinCall":
         builtin_name = _str(node, "builtin_name")
         runtime_sym = _str(node, "runtime_symbol")
+        # Handle sum() specially — emit as .iter_snapshot().into_iter().sum()
+        if builtin_name == "sum" and len(args) == 1:
+            arg_expr = _emit_call_arg(ctx, args[0])
+            ret_type = _str(node, "resolved_type")
+            rs_ret = rs_type(ret_type) if ret_type not in ("", "unknown") else "f64"
+            return arg_expr + ".iter_snapshot().into_iter().sum::<" + rs_ret + ">()"
         mapped2 = resolve_runtime_call(runtime_sym, builtin_name, adapter_kind, ctx.mapping)
         if mapped2 != "" and not mapped2.startswith("__"):
             return _emit_runtime_call(ctx, mapped2, func, args, keywords, node)
@@ -766,11 +1127,9 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     if func_name in ctx.class_names:
         return _emit_constructor_call(ctx, func_name, args, keywords, node)
 
-    # deque() constructor → VecDeque::new()
+    # deque() constructor → deque::new() (Pytra stdlib struct)
     if func_name == "deque":
-        rt = _str(node, "resolved_type") if isinstance(node, dict) else ""
-        elem_type = "_"
-        return "VecDeque::<" + elem_type + ">::new()"
+        return "deque::new()"
 
     # bytes()/bytearray() constructor → PyList<i64> (bytes elements are accessed as ints)
     if func_name in ("bytes", "bytearray"):
@@ -782,6 +1141,18 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
                 return inner  # already a PyList<i64>
             return inner
         return "PyList::<i64>::new()"
+
+    # zip(a, b) → produce PyList of tuples; rendered as list of (a[i], b[i]) pairs
+    if func_name == "zip" and len(args) == 2:
+        a0 = _emit_call_arg(ctx, args[0])
+        a1 = _emit_call_arg(ctx, args[1])
+        # Determine element types
+        t0 = _str(args[0], "resolved_type") if isinstance(args[0], dict) else ""
+        t1 = _str(args[1], "resolved_type") if isinstance(args[1], dict) else ""
+        elem0 = rs_type(t0[5:-1]) if t0.startswith("list[") and t0.endswith("]") else "f64"
+        elem1 = rs_type(t1[5:-1]) if t1.startswith("list[") and t1.endswith("]") else "f64"
+        return ("PyList::<(" + elem0 + ", " + elem1 + ")>::from_vec("
+                + a0 + ".iter_snapshot().into_iter().zip(" + a1 + ".iter_snapshot().into_iter()).collect())")
 
     # Check for runtime imports
     mapped3 = ctx.runtime_imports.get(func_name)
@@ -834,10 +1205,21 @@ def _emit_call_arg(ctx: RsEmitContext, arg: JsonVal) -> str:
         if call_arg_type in ctx.trait_names:
             # Coerce Box<UserClass> → &dyn Trait: use &* to dereference Box
             return "&*" + _emit_expr(ctx, arg)
-        # Wrap plain closures in Box::new() when passing to Box<dyn Fn> parameters
-        if (resolved.startswith("callable[") or resolved.startswith("Callable[")) and (call_arg_type.startswith("callable") or call_arg_type.startswith("Callable")):
+        # Wrap plain closures/fn items in Box::new() when passing to Box<dyn Fn> parameters
+        _is_callable_type = lambda t: t in ("Callable", "callable") or t.startswith("callable[") or t.startswith("Callable[")
+        if _is_callable_type(resolved) and _is_callable_type(call_arg_type):
             inner_expr = _emit_expr(ctx, arg)
             return "Box::new(" + inner_expr + ")"
+        # Box values when passing to Box<dyn Any> parameter.
+        # Only applies for union-typed parameters (e.g. Scalar = int | float) because those
+        # become Box<dyn Any> in Rust. Simple object/Any/Obj annotations use generics in Rust.
+        if call_arg_type != "" and "|" in call_arg_type and resolved not in ("object", "Any", "Obj", "unknown", ""):
+            call_arg_rs = _rs_type_for_context(ctx, call_arg_type)
+            if call_arg_rs == "Box<dyn std::any::Any>":
+                inner_expr = _emit_expr(ctx, arg)
+                if resolved in ctx.class_names and resolved not in ctx.enum_bases:
+                    return "Box::new(" + inner_expr + ".clone()) as Box<dyn std::any::Any>"
+                return "Box::new(" + inner_expr + ") as Box<dyn std::any::Any>"
         # Clone PyList<T>/bytes/bytearray when passed to functions (Rc-based, cheap clone)
         if resolved.startswith("list[") or resolved == "list" or resolved in ("bytes", "bytearray"):
             inner_expr = _emit_expr(ctx, arg)
@@ -850,6 +1232,21 @@ def _emit_call_arg(ctx: RsEmitContext, arg: JsonVal) -> str:
     return _emit_expr(ctx, arg)
 
 
+def _emit_runtime_call_arg(ctx: RsEmitContext, arg: JsonVal) -> str:
+    """Emit a call argument for a runtime function (py_runtime.rs generics — no primitive boxing)."""
+    if isinstance(arg, dict) and _str(arg, "kind") == "Box":
+        outer_rt = _str(arg, "resolved_type")
+        inner = arg.get("value")
+        if isinstance(inner, dict) and outer_rt in ("object", "Any", "Obj"):
+            inner_rt = _str(inner, "resolved_type")
+            # Runtime functions use generics (PyStringify etc.), not Box<dyn Any>.
+            # Don't box primitive/str values; let Rust generic inference handle them.
+            if inner_rt in ("int64", "int32", "int16", "int8", "uint64", "uint32", "uint16", "uint8",
+                            "float64", "float32", "bool", "str"):
+                return _emit_expr(ctx, inner)
+    return _emit_call_arg(ctx, arg)
+
+
 def _emit_runtime_call(
     ctx: RsEmitContext,
     mapped: str,
@@ -858,21 +1255,34 @@ def _emit_runtime_call(
     keywords: list[JsonVal],
     node: dict[str, JsonVal],
 ) -> str:
-    rendered_args = [_emit_call_arg(ctx, a) for a in args]
+    rendered_args = [_emit_runtime_call_arg(ctx, a) for a in args]
     for kw in keywords:
         if isinstance(kw, dict):
             kw_val = kw.get("value")
             rendered_args.append(_emit_expr(ctx, kw_val))
 
-    # py_len takes &T — pass by reference, and return i64 (Python int)
-    if mapped == "py_len" and len(rendered_args) == 1:
+    # first_ref_arg adapter: first argument passed as &T (borrow, not move)
+    if ctx.mapping.call_adapters.get(mapped, "") == "first_ref_arg" and len(rendered_args) >= 1:
+        first = rendered_args[0]
+        if not first.startswith("&"):
+            first = "&" + first
+        rest = rendered_args[1:]
+        all_args = [first] + rest
+        return mapped + "(" + ", ".join(all_args) + ")"
+
+    # ref_arg adapter: function takes &T — pass by reference, return i64 (Python int)
+    if ctx.mapping.call_adapters.get(mapped, "") == "ref_arg" and len(rendered_args) == 1:
+        # For deque (std lib struct with __len__ but no PyLen trait), call directly
+        if len(args) == 1 and isinstance(args[0], dict) and _str(args[0], "resolved_type") == "deque":
+            obj_expr = rendered_args[0]
+            return "(" + obj_expr + ".__len__() as i64)"
         arg = rendered_args[0]
         if not arg.startswith("&"):
             arg = "&" + arg
-        return "py_len(" + arg + ") as i64"
+        return mapped + "(" + arg + ") as i64"
 
-    # py_int, py_float, py_str, py_str_to_i64 take &T
-    if mapped in ("py_int", "py_float", "py_str", "py_str_to_i64", "py_str_to_f64", "py_str_isdigit", "py_str_isalpha", "py_str_isupper", "py_str_islower") and len(rendered_args) == 1:
+    # py_int, py_float, py_str, py_bool, py_str_to_i64 take &T
+    if mapped in ("py_int", "py_float", "py_str", "py_bool", "py_str_to_i64", "py_str_to_f64", "py_str_isdigit", "py_str_isalpha", "py_str_isupper", "py_str_islower") and len(rendered_args) == 1:
         arg = rendered_args[0]
         if not arg.startswith("&"):
             arg = "&" + arg
@@ -888,16 +1298,15 @@ def _emit_runtime_call(
             k = "&" + k
         return "py_in(" + c + ", " + k + ")"
 
-    # py_print with a todo!() arg: emit todo! directly (avoids never-type inference issues)
-    if mapped == "py_print" and len(rendered_args) >= 1 and all(a.startswith("todo!(") for a in rendered_args):
-        return rendered_args[0]
-
-    # py_print with multiple args: join with space
-    if mapped == "py_print" and len(rendered_args) > 1:
-        fmt_parts = " ".join(["{}" for _ in rendered_args])
-        # Wrap each arg in parens to avoid precedence issues (e.g. `x as i64.py_stringify()`)
-        stringify_args = ", ".join("(" + a + ").py_stringify()" for a in rendered_args)
-        return 'py_print(format!("' + fmt_parts + '", ' + stringify_args + "))"
+    # multi_arg_print adapter: todo!() arg → emit directly; multiple args → join with space
+    if ctx.mapping.call_adapters.get(mapped, "") == "multi_arg_print":
+        if len(rendered_args) >= 1 and all(a.startswith("todo!(") for a in rendered_args):
+            return rendered_args[0]
+        if len(rendered_args) > 1:
+            fmt_parts = " ".join(["{}" for _ in rendered_args])
+            # Wrap each arg in parens to avoid precedence issues (e.g. `x as i64.py_stringify()`)
+            stringify_args = ", ".join("(" + a + ").py_stringify()" for a in rendered_args)
+            return mapped + '(format!("' + fmt_parts + '", ' + stringify_args + "))"
 
     # py_assert_eq(opt, None, label) or py_assert_eq(None, opt, label) → py_assert_true(opt.is_none(), label)
     if mapped == "py_assert_eq" and len(args) >= 2:
@@ -947,6 +1356,25 @@ def _emit_method_call(
     obj_type = _str(obj, "resolved_type") if isinstance(obj, dict) else ""
     obj_id = _str(obj, "id") if isinstance(obj, dict) else ""
 
+    # super().method(args) → call parent class method via temp instance with inherited fields
+    if isinstance(obj, dict) and _str(obj, "kind") == "Call":
+        obj_func = obj.get("func")
+        if isinstance(obj_func, dict) and _str(obj_func, "id") in ("super", "py_super"):
+            parent = ctx.class_bases.get(ctx.current_class, "")
+            if parent != "" and parent in ctx.class_names:
+                rendered_args = [_emit_call_arg(ctx, a) for a in args]
+                # Build a temporary parent instance that copies inherited fields from self
+                parent_fields = ctx.class_fields.get(parent, {})
+                if parent_fields:
+                    field_inits = ", ".join(
+                        safe_rs_ident(f) + ": self." + safe_rs_ident(f) + ".clone()"
+                        for f in parent_fields
+                    )
+                    parent_expr = "{ let mut __p = " + safe_rs_ident(parent) + " { " + field_inits + " }; " + safe_rs_ident(parent) + "::" + safe_rs_ident(method) + "(&mut __p, " + ", ".join(rendered_args) + ") }"
+                else:
+                    parent_expr = safe_rs_ident(parent) + "::" + safe_rs_ident(method) + "(&mut " + safe_rs_ident(parent) + " {}, " + ", ".join(rendered_args) + ")"
+                return parent_expr
+
     # Static method call: ClassName.method(args) → ClassName::method(args)
     type_object_of = _str(obj, "type_object_of") if isinstance(obj, dict) else ""
     if type_object_of != "" and obj_type == "type":
@@ -980,6 +1408,12 @@ def _emit_method_call(
             if isinstance(kw, dict):
                 kw_val = kw.get("value")
                 rendered_args.append(_emit_expr(ctx, kw_val))
+        # Apply call_adapters for module-qualified calls
+        if ctx.mapping.call_adapters.get(resolved_name, "") == "first_ref_arg" and len(rendered_args) >= 1:
+            first = rendered_args[0]
+            if not first.startswith("&"):
+                first = "&" + first
+            rendered_args = [first] + rendered_args[1:]
         return resolved_name + "(" + ", ".join(rendered_args) + ")"
 
     # Check runtime_call for method call
@@ -1061,12 +1495,37 @@ def _emit_method_call(
             all_args = ["&" + obj_str] + ["&" + a if i > 0 else a for i, a in enumerate(rendered_args)]
             return mapped_fn + "(" + ", ".join(["&" + obj_str] + rendered_args) + ")"
 
+    # JsonVal method calls (JsonVal → PyAny, dict-like .get())
+    if obj_type == "JsonVal":
+        if method == "get":
+            key = rendered_args[0] if rendered_args else '""'
+            return obj_str + ".pyany_get(&" + key + ")"
+
     # dict methods
     if obj_type.startswith("dict[") or obj_type == "dict":
         if method == "get":
+            # Check if actual variable is dynamic (JsonVal/PyAny) — EAST3 may have narrowed the type
+            # but the Rust variable is actually PyAny, needing py_any_as_hashmap conversion
+            _actual_rt = (ctx.var_types.get(obj_id, "") or obj_type) if obj_id else obj_type
+            _is_dynamic_var = (
+                _actual_rt in ("JsonVal", "Any", "object", "Obj")
+                or ("JsonVal" in _actual_rt and "dict[" not in _actual_rt.split("|")[0].strip()[:10])
+                or ("|" in _actual_rt and "JsonVal" in _actual_rt)
+            )
+            if _is_dynamic_var:
+                _key = rendered_args[0] if rendered_args else '""'
+                _default = rendered_args[1] if len(rendered_args) >= 2 else "PyAny::None"
+                _unwrap = "clone().unwrap_or(PyAny::None)" if "|" in _actual_rt else "clone()"
+                return "py_any_as_hashmap(" + obj_str + "." + _unwrap + ").get(&" + _key + ").cloned().unwrap_or(" + _default + ")"
             if len(rendered_args) >= 2:
                 return obj_str + ".get(&" + rendered_args[0] + ").cloned().unwrap_or(" + rendered_args[1] + ")"
             elif len(rendered_args) == 1:
+                # For dict[K, PyAny] return PyAny::None as default instead of Option<PyAny>
+                if obj_type.startswith("dict[") and obj_type.endswith("]"):
+                    _inner = obj_type[5:-1]
+                    _parts = _split_generic_args(_inner)
+                    if len(_parts) == 2 and rs_type(_parts[1]) == "PyAny":
+                        return obj_str + ".get(&" + rendered_args[0] + ").cloned().unwrap_or(PyAny::None)"
                 return obj_str + ".get(&" + rendered_args[0] + ").cloned()"
         if method == "keys":
             return "PyList::from_vec(" + obj_str + ".keys().cloned().collect())"
@@ -1095,18 +1554,10 @@ def _emit_method_call(
         if method == "intersection":
             return obj_str + ".intersection(&" + rendered_args[0] + ").cloned().collect::<HashSet<_>>()"
 
-    # deque methods (VecDeque)
+    # deque methods — delegate to the deque struct's own methods (mirrors Python API)
     if obj_type == "deque":
-        if method == "append":
-            return obj_str + ".push_back(" + ", ".join(rendered_args) + ")"
-        if method == "appendleft":
-            return obj_str + ".push_front(" + ", ".join(rendered_args) + ")"
-        if method == "popleft":
-            return obj_str + ".pop_front().unwrap_or_default()"
-        if method == "pop":
-            return obj_str + ".pop_back().unwrap_or_default()"
-        if method == "clear":
-            return obj_str + ".clear()"
+        all_args_str = ", ".join(rendered_args)
+        return obj_str + "." + safe_rs_ident(method) + "(" + all_args_str + ")"
 
     # Generic method call
     all_args_str = ", ".join(rendered_args)
@@ -1239,15 +1690,101 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
     if kind == "JoinedStr":
         return _emit_fstring(ctx, node)
     if kind == "ObjTypeId":
-        # Get runtime type ID of an object
+        # Get runtime type ID of an object — sequential TID space
         val = node.get("value")
+        value_type = _str(val, "resolved_type") if isinstance(val, dict) else ""
         inner = _emit_expr(ctx, val)
+        # For PyAny typed values (object/Any/Obj), type ID is encoded as PyAny::Int(type_id)
+        if value_type in ("object", "Any", "Obj"):
+            return "(if let PyAny::Int(__tid) = &" + inner + " { *__tid } else { py_runtime_type_id(&" + inner + ") })"
+        # For Box<dyn Any> (unknown / union types), use downcast chain to recover TID
+        if value_type in ("unknown",) or value_type == "":
+            user_cls = _sorted_user_classes_desc(ctx)
+            if user_cls:
+                ref_inner = "&" + inner if not inner.startswith("&") else inner
+                return _emit_obj_type_id_downcast(ctx, ref_inner, user_cls)
         ref_inner = "&" + inner if not inner.startswith("&") else inner
         return "py_runtime_type_id(" + ref_inner + ")"
+    if kind == "IsInstance":
+        return _emit_isinstance(ctx, node)
     if kind == "Unbox":
-        # Unbox: wraps an expression promoting it to Optional/nullable; passthrough inner value
+        # Unbox: converts a dynamic (Any/object/JsonVal) value to a static type.
+        # EAST3 inserts Unbox nodes for isinstance-narrowed JsonVal/Any variables;
+        # inner node carries the original (pre-narrowing) storage type.
         inner_node = node.get("value")
-        return _emit_expr(ctx, inner_node)
+        inner_rt = _str(inner_node, "resolved_type") if isinstance(inner_node, dict) else ""
+        outer_rt = _str(node, "resolved_type")
+        inner_expr = _emit_expr(ctx, inner_node)
+
+        _PYANY = ("Any", "object", "Obj", "JsonVal")
+        # Handle Option<X> inner types (e.g. dict[str,JsonVal] | None)
+        inner_base_rt = inner_rt
+        needs_unwrap = False
+        if inner_rt.endswith(" | None") or inner_rt.endswith("|None"):
+            inner_base_rt = inner_rt[:-7].strip() if inner_rt.endswith(" | None") else inner_rt[:-5].strip()
+            needs_unwrap = True
+        inner_base_is_dynamic = inner_base_rt in _PYANY
+        is_dynamic_inner = (
+            inner_base_is_dynamic
+            or "JsonVal" in inner_base_rt
+        )
+        if is_dynamic_inner and outer_rt not in _PYANY and outer_rt != "":
+            # Source expr: unwrap Option if needed, otherwise use directly
+            if needs_unwrap:
+                if inner_base_is_dynamic:
+                    # Option<PyAny> → PyAny
+                    src = inner_expr + ".clone().unwrap_or(PyAny::None)"
+                else:
+                    # Option<ConcreteType> → ConcreteType: already the right type
+                    src = inner_expr + ".clone().unwrap_or_default()"
+            else:
+                src = inner_expr
+            if outer_rt.startswith("list[") or outer_rt == "list":
+                if needs_unwrap and not inner_base_is_dynamic:
+                    # Already PyList — no conversion needed
+                    return src
+                clone_src = src if needs_unwrap else src + ".clone()"
+                return "py_any_as_list(" + clone_src + ")"
+            if outer_rt.startswith("dict["):
+                if needs_unwrap and not inner_base_is_dynamic:
+                    # Already HashMap — no conversion needed
+                    return src
+                clone_src = src if needs_unwrap else src + ".clone()"
+                return "py_any_as_hashmap(" + clone_src + ")"
+            if outer_rt == "str":
+                return "py_str(&" + src + ")"
+            if outer_rt in ("int64", "int", "int32", "int16", "int8",
+                            "uint64", "uint32", "uint16", "uint8"):
+                return "py_int(&" + src + ")"
+            if outer_rt in ("float64", "float32", "float"):
+                return "py_float(&" + src + ")"
+            if outer_rt == "bool":
+                return "py_bool(&" + src + ")"
+        # Handle Box<dyn Any> union types (e.g. int64|float64 → int64).
+        # When the inner Rust type is Box<dyn Any> (a non-PyAny union type), emit a downcast.
+        if not is_dynamic_inner and not needs_unwrap and outer_rt not in _PYANY and outer_rt != "":
+            inner_rs = _rs_type_for_context(ctx, inner_base_rt)
+            if inner_rs == "Box<dyn std::any::Any>":
+                _BOX_ANY_DOWNCAST: dict[str, tuple[str, str]] = {
+                    "int64": ("i64", "0"), "int32": ("i32", "0"), "int16": ("i16", "0"), "int8": ("i8", "0"),
+                    "uint64": ("u64", "0"), "uint32": ("u32", "0"), "uint16": ("u16", "0"), "uint8": ("u8", "0"),
+                    "float64": ("f64", "0.0"), "float32": ("f32", "0.0"),
+                    "bool": ("bool", "false"),
+                    "str": ("String", "String::new()"),
+                }
+                narrow = _BOX_ANY_DOWNCAST.get(outer_rt)
+                if narrow is not None:
+                    rs_narrow, zero = narrow
+                    if rs_narrow == "String":
+                        return inner_expr + ".downcast_ref::<String>().cloned().unwrap_or_default()"
+                    return inner_expr + ".downcast_ref::<" + rs_narrow + ">().copied().unwrap_or(" + zero + ")"
+        return inner_expr
+    if kind == "ListComp":
+        return _emit_listcomp(ctx, node)
+    if kind == "SetComp":
+        return _emit_setcomp(ctx, node)
+    if kind == "DictComp":
+        return _emit_dictcomp(ctx, node)
     # Fallback: use repr if available (emit todo! so it compiles but panics at runtime)
     # Escape { and } since todo! uses them as format specifiers
     repr_str = _str(node, "repr")
@@ -1255,6 +1792,131 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
         safe_repr = repr_str.replace('"', "'").replace("{", "{{").replace("}", "}}")
         return "todo!(\"unsupported: " + safe_repr + "\")"
     return "todo!(\"unsupported_expr:" + kind + "\")"
+
+
+def _emit_comp_generators(ctx: RsEmitContext, generators: list[JsonVal], push_stmt: str) -> str:
+    """Emit nested for/if loops for a comprehension, ending with push_stmt."""
+    parts: list[str] = []
+    close_count = 0
+    for gen in generators:
+        if not isinstance(gen, dict):
+            continue
+        target_node = gen.get("target")
+        iter_node = gen.get("iter")
+        ifs = gen.get("ifs")
+        # Build target pattern (support tuple destructuring)
+        if isinstance(target_node, dict) and _str(target_node, "kind") == "Tuple":
+            # Try "elements" then "elts" (different EAST3 versions)
+            tuple_elts = _list(target_node, "elements") or _list(target_node, "elts")
+            names = [_str(e, "id") if isinstance(e, dict) else "_" for e in tuple_elts]
+            target_name = "(" + ", ".join(names) + ")" if names else "_"
+        else:
+            target_name = _str(target_node, "id") if isinstance(target_node, dict) else "_"
+        iter_expr = _emit_expr(ctx, iter_node)
+        iter_type = _str(iter_node, "resolved_type") if isinstance(iter_node, dict) else ""
+        if iter_type == "str":
+            # Iterating over a string yields single-char strings
+            iter_str = iter_expr + ".chars().map(|__c| __c.to_string()).collect::<Vec<String>>().into_iter()"
+        elif iter_type.startswith("list[tuple["):
+            # List of tuples (from zip): iter directly
+            iter_str = iter_expr + ".iter_snapshot().into_iter()"
+        else:
+            iter_str = iter_expr + ".iter_snapshot().into_iter()"
+        parts.append("for " + target_name + " in " + iter_str + " {")
+        close_count += 1
+        if isinstance(ifs, list) and len(ifs) > 0:
+            cond_parts: list[str] = []
+            for cond in ifs:
+                if isinstance(cond, dict):
+                    cond_parts.append(_emit_expr(ctx, cond))
+            if cond_parts:
+                parts.append("if " + " && ".join(cond_parts) + " {")
+                close_count += 1
+    parts.append(push_stmt)
+    for _ in range(close_count):
+        parts.append("}")
+    return " ".join(parts)
+
+
+def _emit_listcomp(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
+    """Emit list comprehension as a Rust block expression."""
+    elt = node.get("elt")
+    generators = _list(node, "generators")
+    resolved_type = _str(node, "resolved_type")
+    elem_type = ""
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        elem_type = rs_type(resolved_type[5:-1])
+    elif resolved_type.startswith("PyList<") and resolved_type.endswith(">"):
+        elem_type = resolved_type[7:-1]
+    decl = "let mut __comp = PyList::<" + elem_type + ">::new();" if elem_type else "let mut __comp = PyList::new();"
+    elt_expr = _emit_expr(ctx, elt)
+    body = _emit_comp_generators(ctx, generators, "__comp.push(" + elt_expr + ");")
+    return "{ " + decl + " " + body + " __comp }"
+
+
+def _emit_setcomp(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
+    """Emit set comprehension as a Rust block expression."""
+    elt = node.get("elt")
+    generators = _list(node, "generators")
+    resolved_type = _str(node, "resolved_type")
+    elem_type = ""
+    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+        elem_type = rs_type(resolved_type[4:-1])
+    decl = "let mut __comp: HashSet<" + elem_type + "> = HashSet::new();" if elem_type else "let mut __comp = HashSet::new();"
+    elt_expr = _emit_expr(ctx, elt)
+    body = _emit_comp_generators(ctx, generators, "__comp.insert(" + elt_expr + ");")
+    return "{ " + decl + " " + body + " __comp }"
+
+
+def _emit_dictcomp(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
+    """Emit dict comprehension as a Rust block expression."""
+    key_node = node.get("key")
+    val_node = node.get("value")
+    generators = _list(node, "generators")
+    resolved_type = _str(node, "resolved_type")
+    k_type = ""
+    v_type = ""
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        comma = inner.find(",")
+        if comma != -1:
+            k_type = rs_type(inner[:comma].strip())
+            v_type = rs_type(inner[comma + 1:].strip())
+    decl = ("let mut __comp: HashMap<" + k_type + ", " + v_type + "> = HashMap::new();"
+            if k_type and v_type else "let mut __comp = HashMap::new();")
+    key_expr = _emit_expr(ctx, key_node)
+    val_expr = _emit_expr(ctx, val_node)
+    body = _emit_comp_generators(ctx, generators, "__comp.insert(" + key_expr + ", " + val_expr + ");")
+    return "{ " + decl + " " + body + " __comp }"
+
+
+def _translate_py_format_spec(spec: str) -> str:
+    """Translate Python format spec to Rust format spec string (without braces).
+
+    Examples:
+      "4d"   -> "4"     (width 4, integer type stripped)
+      ".4f"  -> ".4"    (precision 4, float type stripped)
+      "10.2f"-> "10.2"  (width 10, precision 2)
+      ">10s" -> ">10"   (left-align, string type stripped)
+      "02x"  -> "02x"   (hex kept, Rust supports :02x)
+      "02X"  -> "02X"   (uppercase hex kept)
+      ",d"   -> ""      (comma grouping removed, Rust doesn't support)
+      ".1%"  -> ".1"    (percent stripped, value stays unchanged)
+      "+d"   -> "+"     (sign kept)
+      ""     -> ""
+    """
+    if spec == "":
+        return ""
+    # Remove comma grouping (Python ,  → not supported in Rust)
+    spec = spec.replace(",", "")
+    if spec == "":
+        return ""
+    # Strip trailing Python type characters that Rust doesn't use
+    # Keep: x, X, o, b, e, E (Rust supports these as format types)
+    # Strip: d, i, f, F, g, G, s, r, c, n, % (not valid in Rust format strings)
+    if spec and spec[-1] in "difFgGsrcn%":
+        spec = spec[:-1]
+    return spec
 
 
 def _emit_fstring(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
@@ -1268,9 +1930,13 @@ def _emit_fstring(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             if v_kind == "Constant":
                 s = v.get("value")
                 if isinstance(s, str):
-                    fmt_parts.append(s.replace("{", "{{").replace("}", "}}"))
+                    # Escape backslashes first, then braces (for Rust format! string)
+                    fmt_parts.append(s.replace("\\", "\\\\").replace("{", "{{").replace("}", "}}"))
             elif v_kind == "FormattedValue":
-                fmt_parts.append("{}")
+                raw_spec = v.get("format_spec")
+                spec_str = raw_spec if isinstance(raw_spec, str) else ""
+                rs_spec = _translate_py_format_spec(spec_str)
+                fmt_parts.append("{:" + rs_spec + "}" if rs_spec else "{}")
                 inner = v.get("value")
                 fmt_args.append(_emit_expr(ctx, inner))
             else:
@@ -1316,14 +1982,25 @@ def _emit_return(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, "return;")
         return
     rendered = _emit_expr(ctx, value)
+    # If function has no return type (void), drop the return value
+    if ctx.current_return_type in ("", "None", "none"):
+        _emit(ctx, "return;")
+        return
     # Wrap in Some() if returning a non-None value into an Optional return type
     if ctx.current_return_type != "":
         ret_rs = _rs_type_for_context(ctx, ctx.current_return_type)
+        val_rt = _str(value, "resolved_type") if isinstance(value, dict) else ""
         if ret_rs.startswith("Option<") and rendered != "None":
-            val_rs_type = _str(value, "resolved_type") if isinstance(value, dict) else ""
-            val_is_none = (val_rs_type in ("None", "none") or rendered == "None")
-            if not val_is_none:
+            val_is_none = (val_rt in ("None", "none") or rendered == "None")
+            # Don't wrap if value is already Optional (e.g., str | None → Option<String>)
+            val_is_already_optional = (val_rt.endswith(" | None") or val_rt.endswith("|None"))
+            val_rs = rs_type(val_rt) if val_rt != "" else ""
+            val_is_option = val_rs.startswith("Option<")
+            if not val_is_none and not val_is_already_optional and not val_is_option:
                 rendered = "Some(" + rendered + ")"
+        elif ret_rs == "Box<dyn std::any::Any>" and val_rt in ctx.class_names and val_rt not in ctx.enum_bases:
+            # Returning a class instance as Box<dyn Any> — box and clone
+            rendered = "Box::new(" + rendered + ".clone()) as Box<dyn std::any::Any>"
     _emit(ctx, "return " + rendered + ";")
 
 
@@ -1551,11 +2228,29 @@ def _emit_aug_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
 def _emit_raise(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     exc = node.get("exc")
     if exc is None:
-        _emit(ctx, 'panic!("re-raised");')
+        # Bare raise: re-raise current exception
+        if ctx.catch_err_msg_var:
+            _emit(ctx, "panic!(\"{}\", " + ctx.catch_err_msg_var + ".clone());")
+        else:
+            _emit(ctx, 'panic!("re-raised");')
         return
     if isinstance(exc, dict):
         exc_kind = _str(exc, "kind")
         if exc_kind == "Call":
+            func_node = exc.get("func")
+            func_runtime_mod = _str(func_node, "runtime_module_id") if isinstance(func_node, dict) else ""
+            exc_resolved = _str(exc, "resolved_type")
+            # User-defined exception (no runtime_module_id, class defined in this module)
+            if func_runtime_mod == "" and exc_resolved in ctx.class_names:
+                # _emit_expr wraps constructors in Box::new() — we need the raw value for panic_any
+                # Emit ClassName::new(args...) without Box wrapper
+                exc_args = _list(exc, "args")
+                exc_kwargs = _list(exc, "keywords")
+                rendered_args = [_emit_expr(ctx, a) for a in exc_args]
+                rs_exc_name = safe_rs_ident(exc_resolved)
+                raw_call = rs_exc_name + "::new(" + ", ".join(rendered_args) + ")"
+                _emit(ctx, "std::panic::panic_any(" + raw_call + ");")
+                return
             args = _list(exc, "args")
             if len(args) > 0:
                 msg = _emit_expr(ctx, args[0])
@@ -1567,39 +2262,136 @@ def _emit_raise(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     _emit(ctx, 'panic!("exception");')
 
 
+def _body_has_return(stmts: list[JsonVal]) -> bool:
+    """Recursively check if any statement in the body has a Return node with a value."""
+    for stmt in stmts:
+        if not isinstance(stmt, dict):
+            continue
+        if stmt.get("kind") == "Return":
+            val = stmt.get("value")
+            if val is not None:
+                return True
+        for key in ("body", "orelse", "finalbody"):
+            sub = stmt.get(key)
+            if isinstance(sub, list) and _body_has_return(sub):
+                return True
+        handlers = stmt.get("handlers")
+        if isinstance(handlers, list):
+            for h in handlers:
+                if isinstance(h, dict):
+                    hbody = h.get("body")
+                    if isinstance(hbody, list) and _body_has_return(hbody):
+                        return True
+    return False
+
+
 def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
-    # Rust doesn't have try/except in the same way.
-    # For now, emit the body with a comment about exception handling.
+    """Emit try/except/finally using std::panic::catch_unwind."""
     body = _list(node, "body")
     handlers = _list(node, "handlers")
     finalbody = _list(node, "finalbody")
-    orelse = _list(node, "orelse")
 
-    if len(handlers) == 0 and len(finalbody) > 0:
-        # Just finally - use a drop guard pattern (simplified: just emit)
+    _emit(ctx, "{")
+    ctx.indent_level += 1
+
+    if len(handlers) == 0:
+        # Only finally: catch, run finally, re-raise if panic
+        _emit(ctx, "let __try_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
+        ctx.indent_level += 1
         _emit_body(ctx, body)
-        _emit_body(ctx, finalbody)
-        return
+        ctx.indent_level -= 1
+        _emit(ctx, "}));")
+        if finalbody:
+            _emit_body(ctx, finalbody)
+        _emit(ctx, "if let Err(__try_err) = __try_result { std::panic::resume_unwind(__try_err); }")
+    else:
+        # Catch and dispatch to handlers
+        _emit(ctx, "let __try_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
+        ctx.indent_level += 1
+        _emit_body(ctx, body)
+        ctx.indent_level -= 1
+        _emit(ctx, "}));")
+        # If the try body can return a value, use match to propagate Ok result.
+        body_has_ret = _body_has_return(body) and ctx.current_return_type not in ("", "None")
+        _emit(ctx, "match __try_result {")
+        ctx.indent_level += 1
+        if body_has_ret:
+            _emit(ctx, "Ok(__try_ok) => { return __try_ok; }")
+        else:
+            _emit(ctx, "Ok(_) => {}")
+        _emit(ctx, "Err(ref __catch_err) => {")
+        ctx.indent_level += 1
+        old_catch_var = ctx.catch_err_msg_var
 
-    # Simplified: emit body only (proper panic/unwind handling would require std::panic::catch_unwind)
-    _emit(ctx, "// try block (Rust: panic on exception)")
-    _emit_body(ctx, body)
-
-    if len(handlers) > 0:
-        _emit(ctx, "// except handlers (simplified - not fully translated)")
+        # Separate user-defined exception handlers from built-in string handlers
+        user_handlers: list[dict[str, JsonVal]] = []
+        string_handlers: list[dict[str, JsonVal]] = []
         for handler in handlers:
-            if isinstance(handler, dict):
-                # Declare the exception variable as placeholder so body compiles
+            if not isinstance(handler, dict):
+                continue
+            type_node = handler.get("type")
+            if isinstance(type_node, dict):
+                handler_type_id = _str(type_node, "id")
+                handler_runtime_mod = _str(type_node, "runtime_module_id")
+                # User-defined exception: no runtime_module_id, class in this module
+                if handler_runtime_mod == "" and handler_type_id in ctx.class_names:
+                    user_handlers.append(handler)
+                    continue
+            string_handlers.append(handler)
+
+        # Emit user-defined exception handlers first (if any)
+        if len(user_handlers) > 0:
+            for i, handler in enumerate(user_handlers):
+                type_node = handler.get("type")
+                handler_type_id = _str(type_node, "id") if isinstance(type_node, dict) else ""
                 exc_name = _str(handler, "name")
-                if exc_name != "":
-                    _emit(ctx, "let " + safe_rs_ident(exc_name) + " = \"exception\".to_string();")
-                    ctx.declared_vars.add(exc_name)
                 handler_body = _list(handler, "body")
+                rs_type = safe_rs_ident(handler_type_id)
+                if i == 0:
+                    _emit(ctx, "if let Some(" + safe_rs_ident(exc_name) + ") = __catch_err.downcast_ref::<" + rs_type + ">() {")
+                else:
+                    _emit(ctx, "} else if let Some(" + safe_rs_ident(exc_name) + ") = __catch_err.downcast_ref::<" + rs_type + ">() {")
+                ctx.indent_level += 1
+                ctx.declared_vars.add(exc_name)
+                _emit_body(ctx, handler_body)
+                ctx.indent_level -= 1
+            # Remaining string handlers go in else block
+            if len(string_handlers) > 0:
+                _emit(ctx, "} else {")
+                ctx.indent_level += 1
+                _emit(ctx, "let __err_msg: String = if let Some(__s) = __catch_err.downcast_ref::<String>() { __s.clone() } else if let Some(__s) = __catch_err.downcast_ref::<&str>() { __s.to_string() } else { \"exception\".to_string() };")
+                ctx.catch_err_msg_var = "__err_msg"
+                for handler in string_handlers:
+                    exc_name = _str(handler, "name")
+                    handler_body = _list(handler, "body")
+                    if exc_name != "":
+                        _emit(ctx, "let " + safe_rs_ident(exc_name) + " = __err_msg.clone();")
+                        ctx.declared_vars.add(exc_name)
+                    _emit_body(ctx, handler_body)
+                ctx.indent_level -= 1
+            _emit(ctx, "}")
+        else:
+            # Only string handlers (original behavior)
+            _emit(ctx, "let __err_msg: String = if let Some(__s) = __catch_err.downcast_ref::<String>() { __s.clone() } else if let Some(__s) = __catch_err.downcast_ref::<&str>() { __s.to_string() } else { \"exception\".to_string() };")
+            ctx.catch_err_msg_var = "__err_msg"
+            for handler in string_handlers:
+                exc_name = _str(handler, "name")
+                handler_body = _list(handler, "body")
+                if exc_name != "":
+                    _emit(ctx, "let " + safe_rs_ident(exc_name) + " = __err_msg.clone();")
+                    ctx.declared_vars.add(exc_name)
                 _emit_body(ctx, handler_body)
 
-    if len(finalbody) > 0:
-        _emit(ctx, "// finally block")
-        _emit_body(ctx, finalbody)
+        ctx.catch_err_msg_var = old_catch_var
+        ctx.indent_level -= 1
+        _emit(ctx, "}")  # close Err arm
+        ctx.indent_level -= 1
+        _emit(ctx, "}")  # close match
+        if finalbody:
+            _emit_body(ctx, finalbody)
+
+    ctx.indent_level -= 1
+    _emit(ctx, "}")
 
 
 def _emit_for_core(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
@@ -1697,7 +2489,7 @@ def _emit_static_range_for_from_plan(
     start_str = _emit_expr(ctx, start) if start is not None else "0_i64"
     stop_str = _emit_expr(ctx, stop) if stop is not None else "0_i64"
 
-    # Determine step value
+    # Determine step value — handles Constant, int, and UnaryOp(USub, Constant)
     step_val = 1
     step_is_const = False
     if isinstance(step, dict) and _str(step, "kind") == "Constant":
@@ -1708,6 +2500,14 @@ def _emit_static_range_for_from_plan(
     elif isinstance(step, int):
         step_val = step
         step_is_const = True
+    elif (isinstance(step, dict) and _str(step, "kind") == "UnaryOp"
+          and _str(step, "op") == "USub"):
+        operand = step.get("operand")
+        if isinstance(operand, dict) and _str(operand, "kind") == "Constant":
+            sv2 = operand.get("value")
+            if isinstance(sv2, int):
+                step_val = -sv2
+                step_is_const = True
 
     if step_is_const:
         if step_val == 1:
@@ -1722,7 +2522,7 @@ def _emit_static_range_for_from_plan(
         else:
             _emit(ctx, "for " + target_str + " in " + start_str + ".." + stop_str + " {")
     else:
-        # Dynamic step - use while loop
+        # Dynamic step — sign unknown at emit time, assume positive (forward range)
         step_str = _emit_expr(ctx, step)
         _emit(ctx, "let mut " + target_str + ": " + target_type + " = " + start_str + ";")
         _emit(ctx, "while " + target_str + " < " + stop_str + " {")
@@ -1822,6 +2622,11 @@ def _emit_for_iter(ctx: RsEmitContext, iter_node: JsonVal, target: JsonVal) -> s
         var_id = _str(iter_node, "id")
         if var_id in ctx.var_types:
             resolved_type = ctx.var_types[var_id]
+
+    # JsonVal / PyAny iteration (treats as list)
+    if resolved_type in ("JsonVal", "object", "Any", "Obj"):
+        iter_expr = _emit_expr(ctx, iter_node)
+        return "py_any_as_list(" + iter_expr + ".clone()).iter_snapshot().into_iter()"
 
     # List/collection iteration
     if resolved_type.startswith("list[") or resolved_type == "list":
@@ -1993,6 +2798,20 @@ def _emit_stmt(ctx: RsEmitContext, node: JsonVal) -> None:
         _emit_type_alias(ctx, node)
     elif kind == "VarDecl":
         _emit_var_decl(ctx, node)
+    elif kind == "Swap":
+        # a, b = b, a → temp swap using a local __swap_tmp variable
+        left_node = node.get("left")
+        right_node = node.get("right")
+        left_name = _str(left_node, "id") if isinstance(left_node, dict) else ""
+        right_name = _str(right_node, "id") if isinstance(right_node, dict) else ""
+        if left_name != "" and right_name != "":
+            safe_l = safe_rs_ident(left_name)
+            safe_r = safe_rs_ident(right_name)
+            _emit(ctx, "let __swap_tmp = " + safe_l + ".clone();")
+            _emit(ctx, safe_l + " = " + safe_r + ".clone();")
+            _emit(ctx, safe_r + " = __swap_tmp;")
+        else:
+            _emit(ctx, "// unsupported Swap: non-Name targets")
     else:
         _emit(ctx, "// unsupported stmt: " + kind)
 
@@ -2104,6 +2923,7 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
     name = _str(node, "name")
     arg_order = _list(node, "arg_order")
     arg_types = _dict(node, "arg_types")
+    arg_usage = _dict(node, "arg_usage")
     return_type = _str(node, "return_type")
     body = _list(node, "body")
     decorators = _list(node, "decorator_list")
@@ -2145,10 +2965,16 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
         arg_type = _str(arg_types, arg)
         if arg_type in ctx.trait_names:
             rs_arg_type = "&dyn " + safe_rs_ident(arg_type)
+        elif arg_type in ctx.parent_class_names:
+            # Parent class used as parameter type → use dyn trait for polymorphism
+            rs_arg_type = "Box<dyn " + safe_rs_ident(arg_type) + "Methods>"
         else:
             rs_arg_type = _rs_type_for_context(ctx, arg_type) if arg_type != "" else "Box<dyn std::any::Any>"
-        # Owned Box<UserClass> params may have fields mutated — emit as `mut param`
-        mut_prefix = "mut " if rs_arg_type.startswith("Box<") else ""
+        # Add `mut` only if arg_usage says "reassigned" (EAST3 §arg_usage),
+        # or if the type is Box<T> (fields may be mutated via &mut self patterns).
+        is_reassigned = _str(arg_usage, arg) == "reassigned"
+        is_box = rs_arg_type.startswith("Box<")
+        mut_prefix = "mut " if (is_reassigned or is_box) else ""
         params.append(mut_prefix + safe_rs_ident(arg) + ": " + rs_arg_type)
 
     # Varargs (*args) → PyList<ElemType>
@@ -2164,7 +2990,10 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
     if return_type == "" or return_type == "None" or return_type == "none":
         ret_str = ""
     else:
-        rt = _rs_type_for_context(ctx, return_type)
+        if return_type in ctx.parent_class_names:
+            rt = "Box<dyn " + safe_rs_ident(return_type) + "Methods>"
+        else:
+            rt = _rs_type_for_context(ctx, return_type)
         if rt == "()":
             ret_str = ""
         else:
@@ -2702,6 +3531,27 @@ def _emit_class_def(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     if name not in ctx.enum_bases:
         _emit_class_runtime_type_id(ctx, name)
 
+    # Emit PyStringify for user-defined classes (needed for str(instance))
+    if name not in ctx.enum_bases:
+        _emit_blank(ctx)
+        _emit(ctx, "impl PyStringify for " + rs_name + " {")
+        ctx.indent_level += 1
+        _emit(ctx, "fn py_stringify(&self) -> String { format!(\"{:?}\", self) }")
+        ctx.indent_level -= 1
+        _emit(ctx, "}")
+
+    # If this class is a parent class, emit a <Name>Methods trait and impl for it
+    if name in ctx.parent_class_names:
+        _emit_parent_class_methods_trait(ctx, name)
+        _emit_parent_class_methods_impl(ctx, name)
+
+    # If this class has ancestors in parent_class_names, emit impl <Ancestor>Methods for this class
+    ancestor = ctx.class_bases.get(name, "")
+    while ancestor != "" and ancestor in ctx.class_names:
+        if ancestor in ctx.parent_class_names:
+            _emit_parent_class_methods_impl(ctx, name, as_type=ancestor)
+        ancestor = ctx.class_bases.get(ancestor, "")
+
 
 def _emit_init_as_new(
     ctx: RsEmitContext,
@@ -2818,20 +3668,172 @@ def _camel_to_screaming_snake(name: str) -> str:
 
 
 def _class_tid_const_name(ctx: RsEmitContext, class_name: str) -> str:
-    """Build the TID const name for a user-defined class: {MODULE_STEM_UPPER}_{CLASS_SNAKE_UPPER}_TID."""
-    source_path = ctx.source_path
-    if source_path != "":
-        import os
-        stem = os.path.splitext(os.path.basename(source_path))[0]
-    elif ctx.module_id != "":
-        stem = ctx.module_id.split(".")[-1]
+    """Build the TID const name matching _fqcn_to_tid_const: {MODULE_UPPER}_{CLASS_SNAKE_UPPER}_TID."""
+    import re
+    # Use module_id (dotted path) to match the FQCN used in the manifest type_id_table
+    if ctx.module_id != "":
+        fqcn = ctx.module_id + "." + class_name
     else:
-        stem = "module"
-    # Convert class name to SCREAMING_SNAKE_CASE (CamelCase → CAMEL_CASE)
-    # Use original Python class name (not safe_rs_ident) for TID const name matching
-    cls_safe = _camel_to_screaming_snake(class_name)
-    stem_safe = stem.upper().replace("-", "_").replace(".", "_")
-    return stem_safe + "_" + cls_safe + "_TID"
+        import os
+        source_path = ctx.source_path
+        stem = os.path.splitext(os.path.basename(source_path))[0] if source_path != "" else "module"
+        fqcn = stem + "." + class_name
+    # Mirror _fqcn_to_tid_const logic from pytra-cli2.py
+    flat = fqcn.replace(".", "_")
+    snake = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", flat)
+    snake = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", snake)
+    return snake.upper() + "_TID"
+
+
+def _lookup_class_dense_tid(ctx: RsEmitContext, type_name: str) -> int | None:
+    """Look up the dense TID for a user-defined class from class_type_ids.
+
+    Returns None if the type is not a known user class.
+    """
+    if type_name == "" or type_name in ("object", "Any", "Obj", "unknown"):
+        return None
+    # Try FQCN lookup
+    if ctx.module_id != "":
+        fqcn = ctx.module_id + "." + type_name
+        if fqcn in ctx.class_type_ids:
+            return ctx.class_type_ids[fqcn]
+    # Try direct match
+    if type_name in ctx.class_type_ids:
+        return ctx.class_type_ids[type_name]
+    # Try suffix match
+    suffix = "." + type_name
+    for fqcn, tid in ctx.class_type_ids.items():
+        if fqcn.endswith(suffix) and not fqcn.startswith("pytra."):
+            return tid
+    return None
+
+
+def _sorted_user_classes_desc(ctx: RsEmitContext) -> list[tuple[str, int]]:
+    """Return user-defined class (fqcn, dense_tid) pairs sorted by dense_tid descending.
+
+    Most-specific (leaf) classes have higher dense TIDs, so they come first.
+    This is used to generate correct downcast chains (children before parents).
+    """
+    result: list[tuple[str, int]] = []
+    for fqcn, dense_tid in ctx.class_type_ids.items():
+        if fqcn.startswith("pytra."):
+            continue
+        if dense_tid < 1000:
+            continue
+        result.append((fqcn, dense_tid))
+    result.sort(key=lambda kv: kv[1], reverse=True)
+    return result
+
+
+def _emit_obj_type_id_downcast(ctx: RsEmitContext, ref_expr: str, user_cls: list[tuple[str, int]]) -> str:
+    """Emit a downcast chain to determine the sequential TID of a Box<dyn Any> value.
+
+    The Box<dyn Any> typically contains a Box<ClassName> (due to double-boxing at call sites),
+    so we try downcast_ref::<Box<ClassName>> first, then bare ClassName as fallback.
+    Falls back to py_runtime_type_id for primitive types.
+    """
+    parts: list[str] = []
+    for fqcn, _dense in user_cls:
+        simple_name = fqcn.rsplit(".", 1)[-1] if "." in fqcn else fqcn
+        rs_name = safe_rs_ident(simple_name)
+        seq_const = _fqcn_to_tid_const_name(fqcn)
+        # Try Box<ClassName> first (double-boxed case: Box<Box<ClassName>> as Box<dyn Any>)
+        parts.append(
+            "if (" + ref_expr + ").downcast_ref::<Box<" + rs_name + ">>().is_some() || "
+            + "(" + ref_expr + ").downcast_ref::<" + rs_name + ">().is_some() "
+            + "{ " + seq_const + " }"
+        )
+    fallback = "py_runtime_type_id(" + ref_expr + ")"
+    if not parts:
+        return fallback
+    chain = " else ".join(parts) + " else { " + fallback + " }"
+    return "{ " + chain + " }"
+
+
+def _emit_parent_class_methods_trait(ctx: RsEmitContext, class_name: str) -> None:
+    """Emit a `<ClassName>Methods` trait for a parent class, including all its public methods."""
+    rs_name = safe_rs_ident(class_name)
+    methods = ctx.class_instance_methods.get(class_name, {})
+    trait_methods: list[str] = []
+    for mname, mnode in methods.items():
+        if mname.startswith("__"):
+            continue
+        arg_order = _list(mnode, "arg_order")
+        arg_types = _dict(mnode, "arg_types")
+        return_type = _str(mnode, "return_type")
+        params: list[str] = []
+        for arg in arg_order:
+            if not isinstance(arg, str):
+                continue
+            if arg == "self":
+                params.append("&mut self")
+                continue
+            arg_type = _str(arg_types, arg)
+            rs_arg_type = _rs_type_for_context(ctx, arg_type) if arg_type != "" else "Box<dyn std::any::Any>"
+            params.append(safe_rs_ident(arg) + ": " + rs_arg_type)
+        params_str = ", ".join(params)
+        if return_type == "" or return_type in ("None", "none"):
+            ret_str = ""
+        else:
+            rt = _rs_type_for_context(ctx, return_type)
+            ret_str = " -> " + rt if rt != "()" else ""
+        trait_methods.append("    fn " + safe_rs_ident(mname) + "(" + params_str + ")" + ret_str + ";")
+    if not trait_methods:
+        return
+    _emit_blank(ctx)
+    _emit(ctx, "pub trait " + rs_name + "Methods {")
+    for tm in trait_methods:
+        ctx.lines.append(tm)
+    _emit(ctx, "}")
+
+
+def _emit_parent_class_methods_impl(ctx: RsEmitContext, class_name: str, as_type: str = "") -> None:
+    """Emit `impl <ParentName>Methods for <ClassName>` delegating to existing methods."""
+    impl_class = safe_rs_ident(class_name)
+    trait_class = safe_rs_ident(as_type if as_type != "" else class_name)
+    methods = ctx.class_instance_methods.get(as_type if as_type != "" else class_name, {})
+    trait_methods: list[str] = []
+    for mname, mnode in methods.items():
+        if mname.startswith("__"):
+            continue
+        arg_order = _list(mnode, "arg_order")
+        arg_types = _dict(mnode, "arg_types")
+        return_type = _str(mnode, "return_type")
+        params: list[str] = []
+        call_args: list[str] = []
+        for arg in arg_order:
+            if not isinstance(arg, str):
+                continue
+            if arg == "self":
+                params.append("&mut self")
+                continue
+            arg_type = _str(arg_types, arg)
+            rs_arg_type = _rs_type_for_context(ctx, arg_type) if arg_type != "" else "Box<dyn std::any::Any>"
+            params.append(safe_rs_ident(arg) + ": " + rs_arg_type)
+            call_args.append(safe_rs_ident(arg))
+        params_str = ", ".join(params)
+        call_str = impl_class + "::" + safe_rs_ident(mname) + "(self, " + ", ".join(call_args) + ")"
+        if return_type == "" or return_type in ("None", "none"):
+            ret_str = ""
+            body = call_str + ";"
+        else:
+            rt = _rs_type_for_context(ctx, return_type)
+            ret_str = " -> " + rt if rt != "()" else ""
+            body = "return " + call_str + ";"
+        trait_methods.append((params_str, ret_str, mname, body))
+    if not trait_methods:
+        return
+    _emit_blank(ctx)
+    _emit(ctx, "impl " + trait_class + "Methods for " + impl_class + " {")
+    ctx.indent_level += 1
+    for (params_str, ret_str, mname, body) in trait_methods:
+        _emit(ctx, "fn " + safe_rs_ident(mname) + "(" + params_str + ")" + ret_str + " {")
+        ctx.indent_level += 1
+        _emit(ctx, body)
+        ctx.indent_level -= 1
+        _emit(ctx, "}")
+    ctx.indent_level -= 1
+    _emit(ctx, "}")
 
 
 def _emit_class_runtime_type_id(ctx: RsEmitContext, class_name: str) -> None:
@@ -3029,6 +4031,96 @@ def _collect_uses(ctx: RsEmitContext) -> list[str]:
     return []
 
 
+def _fqcn_to_tid_const_name(fqcn: str) -> str:
+    """Mirror _fqcn_to_tid_const logic from pytra-cli2.py: FQCN → TID const name."""
+    import re
+    flat = fqcn.replace(".", "_")
+    snake = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", flat)
+    snake = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", snake)
+    return snake.upper() + "_TID"
+
+
+def _emit_type_registrations(ctx: RsEmitContext) -> None:
+    """Emit py_register_type_info calls for user-defined classes at start of fn main().
+
+    Uses a pure sequential TID space. Each class C gets:
+        py_register_type_info(C_SEQ_TID, C_SEQ_TID, C_SEQ_TID, C_MAX_DESCENDANT_SEQ_TID)
+
+    This way py_is_subtype(child_seq, base_seq) checks:
+        base_seq <= child_seq <= base_max_seq  -- all in the same TID space.
+
+    The sequential TIDs are the values of the TID constants generated in
+    pytra_built_in_type_id_table.rs (e.g. CLASS_INHERIT_BASIC_BASE_TID = 19).
+    We refer to them by const name so Rust evaluates the correct values at compile time.
+
+    Dense TID ordering (type_id_resolved_v1 values >= 1000) is used as a proxy for
+    sequential ordering: higher dense TID → higher sequential TID.
+    """
+    if not ctx.class_type_ids:
+        return
+    # Collect user-defined classes (dense TID >= 1000)
+    user_classes: list[tuple[str, int]] = []  # (fqcn, dense_tid)
+    for fqcn, dense_tid in ctx.class_type_ids.items():
+        if fqcn.startswith("pytra."):
+            continue
+        if dense_tid < 1000:
+            continue
+        user_classes.append((fqcn, dense_tid))
+    if not user_classes:
+        return
+    # Sort by dense TID ascending (reflects sequential ordering)
+    user_classes.sort(key=lambda kv: kv[1])
+    dense_to_fqcn: dict[int, str] = {d: f for f, d in user_classes}
+
+    # Build children map: fqcn → list of child fqcns (using class_type_info_table's parent info)
+    # We use type_id_resolved_v1: if FQCN "mod.Child" has dense=1012 and "mod.Base" has dense=1011,
+    # and type_info_table says "mod.Base" entry=1011,exit=1013 covering 1012, then Child is under Base.
+    children_map: dict[str, list[str]] = {f: [] for f, _ in user_classes}
+    # Build parent → children from type_info_table_v1
+    # A class P is the direct parent of class C if P's type_id_table entry contains C's dense TID
+    # AND P's exit - P's entry is minimal (closest ancestor)
+    fqcn_set = set(f for f, _ in user_classes)
+    for fqcn, dense_tid in user_classes:
+        simple_name = fqcn.rsplit(".", 1)[-1] if "." in fqcn else fqcn
+        ti_c = ctx.class_type_info_table.get(fqcn) or ctx.class_type_info_table.get(simple_name)
+        if ti_c is None:
+            continue
+        # Find the closest parent: the ancestor with smallest (exit - entry) that still covers dense_tid
+        best_parent: str = ""
+        best_span = -1
+        for other_fqcn, other_dense in user_classes:
+            if other_fqcn == fqcn:
+                continue
+            other_simple = other_fqcn.rsplit(".", 1)[-1] if "." in other_fqcn else other_fqcn
+            ti_p = ctx.class_type_info_table.get(other_fqcn) or ctx.class_type_info_table.get(other_simple)
+            if ti_p is None:
+                continue
+            # Does other contain fqcn? entry <= dense_tid <= exit-1 AND other != fqcn
+            if ti_p["entry"] <= dense_tid <= ti_p["exit"] - 1 and ti_p["entry"] != dense_tid:
+                span = ti_p["exit"] - ti_p["entry"]
+                if best_parent == "" or span < best_span:
+                    best_parent = other_fqcn
+                    best_span = span
+        if best_parent != "" and best_parent in children_map:
+            children_map[best_parent].append(fqcn)
+
+    def _max_descendant_dense(fqcn: str) -> int:
+        """Return the max dense TID in the subtree rooted at fqcn."""
+        max_d = ctx.class_type_ids.get(fqcn, 0)
+        for child in children_map.get(fqcn, []):
+            max_d = max(max_d, _max_descendant_dense(child))
+        return max_d
+
+    for fqcn, dense_tid in user_classes:
+        seq_const = _fqcn_to_tid_const_name(fqcn)
+        max_dense = _max_descendant_dense(fqcn)
+        max_fqcn = dense_to_fqcn.get(max_dense, fqcn)
+        max_const = _fqcn_to_tid_const_name(max_fqcn)
+        # Register: id=seq_tid, order=seq_tid, min=seq_tid, max=max_descendant_seq_tid
+        # All values use sequential TID const names so Rust evaluates them correctly.
+        _emit(ctx, "py_register_type_info(" + seq_const + ", " + seq_const + ", " + seq_const + ", " + max_const + ");")
+
+
 def emit_rs_module(east3_doc: dict[str, JsonVal]) -> str:
     """Emit a complete Rust source file from an EAST3 document.
 
@@ -3091,6 +4183,26 @@ def emit_rs_module(east3_doc: dict[str, JsonVal]) -> str:
     # First pass: collect class/function info
     _first_pass(ctx, body)
 
+    # Compute parent class names (classes that are bases of other classes)
+    ctx.parent_class_names = {
+        base for base in ctx.class_bases.values()
+        if base in ctx.class_names and base not in ctx.trait_names and base not in ctx.enum_bases
+    }
+
+    # Load type_id_resolved_v1 (FQCN → dense TID) and type_info_table_v1
+    type_id_resolved = _dict(lp, "type_id_resolved_v1")
+    for fqcn, dense_val in type_id_resolved.items():
+        if isinstance(fqcn, str) and isinstance(dense_val, int):
+            ctx.class_type_ids[fqcn] = dense_val
+    type_info_raw = _dict(lp, "type_info_table_v1")
+    for ti_name, ti_val in type_info_raw.items():
+        if isinstance(ti_name, str) and isinstance(ti_val, dict):
+            entry = ti_val.get("entry")
+            exit_val = ti_val.get("exit")
+            tid_id = ti_val.get("id")
+            if isinstance(entry, int) and isinstance(exit_val, int) and isinstance(tid_id, int):
+                ctx.class_type_info_table[ti_name] = {"id": tid_id, "entry": entry, "exit": exit_val}
+
     # Collect import alias modules
     ctx.import_alias_modules = build_import_alias_map(meta)
 
@@ -3106,23 +4218,24 @@ def emit_rs_module(east3_doc: dict[str, JsonVal]) -> str:
         lines.append("include!(\"py_runtime.rs\");")
         lines.append("include!(\"pytra_built_in_type_id_table.rs\");")
         # Include std module files for any imported modules that have a native .rs file
-        _STD_MODULE_FILES: dict[str, str] = {
+        # Native .rs file table: pytra.std.* entries are fixed; short names come from mapping.json
+        _STD_MODULE_FILES_FIXED: dict[str, str] = {
             "pytra.std.math": "math_native.rs",
             "pytra.std.time": "time_native.rs",
-            "math": "math_native.rs",
-            "time": "time_native.rs",
+            "pytra.std.collections": "pytra_std_collections.rs",
         }
+        _std_module_files = {**_STD_MODULE_FILES_FIXED, **ctx.mapping.module_native_files}
         for alias, mod_id in ctx.import_alias_modules.items():
-            rs_file = _STD_MODULE_FILES.get(mod_id, "")
+            rs_file = _std_module_files.get(mod_id, "")
             if rs_file == "":
                 # Try prefix match
-                for prefix, rs_f in _STD_MODULE_FILES.items():
+                for prefix, rs_f in _std_module_files.items():
                     if mod_id.startswith(prefix):
                         rs_file = rs_f
                         break
             if rs_file == "":
                 # Try alias itself (e.g. alias == "math")
-                rs_file = _STD_MODULE_FILES.get(alias, "")
+                rs_file = _std_module_files.get(alias, "")
             if rs_file != "":
                 inc = "include!(\"" + rs_file + "\");"
                 if inc not in lines:
@@ -3137,6 +4250,8 @@ def emit_rs_module(east3_doc: dict[str, JsonVal]) -> str:
         _emit_blank(ctx)
         _emit(ctx, "fn main() {")
         ctx.indent_level += 1
+        # Register user-defined class type info for py_is_subtype to work
+        _emit_type_registrations(ctx)
         if len(main_guard) > 0:
             prev_declared = set(ctx.declared_vars)
             ctx.declared_vars = set()

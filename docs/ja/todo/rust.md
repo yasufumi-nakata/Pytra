@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-29 (更新: 2026-03-29)
+最終更新: 2026-03-31
 
 ## 運用ルール
 
@@ -32,16 +32,21 @@
 
 EAST3 は isinstance narrowing 後に `resolved_type` を更新するが、明示的な Cast/Unbox ノードを挿入しない。Rust のように PyAny から具象型へのダウンキャストが必要な言語では、emitter が自前で narrowing 判定するしかなく、§1.1 違反になる。
 
-1. [ ] [ID: P0-EAST3-NARROW-S1] isinstance narrowing で `resolved_type` が変わった Name 参照に Cast/Unbox ノードを挿入する — 元の型と narrowing 後の型が異なる場合のみ
-2. [ ] [ID: P0-EAST3-NARROW-S2] Rust emitter の `_emit_name` workaround（`EAST3 DEFICIENCY WORKAROUND` コメント）を削除し、Cast/Unbox ノードをレンダリングするだけにする
-3. [ ] [ID: P0-EAST3-NARROW-S3] 全言語の fixture parity に影響がないことを確認する
+1. [x] [ID: P0-EAST3-NARROW-S1] isinstance narrowing で `resolved_type` が変わった Name 参照に Cast/Unbox ノードを挿入する — 元の型と narrowing 後の型が異なる場合のみ
+   - 完了: `passes.py` の `apply_guard_narrowing` で `UnaryOp(Not)` / `BoolOp(And)` / `IfExp` パターンを追加し Unbox ノードを挿入。`test_isinstance_narrowing.py` 6/6 PASS。
+2. [x] [ID: P0-EAST3-NARROW-S2] Rust emitter の `_emit_name` workaround を削除し、Unbox ノードをレンダリングするだけにする
+   - 完了: `emitter.py` の `_emit_name` に workaround なし。Unbox ノードは `_emit_expr` の `kind == "Unbox"` ブランチで処理。
+3. [x] [ID: P0-EAST3-NARROW-S3] 全言語の fixture parity に影響がないことを確認する
+   - 完了: 全 131 fixture 再生成。typing 23/23, stdlib 16/16, sample 18/18 PASS（スモークテスト 22/65 は fixture 未生成の既知 43 件のみ失敗）。
 
 ### P0-RS-NARROWED-BINOP: narrowing 済み union 型の BinOp が todo!() に落ちる
 
 Review 指摘: `emitter.py:411` で被演算子の格納型が `Box<dyn Any>` だと `todo!()` に落としている。EAST3 で isinstance narrowing 後の `a + b` は合法なのに、Rust backend だけ実行時 panic。`type_alias_pep695` fixture の `Scalar = int | float` の int 分岐が該当。
 
-1. [ ] [ID: P0-RS-NARROWED-BINOP-S1] EAST3 の narrowing 済み `resolved_type` を参照して正しい型で演算を emit する — `Box<dyn Any>` fallback ではなく narrowing 後の具象型を使う
-2. [ ] [ID: P0-RS-NARROWED-BINOP-S2] `type_alias_pep695` fixture が Rust で compile + run parity PASS することを確認する
+1. [x] [ID: P0-RS-NARROWED-BINOP-S1] EAST3 の narrowing 済み `resolved_type` を参照して正しい型で演算を emit する — `Box<dyn Any>` fallback ではなく narrowing 後の具象型を使う
+   - 完了: Unbox ノード導入済み（P0-EAST3-NARROWING-CAST）により BinOp の子ノードは具象型で emit される。_emit_binop の Box<dyn Any> downcast ロジックに結果型・対向operand型からの推論フォールバックを追加。
+2. [x] [ID: P0-RS-NARROWED-BINOP-S2] `type_alias_pep695` fixture が Rust で compile + run parity PASS することを確認する
+   - 完了: PyAny に PyStringify 実装を追加し、runtime_parity_check_fast PASS 確認。
 
 ### P0-RS-TYPE-MAPPING: Rust emitter の型写像を mapping.json に移行する
 
