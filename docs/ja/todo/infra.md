@@ -34,4 +34,9 @@
 5. [x] [ID: P0-PROGRESS-SUMMARY-S5] サマリの fixture / sample / stdlib セルに `PASS件数/総件数`（例: `🟩 123/128`）を表示するよう `_build_summary_matrix()` を修正する — 現状はアイコンのみで件数がない。plans/p0-progress-summary.md のテーブル形式を参照
    完了: `_parity_summary_cell()` / `_lint_cell()` に変更。`🟩 132/132` 形式で表示。
 
+### P0-LINT-TYPEID-CATEGORY: emitter lint に type_id/isinstance カテゴリを追加する
+
+1. [ ] [ID: P0-LINT-TYPEID-S1] `check_emitter_hardcode_lint.py` に第7カテゴリ「type_id / isinstance ロジックのハードコード」を追加する — 禁止パターン: `py_runtime_object_isinstance`, `PYTRA_TID_`, `py_tid_`, `g_type_table`
+2. [ ] [ID: P0-LINT-TYPEID-S2] emitter-hardcode-lint.md に新カテゴリが表示されることを確認する
+
 （P20-INT32 は [plans/p4-int32-default.md](../plans/p4-int32-default.md) に保留中。再開時にここへ戻す。）

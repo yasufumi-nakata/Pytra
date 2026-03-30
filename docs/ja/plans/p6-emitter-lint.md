@@ -51,14 +51,20 @@ EAST3 では既に正規化済みの Python 構文が emitter に残っている
 
 禁止パターン例: `"__main__"`, `"super()"`
 
+### 7. type_id / isinstance ロジックのハードコード
+
+emitter が `pytra_isinstance` に委譲せず、型判定ロジックを自前で持っている。
+
+禁止パターン例: `"py_runtime_object_isinstance"`, `"PYTRA_TID_"`, `"py_tid_"`, `"g_type_table"`
+
 ## 設計
 
 ### grep ベースの静的検査
 
 `src/toolchain2/emit/*/` 配下の `.py` ファイルを対象に、禁止パターンの文字列を grep する。
 
-- 検出精度が高いカテゴリ（1〜4, 一部の 5, 6）に絞る
-- カテゴリ 4〜7（型名の文字列マッチ、属性名での分岐等）は誤検知が多いため、将来 AST ベースの lint に移行する候補とする
+- 検出精度が高いカテゴリ（1〜4, 一部の 5, 6, 7）に絞る
+- カテゴリ 4〜7 のうち型名の文字列マッチ、属性名での分岐は誤検知が多いため、将来 AST ベースの lint に移行する候補とする
 
 ### allowlist
 
