@@ -1263,3 +1263,49 @@ emit だけ成功してもプレースホルダーコード（`nil /* list compr
 - [ ] `runtime_parity_check_fast.py --targets <lang>` で fixture 検証している（§13）
 - [ ] `runtime_parity_check_fast.py --targets <lang> --case-root sample` で sample 検証している（§13）
 - [ ] `runtime_parity_check_fast.py --targets <lang> --case-root stdlib` で stdlib 検証している（§13）
+
+## 15. 言語別 FAQ
+
+新しい emitter を実装する際によくある疑問と回答。
+
+### isinstance はどう実装する？
+
+emitter は `pytra_isinstance(x, TID)` を出力するだけ。ターゲット言語の `instanceof`（Java）や `is`（C#）を直接使ってはならない。isinstance の判定ロジックは linker が `type_id_table` に埋めており、emitter の責務ではない（§10.2 参照）。
+
+### enum / IntEnum はどう出力する？
+
+定数群（`public static final long RED = 1;` 等）として出力する。ターゲット言語の enum 型（Java `enum`、C# `enum`、Rust `enum`）にマッピングしない。理由:
+- `IntEnum` は算術演算（`Color.RED + 1`）が合法であり、言語の enum 型だと面倒になる
+- EAST3 で enum は通常のクラス + 定数フィールドとして表現されている
+- fixture を早く通すことを優先する
+
+### property / super / trait はどう出力する？
+
+ターゲット言語の素直な継承・interface に寄せる:
+- `@property` → getter メソッド（Java: `getX()` / C#: プロパティ）
+- `super().__init__()` → 親クラスのコンストラクタ呼び出し
+- `@trait` → interface（Java: `interface` / C#: `interface` / Go: `interface`）
+- `@implements` → implements / コンストラクタで interface 実装
+
+EAST3 のノードをそのまま写像すること。emitter が独自の継承解決ロジックを持ってはならない。
+
+### コンテナ（list/dict/set）は値型？参照型？
+
+参照型ラッパーを既定とする（§10 参照）。言語ごとの表現:
+- C++: `Object<list<T>>`
+- Go: `*PyList[T]`
+- Java: `PyList<T>`（参照型が既定）
+- C#: `PyList<T>`（参照型が既定）
+- Rust: `Rc<RefCell<Vec<T>>>`
+- TS/JS: 配列はそのまま（JS の配列は参照型）
+
+### 戻り値型の注釈がない関数はどう扱う？
+
+`-> None` は省略可能。body に `return <値>` がなければ resolve が `None` と推論する。emitter に到達する時点では `return_type` は必ず確定している（§1.2 参照）。
+
+### sample の生成コードが汚い。どこまで品質を気にすべき？
+
+`sample/<lang>/` は Pytra の展示物。§1.4 の NG パターンを全て排除し、ターゲット言語のプログラマが読んで違和感がないレベルを目指すこと。具体的には:
+- `int64(0)` → `0`（不要な POD cast 除去）
+- `(a) + (b)` → `a + b`（冗長な括弧除去）
+- `int64{}` → `0`（デフォルトコンストラクタではなくリテラル）
