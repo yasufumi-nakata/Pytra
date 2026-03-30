@@ -5,7 +5,7 @@
 # Backend overall summary
 
 > Machine-generated file. Run `python3 tools/gen/gen_backend_progress.py` to update.
-> Generated at: 2026-03-30T12:11:26
+> Generated at: 2026-03-30T12:17:18
 > [Links](./index.md)
 
 Overview of fixture / sample / stdlib / selfhost / emitter lint status per language.
@@ -18,14 +18,14 @@ Overview of fixture / sample / stdlib / selfhost / emitter lint status per langu
 
 | Lang | fixture | sample | stdlib | selfhost | emitter lint |
 |---|:---:|:---:|:---:|:---:|:---:|
-| cpp | 🟥 | 🟥 | ⬜ | 🟥 | ⬜ |
-| rs | 🟥 | ⬜ | ⬜ | 🟥 | ⬜ |
+| cpp | 🟥 129/132 | 🟥 2/18 | ⬜ | 🟥 | 🟥 4 |
+| rs | 🟥 83/132 | ⬜ | ⬜ | 🟥 | 🟩 0 |
 | cs | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | ps1 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| js | 🟥 | ⬜ | ⬜ | 🟥 | ⬜ |
-| ts | 🟩 | ⬜ | ⬜ | 🟥 | ⬜ |
+| js | 🟥 131/132 | ⬜ | 🟥 2/15 | 🟥 | ⬜ |
+| ts | 🟩 132/132 | ⬜ | ⬜ | 🟥 | 🟩 0 |
 | dart | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
-| go | 🟩 | 🟩 | ⬜ | 🟩 | ⬜ |
+| go | 🟩 132/132 | 🟩 18/18 | 🟩 15/15 | 🟩 | 🟥 27 |
 | java | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | swift | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | kotlin | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
