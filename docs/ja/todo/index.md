@@ -16,6 +16,10 @@
 | TS/JS backend | [ts.md](./ts.md) |
 | C# backend | [cs.md](./cs.md) |
 | Java backend | [java.md](./java.md) |
+| Ruby backend | [ruby.md](./ruby.md) |
+| Lua backend | [lua.md](./lua.md) |
+| PHP backend | [php.md](./php.md) |
+| Nim backend | [nim.md](./nim.md) |
 | インフラ・ツール | [infra.md](./infra.md) |
 
 完了済みタスクは [アーカイブ](archive/index.md) に移動済み。
