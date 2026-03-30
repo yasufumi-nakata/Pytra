@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-30（P0-GO-ENV-TARGET 完了、P0-GO-TYPE-MAPPING 完了、P0-GO-SPLITEXT 完了、P0-GO-ARGPARSE-ARGV 完了）
+最終更新: 2026-03-30（P0-GO-ENV-TARGET 完了、P0-GO-TYPE-MAPPING 完了、P0-GO-SPLITEXT 完了、P0-GO-ARGPARSE-ARGV 完了、stdlib 16/16 PASS）
 
 ## 運用ルール
 
@@ -37,6 +37,16 @@
    - 完了: `emitter.py` の `__LIST_CTOR__` ハンドラで `result_type.startswith("list[")` 時に `PyListFromSlice[T]()` でラップ
 2. [x] [ID: P0-GO-ARGPARSE-S2] `argparse_extended:go` parity PASS を確認する
    - 完了: PASS
+
+### P0-GO-SPLITEXT（副作用修正）: `py_splitext` を `(string, string)` に変更したことで既存 parity が破損 → tuple-multi-return 展開で解消
+
+原因: `pathlib.py` は `__tup_N = py_splitext(...)` + `__tup_N[0]` 形式（`Assign` + subscript）で使用していたが、`py_splitext` が `(string, string)` を返すと `var __tup_N []any = py_splitext(...)` が Go コンパイルエラーになる。
+
+修正:
+- `_emit_assign` で `target: Name(resolved_type=tuple[...])` かつ `value: Call(resolved_type=tuple[...])` のとき、多値変数 `__tup_N_0, __tup_N_1 := py_splitext(...)` に展開し `ctx.tup_multi_vars["__tup_N"] = ["__tup_N_0", "__tup_N_1"]` を記録
+- `_emit_subscript` で `value` が `ctx.tup_multi_vars` にある場合、インデックスに対応する変数名 `__tup_N_i` を直接返す
+- `EmitContext.tup_multi_vars: dict[str, list[str]]` を追加
+- stdlib 16/16 PASS 回復（2026-03-30）
 
 ### P0-GO-TYPE-MAPPING: Go emitter の型写像を mapping.json に移行する
 
@@ -80,6 +90,16 @@
    - 完了: `mapping.json` に `pytra.std.env` を `skip_modules` 追加、`_emit_attribute` で `owner_id + "." + attr` を `mapping.calls` から直接ルックアップするよう修正
 2. [x] [ID: P0-GO-ENV-S2] `pytra_runtime_png` fixture が Go で compile + run parity PASS することを確認する
    - 完了: stdlib/pytra_runtime_png:go PASS（2026-03-30）
+
+### P0-RESOLVE-INT-PROMOTION: BinOp の整数昇格 cast が結果型ではなくオペランド型に付くよう修正する
+
+`m8: int8 = 100; m16: int16 = 100; r5: int32 = m8 * m16` で、現在の resolve は `left` に `int8 → int16` の cast を付けた上で結果を `int32` にしているが、`int16 * int16` の結果に `int32` への cast がない。Go では `int16 * int16 = int16` なのでコンパイルエラーになる。
+
+正しくは **掛け算の前に** 両オペランドを結果型（`int32`）に cast すべき。`int32(m8) * int32(m16)` なら Go でもコンパイルが通り、overflow もしない。
+
+1. [ ] [ID: P0-RESOLVE-INTPROMO-S1] resolve の BinOp 整数昇格で、cast を「結果型にまで昇格」に修正する — `int8 * int16 → int32` なら left に `int8 → int32`、right に `int16 → int32` の cast を付ける
+2. [ ] [ID: P0-RESOLVE-INTPROMO-S2] `integer_promotion` fixture が Go で compile + run parity PASS することを確認する
+3. [ ] [ID: P0-RESOLVE-INTPROMO-S3] 他の fixture に影響がないことを確認する（golden 再生成）
 
 ### P2-COMMON-RENDERER-PARENS: CommonRenderer に演算子優先順位ベースの括弧制御を実装する
 
