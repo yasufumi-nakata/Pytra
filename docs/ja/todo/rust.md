@@ -47,13 +47,8 @@ selfhost で必要な 4 パターン（dict.items() tuple unpack, typed dict.get
 
 文脈: [docs/ja/plans/plan-common-renderer-peer-class-info.md](../plans/plan-common-renderer-peer-class-info.md)
 
-linked EAST3 には property 判定 (`attribute_access_kind`) や戻り値型 (`Call.resolved_type`) は既にあるが、receiver が ref class か value class かの情報 (`class_storage_hint`) だけが `Attribute` / `Call` ノードに載っていない。linker が `receiver_storage_hint` フィールドを追加すれば、emitter は peer module を読む必要がなくなる。
-
-1. [x] [ID: P0-RECV-HINT-S1] linker に全 module の ClassDef から `{class_name: class_storage_hint}` マップを構築する処理を追加する
-2. [x] [ID: P0-RECV-HINT-S2] linker が `Attribute` / `Call` ノードの receiver の `resolved_type` を引いて `receiver_storage_hint` を付与する pass を追加する
-3. [x] [ID: P0-RECV-HINT-S3] Rust emitter の `_emit_attribute` / `_emit_call` で `receiver_storage_hint` を参照し、ref class なら `borrow()` を挿入する
-4. [x] [ID: P0-RECV-HINT-S4] `pathlib_extended` / `path_stringify` fixture が Rust で compile + run parity PASS することを確認する
-5. [ ] [ID: P0-RECV-HINT-S5] fixture + sample の全件 parity に回帰がないことを確認する
+1. [x] S1〜S4 完了（linker pass 追加、Rust emitter borrow() 挿入、pathlib parity PASS）
+2. [ ] [ID: P0-RECV-HINT-S5] fixture + sample の全件 parity に回帰がないことを確認する
 
 ### P0-RS-SKIP-PURE-PY: skip_modules から pure Python モジュールを外す
 
@@ -63,72 +58,6 @@ linked EAST3 には property 判定 (`attribute_access_kind`) や戻り値型 (`
 2. [ ] [ID: P0-RS-SKIP-PURE-S2] transpile された pathlib / env が Rust で compile できることを確認する（必要なら emitter / runtime を修正）
 3. [ ] [ID: P0-RS-SKIP-PURE-S3] `check_emitter_hardcode_lint.py --lang rs` で `skip_pure_python` が 0 件になることを確認する
 4. [ ] [ID: P0-RS-SKIP-PURE-S4] fixture + sample parity に回帰がないことを確認する
-
-### P0-RS-CALLABLE: callable 型（高階関数）の Rust parity を通す
-
-EAST3 の `GenericType(base="callable", args=[引数型, 戻り値型])` を Rust の関数ポインタ (`fn(Args) -> R`) または `Box<dyn Fn(Args) -> R>` に変換する処理が必要。`callable_higher_order` fixture が compile + run parity PASS することを完了条件とする。
-
-1. [x] [ID: P0-RS-CALLABLE-S1] Rust emitter で `callable` 型を関数ポインタまたは trait object に変換する処理を追加する
-2. [x] [ID: P0-RS-CALLABLE-S2] `callable_higher_order` fixture が Rust で compile + run parity PASS することを確認する
-
-### P0-RS-IN-ITERABLE: `in` 演算子を iterable の汎用 contains で処理する
-
-文脈: [docs/ja/plans/plan-rs-in-iterable-contains.md](../plans/plan-rs-in-iterable-contains.md)
-
-現状の Rust runtime は tuple の `in` を要素数ごとの `PyContains` trait impl (2〜12要素) で処理しており、13要素以上で破綻する。tuple をスライスに変換して `.contains()` を呼ぶ汎用方式に移行する。range は算術判定で処理する。
-
-1. [x] [ID: P0-RS-IN-ITER-S1] Rust emitter の `_emit_compare` で `In`/`NotIn` + `Tuple` を `[...].contains(&key)` に変換する
-2. [x] [ID: P0-RS-IN-ITER-S2] Rust emitter の `_emit_compare` で `In`/`NotIn` + `RangeExpr` を算術判定に変換する
-3. [x] [ID: P0-RS-IN-ITER-S3] `py_runtime.rs` の tuple 要素数別 `PyContains` impl (2〜12要素) を削除する
-4. [x] [ID: P0-RS-IN-ITER-S4] `in_membership_iterable` fixture が Rust で compile + run parity PASS することを確認する
-5. [x] [ID: P0-RS-IN-ITER-S5] fixture + sample の全件 parity に回帰がないことを確認する
-
-### P0-EAST3-IN-EXPAND: `in` リテラル展開を EAST3 optimizer で行う
-
-文脈: [docs/ja/plans/plan-east3-opt-in-literal-expansion.md](../plans/plan-east3-opt-in-literal-expansion.md)
-
-`x in (1, 2, 3)` のような少数リテラル要素の `in` を EAST3 optimizer で `x == 1 || x == 2 || x == 3` に展開する。emitter が要素数ごとに runtime 実装を用意するのは禁止（spec-emitter-guide §1.1）。大きいコレクションや非リテラル要素は iterable の汎用 `contains` のまま残す。
-
-1. [x] [ID: P0-IN-EXPAND-S1] EAST3 optimizer に `Compare(In/NotIn) + Tuple/List(literal, len <= 3)` → `BoolOp(Or/And, [Compare(Eq/NotEq), ...])` の pass を追加する
-2. [x] [ID: P0-IN-EXPAND-S2] Rust の fixture + sample parity に回帰がないことを確認する
-3. [x] [ID: P0-IN-EXPAND-S3] Rust runtime の要素数ごとの `PyContains` tuple impl を削除し、iterable 汎用の `contains` に置換する
-
-### P0-EAST3-INHERIT: 継承クラスの ref 一貫性 + super() 解決
-
-文脈: [docs/ja/plans/plan-east3-inheritance-ref-super.md](../plans/plan-east3-inheritance-ref-super.md)
-
-EAST3 lowering の問題。継承階層の基底クラスが `class_storage_hint: "value"` のまま、派生クラスだけ `"ref"` になるため、Rust emitter で `Rc<RefCell<T>>` と `Box<dyn Trait>` が衝突する。また `super()` が `resolved_type: "unknown"` のまま未解決。emitter のワークアラウンドではなく EAST3 側の修正が必要。
-
-1. [x] [ID: P0-EAST3-INHERIT-S1] EAST3 lowering で、派生クラスが存在する基底クラスの `class_storage_hint` を `"ref"` に昇格する（推移的に適用）
-   - 完了: `src/toolchain2/resolve/py/resolver.py` に継承階層の基底クラスを推移的に `ref` へ昇格する pass を追加。`tools/unittest/toolchain2/test_inheritance_ref_super_resolution.py` で `Animal <- Dog <- LoudDog` が EAST2/EAST3 の両方で `ref` になることを固定。
-2. [x] [ID: P0-EAST3-INHERIT-S2] EAST3 lowering（または EAST2 resolve）で `super()` の型を解決する — receiver type を base class に、method call の戻り値型を base class のメソッド定義から確定
-   - 完了: `resolve_east1_to_east2()` で `super()` を現在クラスの base class へ解決し、`super().method()` の receiver / return type が既存の method lookup に乗るよう修正。`tools/unittest/toolchain2/test_inheritance_ref_super_resolution.py` で `super().speak()` が `Dog -> str` に解決されることを確認。
-4. [x] [ID: P0-EAST3-INHERIT-S4] Rust の `inheritance_virtual_dispatch_multilang` が compile + run parity PASS することを確認する
-   - 完了: EAST3 の `class_storage_hint` 昇格 + `super()` 解決を前提に、`src/toolchain2/emit/rs/emitter.py` の継承 lowering を整理。`Rc<RefCell<T>>` と `Box<dyn ParentMethods>` の境界、trait receiver、enum alias、property/trait dispatch を修正し、`python3 tools/check/runtime_parity_check_fast.py --targets rs --case-root fixture inheritance_virtual_dispatch_multilang` で PASS、さらに `--case-root fixture` 全体でも `131/131 PASS` を確認。
-
-### P7-RS-EMITTER: Rust emitter を toolchain2 に新規実装する
-
-前提: Go emitter（参照実装）と CommonRenderer が安定してから着手。
-
-1. [x] [ID: P7-RS-EMITTER-S1] `src/toolchain2/emit/rs/` に Rust emitter を新規実装する — Go emitter を参考に CommonRenderer + override 構成で作成。Rust 固有のノード（所有権・ライフタイム・borrow、match、impl ブロック等）だけ override として残す
-   - 完了: `src/toolchain2/emit/rs/{emitter.py,types.py,__init__.py}` と `src/toolchain2/emit/profiles/rs.json` を作成。全 1001 件 fixture エラーなし emit 成功。pytra-cli2.py に rs target を追加。
-2. [x] [ID: P7-RS-EMITTER-S2] `src/runtime/rs/mapping.json` を作成し、runtime_call の写像を定義する
-   - 完了: `src/runtime/rs/mapping.json` を作成。Go mapping.json を参考に Rust 向け関数名でマッピング定義。
-3. [x] [ID: P7-RS-EMITTER-S3] fixture 132 件 + sample 18 件の Rust emit 成功を確認する
-   - 完了: fixture 131/131 + sample 18/18 emit 成功（合計 149 件）。isinstance_user_class / isinstance_tuple_check の module_prefix 属性エラーを修正。
-4. [x] [ID: P7-RS-EMITTER-S4] Rust runtime を toolchain2 の emit 出力と整合させる（旧 toolchain1 runtime の引き継ぎ or 再実装）
-   - 2026-03-31: `runtime_parity_check_fast.py --targets rs --case-root fixture` で `131/131 PASS` を確認
-5. [x] [ID: P7-RS-EMITTER-S5] fixture + sample の Rust compile + run parity を通す
-   - 2026-03-31: `runtime_parity_check_fast.py --targets rs --case-root sample` で `18/18 PASS` を確認
-
-### P8-RS-LINT: emitter hardcode lint の Rust 残件を解消する
-
-文脈: [docs/ja/plans/p6-emitter-lint.md](../plans/p6-emitter-lint.md)
-
-1. [x] [ID: P8-RS-LINT-S1] `check_emitter_hardcode_lint.py --lang rs` の `class_name` 違反を 0 件にする
-   - 完了: `src/toolchain2/emit/rs/emitter.py` の `Path` / `ArgumentParser` 直書き double-quote 判定を解消し、`python3 tools/check/check_emitter_hardcode_lint.py --lang rs --verbose` で `class_name` 0 件を確認。
-2. [x] [ID: P8-RS-LINT-S2] `check_emitter_hardcode_lint.py --lang rs` の `skip pure py` 違反を 0 件にする
-   - 完了: `src/runtime/rs/mapping.json` から `pytra.std.random` の skip を外し、`src/pytra/std/{env.py,pathlib.py}` に native-marker を追加して Rust の `skip pure py` 違反を解消。`python3 tools/check/check_emitter_hardcode_lint.py --lang rs --verbose` で 0 件を確認し、代表 parity として `runtime_parity_check_fast.py --targets rs --case-root stdlib path_stringify pathlib_extended argparse_extended` も PASS。
 
 ### P9-RS-SELFHOST: Rust emitter で toolchain2 を Rust に変換し cargo build を通す
 

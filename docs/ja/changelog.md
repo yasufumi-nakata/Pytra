@@ -4,6 +4,25 @@
 
 # 更新履歴
 
+## 2026-03-31 (後半)
+
+- **spec-east.md §4.1 Python → EAST ノード変換表**: 代入/unpack、ループ、関数/クロージャ、制御構文、式、クラス、import、コンテナ操作の全カテゴリで変換表を追加。
+- **EAST tuple unpack バグ修正**: 括弧付き左辺 `(x,y,z)=` / `[x,y,z]=` と comprehension + unpack の 3 パターンを修正。
+- **C++ callable 型サポート**: `callable[[Args],Ret]` → `std::function<R(Args...)>` 変換を実装。
+- **C++ in/not in の range 算術展開**: `x in range(start, stop, step)` を算術判定式に直接展開。
+- **Rust in 演算子を iterable 汎用化**: 要素数ごとの `PyContains` を廃止、slice.contains() に統一。
+- **EAST3 optimizer に in リテラル展開**: 少数リテラルの `in` を `||` チェーンに展開する pass を追加。
+- **Rust 継承 ref 一貫性 + super() 解決**: 基底クラスの ref 昇格、super() の型解決を EAST2/EAST3 で実装。
+- **linker に receiver_storage_hint**: peer module のクラス情報を Attribute/Call ノードに付与。
+- **pytra-cli2.py から C++/Rust emit を subprocess 委譲**: selfhost で不要な言語の emitter が依存グラフに入らなくなった。
+- **parity changelog 自動記録**: PASS 件数の変化を progress-preview/changelog.md に自動追記。
+- **emitter lint に skip_pure_python カテゴリ**: pure Python モジュールの skip を検出。
+- **fixture 追加**: tuple_unpack_variants, typed_container_access, in_membership_iterable, callable_higher_order。
+- **spec-emitter-guide 更新**: selfhost parity (run_selfhost_parity.py) を §13 に追加、tuple in 要素数特殊化を §1.1 で禁止。
+- **spec-setup.md 新設**: clone 直後の golden / runtime east 生成手順を一箇所にまとめた。
+- **出力先整理**: sample → sample-preview、progress → progress-preview、runtime east を gitignore 化。
+- **自動生成間隔変更**: progress 3分、emitter lint 10分、selfhost 15分、benchmark 3分。
+
 ## 2026-03-31
 
 - **Ruby / Lua / PHP / Nim backend 担当を新設**: TODO と plans を起票。各言語の emitter 実装 → lint → selfhost のタスクを積んだ。

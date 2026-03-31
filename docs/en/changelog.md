@@ -4,6 +4,25 @@
 
 # Changelog
 
+## 2026-03-31 (second half)
+
+- **spec-east.md §4.1 Python → EAST node conversion table**: Added comprehensive table for all categories.
+- **EAST tuple unpack bugfix**: Fixed 3 patterns — parenthesized LHS, bracket LHS, comprehension + unpack.
+- **C++ callable type support**: `callable[[Args],Ret]` → `std::function<R(Args...)>`.
+- **C++ range in arithmetic expansion**: `x in range(start, stop, step)` expanded to arithmetic check.
+- **Rust in operator generalized**: Replaced per-arity PyContains with slice.contains().
+- **EAST3 optimizer in-literal expansion**: Small literal `in` expanded to `||` chain.
+- **Rust inheritance ref consistency + super() resolution**: Base class ref promotion, super() type resolution.
+- **Linker receiver_storage_hint**: Peer module class info attached to Attribute/Call nodes.
+- **pytra-cli2.py C++/Rust emit subprocess delegation**: Selfhost no longer pulls in other language emitters.
+- **Parity changelog auto-recording**: PASS count changes auto-appended to progress-preview/changelog.md.
+- **Emitter lint skip_pure_python category**: Detects pure Python modules in skip_modules.
+- **New fixtures**: tuple_unpack_variants, typed_container_access, in_membership_iterable, callable_higher_order.
+- **spec-emitter-guide updates**: selfhost parity in §13, tuple in arity specialization banned in §1.1.
+- **spec-setup.md**: Consolidated clone setup instructions (golden + runtime east).
+- **Output path cleanup**: sample → sample-preview, progress → progress-preview, runtime east gitignored.
+- **Auto-generation intervals**: progress 3min, emitter lint 10min, selfhost 15min, benchmark 3min.
+
 ## 2026-03-31
 
 - **Ruby / Lua / PHP / Nim backend teams added**: TODO and plans created for each language.

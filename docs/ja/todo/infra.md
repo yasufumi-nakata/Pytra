@@ -16,43 +16,9 @@
 - **タスク完了時は `[ ]` を `[x]` に変更し、完了メモを追記してコミットすること。**
 - 完了済みタスクは定期的に `docs/ja/todo/archive/` へ移動する。
 
-完了済みタスクは [アーカイブ](archive/20260330.md) を参照。
+完了済みタスクは [アーカイブ](archive/20260331.md) を参照。
 
 ## 未完了タスク
-
-### P0-EAST-TUPLE-UNPACK: EAST の tuple unpack バグ修正
-
-文脈: [docs/ja/plans/plan-east-tuple-unpack-bugs.md](../plans/plan-east-tuple-unpack-bugs.md)
-
-EAST3 で 3 パターンの tuple unpack が壊れている。括弧付き左辺 `(x,y,z)=` / `[x,y,z]=` が `Expr` に崩壊、comprehension + unpack で代入が消失。`tuple_unpack_variants` fixture で検出済み。
-
-1. [x] [ID: P0-TUPLE-UNPACK-S1] EAST1 parser で括弧付き左辺 `(x,y,z)` / `[x,y,z]` を括弧なしと同様に tuple target として認識させる
-   - 完了: `parser.py` で左辺の外側 wrapper を剥がして tuple target 判定するよう修正し、bare RHS CSV も `TupleExpr` として保持するようにした
-2. [x] [ID: P0-TUPLE-UNPACK-S2] list comprehension 展開パスで元の代入ターゲットが Tuple の場合に `__comp_N[0]`, `__comp_N[1]`, ... への代入を生成する
-   - 完了: `passes.py` で listcomp 展開後の元 target を保持し、individual_temps 展開で `Subscript` / nested tuple target も再帰的に展開するよう修正した
-3. [x] [ID: P0-TUPLE-UNPACK-S3] `tuple_unpack_variants` fixture が全パターン EAST3 で正しい TupleUnpack を生成することを確認する
-   - 完了: `tools/unittest/toolchain2/test_tuple_unpack_lowering_profile.py` に parser/lowering 回帰を追加し、`test_paren_unpack` / `test_bracket_unpack` / `test_comprehension_unpack` が EAST3 で正しい unpack へ落ちることを確認した
-4. [x] [ID: P0-TUPLE-UNPACK-S4] C++ / Rust の fixture parity に回帰がないことを確認する
-   - 完了: `runtime_parity_check_fast.py --targets cpp|rs --case-root fixture --east3-opt-level 2 tuple_unpack_variants` が両 backend で PASS。あわせて C++/Rust emitter の tuple/list source 判定と local function return type 補完を修正した
-
-### P0-PARITY-CHANGELOG: parity 変化点ログの自動記録
-
-文脈: [docs/ja/plans/plan-parity-changelog.md](../plans/plan-parity-changelog.md)
-
-parity check の PASS 件数が変化したタイミングで `progress-preview/changelog.md` に自動追記する。退行の即時検知と履歴追跡が目的。
-
-1. [x] [ID: P0-CHANGELOG-S1] `runtime_parity_check_fast.py` で結果保存時に前回 PASS 件数と比較し、変化があれば `progress-preview/changelog.md` に行を追記する — `_save_parity_results` は fast 版が import して使うため、非 fast 版に実装することで両方に適用
-2. [x] [ID: P0-CHANGELOG-S2] `runtime_parity_check.py`（非 fast 版）にも同様のロジックを追加する — `_save_parity_results` 内に `prev_pass`/`curr_pass` 計算と `_append_parity_changelog` 呼び出しを追加
-3. [x] [ID: P0-CHANGELOG-S3] 動作確認 — parity check 実行後に changelog.md が正しく更新されることを確認する — ユニットテストで新規作成・行挿入・変化なし時スキップを確認
-
-### P1-LINT-CHANGELOG: emitter lint 変化点ログの自動記録
-
-文脈: [docs/ja/plans/plan-lint-changelog.md](../plans/plan-lint-changelog.md)
-
-emitter lint（ハードコード違反検出）の `pass_cats` が変化したタイミングで `progress-preview/changelog.md` に自動追記する。parity changelog と同じ `_append_parity_changelog` を `case_root="lint"` で再利用する。
-
-1. [x] [ID: P1-LINT-CHANGELOG-S1] `check_emitter_hardcode_lint.py` の `_write_results()` で既存 `emitter_lint.json` と比較し、変化があれば `_append_parity_changelog` を呼び出す — `case_root="lint"` で再利用。ロック・クールダウンも既存実装が適用される
-2. [x] [ID: P1-LINT-CHANGELOG-S2] 動作確認 — lint 実行後に changelog.md が正しく更新されることを確認する — pass_cats 変化時に `| ts | rs | lint | 4→6 (+2) |` 形式で先頭に挿入されることを確認
 
 ### P20-DATA-DRIVEN-TESTS: パイプライン系テストのデータ駆動化
 
