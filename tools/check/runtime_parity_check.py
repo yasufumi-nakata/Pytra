@@ -737,10 +737,15 @@ _CHANGELOG_HEADERS: dict[str, str] = {
 }
 
 
+_CHANGELOG_COOLDOWN_SEC = 600  # 10 minutes: prevent multiple agents from writing in the same window
+
+
 def _append_parity_changelog(target: str, case_root: str, prev_pass: int, curr_pass: int, now: str) -> None:
     """Append a row to progress-preview/changelog.md when PASS count changes.
 
     changelog.md は全エージェント共有の単一ファイルのため、fcntl.flock で排他制御する。
+    クールダウン判定は lock 内で行い、待機中のエージェントが続けて書き込むのを防ぐ。
+    クールダウンは target+case_root 単位で管理する。
     """
     import fcntl
 
@@ -753,10 +758,15 @@ def _append_parity_changelog(target: str, case_root: str, prev_pass: int, curr_p
     row = f"| {ts} | {target} | {case_root} | {prev_pass}→{curr_pass} ({sign}{diff}) | {note} |"
     sep_marker = "|---|---|---|---|---|"
     lock_path = ROOT / ".parity-results" / ".changelog.lock"
+    marker_path = ROOT / ".parity-results" / f".changelog_last_{target}_{case_root}"
     try:
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         with open(lock_path, "w") as lf:
             fcntl.flock(lf, fcntl.LOCK_EX)
+            # クールダウン判定は lock 内で行う。
+            # lock 待ち中のエージェントはここで「まだ期限切れでない」と判定してスキップする。
+            if marker_path.exists() and time.time() - marker_path.stat().st_mtime < _CHANGELOG_COOLDOWN_SEC:
+                return
             for cl_path in _CHANGELOG_PATHS:
                 lang = "en" if "/en/" in cl_path.as_posix() else "ja"
                 header = _CHANGELOG_HEADERS[lang]
@@ -776,6 +786,7 @@ def _append_parity_changelog(target: str, case_root: str, prev_pass: int, curr_p
                     cl_path.write_text(content, encoding="utf-8")
                 except Exception:
                     pass
+            marker_path.touch()
     except Exception:
         pass
 
