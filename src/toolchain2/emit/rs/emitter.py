@@ -48,6 +48,8 @@ class RsEmitContext:
     lines: list[str] = field(default_factory=list)
     # Variable types in current scope
     var_types: dict[str, str] = field(default_factory=dict)
+    # Best-effort concrete Rust storage types inferred from emitted RHS.
+    var_rust_types: dict[str, str] = field(default_factory=dict)
     # Current function return type
     current_return_type: str = ""
     # Imported runtime symbols mapped to emitted helper names
@@ -108,6 +110,8 @@ class RsEmitContext:
     constructor_field_locals: set[str] = field(default_factory=set)
     # Labeled block name used when lowering Python __init__ returns to Rust break.
     constructor_block_label: str = ""
+    # Varargs lowered as raw Vec<T> instead of PyList<T> when T is not Clone.
+    vec_vararg_names: set[str] = field(default_factory=set)
 
 
 def _package_prelude_uses() -> list[str]:
@@ -217,6 +221,20 @@ def _emit_raw(ctx: RsEmitContext, line: str) -> None:
 
 def _emit_blank(ctx: RsEmitContext) -> None:
     ctx.lines.append("")
+
+
+def _infer_emitted_rust_type(expr: str) -> str:
+    if expr.startswith("Rc::new(RefCell::new("):
+        inner = expr[len("Rc::new(RefCell::new("):]
+        class_match = re.match(r"([A-Za-z_][A-Za-z0-9_]*)::new\(", inner)
+        if class_match is not None:
+            return "Rc<RefCell<" + class_match.group(1) + ">>"
+    if expr.startswith("Box::new("):
+        inner = expr[len("Box::new("):]
+        class_match = re.match(r"([A-Za-z_][A-Za-z0-9_]*)::new\(", inner)
+        if class_match is not None:
+            return "Box<" + class_match.group(1) + ">"
+    return ""
 
 
 def _next_temp(ctx: RsEmitContext, prefix: str) -> str:
@@ -690,6 +708,9 @@ def _emit_cast_call(ctx: RsEmitContext, node: dict[str, JsonVal], args: list[Jso
     if isinstance(value_node, dict) and _str(value_node, "kind") == "Name":
         storage_type = ctx.var_types.get(_str(value_node, "id"), "")
         storage_rs = _rs_type_for_context(ctx, storage_type) if storage_type != "" else ""
+        if storage_rs == "Box<dyn std::any::Any>":
+            source_type = storage_type
+            source_rs = storage_rs
         if storage_rs.startswith("Option<") and not target_rs.startswith("Option<"):
             return expr + '.expect("cast unwrap")'
     if target_rs == "" or target_rs == source_rs or target_type == source_type:
@@ -713,6 +734,10 @@ def _emit_cast_call(ctx: RsEmitContext, node: dict[str, JsonVal], args: list[Jso
     if source_rs in _NUMERIC_RS and target_rs in _NUMERIC_RS:
         return "(" + expr + " as " + target_rs + ")"
     if source_rs == "Box<dyn std::any::Any>":
+        if target_type in ctx.ref_classes:
+            return "(*" + expr + ".downcast::<Rc<RefCell<" + safe_rs_ident(target_type) + ">>>().unwrap())"
+        if target_type in ctx.class_names:
+            return "(*" + expr + ".downcast::<Box<" + safe_rs_ident(target_type) + ">>().unwrap())"
         return "(*" + expr + ".downcast::<" + target_rs + ">().unwrap())"
     return expr
 
@@ -1108,6 +1133,8 @@ def _emit_isinstance(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         if rust_type == "":
             # User-defined class or unknown: check via PyRuntimeTypeId downcast
             if expected_id in ctx.class_names:
+                if expected_id in ctx.ref_classes:
+                    return "(" + ref_val + ").downcast_ref::<Rc<RefCell<" + expected_id + ">>>().is_some()"
                 return "(" + ref_val + ").downcast_ref::<" + expected_id + ">().is_some()"
             # Unknown type — fallback to false
             return "false"
@@ -1223,6 +1250,14 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         # Enum/static access from outside → ClassName::MEMBER
         return safe_rs_ident(type_object_of) + "::" + safe_rs_ident(attr)
     obj = _emit_expr(ctx, obj_node)
+    receiver_storage_hint = _str(node, "receiver_storage_hint")
+    attr_access_kind = _str(node, "attribute_access_kind")
+    if (
+        attr_access_kind == "property_getter"
+        and receiver_storage_hint == "ref"
+        and not (isinstance(obj_node, dict) and _str(obj_node, "kind") == "Name" and _str(obj_node, "id") == "self")
+    ):
+        return obj + ".borrow()." + safe_rs_ident(attr) + "()"
     # If attr is a @property method, call it with ()
     # Check both the current class context and the obj's type class
     obj_class = obj_type if obj_type in ctx.class_names else ""
@@ -1234,6 +1269,15 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             return obj + "." + safe_rs_ident(attr) + "()"
     ref_attr_class = actual_class if actual_class in ctx.ref_classes else obj_class
     if ref_attr_class not in ctx.ref_classes:
+        if isinstance(obj_node, dict) and _str(obj_node, "kind") == "Name":
+            name_rs = ctx.var_rust_types.get(_str(obj_node, "id"), "")
+            if name_rs.startswith("Rc<RefCell<") and name_rs.endswith(">>"):
+                ref_attr_class = name_rs[len("Rc<RefCell<"):-2]
+        for candidate_type in (obj_actual_type, obj_type, _str(node, "resolved_type")):
+            candidate_rs = _rs_type_for_context(ctx, candidate_type) if candidate_type != "" else ""
+            if candidate_rs.startswith("Rc<RefCell<") and candidate_rs.endswith(">>"):
+                ref_attr_class = candidate_rs[len("Rc<RefCell<"):-2]
+                break
         if isinstance(obj_node, dict) and _str(obj_node, "kind") == "Unbox":
             unboxed_rt = _str(obj_node, "resolved_type")
             if unboxed_rt in ctx.ref_classes:
@@ -1244,7 +1288,11 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
                 if inner_candidate in ctx.ref_classes:
                     ref_attr_class = inner_candidate
                     break
-    if ref_attr_class in ctx.ref_classes and ref_attr_class not in ctx.parent_class_names and not (isinstance(obj_node, dict) and _str(obj_node, "kind") == "Name" and _str(obj_node, "id") == "self"):
+    ref_attr_is_ref = receiver_storage_hint == "ref" or ref_attr_class in ctx.ref_classes
+    if not ref_attr_is_ref and isinstance(obj_node, dict) and _str(obj_node, "kind") == "Name":
+        name_rs = ctx.var_rust_types.get(_str(obj_node, "id"), "")
+        ref_attr_is_ref = name_rs.startswith("Rc<RefCell<") and name_rs.endswith(">>")
+    if ref_attr_is_ref and ref_attr_class not in ctx.parent_class_names and not (isinstance(obj_node, dict) and _str(obj_node, "kind") == "Name" and _str(obj_node, "id") == "self"):
         return obj + ".borrow()." + safe_rs_ident(attr) + ".clone()"
     if (
         isinstance(obj_node, dict)
@@ -1763,16 +1811,6 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
             return arg_expr + ".clone()"
         return "HashMap::from_iter(" + arg_expr + ".into_iter())"
 
-    if func_name == "Path":
-        if len(args) >= 1:
-            arg0 = args[0]
-            if isinstance(arg0, dict) and _str(arg0, "kind") == "Box":
-                inner = arg0.get("value")
-                if isinstance(inner, dict) and _str(inner, "resolved_type") == "str":
-                    return "Path(" + _emit_expr(ctx, inner) + ")"
-            return "Path(" + _emit_call_arg(ctx, args[0]) + ")"
-        return 'Path("".to_string())'
-
     mapped3 = ctx.runtime_imports.get(func_name)
     if mapped3 is not None and mapped3 != "":
         return _emit_runtime_call(ctx, mapped3, func, args, keywords, node)
@@ -1916,16 +1954,6 @@ def _emit_call_arg(ctx: RsEmitContext, arg: JsonVal) -> str:
         if _is_callable_type(resolved) and _is_callable_type(call_arg_type):
             inner_expr = _emit_expr(ctx, arg)
             return "Box::new(" + inner_expr + ")"
-        # Box values when passing to Box<dyn Any> parameter.
-        # Only applies for union-typed parameters (e.g. Scalar = int | float) because those
-        # become Box<dyn Any> in Rust. Simple object/Any/Obj annotations use generics in Rust.
-        if call_arg_type != "" and "|" in call_arg_type and resolved not in ("object", "Any", "Obj", "unknown", ""):
-            call_arg_rs = _rs_type_for_context(ctx, call_arg_type)
-            if call_arg_rs == "Box<dyn std::any::Any>":
-                inner_expr = _emit_expr(ctx, arg)
-                if resolved in ctx.class_names and resolved not in ctx.enum_bases:
-                    return "Box::new(" + inner_expr + ".clone()) as Box<dyn std::any::Any>"
-                return "Box::new(" + inner_expr + ") as Box<dyn std::any::Any>"
         # Clone Python containers/maps when passed to functions.
         if (
             resolved.startswith("list[") or resolved == "list" or resolved in ("bytes", "bytearray")
@@ -2003,6 +2031,8 @@ def _emit_runtime_call(
         if not arg.startswith("&"):
             arg = "&(" + arg + ")"
         return mapped + "(" + arg + ")"
+    if mapped == "py_open" and len(rendered_args) == 2:
+        return mapped + "(" + rendered_args[0] + ", " + rendered_args[1] + ', "utf-8".to_string())'
 
     if mapped in ("py_list", "py_set") and len(args) == 1 and isinstance(args[0], dict):
         arg_code = rendered_args[0]
@@ -2099,6 +2129,7 @@ def _emit_method_call(
     method = _str(attr_node, "attr")
     obj_type = _resolved_type_in_context(ctx, obj)
     obj_actual_type = _actual_type_in_context(ctx, obj)
+    receiver_storage_hint = _str(call_node, "receiver_storage_hint") or _str(attr_node, "receiver_storage_hint")
     obj_id = _str(obj, "id") if isinstance(obj, dict) else ""
     if obj_type == "py_imported_module" and method == "run":
         rendered_args = [_emit_call_arg(ctx, a) for a in args]
@@ -2261,7 +2292,9 @@ def _emit_method_call(
 
     obj_str = _emit_expr(ctx, obj)
     raw_obj_str = _emit_attr_receiver_raw(ctx, obj)
-    method_sig = _lookup_method_sig(ctx, obj_actual_type, method)
+    method_sig = _dict(call_node, "method_signature_v1")
+    if not method_sig:
+        method_sig = _lookup_method_sig(ctx, obj_actual_type, method)
     if method_sig is None:
         method_sig = _lookup_method_sig(ctx, obj_type, method)
     if isinstance(method_sig, dict):
@@ -2317,8 +2350,24 @@ def _emit_method_call(
     if obj_type in ctx.parent_class_names:
         return obj_str + "." + safe_rs_ident(method) + "(" + ", ".join(rendered_args) + ")"
 
-    if obj_actual_type in ctx.ref_classes and obj_actual_type not in ctx.parent_class_names and not (isinstance(obj, dict) and _str(obj, "kind") == "Name" and _str(obj, "id") == "self"):
-        method_node = ctx.class_instance_methods.get(obj_actual_type, {}).get(method)
+    ref_method_class = obj_actual_type
+    if ref_method_class not in ctx.ref_classes:
+        if isinstance(obj, dict) and _str(obj, "kind") == "Name":
+            name_rs = ctx.var_rust_types.get(_str(obj, "id"), "")
+            if name_rs.startswith("Rc<RefCell<") and name_rs.endswith(">>"):
+                ref_method_class = name_rs[len("Rc<RefCell<"):-2]
+        for candidate_type in (obj_actual_type, obj_type):
+            candidate_rs = _rs_type_for_context(ctx, candidate_type) if candidate_type != "" else ""
+            if candidate_rs.startswith("Rc<RefCell<") and candidate_rs.endswith(">>"):
+                ref_method_class = candidate_rs[len("Rc<RefCell<"):-2]
+                break
+
+    ref_method_is_ref = receiver_storage_hint == "ref" or ref_method_class in ctx.ref_classes
+    if not ref_method_is_ref and isinstance(obj, dict) and _str(obj, "kind") == "Name":
+        name_rs = ctx.var_rust_types.get(_str(obj, "id"), "")
+        ref_method_is_ref = name_rs.startswith("Rc<RefCell<") and name_rs.endswith(">>")
+    if ref_method_is_ref and ref_method_class not in ctx.parent_class_names and not (isinstance(obj, dict) and _str(obj, "kind") == "Name" and _str(obj, "id") == "self"):
+        method_node = ctx.class_instance_methods.get(ref_method_class, {}).get(method)
         needs_mut = True
         if isinstance(method_node, dict):
             needs_mut = bool(method_node.get("mutates_self", True))
@@ -2468,7 +2517,7 @@ def _emit_method_call(
     all_args_str = ", ".join(rendered_args)
 
     path_like_types = {obj_type, obj_actual_type, rs_type(obj_type), rs_type(obj_actual_type)}
-    if any(t in ("Path", "PyPath", "pathlib.Path", "pytra.std.pathlib.Path") or t.endswith(".Path") for t in path_like_types if t != ""):
+    if any(t == "PyPath" for t in path_like_types if t != ""):
         if method == "glob" and len(rendered_args) == 1:
             return obj_str + ".glob(" + rendered_args[0] + ")"
         if method == "read_text":
@@ -2490,6 +2539,8 @@ def _coerce_call_arg_to_expected(
     arg_node: JsonVal,
     arg_code: str,
     expected_type: str,
+    *,
+    prefer_into_py_box_any: bool = False,
 ) -> str:
     if expected_type == "" or not isinstance(arg_node, dict):
         return arg_code
@@ -2516,7 +2567,37 @@ def _coerce_call_arg_to_expected(
     if expected_rs.startswith("Option<") and not actual_rs.startswith("Option<"):
         is_none = _str(arg_node, "kind") == "Constant" and arg_node.get("value") is None
         return "None" if is_none else "Some(" + arg_code + ")"
+    if expected_rs == "Box<dyn std::any::Any>" and actual_rs != "Box<dyn std::any::Any>" and not arg_code.startswith("Box::new("):
+        if prefer_into_py_box_any:
+            if isinstance(arg_node, dict) and _str(arg_node, "kind") == "Name":
+                if actual_rs == "" or not _rs_is_copy_type(actual_rs):
+                    return arg_code + ".clone()"
+            return arg_code
+        boxed = arg_code
+        if isinstance(arg_node, dict) and _str(arg_node, "kind") == "Name":
+            if actual_rs == "" or not _rs_is_copy_type(actual_rs):
+                boxed = arg_code + ".clone()"
+        return "Box::new(" + boxed + ") as Box<dyn std::any::Any>"
     return arg_code
+
+
+def _sig_param_uses_into_py_box_any(
+    ctx: RsEmitContext,
+    sig: dict[str, JsonVal],
+    param_name: str,
+    *,
+    skip_self: bool,
+) -> bool:
+    owner = _str(sig, "owner")
+    arg_order = [p for p in _list(sig, "arg_order") if isinstance(p, str)]
+    if skip_self and len(arg_order) > 0 and arg_order[0] == "self":
+        arg_order = arg_order[1:]
+    is_method = owner != "" and "self" in _list(sig, "arg_order")
+    is_nested = _str(sig, "kind") == "ClosureDef" or (_str(sig, "kind") == "FunctionDef" and owner == "" and bool(_dict(sig, "capture_types")))
+    if is_nested:
+        return False
+    arg_types = _dict(sig, "arg_types")
+    return _rs_type_for_context(ctx, _str(arg_types, param_name)) == "Box<dyn std::any::Any>"
 
 
 def _build_sig_call_args(
@@ -2527,6 +2608,7 @@ def _build_sig_call_args(
     sig: dict[str, JsonVal],
     *,
     skip_self: bool = False,
+    force_into_py_box_any: bool = False,
 ) -> list[str]:
     arg_order = [p for p in _list(sig, "arg_order") if isinstance(p, str)]
     arg_types = _dict(sig, "arg_types")
@@ -2568,7 +2650,18 @@ def _build_sig_call_args(
         else:
             continue
         expected_type = _str(arg_types, param_name)
-        out.append(_coerce_call_arg_to_expected(ctx, arg_node, arg_code, expected_type))
+        out.append(
+            _coerce_call_arg_to_expected(
+                ctx,
+                arg_node,
+                arg_code,
+                expected_type,
+                prefer_into_py_box_any=(
+                    force_into_py_box_any
+                    and _rs_type_for_context(ctx, expected_type) == "Box<dyn std::any::Any>"
+                ) or _sig_param_uses_into_py_box_any(ctx, sig, param_name, skip_self=skip_self),
+            )
+        )
     if vararg_name != "":
         expected_type = vararg_type
         if (
@@ -2593,7 +2686,10 @@ def _build_sig_call_args(
         for extra in extra_args:
             vararg_elems.append(extra)
         elem_rs = _rs_type_for_context(ctx, expected_type) if expected_type != "" else "Box<dyn std::any::Any>"
-        out.append("PyList::<" + elem_rs + ">::from_vec(vec![" + ", ".join(vararg_elems) + "])")
+        if elem_rs == "Box<dyn std::any::Any>":
+            out.append("vec![" + ", ".join(vararg_elems) + "]")
+        else:
+            out.append("PyList::<" + elem_rs + ">::from_vec(vec![" + ", ".join(vararg_elems) + "])")
         extra_args = []
     out.extend(extra_args)
     return out
@@ -2606,6 +2702,13 @@ def _emit_constructor_call(
     keywords: list[JsonVal],
     node: dict[str, JsonVal],
 ) -> str:
+    def _strip_box_any(expr: str) -> str:
+        prefix = "Box::new("
+        suffix = ") as Box<dyn std::any::Any>"
+        if expr.startswith(prefix) and expr.endswith(suffix):
+            return expr[len(prefix):-len(suffix)]
+        return expr
+
     def _collect_name_refs(expr: JsonVal) -> set[str]:
         refs: set[str] = set()
         if not isinstance(expr, dict):
@@ -2657,7 +2760,26 @@ def _emit_constructor_call(
     rs_name = safe_rs_ident(class_name)
     init_method = ctx.class_instance_methods.get(class_name, {}).get("__init__")
     if init_method is not None:
-        rendered_args = _build_sig_call_args(ctx, args, rendered_args, keywords, init_method, skip_self=True)
+        rendered_args = _build_sig_call_args(
+            ctx,
+            args,
+            rendered_args,
+            keywords,
+            init_method,
+            skip_self=True,
+            force_into_py_box_any=True,
+        )
+        init_arg_order = [p for p in _list(init_method, "arg_order") if isinstance(p, str) and p != "self"]
+        init_arg_types = _dict(init_method, "arg_types")
+        normalized_args: list[str] = []
+        for index, rendered_arg in enumerate(rendered_args):
+            if index < len(init_arg_order):
+                expected_type = _str(init_arg_types, init_arg_order[index])
+                if _rs_type_for_context(ctx, expected_type) == "Box<dyn std::any::Any>":
+                    normalized_args.append(_strip_box_any(rendered_arg))
+                    continue
+            normalized_args.append(rendered_arg)
+        rendered_args = normalized_args
     else:
         # No __init__ (dataclass-style): use fields and defaults to fill positional args
         fields = ctx.class_fields.get(class_name, {})
@@ -2678,7 +2800,8 @@ def _emit_constructor_call(
                         full_args2.append(rs_zero_value(fields[field_name]))
             rendered_args = full_args2
     ctor = rs_name + "::new(" + ", ".join(rendered_args) + ")"
-    if class_name in ctx.ref_classes:
+    resolved_storage_hint = _str(node, "resolved_storage_hint")
+    if class_name in ctx.ref_classes or resolved_storage_hint == "ref":
         return "Rc::new(RefCell::new(" + ctor + "))"
     return "Box::new(" + ctor + ")"
 
@@ -2745,7 +2868,7 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
         if value_type in ("object", "Any", "Obj"):
             return "(if let PyAny::Int(__tid) = &" + inner + " { *__tid } else { py_runtime_type_id(&" + inner + ") })"
         # For Box<dyn Any> (unknown / union types), use downcast chain to recover TID
-        if value_type in ("unknown",) or value_type == "":
+        if value_type in ("unknown",) or value_type == "" or _rs_type_for_context(ctx, value_type) == "Box<dyn std::any::Any>":
             user_cls = _sorted_user_classes_desc(ctx)
             if user_cls:
                 ref_inner = "&" + inner if not inner.startswith("&") else inner
@@ -2831,6 +2954,10 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
                     if (owner_rt.startswith("list[") or owner_rt == "list") and method in ("pop",):
                         return inner_expr
             if inner_rs == "Box<dyn std::any::Any>":
+                if outer_rt in ctx.ref_classes:
+                    return "(*" + inner_expr + ".downcast::<Rc<RefCell<" + safe_rs_ident(outer_rt) + ">>>().unwrap())"
+                if outer_rt in ctx.class_names:
+                    return "(*" + inner_expr + ".downcast::<Box<" + safe_rs_ident(outer_rt) + ">>().unwrap())"
                 _BOX_ANY_DOWNCAST: dict[str, tuple[str, str]] = {}
                 _BOX_ANY_DOWNCAST["int64"] = ("i64", "0")
                 _BOX_ANY_DOWNCAST["int32"] = ("i32", "0")
@@ -3190,6 +3317,9 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             # Reassignment
             if value is not None:
                 rhs = _emit_expr(ctx, value)
+                inferred_rhs_rt = _infer_emitted_rust_type(rhs)
+                if inferred_rhs_rt != "":
+                    ctx.var_rust_types[target_name] = inferred_rhs_rt
                 _emit(ctx, rs_name + " = " + rhs + ";")
         else:
             # New declaration
@@ -3235,6 +3365,9 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             if value is not None:
                 rhs = _emit_expr(ctx, value)
                 rhs = _coerce_assignment_rhs(ctx, rhs, value, resolved_type)
+                inferred_rhs_rt = _infer_emitted_rust_type(rhs)
+                if inferred_rhs_rt != "":
+                    ctx.var_rust_types[target_name] = inferred_rhs_rt
                 if _needs_parent_trait_object(ctx, resolved_type) and value_rt in ctx.class_names and value_rt != "":
                     if value_rt in ctx.ref_classes:
                         rhs = "Box::new(" + rhs + ".borrow().clone()) as Box<dyn " + safe_rs_ident(resolved_type) + "Methods>"
@@ -3610,7 +3743,16 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, "}));")
         if finalbody:
             _emit_body(ctx, finalbody)
-        _emit(ctx, "if let Err(__try_err) = __try_result { std::panic::resume_unwind(__try_err); }")
+        body_has_ret = _body_has_return(body) and ctx.current_return_type not in ("", "None")
+        if body_has_ret:
+            _emit(ctx, "match __try_result {")
+            ctx.indent_level += 1
+            _emit(ctx, "Ok(__try_ok) => { return __try_ok; }")
+            _emit(ctx, "Err(__try_err) => { std::panic::resume_unwind(__try_err); }")
+            ctx.indent_level -= 1
+            _emit(ctx, "}")
+        else:
+            _emit(ctx, "if let Err(__try_err) = __try_result { std::panic::resume_unwind(__try_err); };")
     else:
         # Catch and dispatch to handlers
         _emit(ctx, "let __try_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
@@ -3990,6 +4132,10 @@ def _emit_for_iter(ctx: RsEmitContext, iter_node: JsonVal, target: JsonVal) -> s
     # List/collection iteration
     if resolved_type.startswith("list[") or resolved_type == "list":
         iter_expr = _emit_expr(ctx, iter_node)
+        if isinstance(iter_node, dict) and _str(iter_node, "kind") == "Name":
+            iter_name = _str(iter_node, "id")
+            if iter_name in ctx.vec_vararg_names:
+                return iter_expr + ".into_iter()"
         return iter_expr + ".iter_snapshot().into_iter()"
 
     # String iteration (character by character)
@@ -4247,6 +4393,11 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     body = _list(node, "body")
     # Simplified: emit body only, RAII handles cleanup
     _emit(ctx, "// with block (RAII-based)")
+    if len(items) == 0:
+        context_expr = node.get("context_expr")
+        var_name = _str(node, "var_name")
+        if context_expr is not None and var_name != "":
+            _emit(ctx, "let mut " + safe_rs_ident(var_name) + " = " + _emit_expr(ctx, context_expr) + ";")
     for item in items:
         if isinstance(item, dict):
             context_expr = item.get("context_expr")
@@ -4347,8 +4498,10 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
 
     # Build parameter list
     params: list[str] = []
+    box_any_param_names: list[str] = []
     has_self = "self" in arg_order
     is_method = owner != "" and has_self
+    is_nested = not ctx.at_module_level and owner == ""
 
     for arg in arg_order:
         if not isinstance(arg, str):
@@ -4365,6 +4518,10 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
             rs_arg_type = "Box<dyn " + safe_rs_ident(arg_type) + "Methods>"
         else:
             rs_arg_type = _rs_type_for_context(ctx, arg_type) if arg_type != "" else "Box<dyn std::any::Any>"
+        if rs_arg_type == "Box<dyn std::any::Any>" and not is_nested:
+            params.append(safe_rs_ident(arg) + ": impl IntoPyBoxAny")
+            box_any_param_names.append(arg)
+            continue
         # Add `mut` only if arg_usage says "reassigned" (EAST3 §arg_usage),
         # or if the type is Box<T> (fields may be mutated via &mut self patterns).
         is_reassigned = _str(arg_usage, arg) == "reassigned"
@@ -4377,7 +4534,10 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
     vararg_type = _str(node, "vararg_type")
     if vararg_name != "":
         elem_type = _rs_type_for_context(ctx, vararg_type) if vararg_type != "" else "Box<dyn std::any::Any>"
-        params.append(safe_rs_ident(vararg_name) + ": PyList<" + elem_type + ">")
+        if elem_type == "Box<dyn std::any::Any>":
+            params.append(safe_rs_ident(vararg_name) + ": Vec<" + elem_type + ">")
+        else:
+            params.append(safe_rs_ident(vararg_name) + ": PyList<" + elem_type + ">")
 
     params_str = ", ".join(params)
 
@@ -4429,9 +4589,9 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
         ctx.declared_vars.add(vararg_name)
         if vararg_type != "":
             ctx.var_types[vararg_name] = "list[" + vararg_type + "]"
-
+            if _rs_type_for_context(ctx, vararg_type) == "Box<dyn std::any::Any>":
+                ctx.vec_vararg_names.add(vararg_name)
     # Nested function (inside another function body, not a class method): emit as closure
-    is_nested = not ctx.at_module_level and owner == ""
     is_recursive_nested = is_nested and _bool(node, "is_recursive")
     fn_prefix = "pub " if (ctx.package_mode and not is_nested) else ""
     if is_nested:
@@ -4461,6 +4621,8 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
     ctx.indent_level += 1
     prev_module_level = ctx.at_module_level
     ctx.at_module_level = False
+    for arg in box_any_param_names:
+        _emit(ctx, "let mut " + safe_rs_ident(arg) + " = " + safe_rs_ident(arg) + ".into_py_box_any();")
     body_is_empty = len(body) == 0 or all(
         isinstance(s, dict) and _str(s, "kind") == "Pass"
         for s in body
@@ -4493,6 +4655,8 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
     ctx.nested_capture_args = prev_nested_capture_args
     ctx.function_signatures = prev_function_signatures
     ctx.current_nested_fn = prev_nested_fn
+    if vararg_name != "" and vararg_name in ctx.vec_vararg_names:
+        ctx.vec_vararg_names.remove(vararg_name)
 
 
 # ---------------------------------------------------------------------------
@@ -5085,6 +5249,8 @@ def _emit_class_def(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         ctx.indent_level += 1
         if "msg" in fields and fields["msg"] == "str":
             _emit(ctx, "fn py_stringify(&self) -> String { self.msg.clone() }")
+        elif "__str__" in ctx.class_instance_methods.get(name, {}):
+            _emit(ctx, "fn py_stringify(&self) -> String { self.__str__() }")
         else:
             _emit(ctx, "fn py_stringify(&self) -> String { format!(\"{:?}\", self) }")
         ctx.indent_level -= 1
@@ -5115,12 +5281,17 @@ def _emit_init_as_new(
     body = _list(init_method, "body")
 
     params: list[str] = []
+    box_any_param_names: list[str] = []
     for arg in arg_order:
         if not isinstance(arg, str) or arg == "self":
             continue
         arg_type = _str(arg_types, arg)
         rs_arg_type = _rs_type_for_context(ctx, arg_type) if arg_type != "" else "Box<dyn std::any::Any>"
-        params.append(safe_rs_ident(arg) + ": " + rs_arg_type)
+        if rs_arg_type == "Box<dyn std::any::Any>":
+            params.append(safe_rs_ident(arg) + ": impl IntoPyBoxAny")
+            box_any_param_names.append(arg)
+        else:
+            params.append(safe_rs_ident(arg) + ": " + rs_arg_type)
 
     params_str = ", ".join(params)
     ctor_prefix = "pub " if ctx.package_mode else ""
@@ -5158,6 +5329,8 @@ def _emit_init_as_new(
         if init_expr is None:
             init_expr = _rs_zero_value_for_context(ctx, field_type)
         _emit(ctx, "let mut " + _rs_constructor_field_name(field_name) + " = " + init_expr + ";")
+    for arg in box_any_param_names:
+        _emit(ctx, "let mut " + safe_rs_ident(arg) + " = " + safe_rs_ident(arg) + ".into_py_box_any();")
 
     filtered_body: list[dict[str, JsonVal]] = []
     for stmt in body:
@@ -5260,9 +5433,9 @@ def _sorted_user_classes_desc(ctx: RsEmitContext) -> list[tuple[str, int]]:
     """
     result: list[tuple[str, int]] = []
     for fqcn, dense_tid in ctx.class_type_ids.items():
-        if fqcn.startswith("pytra."):
-            continue
         if dense_tid < 1000:
+            continue
+        if not ctx.package_mode and fqcn.startswith("pytra.built_in.error."):
             continue
         result.append((fqcn, dense_tid))
     result.sort(key=lambda kv: kv[1], reverse=True)
@@ -5283,7 +5456,7 @@ def _emit_obj_type_id_downcast(ctx: RsEmitContext, ref_expr: str, user_cls: list
         simple_name = fqcn.rsplit(".", 1)[-1] if "." in fqcn else fqcn
         owner_module = fqcn.rsplit(".", 1)[0] if "." in fqcn else ""
         rs_name = safe_rs_ident(simple_name)
-        if owner_module != "" and owner_module != ctx.module_id:
+        if ctx.package_mode and owner_module != "" and owner_module != ctx.module_id:
             rs_name = "crate::" + _module_id_to_rs_mod_name(owner_module) + "::" + rs_name
         seq_const = _fqcn_to_tid_const_name(fqcn)
         # Try Box<ClassName> first (double-boxed case: Box<Box<ClassName>> as Box<dyn Any>)
@@ -5292,7 +5465,7 @@ def _emit_obj_type_id_downcast(ctx: RsEmitContext, ref_expr: str, user_cls: list
             + "(" + ref_expr + ").downcast_ref::<" + rs_name + ">().is_some() "
             + "{ " + seq_const + " }"
         )
-    fallback = "py_runtime_type_id(" + ref_expr + ")"
+    fallback = "py_runtime_type_id_any(" + ref_expr + ")"
     if not parts:
         return fallback
     chain = " else ".join(parts) + " else { " + fallback + " }"

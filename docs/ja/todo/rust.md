@@ -41,10 +41,10 @@ selfhost で必要な 4 パターン（dict.items() tuple unpack, typed dict.get
 
 linked EAST3 には property 判定 (`attribute_access_kind`) や戻り値型 (`Call.resolved_type`) は既にあるが、receiver が ref class か value class かの情報 (`class_storage_hint`) だけが `Attribute` / `Call` ノードに載っていない。linker が `receiver_storage_hint` フィールドを追加すれば、emitter は peer module を読む必要がなくなる。
 
-1. [ ] [ID: P0-RECV-HINT-S1] linker に全 module の ClassDef から `{class_name: class_storage_hint}` マップを構築する処理を追加する
-2. [ ] [ID: P0-RECV-HINT-S2] linker が `Attribute` / `Call` ノードの receiver の `resolved_type` を引いて `receiver_storage_hint` を付与する pass を追加する
-3. [ ] [ID: P0-RECV-HINT-S3] Rust emitter の `_emit_attribute` / `_emit_call` で `receiver_storage_hint` を参照し、ref class なら `borrow()` を挿入する
-4. [ ] [ID: P0-RECV-HINT-S4] `pathlib_extended` / `path_stringify` fixture が Rust で compile + run parity PASS することを確認する
+1. [x] [ID: P0-RECV-HINT-S1] linker に全 module の ClassDef から `{class_name: class_storage_hint}` マップを構築する処理を追加する
+2. [x] [ID: P0-RECV-HINT-S2] linker が `Attribute` / `Call` ノードの receiver の `resolved_type` を引いて `receiver_storage_hint` を付与する pass を追加する
+3. [x] [ID: P0-RECV-HINT-S3] Rust emitter の `_emit_attribute` / `_emit_call` で `receiver_storage_hint` を参照し、ref class なら `borrow()` を挿入する
+4. [x] [ID: P0-RECV-HINT-S4] `pathlib_extended` / `path_stringify` fixture が Rust で compile + run parity PASS することを確認する
 5. [ ] [ID: P0-RECV-HINT-S5] fixture + sample の全件 parity に回帰がないことを確認する
 
 ### P0-RS-SKIP-PURE-PY: skip_modules から pure Python モジュールを外す

@@ -564,6 +564,227 @@ def _collect_local_class_names(doc: dict[str, JsonVal], module_id: str) -> dict[
     return out
 
 
+def _collect_class_storage_hints(
+    copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]],
+) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for module, doc in copied_docs:
+        body = doc.get("body")
+        if not isinstance(body, list):
+            continue
+        for item in body:
+            if not isinstance(item, dict) or item.get("kind") != "ClassDef":
+                continue
+            name = item.get("name")
+            hint = item.get("class_storage_hint")
+            if not isinstance(name, str) or name == "":
+                continue
+            if not isinstance(hint, str) or hint == "":
+                hint = "value"
+            out[module.module_id + "." + name] = hint
+    return out
+
+
+def _receiver_type_base(type_name: str) -> str:
+    t = type_name.strip()
+    if t.endswith(" | None"):
+        t = t[:-7].strip()
+    elif t.endswith("|None"):
+        t = t[:-5].strip()
+    return t
+
+
+def _resolve_receiver_class_fqcn(
+    receiver_type: str,
+    *,
+    module_id: str,
+    local_classes: dict[str, str],
+    import_modules: dict[str, str],
+    import_symbols: dict[str, str],
+    class_storage_hints: dict[str, str],
+) -> str:
+    expected_name = _receiver_type_base(receiver_type)
+    if expected_name == "":
+        return ""
+    def _import_symbol_candidates(imported_symbol: str) -> list[str]:
+        out: list[str] = []
+        if imported_symbol == "" or "::" not in imported_symbol:
+            return out
+        dep_module_id, export_name = imported_symbol.split("::", 1)
+        dep_module_id = dep_module_id.strip()
+        export_name = export_name.strip()
+        if dep_module_id == "" or export_name == "":
+            return out
+        out.append(dep_module_id + "." + export_name)
+        if "." not in dep_module_id:
+            out.append("pytra.std." + dep_module_id + "." + export_name)
+        return out
+    if expected_name in class_storage_hints:
+        return expected_name
+    local_fqcn = local_classes.get(expected_name, "")
+    if local_fqcn != "" and local_fqcn in class_storage_hints:
+        return local_fqcn
+    imported_symbol = import_symbols.get(expected_name, "")
+    for candidate in _import_symbol_candidates(imported_symbol):
+        if candidate in class_storage_hints:
+            return candidate
+    if "." in expected_name:
+        owner_name, attr_name = expected_name.rsplit(".", 1)
+        imported_module = import_modules.get(owner_name, "")
+        if imported_module != "":
+            candidates = [imported_module + "." + attr_name]
+            if "." not in imported_module:
+                candidates.append("pytra.std." + imported_module + "." + attr_name)
+            for candidate2 in candidates:
+                if candidate2 in class_storage_hints:
+                    return candidate2
+    candidate3 = module_id + "." + expected_name
+    if candidate3 in class_storage_hints:
+        return candidate3
+    return ""
+
+
+def _attach_receiver_storage_hints(
+    copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]],
+) -> None:
+    class_storage_hints = _collect_class_storage_hints(copied_docs)
+    for module, doc in copied_docs:
+        import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
+        import_modules = cast(dict[str, str], import_parts[0])
+        import_symbols = cast(dict[str, str], import_parts[1])
+        local_classes = _collect_local_class_names(doc, module.module_id)
+        for node in _walk_nodes(doc):
+            kind = node.get("kind")
+            receiver_node: dict[str, JsonVal] | None = None
+            if kind == "Attribute":
+                value = node.get("value")
+                if isinstance(value, dict):
+                    receiver_node = value
+            elif kind == "Call":
+                func = node.get("func")
+                if isinstance(func, dict) and func.get("kind") == "Attribute":
+                    value2 = func.get("value")
+                    if isinstance(value2, dict):
+                        receiver_node = value2
+            if receiver_node is None:
+                continue
+            receiver_type = receiver_node.get("resolved_type")
+            if not isinstance(receiver_type, str) or receiver_type == "":
+                continue
+            fqcn = _resolve_receiver_class_fqcn(
+                receiver_type,
+                module_id=module.module_id,
+                local_classes=local_classes,
+                import_modules=import_modules,
+                import_symbols=import_symbols,
+                class_storage_hints=class_storage_hints,
+            )
+            if fqcn == "":
+                continue
+            hint = class_storage_hints.get(fqcn, "")
+            if hint in ("ref", "value"):
+                node["receiver_storage_hint"] = hint
+
+
+def _attach_resolved_storage_hints(
+    copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]],
+) -> None:
+    class_storage_hints = _collect_class_storage_hints(copied_docs)
+    for module, doc in copied_docs:
+        import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
+        import_modules = cast(dict[str, str], import_parts[0])
+        import_symbols = cast(dict[str, str], import_parts[1])
+        local_classes = _collect_local_class_names(doc, module.module_id)
+        for node in _walk_nodes(doc):
+            resolved_type = node.get("resolved_type")
+            if not isinstance(resolved_type, str) or resolved_type == "":
+                continue
+            fqcn = _resolve_receiver_class_fqcn(
+                resolved_type,
+                module_id=module.module_id,
+                local_classes=local_classes,
+                import_modules=import_modules,
+                import_symbols=import_symbols,
+                class_storage_hints=class_storage_hints,
+            )
+            if fqcn == "":
+                continue
+            hint = class_storage_hints.get(fqcn, "")
+            if hint in ("ref", "value"):
+                node["resolved_storage_hint"] = hint
+
+
+def _collect_class_method_signatures(
+    copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]],
+) -> dict[str, dict[str, dict[str, JsonVal]]]:
+    out: dict[str, dict[str, dict[str, JsonVal]]] = {}
+    for module, doc in copied_docs:
+        body = doc.get("body")
+        if not isinstance(body, list):
+            continue
+        for stmt in body:
+            if not isinstance(stmt, dict) or stmt.get("kind") != "ClassDef":
+                continue
+            class_name = stmt.get("name")
+            if not isinstance(class_name, str) or class_name == "":
+                continue
+            fqcn = module.module_id + "." + class_name
+            methods: dict[str, dict[str, JsonVal]] = {}
+            class_body = stmt.get("body")
+            if not isinstance(class_body, list):
+                continue
+            for member in class_body:
+                if not isinstance(member, dict) or member.get("kind") not in ("FunctionDef", "ClosureDef"):
+                    continue
+                method_name = member.get("name")
+                if not isinstance(method_name, str) or method_name == "":
+                    continue
+                methods[method_name] = member
+            if len(methods) > 0:
+                out[fqcn] = methods
+    return out
+
+
+def _attach_method_signature_hints(
+    copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]],
+) -> None:
+    class_storage_hints = _collect_class_storage_hints(copied_docs)
+    class_method_signatures = _collect_class_method_signatures(copied_docs)
+    for module, doc in copied_docs:
+        import_parts = cast(tuple[JsonVal, JsonVal], collect_import_maps(doc))
+        import_modules = cast(dict[str, str], import_parts[0])
+        import_symbols = cast(dict[str, str], import_parts[1])
+        local_classes = _collect_local_class_names(doc, module.module_id)
+        for node in _walk_nodes(doc):
+            if node.get("kind") != "Call":
+                continue
+            func = node.get("func")
+            if not isinstance(func, dict) or func.get("kind") != "Attribute":
+                continue
+            receiver_node = func.get("value")
+            if not isinstance(receiver_node, dict):
+                continue
+            receiver_type = receiver_node.get("resolved_type")
+            method_name = func.get("attr")
+            if not isinstance(receiver_type, str) or receiver_type == "":
+                continue
+            if not isinstance(method_name, str) or method_name == "":
+                continue
+            fqcn = _resolve_receiver_class_fqcn(
+                receiver_type,
+                module_id=module.module_id,
+                local_classes=local_classes,
+                import_modules=import_modules,
+                import_symbols=import_symbols,
+                class_storage_hints=class_storage_hints,
+            )
+            if fqcn == "":
+                continue
+            method_sig = class_method_signatures.get(fqcn, {}).get(method_name)
+            if isinstance(method_sig, dict):
+                node["method_signature_v1"] = cast(dict[str, JsonVal], _copy_json(method_sig))
+
+
 def _resolve_type_id_target(
     expected_name: str,
     *,
@@ -1133,6 +1354,9 @@ def link_modules(
     # 9. Cross-module default argument expansion
     all_docs = _docs_as_json(copied_docs)
     expand_cross_module_defaults(all_docs)
+    _attach_receiver_storage_hints(copied_docs)
+    _attach_resolved_storage_hints(copied_docs)
+    _attach_method_signature_hints(copied_docs)
 
     # 9.5 exception propagation markers
     direct_raise_markers = _collect_direct_raise_markers(modules)

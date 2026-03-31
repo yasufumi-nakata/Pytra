@@ -13,6 +13,54 @@ use std::rc::Rc;
 use std::sync::Once;
 use std::{collections::BTreeMap, collections::BTreeSet, collections::HashMap, collections::HashSet, collections::VecDeque};
 
+pub trait IntoPyBoxAny {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any>;
+}
+
+impl IntoPyBoxAny for Box<dyn std::any::Any> {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any> {
+        self
+    }
+}
+
+impl IntoPyBoxAny for String {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any> {
+        Box::new(self)
+    }
+}
+
+impl IntoPyBoxAny for i64 {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any> { Box::new(self) }
+}
+
+impl IntoPyBoxAny for f64 {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any> { Box::new(self) }
+}
+
+impl IntoPyBoxAny for bool {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any> { Box::new(self) }
+}
+
+impl<T: 'static> IntoPyBoxAny for Box<T> {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any> { Box::new(self) }
+}
+
+impl<T: 'static> IntoPyBoxAny for Rc<RefCell<T>> {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any> { Box::new(self) }
+}
+
+impl<T: 'static> IntoPyBoxAny for PyList<T> {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any> { Box::new(self) }
+}
+
+impl<T: 'static> IntoPyBoxAny for Vec<T> {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any> { Box::new(self) }
+}
+
+impl<K: 'static, V: 'static> IntoPyBoxAny for HashMap<K, V> {
+    fn into_py_box_any(self) -> Box<dyn std::any::Any> { Box::new(self) }
+}
+
 // ---------------------------------------------------------------------------
 // PyList<T> — Python list の参照セマンティクスラッパー (spec-emitter-guide §10)
 // Clone は Rc のコピー（shallow）で Python の代入・引数渡しと一致。
@@ -263,6 +311,11 @@ impl<T: PyStringify> PyStringify for &T {
 impl<T: PyStringify> PyStringify for Box<T> {
     fn py_stringify(&self) -> String {
         (**self).py_stringify()
+    }
+}
+impl<T: PyStringify> PyStringify for Rc<RefCell<T>> {
+    fn py_stringify(&self) -> String {
+        self.borrow().py_stringify()
     }
 }
 impl PyStringify for () {
@@ -1335,6 +1388,25 @@ pub fn py_runtime_type_id<T: PyRuntimeTypeId>(value: &T) -> i64 {
     py_runtime_value_type_id(value)
 }
 
+pub fn py_runtime_type_id_any(value: &Box<dyn std::any::Any>) -> i64 {
+    if let Some(v) = value.downcast_ref::<i64>() {
+        return py_runtime_type_id(v);
+    }
+    if let Some(v) = value.downcast_ref::<f64>() {
+        return py_runtime_type_id(v);
+    }
+    if let Some(v) = value.downcast_ref::<bool>() {
+        return py_runtime_type_id(v);
+    }
+    if let Some(v) = value.downcast_ref::<String>() {
+        return py_runtime_type_id(v);
+    }
+    if let Some(v) = value.downcast_ref::<PyAny>() {
+        return py_runtime_type_id(v);
+    }
+    PYTRA_TID_NONE
+}
+
 pub fn py_runtime_type_id_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {
     let actual = match py_type_info(actual_type_id) {
         Some(info) => info,
@@ -1488,11 +1560,14 @@ pub struct PyPath {
     value: String,
 }
 
-pub type Path = PyPath;
-
-#[allow(non_snake_case)]
-pub fn Path(value: String) -> Box<Path> {
+pub fn py_path(value: String) -> Box<PyPath> {
     Box::new(PyPath::new(value))
+}
+
+pub fn py_abspath(path: String) -> String {
+    fs::canonicalize(&path)
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or(path)
 }
 
 impl PyPath {
@@ -1729,38 +1804,49 @@ pub struct PyFile {
 }
 
 pub trait PyFileWritable {
-    fn write_to_file(&self, file: &mut fs::File);
+    fn write_to_file(&self, file: &mut fs::File) -> i64;
 }
 
 impl PyFileWritable for Vec<i64> {
-    fn write_to_file(&self, file: &mut fs::File) {
+    fn write_to_file(&self, file: &mut fs::File) -> i64 {
         let bytes: Vec<u8> = self.iter().map(|v| (*v & 0xFF) as u8).collect();
         file.write_all(&bytes).expect("write failed");
+        bytes.len() as i64
     }
 }
 
 impl PyFileWritable for Vec<u8> {
-    fn write_to_file(&self, file: &mut fs::File) {
+    fn write_to_file(&self, file: &mut fs::File) -> i64 {
         file.write_all(self).expect("write failed");
+        self.len() as i64
     }
 }
 
 impl PyFileWritable for PyList<i64> {
-    fn write_to_file(&self, file: &mut fs::File) {
+    fn write_to_file(&self, file: &mut fs::File) -> i64 {
         let bytes: Vec<u8> = self.py_borrow().iter().map(|v| (*v & 0xFF) as u8).collect();
         file.write_all(&bytes).expect("write failed");
+        bytes.len() as i64
     }
 }
 
 impl PyFileWritable for String {
-    fn write_to_file(&self, file: &mut fs::File) {
+    fn write_to_file(&self, file: &mut fs::File) -> i64 {
         file.write_all(self.as_bytes()).expect("write failed");
+        self.len() as i64
     }
 }
 
 impl PyFile {
-    pub fn write<T: PyFileWritable>(&mut self, data: T) {
-        data.write_to_file(&mut self.inner);
+    pub fn write<T: PyFileWritable>(&mut self, data: T) -> i64 {
+        data.write_to_file(&mut self.inner)
+    }
+
+    pub fn read(&mut self) -> String {
+        use std::io::Read;
+        let mut out = String::new();
+        let _ = self.inner.read_to_string(&mut out);
+        out
     }
 
     pub fn close(self) {
@@ -1770,15 +1856,34 @@ impl PyFile {
 }
 
 /// Python `open(path, mode)` emulation (only "wb" mode supported).
-pub fn open(path: &str, _mode: String) -> PyFile {
+pub fn open(path: &str, mode: String) -> PyFile {
     // Ensure parent directory exists (Python's open does this implicitly via os)
     if let Some(parent) = StdPath::new(path).parent() {
         if !parent.as_os_str().is_empty() {
             let _ = fs::create_dir_all(parent);
         }
     }
-    let file = fs::File::create(path).expect("open failed");
+    let mut opts = fs::OpenOptions::new();
+    match mode.as_str() {
+        "r" | "rb" => {
+            opts.read(true);
+        }
+        "w" | "wb" => {
+            opts.write(true).create(true).truncate(true);
+        }
+        "a" | "ab" => {
+            opts.append(true).create(true);
+        }
+        _ => {
+            opts.read(true).write(true).create(true);
+        }
+    }
+    let file = opts.open(path).expect("open failed");
     PyFile { inner: file }
+}
+
+pub fn py_open(path: String, mode: String, _encoding: String) -> PyFile {
+    open(&path, mode)
 }
 
 /// Python `str(v)` — convert any PyStringify value to String.
