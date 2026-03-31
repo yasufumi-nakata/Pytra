@@ -20,6 +20,13 @@
 
 ## 未完了タスク
 
+### P0-CPP-IN-MEMBERSHIP: in_membership_iterable fixture の C++ parity を通す
+
+`test/fixture/source/py/collections/in_membership_iterable.py` が C++ で FAIL。大きい tuple (20要素)、range(1000)、range with step、str の `in`/`not in` を含むケース。C++ emitter / runtime が iterable の汎用 `contains` として正しく処理できていない可能性。
+
+1. [ ] [ID: P0-CPP-IN-MEMBER-S1] 失敗原因を特定する（compile error / runtime error / output mismatch）
+2. [ ] [ID: P0-CPP-IN-MEMBER-S2] C++ emitter / runtime を修正し、`in_membership_iterable` が compile + run parity PASS することを確認する
+
 ### P0-CPP-CALLABLE: callable 型（高階関数）の C++ parity を通す
 
 EAST3 の `GenericType(base="callable", args=[引数型, 戻り値型])` を `std::function<R(Args...)>` に変換する処理が C++ emitter にない。`callable_higher_order` fixture が compile + run parity PASS することを完了条件とする。
