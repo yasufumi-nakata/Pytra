@@ -237,6 +237,22 @@ def _infer_emitted_rust_type(expr: str) -> str:
     return ""
 
 
+def _infer_node_rust_type(ctx: RsEmitContext, node: JsonVal) -> str:
+    if not isinstance(node, dict):
+        return ""
+    kind = _str(node, "kind")
+    resolved_type = _str(node, "resolved_type")
+    resolved_storage_hint = _str(node, "resolved_storage_hint")
+    if resolved_type != "":
+        base_rt = _rs_type_for_context(ctx, resolved_type)
+        if kind == "Call" and resolved_storage_hint == "ref" and base_rt.startswith("Box<") and base_rt.endswith(">"):
+            inner = base_rt[len("Box<"):-1]
+            return "Rc<RefCell<" + inner + ">>"
+        if base_rt != "":
+            return base_rt
+    return ""
+
+
 def _next_temp(ctx: RsEmitContext, prefix: str) -> str:
     ctx.temp_counter += 1
     return "__" + prefix + "_" + str(ctx.temp_counter)
@@ -3316,6 +3332,8 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
 
         rs_name = _rs_var_name(ctx, target_name)
         rt = _rs_type_for_context(ctx, resolved_type) if resolved_type != "" else ""
+        if resolved_type in ctx.ref_classes and not _needs_parent_trait_object(ctx, resolved_type):
+            rt = "Rc<RefCell<" + safe_rs_ident(resolved_type) + ">>"
         value_rt = _str(value, "resolved_type") if isinstance(value, dict) else ""
         if _needs_parent_trait_object(ctx, resolved_type):
             rt = "Box<dyn " + safe_rs_ident(resolved_type) + "Methods>"
@@ -3324,7 +3342,9 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             # Reassignment
             if value is not None:
                 rhs = _emit_expr(ctx, value)
-                inferred_rhs_rt = _infer_emitted_rust_type(rhs)
+                inferred_rhs_rt = _infer_node_rust_type(ctx, value)
+                if inferred_rhs_rt == "":
+                    inferred_rhs_rt = _infer_emitted_rust_type(rhs)
                 if inferred_rhs_rt != "":
                     ctx.var_rust_types[target_name] = inferred_rhs_rt
                 _emit(ctx, rs_name + " = " + rhs + ";")
@@ -3372,9 +3392,17 @@ def _emit_ann_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             if value is not None:
                 rhs = _emit_expr(ctx, value)
                 rhs = _coerce_assignment_rhs(ctx, rhs, value, resolved_type)
-                inferred_rhs_rt = _infer_emitted_rust_type(rhs)
+                inferred_rhs_rt = _infer_node_rust_type(ctx, value)
+                if inferred_rhs_rt == "":
+                    inferred_rhs_rt = _infer_emitted_rust_type(rhs)
                 if inferred_rhs_rt != "":
                     ctx.var_rust_types[target_name] = inferred_rhs_rt
+                    if (
+                        rt != ""
+                        and rt != inferred_rhs_rt
+                        and inferred_rhs_rt.startswith("Rc<RefCell<")
+                    ):
+                        rt = inferred_rhs_rt
                 if _needs_parent_trait_object(ctx, resolved_type) and value_rt in ctx.class_names and value_rt != "":
                     if value_rt in ctx.ref_classes:
                         rhs = "Box::new(" + rhs + ".borrow().clone()) as Box<dyn " + safe_rs_ident(resolved_type) + "Methods>"
