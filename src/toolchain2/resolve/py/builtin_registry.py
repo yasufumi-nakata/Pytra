@@ -40,7 +40,7 @@ class FuncSig:
     vararg_type: str = ""
     is_method: bool = False
     owner_class: str = ""
-    extern: ExternV2 | None = None  # from meta.extern_v2
+    extern_v2: ExternV2 | None = None  # from meta.extern_v2
 
 
 @dataclass
@@ -48,7 +48,7 @@ class VarSig:
     """Variable declaration extracted from EAST1."""
     name: str
     var_type: str  # normalized type
-    extern: ExternV2 | None = None
+    extern_v2: ExternV2 | None = None
 
 
 @dataclass
@@ -62,7 +62,7 @@ class ClassSig:
     is_trait: bool = False
     implements_traits: list[str] = field(default_factory=list)
     template_params: list[str] = field(default_factory=list)
-    extern: ExternV2 | None = None
+    extern_v2: ExternV2 | None = None
 
 
 @dataclass
@@ -201,8 +201,8 @@ def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> 
         for d in decs_raw:
             if isinstance(d, str):
                 decs.append(d)
-    extern: ExternV2 | None = _extract_extern_v2(node)
-    return FuncSig(name=name, arg_names=arg_names, arg_types=arg_types, return_type=ret, decorators=decs, vararg_name=vararg_name, vararg_type=vararg_type, is_method=is_method, owner_class=owner, extern=extern)
+    extern_v2: ExternV2 | None = _extract_extern_v2(node)
+    return FuncSig(name=name, arg_names=arg_names, arg_types=arg_types, return_type=ret, decorators=decs, vararg_name=vararg_name, vararg_type=vararg_type, is_method=is_method, owner_class=owner, extern_v2=extern_v2)
 
 
 def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
@@ -266,7 +266,7 @@ def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
             name2 = part.strip()
             if name2 != "":
                 implements_traits.append(name2)
-    extern: ExternV2 | None = _extract_extern_v2(node)
+    extern_v2: ExternV2 | None = _extract_extern_v2(node)
     # Fallback: well-known container template params
     if len(tparams) == 0:
         if name == "list" or name == "set" or name == "deque":
@@ -275,7 +275,7 @@ def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
             tparams = ["K", "V"]
         elif name == "Iterable":
             tparams = ["T"]
-    return ClassSig(name=name, bases=bases, methods=methods, fields=fields, decorators=decorators, is_trait=is_trait, implements_traits=implements_traits, template_params=tparams, extern=extern)
+    return ClassSig(name=name, bases=bases, methods=methods, fields=fields, decorators=decorators, is_trait=is_trait, implements_traits=implements_traits, template_params=tparams, extern_v2=extern_v2)
 
 
 def _load_module_sig(east1_path: Path, module_id: str) -> ModuleSig:
@@ -307,7 +307,7 @@ def _load_module_sig(east1_path: Path, module_id: str) -> ModuleSig:
                     var_type: str = normalize_type(str(ann_val)) if isinstance(ann_val, str) else "unknown"
                     extern_v: ExternV2 | None = _extract_extern_v2(item)
                     msig.variables[var_name_val] = VarSig(
-                        name=var_name_val, var_type=var_type, extern=extern_v,
+                        name=var_name_val, var_type=var_type, extern_v2=extern_v,
                     )
     return msig
 
@@ -335,8 +335,8 @@ def _merge_module_sig(dst: ModuleSig, src: ModuleSig) -> None:
             existing.bases = cls.bases
         if len(existing.template_params) == 0 and len(cls.template_params) > 0:
             existing.template_params = cls.template_params
-        if existing.extern is None and cls.extern is not None:
-            existing.extern = cls.extern
+        if existing.extern_v2 is None and cls.extern_v2 is not None:
+            existing.extern_v2 = cls.extern_v2
 
 
 def _module_aliases(module_id: str) -> list[str]:
@@ -371,19 +371,19 @@ def _retarget_string_method_runtime_modules(reg: BuiltinRegistry) -> None:
         return
 
     for method_name, sig in str_cls.methods.items():
-        extern = sig.extern
-        if extern is None or extern.module != "pytra.core.str":
+        extern_v2 = sig.extern_v2
+        if extern_v2 is None or extern_v2.module != "pytra.core.str":
             continue
-        if not extern.symbol.startswith("str."):
+        if not extern_v2.symbol.startswith("str."):
             continue
         candidate_symbol = "py_" + method_name
         if candidate_symbol not in string_ops.functions:
             continue
-        sig.extern = ExternV2(
+        sig.extern_v2 = ExternV2(
             module="pytra.built_in.string_ops",
-            symbol=extern.symbol,
-            tag=extern.tag,
-            kind=extern.kind,
+            symbol=extern_v2.symbol,
+            tag=extern_v2.tag,
+            kind=extern_v2.kind,
         )
 
 

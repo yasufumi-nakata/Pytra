@@ -75,6 +75,17 @@ _BUILTIN_EXCEPTION_TYPE_NAMES: set[str] = {
 _BUILTIN_EXCEPTION_MODULE_ID = "pytra.built_in.error"
 
 
+def _repo_root_from_cwd() -> Path:
+    cur = Path(".").resolve()
+    while True:
+        if cur.joinpath("src").joinpath("pytra-cli2.py").exists():
+            return cur
+        parent = cur.parent
+        if str(parent) == str(cur):
+            return Path(".").resolve()
+        cur = parent
+
+
 @dataclass
 class ResolveResult:
     """resolve の結果。"""
@@ -87,14 +98,11 @@ class Scope:
     """Variable type environment."""
     vars: dict[str, str] = field(default_factory=dict)
     lambda_vars: dict[str, dict[str, JsonVal]] = field(default_factory=dict)
-    parent: Scope | None = None
 
     def lookup(self, name: str) -> str:
         v: str = self.vars.get(name, "")
         if v != "":
             return v
-        if self.parent is not None:
-            return self.parent.lookup(name)
         return "unknown"
 
     def define(self, name: str, typ: str) -> None:
@@ -110,12 +118,15 @@ class Scope:
         expr = self.lambda_vars.get(name)
         if isinstance(expr, dict):
             return expr
-        if self.parent is not None:
-            return self.parent.lookup_lambda(name)
         return None
 
     def child(self) -> Scope:
-        return Scope(parent=self)
+        child_scope = Scope()
+        for name, typ in self.vars.items():
+            child_scope.vars[name] = typ
+        for name, expr in self.lambda_vars.items():
+            child_scope.lambda_vars[name] = expr
+        return child_scope
 
 
 @dataclass
@@ -151,7 +162,7 @@ class ResolveContext:
         if self._runtime_index is not None:
             return self._runtime_index
         try:
-            idx_path: Path = Path(__file__).resolve().parents[4] / "tools" / "runtime_symbol_index.json"
+            idx_path: Path = _repo_root_from_cwd().joinpath("tools").joinpath("runtime_symbol_index.json")
             if idx_path.exists():
                 text: str = idx_path.read_text(encoding="utf-8")
                 raw: JsonVal = json.loads(text).raw
@@ -2196,7 +2207,7 @@ def _resolve_builtin_call(
     func["resolved_type"] = "callable"
 
     # Add runtime metadata from extern_v2
-    extern: ExternV2 | None = sig.extern if sig is not None else None
+    extern: ExternV2 | None = sig.extern_v2 if sig is not None else None
 
     # isinstance/issubclass use TypePredicateCall lowered_kind
     if name == "isinstance":
@@ -2412,9 +2423,9 @@ def _resolve_module_attr_call(
     stdlib_class: ClassSig | None = ctx.registry.lookup_stdlib_class(canonical, attr)
     extern: ExternV2 | None = None
     if stdlib_func is not None:
-        extern = stdlib_func.extern
+        extern = stdlib_func.extern_v2
     elif stdlib_class is not None:
-        extern = stdlib_class.extern
+        extern = stdlib_class.extern_v2
 
     # Determine return type
     ret: str = "unknown"
@@ -2491,7 +2502,7 @@ def _resolve_container_method_call(
         expr["runtime_owner"] = owner_copy
 
     # Runtime metadata from extern_v2 (正本)
-    method_extern: ExternV2 | None = method_sig.extern
+    method_extern: ExternV2 | None = method_sig.extern_v2
     if method_extern is not None and method_extern.module != "":
         mod = method_extern.module
         runtime_call_name = method_extern.symbol

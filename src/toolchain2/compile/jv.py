@@ -17,11 +17,19 @@ from toolchain2.emit.common.profile_loader import LoweringProfile, load_lowering
 
 # common/ から共有ユーティリティを re-export
 from toolchain2.common.jv import deep_copy_json as deep_copy_json
-from toolchain2.common.types import normalize_type_name as normalize_type_name
 
 # Runtime import contract for existing toolchain2 modules.
 # The C++ emitter skips this typing-only alias assignment.
 Node = dict[str, JsonVal]
+
+
+def normalize_type_name(value: JsonVal) -> str:
+    """Local selfhost-safe normalize to keep CompileContext methods statically typed."""
+    if isinstance(value, str):
+        text = value.strip()
+        if text != "":
+            return text
+    return "unknown"
 
 
 @dataclass

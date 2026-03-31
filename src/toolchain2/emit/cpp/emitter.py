@@ -25,6 +25,7 @@ from toolchain2.emit.cpp.types import (
     _top_level_optional_inner,
     _split_generic_args,
     init_types_mapping,
+    normalize_cpp_container_alias,
 )
 from toolchain2.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
@@ -456,9 +457,9 @@ def _expr_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
         return _attribute_static_type(ctx, node)
     if kind == "Subscript":
         value_node = node.get("value")
-        container_type = _effective_resolved_type(value_node)
+        container_type = normalize_cpp_container_alias(_effective_resolved_type(value_node))
         if container_type in ("", "unknown"):
-            container_type = _expr_storage_type(ctx, value_node)
+            container_type = normalize_cpp_container_alias(_expr_storage_type(ctx, value_node))
         if container_type.startswith("list[") or container_type.startswith("set["):
             parts = _container_type_args(container_type)
             return parts[0] if len(parts) == 1 else ""
@@ -599,7 +600,7 @@ def _wrap_container_result_if_needed(node: dict[str, JsonVal], value_expr: str) 
     return _wrap_container_value_expr(resolved_type, value_expr)
 
 
-def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr: str) -> str:
+def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr: str, value_node: JsonVal = None) -> str:
     if not is_container_resolved_type(target_type):
         # When assigning dict.get(no-default) to an optional variable, use py_dict_get_opt
         # so that missing keys produce an empty optional (None), not a zero-valued optional.
@@ -609,6 +610,8 @@ def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr
             inner = value_expr[len("py_dict_get("):-1]
             if len(_split_generic_args(inner)) == 2:
                 return "py_dict_get_opt(" + inner + ")"
+        return value_expr
+    if isinstance(value_node, dict) and _effective_resolved_type(value_node) == target_type:
         return value_expr
     trimmed = value_expr.strip()
     if trimmed in ctx.var_types and ctx.var_types.get(trimmed, "") == target_type:
@@ -1277,10 +1280,12 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                     )
             # Fallback: look up <static_owner_type>.<attr> in the mapping for known value types
             # (covers cases where the resolver left resolved_type="unknown" on the call node).
-            _static_owner_type = _expr_static_type(ctx, owner_node)
+            _static_owner_type = normalize_cpp_container_alias(_expr_static_type(ctx, owner_node))
             if _static_owner_type != "" and _static_owner_type != "unknown":
                 _type_attr_key = _static_owner_type + "." + attr
                 _fallback_name = resolve_runtime_call(_type_attr_key, attr, adapter, ctx.mapping)
+                if _fallback_name == "" and _static_owner_type.startswith("dict["):
+                    _fallback_name = resolve_runtime_call("dict." + attr, attr, adapter, ctx.mapping)
                 if _fallback_name != "":
                     return _wrap_container_result_if_needed(
                         node,
@@ -1629,6 +1634,7 @@ def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     storage_type = _expr_storage_type(ctx, value_node)
     if (value_type in ("", "unknown", "tuple", "list", "dict", "set") or value_type == storage_type) and storage_type != "":
         value_type = storage_type
+    value_type = normalize_cpp_container_alias(value_type)
     class_var_spec = _class_var_spec(ctx, value_node)
     if class_var_spec is not None and value_type in ("", "unknown", "tuple", "list", "dict", "set"):
         spec_type = _str(class_var_spec, "type")
@@ -1654,7 +1660,7 @@ def _emit_subscript_store_target(ctx: CppEmitContext, node: dict[str, JsonVal]) 
     value = _emit_expr(ctx, node.get("value"))
     sl = node.get("slice")
     value_node = node.get("value")
-    value_type = _effective_resolved_type(value_node)
+    value_type = normalize_cpp_container_alias(_effective_resolved_type(value_node))
     class_var_spec = _class_var_spec(ctx, value_node)
     if class_var_spec is not None and value_type in ("", "unknown", "tuple", "list", "dict", "set"):
         spec_type = _str(class_var_spec, "type")
@@ -1958,6 +1964,21 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return value_expr
     if _attribute_static_type(ctx, value) == target:
         return value_expr
+    if isinstance(value, dict) and _str(value, "kind") == "Call":
+        func = value.get("func")
+        func_name = _str(func, "id") if isinstance(func, dict) else ""
+        if func_name in (
+            "linked_module_id",
+            "linked_module_source_path",
+            "linked_module_east_doc",
+            "linked_module_kind",
+            "lower_east2_to_east3",
+            "optimize_east3_doc_only",
+            "write_runtime_module_artifacts",
+            "write_helper_module_artifacts",
+            "write_user_module_artifacts",
+        ):
+            return value_expr
     if target in ctx.class_names:
         return "(*(" + value_expr + ").as<" + target + ">())"
     if target in ("str", "int", "int64", "float", "float64", "bool"):
@@ -2315,7 +2336,7 @@ def _emit_ann_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         lhs = _emit_expr(ctx, target_val)
         if value is not None:
             rhs = _emit_expr(ctx, value)
-            rhs = _wrap_expr_for_target_type(ctx, _attribute_target_type(ctx, target_val), rhs)
+            rhs = _wrap_expr_for_target_type(ctx, _attribute_target_type(ctx, target_val), rhs, value)
             _emit(ctx, lhs + " = " + rhs + ";")
         return
 
@@ -2324,7 +2345,7 @@ def _emit_ann_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     ct = _decl_cpp_type(ctx, rt, name)
     if value is not None:
         val_expr = _emit_expr(ctx, value)
-        val_expr = _wrap_expr_for_target_type(ctx, rt, val_expr)
+        val_expr = _wrap_expr_for_target_type(ctx, rt, val_expr, value)
         _emit(ctx, ct + " " + name + " = " + val_expr + ";")
     else:
         _emit(ctx, ct + " " + name + " = " + _decl_cpp_zero_value(ctx, rt, name) + ";")
@@ -2364,7 +2385,7 @@ def _emit_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         if _bool(node, "unused") and _bool(node, "declare"):
             _emit(ctx, "(void)" + name + ";")
     elif tk == "Attribute":
-        _emit(ctx, _emit_expr(ctx, t) + " = " + _wrap_expr_for_target_type(ctx, _attribute_target_type(ctx, t), val_code) + ";")
+        _emit(ctx, _emit_expr(ctx, t) + " = " + _wrap_expr_for_target_type(ctx, _attribute_target_type(ctx, t), val_code, value) + ";")
     elif tk == "Subscript":
         _emit(ctx, _emit_subscript_store_target(ctx, t) + " = " + val_code + ";")
     elif tk == "Tuple":

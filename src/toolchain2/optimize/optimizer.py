@@ -262,3 +262,27 @@ def optimize_east3_document(
     report["disabled_passes"] = sorted(list(disabled))
     report["non_escape_policy"] = dict(context.non_escape_policy)
     return east3_doc, report
+
+
+def optimize_east3_doc_only(
+    east3_doc: dict[str, JsonVal],
+    *,
+    opt_level: int = 1,
+    target_lang: str = "",
+    opt_pass_spec: str = "",
+    debug_flags: dict[str, JsonVal] | None = None,
+    non_escape_policy: dict[str, JsonVal] | None = None,
+    pass_manager: PassManager | None = None,
+) -> dict[str, JsonVal]:
+    """Selfhost-safe wrapper that returns only the optimized doc."""
+    optimized_doc, report = optimize_east3_document(
+        east3_doc,
+        opt_level=opt_level,
+        target_lang=target_lang,
+        opt_pass_spec=opt_pass_spec,
+        debug_flags=debug_flags,
+        non_escape_policy=non_escape_policy,
+        pass_manager=pass_manager,
+    )
+    _ = report
+    return optimized_doc

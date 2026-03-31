@@ -54,7 +54,14 @@ _TYPE_MAP: dict[str, str] = {
 }
 
 
+def normalize_cpp_container_alias(resolved_type: str) -> str:
+    if resolved_type == "Node":
+        return "dict[str,JsonVal]"
+    return resolved_type
+
+
 def is_container_resolved_type(resolved_type: str) -> bool:
+    resolved_type = normalize_cpp_container_alias(resolved_type)
     return (
         resolved_type.startswith("list[")
         or resolved_type.startswith("dict[")
@@ -63,6 +70,7 @@ def is_container_resolved_type(resolved_type: str) -> bool:
 
 
 def cpp_container_value_type(resolved_type: str) -> str:
+    resolved_type = normalize_cpp_container_alias(resolved_type)
     if resolved_type.startswith("list[") and resolved_type.endswith("]"):
         inner = resolved_type[5:-1]
         return "list<" + cpp_signature_type(inner) + ">"

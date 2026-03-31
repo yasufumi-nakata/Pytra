@@ -265,3 +265,72 @@ def emit_runtime_module_artifacts(
         header_text = _append_header_only_impls(header_text, cpp_text)
     header_path.write_text(header_text, encoding="utf-8")
     return str(header_path), source_out
+
+
+def write_runtime_module_artifacts(
+    module_id: str,
+    east_doc: dict[str, JsonVal],
+    *,
+    output_dir: Path,
+    source_path: str = "",
+) -> int:
+    """Selfhost-safe wrapper that returns emitted file count."""
+    header_path, source_out = emit_runtime_module_artifacts(
+        module_id,
+        east_doc,
+        output_dir=output_dir,
+        source_path=source_path,
+    )
+    count = 0
+    if header_path != "":
+        count += 1
+    if source_out != "":
+        count += 1
+    return count
+
+
+def write_helper_module_artifacts(
+    module_id: str,
+    east_doc: dict[str, JsonVal],
+    *,
+    output_dir: Path,
+    rel_header_path: str,
+) -> int:
+    """Write helper module source/header and return emitted file count."""
+    cpp_path = output_dir / (rel_header_path[:-2] + ".cpp")
+    header_path = output_dir / rel_header_path
+    cpp_path.parent.mkdir(parents=True, exist_ok=True)
+    header_path.parent.mkdir(parents=True, exist_ok=True)
+    cpp_text = emit_cpp_module(east_doc, self_header=rel_header_path)
+    header_text = build_cpp_header_from_east3(
+        module_id,
+        east_doc,
+        rel_header_path=rel_header_path,
+    )
+    cpp_path.write_text(cpp_text, encoding="utf-8")
+    header_path.write_text(header_text, encoding="utf-8")
+    return 2
+
+
+def write_user_module_artifacts(
+    module_id: str,
+    east_doc: dict[str, JsonVal],
+    *,
+    output_dir: Path,
+) -> int:
+    """Write user module source/header and return emitted file count."""
+    rel_header_path = module_id.replace(".", "/") + ".h"
+    cpp_text = emit_cpp_module(east_doc, self_header=rel_header_path)
+    if cpp_text.strip() == "":
+        return 0
+    cpp_path = output_dir / (module_id.replace(".", "_") + ".cpp")
+    header_path = output_dir / rel_header_path
+    header_path.parent.mkdir(parents=True, exist_ok=True)
+    header_text = build_cpp_header_from_east3(
+        module_id,
+        east_doc,
+        rel_header_path=rel_header_path,
+    )
+    cpp_path.write_text(cpp_text, encoding="utf-8")
+    header_path.write_text(header_text, encoding="utf-8")
+    return 2

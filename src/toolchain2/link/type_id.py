@@ -136,6 +136,42 @@ def _tail_name(name: str) -> str:
     return parts[len(parts) - 1]
 
 
+def _assign_type_rows(
+    fqcn: str,
+    children: dict[str, list[str]],
+    next_id_holder: list[int],
+    type_id_table: dict[str, int],
+    type_info_table: dict[str, dict[str, int]],
+) -> None:
+    entry = next_id_holder[0]
+    type_id_table[fqcn] = entry
+    next_id_holder[0] = next_id_holder[0] + 1
+    for child_fqcn in children.get(fqcn, []):
+        _assign_type_rows(child_fqcn, children, next_id_holder, type_id_table, type_info_table)
+    exit_val = next_id_holder[0]
+    type_info_table[fqcn] = {"id": entry, "entry": entry, "exit": exit_val}
+
+
+def _walk_builtin_type_tree(
+    name: str,
+    children: dict[str, list[str]],
+    next_id_holder: list[int],
+    type_id_table: dict[str, int],
+    type_info_table: dict[str, dict[str, int]],
+) -> None:
+    for builtin_child in _BUILTIN_CLASS_CHILDREN.get(name, []):
+        _walk_builtin_type_tree(builtin_child, children, next_id_holder, type_id_table, type_info_table)
+    for child_fqcn in children.get(name, []):
+        _assign_type_rows(child_fqcn, children, next_id_holder, type_id_table, type_info_table)
+    exit_val = next_id_holder[0]
+    next_builtin_id = _BUILTIN_CLASS_IDS[name] + 1
+    if len(_BUILTIN_CLASS_CHILDREN.get(name, [])) == 0 and len(children.get(name, [])) == 0:
+        exit_val = next_builtin_id
+    elif exit_val < next_builtin_id:
+        exit_val = next_builtin_id
+    type_info_table[name] = {"id": _BUILTIN_CLASS_IDS[name], "entry": _BUILTIN_CLASS_IDS[name], "exit": exit_val}
+
+
 def builtin_exception_type_names() -> set[str]:
     out: set[str] = set()
     pending: list[str] = ["BaseException"]
@@ -401,32 +437,10 @@ def build_type_id_table(
     type_id_table: dict[str, int] = {}
     type_info_table: dict[str, dict[str, int]] = {}
 
-    def _assign(fqcn: str) -> None:
-        entry = next_id_holder[0]
-        type_id_table[fqcn] = entry
-        next_id_holder[0] = next_id_holder[0] + 1
-        for child_fqcn in children.get(fqcn, []):
-            _assign(child_fqcn)
-        exit_val = next_id_holder[0]
-        type_info_table[fqcn] = {"id": entry, "entry": entry, "exit": exit_val}
-
     for builtin_name in _builtin_class_names_in_id_order():
         type_id_table[builtin_name] = _BUILTIN_CLASS_IDS[builtin_name]
 
-    def _walk_builtin(name: str) -> None:
-        for builtin_child in _BUILTIN_CLASS_CHILDREN.get(name, []):
-            _walk_builtin(builtin_child)
-        for child_fqcn in children.get(name, []):
-            _assign(child_fqcn)
-        exit_val = next_id_holder[0]
-        next_builtin_id = _BUILTIN_CLASS_IDS[name] + 1
-        if len(_BUILTIN_CLASS_CHILDREN.get(name, [])) == 0 and len(children.get(name, [])) == 0:
-            exit_val = next_builtin_id
-        elif exit_val < next_builtin_id:
-            exit_val = next_builtin_id
-        type_info_table[name] = {"id": _BUILTIN_CLASS_IDS[name], "entry": _BUILTIN_CLASS_IDS[name], "exit": exit_val}
-
-    _walk_builtin("object")
+    _walk_builtin_type_tree("object", children, next_id_holder, type_id_table, type_info_table)
 
     # Add type_info_table entries for any _BUILTIN_CLASS_IDS entries not processed by
     # _walk_builtin (e.g. None, bool, int, float, str, list, dict, set — standalone leaf types).
@@ -444,12 +458,12 @@ def build_type_id_table(
             continue
         for child_fqcn in children.get(synthetic_root, []):
             if child_fqcn not in type_info_table:
-                _assign(child_fqcn)
+                _assign_type_rows(child_fqcn, children, next_id_holder, type_id_table, type_info_table)
 
     for fqcn in sorted_class_names:
         base_fqcn = class_bases[fqcn]
         if base_fqcn == "object" and fqcn not in type_info_table:
-            _assign(fqcn)
+            _assign_type_rows(fqcn, children, next_id_holder, type_id_table, type_info_table)
 
     if "object" in type_info_table:
         type_info_table["object"]["exit"] = next_id_holder[0]
