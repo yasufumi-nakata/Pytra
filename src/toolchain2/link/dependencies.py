@@ -35,6 +35,26 @@ _TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
     "ClassDef",
 }
 
+_STRING_OP_RUNTIME_SYMBOLS: set[str] = {
+    "str.strip",
+    "str.lstrip",
+    "str.rstrip",
+    "str.startswith",
+    "str.endswith",
+    "str.find",
+    "str.rfind",
+    "str.replace",
+    "str.join",
+    "str.split",
+    "str.splitlines",
+    "str.count",
+    "str.upper",
+    "str.lower",
+    "str.isdigit",
+    "str.isalpha",
+    "str.isalnum",
+}
+
 
 def is_type_only_dependency_module_id(module_id: str) -> bool:
     return module_id in _TYPE_ONLY_MODULE_IDS
@@ -56,8 +76,8 @@ def _scan_runtime_refs(node: JsonVal, out: set[str]) -> None:
     if not isinstance(node, dict):
         return
 
-    runtime_module_id = node.get("runtime_module_id")
-    if isinstance(runtime_module_id, str) and runtime_module_id != "":
+    runtime_module_id = _normalized_runtime_module_id(node)
+    if runtime_module_id != "":
         out.add(runtime_module_id)
     kind = node.get("kind")
     if isinstance(kind, str) and kind in _TYPE_ID_RUNTIME_NODE_KINDS:
@@ -68,6 +88,26 @@ def _scan_runtime_refs(node: JsonVal, out: set[str]) -> None:
             _scan_runtime_refs(value, out)
         elif isinstance(value, list):
             _scan_runtime_refs(value, out)
+
+
+def _normalized_runtime_module_id(node: JsonVal) -> str:
+    if not isinstance(node, dict):
+        return ""
+    runtime_module_id = node.get("runtime_module_id")
+    if not isinstance(runtime_module_id, str) or runtime_module_id == "":
+        return ""
+    if runtime_module_id == "pytra.core.str":
+        runtime_symbol = node.get("runtime_symbol")
+        runtime_call = node.get("runtime_call")
+        if (
+            isinstance(runtime_symbol, str)
+            and runtime_symbol in _STRING_OP_RUNTIME_SYMBOLS
+        ) or (
+            isinstance(runtime_call, str)
+            and runtime_call in _STRING_OP_RUNTIME_SYMBOLS
+        ):
+            return "pytra.built_in.string_ops"
+    return runtime_module_id
 
 
 def _binding_dependency_module_id(binding: JsonVal) -> str:

@@ -50,7 +50,7 @@ _TYPE_MAP: dict[str, str] = {
     "object": "object",
     "JsonVal": "object",
     "Node": "Object<dict<str, object>>",
-    "Callable": "object",
+    "Callable": "::std::function<object(object)>",
 }
 
 
@@ -96,6 +96,9 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
         mapped = _TYPE_MAP.get(resolved_type, "")
     if mapped != "":
         return mapped
+
+    if resolved_type == "callable":
+        return "::std::function<object(object)>"
 
     # list[T] / dict[K, V] / set[T]
     container_value_type = cpp_container_value_type(resolved_type)
@@ -144,6 +147,8 @@ def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = Fal
     """
     if resolved_type == "" or resolved_type == "unknown":
         return "object"
+    if resolved_type in ("Callable", "callable"):
+        return "::std::function<object(object)>"
     if resolved_type in ("Any", "Obj", "object"):
         return "object"
     optional_inner = _top_level_optional_inner(resolved_type)

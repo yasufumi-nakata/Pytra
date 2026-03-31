@@ -31,8 +31,10 @@
 
 EAST3 の `GenericType(base="callable", args=[引数型, 戻り値型])` を `std::function<R(Args...)>` に変換する処理が C++ emitter にない。`callable_higher_order` fixture が compile + run parity PASS することを完了条件とする。
 
-1. [ ] [ID: P0-CPP-CALLABLE-S1] C++ emitter で `callable` 型を `std::function<R(Args...)>` に変換する処理を追加する
-2. [ ] [ID: P0-CPP-CALLABLE-S2] `callable_higher_order` fixture が C++ で compile + run parity PASS することを確認する
+1. [x] [ID: P0-CPP-CALLABLE-S1] C++ emitter で `callable` 型を `std::function<R(Args...)>` に変換する処理を追加する
+2. [x] [ID: P0-CPP-CALLABLE-S2] `callable_higher_order` fixture が C++ で compile + run parity PASS することを確認する
+   - 完了: `types.py` / `header_gen.py` / `emitter.py` で `callable[[Args],Ret]` を `std::function<Ret(Args...)>` に落とし、bare `callable` も fallback で扱えるようにした。C++ 予約語衝突（`double`→`double_`）と `std::function` include 伝播も修正した。
+   - 完了: `pytra.core.str` 上の string method runtime 参照を依存収集時に `pytra.built_in.string_ops` へ正規化し、`src/pytra/built_in/string_ops.py` に `py_lower` / `py_upper` を追加して runtime EAST を再生成した。`PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --targets cpp --case-root fixture --east3-opt-level 2 callable_higher_order` は PASS。
 
 ### P0-CLI2-RS-DECOUPLE: pytra-cli2.py から Rust emit 固有 import を分離
 

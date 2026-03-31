@@ -142,6 +142,36 @@ def py_strip_chars(s: str, chars: str) -> str:
     return py_rstrip_chars(py_lstrip_chars(s, chars), chars)
 
 
+def py_lower(s: str) -> str:
+    out = ""
+    i = 0
+    n = len(s)
+    while i < n:
+        ch = s[i]
+        code = ord(ch)
+        if ord("A") <= code and code <= ord("Z"):
+            out += chr(code + 32)
+        else:
+            out += ch
+        i += 1
+    return out
+
+
+def py_upper(s: str) -> str:
+    out = ""
+    i = 0
+    n = len(s)
+    while i < n:
+        ch = s[i]
+        code = ord(ch)
+        if ord("a") <= code and code <= ord("z"):
+            out += chr(code - 32)
+        else:
+            out += ch
+        i += 1
+    return out
+
+
 def py_startswith(s: str, prefix: str) -> bool:
     n = len(s)
     m = len(prefix)

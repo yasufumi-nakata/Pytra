@@ -481,6 +481,9 @@ def _expr_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
             ret = _extract_std_function_return_type(func_type)
             if ret not in ("", "unknown"):
                 return ret
+            ret = _extract_callable_return_type(func_type)
+            if ret not in ("", "unknown"):
+                return ret
     if kind == "BinOp":
         left_type = _expr_storage_type(ctx, node.get("left"))
         right_type = _expr_storage_type(ctx, node.get("right"))
@@ -505,6 +508,16 @@ def _extract_std_function_return_type(func_type: str) -> str:
     if paren < 0:
         return ""
     return inner[:paren].strip()
+
+
+def _extract_callable_return_type(func_type: str) -> str:
+    if not (func_type.startswith("callable[") and func_type.endswith("]")):
+        return ""
+    inner = func_type[9:-1]
+    parts = _split_generic_args(inner)
+    if len(parts) != 2:
+        return ""
+    return parts[1].strip()
 
 
 def _scope_key(ctx: CppEmitContext, func_name: str, owner_name: str = "") -> str:
@@ -598,6 +611,24 @@ def _wrap_container_result_if_needed(node: dict[str, JsonVal], value_expr: str) 
     ):
         return value_expr
     return _wrap_container_value_expr(resolved_type, value_expr)
+
+
+def _note_runtime_symbol_include(ctx: CppEmitContext, symbol_name: str) -> None:
+    if symbol_name in {
+        "py_upper",
+        "py_lower",
+        "py_strip",
+        "py_lstrip",
+        "py_rstrip",
+        "py_split",
+        "py_join",
+        "py_startswith",
+        "py_endswith",
+        "py_replace",
+        "py_find",
+        "py_count",
+    }:
+        ctx.includes_needed.add("built_in/string_ops_fwd.h")
 
 
 def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr: str, value_node: JsonVal = None) -> str:
@@ -977,6 +1008,7 @@ def _emit_name(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if name == "continue": return "continue"
     if name == "break": return "break"
     if name == "main": return "__pytra_main"
+    name = _safe_cpp_ident(name)
     resolved_type = _effective_resolved_type(node)
     storage_type = _expr_storage_type(ctx, node)
     optional_storage_inner = _optional_inner_type(storage_type)
@@ -1018,7 +1050,7 @@ def _emit_name_storage(node: dict[str, JsonVal]) -> str:
         return "break"
     if name == "main":
         return "__pytra_main"
-    return name
+    return _safe_cpp_ident(name)
 
 
 def _emit_binop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
@@ -1274,6 +1306,7 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                     ctx.mapping,
                 )
                 if mapped_name != "":
+                    _note_runtime_symbol_include(ctx, mapped_name)
                     return _wrap_container_result_if_needed(
                         node,
                         _qualify_runtime_call_symbol(mapped_name) + "(" + ", ".join([owner] + call_arg_strs) + ")",
@@ -1287,6 +1320,7 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 if _fallback_name == "" and _static_owner_type.startswith("dict["):
                     _fallback_name = resolve_runtime_call("dict." + attr, attr, adapter, ctx.mapping)
                 if _fallback_name != "":
+                    _note_runtime_symbol_include(ctx, _fallback_name)
                     return _wrap_container_result_if_needed(
                         node,
                         _qualify_runtime_call_symbol(_fallback_name) + "(" + ", ".join([owner] + call_arg_strs) + ")",
@@ -1340,6 +1374,7 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                     ctx.mapping,
                 )
                 if mapped_name != "":
+                    _note_runtime_symbol_include(ctx, mapped_name)
                     return _qualify_runtime_call_symbol(mapped_name) + "(" + ", ".join(call_arg_strs) + ")"
             # Qualify module-level calls with :: so class method names can't shadow them.
             # Only skip :: for local variables (closures/lambdas) visible in scope.
@@ -3033,6 +3068,9 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
             continue
         arg_type = arg_types.get(arg_name, "")
         arg_type_str = arg_type if isinstance(arg_type, str) else "object"
+        inferred = _infer_callable_param_type(node, arg_name)
+        if inferred != "":
+            arg_type_str = inferred
         is_mutable = (arg_usage.get(arg_name) == "reassigned"
                       or _function_param_is_mutated_via_call(node, arg_name, ctx)
                       or (_is_user_class_param_type(arg_type_str)
@@ -3044,6 +3082,81 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
         vararg_type_str = vararg_type if isinstance(vararg_type, str) else "object"
         out.append((vararg_name, vararg_type_str, False))
     return out
+
+
+def _type_uses_callable(resolved_type: str) -> bool:
+    return resolved_type == "callable" or resolved_type == "Callable" or resolved_type.startswith("callable[")
+
+
+def _infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> str:
+    arg_types = _dict(node, "arg_types")
+    declared_obj = arg_types.get(param_name, "")
+    declared = declared_obj if isinstance(declared_obj, str) else ""
+    if not _type_uses_callable(declared):
+        return ""
+    inferred_arg = ""
+    inferred_ret = ""
+
+    def _visit(cur: JsonVal, parent: JsonVal = None, grandparent: JsonVal = None) -> None:
+        nonlocal inferred_arg, inferred_ret
+        if isinstance(cur, dict):
+            if _str(cur, "kind") == "Call":
+                func = cur.get("func")
+                if isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == param_name:
+                    args = _list(cur, "args")
+                    if len(args) == 1 and isinstance(args[0], dict):
+                        arg_type = _effective_resolved_type(args[0])
+                        if arg_type not in ("", "unknown", "object", "Any", "Callable", "callable"):
+                            inferred_arg = arg_type
+                    ret_type = _infer_callable_return_from_parent(cur, parent, grandparent, node)
+                    if ret_type not in ("", "unknown", "object", "Any", "Callable", "callable"):
+                        inferred_ret = ret_type
+            for child in cur.values():
+                _visit(child, cur, parent)
+        elif isinstance(cur, list):
+            for child in cur:
+                _visit(child, parent, grandparent)
+
+    _visit(_list(node, "body"))
+    if inferred_arg != "" and inferred_ret != "":
+        return "callable[[" + inferred_arg + "]," + inferred_ret + "]"
+    return ""
+
+
+def _infer_callable_return_from_parent(
+    call_node: dict[str, JsonVal],
+    parent: JsonVal,
+    grandparent: JsonVal,
+    func_node: dict[str, JsonVal],
+) -> str:
+    if isinstance(parent, dict):
+        parent_kind = _str(parent, "kind")
+        if parent_kind == "Return":
+            return _return_type(func_node)
+        if parent_kind == "Unbox":
+            resolved = _effective_resolved_type(parent)
+            if resolved != "":
+                return resolved
+        if parent_kind == "Call":
+            runtime_call = _str(parent, "runtime_call")
+            if runtime_call == "list.append":
+                owner = parent.get("runtime_owner")
+                owner_type = _effective_resolved_type(owner) if isinstance(owner, dict) else ""
+                if owner_type.startswith("list[") and owner_type.endswith("]"):
+                    return owner_type[5:-1]
+            func = parent.get("func")
+            if isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == _str(call_node.get("func"), "id"):
+                if isinstance(grandparent, dict) and _str(grandparent, "kind") == "Return":
+                    return _return_type(func_node)
+                if isinstance(grandparent, dict) and _str(grandparent, "kind") == "Unbox":
+                    resolved = _effective_resolved_type(grandparent)
+                    if resolved != "":
+                        return resolved
+        if parent_kind in ("Assign", "AnnAssign"):
+            declared = _str(parent, "decl_type")
+            if declared != "":
+                return declared
+    return ""
 
 
 def _function_self_mutates(node: dict[str, JsonVal]) -> bool:
@@ -3452,6 +3565,28 @@ def emit_cpp_module(
     # Build header
     dep_ids = collect_cpp_dependency_module_ids(module_id, meta)
 
+    for line in ctx.lines:
+        if "::std::function<" in line:
+            ctx.includes_needed.add("functional")
+            break
+    for line in ctx.lines:
+        if (
+            "py_upper(" in line
+            or "py_lower(" in line
+            or "py_strip(" in line
+            or "py_lstrip(" in line
+            or "py_rstrip(" in line
+            or "py_split(" in line
+            or "py_join(" in line
+            or "py_startswith(" in line
+            or "py_endswith(" in line
+            or "py_replace(" in line
+            or "py_find(" in line
+            or "py_count(" in line
+        ):
+            ctx.includes_needed.add("built_in/string_ops.h")
+            break
+
     header: list[str] = [
         "#include <cstdint>",
         "#include <string>",
@@ -3467,6 +3602,8 @@ def emit_cpp_module(
         header.insert(6, "#include <functional>")
     if "built_in/format_ops.h" in ctx.includes_needed:
         header.append('#include "built_in/format_ops.h"')
+    if "built_in/string_ops_fwd.h" in ctx.includes_needed:
+        header.append('#include "built_in/string_ops_fwd.h"')
 
     seen_includes: set[str] = {"core/py_runtime.h"}
     if self_header != "":
