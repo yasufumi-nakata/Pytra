@@ -86,6 +86,25 @@ _ROOT_BASE_NAMES.add("Protocol")
 _USER_TYPE_ID_BASE = 1000
 
 
+def builtin_exception_type_names() -> set[str]:
+    out: set[str] = set()
+    pending: list[str] = ["BaseException"]
+    seen: set[str] = set()
+    while len(pending) > 0:
+        name = pending.pop()
+        if name in seen:
+            continue
+        seen.add(name)
+        out.add(name)
+        for child in _BUILTIN_CLASS_CHILDREN.get(name, []):
+            pending.append(child)
+    return out
+
+
+def is_builtin_exception_type_name(type_name: str) -> bool:
+    return type_name in builtin_exception_type_names()
+
+
 def _safe_name(val: JsonVal) -> str:
     if isinstance(val, str):
         text = val.strip()

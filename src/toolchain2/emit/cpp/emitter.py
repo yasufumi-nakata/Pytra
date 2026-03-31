@@ -33,6 +33,7 @@ from toolchain2.emit.common.code_emitter import (
 from toolchain2.emit.common.common_renderer import CommonRenderer
 from toolchain2.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids, cpp_include_for_module
 from toolchain2.common.types import split_generic_types
+from toolchain2.link.type_id import is_builtin_exception_type_name
 
 
 # ---------------------------------------------------------------------------
@@ -68,13 +69,6 @@ class CppEmitContext:
     mapping: RuntimeMapping = field(default_factory=RuntimeMapping)
     temp_counter: int = 0
     emit_class_decls: bool = True
-
-
-_EXCEPTION_NAME_HINTS = {
-    "BaseException", "Exception", "ValueError", "TypeError", "IndexError",
-    "KeyError", "RuntimeError", "AssertionError", "NotImplementedError",
-    "ZeroDivisionError",
-}
 
 
 def _indent(ctx: CppEmitContext) -> str:
@@ -121,7 +115,9 @@ def _module_needs_error_header(node: JsonVal) -> bool:
         kind = _str(node, "kind")
         if kind in ("Raise", "Try"):
             return True
-        if kind == "Name" and _str(node, "id") in _EXCEPTION_NAME_HINTS:
+        if kind == "Name" and is_builtin_exception_type_name(_str(node, "id")):
+            return True
+        if kind == "ClassDef" and is_builtin_exception_type_name(_str(node, "base")):
             return True
         for value in node.values():
             if _module_needs_error_header(value):
@@ -1254,7 +1250,7 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                     fallback_symbol=attr,
                 )
                 return _qualify_runtime_call_symbol(symbol_name) + "(" + ", ".join(call_arg_strs) + ")"
-            if attr == "add_argument" and owner_type == "ArgumentParser":
+            if attr == "add_argument" and (_str(node, "semantic_tag") == "stdlib.method.add_argument" or len(keywords) > 0):
                 call_arg_strs = _emit_argparse_add_argument_args(ctx, args, keywords)
             if _is_type_owner(ctx, owner_node):
                 return owner + "::" + _safe_cpp_ident(attr) + "(" + ", ".join(call_arg_strs) + ")"
@@ -1486,7 +1482,10 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         if len(arg_strs) >= 1:
             return "bytes(" + arg_strs[0] + ")"
         return "bytes{}"
-    if rc in ("py_print", "py_len") and len(arg_strs) >= 1:
+    adapter_policy = ctx.mapping.call_adapters.get(rc, "")
+    if adapter_policy == "multi_arg_print" and len(arg_strs) >= 1:
+        return rc + "(" + ", ".join(arg_strs) + ")"
+    if adapter_policy == "ref_arg" and len(arg_strs) >= 1:
         return rc + "(" + ", ".join(arg_strs) + ")"
     # Container constructor builtins: list(), dict(), set()
     if rc == "list_ctor" or (bn == "list" and len(arg_strs) == 0):
@@ -2048,9 +2047,16 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         "dict": "PYTRA_TID_DICT",
         "set": "PYTRA_TID_SET",
         "object": "PYTRA_TID_OBJECT",
+        "PYTRA_TID_NONE": "PYTRA_TID_NONE",
+        "PYTRA_TID_BOOL": "PYTRA_TID_BOOL",
+        "PYTRA_TID_INT": "PYTRA_TID_INT",
+        "PYTRA_TID_FLOAT": "PYTRA_TID_FLOAT",
+        "PYTRA_TID_STR": "PYTRA_TID_STR",
+        "PYTRA_TID_LIST": "PYTRA_TID_LIST",
+        "PYTRA_TID_DICT": "PYTRA_TID_DICT",
+        "PYTRA_TID_SET": "PYTRA_TID_SET",
+        "PYTRA_TID_OBJECT": "PYTRA_TID_OBJECT",
     }.get(expected_name, "")
-    if tid == "" and expected_name.startswith("PYTRA_TID_"):
-        tid = expected_name
     if tid == "":
         class_type_id = _lookup_class_type_id(ctx, expected_name)
         if class_type_id is not None:
@@ -2655,7 +2661,7 @@ def _render_raise_value(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if isinstance(exc, dict):
         bn = _str(exc, "builtin_name")
         rc = _str(exc, "runtime_call")
-        if bn in ("BaseException", "Exception", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError") or rc == "std::runtime_error":
+        if (bn != "" and is_builtin_exception_type_name(bn)) or rc == "std::runtime_error":
             ea = _list(exc, "args")
             if len(ea) >= 1:
                 ctor_name = bn if bn != "" else "RuntimeError"

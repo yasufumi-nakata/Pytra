@@ -109,9 +109,21 @@
   },
   "skip_modules": [
     "pytra.built_in.",
-    "pytra.core.",
-    "pytra.std."
+    "pytra.core."
   ],
+  "skip_modules_exact": [
+    "pytra.std.glob",
+    "pytra.std.math",
+    "pytra.std.os",
+    "pytra.std.os_path",
+    "pytra.std.subprocess",
+    "pytra.std.sys",
+    "pytra.std.time"
+  ],
+  "call_adapters": {
+    "py_print": "multi_arg_print",
+    "py_len": "ref_arg"
+  },
   "implicit_promotions": [
     ["uint8", "int64"],
     ["int8", "int64"],

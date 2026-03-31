@@ -62,11 +62,16 @@
 
 `check_emitter_hardcode_lint.py` で検出される 4 カテゴリ 14 件の違反を解消する。
 
-1. [ ] [ID: P1-CPP-LINT-S1] class_name 違反 (3件) を解消する — 例外クラス名を mapping.json の types テーブルから導出、ArgumentParser 分岐を EAST3 の解決済み情報に置換
-2. [ ] [ID: P1-CPP-LINT-S2] runtime_symbol 違反 (1件) を解消する — `py_print`/`py_len` の文字列マッチを mapping.json の `call_adapters` に移行
-3. [ ] [ID: P1-CPP-LINT-S3] type_id 違反 (1件) を解消する — `PYTRA_TID_*` プレフィックス fallback を除去し、EAST3/linker の type_id 確定に依存
-4. [ ] [ID: P1-CPP-LINT-S4] skip_pure_python 違反 (9件) を解消する — `skip_modules` の `pytra.std.` 全 skip を撤廃し、`@extern` モジュールだけを個別 skip にする。小モジュール (env/template/timeit) から段階的に transpile 対象化
-5. [ ] [ID: P1-CPP-LINT-S5] fixture + sample parity に回帰がないことを確認する
+1. [x] [ID: P1-CPP-LINT-S1] class_name 違反 (3件) を解消する — 例外クラス名を mapping.json の types テーブルから導出、ArgumentParser 分岐を EAST3 の解決済み情報に置換
+   - 完了: C++ emitter の built-in exception 直書きを `toolchain2.link.type_id.is_builtin_exception_type_name(...)` ベースに置換し、`ArgumentParser.add_argument` の特殊分岐は `semantic_tag` と keyword 有無で判定するよう更新した
+2. [x] [ID: P1-CPP-LINT-S2] runtime_symbol 違反 (1件) を解消する — `py_print`/`py_len` の文字列マッチを mapping.json の `call_adapters` に移行
+   - 完了: `src/runtime/cpp/mapping.json` に `call_adapters` を追加し、C++ emitter は `multi_arg_print` / `ref_arg` adapter を参照して `py_print` / `py_len` の emit を決める形へ変更した
+3. [x] [ID: P1-CPP-LINT-S3] type_id 違反 (1件) を解消する — `PYTRA_TID_*` プレフィックス fallback を除去し、EAST3/linker の type_id 確定に依存
+   - 完了: `startswith("PYTRA_TID_")` fallback を撤去し、EAST3 が渡す exact `PYTRA_TID_*` 定数だけを明示マップで受理するよう整理した
+4. [x] [ID: P1-CPP-LINT-S4] skip_pure_python 違反 (9件) を解消する — `skip_modules` の `pytra.std.` 全 skip を撤廃し、`@extern` モジュールだけを個別 skip にする。小モジュール (env/template/timeit) から段階的に transpile 対象化
+   - 完了: `mapping.json` から `pytra.std.` prefix skip を削除し、`glob/math/os/os_path/subprocess/sys/time` だけを `skip_modules_exact` へ移した。`argparse/json/pathlib/re` の representative stdlib case が transpile 経路で通ることも確認した
+5. [x] [ID: P1-CPP-LINT-S5] fixture + sample parity に回帰がないことを確認する
+   - 完了: `python3 tools/check/check_emitter_hardcode_lint.py --lang cpp --verbose` で `0 件` を確認。`PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py --targets cpp --case-root sample --east3-opt-level 2` で `18/18 PASS`、stdlib representative 4 件（`argparse_extended`, `json_extended`, `pathlib_extended`, `re_extended`）も `4/4 PASS` を確認した
 
 ### P10-CPP-TYPETABLE-REDESIGN: g_type_table と destructor dispatch の再設計
 

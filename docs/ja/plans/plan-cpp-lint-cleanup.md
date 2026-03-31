@@ -62,3 +62,12 @@ mapping.json: skip_modules contains "pytra.std." which skips pure Python module 
 - class_name / runtime_symbol / type_id の修正は emitter.py のみ
 - skip_pure_python の修正は mapping.json + transpile 品質確認が必要
 - fixture + sample parity の全件確認が必要
+
+## 完了メモ
+
+- `toolchain2.link.type_id` に built-in exception 判定 helper を追加し、C++ emitter の `BaseException` / `ValueError` 直書きを排除した
+- `ArgumentParser.add_argument` の特殊整形は class 名ではなく `semantic_tag` と keyword call で判定するように変更した
+- `mapping.json` に `call_adapters` を追加し、`py_print` / `py_len` の emit 分岐は adapter ベースへ移行した
+- `PYTRA_TID_*` の prefix fallback は撤去し、EAST3 が渡す exact constant だけを明示マップで扱うよう整理した
+- `skip_modules` から `pytra.std.` prefix を外し、native のまま維持すべき `@extern` モジュールのみを `skip_modules_exact` へ移した
+- transpiled stdlib 経路で露出した regressions（`argparse_extended`, `json_extended`）も同時に修正し、`argparse/json/pathlib/re` の representative case を C++ parity で通した
