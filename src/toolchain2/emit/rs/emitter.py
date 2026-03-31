@@ -270,12 +270,35 @@ def _module_id_to_rs_mod_name(module_id: str) -> str:
     return safe_rs_ident(module_id.replace(".", "_"))
 
 
+def _has_python_module_file(module_id: str) -> bool:
+    if module_id == "":
+        return False
+    root = Path(__file__).resolve().parents[3]
+    module_py = root
+    for part in module_id.split("."):
+        module_py = module_py / part
+    module_py = module_py.with_suffix(".py")
+    return module_py.exists()
+
+
 def _is_transpiled_module(ctx: RsEmitContext, module_id: str) -> bool:
     if module_id == "" or module_id == ctx.module_id:
         return False
     if module_id.startswith("pytra."):
         return not should_skip_module(module_id, ctx.mapping)
     return True
+
+
+def _is_package_crate_module(ctx: RsEmitContext, module_id: str) -> bool:
+    if module_id == "" or module_id == ctx.module_id:
+        return False
+    if should_skip_module(module_id, ctx.mapping):
+        return False
+    if module_id in ("pytra", "pytra.std", "pytra.built_in", "toolchain2"):
+        return False
+    if module_id.startswith("pytra.") or module_id.startswith("toolchain2."):
+        return _has_python_module_file(module_id)
+    return False
 
 
 def _has_nested_python_module(module_id: str, child_name: str) -> bool:
@@ -634,6 +657,20 @@ def _emit_name(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     mapped = ctx.runtime_imports.get(name)
     if mapped is not None and mapped != "":
         return mapped
+    nested_captures = ctx.nested_capture_args.get(_rs_symbol_name(ctx, name), [])
+    if nested_captures:
+        sig = ctx.function_signatures.get(name)
+        arg_order = [arg for arg in _list(sig, "arg_order")] if isinstance(sig, dict) else []
+        wrapper_args: list[str] = []
+        forwarded_args: list[str] = []
+        for idx, arg in enumerate(arg_order):
+            if not isinstance(arg, str) or arg in ("", "self"):
+                continue
+            wrapper_name = "__arg_" + str(idx)
+            wrapper_args.append(wrapper_name)
+            forwarded_args.append(wrapper_name)
+        forwarded_args.extend(_rs_var_name(ctx, cap) for cap in nested_captures)
+        return "move |" + ", ".join(wrapper_args) + "| " + _rs_symbol_name(ctx, name) + "(" + ", ".join(forwarded_args) + ")"
     return _rs_symbol_name(ctx, name)
 
 
@@ -1235,12 +1272,14 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         qualified = obj_id + "." + attr if obj_id != "" else ""
         if qualified in ctx.mapping.calls:
             return ctx.mapping.calls[qualified]
+        if module_id == "os" and attr == "environ":
+            return "py_import_os().environ()"
         is_emitted_pytra_module = (
             module_id.startswith("pytra.")
             and not should_skip_module(module_id, ctx.mapping)
             and module_id not in ctx.mapping.non_native_modules
         )
-        if ctx.package_mode and _is_transpiled_module(ctx, module_id):
+        if ctx.package_mode and _is_package_crate_module(ctx, module_id):
             module_ref = safe_rs_ident(obj_id) if obj_id != "" else _module_id_to_rs_mod_name(module_id)
             return module_ref + "::" + safe_rs_ident(attr)
         if module_id == "pytra.std.sys":
@@ -2217,7 +2256,7 @@ def _emit_method_call(
             module_id.startswith("pytra.")
             and not should_skip_module(module_id, ctx.mapping)
         )
-        if ctx.package_mode and _is_transpiled_module(ctx, module_id):
+        if ctx.package_mode and _is_package_crate_module(ctx, module_id):
             rendered_args = [_emit_call_arg(ctx, a) for a in args]
             for kw in keywords:
                 if isinstance(kw, dict):
@@ -4282,6 +4321,38 @@ def _emit_body(ctx: RsEmitContext, body: list[JsonVal]) -> None:
         _emit_stmt(ctx, stmt)
 
 
+def _collect_called_nested_capture_names(
+    body: list[JsonVal],
+    known_nested: dict[str, dict[str, JsonVal]],
+) -> list[str]:
+    names: list[str] = []
+    seen: set[str] = set()
+
+    def _visit(node: JsonVal) -> None:
+        if isinstance(node, dict):
+            if _str(node, "kind") == "Call":
+                func = node.get("func")
+                if isinstance(func, dict) and _str(func, "kind") == "Name":
+                    fn_name = _str(func, "id")
+                    child = known_nested.get(fn_name)
+                    if isinstance(child, dict):
+                        child_capture_types = _dict(child, "capture_types")
+                        for capture_name in child_capture_types.keys():
+                            capture_name = str(capture_name)
+                            if capture_name != "" and capture_name not in seen:
+                                seen.add(capture_name)
+                                names.append(capture_name)
+            for value in node.values():
+                if isinstance(value, (dict, list)):
+                    _visit(value)
+        elif isinstance(node, list):
+            for item in node:
+                _visit(item)
+
+    _visit(body)
+    return names
+
+
 def _emit_stmt(ctx: RsEmitContext, node: JsonVal) -> None:
     if not isinstance(node, dict):
         return
@@ -4643,23 +4714,39 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
         capture_types = _dict(node, "capture_types")
         capture_names = [str(k) for k in capture_types.keys()]
         extra_params: list[str] = []
-        for capture_name in capture_names:
-            capture_type = _str(capture_types, capture_name)
-            if capture_type == "":
-                continue
-            extra_params.append(_rs_var_name(ctx, capture_name) + ": " + _rs_type_for_context(ctx, capture_type))
-            ctx.declared_vars.add(capture_name)
-            ctx.var_types[capture_name] = capture_type
-        all_params = params + extra_params
-        all_params_str = ", ".join(all_params)
         if is_recursive_nested:
+            known_nested: dict[str, dict[str, JsonVal]] = {}
+            for known_name, sig in ctx.function_signatures.items():
+                if isinstance(sig, dict) and _str(sig, "kind") in ("FunctionDef", "ClosureDef") and _dict(sig, "capture_types"):
+                    known_nested[known_name] = sig
+            for extra_capture_name in _collect_called_nested_capture_names(body, known_nested):
+                if extra_capture_name not in capture_names:
+                    capture_names.append(extra_capture_name)
+            for capture_name in capture_names:
+                capture_type = _str(capture_types, capture_name)
+                if capture_type == "":
+                    capture_type = ctx.var_types.get(capture_name, "")
+                if capture_type == "":
+                    continue
+                extra_params.append(_rs_var_name(ctx, capture_name) + ": " + _rs_type_for_context(ctx, capture_type))
+                ctx.declared_vars.add(capture_name)
+                ctx.var_types[capture_name] = capture_type
+            all_params = params + extra_params
+            all_params_str = ", ".join(all_params)
             ctx.current_nested_fn = ""
             ctx.nested_capture_args[fn_name] = capture_names
             _emit(ctx, "fn " + fn_name + "(" + all_params_str + ")" + ret_str + " {")
         else:
+            for capture_name in capture_names:
+                capture_type = _str(capture_types, capture_name)
+                if capture_type == "":
+                    continue
+                extra_params.append(_rs_var_name(ctx, capture_name) + ": " + _rs_type_for_context(ctx, capture_type))
+                ctx.declared_vars.add(capture_name)
+                ctx.var_types[capture_name] = capture_type
             ctx.current_nested_fn = fn_name
             ctx.nested_capture_args[fn_name] = capture_names
-            _emit(ctx, "let " + fn_name + " = |" + all_params_str + "|" + ret_str + " {")
+            _emit(ctx, "let " + fn_name + " = |" + ", ".join(params + extra_params) + "|" + ret_str + " {")
     else:
         ctx.current_nested_fn = ""
         _emit(ctx, fn_prefix + "fn " + fn_name + "(" + params_str + ")" + ret_str + " {")
@@ -5848,27 +5935,33 @@ def _collect_uses(ctx: RsEmitContext, meta: dict[str, JsonVal]) -> list[str]:
         module_id = binding.get("runtime_module_id")
         if not isinstance(module_id, str) or module_id == "":
             module_id = binding.get("module_id")
-        if not isinstance(module_id, str) or not _is_transpiled_module(ctx, module_id):
+        if not isinstance(module_id, str):
             continue
-        if module_id in ("pytra.typing", "pytra.types", "abc"):
-            continue
-        wildcard_line = "pub use crate::" + _module_id_to_rs_mod_name(module_id) + "::*;"
-        if wildcard_line not in seen:
-            seen.add(wildcard_line)
-            lines.append(wildcard_line)
         binding_kind = binding.get("binding_kind")
         local_name = binding.get("local_name")
         export_name = binding.get("export_name")
+        symbol_name = export_name if isinstance(export_name, str) and export_name != "" else local_name
+        symbol_name = _normalize_binding_name(symbol_name) if isinstance(symbol_name, str) else ""
+        nested_module_id = module_id + "." + symbol_name if symbol_name not in ("", "_") else ""
+        module_is_crate = _is_package_crate_module(ctx, module_id)
+        nested_is_crate = nested_module_id != "" and _is_package_crate_module(ctx, nested_module_id)
+        if not module_is_crate and not nested_is_crate:
+            continue
+        if module_id in ("pytra.typing", "pytra.types", "abc") and not nested_is_crate:
+            continue
+        if module_is_crate:
+            wildcard_line = "pub use crate::" + _module_id_to_rs_mod_name(module_id) + "::*;"
+            if wildcard_line not in seen:
+                seen.add(wildcard_line)
+                lines.append(wildcard_line)
         if binding_kind == "module" and isinstance(local_name, str) and local_name != "":
             line = "pub use crate::" + _module_id_to_rs_mod_name(module_id) + " as " + safe_rs_ident(local_name) + ";"
         elif binding_kind == "symbol" and isinstance(local_name, str) and local_name != "":
-            symbol_name = export_name if isinstance(export_name, str) and export_name != "" else local_name
-            symbol_name = _normalize_binding_name(symbol_name)
             local_name = _normalize_binding_name(local_name)
             if symbol_name in ("", "_") or local_name in ("", "_"):
                 continue
             module_leaf = module_id.rsplit(".", 1)[-1] if "." in module_id else module_id
-            if symbol_name == module_leaf:
+            if module_is_crate and symbol_name == module_leaf:
                 source_rs = _module_id_to_rs_mod_name(module_id)
                 line = "pub use crate::" + source_rs
                 local_rs = safe_rs_ident(local_name)
@@ -5879,8 +5972,7 @@ def _collect_uses(ctx: RsEmitContext, meta: dict[str, JsonVal]) -> list[str]:
                     seen.add(line)
                     lines.append(line)
                 continue
-            nested_module_id = module_id + "." + symbol_name
-            if _has_nested_python_module(module_id, symbol_name) and _is_transpiled_module(ctx, nested_module_id):
+            if nested_is_crate or (_has_nested_python_module(module_id, symbol_name) and _is_transpiled_module(ctx, nested_module_id)):
                 source_rs = _module_id_to_rs_mod_name(nested_module_id)
                 line = "pub use crate::" + source_rs
                 local_rs = safe_rs_ident(local_name)

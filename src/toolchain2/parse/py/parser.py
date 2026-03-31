@@ -2475,6 +2475,13 @@ def _parse_block_lines(
             pending_comments = []
             continue
 
+        # global / nonlocal
+        if s_clean.startswith("global ") or s_clean.startswith("nonlocal "):
+            i += 1
+            pending_trivia = []
+            pending_comments = []
+            continue
+
         # yield statement
         if s_clean.startswith("yield "):
             expr_text = s_clean[6:].strip()

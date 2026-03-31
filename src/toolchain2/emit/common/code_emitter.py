@@ -192,8 +192,18 @@ def build_import_alias_map(meta: dict[str, JsonVal]) -> dict[str, str]:
             info = isyms[alias]
             if isinstance(alias, str) and isinstance(info, dict):
                 mod = info.get("module")
+                name = info.get("name")
                 if isinstance(mod, str) and mod != "" and alias not in alias_map:
-                    alias_map[alias] = mod
+                    nested_mod = ""
+                    if isinstance(name, str) and name != "":
+                        root = Path(__file__).resolve().parents[3]
+                        nested_py = root
+                        for part in (mod + "." + name).split("."):
+                            nested_py = nested_py / part
+                        nested_py = nested_py.with_suffix(".py")
+                        if nested_py.exists():
+                            nested_mod = mod + "." + name
+                    alias_map[alias] = nested_mod if nested_mod != "" else mod
 
     return alias_map
 
