@@ -1,14 +1,20 @@
-# 計画: unittest のデータ駆動化 (P20-DATA-DRIVEN-TESTS)
+# 計画: パイプライン系テストのデータ駆動化 (P20-DATA-DRIVEN-TESTS)
 
 ## 背景
 
-`tools/unittest/` に 269 個のテストスクリプトがあり、増え続けている。しかし大半のテストの本質は:
+`tools/unittest/` に 267 個のテストスクリプトがある。このうち約 80 件は「Python ソース or EAST JSON を入力 → パイプライン実行 → 出力文字列 or JSON の一部一致を検証」というパターンで、Python コードで書く必要がない。
 
-- **入力**: Python ソース文字列 or EAST JSON
-- **操作**: parse / resolve / lower / emit のどれか
-- **期待**: 出力文字列 or JSON の一部一致
+対象:
+- `tools/unittest/ir/` — EAST パーサー / lowering テスト (~30件)
+- `tools/unittest/toolchain2/` — renderer / narrowing テスト (~18件)
+- `tools/unittest/emit/<lang>/test_py2*_smoke.py` — 言語別 smoke (~20件)
+- `tools/unittest/common/test_pylib_*.py` — pylib テスト (~10件)
 
-これは Python コードで書く必要がなく、JSON データで定義できる。テストスクリプトが増殖するのは「テストケース = Python コード」という前提のせいであり、設計を変えるべき。
+対象外（Python テストとして残す）:
+- `tools/unittest/tooling/` (92件) — CLI 契約テスト、ファイルレイアウト検証、manifest 検証。ファイルシステムの状態やプロセス実行を検証するもので、入力→出力パターンに載らない
+- `tools/unittest/selfhost/` (12件) — selfhost ビルド、golden 比較、stage2 diff。プロセス実行とファイル比較が主体
+- `tools/unittest/link/` (5件) — linker のグラフ解析、export 解決。複数モジュールの関係をテスト
+- `tools/unittest/common/` の一部 — backend registry メタデータ整合性、runtime symbol index 構造検証
 
 言語ごとの smoke テストスクリプトは spec-emitter-guide §13 で禁止されているが、同じ問題が `test_common_renderer.py` のメソッド増殖や `tools/unittest/emit/<lang>/` のスクリプト増殖として起きている。
 
@@ -115,14 +121,16 @@ test/cases/
 
 どちらも `pytest.mark.parametrize` で JSON ファイルを動的収集。ケース追加は JSON ファイルを置くだけ。
 
-### Python テストとして残すもの
+### Python テストとして残すもの (~190件)
 
-以下は JSON では表現しにくいため、Python テストとして残す:
+以下は JSON では表現しにくいため、`tools/unittest/` に Python テストとして残す:
 
+- `tools/unittest/tooling/` — CLI 契約、ファイルレイアウト、manifest 検証 (92件)
+- `tools/unittest/selfhost/` — selfhost ビルド、golden 比較 (12件)
+- `tools/unittest/link/` — linker グラフ解析、export 解決 (5件)
+- `tools/unittest/common/` の構造検証系 — backend registry、runtime symbol index 等
 - emitter コンテキスト（EmitContext）のカスタマイズが必要なテスト
 - 複数ファイル間の import 解決テスト
-- selfhost golden 比較テスト
-- ファイルシステム操作を伴うテスト（compile + run）
 
 ## 移行計画
 
@@ -135,23 +143,43 @@ test/cases/
 
 ### Phase 2: パイプライン層に横展開
 
-1. `test/cases/east3/` に JSON テストケースを作成（isinstance narrowing, closure capture 等）
+1. `test/cases/{east1,east2,east3}/` に JSON テストケースを作成（isinstance narrowing, closure capture 等）
 2. `tools/unittest/test_pipeline_cases.py` を実装
-3. `tools/unittest/toolchain2/` の対応テストを段階的に JSON に移行
+3. `tools/unittest/ir/` と `tools/unittest/toolchain2/` の対応テストを段階的に JSON に移行
 
-### Phase 3: 既存スクリプトの縮退
+### Phase 3: smoke テストの統合
 
-1. JSON に移行済みのテストメソッドを Python スクリプトから削除
-2. 空になったスクリプトを削除
-3. `tools/unittest/emit/<lang>/` の言語別スクリプトを段階的に JSON に移行
+1. `tools/unittest/emit/<lang>/test_py2*_smoke.py` (~20件) を `test/cases/emit/<lang>/` の module レベル JSON に移行
+2. `tools/unittest/common/test_pylib_*.py` (~10件) を `test/cases/east2/` or `east3/` に移行
+3. 空になったスクリプトを削除
+
+### Phase 3 完了後の姿
+
+```
+test/cases/           # ~80件の JSON テストケース（データ駆動）
+  east1/
+  east2/
+  east3/
+  emit/{cpp,go,rs,...}/
+
+tools/unittest/       # ~190件の Python テスト（残存）
+  test_emit_cases.py      # JSON テストランナー (emit)
+  test_pipeline_cases.py  # JSON テストランナー (pipeline)
+  tooling/                # CLI・manifest 契約テスト (残存)
+  selfhost/               # selfhost テスト (残存)
+  link/                   # linker テスト (残存)
+  common/                 # 構造検証系 (残存)
+  emit/cpp/               # EmitContext カスタマイズ系のみ残存
+  ir/                     # JSON 移行できなかった複雑テストのみ残存
+```
 
 ## 利点
 
-- ケース追加が JSON ファイル追加のみ（Python コード変更不要）
+- パイプライン系テスト (~80件) のケース追加が JSON ファイル追加のみ（Python コード変更不要）
 - テストケースの一覧性が高い（ファイル名で内容がわかる）
-- 言語横断で同じ仕組みを使える
-- テストスクリプトの肥大化を防げる
+- 言語横断で同じ仕組みを使える（smoke テスト 20件が JSON に統合）
 - agent がテストを追加するときに既存スクリプトを読む必要がない
+- ツール/CI 系テスト (~190件) は Python テストとして残し、無理に JSON 化しない
 
 ## ステータス
 
