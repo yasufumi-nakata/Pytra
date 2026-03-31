@@ -54,27 +54,22 @@ fn process(x: IntOrStr) {
 
 | 言語 | 変換先 | isinstance 相当 |
 |---|---|---|
-| C++ | `struct { std::variant<T1, T2, ...> value; }` | `std::holds_alternative<T>(v.value)` / `std::visit` |
+| C++ | `std::variant<T1, T2, ...>` (非再帰)、`struct { variant<...> }` (再帰) | `std::holds_alternative<T>(v)` / `std::visit` |
 
-C++ では union を `struct` + `std::variant` の組み合わせで表現する。`using` による型エイリアスではなく `struct` で包む理由は:
+C++ では非再帰と再帰で表現が異なる:
 
-- `using` は定義時点で右辺の型が完全でなければならず、再帰型で前方参照できない
-- `struct` は宣言した時点で型名が存在し、メンバ定義は閉じ括弧までに確定すればよい
-- 再帰型の variant メンバ（`shared_ptr<vector<Self>>`）はポインタなので `Self` のサイズが未確定でも OK
-
-非再帰・再帰を問わず `struct` + `variant` で統一することで、emitter の出力パターンが1つになる。
+- **非再帰** (`int | str`, `str | None`): `using` による型エイリアスで `std::variant` を直接使う
+- **再帰** (`JsonVal` のように自身を含む型): `struct` で包む。`using` は定義時点で右辺の型が完全でなければならず前方参照できないが、`struct` は宣言した時点で型名が存在し、メンバ定義は閉じ括弧までに確定すればよい。再帰 variant メンバは `shared_ptr` で包むことで RC 管理と前方参照を両立する
 
 例（C++、非再帰）:
 ```cpp
-struct IntOrStr {
-    std::variant<int64_t, std::string> value;
-};
+using IntOrStr = std::variant<int64_t, std::string>;
 
-void process(const IntOrStr& x) {
-    if (std::holds_alternative<int64_t>(x.value)) {
-        std::cout << std::get<int64_t>(x.value) << std::endl;
+void process(IntOrStr x) {
+    if (std::holds_alternative<int64_t>(x)) {
+        std::cout << std::get<int64_t>(x) << std::endl;
     } else {
-        std::cout << std::get<std::string>(x.value) << std::endl;
+        std::cout << std::get<std::string>(x) << std::endl;
     }
 }
 ```
@@ -94,8 +89,6 @@ struct JsonVal {
     > value;
 };
 ```
-
-再帰 variant は `shared_ptr` で包むことで RC 管理と前方参照を両立する。
 
 ### 3.3 sealed class / abstract record を持つ言語
 
