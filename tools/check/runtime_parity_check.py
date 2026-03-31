@@ -738,7 +738,12 @@ _CHANGELOG_HEADERS: dict[str, str] = {
 
 
 def _append_parity_changelog(target: str, case_root: str, prev_pass: int, curr_pass: int, now: str) -> None:
-    """Append a row to progress-preview/changelog.md when PASS count changes."""
+    """Append a row to progress-preview/changelog.md when PASS count changes.
+
+    changelog.md は全エージェント共有の単一ファイルのため、fcntl.flock で排他制御する。
+    """
+    import fcntl
+
     diff = curr_pass - prev_pass
     if diff == 0:
         return
@@ -747,25 +752,32 @@ def _append_parity_changelog(target: str, case_root: str, prev_pass: int, curr_p
     ts = now[:16]  # "YYYY-MM-DDTHH:MM"
     row = f"| {ts} | {target} | {case_root} | {prev_pass}→{curr_pass} ({sign}{diff}) | {note} |"
     sep_marker = "|---|---|---|---|---|"
-    for cl_path in _CHANGELOG_PATHS:
-        lang = "en" if "/en/" in cl_path.as_posix() else "ja"
-        header = _CHANGELOG_HEADERS[lang]
-        try:
-            cl_path.parent.mkdir(parents=True, exist_ok=True)
-            if not cl_path.exists():
-                content = header + row + "\n"
-            else:
-                content = cl_path.read_text(encoding="utf-8")
-                idx = content.find(sep_marker)
-                if idx == -1:
-                    content = content.rstrip("\n") + "\n" + row + "\n"
-                else:
-                    nl_pos = content.find("\n", idx)
-                    insert_after = (nl_pos + 1) if nl_pos != -1 else len(content)
-                    content = content[:insert_after] + row + "\n" + content[insert_after:]
-            cl_path.write_text(content, encoding="utf-8")
-        except Exception:
-            pass
+    lock_path = ROOT / ".parity-results" / ".changelog.lock"
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(lock_path, "w") as lf:
+            fcntl.flock(lf, fcntl.LOCK_EX)
+            for cl_path in _CHANGELOG_PATHS:
+                lang = "en" if "/en/" in cl_path.as_posix() else "ja"
+                header = _CHANGELOG_HEADERS[lang]
+                try:
+                    cl_path.parent.mkdir(parents=True, exist_ok=True)
+                    if not cl_path.exists():
+                        content = header + row + "\n"
+                    else:
+                        content = cl_path.read_text(encoding="utf-8")
+                        idx = content.find(sep_marker)
+                        if idx == -1:
+                            content = content.rstrip("\n") + "\n" + row + "\n"
+                        else:
+                            nl_pos = content.find("\n", idx)
+                            insert_after = (nl_pos + 1) if nl_pos != -1 else len(content)
+                            content = content[:insert_after] + row + "\n" + content[insert_after:]
+                    cl_path.write_text(content, encoding="utf-8")
+                except Exception:
+                    pass
+    except Exception:
+        pass
 
 
 def main() -> int:
