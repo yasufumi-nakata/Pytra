@@ -22,6 +22,7 @@ from pytra.std import sys
 from pytra.std import json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
+from pytra.std.subprocess import run as subprocess_run
 from toolchain2.common.jv import deep_copy_json
 from toolchain2.compile.lower import lower_east2_to_east3
 from toolchain2.link.linker import LinkResult
@@ -70,15 +71,11 @@ def _python() -> str:
 
 
 def _subprocess_env() -> dict[str, str]:
-    os_mod = __import__("os")
-    env = dict(os_mod.environ)
-    env["PYTHONPATH"] = str(_src_dir())
-    return env
+    return {"PYTHONPATH": str(_src_dir())}
 
 
 def _run_subprocess(cmd: list[str]) -> int:
-    subprocess_mod = __import__("subprocess")
-    result = subprocess_mod.run(cmd, env=_subprocess_env())
+    result = subprocess_run(cmd, env=_subprocess_env())
     return result.returncode
 
 

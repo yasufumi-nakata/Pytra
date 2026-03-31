@@ -147,22 +147,15 @@ def _canonical_type_name(ctx: CompileContext, value: JsonVal) -> str:
     norm = _normalize_type_name(value)
     if norm in ("", "unknown"):
         return norm
-    summary: Node = cast(dict[str, JsonVal], type_expr_summary_from_payload(ctx, None, norm))
-    mirror = ""
-    if "mirror" in summary:
-        mirror = _normalize_type_name(summary["mirror"])
+    summary = type_expr_summary_from_payload(ctx, None, norm)
+    mirror = _normalize_type_name(nd_get_str(summary, "mirror"))
     if mirror not in ("", "unknown"):
         return mirror
     return norm
 
 
 def _copy_node(node: Node) -> Node:
-    out: Node = {}
-    for key in node.keys():
-        key_s: str = cast(str, key)
-        value = node[key_s]
-        out[key_s] = value
-    return out
+    return jv_dict(deep_copy_json(node))
 
 
 def _drop_last_char(text: str) -> str:
@@ -188,7 +181,12 @@ def _tuple_element_types(type_name: JsonVal) -> list[str]:
 # ---------------------------------------------------------------------------
 
 def _is_any_like_type(type_name: JsonVal, ctx: CompileContext) -> bool:
-    return is_dynamic_like_summary(type_expr_summary_from_payload(ctx, None, type_name))
+    summary = type_expr_summary_from_payload(ctx, None, type_name)
+    category = nd_get_str(summary, "category")
+    if category == "dynamic" or category == "dynamic_union":
+        return True
+    mirror = nd_get_str(summary, "mirror")
+    return mirror == "Any" or mirror == "object" or mirror == "unknown"
 
 
 def _const_int_node(value: int) -> Node:
@@ -234,11 +232,7 @@ def _node_source_span(node: JsonVal) -> JsonVal:
 
 def _node_repr(node: JsonVal) -> str:
     if isinstance(node, dict):
-        dn: Node = node
-        if "repr" in dn:
-            repr_obj = dn["repr"]
-            if isinstance(repr_obj, str):
-                return repr_obj
+        return nd_get_str(node, "repr")
     return ""
 
 
@@ -274,56 +268,40 @@ def _make_boundary_expr(
 def _const_string_value(node: JsonVal) -> str:
     if not isinstance(node, dict):
         return ""
-    d: Node = node
-    kind = ""
-    if "kind" in d:
-        kind = jv_str(d["kind"])
-    value: JsonVal = None
-    if "value" in d:
-        value = d["value"]
+    d = node
+    kind = nd_kind(d)
+    value = d.get("value")
     if kind == CONSTANT and isinstance(value, str):
         return value
     if kind == CALL:
-        if "func" in d and isinstance(d["func"], dict):
-            fd: Node = d["func"]
-            fd_kind = jv_str(fd["kind"]) if "kind" in fd else ""
-            fd_id = jv_str(fd["id"]) if "id" in fd else ""
+        func = d.get("func")
+        if isinstance(func, dict):
+            fd = func
+            fd_kind = nd_kind(fd)
+            fd_id = nd_get_str(fd, "id")
             if fd_kind == NAME and fd_id == "str":
-                args: list[JsonVal] = []
-                if "args" in d:
-                    args_obj = d["args"]
-                    if isinstance(args_obj, list):
-                        args = cast(list[JsonVal], args_obj)
+                args = nd_get_list(d, "args")
                 if len(args) == 1:
-                    return _const_string_value(args[0])
+                    for arg in args:
+                        return _const_string_value(arg)
     return ""
 
 
 def _is_string_index_expr(node: JsonVal) -> bool:
     if not isinstance(node, dict):
         return False
-    nd: Node = node
-    if ("kind" not in nd) or nd["kind"] != SUBSCRIPT:
+    nd = node
+    if nd_kind(nd) != SUBSCRIPT:
         return False
-    value_node: JsonVal = None
-    if "value" in nd:
-        value_node = nd["value"]
-    slice_node: JsonVal = None
-    if "slice" in nd:
-        slice_node = nd["slice"]
+    value_node = nd.get("value")
+    slice_node = nd.get("slice")
     if isinstance(slice_node, dict):
-        slice_kind = ""
-        if "kind" in slice_node:
-            slice_kind = jv_str(slice_node["kind"])
+        slice_kind = nd_kind(slice_node)
         if slice_kind == "Slice":
             return False
     if not isinstance(value_node, dict):
         return False
-    value_dict: Node = cast(dict[str, JsonVal], value_node)
-    value_type: JsonVal = None
-    if "resolved_type" in value_dict:
-        value_type = value_dict["resolved_type"]
-    return _normalize_type_name(value_type) == "str"
+    return _normalize_type_name(nd_get_str(value_node, "resolved_type")) == "str"
 
 
 def _make_named_type_expr(name: str) -> Node:
@@ -334,9 +312,7 @@ def _make_named_type_expr(name: str) -> Node:
 
 
 def _assignment_storage_type_override(stmt: Node, value_expr: JsonVal, target_type: str) -> str:
-    stmt_kind = ""
-    if "kind" in stmt:
-        stmt_kind = jv_str(stmt["kind"])
+    stmt_kind = nd_kind(stmt)
     if stmt_kind != ANN_ASSIGN:
         return ""
     if target_type not in ("uint8", "byte"):
@@ -411,16 +387,16 @@ def _list_inner_type(type_name: str) -> str:
 def _wrap_list_literal_for_target_type(value_expr: JsonVal, target_type: str, *, ctx: CompileContext) -> JsonVal:
     if not isinstance(value_expr, dict):
         return value_expr
-    node: Node = value_expr
-    node_kind = node["kind"] if "kind" in node else None
+    node = cast(dict[str, JsonVal], value_expr)
+    node_kind = node.get("kind")
     if node_kind != LIST:
         return value_expr
     inner_type = _list_inner_type(target_type)
     if inner_type == "":
         return value_expr
     out: Node = _copy_node(node)
-    elems_obj = node["elements"] if "elements" in node else None
-    if isinstance(elems_obj, list):
+    elems_obj = nd_get_list(node, "elements")
+    if len(elems_obj) > 0 or "elements" in node:
         elems_out: list[JsonVal] = []
         for item in elems_obj:
             if isinstance(item, dict):
@@ -436,25 +412,25 @@ def _wrap_list_literal_for_target_type(value_expr: JsonVal, target_type: str, *,
 def _wrap_dict_literal_for_target_type(value_expr: JsonVal, target_type: str, *, ctx: CompileContext) -> JsonVal:
     if not isinstance(value_expr, dict):
         return value_expr
-    node: Node = value_expr
-    node_kind = node["kind"] if "kind" in node else None
+    node = cast(dict[str, JsonVal], value_expr)
+    node_kind = node.get("kind")
     if node_kind != DICT:
         return value_expr
     key_type, val_type = _split_dict_types(target_type)
     if key_type == "" or val_type == "":
         return value_expr
     out: Node = _copy_node(node)
-    entries_obj = node["entries"] if "entries" in node else None
-    if isinstance(entries_obj, list):
+    entries_obj = nd_get_list(node, "entries")
+    if len(entries_obj) > 0 or "entries" in node:
         wrapped_entries: list[JsonVal] = []
         for entry in entries_obj:
             if not isinstance(entry, dict):
                 wrapped_entries.append(entry)
                 continue
-            entry_node: Node = cast(dict[str, JsonVal], entry)
+            entry_node: Node = entry
             entry_out: Node = _copy_node(entry_node)
-            key_node = entry_node["key"] if "key" in entry_node else None
-            value_node = entry_node["value"] if "value" in entry_node else None
+            key_node = entry_node.get("key")
+            value_node = entry_node.get("value")
             if isinstance(key_node, dict):
                 entry_out["key"] = _wrap_value_for_target_type(key_node, key_type, ctx=ctx)
             if isinstance(value_node, dict):
@@ -462,9 +438,9 @@ def _wrap_dict_literal_for_target_type(value_expr: JsonVal, target_type: str, *,
             wrapped_entries.append(entry_out)
         out["entries"] = wrapped_entries
     else:
-        keys_obj = node["keys"] if "keys" in node else None
-        values_obj = node["values"] if "values" in node else None
-        if isinstance(keys_obj, list):
+        keys_obj = nd_get_list(node, "keys")
+        values_obj = nd_get_list(node, "values")
+        if len(keys_obj) > 0 or "keys" in node:
             keys_out: list[JsonVal] = []
             for item in keys_obj:
                 if isinstance(item, dict):
@@ -472,7 +448,7 @@ def _wrap_dict_literal_for_target_type(value_expr: JsonVal, target_type: str, *,
                 else:
                     keys_out.append(item)
             out["keys"] = keys_out
-        if isinstance(values_obj, list):
+        if len(values_obj) > 0 or "values" in node:
             values_out: list[JsonVal] = []
             for item in values_obj:
                 if isinstance(item, dict):
@@ -488,15 +464,11 @@ def _wrap_dict_literal_for_target_type(value_expr: JsonVal, target_type: str, *,
 def _is_none_literal(node: JsonVal) -> bool:
     if not isinstance(node, dict):
         return False
-    nd: Node = node
-    kind = ""
-    if "kind" in nd:
-        kind = jv_str(nd["kind"])
+    nd = cast(dict[str, JsonVal], node)
+    kind = jv_str(nd.get("kind", ""))
     if kind != CONSTANT:
         return False
-    value: JsonVal = None
-    if "value" in nd:
-        value = nd["value"]
+    value = nd.get("value")
     return value is None
 
 
@@ -535,20 +507,18 @@ def _wrap_value_for_target_type(
     *,
     target_type_expr: JsonVal = None,
 ) -> JsonVal:
-    target_summary: Node = cast(dict[str, JsonVal], type_expr_summary_from_payload(ctx, target_type_expr, target_type))
-    target_mirror = target_summary["mirror"] if "mirror" in target_summary else None
-    target_t = _normalize_type_name(target_mirror)
+    target_summary = type_expr_summary_from_payload(ctx, target_type_expr, target_type)
+    target_t = _normalize_type_name(nd_get_str(target_summary, "mirror"))
     if target_t == "unknown":
         return value_expr
-    value_summary: Node = cast(dict[str, JsonVal], expr_type_summary(ctx, value_expr))
+    value_summary = expr_type_summary(ctx, value_expr)
     target_contains_dynamic_lane = (
         "Any" in target_t or "object" in target_t or "unknown" in target_t
     )
-    value_mirror = value_summary["mirror"] if "mirror" in value_summary else None
-    value_t = _normalize_type_name(value_mirror)
+    value_t = _normalize_type_name(nd_get_str(value_summary, "mirror"))
     if target_t in ("dict", "list", "set", "tuple") and value_t.startswith(target_t + "["):
         target_t = value_t
-        target_summary = cast(dict[str, JsonVal], type_expr_summary_from_payload(ctx, None, target_t))
+        target_summary = type_expr_summary_from_payload(ctx, None, target_t)
     value_requires_runtime_unbox = isinstance(value_expr, dict) and value_expr.get("yields_dynamic") is True
     storage_type = ""
     if isinstance(value_expr, dict) and jv_str(value_expr.get("kind", "")) == NAME:
@@ -577,8 +547,8 @@ def _wrap_value_for_target_type(
         and unbox_target != ""
         and storage_type != unbox_target
     ):
-        storage_summary: Node = type_expr_summary_from_payload(ctx, None, storage_type)
-        unbox_summary: Node = type_expr_summary_from_payload(ctx, None, unbox_target)
+        storage_summary = type_expr_summary_from_payload(ctx, None, storage_type)
+        unbox_summary = type_expr_summary_from_payload(ctx, None, unbox_target)
         out = _make_boundary_expr(
             kind="Unbox", value_key="value", value_node=value_expr,
             resolved_type=unbox_target, source_expr=value_expr,
@@ -590,7 +560,7 @@ def _wrap_value_for_target_type(
         set_type_expr_summary(out, unbox_summary)
         return out
     if storage_requires_runtime_unbox:
-        storage_summary: Node = type_expr_summary_from_payload(ctx, None, storage_type)
+        storage_summary = type_expr_summary_from_payload(ctx, None, storage_type)
         out = _make_boundary_expr(
             kind="Unbox", value_key="value", value_node=value_expr,
             resolved_type=target_t, source_expr=value_expr,
@@ -660,23 +630,19 @@ def _wrap_value_for_target_type(
 
 def _resolve_assign_target_type_summary(stmt: Node, ctx: CompileContext) -> Node:
     decl_expr = stmt.get("decl_type_expr")
-    summary: Node = type_expr_summary_from_payload(ctx, decl_expr, stmt.get("decl_type"))
-    category = summary["category"] if "category" in summary else "unknown"
-    if jv_str(category) != "unknown":
+    summary = type_expr_summary_from_payload(ctx, decl_expr, stmt.get("decl_type"))
+    if nd_get_str(summary, "category") != "unknown":
         return summary
     ann_expr = stmt.get("annotation_type_expr")
     summary = type_expr_summary_from_payload(ctx, ann_expr, stmt.get("annotation"))
-    category = summary["category"] if "category" in summary else "unknown"
-    if jv_str(category) != "unknown":
+    if nd_get_str(summary, "category") != "unknown":
         return summary
     target_obj = stmt.get("target")
     if isinstance(target_obj, dict):
-        tod: Node = cast(dict[str, JsonVal], target_obj)
+        tod: Node = target_obj
         summary = type_expr_summary_from_payload(ctx, tod.get("type_expr"), tod.get("resolved_type"))
-        category = summary["category"] if "category" in summary else "unknown"
-        if jv_str(category) != "unknown":
-            mirror_val = summary["mirror"] if "mirror" in summary else None
-            mirror = _normalize_type_name(mirror_val)
+        if nd_get_str(summary, "category") != "unknown":
+            mirror = _normalize_type_name(nd_get_str(summary, "mirror"))
             if tod.get("kind") != TUPLE or "unknown" not in mirror:
                 return summary
         inferred_tuple_type = _infer_tuple_assign_target_type(stmt)
@@ -728,8 +694,7 @@ def _infer_tuple_assign_target_type(stmt: Node) -> str:
 
 def _resolve_assign_target_type(stmt: Node, ctx: CompileContext) -> str:
     summary = _resolve_assign_target_type_summary(stmt, ctx)
-    mirror_val = summary["mirror"] if "mirror" in summary else None
-    mirror = _normalize_type_name(mirror_val)
+    mirror = _normalize_type_name(nd_get_str(summary, "mirror"))
     if mirror != "unknown":
         return mirror
     tuple_type = _infer_tuple_assign_target_type(stmt)
