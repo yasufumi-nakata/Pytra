@@ -20,6 +20,17 @@
 
 ## 未完了タスク
 
+### P0-CLI2-RS-DECOUPLE: pytra-cli2.py から Rust emit 固有 import を分離
+
+文脈: [docs/ja/plans/plan-cli2-rs-decouple.md](../plans/plan-cli2-rs-decouple.md)
+
+`pytra-cli2.py` は C++ emit 経路を切り離した後も Rust emit の top-level import を残しており、C++ selfhost build で不要な Rust emitter / manifest loader を include graph に引き込んでいる。Rust emit も subprocess 委譲へ揃える。
+
+1. [x] [ID: P0-CLI2-RS-DECOUPLE-S1] Rust emit 用 CLI を `toolchain2.emit.rs` 側へ追加し、manifest loader / package emit helper を移す
+2. [x] [ID: P0-CLI2-RS-DECOUPLE-S2] `pytra-cli2.py` の Rust emit/build 経路を subprocess 委譲へ変更し、top-level import を削除する
+3. [x] [ID: P0-CLI2-RS-DECOUPLE-S3] `pytra-cli2.py --target rs` の representative build と C++ selfhost header で非流入を確認する
+   - 完了: `src/toolchain2/emit/rs/cli.py` を追加して Rust emit helper を移し、`pytra-cli2.py` は `python3 -m toolchain2.emit.rs.cli` への subprocess 委譲へ変更した。`PYTHONPATH=src python3 src/pytra-cli2.py -build sample/py/17_monte_carlo_pi.py --target rs --rs-package -o work/tmp/cli2_rs_emit` は成功し、C++ selfhost 用に生成した `work/selfhost/build/cpp/emit/pytra_cli2.h` から `toolchain2/emit/rs/emitter.h` と `shutil.h` の流入が消えていることを確認した
+
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す
 
 文脈: [docs/ja/plans/p4-cpp-selfhost.md](../plans/p4-cpp-selfhost.md)

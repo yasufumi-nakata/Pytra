@@ -22,7 +22,6 @@ from pytra.std import sys
 from pytra.std import json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
-from pytra.std.subprocess import run as subprocess_run
 from toolchain2.common.jv import deep_copy_json
 from toolchain2.compile.lower import lower_east2_to_east3
 from toolchain2.link.linker import LinkResult
@@ -41,8 +40,21 @@ from toolchain2.resolve.py.resolver import resolve_file
 
 
 def _repo_root() -> Path:
-    """Return repository root anchored to this script location."""
-    return Path(__file__).resolve().parent.parent
+    """Return repository root from sys.path first, then cwd walk fallback."""
+    for path_entry in sys.path:
+        candidate = Path(path_entry).resolve()
+        if candidate.joinpath("pytra-cli2.py").exists():
+            return candidate.parent
+        if candidate.joinpath("src").joinpath("pytra-cli2.py").exists():
+            return candidate
+    cur = Path(".").resolve()
+    while True:
+        if cur.joinpath("src").joinpath("pytra-cli2.py").exists():
+            return cur
+        parent = cur.parent
+        if str(parent) == str(cur):
+            return Path(".").resolve()
+        cur = parent
 
 
 def _unsupported_target_attr(module_name: str, attr_name: str) -> None:
@@ -58,11 +70,15 @@ def _python() -> str:
 
 
 def _subprocess_env() -> dict[str, str]:
-    return {"PYTHONPATH": str(_src_dir())}
+    os_mod = __import__("os")
+    env = dict(os_mod.environ)
+    env["PYTHONPATH"] = str(_src_dir())
+    return env
 
 
 def _run_subprocess(cmd: list[str]) -> int:
-    result = subprocess_run(cmd, env=_subprocess_env())
+    subprocess_mod = __import__("subprocess")
+    result = subprocess_mod.run(cmd, env=_subprocess_env())
     return result.returncode
 
 
@@ -770,50 +786,12 @@ def cmd_emit(args: list[str]) -> int:
     return 1
 
 
-def _fqcn_to_tid_const(fqcn: str) -> str:
-    """Convert a fully-qualified class name to a Rust TID constant name.
-
-    Examples:
-      "trait_basic.Circle"                     → "TRAIT_BASIC_CIRCLE_TID"
-      "pytra.built_in.error.ValueError"        → "PYTRA_BUILT_IN_ERROR_VALUE_ERROR_TID"
-      "BaseException"                           → "BASE_EXCEPTION_TID"
-    """
-    import re
-    # Replace dots with underscores, convert CamelCase to SCREAMING_SNAKE
-    flat = fqcn.replace(".", "_")
-    # Insert underscore before sequences of uppercase letters preceded by lowercase (CamelCase split)
-    snake = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", flat)
-    snake = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", snake)
-    return snake.upper() + "_TID"
-
-
-def _generate_type_id_table_rs(type_id_table: dict[str, int]) -> str:
-    _ = type_id_table
-    _unsupported_target_attr("toolchain2.emit.rs.emitter", "emit_rs_module")
-    return ""
-
-
-def _copy_rs_runtime_files(dst_dir: Path) -> int:
-    _ = dst_dir
-    _unsupported_target_attr("toolchain2.emit.rs.emitter", "emit_rs_module")
-    return 0
-
-
-def _write_rs_package_files(
-    _manifest_doc: dict[str, JsonVal],
-    _linked_modules: list[LinkedModule],
-    _output_dir: Path,
-) -> int:
-    _unsupported_target_attr("toolchain2.emit.rs.emitter", "emit_rs_module")
-    return 0
-
-
-def _emit_rs(_manifest_path: Path, _output_dir: Path, *, package_mode: bool = False) -> int:
-    """Rust emit: linked output → Rust source files."""
-    _unused_package_mode = package_mode
-    _ = _unused_package_mode
-    _unsupported_target_attr("toolchain2.emit.rs.emitter", "emit_rs_module")
-    return 1
+def _emit_rs(manifest_path: Path, output_dir: Path, *, package_mode: bool = False) -> int:
+    """Rust emit: linked output → subprocess delegated Rust emitter."""
+    cmd = [_python(), "-m", "toolchain2.emit.rs.cli", str(manifest_path), "--output-dir", str(output_dir)]
+    if package_mode:
+        cmd.append("--package")
+    return _run_subprocess(cmd)
 
 
 def _emit_nim(manifest_path: Path, output_dir: Path) -> int:
@@ -901,10 +879,6 @@ def cmd_build(args: list[str]) -> int:
 
 def _build_pipeline(inputs: list[str], output_dir_text: str, target: str, *, rs_package: bool = False) -> int:
     """Run the full build pipeline in-memory."""
-    if target != "cpp":
-        _ = rs_package
-        _unsupported_target_attr("toolchain2.emit." + target, "selfhost_build")
-        return 1
     # 1. Parse
     east1_docs = _collect_build_sources(inputs)
     print("build: parsed " + str(len(east1_docs)) + " files")
@@ -923,13 +897,13 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str, *, rs_
     # 3. Compile
     east3_docs: list[tuple[str, dict[str, JsonVal]]] = []
     for inp, east2_doc in east2_docs:
-        east3_docs.append((inp, _lower_cpp_doc(east2_doc)))
+        east3_docs.append((inp, lower_east2_to_east3(east2_doc, target_language=target)))
     print("build: compiled " + str(len(east3_docs)) + " files")
 
     # 4. Optimize
     east3_opt_docs: list[tuple[str, dict[str, JsonVal]]] = []
     for inp, east3_doc in east3_docs:
-        east3_opt_docs.append((inp, _optimize_cpp_doc(east3_doc)))
+        east3_opt_docs.append((inp, optimize_east3_doc_only(east3_doc, opt_level=1)))
     print("build: optimized " + str(len(east3_opt_docs)) + " files")
 
     # 5. Link — write east3-opt to temp files for link_modules
@@ -980,6 +954,18 @@ def _build_pipeline(inputs: list[str], output_dir_text: str, target: str, *, rs_
 
     linked_dir = work_dir.joinpath("linked")
     _write_link_output(link_result, linked_dir, True)
+    if target == "rs":
+        return _emit_rs(linked_dir.joinpath("manifest.json"), output_dir, package_mode=rs_package)
+    if target == "go":
+        return _emit_go(linked_dir.joinpath("manifest.json"), output_dir)
+    if target == "cs":
+        return _emit_cs(linked_dir.joinpath("manifest.json"), output_dir)
+    if target == "java":
+        return _emit_java(linked_dir.joinpath("manifest.json"), output_dir)
+    if target == "ts" or target == "js":
+        return _emit_ts(linked_dir.joinpath("manifest.json"), output_dir, strip_types=(target == "js"))
+    if target == "nim":
+        return _emit_nim(linked_dir.joinpath("manifest.json"), output_dir)
     return _emit_cpp(linked_dir.joinpath("manifest.json"), output_dir)
 
 

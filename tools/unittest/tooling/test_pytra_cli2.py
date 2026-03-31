@@ -44,6 +44,9 @@ class PytraCli2Test(unittest.TestCase):
         source = _CLI2_PATH.read_text(encoding="utf-8")
         self.assertNotIn("toolchain2.emit.cpp.runtime_bundle", source)
         self.assertIn('"-m", "toolchain2.emit.cpp.cli"', source)
+        self.assertNotIn("from toolchain2.emit.rs.emitter import", source)
+        self.assertNotIn("from toolchain2.link.manifest_loader import", source)
+        self.assertIn('"-m", "toolchain2.emit.rs.cli"', source)
 
 
 if __name__ == "__main__":
