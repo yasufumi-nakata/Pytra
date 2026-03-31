@@ -717,11 +717,24 @@ _CHANGELOG_PATHS = [
     ROOT / "docs" / "en" / "progress-preview" / "changelog.md",
 ]
 
-_CHANGELOG_HEADER = (
-    "# Parity Changelog\n\n"
-    "| 日時 | 言語 | case-root | 変化 | 備考 |\n"
-    "|---|---|---|---|---|\n"
-)
+_CHANGELOG_HEADERS: dict[str, str] = {
+    "ja": (
+        '<a href="../../en/progress-preview/changelog.md">\n'
+        '  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">\n'
+        '</a>\n\n'
+        "# Parity Changelog\n\n"
+        "| 日時 | 言語 | case-root | 変化 | 備考 |\n"
+        "|---|---|---|---|---|\n"
+    ),
+    "en": (
+        '<a href="../../ja/progress-preview/changelog.md">\n'
+        '  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">\n'
+        '</a>\n\n'
+        "# Parity Changelog\n\n"
+        "| Date | Language | case-root | Change | Note |\n"
+        "|---|---|---|---|---|\n"
+    ),
+}
 
 
 def _append_parity_changelog(target: str, case_root: str, prev_pass: int, curr_pass: int, now: str) -> None:
@@ -735,10 +748,12 @@ def _append_parity_changelog(target: str, case_root: str, prev_pass: int, curr_p
     row = f"| {ts} | {target} | {case_root} | {prev_pass}→{curr_pass} ({sign}{diff}) | {note} |"
     sep_marker = "|---|---|---|---|---|"
     for cl_path in _CHANGELOG_PATHS:
+        lang = "en" if "/en/" in cl_path.as_posix() else "ja"
+        header = _CHANGELOG_HEADERS[lang]
         try:
             cl_path.parent.mkdir(parents=True, exist_ok=True)
             if not cl_path.exists():
-                content = _CHANGELOG_HEADER + row + "\n"
+                content = header + row + "\n"
             else:
                 content = cl_path.read_text(encoding="utf-8")
                 idx = content.find(sep_marker)
