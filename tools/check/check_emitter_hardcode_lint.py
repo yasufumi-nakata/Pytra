@@ -211,7 +211,8 @@ def collect_hits(
     # 除外ファイル:
     #   code_emitter.py  — mapping 読み込み共通基盤（禁止パターンの定義場所）
     #   types.py         — 型写像テーブル（"Exception": "Error" 等は正当）
-    EXCLUDE_NAMES = {"code_emitter.py", "types.py", "__init__.py"}
+    #   cli.py           — CLI エントリポイント（if __name__ == "__main__" は Python 標準ガード）
+    EXCLUDE_NAMES = {"code_emitter.py", "types.py", "__init__.py", "cli.py"}
 
     files = sorted(
         f for f in EMIT_DIR.rglob("*.py")
