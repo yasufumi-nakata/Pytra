@@ -27,6 +27,14 @@
 
 ## 未完了タスク
 
+### P0-RS-OBJECT-CONTAINER: object_container_access fixture の Rust parity を通す
+
+文脈: [docs/ja/plans/plan-object-container-access-parity.md](../plans/plan-object-container-access-parity.md)
+
+selfhost で必要な動的型パターン（`dict[str, object]` の items() unpack / get()、`list[object]` の index、str 不要 unbox、`set[tuple[str,str]]`）を網羅する fixture。EAST3 には全て情報が載っている。
+
+1. [ ] [ID: P0-RS-OBJ-CONT-S1] `object_container_access` fixture が Rust で compile + run parity PASS することを確認する（失敗なら emitter を修正）
+
 ### P0-RS-TUPLE-UNPACK: tuple_unpack_variants fixture の Rust parity を通す
 
 文脈: [docs/ja/plans/plan-east-tuple-unpack-bugs.md](../plans/plan-east-tuple-unpack-bugs.md)

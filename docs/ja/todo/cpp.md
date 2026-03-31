@@ -20,6 +20,14 @@
 
 ## 未完了タスク
 
+### P0-CPP-OBJECT-CONTAINER: object_container_access fixture の C++ parity を通す
+
+文脈: [docs/ja/plans/plan-object-container-access-parity.md](../plans/plan-object-container-access-parity.md)
+
+selfhost で必要な動的型パターン（`dict[str, object]` の items() unpack / get()、`list[object]` の index、str 不要 unbox、`set[tuple[str,str]]`）を網羅する fixture。EAST3 には全て情報が載っている。selfhost build (S5) の前提。
+
+1. [ ] [ID: P0-CPP-OBJ-CONT-S1] `object_container_access` fixture が C++ で compile + run parity PASS することを確認する（失敗なら emitter を修正）
+
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す
 
 文脈: [docs/ja/plans/p4-cpp-selfhost.md](../plans/p4-cpp-selfhost.md)
