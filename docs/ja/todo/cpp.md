@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-31
+最終更新: 2026-04-02
 
 ## 運用ルール
 
@@ -76,6 +76,16 @@ selfhost で必要な動的型パターン（`dict[str, object]` の items() unp
 
 1. [x] [ID: P0-CPP-OBJ-CONT-S1] `object_container_access` fixture が C++ で compile + run parity PASS することを確認する（失敗なら emitter を修正）
    - 完了: `src/runtime/cpp/core/py_types.h` に `std::tuple<...>` 向け hash 特殊化を追加し、`set[tuple[str, str]]` の compile failure を解消した。`PYTHONPATH=/workspace/Pytra/src:/workspace/Pytra/tools/check python3 tools/check/runtime_parity_check_fast.py --targets cpp object_container_access --cmd-timeout-sec 120` で parity PASS を確認し、`tools/unittest/emit/cpp/test_object_t.py` に tuple-key set の runtime 回帰テストを追加した。
+
+### P0-CPP-OPT-VARIANT: optional\<variant\> 移行後の JSON stdlib parity 回復
+
+文脈: [docs/ja/plans/p0-cpp-optional-variant-parity.md](../plans/p0-cpp-optional-variant-parity.md)
+
+monostate → `std::optional<std::variant<...>>` 移行（commit f8c4c618b）で JSON stdlib 3件が compile failure。JsonValue の resolved_type が展開されて `list<optional<variant<...>>>` になるのが原因。
+
+1. [ ] [ID: P0-CPP-OPT-VAR-S1] JsonValue の resolved_type 展開が optional\<variant\> に巻き込まれる原因を調査し、NominalAdtType の型写像を修正する
+2. [ ] [ID: P0-CPP-OPT-VAR-S2] json_extended / json_indent_optional / json_nested が C++ parity PASS することを確認する
+3. [ ] [ID: P0-CPP-OPT-VAR-S3] fixture + sample に回帰がないことを確認する
 
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す
 
