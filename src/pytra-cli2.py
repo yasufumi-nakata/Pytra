@@ -38,6 +38,7 @@ from toolchain2.resolve.py.builtin_registry import load_builtin_registry
 from toolchain2.resolve.py.resolver import east2_output_path_from_east1
 from toolchain2.resolve.py.resolver import resolve_east1_to_east2
 from toolchain2.resolve.py.resolver import resolve_file
+from toolchain2.emit.cs.emitter import emit_cs_module
 
 
 def _repo_root() -> Path:
@@ -84,8 +85,7 @@ def _java_module_class_name(_module_id: str) -> str:
 
 
 def _emit_cs_module(_east_doc: dict[str, JsonVal]) -> str:
-    _unsupported_target_attr("toolchain2.emit.cs.emitter", "emit_cs_module")
-    return ""
+    return emit_cs_module(_east_doc)
 
 
 def _emit_rs_module(_east_doc: dict[str, JsonVal], package_mode: bool = False) -> str:
@@ -133,17 +133,24 @@ def _copy_go_runtime_files(output_dir: Path) -> int:
 
 
 def _copy_cs_runtime_files(output_dir: Path) -> int:
-    """Copy C# runtime files into the emit directory, preserving subdirectories."""
+    """Copy C# runtime files into the emit directory."""
     runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("cs")
     copied = 0
     if not runtime_root.exists():
         return copied
-    for cs_file in runtime_root.glob("**/*.cs"):
-        rel_text = str(cs_file).replace(str(runtime_root) + "/", "")
-        dst = output_dir.joinpath(rel_text)
+    built_in = runtime_root.joinpath("built_in").joinpath("py_runtime.cs")
+    if built_in.exists():
+        dst = output_dir.joinpath("built_in").joinpath("py_runtime.cs")
         dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_text(cs_file.read_text(encoding="utf-8"), encoding="utf-8")
+        dst.write_text(built_in.read_text(encoding="utf-8"), encoding="utf-8")
         copied += 1
+    std_dir = runtime_root.joinpath("std")
+    if std_dir.exists():
+        for cs_file in std_dir.glob("*.cs"):
+            dst2 = output_dir.joinpath("std").joinpath(cs_file.name)
+            dst2.parent.mkdir(parents=True, exist_ok=True)
+            dst2.write_text(cs_file.read_text(encoding="utf-8"), encoding="utf-8")
+            copied += 1
     return copied
 
 
@@ -672,10 +679,43 @@ def _emit_go(manifest_path: Path, output_dir: Path) -> int:
 
 def _emit_cs(manifest_path: Path, output_dir: Path) -> int:
     """C# emit: linked output → C# source files."""
-    _ = manifest_path
-    _ = output_dir
-    _unsupported_target_attr("toolchain2.emit.cs.emitter", "emit_cs_module")
-    return 1
+    manifest_doc = json.loads_obj(manifest_path.read_text(encoding="utf-8"))
+    if manifest_doc is None:
+        print("error: invalid manifest: " + str(manifest_path))
+        return 1
+    modules = manifest_doc.get_arr("modules")
+    if modules is None:
+        print("error: invalid manifest.modules: " + str(manifest_path))
+        return 1
+    output_dir.mkdir(parents=True, exist_ok=True)
+    emitted = 0
+    for item in modules.raw:
+        item_obj = json.JsonValue(item).as_obj()
+        if item_obj is None:
+            continue
+        module_id = item_obj.get_str("module_id")
+        rel_output = item_obj.get_str("output")
+        if module_id is None or module_id == "":
+            continue
+        if rel_output is None or rel_output == "":
+            continue
+        east_path = manifest_path.parent.joinpath(rel_output)
+        if not east_path.exists():
+            print("error: linked east3 missing: " + str(east_path))
+            return 1
+        east_doc_obj = json.loads_obj(east_path.read_text(encoding="utf-8"))
+        if east_doc_obj is None:
+            print("error: invalid east3 document: " + str(east_path))
+            return 1
+        code = _emit_cs_module(east_doc_obj.raw)
+        if code.strip() == "":
+            continue
+        out_path = output_dir.joinpath(module_id.replace(".", "_") + ".cs")
+        out_path.write_text(code, encoding="utf-8")
+        emitted += 1
+    _copy_cs_runtime_files(output_dir)
+    print("emitted: " + str(output_dir) + " (" + str(emitted) + " files)")
+    return 0
 
 
 def _emit_java(manifest_path: Path, output_dir: Path) -> int:

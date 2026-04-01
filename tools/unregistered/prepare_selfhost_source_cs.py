@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SRC_PY2X = ROOT / "src" / "pytra-cli.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2x_cs.py"
 

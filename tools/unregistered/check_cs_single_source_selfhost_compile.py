@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import os
 import re
 import subprocess
 import tempfile
@@ -12,19 +13,22 @@ from collections import Counter
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-PREPARE = ROOT / "tools" / "prepare_selfhost_source_cs.py"
+ROOT = Path(__file__).resolve().parents[2]
+PREPARE = ROOT / "tools" / "unregistered" / "prepare_selfhost_source_cs.py"
 PY2X = ROOT / "src" / "pytra-cli.py"
 SELFHOST_PY2X_CS = ROOT / "selfhost" / "py2x_cs.py"
-RUNTIME_FILES = [
-    ROOT / "src" / "runtime" / "cs" / "native" / "built_in" / "py_runtime.cs",
-    ROOT / "src" / "runtime" / "cs" / "native" / "built_in" / "time.cs",
-    ROOT / "src" / "runtime" / "cs" / "native" / "built_in" / "math.cs",
-    ROOT / "src" / "runtime" / "cs" / "generated" / "utils" / "png.cs",
-    ROOT / "src" / "runtime" / "cs" / "generated" / "utils" / "gif.cs",
-    ROOT / "src" / "runtime" / "cs" / "native" / "std" / "pathlib.cs",
-    ROOT / "src" / "runtime" / "cs" / "native" / "std" / "json.cs",
-]
+
+
+def _runtime_files() -> list[Path]:
+    runtime_root = ROOT / "src" / "runtime" / "cs"
+    out: list[Path] = []
+    for rel in ("built_in", "generated/built_in", "generated/utils", "std"):
+        bucket = runtime_root / rel
+        if not bucket.exists():
+            continue
+        for path in sorted(bucket.glob("*.cs")):
+            out.append(path)
+    return out
 
 
 def _run(cmd: list[str], *, cwd: Path | None = None) -> tuple[int, str, str]:
@@ -33,9 +37,43 @@ def _run(cmd: list[str], *, cwd: Path | None = None) -> tuple[int, str, str]:
     return int(cp.returncode), cp.stdout, cp.stderr
 
 
-def _collect_error_lines(stderr_text: str) -> list[str]:
+def _run_dotnet_compile(source_file: Path, runtime_files: list[Path], work_dir: Path) -> tuple[int, str, str]:
+    project_path = work_dir / "SelfhostCheck.csproj"
+    compile_items: list[str] = []
+    for path in [source_file] + runtime_files:
+        rel = os.path.relpath(path, work_dir).replace(os.sep, "/")
+        compile_items.append(f'    <Compile Include="{rel}" />')
+    project_path.write_text(
+        "\n".join([
+            "<Project Sdk=\"Microsoft.NET.Sdk\">",
+            "  <PropertyGroup>",
+            "    <OutputType>Exe</OutputType>",
+            "    <TargetFramework>net8.0</TargetFramework>",
+            "    <ImplicitUsings>disable</ImplicitUsings>",
+            "    <Nullable>disable</Nullable>",
+            "    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>",
+            "    <LangVersion>latest</LangVersion>",
+            "  </PropertyGroup>",
+            "  <ItemGroup>",
+            *compile_items,
+            "  </ItemGroup>",
+            "</Project>",
+            "",
+        ]),
+        encoding="utf-8",
+    )
+    cp = subprocess.run(
+        ["dotnet", "build", str(project_path), "-nologo", "-v:q"],
+        cwd=str(work_dir),
+        capture_output=True,
+        text=True,
+    )
+    return int(cp.returncode), cp.stdout, cp.stderr
+
+
+def _collect_error_lines(text: str) -> list[str]:
     out: list[str] = []
-    for raw in stderr_text.splitlines():
+    for raw in text.splitlines():
         if "error CS" in raw:
             out.append(raw.strip())
     return out
@@ -174,13 +212,12 @@ def main() -> int:
         compile_msg = ""
         rc_compile = 1
 
+        runtime_files = _runtime_files()
         if rc_transpile == 0 and stage1_cs.exists():
-            cmd = ["mcs", "-langversion:latest", "-warn:0", "-out:" + str(stage1_exe), str(stage1_cs)]
-            for runtime_file in RUNTIME_FILES:
-                cmd.append(str(runtime_file))
-            rc_compile, _, err_compile = _run(cmd)
-            compile_msg = err_compile.strip().splitlines()[-1] if err_compile.strip() != "" else ""
-            error_lines = _collect_error_lines(err_compile)
+            rc_compile, out_compile, err_compile = _run_dotnet_compile(stage1_cs, runtime_files, tmp)
+            compile_text = ((out_compile or "") + "\n" + (err_compile or "")).strip()
+            compile_msg = compile_text.splitlines()[-1] if compile_text != "" else ""
+            error_lines = _collect_error_lines(compile_text)
             code_counts, category_counts = _summarize_errors(error_lines)
             top_errors = error_lines[:20]
         else:
