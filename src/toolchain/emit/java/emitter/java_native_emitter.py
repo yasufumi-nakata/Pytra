@@ -206,6 +206,8 @@ def _java_type(type_name: Any, *, allow_void: bool) -> str:
         if len(parts) == 2:
             return "java.util.HashMap<" + _java_ref_type(parts[0]) + ", " + _java_ref_type(parts[1]) + ">"
         return "java.util.HashMap<Object, Object>"
+    if tn.startswith("tuple["):
+        return "java.util.ArrayList<Object>"
     if tn.isidentifier():
         return _safe_ident(tn, "Object")
     return "Object"
@@ -1327,6 +1329,14 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return owner_expr + ".add(" + _render_expr(args[0]) + ")"
         if attr_name == "extend" and len(args) == 1:
             return owner_expr + ".addAll(" + _render_expr(args[0]) + ")"
+        owner_resolved = owner_any.get("resolved_type") if isinstance(owner_any, dict) else ""
+        if isinstance(owner_resolved, str) and owner_resolved.startswith("dict[") and len(args) == 0:
+            if attr_name == "keys":
+                return "PyRuntime.pyDictKeys(" + owner_expr + ")"
+            if attr_name == "values":
+                return "PyRuntime.pyDictValues(" + owner_expr + ")"
+            if attr_name == "items":
+                return "PyRuntime.pyDictItems(" + owner_expr + ")"
         if attr_name == "pop":
             if len(args) == 0:
                 return owner_expr + ".remove(" + owner_expr + ".size() - 1)"
@@ -1860,6 +1870,18 @@ def _infer_java_type_from_expr_node(expr: Any, type_map: dict[str, str] | None =
     return inferred
 
 
+def _coerce_assignment_value(target_type: str, value_code: str, value_expr: Any, *, type_map: dict[str, str] | None = None) -> str:
+    target_java = _java_type(target_type, allow_void=False)
+    if target_java == "void" or target_java == "Object":
+        return value_code
+    source_java = _infer_java_type_from_expr_node(value_expr, type_map=type_map)
+    if source_java == target_java or source_java == "void":
+        return value_code
+    if target_java.startswith("java.util.HashMap<") or target_java.startswith("java.util.ArrayList<") or target_java.startswith("java.util.ArrayDeque<"):
+        return "((" + target_java + ")(Object)(" + value_code + "))"
+    return value_code
+
+
 def _emit_for_runtime_iter(
     stmt: dict[str, Any],
     *,
@@ -1918,27 +1940,60 @@ def _emit_for_runtime_iter(
     if target_plan.get("kind") == "NameTarget":
         target_name = _safe_ident(target_plan.get("id"), "item")
         raw_target_type = target_plan.get("target_type")
-        # enumerate expansion: target_type is tuple[int64, T] but iter is list[T]
-        if isinstance(raw_target_type, str) and raw_target_type.startswith("tuple["):
-            iter_resolved = iter_expr_any.get("resolved_type") if isinstance(iter_expr_any, dict) else ""
-            elem_parts = _split_type_args(iter_resolved, "list") if isinstance(iter_resolved, str) else []
-            if len(elem_parts) == 1:
-                target_type = _java_type(elem_parts[0], allow_void=False)
+        direct_unpack_any = target_plan.get("direct_unpack_names")
+        direct_unpack = direct_unpack_any if isinstance(direct_unpack_any, list) else []
+        tuple_expanded = bool(target_plan.get("tuple_expanded"))
+        if tuple_expanded and len(direct_unpack) > 0:
+            tuple_type = _java_type(raw_target_type, allow_void=False)
+            if tuple_type == "void" or tuple_type == "Object":
+                tuple_type = "java.util.ArrayList<Object>"
+            tuple_item_tmp = _fresh_tmp(body_ctx, "iter_item")
+            lines.append(
+                indent + "    " + tuple_type + " " + tuple_item_tmp + " = ((" + tuple_type + ")(Object)(" + iter_tmp + ".get((int)(" + idx_tmp + "))));"
+            )
+            tuple_types = _tuple_element_types(raw_target_type)
+            i = 0
+            while i < len(direct_unpack):
+                name_any = direct_unpack[i]
+                if not isinstance(name_any, str) or name_any == "":
+                    i += 1
+                    continue
+                elem_type = "Object"
+                if i < len(tuple_types):
+                    inferred = _java_type(tuple_types[i], allow_void=False)
+                    elem_type = "Object" if inferred == "void" else inferred
+                rhs = _cast_from_object(tuple_item_tmp + ".get(" + str(i) + ")", elem_type)
+                name = _safe_ident(name_any, "item_" + str(i))
+                if name in body_declared:
+                    lines.append(indent + "    " + name + " = " + rhs + ";")
+                else:
+                    lines.append(indent + "    " + elem_type + " " + name + " = " + rhs + ";")
+                body_declared.add(name)
+                if elem_type != "Object":
+                    body_types[name] = elem_type
+                i += 1
+        else:
+            # enumerate expansion: target_type is tuple[int64, T] but iter is list[T]
+            if isinstance(raw_target_type, str) and raw_target_type.startswith("tuple["):
+                iter_resolved = iter_expr_any.get("resolved_type") if isinstance(iter_expr_any, dict) else ""
+                elem_parts = _split_type_args(iter_resolved, "list") if isinstance(iter_resolved, str) else []
+                if len(elem_parts) == 1:
+                    target_type = _java_type(elem_parts[0], allow_void=False)
+                else:
+                    target_type = _java_type(raw_target_type, allow_void=False)
             else:
                 target_type = _java_type(raw_target_type, allow_void=False)
-        else:
-            target_type = _java_type(raw_target_type, allow_void=False)
-        if target_type == "void":
-            target_type = "Object"
-        base = iter_tmp + ".get((int)(" + idx_tmp + "))"
-        rhs = _cast_from_object(base, target_type)
-        if target_name in body_declared:
-            lines.append(indent + "    " + target_name + " = " + rhs + ";")
-        else:
-            lines.append(indent + "    " + target_type + " " + target_name + " = " + rhs + ";")
-        body_declared.add(target_name)
-        if target_type != "Object":
-            body_types[target_name] = target_type
+            if target_type == "void":
+                target_type = "Object"
+            base = iter_tmp + ".get((int)(" + idx_tmp + "))"
+            rhs = _cast_from_object(base, target_type)
+            if target_name in body_declared:
+                lines.append(indent + "    " + target_name + " = " + rhs + ";")
+            else:
+                lines.append(indent + "    " + target_type + " " + target_name + " = " + rhs + ";")
+            body_declared.add(target_name)
+            if target_type != "Object":
+                body_types[target_name] = target_type
     elif target_plan.get("kind") == "TupleTarget":
         elems_any = target_plan.get("elements")
         elems = elems_any if isinstance(elems_any, list) else []
@@ -2002,6 +2057,23 @@ def _emit_for_runtime_iter(
 
     body_any = stmt.get("body")
     body = body_any if isinstance(body_any, list) else []
+    if target_plan.get("kind") == "NameTarget" and bool(target_plan.get("tuple_expanded")):
+        direct_unpack_any = target_plan.get("direct_unpack_names")
+        direct_unpack = direct_unpack_any if isinstance(direct_unpack_any, list) else []
+        skip_count = 0
+        while skip_count < len(direct_unpack) and skip_count < len(body):
+            body_stmt = body[skip_count]
+            if not isinstance(body_stmt, dict) or body_stmt.get("kind") != "Assign":
+                break
+            target_node = body_stmt.get("target")
+            if not isinstance(target_node, dict) or target_node.get("kind") != "Name":
+                break
+            expected_name = direct_unpack[skip_count] if skip_count < len(direct_unpack) else None
+            if not isinstance(expected_name, str) or target_node.get("id") != expected_name:
+                break
+            skip_count += 1
+        if skip_count > 0:
+            body = body[skip_count:]
     i = 0
     while i < len(body):
         lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
@@ -2419,6 +2491,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         typed_ctor = _typed_empty_ctor(value_expr, decl_type)
         if isinstance(typed_ctor, str):
             value = typed_ctor
+        value = _coerce_assignment_value(sd2.get("decl_type") or sd2.get("annotation"), value, value_expr, type_map=type_map)
         if value == "null" and decl_type == "long":
             value = "0L"
         if value == "null" and decl_type == "double":
@@ -2506,6 +2579,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                 typed_ctor = _typed_empty_ctor(value_expr, mapped_decl)
                 if isinstance(typed_ctor, str):
                     value = typed_ctor
+                value = _coerce_assignment_value(mapped_decl, value, value_expr, type_map=type_map)
                 return [indent + lhs + " = " + value + ";"]
             decl_type = _java_type(sd2.get("decl_type"), allow_void=False)
             if decl_type == "Object":
@@ -2517,6 +2591,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             typed_ctor = _typed_empty_ctor(value_expr, decl_type)
             if isinstance(typed_ctor, str):
                 value = typed_ctor
+            value = _coerce_assignment_value(sd2.get("decl_type"), value, value_expr, type_map=type_map)
             if value == "null" and decl_type == "long":
                 value = "0L"
             if value == "null" and decl_type == "double":
@@ -2536,6 +2611,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     decl_type = inferred
             if decl_type == "void":
                 decl_type = "Object"
+            value = _coerce_assignment_value(sd2.get("decl_type"), value, value_expr, type_map=type_map)
             declared.add(lhs)
             type_map[lhs] = decl_type
             return [indent + decl_type + " " + lhs + " = " + value + ";"]
@@ -2544,6 +2620,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         typed_ctor = _typed_empty_ctor(value_expr, mapped_decl)
         if isinstance(typed_ctor, str):
             value = typed_ctor
+        value = _coerce_assignment_value(mapped_decl, value, value_expr, type_map=type_map)
         return [indent + lhs + " = " + value + ";"]
     if kind == "AugAssign":
         lhs = _target_name(sd2.get("target"))
