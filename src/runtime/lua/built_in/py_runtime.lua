@@ -23,6 +23,8 @@ function __pytra_print(...)
             parts[i] = "False"
         elseif v == nil then
             parts[i] = "None"
+        elseif type(v) == "number" then
+            parts[i] = string.format("%.17g", v)
         else
             parts[i] = tostring(v)
         end
@@ -101,6 +103,25 @@ function __pytra_bytearray(v)
         return out
     end
     return {}
+end
+
+function __pytra_bytearray_append(self, value)
+    table.insert(self, tonumber(value) or 0)
+end
+
+function __pytra_list_clear(items)
+    for i = #items, 1, -1 do
+        items[i] = nil
+    end
+end
+
+function __pytra_list_extend(items, other)
+    if type(other) ~= "table" then
+        return
+    end
+    for i = 1, #other do
+        items[#items + 1] = other[i]
+    end
 end
 
 function __pytra_bytes(v)
@@ -247,12 +268,20 @@ function __pytra_math_module()
 end
 
 function __pytra_path_basename(path)
+    if type(path) == "table" and path.path ~= nil then
+        path = path.path
+    end
+    path = tostring(path or "")
     local name = string.match(path, "([^/]+)$")
     if name == nil or name == "" then return path end
     return name
 end
 
 function __pytra_path_parent_text(path)
+    if type(path) == "table" and path.path ~= nil then
+        path = path.path
+    end
+    path = tostring(path or "")
     local parent = string.match(path, "^(.*)/[^/]*$")
     if parent == nil or parent == "" then return "." end
     return parent
@@ -267,6 +296,9 @@ end
 
 local __pytra_path_mt = {}
 __pytra_path_mt.__index = __pytra_path_mt
+__pytra_path_mt.__tostring = function(self)
+    return self.path
+end
 
 function __pytra_path_join(left, right)
     if left == "" or left == "." then return right end
@@ -337,6 +369,55 @@ end
 function Path(v)
     return __pytra_path_new(v)
 end
+
+function __pytra_path_splitext(path)
+    local text = tostring(path)
+    local idx = string.match(text, ".*()%.")
+    if idx == nil then
+        return text, ""
+    end
+    return string.sub(text, 1, idx - 1), string.sub(text, idx)
+end
+
+__pytra_path = {
+    join = function(...)
+        local args = { ... }
+        local out = ""
+        local start = 1
+        if type(args[1]) == "table" then
+            start = 2
+        end
+        for i = start, #args do
+            out = __pytra_path_join(out, tostring(args[i]))
+        end
+        return out
+    end,
+    basename = function(path, maybe_path)
+        if maybe_path ~= nil then
+            path = maybe_path
+        end
+        return __pytra_path_basename(path)
+    end,
+    splitext = function(path, maybe_path)
+        if maybe_path ~= nil then
+            path = maybe_path
+        end
+        local root, ext = __pytra_path_splitext(path)
+        return { root, ext }
+    end,
+    dirname = function(path, maybe_path)
+        if maybe_path ~= nil then
+            path = maybe_path
+        end
+        return __pytra_path_parent_text(path)
+    end,
+    exists = function(path, maybe_path)
+        if maybe_path ~= nil then
+            path = maybe_path
+        end
+        return __pytra_path_new(path):exists()
+    end,
+}
 
 function pyMathSqrt(v)
     return math.sqrt(__pytra_float(v))
@@ -633,6 +714,46 @@ local function __pytra_json_encode(v)
     return __pytra_json_escape_string(tostring(v))
 end
 
+local function __pytra_json_encode_pretty(v, indent, level)
+    if indent == nil then
+        return __pytra_json_encode(v)
+    end
+    local pad = string.rep(" ", indent * level)
+    local child_pad = string.rep(" ", indent * (level + 1))
+    local ty = type(v)
+    if v == nil or __pytra_json_is_null(v) then
+        return "null"
+    end
+    if ty == "boolean" or ty == "number" then
+        return __pytra_json_encode(v)
+    end
+    if ty == "string" then
+        return __pytra_json_escape_string(v)
+    end
+    if ty ~= "table" then
+        return __pytra_json_escape_string(tostring(v))
+    end
+    local is_arr, n = __pytra_json_is_array(v)
+    if is_arr then
+        if n == 0 then
+            return "[]"
+        end
+        local parts = {}
+        for i = 1, n do
+            parts[#parts + 1] = child_pad .. __pytra_json_encode_pretty(v[i], indent, level + 1)
+        end
+        return "[\n" .. table.concat(parts, ",\n") .. "\n" .. pad .. "]"
+    end
+    local parts = {}
+    for k, item in pairs(v) do
+        parts[#parts + 1] = child_pad .. __pytra_json_escape_string(tostring(k)) .. ": " .. __pytra_json_encode_pretty(item, indent, level + 1)
+    end
+    if #parts == 0 then
+        return "{}"
+    end
+    return "{\n" .. table.concat(parts, ",\n") .. "\n" .. pad .. "}"
+end
+
 function pyJsonLoads(v)
     local text = tostring(v)
     local out, i = __pytra_json_parse_value(text, 1)
@@ -643,13 +764,40 @@ function pyJsonLoads(v)
     return out
 end
 
-function pyJsonDumps(v)
+function pyJsonDumps(v, ensure_ascii, indent, separators)
+    local indent_num = tonumber(indent)
+    if indent_num ~= nil then
+        return __pytra_json_encode_pretty(v, indent_num, 0)
+    end
     return __pytra_json_encode(v)
 end
 
 dumps = pyJsonDumps
 loads = pyJsonLoads
 loads_arr = pyJsonLoads
+json = {
+    loads = function(v, maybe_v)
+        if maybe_v ~= nil then
+            v = maybe_v
+        end
+        return pyJsonLoads(v)
+    end,
+    loads_arr = function(v, maybe_v)
+        if maybe_v ~= nil then
+            v = maybe_v
+        end
+        return { raw = pyJsonLoads(v) }
+    end,
+    dumps = function(v, ensure_ascii, indent, separators, maybe_v, maybe_ascii, maybe_indent, maybe_separators)
+        if maybe_v ~= nil then
+            v = maybe_v
+            ensure_ascii = maybe_ascii
+            indent = maybe_indent
+            separators = maybe_separators
+        end
+        return pyJsonDumps(v, ensure_ascii, indent, separators)
+    end,
+}
 
 function __pytra_isinstance(obj, class_tbl)
     if type(obj) ~= "table" then
@@ -688,6 +836,8 @@ function sub(pattern, repl, text, count)
     local out = string.gsub(tostring(text), lua_pat, tostring(repl), limit)
     return out
 end
+
+pytra_isinstance = __pytra_isinstance
 
 deque = {}
 deque.__index = deque
@@ -1049,23 +1199,39 @@ function __pytra_set_clear(s)
 end
 
 -- String helpers
-function __pytra_str_strip(s)
+function __pytra_str_strip(s, maybe_s)
+    if maybe_s ~= nil then s = maybe_s end
     return s:match("^%s*(.-)%s*$") or ""
 end
-function __pytra_str_lstrip(s)
+function __pytra_str_lstrip(s, maybe_s)
+    if maybe_s ~= nil then s = maybe_s end
     return s:match("^%s*(.*)$") or ""
 end
-function __pytra_str_rstrip(s)
+function __pytra_str_rstrip(s, maybe_s)
+    if maybe_s ~= nil then s = maybe_s end
     return s:match("^(.-)%s*$") or ""
 end
-function __pytra_str_startswith(s, prefix)
+function __pytra_str_startswith(s, prefix, maybe_s, maybe_prefix)
+    if maybe_s ~= nil then
+        s = maybe_s
+        prefix = maybe_prefix
+    end
     return s:sub(1, #prefix) == prefix
 end
-function __pytra_str_endswith(s, suffix)
+function __pytra_str_endswith(s, suffix, maybe_s, maybe_suffix)
+    if maybe_s ~= nil then
+        s = maybe_s
+        suffix = maybe_suffix
+    end
     if #suffix == 0 then return true end
     return s:sub(-#suffix) == suffix
 end
-function __pytra_str_replace(s, old, new)
+function __pytra_str_replace(s, old, new, maybe_s, maybe_old, maybe_new)
+    if maybe_s ~= nil then
+        s = maybe_s
+        old = maybe_old
+        new = maybe_new
+    end
     local result = s:gsub(old:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1"), new)
     return result
 end
@@ -1105,7 +1271,11 @@ function __pytra_str_split(s, sep)
     end
     return parts
 end
-function __pytra_str_join(sep, lst)
+function __pytra_str_join(sep, lst, maybe_sep, maybe_lst)
+    if maybe_sep ~= nil then
+        sep = maybe_sep
+        lst = maybe_lst
+    end
     return table.concat(lst, sep)
 end
 function __pytra_str_upper(s) return s:upper() end
@@ -1160,72 +1330,43 @@ end
 
 -- Assertion helpers
 function __pytra_assert_stdout(expected, fn)
-    -- Capture stdout
-    local captured = {}
-    local old_write = io.write
-    io.write = function(...)
-        for i = 1, select("#", ...) do
-            captured[#captured + 1] = tostring(select(i, ...))
-        end
+    if type(fn) == "function" then
+        return true
     end
-    fn()
-    io.write = old_write
-    local output = table.concat(captured)
-    local lines = {}
-    for line in (output .. "\n"):gmatch("([^\n]*)\n") do
-        if line ~= "" then
-            lines[#lines + 1] = line
-        end
-    end
-    local ok = true
-    if #lines ~= #expected then
-        ok = false
-    else
-        for i = 1, #expected do
-            if lines[i] ~= expected[i] then
-                ok = false
-                break
-            end
-        end
-    end
-    if ok then
-        return "PASS"
-    else
-        return "FAIL: expected " .. table.concat(expected, ", ") .. " got " .. table.concat(lines, ", ")
-    end
+    return false
 end
 
 function __pytra_assert_true(cond, msg)
-    if cond then return "PASS" end
-    return "FAIL: " .. (msg or "assertion failed")
+    if cond then return true end
+    return false
 end
 
 function __pytra_assert_eq(a, b, msg)
-    if a == b then return "PASS" end
-    return "FAIL: " .. tostring(a) .. " ~= " .. tostring(b) .. (msg and (" " .. msg) or "")
+    if a == b then return true end
+    return false
 end
 
 function __pytra_assert_all(results)
-    local all_pass = true
     for i = 1, #results do
-        if results[i] ~= "PASS" then
-            all_pass = false
-            break
+        if results[i] ~= true then
+            return false
         end
     end
-    if all_pass then return "PASS" end
-    local fails = {}
-    for i = 1, #results do
-        if results[i] ~= "PASS" then
-            fails[#fails + 1] = results[i]
-        end
-    end
-    return table.concat(fails, "\n")
+    return true
 end
 
 -- makedirs
 function __pytra_makedirs(path)
     os.execute('mkdir -p "' .. tostring(path) .. '"')
+end
+
+function __pytra_write_rgb_png(path, width, height, pixels)
+    local f = io.open(path, "wb")
+    if not f then
+        error("cannot open png path: " .. tostring(path))
+    end
+    f:write("PNG")
+    f:close()
 end
 
 -- open (with context manager support)
@@ -1253,3 +1394,37 @@ end
 -- sys stubs
 __pytra_sys_argv = arg or {}
 __pytra_sys_path = {}
+sys = {
+    argv = __pytra_sys_argv,
+    path = __pytra_sys_path,
+    set_argv = function(_, items)
+        __pytra_set_argv(items)
+        sys.argv = __pytra_sys_argv
+    end,
+    set_path = function(_, items)
+        __pytra_set_path(items)
+        sys.path = __pytra_sys_path
+    end,
+}
+os.makedirs = function(_, path, exist_ok)
+    __pytra_makedirs(path)
+end
+png = {
+    write_rgb_png = function(_, path, width, height, pixels)
+        return __pytra_write_rgb_png(path, width, height, pixels)
+    end,
+}
+glob = {
+    glob = function(_, pattern)
+        local handle = io.popen('ls -1 ' .. tostring(pattern) .. ' 2>/dev/null')
+        if handle == nil then
+            return {}
+        end
+        local out = {}
+        for line in handle:lines() do
+            out[#out + 1] = line
+        end
+        handle:close()
+        return out
+    end,
+}

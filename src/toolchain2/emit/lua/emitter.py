@@ -16,7 +16,7 @@ from toolchain2.emit.lua.types import (
     lua_type, lua_zero_value, _safe_lua_ident, _split_generic_args,
     is_numeric_type, is_integer_type,
     LUA_EXCEPTION_TYPE_NAMES, LUA_PATH_TYPE_NAMES, LUA_BUILTIN_MODULE_PREFIX,
-    LUA_NON_INHERITABLE_BASES,
+    LUA_NON_INHERITABLE_BASES, LUA_PYTRA_ISINSTANCE_NAME,
 )
 from toolchain2.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
@@ -55,6 +55,7 @@ class EmitContext:
     current_class: str = ""
     exception_type_ids: dict[str, int] = field(default_factory=dict)
     class_type_ids: dict[str, int] = field(default_factory=dict)
+    tid_const_types: dict[str, str] = field(default_factory=dict)
     renamed_symbols: dict[str, str] = field(default_factory=dict)
     temp_counter: int = 0
     is_type_id_table: bool = False
@@ -148,6 +149,53 @@ def _is_exception_type_name(ctx: EmitContext, type_name: str) -> bool:
     if base != "":
         return _is_exception_type_name(ctx, base)
     return False
+
+
+def _tid_const_name(fqcn: str) -> str:
+    dotted = fqcn.replace(".", "_")
+    chars: list[str] = []
+    prev_is_lower = False
+    for ch in dotted:
+        is_upper = "A" <= ch and ch <= "Z"
+        is_lower = "a" <= ch and ch <= "z"
+        if is_upper and prev_is_lower:
+            chars.append("_")
+        chars.append(ch.upper())
+        prev_is_lower = is_lower
+    result = "".join(chars) + "_TID"
+    if result != "" and result[0].isdigit():
+        result = "_" + result
+    return result
+
+
+def _isinstance_lua_check(obj: str, type_name: str) -> str:
+    if type_name in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float", "float32", "float64", "number", "byte"):
+        return '(type(' + obj + ') == "number")'
+    if type_name in ("bool", "boolean"):
+        return '(type(' + obj + ') == "boolean")'
+    if type_name in ("str", "string", "char"):
+        return '(type(' + obj + ') == "string")'
+    if type_name in ("list", "tuple", "dict", "set", "object"):
+        return '(type(' + obj + ') == "table")'
+    return "__pytra_isinstance(" + obj + ", " + _safe_lua_ident(type_name) + ")"
+
+
+def _emit_linked_type_id_isinstance(ctx: EmitContext, args: list[JsonVal]) -> str | None:
+    if len(args) != 2:
+        return None
+    type_id_arg = args[0]
+    expected_arg = args[1]
+    if not isinstance(type_id_arg, dict) or _str(type_id_arg, "kind") != "ObjTypeId":
+        return None
+    if not isinstance(expected_arg, dict) or _str(expected_arg, "kind") != "Name":
+        return None
+    expected_const = _str(expected_arg, "id")
+    type_name = ctx.tid_const_types.get(expected_const, "")
+    if type_name == "":
+        return None
+    value_node = type_id_arg.get("value")
+    obj = _emit_expr(ctx, value_node)
+    return _isinstance_lua_check(obj, type_name)
 
 
 # ---------------------------------------------------------------------------
@@ -284,6 +332,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     arg_strs: list[str] = []
     for a in args:
         arg_strs.append(_emit_expr(ctx, a))
+    func_node = node.get("func")
+
+    if runtime_call.startswith("str.") and isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
+        owner_node = func_node.get("value")
+        owner = _emit_expr(ctx, owner_node)
+        return _emit_str_method(ctx, owner, _str(func_node, "attr"), arg_strs)
 
     # Resolve mapped call name
     call_name = ""
@@ -428,17 +482,47 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "__pytra_dict_setdefault(" + arg_strs[0] + ", " + arg_strs[1] + ", " + arg_strs[2] + ")"
         return "nil"
 
+    if call_name == "__LIST_APPEND__":
+        if len(arg_strs) >= 2:
+            return "table.insert(" + arg_strs[0] + ", " + arg_strs[1] + ")"
+        return "nil"
+
+    if call_name == "__LIST_CLEAR__":
+        if len(arg_strs) >= 1:
+            return "__pytra_list_clear(" + arg_strs[0] + ")"
+        return "nil"
+
+    if call_name == "__LIST_EXTEND__":
+        if len(arg_strs) >= 2:
+            return "__pytra_list_extend(" + arg_strs[0] + ", " + arg_strs[1] + ")"
+        return "nil"
+
+    if call_name == "__LIST_INSERT__":
+        if len(arg_strs) >= 3:
+            return "table.insert(" + arg_strs[0] + ", (" + arg_strs[1] + ") + 1, " + arg_strs[2] + ")"
+        return "nil"
+
+    if call_name == "__LIST_POP__":
+        if len(arg_strs) >= 2:
+            return "table.remove(" + arg_strs[0] + ", (" + arg_strs[1] + ") + 1)"
+        if len(arg_strs) >= 1:
+            return "table.remove(" + arg_strs[0] + ")"
+        return "nil"
+
     # Resolved mapped name
     if call_name != "":
         return call_name + "(" + ", ".join(arg_strs) + ")"
 
     # Fallback: emit callee from func node
-    func_node = node.get("func")
     if isinstance(func_node, dict):
         func_id = _str(func_node, "id")
 
         # Try mapping by bare function name
         if call_name == "" and func_id != "":
+            if func_id == LUA_PYTRA_ISINSTANCE_NAME:
+                linked = _emit_linked_type_id_isinstance(ctx, args)
+                if linked is not None:
+                    return linked
             mapped = ctx.mapping.calls.get(func_id, "")
             if mapped != "":
                 if mapped == "__CAST__":
@@ -470,9 +554,24 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if isinstance(owner_node, dict):
                 owner = _emit_expr(ctx, owner_node)
                 owner_rt = _str(owner_node, "resolved_type")
+                owner_id = _str(owner_node, "id")
+                if owner_rt == "module" or owner_id in ctx.import_alias_modules:
+                    return owner + "." + _safe_lua_ident(attr) + "(" + ", ".join(arg_strs) + ")"
+                if owner_id in ctx.class_names and attr in ctx.class_static_methods.get(owner_id, set()):
+                    return owner + "." + _safe_lua_ident(attr) + "(" + ", ".join(arg_strs) + ")"
                 # String methods
                 if owner_rt == "str" or owner_rt == "string":
                     return _emit_str_method(ctx, owner, attr, arg_strs)
+                if owner_rt.startswith("list[") or owner_rt == "list":
+                    if attr == "append" and len(arg_strs) >= 1:
+                        return "table.insert(" + owner + ", " + arg_strs[0] + ")"
+                    if attr == "clear":
+                        return "__pytra_list_clear(" + owner + ")"
+                    if attr == "extend" and len(arg_strs) >= 1:
+                        return "__pytra_list_extend(" + owner + ", " + arg_strs[0] + ")"
+                if owner_rt == "bytearray":
+                    if attr == "append" and len(arg_strs) >= 1:
+                        return "__pytra_bytearray_append(" + owner + ", " + arg_strs[0] + ")"
                 # Path methods
                 if owner_rt in LUA_PATH_TYPE_NAMES:
                     return _emit_path_method(ctx, owner, attr, arg_strs)
@@ -482,6 +581,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return owner
                 return owner + ":" + _safe_lua_ident(attr) + "(" + ", ".join(arg_strs) + ")"
 
+        if _str(func_node, "kind") == "Lambda":
+            callee = "(" + callee + ")"
         return callee + "(" + ", ".join(arg_strs) + ")"
 
     return "nil"
@@ -775,8 +876,24 @@ def _emit_list_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     result += " local __r = {};"
     iter_rt = _str(iter_node, "resolved_type") if isinstance(iter_node, dict) else ""
     is_dict = iter_rt.startswith("dict[") or iter_rt == "dict"
-    if is_dict:
+    if isinstance(iter_node, dict) and _str(iter_node, "kind") == "RangeExpr":
+        start = _emit_expr(ctx, iter_node.get("start")) if isinstance(iter_node.get("start"), dict) else "0"
+        stop = _emit_expr(ctx, iter_node.get("stop")) if isinstance(iter_node.get("stop"), dict) else "0"
+        step = _emit_expr(ctx, iter_node.get("step")) if isinstance(iter_node.get("step"), dict) else "1"
+        if step == "1":
+            result += " for " + target_code + " = " + start + ", " + stop + " - 1 do"
+        elif step == "-1":
+            result += " for " + target_code + " = " + start + ", " + stop + " + 1, -1 do"
+        else:
+            result += " for " + target_code + " = " + start + ", " + stop + " - 1, " + step + " do"
+    elif is_dict:
         result += " for " + target_code + ", _ in pairs(" + iter_code + ") do"
+    elif isinstance(target, dict) and _str(target, "kind") == "Tuple":
+        temp_item = "__item"
+        result += " for _, " + temp_item + " in ipairs(" + iter_code + ") do"
+        for i, elem in enumerate(_list(target, "elements")):
+            if isinstance(elem, dict):
+                result += " local " + _emit_expr(ctx, elem) + " = " + temp_item + "[" + str(i + 1) + "];"
     else:
         result += " for _, " + target_code + " in ipairs(" + iter_code + ") do"
     if len(ifs) > 0:
@@ -855,6 +972,8 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
     if kind == "Expr":
         value = node.get("value")
         if isinstance(value, dict):
+            if _str(value, "kind") == "Constant" and isinstance(value.get("value"), str):
+                return
             code = _emit_expr(ctx, value)
             if code != "" and code != "nil":
                 _emit(ctx, code)
@@ -1097,11 +1216,45 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     iter_node = node.get("iter")
     body = _list(node, "body")
     iter_mode = _str(node, "iter_mode")
+    target_plan = _dict(node, "target_plan")
+    iter_plan = _dict(node, "iter_plan")
 
-    target_code = _emit_expr(ctx, target) if isinstance(target, dict) else "_"
+    if not isinstance(target, dict) and len(target_plan) > 0:
+        if _str(target_plan, "kind") == "NameTarget":
+            target_code = _lua_symbol_name(ctx, _str(target_plan, "id"))
+        else:
+            target_code = "_"
+    else:
+        target_code = _emit_expr(ctx, target) if isinstance(target, dict) else "_"
+
+    if not isinstance(iter_node, dict) and len(iter_plan) > 0:
+        maybe_iter = iter_plan.get("iter_expr")
+        if isinstance(maybe_iter, dict):
+            iter_node = maybe_iter
+
     iter_code = _emit_expr(ctx, iter_node)
 
     iter_rt = _str(iter_node, "resolved_type") if isinstance(iter_node, dict) else ""
+
+    if isinstance(iter_node, dict) and _str(iter_node, "kind") == "RangeExpr":
+        range_node = iter_node
+        start_node = range_node.get("start")
+        stop_node = range_node.get("stop")
+        step_node = range_node.get("step")
+        start_code = _emit_expr(ctx, start_node) if isinstance(start_node, dict) else "0"
+        stop_code = _emit_expr(ctx, stop_node) if isinstance(stop_node, dict) else "0"
+        step_code = _emit_expr(ctx, step_node) if isinstance(step_node, dict) else "1"
+        if step_code == "1":
+            _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " - 1 do")
+        elif step_code == "-1":
+            _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " + 1, -1 do")
+        else:
+            _emit(ctx, "for " + target_code + " = " + start_code + ", " + stop_code + " - 1, " + step_code + " do")
+        ctx.indent_level += 1
+        _emit_body_with_continue(ctx, body)
+        ctx.indent_level -= 1
+        _emit(ctx, "end")
+        return
 
     if iter_mode == "range" or _str(node, "kind_detail") == "ForRange":
         _emit_for_range_inner(ctx, node, body)
@@ -1271,9 +1424,14 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     # Variadic
     is_vararg = False
+    vararg_name = ""
     vararg_raw = node.get("vararg")
     if isinstance(vararg_raw, dict) or (isinstance(vararg_raw, str) and vararg_raw != ""):
         is_vararg = True
+        if isinstance(vararg_raw, dict):
+            vararg_name = _str(vararg_raw, "arg")
+        elif isinstance(vararg_raw, str):
+            vararg_name = vararg_raw
 
     # Collect argument names from arg_order (EAST3 format)
     arg_order = _list(node, "arg_order")
@@ -1317,6 +1475,10 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     ctx.current_return_type = _str(node, "return_type")
     saved_locals = ctx.declared_locals
     ctx.declared_locals = set()
+    if is_vararg and vararg_name != "":
+        safe_vararg = _lua_symbol_name(ctx, vararg_name)
+        ctx.declared_locals.add(safe_vararg)
+        _emit(ctx, "local " + safe_vararg + " = {...}")
     _emit_body(ctx, body)
     ctx.declared_locals = saved_locals
     ctx.current_return_type = saved_return_type
@@ -1329,10 +1491,34 @@ def _emit_init_method(ctx: EmitContext, cls: str, arg_names: list[str], body: li
     """Emit __init__ as Class.new(cls, ...) constructor pattern."""
     _emit(ctx, "function " + cls + ".new(" + ", ".join(arg_names) + ")")
     ctx.indent_level += 1
-    _emit(ctx, "local self = setmetatable({}, {__index = " + cls + "})")
+    base_name = ctx.class_bases.get(cls, "")
+    if base_name != "" and base_name not in LUA_NON_INHERITABLE_BASES:
+        _emit(ctx, "local self = " + _safe_lua_ident(base_name) + ".new()")
+        _emit(ctx, "setmetatable(self, " + cls + ")")
+    else:
+        _emit(ctx, "local self = setmetatable({}, " + cls + ")")
     saved_locals = ctx.declared_locals
     ctx.declared_locals = set()
-    _emit_body(ctx, body)
+    filtered_body: list[JsonVal] = []
+    for stmt in body:
+        if not isinstance(stmt, dict) or _str(stmt, "kind") != "Expr":
+            filtered_body.append(stmt)
+            continue
+        value = stmt.get("value")
+        if not isinstance(value, dict) or _str(value, "kind") != "Call":
+            filtered_body.append(stmt)
+            continue
+        func = value.get("func")
+        if not isinstance(func, dict) or _str(func, "kind") != "Attribute":
+            filtered_body.append(stmt)
+            continue
+        owner = func.get("value")
+        if _str(func, "attr") == "__init__" and isinstance(owner, dict) and _str(owner, "kind") == "Call":
+            owner_func = owner.get("func")
+            if isinstance(owner_func, dict) and _str(owner_func, "id") == "super":
+                continue
+        filtered_body.append(stmt)
+    _emit_body(ctx, filtered_body)
     ctx.declared_locals = saved_locals
     _emit(ctx, "return self")
     ctx.indent_level -= 1
@@ -1346,7 +1532,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     bases = _list(node, "bases")
     body = _list(node, "body")
 
-    base_name = ""
+    base_name = ctx.class_bases.get(name, "")
     if len(bases) > 0 and isinstance(bases[0], dict):
         base_name = _str(bases[0], "id")
 
@@ -1368,7 +1554,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         if not isinstance(stmt, dict):
             continue
         kind = _str(stmt, "kind")
-        if kind == "FunctionDef":
+        if kind == "FunctionDef" or kind == "ClosureDef":
             if _str(stmt, "name") == "__init__":
                 has_init = True
             _emit_function_def(ctx, stmt)
@@ -1392,7 +1578,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if not has_init:
         _emit(ctx, "function " + safe + ".new()")
         ctx.indent_level += 1
-        _emit(ctx, "return setmetatable({}, {__index = " + safe + "})")
+        _emit(ctx, "return setmetatable({}, " + safe + ")")
         ctx.indent_level -= 1
         _emit(ctx, "end")
         _emit_blank(ctx)
@@ -1696,6 +1882,12 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
     # Collect type info from linked_program_v1
     if len(lp) > 0:
         type_info_table = _dict(lp, "type_info_table_v1")
+        type_id_resolved = _dict(lp, "type_id_resolved_v1")
+        type_id_base_map = _dict(lp, "type_id_base_map_v1")
+        id_to_fqcn: dict[int, str] = {}
+        for fqcn, tid in type_id_resolved.items():
+            if isinstance(fqcn, str) and isinstance(tid, int):
+                id_to_fqcn[tid] = fqcn
         for fqcn, info in type_info_table.items():
             if not isinstance(fqcn, str) or not isinstance(info, dict):
                 continue
@@ -1703,6 +1895,16 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
             if isinstance(type_id_val, int):
                 ctx.exception_type_ids[fqcn] = type_id_val
                 ctx.class_type_ids[fqcn] = type_id_val
+                ctx.tid_const_types[_tid_const_name(fqcn)] = fqcn.rsplit(".", 1)[-1]
+        for fqcn, base_tid in type_id_base_map.items():
+            if not isinstance(fqcn, str) or not isinstance(base_tid, int):
+                continue
+            if "." not in fqcn:
+                continue
+            base_fqcn = id_to_fqcn.get(base_tid, "")
+            if base_fqcn == "" or "." not in base_fqcn:
+                continue
+            ctx.class_bases[fqcn.rsplit(".", 1)[-1]] = base_fqcn.rsplit(".", 1)[-1]
 
     ctx.import_alias_modules = build_import_alias_map(meta)
     ctx.runtime_imports = build_runtime_import_map(meta, mapping)
