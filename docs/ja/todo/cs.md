@@ -28,22 +28,8 @@
 
 ## 未完了タスク
 
-### P1-CS-EMITTER: C# emitter を toolchain2 に新規実装する
 
-文脈: [docs/ja/plans/p1-cs-emitter.md](../plans/p1-cs-emitter.md)
-
-1. [x] [ID: P1-CS-EMITTER-S1] `src/toolchain2/emit/cs/` に C# emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/cs/` と TS emitter（`src/toolchain2/emit/ts/`）を参考にする。C# 固有のノード（namespace、using、property、LINQ 等）だけ override として残す（2026-03-30: `emit_cs_module()`、`types.py`、`toolchain2/emit/profiles/cs.json`、`pytra-cli2 --target cs` の emit/build 経路を追加）
-2. [x] [ID: P1-CS-EMITTER-S2] `src/runtime/cs/mapping.json` を作成し、runtime_call の写像を定義する。`types` テーブルも含める（spec-runtime-mapping.md §7）。`env.target` 必須エントリも忘れないこと（2026-03-30: `src/runtime/cs/mapping.json` を追加し、`env.target`、主要 built-in/runtime call、`types`、`implicit_promotions` を定義）
-3. [x] [ID: P1-CS-EMITTER-S3] fixture 全件の C# emit 成功を確認する（`runtime_parity_check_fast.py --targets cs` の既存経路で確認する。2026-03-31: fixture full sweep は 131/131 pass。`core` 22/22、`collections` 20/20、`control` 16/16、`imports` 7/7、`oop` 18/18、`strings` 12/12、`signature` 13/13、`typing` 23/23 も個別確認済み）
-4. [x] [ID: P1-CS-EMITTER-S4] C# runtime を toolchain2 の emit 出力と整合させる（旧 runtime の引き継ぎ or 再実装。2026-03-31: `src/runtime/cs/` に `type_id` / `pytra_isinstance` / container helper / `min` / `max` / display / exact POD helper を追加し、toolchain2 emit 出力と整合）
-5. [x] [ID: P1-CS-EMITTER-S5] fixture + sample の C# compile + run parity を通す（`mcs` + `mono` または `dotnet run`。2026-03-31: fixture は 131/131 pass。sample も 18/18 pass を個別 sweep で確認し、`17_monte_carlo_pi` / `18_mini_language_interpreter` を塞いでいた `pytra.std.pathlib` の `typing.cast` emit 崩れを解消）
-6. [x] [ID: P1-CS-EMITTER-S6] stdlib の C# parity を通す（`--case-root stdlib`。2026-04-01: `runtime_parity_check_fast.py` に `dotnet` fallback を追加して `missing toolchain` を解消し、C# emitter/runtime を `Path` 型解決・optional nominal type の module qualification・cast 括弧・module-level function qualification・loop target alias・`py_runtime.index(string, string)` で補強。`PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py --targets cs --case-root stdlib` は 16/16 pass）
-
-### P2-CS-LINT-FIX: C# emitter のハードコード違反を修正する
-
-仕様: [spec-emitter-guide.md](../spec/spec-emitter-guide.md) §1, §7
-
-1. [x] [ID: P2-CS-LINT-S1] `check_emitter_hardcode_lint.py` で C# の違反が 0 件になることを確認する（2026-04-01: `src/toolchain2/emit/cs/emitter.py` の `Path` / `Exception` / `PYTRA_TID_` / `pytra.std.*` 直書きを `types.py` 定数・helper へ寄せ、`src/runtime/cs/mapping.json` から pure-Python な `pytra.std.random` skip を削除。`python3 tools/check/check_emitter_hardcode_lint.py --lang cs -v --no-write` で 0 件、`runtime_parity_check_fast.py --targets cs --category imports` も 7/7 pass）
+## 未完了タスク
 
 ### P3-CS-SELFHOST: C# emitter で toolchain2 を C# に変換し build を通す
 
