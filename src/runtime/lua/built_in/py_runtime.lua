@@ -47,7 +47,11 @@ function __pytra_repr(v)
         if math.type ~= nil and math.type(v) == "float" and v == math.floor(v) then
             return string.format("%.1f", v)
         end
-        return string.format("%.17g", v)
+        local abs_v = math.abs(v)
+        if abs_v ~= 0 and (abs_v < 1e-6 or abs_v >= 1e16) then
+            return string.format("%.17g", v)
+        end
+        return tostring(v)
     end
     if tv == "string" then
         return v
@@ -75,6 +79,16 @@ function __pytra_repr(v)
     if v._items ~= nil and type(v._items) == "table" then
         return __pytra_repr(v._items)
     end
+    if __pytra_is_tuple(v) then
+        local parts = {}
+        for i = 1, #v do
+            parts[#parts + 1] = __pytra_repr_value(v[i])
+        end
+        if #v == 1 then
+            return "(" .. parts[1] .. ",)"
+        end
+        return "(" .. table.concat(parts, ", ") .. ")"
+    end
     local n = #v
     local is_array = true
     local key_count = 0
@@ -87,7 +101,7 @@ function __pytra_repr(v)
     if is_array and key_count == n then
         local parts = {}
         for i = 1, n do
-            parts[#parts + 1] = __pytra_repr(v[i])
+            parts[#parts + 1] = __pytra_repr_value(v[i])
         end
         return "[" .. table.concat(parts, ", ") .. "]"
     end
@@ -98,9 +112,16 @@ function __pytra_repr(v)
     table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
     local parts = {}
     for _, k in ipairs(keys) do
-        parts[#parts + 1] = __pytra_repr(k) .. ": " .. __pytra_repr(v[k])
+        parts[#parts + 1] = __pytra_repr_value(k) .. ": " .. __pytra_repr_value(v[k])
     end
     return "{" .. table.concat(parts, ", ") .. "}"
+end
+
+function __pytra_repr_value(v)
+    if type(v) == "string" then
+        return "'" .. v:gsub("\\", "\\\\"):gsub("'", "\\'") .. "'"
+    end
+    return __pytra_repr(v)
 end
 
 function __pytra_to_string(v)
@@ -167,6 +188,81 @@ function __pytra_repeat_seq(a, b)
         end
     end
     return out
+end
+
+function __pytra_tuple(items)
+    local mt = { __pytra_tuple = true }
+    return setmetatable(items or {}, mt)
+end
+
+function __pytra_is_tuple(v)
+    if type(v) ~= "table" then
+        return false
+    end
+    local mt = getmetatable(v)
+    return type(mt) == "table" and mt.__pytra_tuple == true
+end
+
+function __pytra_equals(a, b)
+    if type(a) ~= type(b) then
+        return false
+    end
+    if type(a) ~= "table" then
+        return a == b
+    end
+    local a_is_tuple = __pytra_is_tuple(a)
+    local b_is_tuple = __pytra_is_tuple(b)
+    if a_is_tuple ~= b_is_tuple then
+        return false
+    end
+    local a_n = #a
+    local b_n = #b
+    local a_is_array = true
+    local b_is_array = true
+    local a_keys = 0
+    local b_keys = 0
+    for k, _ in pairs(a) do
+        a_keys = a_keys + 1
+        if type(k) ~= "number" or k < 1 or math.floor(k) ~= k or k > a_n then
+            a_is_array = false
+        end
+    end
+    for k, _ in pairs(b) do
+        b_keys = b_keys + 1
+        if type(k) ~= "number" or k < 1 or math.floor(k) ~= k or k > b_n then
+            b_is_array = false
+        end
+    end
+    if a_is_array and b_is_array and a_keys == a_n and b_keys == b_n then
+        if a_n ~= b_n then
+            return false
+        end
+        for i = 1, a_n do
+            if not __pytra_equals(a[i], b[i]) then
+                return false
+            end
+        end
+        return true
+    end
+    if a_keys ~= b_keys then
+        return false
+    end
+    for k, v in pairs(a) do
+        if b[k] == nil and v ~= nil then
+            return false
+        end
+        if not __pytra_equals(v, b[k]) then
+            return false
+        end
+    end
+    return true
+end
+
+function __pytra_set_key(v)
+    if type(v) == "table" then
+        return "__pytra__" .. __pytra_repr(v)
+    end
+    return v
 end
 
 function __pytra_truthy(v)
@@ -372,9 +468,13 @@ function __pytra_contains(container, value)
         end
         if is_array and key_count == n then
             for i = 1, n do
-                if container[i] == value then return true end
+                if __pytra_equals(container[i], value) then return true end
             end
             return false
+        end
+        local slot = __pytra_set_key(value)
+        if container[slot] ~= nil then
+            return true
         end
         return container[value] ~= nil
     end
@@ -1380,14 +1480,14 @@ end
 
 function __pytra_list_index(lst, value)
     for i = 1, #lst do
-        if lst[i] == value then return i - 1 end
+        if __pytra_equals(lst[i], value) then return i - 1 end
     end
     error("ValueError: " .. tostring(value) .. " is not in list")
 end
 
 function __pytra_list_remove(lst, value)
     for i = 1, #lst do
-        if lst[i] == value then
+        if __pytra_equals(lst[i], value) then
             table.remove(lst, i)
             return
         end
@@ -1416,19 +1516,20 @@ function __pytra_set_ctor(iter)
     local out = {}
     if type(iter) == "table" then
         if #iter > 0 then
-            for i = 1, #iter do out[iter[i]] = true end
+            for i = 1, #iter do out[__pytra_set_key(iter[i])] = true end
         else
-            for k, _ in pairs(iter) do out[k] = true end
+            for k, _ in pairs(iter) do out[__pytra_set_key(k)] = true end
         end
     end
     return out
 end
 
-function __pytra_set_add(s, val) s[val] = true end
-function __pytra_set_discard(s, val) s[val] = nil end
+function __pytra_set_add(s, val) s[__pytra_set_key(val)] = true end
+function __pytra_set_discard(s, val) s[__pytra_set_key(val)] = nil end
 function __pytra_set_remove(s, val)
-    if s[val] == nil then error("KeyError: " .. tostring(val)) end
-    s[val] = nil
+    local slot = __pytra_set_key(val)
+    if s[slot] == nil then error("KeyError: " .. tostring(val)) end
+    s[slot] = nil
 end
 function __pytra_set_clear(s)
     for k in pairs(s) do s[k] = nil end
@@ -1549,9 +1650,17 @@ function __pytra_fmt(v, spec)
     local width, prec, ftype = spec:match("^(%d*)%.?(%d*)([fdegsx%%]?)$")
     if ftype == "f" or ftype == "e" or ftype == "g" then
         local p = tonumber(prec) or 6
+        local w = tonumber(width)
+        if w ~= nil and w > 0 then
+            return string.format("%" .. w .. "." .. p .. ftype, v)
+        end
         return string.format("%." .. p .. ftype, v)
     end
     if ftype == "d" then
+        local w = tonumber(width)
+        if w ~= nil and w > 0 then
+            return string.format("%" .. w .. "d", v)
+        end
         return string.format("%d", v)
     end
     if ftype == "s" then
@@ -1578,7 +1687,7 @@ function __pytra_assert_true(cond, msg)
 end
 
 function __pytra_assert_eq(a, b, msg)
-    if a == b then return true end
+    if __pytra_equals(a, b) then return true end
     return false
 end
 

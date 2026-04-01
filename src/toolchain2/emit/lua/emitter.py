@@ -589,6 +589,19 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     keywords = _list(node, "keywords")
     func_node = node.get("func")
 
+    if (
+        (runtime_call == "py_to_string" or resolved_rt_call == "py_to_string" or _str(node, "builtin_name") == "str")
+        and len(args) >= 1
+    ):
+        arg0 = args[0]
+        if isinstance(arg0, dict):
+            arg0_kind = _str(arg0, "kind")
+            arg0_rt = _str(arg0, "resolved_type")
+            if arg0_kind == "List" and len(_list(arg0, "elements")) == 0 and arg0_rt.startswith("list["):
+                return '"[]"'
+            if arg0_kind == "Dict" and len(_list(arg0, "keys")) == 0 and len(_list(arg0, "entries")) == 0 and arg0_rt.startswith("dict["):
+                return '"{}"'
+
     if runtime_call == "ArgumentParser.add_argument" or resolved_rt_call == "ArgumentParser.add_argument":
         if len(keywords) > 0:
             parts: list[str] = []
@@ -936,6 +949,12 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     owner_node = node.get("value")
     owner = _emit_expr(ctx, owner_node)
     owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+    if owner_rt in ("", "unknown") and isinstance(owner_node, dict) and _str(owner_node, "kind") == "Attribute":
+        attr = _str(owner_node, "attr")
+        owner_base = owner_node.get("value")
+        if isinstance(owner_base, dict) and _str(owner_base, "kind") == "Name":
+            owner_base_id = _str(owner_base, "id")
+            owner_rt = ctx.class_fields.get(owner_base_id, {}).get(attr, owner_rt)
     slice_node = node.get("slice")
     if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Slice":
         lower = slice_node.get("lower")
@@ -1167,7 +1186,7 @@ def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_tuple_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     elements = _list(node, "elements")
     elem_strs = [_emit_expr(ctx, e) for e in elements]
-    return "{" + ", ".join(elem_strs) + "}"
+    return "__pytra_tuple({" + ", ".join(elem_strs) + "})"
 
 
 def _emit_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -1349,17 +1368,37 @@ def _emit_lambda(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     body_node = node.get("body")
     arg_order = _list(node, "arg_order")
     arg_names: list[str] = []
+    raw_names: list[str] = []
     if len(arg_order) > 0:
         for a in arg_order:
             if isinstance(a, str):
+                raw_names.append(a)
                 arg_names.append(_lua_symbol_name(ctx, a))
     else:
         args = _list(node, "args")
         for a in args:
             if isinstance(a, dict):
-                arg_names.append(_lua_symbol_name(ctx, _str(a, "arg")))
+                raw_name = _str(a, "arg")
+                raw_names.append(raw_name)
+                arg_names.append(_lua_symbol_name(ctx, raw_name))
+    defaults = _dict(node, "arg_defaults")
+    if len(defaults) == 0:
+        for a in _list(node, "args"):
+            if not isinstance(a, dict):
+                continue
+            raw_name = _str(a, "arg")
+            default_node = a.get("default")
+            if raw_name != "" and isinstance(default_node, dict):
+                defaults[raw_name] = default_node
     body_code = _emit_expr(ctx, body_node)
-    return "function(" + ", ".join(arg_names) + ") return " + body_code + " end"
+    prefix: list[str] = []
+    for raw_name, safe_name in zip(raw_names, arg_names):
+        default_node = defaults.get(raw_name)
+        if isinstance(default_node, dict):
+            prefix.append("if " + safe_name + " == nil then " + safe_name + " = " + _emit_expr(ctx, default_node) + " end")
+    if len(prefix) == 0:
+        return "function(" + ", ".join(arg_names) + ") return " + body_code + " end"
+    return "function(" + ", ".join(arg_names) + ") " + "; ".join(prefix) + "; return " + body_code + " end"
 
 
 def _emit_range_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -2353,7 +2392,11 @@ def _collect_module_class_info(ctx: EmitContext, body: list[JsonVal]) -> None:
                 target = member.get("target")
                 if isinstance(target, dict) and _str(target, "kind") == "Name":
                     fname = _str(target, "id")
-                    ftype = _str(member, "resolved_type")
+                    ftype = _str(member, "decl_type")
+                    if ftype == "":
+                        ftype = _str(member, "resolved_type")
+                    if ftype == "":
+                        ftype = _str(target, "resolved_type")
                     fields[fname] = ftype
         ctx.class_instance_methods[name] = methods
         ctx.class_static_methods[name] = static_methods
