@@ -4,7 +4,7 @@ class Base:
 class Child(Base):
     pass
 
-def check(x: object) -> bool:
+def check(x: Base | Child) -> bool:
     return isinstance(x, Base)
 
 if __name__ == "__main__":

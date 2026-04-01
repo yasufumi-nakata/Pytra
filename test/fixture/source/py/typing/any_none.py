@@ -1,12 +1,9 @@
-# This file contains test/implementation code for `test/fixtures/typing/any_none.py`.
-
-from pytra.typing import Any
 from pytra.utils.assertions import py_assert_all, py_assert_eq, py_assert_true
 
 
 def run_any_none() -> bool:
-    v: Any = None
-    w: Any = "x"
+    v: str | None = None
+    w: str | None = "x"
 
     is_none_v: bool = v is None
     is_not_none_w: bool = w is not None

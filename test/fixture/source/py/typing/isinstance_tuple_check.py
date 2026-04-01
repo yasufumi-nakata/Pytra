@@ -4,7 +4,7 @@ class Cat:
 class Dog:
     pass
 
-def is_pet(x: object) -> bool:
+def is_pet(x: Cat | Dog | int) -> bool:
     return isinstance(x, (Cat, Dog))
 
 if __name__ == "__main__":

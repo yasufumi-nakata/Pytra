@@ -1,11 +1,8 @@
-# This file contains test/implementation code for `test/fixtures/typing/any_list_mixed.py`.
-
-from pytra.typing import Any
 from pytra.utils.assertions import py_assert_all, py_assert_eq
 
 
 def run_any_list_mixed() -> bool:
-    values: list[Any] = [1, "x", True]
+    values: list[int | str | bool] = [1, "x", True]
 
     i: int = int(values[0])
     s: str = str(values[1])
