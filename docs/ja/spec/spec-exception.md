@@ -49,9 +49,9 @@ if __name__ == "__main__":
 
 言語プロファイルの `exception_style` で分岐する。
 
-### 4.1 `native_throw`（15言語）
+### 4.1 `native_throw`（14言語）
 
-対象: C++, Java, C#, Kotlin, Swift, JS, TS, Dart, PHP, Ruby, Nim, Scala, Julia, Lua
+対象: C++, Java, C#, Kotlin, Swift, JS, TS, Dart, PHP, Ruby, Nim, Scala, Julia
 
 - EAST3 の `Raise` / `Try` ノードをそのまま emitter に渡す。
 - emitter が言語ネイティブの `throw` / `try-catch` に写像する。
@@ -62,9 +62,9 @@ EAST3 ノード:
 - `Raise(value=Call(ValueError, ["msg"]))` → `throw ValueError("msg")`
 - `Try(body=[...], handlers=[ExceptHandler(type="ValueError", name="e", body=[...])], finalbody=[...])` → `try { } catch (ValueError& e) { } finally { }`
 
-### 4.2 `union_return`（3言語）
+### 4.2 `union_return`（4言語）
 
-対象: Go, Rust, Zig
+対象: Go, Rust, Zig, Lua
 
 - linker が call graph を解析し、`raise` を含む関数を推移的に特定（マーカー付与）。
 - EAST3 言語別 lowering が `Raise` / `Try` を `ErrorReturn` / `ErrorCheck` / `ErrorCatch` に変換する。
@@ -613,7 +613,7 @@ err.type_id >= PYTRA_TID_VALUE_ERROR_MIN && err.type_id <= PYTRA_TID_VALUE_ERROR
 | Nim | `raise newException(ValueError, "msg")` |
 | Scala | `throw new ValueError("msg")` |
 | Julia | `throw(ValueError("msg"))` |
-| Lua | `error({type="ValueError", msg="msg"})` |
+| Lua | `return {__class__="ValueError", msg="msg"}` (union_return 方式) |
 
 ### 6.2 `Try/Except/Finally`
 
@@ -631,7 +631,7 @@ err.type_id >= PYTRA_TID_VALUE_ERROR_MIN && err.type_id <= PYTRA_TID_VALUE_ERROR
 | Nim | `try: ... except ValueError as e: ... finally: ...` |
 | Scala | `try { } catch { case e: ValueError => } finally { }` |
 | Julia | `try ... catch e; if e isa ValueError ... end; finally ... end` |
-| Lua | `local ok, err = pcall(function() ... end); if not ok then ... end` |
+| Lua | `local result = f(); if __pytra_isinstance(result, "Exception") then ... end` (union_return 方式) |
 
 ## 7. CommonRenderer の例外処理サポート
 
