@@ -735,7 +735,7 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("struct Box100 {", rust)
 
     def test_dict_entries_literal_is_not_dropped(self) -> None:
-        fixture = find_fixture_case("any_dict_items")
+        fixture = find_fixture_case("union_dict_items")
         east = load_east(fixture, parser_backend="self_hosted")
         rust = transpile_to_rust(east)
         self.assertIn("BTreeMap::from([(", rust)

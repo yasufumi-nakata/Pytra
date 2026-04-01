@@ -4838,20 +4838,20 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
-    def test_any_basic_runtime(self) -> None:
-        out = self._compile_and_run_fixture("any_basic")
+    def test_union_basic_runtime(self) -> None:
+        out = self._compile_and_run_fixture("union_basic")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
-    def test_any_none_runtime(self) -> None:
-        out = self._compile_and_run_fixture("any_none")
+    def test_optional_none_runtime(self) -> None:
+        out = self._compile_and_run_fixture("optional_none")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
-    def test_any_dict_items_runtime(self) -> None:
-        out = self._compile_and_run_fixture("any_dict_items")
+    def test_union_dict_items_runtime(self) -> None:
+        out = self._compile_and_run_fixture("union_dict_items")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
@@ -4862,8 +4862,8 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
-    def test_any_list_mixed_runtime(self) -> None:
-        out = self._compile_and_run_fixture("any_list_mixed")
+    def test_union_list_mixed_runtime(self) -> None:
+        out = self._compile_and_run_fixture("union_list_mixed")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")

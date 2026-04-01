@@ -1,0 +1,19 @@
+from pytra.utils.assertions import py_assert_all, py_assert_eq
+
+
+def run_union_list_mixed() -> bool:
+    values: list[int | str | bool] = [1, "x", True]
+
+    i: int = int(values[0])
+    s: str = str(values[1])
+    b: bool = bool(values[2])
+
+    checks: list[bool] = []
+    checks.append(py_assert_eq(i, 1, "int cast"))
+    checks.append(py_assert_eq(s, "x", "str cast"))
+    checks.append(py_assert_eq(b, True, "bool cast"))
+    return py_assert_all(checks, "union_list_mixed")
+
+
+if __name__ == "__main__":
+    print(run_union_list_mixed())

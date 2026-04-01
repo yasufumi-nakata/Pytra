@@ -349,9 +349,9 @@ class FrontendTypeExprTest(unittest.TestCase):
         self.assertEqual(out["body"][0]["meta"]["lifetime_analysis"]["def_use"]["defs"]["meta"], ["n1"])
         self.assertEqual(out["body"][0]["arg_index"]["kind"], 0)
 
-    def test_load_east3_document_accepts_any_dict_items_fixture(self) -> None:
+    def test_load_east3_document_accepts_union_dict_items_fixture(self) -> None:
         doc = load_east3_document(
-            ROOT / "test" / "fixtures" / "typing" / "any_dict_items.py",
+            ROOT / "test" / "fixtures" / "typing" / "union_dict_items.py",
             parser_backend="self_hosted",
             target_lang="rs",
         )

@@ -542,7 +542,7 @@
           "category": "expected_failure",
           "contains": ""
         },
-        "test/fixtures/typing/any_basic.py": {
+        "test/fixtures/typing/union_basic.py": {
           "category": "expected_failure",
           "contains": ""
         },
@@ -550,15 +550,15 @@
           "category": "expected_failure",
           "contains": ""
         },
-        "test/fixtures/typing/any_dict_items.py": {
+        "test/fixtures/typing/union_dict_items.py": {
           "category": "expected_failure",
           "contains": ""
         },
-        "test/fixtures/typing/any_list_mixed.py": {
+        "test/fixtures/typing/union_list_mixed.py": {
           "category": "expected_failure",
           "contains": ""
         },
-        "test/fixtures/typing/any_none.py": {
+        "test/fixtures/typing/optional_none.py": {
           "category": "expected_failure",
           "contains": ""
         },
