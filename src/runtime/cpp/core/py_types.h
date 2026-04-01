@@ -20,6 +20,21 @@
 #include "core/py_scalar_types.h"
 #include "core/io.h"
 
+namespace pytra::runtime::cpp::detail {
+
+static constexpr pytra_type_id kTypeIdNone = 0;
+static constexpr pytra_type_id kTypeIdBool = 1;
+static constexpr pytra_type_id kTypeIdInt = 2;
+static constexpr pytra_type_id kTypeIdFloat = 3;
+static constexpr pytra_type_id kTypeIdStr = 4;
+static constexpr pytra_type_id kTypeIdList = 5;
+static constexpr pytra_type_id kTypeIdDict = 6;
+static constexpr pytra_type_id kTypeIdSet = 7;
+static constexpr pytra_type_id kTypeIdObject = 8;
+static constexpr pytra_type_id kTypeIdUserBase = 1000;
+
+}  // namespace pytra::runtime::cpp::detail
+
 class str;
 
 class str;
@@ -69,17 +84,17 @@ struct py_runtime_builtin_type_id;
 
 template <class T>
 struct py_runtime_builtin_type_id<list<T>> {
-    static constexpr pytra_type_id value = PYTRA_TID_LIST;
+    static constexpr pytra_type_id value = ::pytra::runtime::cpp::detail::kTypeIdList;
 };
 
 template <class K, class V>
 struct py_runtime_builtin_type_id<dict<K, V>> {
-    static constexpr pytra_type_id value = PYTRA_TID_DICT;
+    static constexpr pytra_type_id value = ::pytra::runtime::cpp::detail::kTypeIdDict;
 };
 
 template <class T>
 struct py_runtime_builtin_type_id<set<T>> {
-    static constexpr pytra_type_id value = PYTRA_TID_SET;
+    static constexpr pytra_type_id value = ::pytra::runtime::cpp::detail::kTypeIdSet;
 };
 
 template <typename T, typename... Args>
@@ -99,12 +114,12 @@ struct py_is_rc_list_handle<Object<list<T>>> : ::std::true_type {
 
 template <class T>
 static inline Object<list<T>> rc_list_new() {
-    return make_object<list<T>>(PYTRA_TID_LIST);
+    return make_object<list<T>>(::pytra::runtime::cpp::detail::kTypeIdList);
 }
 
 template <class T>
 static inline Object<list<T>> rc_list_from_value(list<T> values) {
-    return make_object<list<T>>(PYTRA_TID_LIST, ::std::move(values));
+    return make_object<list<T>>(::pytra::runtime::cpp::detail::kTypeIdList, ::std::move(values));
 }
 
 template <class T>
@@ -127,12 +142,12 @@ static inline list<T> rc_list_copy_value(const Object<list<T>>& values) {
 
 template <class K, class V>
 static inline Object<dict<K, V>> rc_dict_new() {
-    return make_object<dict<K, V>>(PYTRA_TID_DICT);
+    return make_object<dict<K, V>>(::pytra::runtime::cpp::detail::kTypeIdDict);
 }
 
 template <class K, class V>
 static inline Object<dict<K, V>> rc_dict_from_value(dict<K, V> values) {
-    return make_object<dict<K, V>>(PYTRA_TID_DICT, ::std::move(values));
+    return make_object<dict<K, V>>(::pytra::runtime::cpp::detail::kTypeIdDict, ::std::move(values));
 }
 
 // Identity overload: pass-through when already Object<dict<K,V>>.
@@ -161,12 +176,12 @@ static inline dict<K, V> rc_dict_copy_value(const Object<dict<K, V>>& values) {
 
 template <class T>
 static inline Object<set<T>> rc_set_new() {
-    return make_object<set<T>>(PYTRA_TID_SET);
+    return make_object<set<T>>(::pytra::runtime::cpp::detail::kTypeIdSet);
 }
 
 template <class T>
 static inline Object<set<T>> rc_set_from_value(set<T> values) {
-    return make_object<set<T>>(PYTRA_TID_SET, ::std::move(values));
+    return make_object<set<T>>(::pytra::runtime::cpp::detail::kTypeIdSet, ::std::move(values));
 }
 
 // Identity overload: pass-through when already Object<set<T>>.
@@ -197,7 +212,7 @@ static inline set<T> rc_set_copy_value(const Object<set<T>>& values) {
 // emitter は型に関わらず rc_from_value(...) のみを使い、型ごとの分岐を持たない。
 template <class T>
 static inline Object<list<T>> rc_from_value(list<T> values) {
-    return make_object<list<T>>(PYTRA_TID_LIST, ::std::move(values));
+    return make_object<list<T>>(::pytra::runtime::cpp::detail::kTypeIdList, ::std::move(values));
 }
 template <class T>
 static inline Object<list<T>> rc_from_value(Object<list<T>> v) {
@@ -205,7 +220,7 @@ static inline Object<list<T>> rc_from_value(Object<list<T>> v) {
 }
 template <class K, class V>
 static inline Object<dict<K, V>> rc_from_value(dict<K, V> values) {
-    return make_object<dict<K, V>>(PYTRA_TID_DICT, ::std::move(values));
+    return make_object<dict<K, V>>(::pytra::runtime::cpp::detail::kTypeIdDict, ::std::move(values));
 }
 template <class K, class V>
 static inline Object<dict<K, V>> rc_from_value(Object<dict<K, V>> v) {
@@ -213,7 +228,7 @@ static inline Object<dict<K, V>> rc_from_value(Object<dict<K, V>> v) {
 }
 template <class T>
 static inline Object<set<T>> rc_from_value(set<T> values) {
-    return make_object<set<T>>(PYTRA_TID_SET, ::std::move(values));
+    return make_object<set<T>>(::pytra::runtime::cpp::detail::kTypeIdSet, ::std::move(values));
 }
 template <class T>
 static inline Object<set<T>> rc_from_value(Object<set<T>> v) {
@@ -236,7 +251,7 @@ inline const T& Object<void>::unbox() const {
 
 inline Object<void>::Object(int64 v) : cb(nullptr) {
     auto boxed = std::make_unique<PyBoxedValue<int64>>(v);
-    cb = new ControlBlock{0, PYTRA_TID_INT, boxed.get(), &deleter_impl<PyBoxedValue<int64>>};
+    cb = new ControlBlock{0, ::pytra::runtime::cpp::detail::kTypeIdInt, boxed.get(), &deleter_impl<PyBoxedValue<int64>>};
     boxed.release();
     retain();
 }
@@ -245,28 +260,28 @@ inline Object<void>::Object(int v) : Object(static_cast<int64>(v)) {}
 
 inline Object<void>::Object(const char* v) : cb(nullptr) {
     auto boxed = std::make_unique<PyBoxedValue<str>>(str(v));
-    cb = new ControlBlock{0, PYTRA_TID_STR, boxed.get(), &deleter_impl<PyBoxedValue<str>>};
+    cb = new ControlBlock{0, ::pytra::runtime::cpp::detail::kTypeIdStr, boxed.get(), &deleter_impl<PyBoxedValue<str>>};
     boxed.release();
     retain();
 }
 
 inline Object<void>::Object(float64 v) : cb(nullptr) {
     auto boxed = std::make_unique<PyBoxedValue<float64>>(v);
-    cb = new ControlBlock{0, PYTRA_TID_FLOAT, boxed.get(), &deleter_impl<PyBoxedValue<float64>>};
+    cb = new ControlBlock{0, ::pytra::runtime::cpp::detail::kTypeIdFloat, boxed.get(), &deleter_impl<PyBoxedValue<float64>>};
     boxed.release();
     retain();
 }
 
 inline Object<void>::Object(bool v) : cb(nullptr) {
     auto boxed = std::make_unique<PyBoxedValue<bool>>(v);
-    cb = new ControlBlock{0, PYTRA_TID_BOOL, boxed.get(), &deleter_impl<PyBoxedValue<bool>>};
+    cb = new ControlBlock{0, ::pytra::runtime::cpp::detail::kTypeIdBool, boxed.get(), &deleter_impl<PyBoxedValue<bool>>};
     boxed.release();
     retain();
 }
 
 inline Object<void>::Object(const str& v) : cb(nullptr) {
     auto boxed = std::make_unique<PyBoxedValue<str>>(v);
-    cb = new ControlBlock{0, PYTRA_TID_STR, boxed.get(), &deleter_impl<PyBoxedValue<str>>};
+    cb = new ControlBlock{0, ::pytra::runtime::cpp::detail::kTypeIdStr, boxed.get(), &deleter_impl<PyBoxedValue<str>>};
     boxed.release();
     retain();
 }

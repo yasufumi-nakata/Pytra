@@ -65,10 +65,10 @@ static inline bool py_runtime_object_exact_is(const object& value) {
     if (!value) {
         return false;
     }
-    if constexpr (::std::is_same_v<Exact, bool>) return value.type_id() == PYTRA_TID_BOOL;
-    else if constexpr (::std::is_same_v<Exact, int64>) return value.type_id() == PYTRA_TID_INT;
-    else if constexpr (::std::is_same_v<Exact, float64>) return value.type_id() == PYTRA_TID_FLOAT;
-    else if constexpr (::std::is_same_v<Exact, str>) return value.type_id() == PYTRA_TID_STR;
+    if constexpr (::std::is_same_v<Exact, bool>) return value.type_id() == ::pytra::runtime::cpp::detail::kTypeIdBool;
+    else if constexpr (::std::is_same_v<Exact, int64>) return value.type_id() == ::pytra::runtime::cpp::detail::kTypeIdInt;
+    else if constexpr (::std::is_same_v<Exact, float64>) return value.type_id() == ::pytra::runtime::cpp::detail::kTypeIdFloat;
+    else if constexpr (::std::is_same_v<Exact, str>) return value.type_id() == ::pytra::runtime::cpp::detail::kTypeIdStr;
     else return false;
 }
 
@@ -83,7 +83,7 @@ static inline bool py_runtime_value_exact_is(const object& value) {
 }
 
 static inline bool py_is_bool(const object& v) {
-    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_BOOL;
+    return static_cast<bool>(v) && v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdBool;
 }
 
 template <class T>
@@ -92,7 +92,7 @@ static inline bool py_is_bool(const T&) {
 }
 
 static inline bool py_is_int(const object& v) {
-    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_INT;
+    return static_cast<bool>(v) && v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdInt;
 }
 
 template <class T>
@@ -102,7 +102,7 @@ static inline bool py_is_int(const T&) {
 }
 
 static inline bool py_is_float(const object& v) {
-    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_FLOAT;
+    return static_cast<bool>(v) && v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdFloat;
 }
 
 template <class T>
@@ -112,7 +112,7 @@ static inline bool py_is_float(const T&) {
 }
 
 static inline bool py_is_str(const object& v) {
-    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_STR;
+    return static_cast<bool>(v) && v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdStr;
 }
 
 template <class T>
@@ -127,7 +127,7 @@ template <class T>
 static inline bool py_is_list(const Object<list<T>>&) { return true; }
 
 static inline bool py_is_list(const object& v) {
-    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_LIST;
+    return static_cast<bool>(v) && v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdList;
 }
 
 template <class T>
@@ -140,7 +140,7 @@ template <class K, class V>
 static inline bool py_is_dict(const Object<dict<K, V>>&) { return true; }
 
 static inline bool py_is_dict(const object& v) {
-    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_DICT;
+    return static_cast<bool>(v) && v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdDict;
 }
 
 template <class T>
@@ -153,7 +153,7 @@ template <class T>
 static inline bool py_is_set(const Object<set<T>>&) { return true; }
 
 static inline bool py_is_set(const object& v) {
-    return static_cast<bool>(v) && v.type_id() == PYTRA_TID_SET;
+    return static_cast<bool>(v) && v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdSet;
 }
 
 template <class T>
@@ -265,13 +265,13 @@ static inline ::std::string py_to_string(float v) {
 
 static inline ::std::string py_to_string(const object& v) {
     if (!v) return "";
-    if (v.type_id() == PYTRA_TID_STR)
+    if (v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdStr)
         return static_cast<PyBoxedValue<str>*>(v.get())->value;
-    if (v.type_id() == PYTRA_TID_INT)
+    if (v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdInt)
         return ::std::to_string(static_cast<PyBoxedValue<int64>*>(v.get())->value);
-    if (v.type_id() == PYTRA_TID_FLOAT)
+    if (v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdFloat)
         return py_to_string(static_cast<PyBoxedValue<float64>*>(v.get())->value);
-    if (v.type_id() == PYTRA_TID_BOOL)
+    if (v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdBool)
         return static_cast<PyBoxedValue<bool>*>(v.get())->value ? "True" : "False";
     return "<object>";
 }

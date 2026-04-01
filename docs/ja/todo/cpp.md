@@ -26,8 +26,10 @@
 
 P0-CPP-VARIANT (variant 移行) の完了後に着手。variant 移行で `object` / `type_id` が不要になったら、`PYTRA_TID_*` 定数、`type_id_support.h`、`py_runtime_object_type_id` を削除する。
 
-1. [ ] [ID: P0-CPP-TYPEID-CLN-S1] `src/runtime/cpp/core/py_scalar_types.h` から `PYTRA_TID_*` 定数を削除する
-2. [ ] [ID: P0-CPP-TYPEID-CLN-S2] `src/runtime/cpp/core/type_id_support.h` を削除する
+1. [x] [ID: P0-CPP-TYPEID-CLN-S1] `src/runtime/cpp/core/py_scalar_types.h` から `PYTRA_TID_*` 定数を削除する
+   - 完了: `src/runtime/cpp/core/py_scalar_types.h` から `PYTRA_TID_*` 公開定数を削除し、C++ runtime 内部では `src/runtime/cpp/core/py_types.h` の `pytra::runtime::cpp::detail::kTypeId*` に置き換えた。あわせて `src/toolchain2/emit/cpp/emitter.py` も built-in type id を数値 literal へ落とすように更新し、生成 C++ から `PYTRA_TID_*` 直参照を除去した。
+2. [x] [ID: P0-CPP-TYPEID-CLN-S2] `src/runtime/cpp/core/type_id_support.h` を削除する
+   - 完了: `src/runtime/cpp/core/type_id_support.h` を削除し、`py_runtime_value_exact_is` は `src/runtime/cpp/built_in/base_ops.h` に移設した。`src/toolchain2/link/{runtime_discovery.py,dependencies.py,linker.py}` と `src/toolchain2/emit/cpp/emitter.py` を更新して、C++ link/emitter では `py_runtime_object_type_id` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` の wrapper と `pytra.built_in.type_id` 自動依存を使わない構成にした。
 3. [ ] [ID: P0-CPP-TYPEID-CLN-S3] fixture + sample + stdlib parity に回帰がないことを確認する
 
 ### P0-CPP-VARIANT: C++ を std::variant ベースに移行し object/box/unbox を廃止する

@@ -44,7 +44,7 @@ static inline bool py_to_bool(bool v) {
 
 static inline bool py_to_bool(const object& v) {
     if (!v) return false;
-    if (v.type_id() == PYTRA_TID_BOOL)
+    if (v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdBool)
         return static_cast<PyBoxedValue<bool>*>(v.get())->value;
     return static_cast<bool>(v);
 }
@@ -92,7 +92,7 @@ static inline float64 py_to_float64(float64 v) { return v; }
 static inline float64 py_to_float64(int64 v) { return static_cast<float64>(v); }
 static inline float64 py_to_float64(const object& v) {
     if (!v) return 0.0;
-    if (v.type_id() == PYTRA_TID_INT)
+    if (v.type_id() == ::pytra::runtime::cpp::detail::kTypeIdInt)
         return static_cast<float64>(static_cast<PyBoxedValue<int64>*>(v.get())->value);
     return static_cast<PyBoxedValue<float64>*>(v.get())->value;
 }
