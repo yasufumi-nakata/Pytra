@@ -146,6 +146,19 @@ class BuiltinRegistry:
                 return cls
         return None
 
+    def find_stdlib_class_module(self, cls_sig: ClassSig) -> str:
+        """Return the stdlib module id that owns ``cls_sig``, or "" if not found."""
+        seen: set[int] = set()
+        for module_id, mod in self.stdlib_modules.items():
+            mod_key = id(mod)
+            if mod_key in seen:
+                continue
+            seen.add(mod_key)
+            for candidate in mod.classes.values():
+                if candidate is cls_sig:
+                    return module_id
+        return ""
+
     def is_builtin(self, name: str) -> bool:
         return name in self.functions
 

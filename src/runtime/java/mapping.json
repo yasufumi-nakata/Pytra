@@ -22,6 +22,7 @@
     "set_ctor": "__SET_CTOR__",
     "list.append": "__LIST_APPEND__",
     "list.extend": "__LIST_EXTEND__",
+    "Path.exists": "__PATH_EXISTS__",
     "list.pop": "PyRuntime.pyPop",
     "list.index": "PyRuntime.pyListIndex",
     "dict.get": "__DICT_GET__",

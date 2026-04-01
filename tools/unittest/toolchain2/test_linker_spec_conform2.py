@@ -4513,6 +4513,40 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("object(make_object<Path>(1000, p))", cpp_code)
         self.assertIn("static_cast<pytra_type_id>(1000)", cpp_code)
 
+    def test_cpp_emitter_isinstance_on_nominal_union_checks_subclass_lanes(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            meta_extra={
+                "linked_program_v1": {
+                    "module_id": "app.main",
+                    "type_id_resolved_v1": {
+                        "app.main.Base": 1000,
+                        "app.main.Child": 1001,
+                    },
+                    "type_info_table_v1": {
+                        "app.main.Base": {"id": 1000, "entry": 1000, "exit": 1002},
+                        "app.main.Child": {"id": 1001, "entry": 1001, "exit": 1002},
+                    },
+                },
+            },
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "x", "resolved_type": "Base | Child"},
+                        "expected_type_id": {"kind": "Name", "id": "Base", "resolved_type": "type"},
+                        "resolved_type": "bool",
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("::std::holds_alternative<Base>(x)", cpp_code)
+        self.assertIn("::std::holds_alternative<Child>(x)", cpp_code)
+
     def test_cpp_header_gen_emits_forward_decls_before_class_bodies(self) -> None:
         doc = _module_doc(
             "pytra.std.json",

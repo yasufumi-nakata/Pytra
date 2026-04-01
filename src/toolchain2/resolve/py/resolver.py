@@ -380,6 +380,41 @@ def _lookup_method_sig(owner_base: str, attr: str, ctx: ResolveContext) -> tuple
     return None, None
 
 
+def _attach_stdlib_method_runtime_metadata(
+    expr: dict[str, JsonVal],
+    cls_sig: ClassSig,
+    method_sig: FuncSig,
+    owner_base: str,
+    attr: str,
+    ctx: ResolveContext,
+) -> None:
+    module_id: str = ctx.registry.find_stdlib_class_module(cls_sig)
+    if module_id == "":
+        return
+    method_extern: ExternV2 | None = method_sig.extern_v2
+    runtime_call_name: str = owner_base + "." + attr
+    runtime_symbol_name: str = runtime_call_name
+    runtime_module_id: str = module_id
+    if method_extern is not None:
+        if method_extern.symbol != "":
+            runtime_call_name = method_extern.symbol
+            runtime_symbol_name = method_extern.symbol
+        if method_extern.module != "":
+            runtime_module_id = method_extern.module
+    expr["resolved_runtime_call"] = runtime_call_name
+    expr["resolved_runtime_source"] = "stdlib_method"
+    expr["runtime_call"] = runtime_call_name
+    expr["runtime_module_id"] = runtime_module_id
+    expr["runtime_symbol"] = runtime_symbol_name
+    adapter: str = ctx.lookup_adapter_kind(runtime_module_id, runtime_symbol_name)
+    if adapter != "":
+        expr["runtime_call_adapter_kind"] = adapter
+    if method_extern is not None and method_extern.tag != "":
+        expr["semantic_tag"] = method_extern.tag
+    elif attr != "":
+        expr["semantic_tag"] = "stdlib.method." + attr
+
+
 def _has_inherited_field(class_name: str, field_name: str, ctx: ResolveContext) -> bool:
     cls_sig: ClassSig | None = ctx.module_classes.get(class_name)
     if cls_sig is None:
@@ -2660,6 +2695,7 @@ def _resolve_method_call(
         ret: str = _ctx_normalize_type(_substitute_type_params(msig.return_type, receiver_type, cls), ctx)
         expr["resolved_type"] = ret
         func["resolved_type"] = "callable"
+        _attach_stdlib_method_runtime_metadata(expr, cls, msig, owner_base, attr, ctx)
         if "staticmethod" in msig.decorators:
             expr["call_dispatch_kind"] = "static_method"
         return ret

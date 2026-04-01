@@ -1109,6 +1109,28 @@ def append_all(dst: bytearray, src: bytearray) -> None:
         self.assertEqual(fn.get("arg_usage", {}).get("dst"), "reassigned")
         self.assertEqual(fn.get("arg_usage", {}).get("src"), "readonly")
 
+    def test_resolver_attaches_runtime_metadata_for_stdlib_class_methods(self) -> None:
+        source = """
+from pytra.std.pathlib import Path
+
+def exists_here(p: Path) -> bool:
+    return p.exists()
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+
+        exists_call = next(
+            node
+            for node in _walk(east2)
+            if node.get("kind") == "Call"
+            and node.get("repr") == "p.exists()"
+        )
+
+        self.assertEqual(exists_call.get("resolved_runtime_call"), "Path.exists")
+        self.assertEqual(exists_call.get("runtime_call"), "Path.exists")
+        self.assertEqual(exists_call.get("runtime_module_id"), "pytra.std.pathlib")
+        self.assertEqual(exists_call.get("runtime_symbol"), "Path.exists")
+
     def test_boolop_value_select_preserves_operand_type(self) -> None:
         source = """
 def f() -> None:

@@ -527,9 +527,6 @@ def _emit_container_method_call(ctx: EmitContext, owner_node: JsonVal, attr: str
     if owner_type == "str":
         if attr == "upper":
             return owner_access + ".toUpperCase()"
-    if owner_type == "Path":
-        if attr == "exists":
-            return owner_access + ".exists()"
     if _is_dict_type(owner_type) or _is_dynamic_type(owner_type):
         if attr == "get":
             if _is_dynamic_type(owner_type):
@@ -835,13 +832,6 @@ def _unwrap_node(node: JsonVal) -> JsonVal:
         current = inner
     return current
 
-
-def _normalize_runtime_module_id(module_id: str) -> str:
-    if module_id.startswith("pytra.std."):
-        return module_id[len("pytra.std."):]
-    return module_id
-
-
 def _module_owner_info(ctx: EmitContext, owner_node: JsonVal) -> tuple[bool, str, str]:
     node = _unwrap_node(owner_node)
     if not isinstance(node, dict):
@@ -885,7 +875,6 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             qualified = owner_key + "." + attr if owner_key != "" else attr
         if qualified in ctx.mapping.calls:
             return ctx.mapping.calls[qualified]
-        mod_id = _normalize_runtime_module_id(mod_id)
         if should_skip_module(mod_id, ctx.mapping):
             resolved = resolve_runtime_symbol_name(
                 attr,
@@ -981,7 +970,8 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if expected_name == "":
                 expected_name = _str(expected_node, "type_object_of")
         if expected_name in ctx.class_names or expected_name in ctx.class_bases:
-            return "(" + _emit_expr(ctx, node.get("value")) + " instanceof " + _safe_java_ident(expected_name) + ")"
+            value_expr = _emit_expr(ctx, node.get("value"))
+            return "(((Object) (" + value_expr + ")) instanceof " + _safe_java_ident(expected_name) + ")"
         value_expr = "PyRuntime.pyRuntimeValueTypeId(" + _emit_expr(ctx, node.get("value")) + ")"
         if isinstance(expected_node, dict):
             expected_tid = _str(expected_node, "id")
@@ -1126,6 +1116,8 @@ def _emit_builtin_placeholder(ctx: EmitContext, fn_name: str, all_arg_strs: list
         return owner + ".add(" + all_arg_strs[1] + ")"
     if fn_name == "__LIST_EXTEND__" and len(all_arg_strs) >= 2:
         return owner + ".addAll(" + all_arg_strs[1] + ")"
+    if fn_name == "__PATH_EXISTS__" and len(all_arg_strs) >= 1:
+        return owner + ".exists()"
     if fn_name == "__DICT_GET__":
         if len(all_arg_strs) >= 3:
             return _maybe_cast_dynamic_call(
@@ -1227,7 +1219,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     qualified = owner_key + "." + attr if owner_key != "" else attr
                 if qualified in ctx.mapping.calls:
                     return ctx.mapping.calls[qualified] + "(" + ", ".join(arg_strs) + ")"
-                mod_id = _normalize_runtime_module_id(mod_id)
                 if should_skip_module(mod_id, ctx.mapping):
                     resolved = resolve_runtime_symbol_name(
                         attr,
@@ -1243,8 +1234,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             fn_name = _runtime_call_name(ctx, node, func)
             if runtime_call != "" or fn_name in ctx.mapping.calls.values():
                 method_args = [owner] + arg_strs
+                if is_module_owner:
+                    method_args = list(arg_strs)
                 owner_type = _node_type(ctx, owner_node)
-                if _is_dynamic_type(owner_type) and fn_name in (
+                if not is_module_owner and _is_dynamic_type(owner_type) and fn_name in (
                     "PyRuntime.pyStrJoin",
                     "PyRuntime.pyStrStrip",
                     "PyRuntime.pyStrRStrip",
@@ -1262,28 +1255,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return _emit_attribute(ctx, func) + "(" + ", ".join(arg_strs) + ")"
         if func_kind == "Name":
             fn_id = _str(func, "id")
-            if fn_id == "pytra_isinstance" and len(args) >= 2:
-                actual_arg = args[0]
-                expected_arg = args[1]
-                if (
-                    isinstance(actual_arg, dict)
-                    and _str(actual_arg, "kind") == "ObjTypeId"
-                    and isinstance(expected_arg, dict)
-                    and _str(expected_arg, "kind") == "Name"
-                ):
-                    tid_name = _str(expected_arg, "id")
-                    expected_class = ""
-                    for fqcn in ctx.linked_type_ids:
-                        if _fqcn_to_tid_const(fqcn) != tid_name:
-                            continue
-                        if "." not in fqcn:
-                            continue
-                        candidate = fqcn.rsplit(".", 1)[1]
-                        if candidate in ctx.class_names or candidate in ctx.class_bases:
-                            expected_class = candidate
-                            break
-                    if expected_class != "":
-                        return "(((Object) (" + _emit_expr(ctx, actual_arg.get("value")) + ")) instanceof " + _safe_java_ident(expected_class) + ")"
             vararg_type = ctx.function_varargs.get(fn_id, "")
             if vararg_type != "" and len(args) >= 1:
                 last_arg = args[-1]
@@ -2125,19 +2096,30 @@ def _build_java_runtime_import_map(meta: dict[str, JsonVal], mapping: RuntimeMap
         module_id = binding.get("runtime_module_id")
         if not isinstance(module_id, str) or module_id == "":
             module_id = binding.get("module_id")
-        normalized_module_id = _normalize_runtime_module_id(module_id if isinstance(module_id, str) else "")
+        export_name = binding.get("export_name")
+        if not isinstance(export_name, str) or export_name == "":
+            export_name = local_name
         if module_id != "pytra.built_in.type_id_table":
-            if normalized_module_id == "" or not should_skip_module(normalized_module_id, mapping):
+            if not isinstance(module_id, str) or module_id == "":
                 continue
-            export_name = binding.get("export_name")
-            symbol_name = export_name if isinstance(export_name, str) and export_name != "" else local_name
+            symbol_name = export_name
+            if symbol_name == "":
+                symbol_name = local_name
+            module_tail = module_id.rsplit(".", 1)[-1] if "." in module_id else module_id
+            qualified_symbol = module_tail + "." + symbol_name if module_tail != "" else symbol_name
+            if qualified_symbol in mapping.calls:
+                runtime_imports[local_name] = mapping.calls[qualified_symbol]
+                continue
+            if symbol_name in mapping.calls:
+                runtime_imports[local_name] = mapping.calls[symbol_name]
+                continue
+            if not should_skip_module(module_id, mapping):
+                runtime_imports[local_name] = _module_class_name(module_id) + "." + _safe_java_ident(export_name)
+                continue
             resolved = resolve_runtime_symbol_name(symbol_name, mapping)
             if resolved != "":
                 runtime_imports[local_name] = resolved
             continue
-        export_name = binding.get("export_name")
-        if not isinstance(export_name, str) or export_name == "":
-            export_name = local_name
         runtime_imports[local_name] = _module_class_name(module_id) + "." + _safe_java_ident(export_name)
     return runtime_imports
 
