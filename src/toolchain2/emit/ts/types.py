@@ -65,7 +65,7 @@ _TS_KEYWORDS: set[str] = {
 TS_BUILTIN_RUNTIME_SYMBOLS: tuple[str, ...] = (
     "PY_TYPE_NONE", "PY_TYPE_BOOL", "PY_TYPE_NUMBER", "PY_TYPE_STRING",
     "PY_TYPE_ARRAY", "PY_TYPE_MAP", "PY_TYPE_SET", "PY_TYPE_OBJECT",
-    "PYTRA_TYPE_ID", "PYTRA_TRUTHY", "PYTRA_TRY_LEN", "PYTRA_STR",
+    "PYTRA_TRUTHY", "PYTRA_TRY_LEN", "PYTRA_STR",
     "pyRegisterType", "pyRegisterClassType", "pyIsSubtype", "pyIsInstance",
     "pyTypeId", "pyTruthy", "pyTryLen", "pyStr", "pyToString",
     "pyPrint", "pyLen", "pyBool", "pyRange", "pyFloorDiv", "pyMod",

@@ -109,8 +109,7 @@
     "py_assert_stdout": "pyAssertStdout",
     "py_assert_true": "pyAssertTrue",
     "py_assert_eq": "pyAssertEq",
-    "py_assert_all": "pyAssertAll",
-    "pytra_isinstance": "pytra_isinstance"
+    "py_assert_all": "pyAssertAll"
   },
   "skip_modules": [
     "pytra.built_in.",

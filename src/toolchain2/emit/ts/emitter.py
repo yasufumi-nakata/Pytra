@@ -64,6 +64,7 @@ class EmitContext:
     # Exception type IDs
     exception_type_ids: dict[str, int] = field(default_factory=dict)
     class_type_ids: dict[str, int] = field(default_factory=dict)
+    tid_const_types: dict[str, str] = field(default_factory=dict)
     # Module-level symbol renames (original → renamed), e.g. main → __pytra_main
     renamed_symbols: dict[str, str] = field(default_factory=dict)
     # Per-module temp counter
@@ -528,6 +529,42 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return _isinstance_ts_check(obj, obj_rt, type_name)
 
 
+def _tid_const_name(fqcn: str) -> str:
+    dotted = fqcn.replace(".", "_")
+    chars: list[str] = []
+    prev_is_lower = False
+    for ch in dotted:
+        is_upper = "A" <= ch and ch <= "Z"
+        is_lower = "a" <= ch and ch <= "z"
+        if is_upper and prev_is_lower:
+            chars.append("_")
+        chars.append(ch.upper())
+        prev_is_lower = is_lower
+    result = "".join(chars) + "_TID"
+    if result != "" and result[0].isdigit():
+        result = "_" + result
+    return result
+
+
+def _emit_linked_type_id_isinstance(ctx: EmitContext, args: list[JsonVal]) -> str | None:
+    if len(args) != 2:
+        return None
+    type_id_arg = args[0]
+    expected_arg = args[1]
+    if not isinstance(type_id_arg, dict) or _str(type_id_arg, "kind") != "ObjTypeId":
+        return None
+    if not isinstance(expected_arg, dict) or _str(expected_arg, "kind") != "Name":
+        return None
+    expected_const = _str(expected_arg, "id")
+    type_name = ctx.tid_const_types.get(expected_const, "")
+    if type_name == "":
+        return None
+    value_node = type_id_arg.get("value")
+    obj = _emit_expr(ctx, value_node)
+    obj_rt = _str(value_node, "resolved_type") if isinstance(value_node, dict) else ""
+    return _isinstance_ts_check(obj, obj_rt, type_name)
+
+
 def _emit_unbox(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return _emit_expr(ctx, node.get("value"))
 
@@ -841,6 +878,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
         if func_kind == "Name":
             fn_id = _str(func, "id")
+
+            if fn_id == "pytra_isinstance":
+                linked_isinstance = _emit_linked_type_id_isinstance(ctx, args)
+                if linked_isinstance is not None:
+                    return linked_isinstance
 
             if fn_id in ("__init__", "py__init__") and len(args) >= 1:
                 first_arg = args[0]
@@ -2518,16 +2560,8 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     # TypeScript `let` is block-scoped; hoisting ensures cross-block accessibility).
     _hoist_nested_declarations(ctx, body)
     _emit_body(ctx, body)
-    # For constructors: append PYTRA_TYPE_ID initialization (after super() calls in body)
-    if fn_name == "constructor" and ctx.current_class != "":
-        fqcn = ctx.module_id + "." + ctx.current_class
-        class_tid = ctx.class_type_ids.get(fqcn)
-        if class_tid is None:
-            class_tid = ctx.class_type_ids.get(ctx.current_class)
-        if class_tid is not None:
-            _emit(ctx, "this[PYTRA_TYPE_ID] = " + str(class_tid) + ";")
     # For abstract/stub methods (empty body, non-void return type): emit stub return
-    elif len(body) == 0 and fn_name != "constructor" and return_type not in ("None", "void", "", "never"):
+    if len(body) == 0 and fn_name != "constructor" and return_type not in ("None", "void", "", "never"):
         _emit(ctx, "return undefined as any;")
     ctx.indent_level -= 1
     _emit(ctx, "}")
@@ -2656,14 +2690,6 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if fname != "":
                     dataclass_defaults[fname] = stmt.get("value")
 
-    # Emit PYTRA_TYPE_ID field declaration if this class has a type ID
-    fqcn_check = ctx.module_id + "." + name
-    class_tid_check = ctx.class_type_ids.get(fqcn_check)
-    if class_tid_check is None:
-        class_tid_check = ctx.class_type_ids.get(name)
-    if class_tid_check is not None and not ctx.strip_types:
-        _emit(ctx, "[PYTRA_TYPE_ID]!: number;")
-
     # Emit instance field declarations (skip static ones)
     if not ctx.strip_types and len(fields) > 0:
         instance_fields = [(fn, ft) for fn, ft in fields if fn not in static_field_names]
@@ -2724,13 +2750,9 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         else:
             _emit_stmt(ctx, stmt)
 
-    # Synthesize constructor for type ID registration / dataclass if no __init__ exists
+    # Synthesize constructor for dataclass if no __init__ exists
     if not has_init and not _is_exception_type_name(ctx, name):
-        fqcn = ctx.module_id + "." + name
-        class_tid = ctx.class_type_ids.get(fqcn)
-        if class_tid is None:
-            class_tid = ctx.class_type_ids.get(name)
-        if class_tid is not None or (is_dataclass and len(fields) > 0):
+        if is_dataclass and len(fields) > 0:
             # Build constructor params (for dataclasses: all fields)
             ctor_params: list[str] = []
             if is_dataclass:
@@ -2750,8 +2772,6 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if is_dataclass:
                 for fname, _ in fields:
                     _emit(ctx, "this." + _safe_ts_ident(fname) + " = " + _safe_ts_ident(fname) + ";")
-            if class_tid is not None:
-                _emit(ctx, "this[PYTRA_TYPE_ID] = " + str(class_tid) + ";")
             ctx.indent_level -= 1
             _emit(ctx, "}")
 
@@ -2915,6 +2935,7 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
             if isinstance(type_id_val, int):
                 ctx.exception_type_ids[fqcn] = type_id_val
                 ctx.class_type_ids[fqcn] = type_id_val
+                ctx.tid_const_types[_tid_const_name(fqcn)] = fqcn.rsplit(".", 1)[-1]
 
     ctx.import_alias_modules = build_import_alias_map(meta)
     ctx.runtime_imports = build_runtime_import_map(meta, mapping)
@@ -2939,18 +2960,6 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
         _emit_blank(ctx)
         _emit(ctx, "// main")
         _emit_body(ctx, main_guard)
-
-    # For type_id_table module: append pytra_isinstance using id_table
-    if is_type_id_table:
-        _emit_blank(ctx)
-        if strip_types:
-            _emit(ctx, "export function pytra_isinstance(actual, tid) {")
-        else:
-            _emit(ctx, "export function pytra_isinstance(actual: number, tid: number): boolean {")
-        ctx.indent_level += 1
-        _emit(ctx, "return id_table[tid * 2] <= actual && actual <= id_table[tid * 2 + 1];")
-        ctx.indent_level -= 1
-        _emit(ctx, "}")
 
     # Detect built-in runtime symbols used in the output and prepend import
     body_text = "\n".join(ctx.lines)
@@ -2986,36 +2995,8 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
                 used_builtins.append(native_sym)
                 used_set.add(native_sym)
 
-    # Detect type_id_table symbols used in the output, generate import from type_id_table
-    type_id_table_module_name = "pytra_built_in_type_id_table"
-    import_bindings_raw = meta.get("import_bindings")
-    type_id_table_syms: list[str] = []
-    if isinstance(import_bindings_raw, list) and not is_type_id_table:
-        for binding in import_bindings_raw:
-            if not isinstance(binding, dict):
-                continue
-            src_module = binding.get("module_id", "")
-            if not isinstance(src_module, str):
-                continue
-            # Symbols from type_id_table OR from type_id (pytra_isinstance lives there but we emit it in type_id_table)
-            if src_module in ("pytra.built_in.type_id_table", "pytra.built_in.type_id"):
-                local_name = binding.get("local_name", "")
-                export_name = binding.get("export_name", "")
-                sym = export_name if isinstance(export_name, str) and export_name != "" else local_name
-                if isinstance(sym, str) and sym != "" and sym not in type_id_table_syms:
-                    type_id_table_syms.append(sym)
-
-    # Remove symbols already imported from type_id_table to avoid TS2300 duplicate imports
-    type_id_set = set(type_id_table_syms)
-    used_builtins = [s for s in used_builtins if s not in type_id_set]
-
     js_ext = ".js" if strip_types else ""
     preamble_lines: list[str] = []
-    if len(type_id_table_syms) > 0:
-        preamble_lines.append(
-            "import { " + ", ".join(sorted(type_id_table_syms)) + " } from \"./" + type_id_table_module_name + js_ext + "\";"
-        )
-
     if len(used_builtins) > 0:
         preamble_lines.append(
             "import { " + ", ".join(used_builtins) + " } from \"./" + _BUILTIN_RUNTIME_MODULE + js_ext + "\";"

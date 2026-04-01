@@ -13,10 +13,10 @@ const PY_TYPE_MAP = 5;
 const PY_TYPE_SET = 6;
 const PY_TYPE_OBJECT = 7;
 
-const PYTRA_TYPE_ID = Symbol.for("pytra.type_id");
 const PYTRA_TRUTHY = Symbol.for("pytra.py_truthy");
 const PYTRA_TRY_LEN = Symbol.for("pytra.py_try_len");
 const PYTRA_STR = Symbol.for("pytra.py_str");
+const PYTRA_TYPE_ID = Symbol.for("pytra.type_id");
 
 const PYTRA_USER_TYPE_ID_BASE = 1000;
 let _pyNextTypeId = PYTRA_USER_TYPE_ID_BASE;
@@ -1166,7 +1166,6 @@ export {
   PY_TYPE_MAP,
   PY_TYPE_SET,
   PY_TYPE_OBJECT,
-  PYTRA_TYPE_ID,
   PYTRA_TRUTHY,
   PYTRA_TRY_LEN,
   PYTRA_STR,
