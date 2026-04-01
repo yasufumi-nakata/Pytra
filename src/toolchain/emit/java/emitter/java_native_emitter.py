@@ -1298,6 +1298,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         if len(args) == 0:
             return "new java.util.ArrayList<Object>()"
         return "PyRuntime.__pytra_enumerate(" + _render_expr(args[0]) + ")"
+    if callee_name == "set":
+        if len(args) == 0:
+            return "new java.util.LinkedHashSet<Object>()"
+        return "new java.util.LinkedHashSet<Object>(" + _render_expr(args[0]) + ")"
     if callee_name == "range":
         if len(args) == 1:
             return "PyRuntime.pyRange(0, (int)(" + _render_expr(args[0]) + "), 1)"
@@ -1943,7 +1947,12 @@ def _coerce_assignment_value(target_type: str, value_code: str, value_expr: Any,
     source_java = _infer_java_type_from_expr_node(value_expr, type_map=type_map)
     if source_java == target_java or source_java == "void":
         return value_code
-    if target_java.startswith("java.util.HashMap<") or target_java.startswith("java.util.ArrayList<") or target_java.startswith("java.util.ArrayDeque<"):
+    if (
+        target_java.startswith("java.util.HashMap<")
+        or target_java.startswith("java.util.ArrayList<")
+        or target_java.startswith("java.util.ArrayDeque<")
+        or target_java.startswith("java.util.LinkedHashSet<")
+    ):
         return "((" + target_java + ")(Object)(" + value_code + "))"
     return value_code
 
@@ -3172,7 +3181,6 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main",
     if not isinstance(body_any, list):
         raise RuntimeError("java native emitter: Module.body must be list")
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Java backend")
-    reject_backend_general_union_type_exprs(east_doc, backend_name="Java backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Java backend")
     main_guard_any = ed.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
