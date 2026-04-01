@@ -416,7 +416,9 @@ def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 _emit(ctx, "local " + safe_exc + " = " + catch_err_var)
                 ctx.current_exc_var = exc_name
             else:
-                ctx.current_exc_var = catch_err_var
+                reraised_exc = _next_temp(ctx, "reraised_exc")
+                _emit(ctx, "local " + reraised_exc + " = " + catch_err_var)
+                ctx.current_exc_var = reraised_exc
             _emit(ctx, matched_var + " = true")
             _emit(ctx, catch_err_var + " = nil")
             _emit_body(ctx, _list(handler, "body"))
@@ -536,6 +538,11 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     owner_node = node.get("value")
     attr = _str(node, "attr")
     if isinstance(owner_node, dict):
+        if attr == "__name__" and _str(owner_node, "kind") == "Call":
+            call_func = owner_node.get("func")
+            call_args = _list(owner_node, "args")
+            if isinstance(call_func, dict) and _str(call_func, "kind") == "Name" and _str(call_func, "id") == "type" and len(call_args) >= 1:
+                return "__pytra_type_name(" + _emit_expr(ctx, call_args[0]) + ")"
         owner = _emit_expr(ctx, owner_node)
         owner_rt = _str(owner_node, "resolved_type")
         if owner_rt in LUA_PATH_TYPE_NAMES and attr in ("name", "stem", "parent"):
@@ -2024,6 +2031,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     _emit(ctx, safe + " = {}")
     _emit(ctx, safe + ".__index = " + safe)
+    _emit(ctx, safe + ".__name = " + _quote_string(name))
     if base_name != "" and base_name not in LUA_NON_INHERITABLE_BASES:
         base_safe = _safe_lua_ident(base_name)
         _emit(ctx, "setmetatable(" + safe + ", {__index = " + base_safe + "})")
@@ -2238,7 +2246,7 @@ def _emit_raise(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     else:
         # Bare raise: re-raise current exception
         if ctx.current_exc_var != "":
-            _emit(ctx, "error(" + _lua_symbol_name(ctx, ctx.current_exc_var) + ")")
+            _emit_error_propagation(ctx, _lua_symbol_name(ctx, ctx.current_exc_var), allow_current_catch=False)
         else:
             _emit(ctx, 'error("re-raise")')
 

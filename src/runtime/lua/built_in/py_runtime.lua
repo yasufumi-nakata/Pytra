@@ -124,6 +124,24 @@ function __pytra_to_string(v)
     return tostring(v)
 end
 
+function __pytra_type_name(v)
+    local tv = type(v)
+    if tv ~= "table" then
+        return tv
+    end
+    local mt = getmetatable(v)
+    if type(mt) == "table" then
+        if type(mt.__name) == "string" then
+            return mt.__name
+        end
+        local mt_index = mt.__index
+        if type(mt_index) == "table" and type(mt_index.__name) == "string" then
+            return mt_index.__name
+        end
+    end
+    return "table"
+end
+
 function __pytra_repeat_seq(a, b)
     local seq = a
     local count = b
