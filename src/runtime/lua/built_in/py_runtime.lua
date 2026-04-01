@@ -8,6 +8,16 @@ if type(__pytra_runtime_source) == "string" and string.sub(__pytra_runtime_sourc
 end
 -- image_runtime is now provided via linker (png/gif modules)
 
+PYTRA_TID_NONE = 0
+PYTRA_TID_BOOL = 1
+PYTRA_TID_INT = 2
+PYTRA_TID_FLOAT = 3
+PYTRA_TID_STR = 4
+PYTRA_TID_LIST = 5
+PYTRA_TID_DICT = 6
+PYTRA_TID_SET = 7
+PYTRA_TID_OBJECT = 8
+
 function __pytra_print(...)
     local argc = select("#", ...)
     if argc == 0 then
@@ -109,6 +119,7 @@ function __pytra_to_string(v)
                 return mt_index.__str__(v)
             end
         end
+        return __pytra_repr(v)
     end
     return tostring(v)
 end
@@ -332,17 +343,21 @@ end
 function __pytra_contains(container, value)
     local t = type(container)
     if t == "table" then
-        -- For sequence tables (array), only linear-scan;
-        -- for dict tables, check key existence.
         local n = #container
-        if n > 0 then
-            -- Sequence: linear scan only (avoid index/key collision)
+        local is_array = true
+        local key_count = 0
+        for k, _ in pairs(container) do
+            key_count = key_count + 1
+            if type(k) ~= "number" or k < 1 or math.floor(k) ~= k or k > n then
+                is_array = false
+            end
+        end
+        if is_array and key_count == n then
             for i = 1, n do
                 if container[i] == value then return true end
             end
             return false
         end
-        -- Dict: key lookup
         return container[value] ~= nil
     end
     if t == "string" then
@@ -350,6 +365,25 @@ function __pytra_contains(container, value)
         return string.find(container, value, 1, true) ~= nil
     end
     return false
+end
+
+function __pytra_truthy(value)
+    if value == nil or value == false then
+        return false
+    end
+    if type(value) == "string" then
+        return #value ~= 0
+    end
+    if type(value) == "number" then
+        return value ~= 0
+    end
+    if type(value) == "table" then
+        if #value > 0 then
+            return true
+        end
+        return next(value) ~= nil
+    end
+    return true
 end
 
 function __pytra_str_isdigit(s)
@@ -932,6 +966,38 @@ json = {
 }
 
 function __pytra_isinstance(obj, class_tbl)
+    if type(class_tbl) == "number" then
+        if class_tbl == PYTRA_TID_OBJECT then
+            return true
+        end
+        if class_tbl == PYTRA_TID_STR then
+            return type(obj) == "string"
+        end
+        if class_tbl == PYTRA_TID_BOOL then
+            return type(obj) == "boolean"
+        end
+        if class_tbl == PYTRA_TID_INT or class_tbl == PYTRA_TID_FLOAT then
+            return type(obj) == "number"
+        end
+        if class_tbl == PYTRA_TID_LIST then
+            if type(obj) ~= "table" then
+                return false
+            end
+            local n = #obj
+            local key_count = 0
+            for k, _ in pairs(obj) do
+                key_count = key_count + 1
+                if type(k) ~= "number" or k < 1 or math.floor(k) ~= k or k > n then
+                    return false
+                end
+            end
+            return key_count == n
+        end
+        if class_tbl == PYTRA_TID_DICT or class_tbl == PYTRA_TID_SET then
+            return type(obj) == "table"
+        end
+        return false
+    end
     if type(obj) ~= "table" then
         return false
     end
@@ -1141,8 +1207,21 @@ end
 function __pytra_len(v)
     if type(v) == "string" then return #v end
     if type(v) == "table" then
+        if type(v._items) == "table" then
+            return #v._items
+        end
         local n = #v
-        if n > 0 then return n end
+        local is_array = true
+        local key_count = 0
+        for k, _ in pairs(v) do
+            key_count = key_count + 1
+            if type(k) ~= "number" or k < 1 or math.floor(k) ~= k or k > n then
+                is_array = false
+            end
+        end
+        if is_array and key_count == n then
+            return n
+        end
         local count = 0
         for _ in pairs(v) do count = count + 1 end
         return count
@@ -1155,6 +1234,10 @@ function __pytra_floordiv(a, b)
 end
 
 function __pytra_range(start, stop, step)
+    if stop == nil then
+        stop = start
+        start = 0
+    end
     if step == nil then step = 1 end
     local out = {}
     if step > 0 then
