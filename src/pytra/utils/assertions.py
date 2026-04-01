@@ -1,29 +1,22 @@
 
-def _eq_any(actual: object, expected: object) -> bool:
-    try:
-        return py_to_string(actual) == py_to_string(expected)
-    except NameError:
-        return actual == expected
-
-
 def py_assert_true(cond: bool, label: str = "") -> bool:
     if cond:
         return True
     if label != "":
-        print(f"[assert_true] {label}: False")
+        print("[assert_true] " + label + ": False")
     else:
         print("[assert_true] False")
     return False
 
 
-def py_assert_eq(actual: object, expected: object, label: str = "") -> bool:
-    ok = _eq_any(actual, expected)
+def py_assert_eq(actual: int | str | bool, expected: int | str | bool, label: str = "") -> bool:
+    ok: bool = str(actual) == str(expected)
     if ok:
         return True
     if label != "":
-        print(f"[assert_eq] {label}: actual={actual}, expected={expected}")
+        print("[assert_eq] " + label + ": actual=" + str(actual) + ", expected=" + str(expected))
     else:
-        print(f"[assert_eq] actual={actual}, expected={expected}")
+        print("[assert_eq] actual=" + str(actual) + ", expected=" + str(expected))
     return False
 
 
@@ -31,13 +24,13 @@ def py_assert_all(results: list[bool], label: str = "") -> bool:
     for v in results:
         if not v:
             if label != "":
-                print(f"[assert_all] {label}: False")
+                print("[assert_all] " + label + ": False")
             else:
                 print("[assert_all] False")
             return False
     return True
 
 
-def py_assert_stdout(expected_lines: list[str], fn: object) -> bool:
+def py_assert_stdout(expected_lines: list[str], fn: callable) -> bool:
     # self_hosted parser / runtime 互換優先: stdout capture は未実装。
     return True
