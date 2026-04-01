@@ -28,4 +28,4 @@
 - 2026-04-01: fixture parity は `119/137 pass` まで改善。`StaticRangeForPlan`、staticmethod dispatch、varargs 復元、list concat、zip/sum、table repr を追加。
 - 2026-04-01: sample parity は `1/18 pass`。画像 artifact、loop/continue、helper 関数不足、sample 特有の lowered パターンが残る。
 - 2026-04-01: `docs/ja/spec/spec-exception.md` に合わせて Lua profile を `exception_style=union_return` に変更。`ErrorReturn` / `ErrorCheck` / `ErrorCatch` を emitter に実装し、`pytra.built_in.error` を pure Python exception class として emit/load するように修正。例外 fixture 5 件は pass に回復。
-- 2026-04-01: 例外方式変更後の full fixture は `110/137 pass`、stdlib は `11/16 pass`。残差は `any_*`、dict/set wrapper、`isinstance_narrowing`、tuple unpack、repr/stringify、`math_extended`、`re_extended`、`sys_extended`、`argparse_extended`、`dataclasses_extended`。
+- 2026-04-01: `dict.get/items` owner 補完、`continue` lowering 吸収、`import math` shim、`ArgumentParser.add_argument` keyword 反映、dataclass default constructor 生成、`sys.set_argv/set_path` と `re.sub(count=0)` の runtime 整合を追加。stdlib は `16/16 pass` に回復、fixture は `115/137 pass` まで改善。

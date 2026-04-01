@@ -965,6 +965,9 @@ end
 function sub(pattern, repl, text, count)
     local lua_pat = tostring(pattern):gsub("\\s", "%%s")
     local limit = tonumber(count)
+    if limit ~= nil and limit <= 0 then
+        limit = nil
+    end
     local out = string.gsub(tostring(text), lua_pat, tostring(repl), limit)
     return out
 end
@@ -1529,11 +1532,17 @@ __pytra_sys_path = {}
 sys = {
     argv = __pytra_sys_argv,
     path = __pytra_sys_path,
-    set_argv = function(_, items)
+    set_argv = function(items, maybe_items)
+        if maybe_items ~= nil then
+            items = maybe_items
+        end
         __pytra_set_argv(items)
         sys.argv = __pytra_sys_argv
     end,
-    set_path = function(_, items)
+    set_path = function(items, maybe_items)
+        if maybe_items ~= nil then
+            items = maybe_items
+        end
         __pytra_set_path(items)
         sys.path = __pytra_sys_path
     end,

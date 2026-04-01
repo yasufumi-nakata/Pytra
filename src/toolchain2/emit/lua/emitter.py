@@ -543,7 +543,21 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     arg_strs: list[str] = []
     for a in args:
         arg_strs.append(_emit_expr(ctx, a))
+    keywords = _list(node, "keywords")
     func_node = node.get("func")
+
+    if runtime_call == "ArgumentParser.add_argument" or resolved_rt_call == "ArgumentParser.add_argument":
+        if len(keywords) > 0:
+            parts: list[str] = []
+            for kw in keywords:
+                if not isinstance(kw, dict):
+                    continue
+                key = kw.get("arg")
+                if not isinstance(key, str) or key == "":
+                    continue
+                parts.append(key + " = " + _emit_expr(ctx, kw.get("value")))
+            if len(parts) > 0:
+                arg_strs.append("{ " + ", ".join(parts) + " }")
 
     if runtime_call.startswith("str.") and isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
         owner_node = func_node.get("value")
@@ -561,7 +575,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if mapped != "":
             call_name = mapped
 
-    if call_name.startswith("__LIST_") and isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute":
+    if (
+        (call_name.startswith("__LIST_") or call_name.startswith("__DICT_") or call_name.startswith("__SET_"))
+        and isinstance(func_node, dict)
+        and _str(func_node, "kind") == "Attribute"
+    ):
         owner_node = func_node.get("value")
         if isinstance(owner_node, dict):
             arg_strs = [_emit_expr(ctx, owner_node)] + arg_strs
@@ -777,6 +795,20 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 owner_id = _str(owner_node, "id")
                 dispatch_kind = _str(node, "call_dispatch_kind")
                 if owner_rt == "module" or owner_id in ctx.import_alias_modules:
+                    mod_id = _str(func_node, "runtime_module_id")
+                    if mod_id == "":
+                        mod_id = ctx.import_alias_modules.get(owner_id, "")
+                    if should_skip_module(mod_id, ctx.mapping):
+                        runtime_symbol = _str(node, "runtime_symbol")
+                        if runtime_symbol == "":
+                            runtime_symbol = _str(func_node, "runtime_symbol")
+                        if runtime_symbol == "":
+                            runtime_symbol = attr
+                        mod_short = mod_id.rsplit(".", 1)[-1]
+                        qualified_key = mod_short + "." + runtime_symbol
+                        mapped = ctx.mapping.calls.get(qualified_key, "")
+                        if mapped != "":
+                            return mapped + "(" + ", ".join(arg_strs) + ")"
                     return owner + "." + _safe_lua_ident(attr) + "(" + ", ".join(arg_strs) + ")"
                 if dispatch_kind == "static_method" or (owner_id in ctx.class_names and attr in ctx.class_static_methods.get(owner_id, set())):
                     return owner + "." + _safe_lua_ident(attr) + "(" + ", ".join(arg_strs) + ")"
@@ -1207,6 +1239,10 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
     if kind == "Expr":
         value = node.get("value")
         if isinstance(value, dict):
+            if _str(value, "kind") == "Name" and _str(value, "id") == "continue":
+                ctx.needs_continue_label = True
+                _emit(ctx, "goto __continue__")
+                return
             if _str(value, "kind") == "Constant" and isinstance(value.get("value"), str):
                 return
             code = _emit_expr(ctx, value)
@@ -1827,6 +1863,7 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     ctx.in_class_body = True
 
     has_init = False
+    is_dataclass = _bool(node, "dataclass") or ("dataclass" in _list(node, "decorators"))
     # Emit class body (methods and class-level assignments)
     for stmt in body:
         if not isinstance(stmt, dict):
@@ -1854,12 +1891,41 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             _emit_stmt(ctx, stmt)
 
     if not has_init:
-        _emit(ctx, "function " + safe + ".new()")
-        ctx.indent_level += 1
-        _emit(ctx, "return setmetatable({}, " + safe + ")")
-        ctx.indent_level -= 1
-        _emit(ctx, "end")
-        _emit_blank(ctx)
+        if is_dataclass:
+            field_names: list[str] = []
+            field_defaults: dict[str, str] = {}
+            for member in body:
+                if not isinstance(member, dict) or _str(member, "kind") != "AnnAssign":
+                    continue
+                target = member.get("target")
+                if not isinstance(target, dict) or _str(target, "kind") != "Name":
+                    continue
+                field_name = _str(target, "id")
+                if field_name == "":
+                    continue
+                field_names.append(field_name)
+                if isinstance(member.get("value"), dict):
+                    field_defaults[field_name] = _emit_expr(ctx, member.get("value"))
+            params = [_safe_lua_ident(name) for name in field_names]
+            _emit(ctx, "function " + safe + ".new(" + ", ".join(params) + ")")
+            ctx.indent_level += 1
+            _emit(ctx, "local self = setmetatable({}, " + safe + ")")
+            for field_name in field_names:
+                safe_field = _safe_lua_ident(field_name)
+                if field_name in field_defaults:
+                    _emit(ctx, "if " + safe_field + " == nil then " + safe_field + " = " + field_defaults[field_name] + " end")
+                _emit(ctx, "self." + safe_field + " = " + safe_field)
+            _emit(ctx, "return self")
+            ctx.indent_level -= 1
+            _emit(ctx, "end")
+            _emit_blank(ctx)
+        else:
+            _emit(ctx, "function " + safe + ".new()")
+            ctx.indent_level += 1
+            _emit(ctx, "return setmetatable({}, " + safe + ")")
+            ctx.indent_level -= 1
+            _emit(ctx, "end")
+            _emit_blank(ctx)
 
     ctx.current_class = saved_class
     ctx.in_class_body = saved_in_class
@@ -1868,6 +1934,22 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     kind = _str(node, "kind")
+    if kind == "Import":
+        names = _list(node, "names")
+        for item in names:
+            if not isinstance(item, dict):
+                continue
+            mod_name = _str(item, "name")
+            asname = _str(item, "asname")
+            local_name = asname if asname != "" else mod_name
+            if mod_name == "math":
+                safe_local = _lua_symbol_name(ctx, local_name)
+                if safe_local not in ctx.declared_locals:
+                    ctx.declared_locals.add(safe_local)
+                    _emit(ctx, "local " + safe_local + " = __pytra_math_module()")
+                else:
+                    _emit(ctx, safe_local + " = __pytra_math_module()")
+        return
     if kind == "ImportFrom":
         module = _str(node, "module")
         if should_skip_module(module, ctx.mapping):
@@ -2212,8 +2294,6 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
         if not isinstance(stmt, dict):
             continue
         kind = _str(stmt, "kind")
-        if kind in ("ImportFrom", "Import"):
-            continue
         _emit_stmt(ctx, stmt)
 
     # Emit main guard
