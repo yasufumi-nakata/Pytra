@@ -103,10 +103,13 @@ CATEGORIES: dict[str, list[str]] = {
     ],
     "type_id": [
         # EAST3 の isinstance / type_id 情報から来るべき判定を emitter がハードコード
+        # spec-adt.md §6: PYTRA_TYPE_ID / pytra_isinstance / type_id_table は廃止予定
         r'"py_runtime_object_isinstance"',
         r'"PYTRA_TID_"',
         r'"py_tid_"',
         r'"g_type_table"',
+        r'"PYTRA_TYPE_ID"',
+        r'"pytra_isinstance"',
     ],
     # skip_pure_python は grep ではなく mapping.json + ソース解析で判定する
     # パターンリストは空にし、collect_hits で別途処理する
