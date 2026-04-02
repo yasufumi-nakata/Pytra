@@ -111,11 +111,11 @@ runtime モジュールの Python 正本は `src/pytra/` にあり、`.east`（E
 
 - 最適化レベル: `--opt-level {0,1,2}`（既定: `1`）
   - `0`: 最適化なし、Python 完全互換（添字の負数正規化・境界チェックを常に行う）
-  - `1`: 軽量最適化（定数負数のみ正規化、境界チェック off）
-  - `2`: 積極最適化（負数正規化 off、境界チェック off、浮動小数ループ強度削減）
+  - `1`: 軽量最適化（リテラル負数のみ正規化、変数の境界チェック off）
+  - `2`: 積極最適化（負数正規化 off、境界チェック off）。`a[-1]` は壊れる（ユーザーの選択）
 - 添字の個別制御（`--opt-level` のデフォルトを上書きする）:
-  - `--negative-index-mode {always,const_only,off}` — 負数インデックスの正規化
-  - `--bounds-check-mode {always,debug,off}` — 添字の範囲チェック
+  - `--negative-index-mode {always,const_only,off}` — 負数インデックスの正規化（`off` ではリテラル `-1` も正規化しない）
+  - `--bounds-check-mode {always,debug,off}` — 添字の範囲チェック（負数正規化と連動する。詳細は spec-options 参照）
 - 除算仕様: `--floor-div-mode {native,python}` / `--mod-mode {native,python}`（既定: `native`）
 - 整数ビット幅: `--int-width {32,64}`（既定: `64`）
 

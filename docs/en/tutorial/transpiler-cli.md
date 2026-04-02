@@ -86,11 +86,11 @@ Notes:
 
 - Optimization level: `--opt-level {0,1,2}` (default: `1`)
   - `0`: no optimization, full Python compatibility (always normalize negative indices, always bounds-check)
-  - `1`: light optimization (normalize constant negatives only, bounds-check off)
-  - `2`: aggressive optimization (negative normalization off, bounds-check off, float loop strength reduction)
+  - `1`: light optimization (normalize literal negatives only, variable bounds-check off)
+  - `2`: aggressive optimization (negative normalization off, bounds-check off). `a[-1]` will break (user's choice)
 - Index control (overrides `--opt-level` defaults):
-  - `--negative-index-mode {always,const_only,off}` — negative index normalization
-  - `--bounds-check-mode {always,debug,off}` — index bounds checking
+  - `--negative-index-mode {always,const_only,off}` — negative index normalization (`off` does not normalize even literal `-1`)
+  - `--bounds-check-mode {always,debug,off}` — index bounds checking (interacts with negative index normalization; see spec-options)
 - Division semantics: `--floor-div-mode {native,python}` / `--mod-mode {native,python}` (default: `native`)
 - Integer bit width: `--int-width {32,64}` (default: `64`)
 

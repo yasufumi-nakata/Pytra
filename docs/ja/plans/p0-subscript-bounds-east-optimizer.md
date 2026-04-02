@@ -34,21 +34,55 @@ toolchain2 ではこのオプションが移行されておらず、C++ runtime 
 --opt-level 2 --negative-index-mode always   # 積極最適化だが負数インデックスは常に正規化
 ```
 
-### optimizer / emitter の責務
+### Python の添字セマンティクスと negative_index / bounds_check の連動
 
-1. `--opt-level` / `--negative-index-mode` / `--bounds-check-mode` は optimizer への入力
-2. optimizer が `Subscript` ノードにメタデータを付与する:
-   - `meta.subscript_access_v1.negative_index: "normalize" | "skip"` — 負数正規化の要否
-   - `meta.subscript_access_v1.bounds_check: "full" | "off"` — 範囲チェックの要否
-3. optimizer の判定ロジック:
-   - `ForRange` ループ変数による添字 → `negative_index: "skip"`, `bounds_check: "off"`（opt-level に関係なく安全）
-   - 定数リテラル非負 → `negative_index: "skip"`
-   - 負数リテラル（`a[-1]`）→ `negative_index: "normalize"`
-   - それ以外 → `--opt-level` が決めたデフォルト（個別オプションで上書き可）に従う
-4. emitter はメタデータを見て runtime API を選ぶだけ:
-   - `bounds_check: "full"` → `py_list_at_ref`（既存、full check）
-   - `bounds_check: "off"` → 直接 `operator[]` / 言語のネイティブ添字アクセス
-5. emitter は `--opt-level` / `--negative-index-mode` / `--bounds-check-mode` のオプション自体を知らない
+Python の `a[i]` は以下のステップで動作する:
+
+```python
+if i < 0:
+    i += len(a)        # ← negative_index（正規化）
+if i < 0 or i >= len(a):
+    raise IndexError   # ← bounds_check（範囲チェック）
+```
+
+**negative_index と bounds_check は独立ではなく連動する。** `a[-100]` は正規化後もまだ負なので IndexError になる。正規化なしで bounds check だけ入れると、負数は即 IndexError（Python と挙動が変わる）。
+
+| | bounds_check on | bounds_check off |
+|---|---|---|
+| **negative_index on** | Python 完全互換 | 正規化するが範囲外は未定義 |
+| **negative_index off** | 負数は即エラー（正規化しない） | 全て未定義（最速） |
+
+**リテラル負数（`a[-1]`）の扱い:**
+- `negative_index: off` では `a[-1]` も正規化しない。C++ なら `vector[-1]` で未定義動作。これはユーザーの選択
+- リテラル負数だけ特別扱いすると `off` の意味が一貫しない
+- `off` は本当に off。`a[-1]` を使うコードは `--opt-level 2` では壊れる。`--opt-level 1`（デフォルト）では `const_only` なのでリテラル負数は正規化される
+
+### EAST lowering / optimizer / emitter の責務
+
+添字の処理は **EAST2 → EAST3 lowering** と **optimizer** の 2 段で行う:
+
+**EAST2 → EAST3 lowering（負数リテラルの静的展開）:**
+- `negative_index_mode=always` / `const_only`: リテラル負数 `a[-1]` を `a[len(a) - 1]` に展開
+- `negative_index_mode=off`: リテラル負数もそのまま残す（emitter にそのまま渡る）
+- 変数インデックスは lowering では触らない（静的に負かどうか判定できない）
+
+**optimizer（メタデータ付与）:**
+- `Subscript` ノードに `meta.subscript_access_v1` を付与する:
+  - `negative_index: "normalize" | "skip"` — 実行時の負数正規化（`if (i < 0) i += len`）の要否
+  - `bounds_check: "full" | "off"` — 範囲チェックの要否
+- 判定ロジック:
+  - `ForRange` ループ変数による添字 → `negative_index: "skip"`, `bounds_check: "off"`（常に安全）
+  - lowering 済みリテラル（非負確定）→ `negative_index: "skip"`
+  - 変数インデックス → `negative_index_mode` 設定に従う
+  - `bounds_check` → `bounds_check_mode` 設定に従う
+
+**emitter:**
+- メタデータを見て runtime API を選ぶだけ:
+  - `bounds_check: "full"` + `negative_index: "normalize"` → `py_list_at_ref`（既存、full check）
+  - `bounds_check: "off"` + `negative_index: "skip"` → 直接 `operator[]` / ネイティブ添字
+  - `bounds_check: "full"` + `negative_index: "skip"` → bounds check のみ、正規化なし
+  - `bounds_check: "off"` + `negative_index: "normalize"` → 正規化のみ、bounds check なし
+- emitter は `--opt-level` / `--negative-index-mode` / `--bounds-check-mode` のオプション自体を知らない
 
 ## 対象
 
