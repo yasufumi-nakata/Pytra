@@ -320,6 +320,11 @@ function __pytra_bytearray_append(self, value)
     self[#self + 1] = math.ceil(n)
 end
 
+function __pytra_list_append(items, value)
+    items[#items + 1] = value
+    return nil
+end
+
 function __pytra_list_clear(items)
     for i = #items, 1, -1 do
         items[i] = nil
@@ -413,6 +418,13 @@ function __pytra_bytes(v)
         return out
     end
     return {}
+end
+
+function __pytra_bytes_alias(v)
+    if type(v) == "table" then
+        return v
+    end
+    return __pytra_bytes(v)
 end
 
 function __pytra_slice(seq, start_idx, stop_idx)

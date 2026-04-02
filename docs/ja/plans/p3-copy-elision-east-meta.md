@@ -54,3 +54,6 @@ EAST3 / linker に関連する既存メタデータ:
 ## 決定ログ
 
 - 2026-04-02: Lua 担当が `__pytra_bytes` のコピー省略を emitter 独自判断で実施 → セマンティクス違反として差し戻し。EAST / linker にメタデータを載せる経路で起票。
+- 2026-04-02: `docs/ja/spec/spec-east.md` に `Call.meta.copy_elision_safe_v1` を追加。v1 は `bytes(bytearray)` 専用で、backend は linker が付けた metadata がある場合だけ alias / borrow へ最適化してよい。
+- 2026-04-02: linker に narrow/fail-closed な v1 解析を実装。現状は `return bytes(local_bytearray)` が同一 module 内で readonly `list[bytes]` フローにしか入らないケースだけ annotate する。
+- 2026-04-02: Lua emitter/runtime に `copy_elision_safe_v1` 対応を実装。`03_julia_set` は無回帰 PASS。`07_game_of_life_loop` は改善したが `--cmd-timeout-sec 600` ではまだ timeout。

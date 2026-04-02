@@ -264,6 +264,295 @@ def _walk_nodes(node: JsonVal) -> list[dict[str, JsonVal]]:
     return out
 
 
+def _node_str(node: dict[str, JsonVal], key: str) -> str:
+    value = node.get(key)
+    if isinstance(value, str):
+        return value
+    return ""
+
+
+def _node_list(node: dict[str, JsonVal], key: str) -> list[JsonVal]:
+    value = node.get(key)
+    if isinstance(value, list):
+        return value
+    return []
+
+
+def _walk_nodes_with_parents(
+    node: JsonVal,
+    parents: list[dict[str, JsonVal]],
+) -> list[tuple[dict[str, JsonVal], list[dict[str, JsonVal]]]]:
+    out: list[tuple[dict[str, JsonVal], list[dict[str, JsonVal]]]] = []
+    if isinstance(node, dict):
+        out.append((node, parents))
+        next_parents = list(parents)
+        next_parents.append(node)
+        for value in node.values():
+            for child in _walk_nodes_with_parents(value, next_parents):
+                out.append(child)
+    elif isinstance(node, list):
+        for item in node:
+            for child2 in _walk_nodes_with_parents(item, parents):
+                out.append(child2)
+    return out
+
+
+def _ensure_node_meta(node: dict[str, JsonVal]) -> dict[str, JsonVal]:
+    meta_val = node.get("meta")
+    if isinstance(meta_val, dict):
+        return meta_val
+    meta: dict[str, JsonVal] = {}
+    node["meta"] = meta
+    return meta
+
+
+def _is_name_with_id(node: JsonVal, name: str) -> bool:
+    return isinstance(node, dict) and node.get("kind") == "Name" and node.get("id") == name
+
+
+def _is_bytes_from_local_bytearray_call(node: dict[str, JsonVal]) -> tuple[str, dict[str, JsonVal]] | None:
+    if _node_str(node, "kind") != "Call":
+        return None
+    func = node.get("func")
+    args = _node_list(node, "args")
+    if not isinstance(func, dict) or _node_str(func, "kind") != "Name" or _node_str(func, "id") != "bytes":
+        return None
+    if len(args) != 1 or not isinstance(args[0], dict):
+        return None
+    arg = args[0]
+    if _node_str(arg, "kind") != "Name" or _node_str(arg, "resolved_type") != "bytearray":
+        return None
+    source_name = _node_str(arg, "id")
+    if source_name == "":
+        return None
+    return (source_name, arg)
+
+
+def _top_level_function_map(doc: dict[str, JsonVal]) -> dict[str, dict[str, JsonVal]]:
+    out: dict[str, dict[str, JsonVal]] = {}
+    for stmt in _node_list(doc, "body"):
+        if not isinstance(stmt, dict):
+            continue
+        kind = _node_str(stmt, "kind")
+        if kind != "FunctionDef" and kind != "ClosureDef":
+            continue
+        name = _node_str(stmt, "name")
+        if name == "":
+            continue
+        out[name] = stmt
+    return out
+
+
+def _copy_elision_return_candidate(func_node: dict[str, JsonVal]) -> dict[str, JsonVal] | None:
+    for stmt in _node_list(func_node, "body"):
+        if not isinstance(stmt, dict) or _node_str(stmt, "kind") != "Return":
+            continue
+        value = stmt.get("value")
+        if not isinstance(value, dict):
+            continue
+        hit = _is_bytes_from_local_bytearray_call(value)
+        if hit is not None:
+            return value
+    return None
+
+
+def _find_outer_call_for_arg(
+    node: dict[str, JsonVal],
+    parents: list[dict[str, JsonVal]],
+) -> dict[str, JsonVal] | None:
+    i = len(parents) - 1
+    while i >= 0:
+        parent = parents[i]
+        if _node_str(parent, "kind") == "Call":
+            args = _node_list(parent, "args")
+            for arg in args:
+                if arg is node:
+                    return parent
+        i -= 1
+    return None
+
+
+def _find_direct_parent(
+    parents: list[dict[str, JsonVal]],
+) -> dict[str, JsonVal] | None:
+    if len(parents) == 0:
+        return None
+    return parents[len(parents) - 1]
+
+
+def _is_list_append_call_on_name(call_node: dict[str, JsonVal]) -> tuple[str, dict[str, JsonVal]] | None:
+    func = call_node.get("func")
+    if not isinstance(func, dict) or _node_str(func, "kind") != "Attribute" or _node_str(func, "attr") != "append":
+        return None
+    owner = func.get("value")
+    if not isinstance(owner, dict) or _node_str(owner, "kind") != "Name":
+        return None
+    owner_type = _node_str(owner, "resolved_type")
+    if owner_type != "list[bytes]":
+        return None
+    owner_name = _node_str(owner, "id")
+    if owner_name == "":
+        return None
+    return (owner_name, owner)
+
+
+def _name_used_as_arg_readonly(
+    name_node: dict[str, JsonVal],
+    parents: list[dict[str, JsonVal]],
+) -> bool:
+    outer = _find_outer_call_for_arg(name_node, parents)
+    if outer is None:
+        return False
+    return _node_str(name_node, "borrow_kind") == "readonly_ref"
+
+
+def _name_is_append_owner(
+    name_node: dict[str, JsonVal],
+    parents: list[dict[str, JsonVal]],
+) -> bool:
+    direct_parent = _find_direct_parent(parents)
+    if direct_parent is None:
+        return False
+    if _node_str(direct_parent, "kind") == "Call":
+        func = direct_parent.get("func")
+        if (
+            isinstance(func, dict)
+            and _node_str(func, "kind") == "Attribute"
+            and _is_name_with_id(func.get("value"), _node_str(name_node, "id"))
+        ):
+            hit = _is_list_append_call_on_name(direct_parent)
+            return hit is not None
+        return False
+    if _node_str(direct_parent, "kind") != "Attribute":
+        return False
+    if direct_parent.get("value") is not name_node:
+        return False
+    outer = _find_direct_parent(parents[: len(parents) - 1])
+    if outer is None or _node_str(outer, "kind") != "Call":
+        return False
+    hit = _is_list_append_call_on_name(outer)
+    return hit is not None
+
+
+def _name_is_decl_target(
+    name_node: dict[str, JsonVal],
+    parents: list[dict[str, JsonVal]],
+) -> bool:
+    direct_parent = _find_direct_parent(parents)
+    if direct_parent is None:
+        return False
+    kind = _node_str(direct_parent, "kind")
+    if kind != "AnnAssign" and kind != "Assign":
+        return False
+    return direct_parent.get("target") is name_node
+
+
+def _all_name_uses_readonly_in_function(
+    func_node: dict[str, JsonVal],
+    local_name: str,
+) -> bool:
+    for node, parents in _walk_nodes_with_parents(func_node, []):
+        if not _is_name_with_id(node, local_name):
+            continue
+        direct_parent = _find_direct_parent(parents)
+        direct_kind = _node_str(direct_parent, "kind") if isinstance(direct_parent, dict) else ""
+        if direct_kind in ("RuntimeIterForPlan", "StaticRangeForPlan", "ForCore", "TargetPlan"):
+            continue
+        if _name_is_decl_target(node, parents):
+            continue
+        if _name_is_append_owner(node, parents):
+            continue
+        if _name_used_as_arg_readonly(node, parents):
+            continue
+        return False
+    return True
+
+
+def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]]) -> None:
+    module_funcs: dict[str, dict[str, dict[str, JsonVal]]] = {}
+    for module, doc in copied_docs:
+        module_funcs[module.module_id] = _top_level_function_map(doc)
+
+    candidate_calls: dict[str, dict[str, JsonVal]] = {}
+    for module, _doc in copied_docs:
+        funcs = module_funcs.get(module.module_id, {})
+        for func_name in sorted(list(funcs.keys())):
+            func_node = funcs[func_name]
+            call_node = _copy_elision_return_candidate(func_node)
+            if call_node is not None:
+                candidate_calls[module.module_id + "::" + func_name] = call_node
+
+    for candidate_key in sorted(list(candidate_calls.keys())):
+        sep = candidate_key.find("::")
+        if sep < 0:
+            continue
+        module_id = candidate_key[:sep]
+        func_name = candidate_key[sep + 2 :]
+        call_node = candidate_calls[candidate_key]
+        hit = _is_bytes_from_local_bytearray_call(call_node)
+        if hit is None:
+            continue
+        source_name = hit[0]
+
+        safe = True
+        saw_callsite = False
+        caller_lists: dict[str, dict[str, JsonVal]] = {}
+        for module, _doc in copied_docs:
+            if module.module_id != module_id:
+                continue
+            funcs = module_funcs.get(module.module_id, {})
+            for caller_name in sorted(list(funcs.keys())):
+                caller_func = funcs[caller_name]
+                for node, parents in _walk_nodes_with_parents(caller_func, []):
+                    if _node_str(node, "kind") != "Call":
+                        continue
+                    func = node.get("func")
+                    if not isinstance(func, dict) or _node_str(func, "kind") != "Name" or _node_str(func, "id") != func_name:
+                        continue
+                    if node is call_node:
+                        continue
+                    saw_callsite = True
+                    outer_call = _find_outer_call_for_arg(node, parents)
+                    if outer_call is None:
+                        safe = False
+                        break
+                    list_hit = _is_list_append_call_on_name(outer_call)
+                    if list_hit is None:
+                        safe = False
+                        break
+                    list_name = list_hit[0]
+                    caller_lists[caller_name + "::" + list_name] = caller_func
+                if not safe:
+                    break
+            if not safe:
+                break
+        if not safe or not saw_callsite:
+            continue
+
+        for list_key in sorted(list(caller_lists.keys())):
+            sep2 = list_key.find("::")
+            if sep2 < 0:
+                safe = False
+                break
+            list_name = list_key[sep2 + 2 :]
+            caller_func = caller_lists[list_key]
+            if not _all_name_uses_readonly_in_function(caller_func, list_name):
+                safe = False
+                break
+        if not safe:
+            continue
+
+        meta = _ensure_node_meta(call_node)
+        meta["copy_elision_safe_v1"] = {
+            "schema_version": 1,
+            "operation": "bytes_from_bytearray",
+            "source_name": source_name,
+            "borrow_kind": "readonly_ref",
+            "analysis_scope": "linked_program",
+            "proof_summary": "linker verified local bytes(bytearray) result flows only through readonly list[bytes] uses",
+        }
+
+
 def _raise_types_in_node(node: JsonVal) -> set[str]:
     out: set[str] = set()
     if isinstance(node, dict):
@@ -1686,6 +1975,7 @@ def link_modules(
     direct_raise_markers = _collect_direct_raise_markers(modules)
     propagated_raise_markers = _propagate_can_raise(call_graph, direct_raise_markers)
     _attach_can_raise_markers(copied_docs, propagated_raise_markers)
+    _annotate_copy_elision_safe_v1(copied_docs)
 
     helper_doc = _build_type_id_table_helper_doc(dispatch_mode, type_info_table)
     helper_module = LinkedModule(

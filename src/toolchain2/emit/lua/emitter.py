@@ -280,6 +280,10 @@ def _type_contains(type_name: str, needle: str) -> bool:
     return False
 
 
+def _is_boolean_type(type_name: str) -> bool:
+    return type_name in ("bool", "boolean")
+
+
 def _is_union_error_return_type(ctx: EmitContext, type_name: str) -> bool:
     if type_name.startswith("multi_return[") and type_name.endswith("]"):
         inner = type_name[len("multi_return["):-1]
@@ -646,6 +650,15 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if mapped != "":
             call_name = mapped
 
+    meta = node.get("meta")
+    copy_elision_meta = meta.get("copy_elision_safe_v1") if isinstance(meta, dict) else None
+    copy_elision_safe = (
+        isinstance(copy_elision_meta, dict)
+        and copy_elision_meta.get("schema_version") == 1
+        and copy_elision_meta.get("operation") == "bytes_from_bytearray"
+        and len(arg_strs) >= 1
+    )
+
     if (
         (call_name.startswith("__LIST_") or call_name.startswith("__DICT_") or call_name.startswith("__SET_"))
         and isinstance(func_node, dict)
@@ -667,10 +680,13 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         msg = arg_strs[0] if len(arg_strs) > 0 else '"error"'
         return 'error(' + msg + ')'
 
+    if call_name == "__pytra_bytes" and copy_elision_safe:
+        return "__pytra_bytes_alias(" + arg_strs[0] + ")"
+
     # Container operation markers
     if call_name == "__LIST_APPEND__":
         if len(arg_strs) >= 2:
-            return "table.insert(" + arg_strs[0] + ", " + arg_strs[1] + ")"
+            return "__pytra_list_append(" + arg_strs[0] + ", " + arg_strs[1] + ")"
         return "nil"
 
     if call_name == "__LIST_POP__":
@@ -789,7 +805,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
     if call_name == "__LIST_APPEND__":
         if len(arg_strs) >= 2:
-            return "table.insert(" + arg_strs[0] + ", " + arg_strs[1] + ")"
+            return "__pytra_list_append(" + arg_strs[0] + ", " + arg_strs[1] + ")"
         return "nil"
 
     if call_name == "__LIST_CLEAR__":
@@ -844,6 +860,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if mapped == "__PANIC__":
                     msg = arg_strs[0] if len(arg_strs) > 0 else '"error"'
                     return "error(" + msg + ")"
+                if mapped == "__pytra_bytes" and copy_elision_safe:
+                    return "__pytra_bytes_alias(" + arg_strs[0] + ")"
                 return mapped + "(" + ", ".join(arg_strs) + ")"
 
         callee = _emit_expr(ctx, func_node)
@@ -907,7 +925,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         return "__pytra_set_remove(" + owner + ", " + arg_strs[0] + ")"
                 if owner_rt.startswith("list[") or owner_rt == "list":
                     if attr == "append" and len(arg_strs) >= 1:
-                        return "table.insert(" + owner + ", " + arg_strs[0] + ")"
+                        return "__pytra_list_append(" + owner + ", " + arg_strs[0] + ")"
                     if attr == "clear":
                         return "__pytra_list_clear(" + owner + ")"
                     if attr == "extend" and len(arg_strs) >= 1:
@@ -1143,6 +1161,17 @@ def _emit_boolop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     op = _str(node, "op")
     if len(values) == 0:
         return "nil"
+    node_rt = _str(node, "resolved_type")
+    if _is_boolean_type(node_rt):
+        parts: list[str] = []
+        for value in values:
+            if not isinstance(value, dict) or not _is_boolean_type(_str(value, "resolved_type")):
+                parts = []
+                break
+            parts.append("(" + _emit_expr(ctx, value) + ")")
+        if len(parts) == len(values):
+            sep = " and " if op == "And" else " or "
+            return "(" + sep.join(parts) + ")"
     current = _emit_expr(ctx, values[0])
     for value in values[1:]:
         right = _emit_expr(ctx, value)
@@ -1161,6 +1190,13 @@ def _emit_boolop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 + " else return " + right + " end end)()"
             )
     return "(" + current + ")"
+
+
+def _emit_condition(ctx: EmitContext, node: JsonVal) -> str:
+    expr = _emit_expr(ctx, node)
+    if isinstance(node, dict) and _is_boolean_type(_str(node, "resolved_type")):
+        return expr
+    return "__pytra_truthy(" + expr + ")"
 
 
 def _emit_list_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -1205,10 +1241,10 @@ def _emit_tuple_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_ifexp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
-    test = _emit_expr(ctx, node.get("test"))
+    test = _emit_condition(ctx, node.get("test"))
     body = _emit_expr(ctx, node.get("body"))
     orelse = _emit_expr(ctx, node.get("orelse"))
-    return "(__pytra_ternary(__pytra_truthy(" + test + "), " + body + ", " + orelse + "))"
+    return "(__pytra_ternary(" + test + ", " + body + ", " + orelse + "))"
 
 
 def _emit_fstring(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -1719,9 +1755,9 @@ def _emit_aug_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _emit_if(ctx: EmitContext, node: dict[str, JsonVal], *, is_elif: bool = False) -> None:
-    test = _emit_expr(ctx, node.get("test"))
+    test = _emit_condition(ctx, node.get("test"))
     keyword = "elseif" if is_elif else "if"
-    _emit(ctx, keyword + " __pytra_truthy(" + test + ") then")
+    _emit(ctx, keyword + " " + test + " then")
     ctx.indent_level += 1
     _emit_body(ctx, _list(node, "body"))
     ctx.indent_level -= 1
@@ -1738,8 +1774,8 @@ def _emit_if(ctx: EmitContext, node: dict[str, JsonVal], *, is_elif: bool = Fals
 
 
 def _emit_while(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
-    test = _emit_expr(ctx, node.get("test"))
-    _emit(ctx, "while __pytra_truthy(" + test + ") do")
+    test = _emit_condition(ctx, node.get("test"))
+    _emit(ctx, "while " + test + " do")
     ctx.indent_level += 1
     _emit_body_with_continue(ctx, _list(node, "body"))
     ctx.indent_level -= 1
