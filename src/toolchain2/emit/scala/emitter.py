@@ -15,12 +15,14 @@ from toolchain2.emit.common.code_emitter import RuntimeMapping, load_runtime_map
 from toolchain2.emit.common.common_renderer import CommonRenderer
 from toolchain2.emit.scala.types import _safe_scala_ident
 from toolchain2.emit.scala.types import scala_type
+from toolchain2.emit.scala.types import scala_zero_value
 
 
 class ScalaRenderer(CommonRenderer):
     def __init__(self, mapping: RuntimeMapping) -> None:
         super().__init__("scala")
         self.mapping = mapping
+        self.current_class_name: str | None = None
 
     def render_module(self, east3_doc: dict[str, JsonVal]) -> str:
         module_id = self._str(east3_doc, "module_id")
@@ -59,8 +61,11 @@ class ScalaRenderer(CommonRenderer):
             return
         if kind == "Assign":
             target = node.get("target")
-            target_name = _safe_scala_ident(self._str(target, "id"))
             value = self._emit_expr(node.get("value"))
+            if isinstance(target, dict) and self._str(target, "kind") == "Attribute":
+                self._emit(self._emit_expr(target) + " = " + value)
+                return
+            target_name = _safe_scala_ident(self._str(target, "id"))
             self._emit("var " + target_name + " = " + value)
             return
         if kind == "ImportFrom":
@@ -72,6 +77,12 @@ class ScalaRenderer(CommonRenderer):
             return
         if kind == "FunctionDef":
             self._emit_function_def(node)
+            return
+        if kind == "ClosureDef":
+            self._emit_function_def(node, is_method=self.current_class_name is not None)
+            return
+        if kind == "ClassDef":
+            self._emit_class_def(node)
             return
         if kind == "ForCore":
             self._emit_for_core(node)
@@ -120,9 +131,40 @@ class ScalaRenderer(CommonRenderer):
         if kind == "Expr":
             self._emit(self._emit_expr(node.get("value")))
             return
+        if kind == "Raise":
+            exc = node.get("exc")
+            message = self._emit_expr(exc) if isinstance(exc, dict) else "\"raise\""
+            self._emit("throw new RuntimeException(String.valueOf(" + message + "))")
+            return
+        if kind == "Try":
+            self._emit("try {")
+            self.state.indent_level += 1
+            for stmt in self._list(node, "body"):
+                self._emit_stmt(stmt)
+            self.state.indent_level -= 1
+            handlers = self._list(node, "handlers")
+            if len(handlers) == 0:
+                self._emit("} finally {")
+            else:
+                self._emit("} catch {")
+                self.state.indent_level += 1
+                self._emit("case _ : Throwable =>")
+                self.state.indent_level += 1
+                for handler in handlers:
+                    if isinstance(handler, dict):
+                        for stmt in self._list(handler, "body"):
+                            self._emit_stmt(stmt)
+                self.state.indent_level -= 2
+                self._emit("} finally {")
+            self.state.indent_level += 1
+            for stmt in self._list(node, "finalbody"):
+                self._emit_stmt(stmt)
+            self.state.indent_level -= 1
+            self._emit("}")
+            return
         raise RuntimeError("scala emitter: unsupported stmt kind: " + kind)
 
-    def _emit_function_def(self, node: dict[str, JsonVal]) -> None:
+    def _emit_function_def(self, node: dict[str, JsonVal], is_method: bool = False) -> None:
         name = _safe_scala_ident(self._str(node, "name"))
         arg_order = self._list(node, "arg_order")
         arg_types = node.get("arg_types")
@@ -130,6 +172,8 @@ class ScalaRenderer(CommonRenderer):
         params: list[str] = []
         for arg in arg_order:
             if not isinstance(arg, str):
+                continue
+            if is_method and arg == "self":
                 continue
             params.append(_safe_scala_ident(arg) + ": " + scala_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
         return_type = scala_type(self._str(node, "return_type"))
@@ -143,6 +187,29 @@ class ScalaRenderer(CommonRenderer):
                 self._emit_stmt(stmt)
         self.state.indent_level -= 1
         self._emit("}")
+
+    def _emit_class_def(self, node: dict[str, JsonVal]) -> None:
+        class_name = _safe_scala_ident(self._str(node, "name"))
+        prev_class_name = self.current_class_name
+        self.current_class_name = class_name
+        self._emit("class " + class_name + " {")
+        self.state.indent_level += 1
+        for stmt in self._list(node, "body"):
+            if not isinstance(stmt, dict):
+                continue
+            kind = self._str(stmt, "kind")
+            if kind == "AnnAssign":
+                target = stmt.get("target")
+                field_name = _safe_scala_ident(self._str(target, "id"))
+                decl_type = self._str(stmt, "decl_type")
+                value_node = stmt.get("value")
+                value = self._emit_expr(value_node) if isinstance(value_node, dict) else scala_zero_value(decl_type)
+                self._emit("var " + field_name + ": " + scala_type(decl_type) + " = " + value)
+                continue
+            self._emit_stmt(stmt)
+        self.state.indent_level -= 1
+        self._emit("}")
+        self.current_class_name = prev_class_name
 
     def _for_target_name(self, node: JsonVal) -> str:
         if not isinstance(node, dict):
@@ -207,19 +274,56 @@ class ScalaRenderer(CommonRenderer):
             if isinstance(value, str):
                 return self._quote_string(value)
         if kind == "Name":
-            return _safe_scala_ident(self._str(node, "id"))
+            ident = self._str(node, "id")
+            if ident == "self" and self.current_class_name is not None:
+                return "this"
+            return _safe_scala_ident(ident)
         if kind == "Attribute":
             owner = self._emit_expr(node.get("value"))
             return owner + "." + _safe_scala_ident(self._str(node, "attr"))
         if kind == "Subscript":
             owner = self._emit_expr(node.get("value"))
-            index = self._emit_expr(node.get("slice"))
+            slice_node = node.get("slice")
+            if isinstance(slice_node, dict) and self._str(slice_node, "kind") == "Slice":
+                lower_node = slice_node.get("lower")
+                upper_node = slice_node.get("upper")
+                lower = self._emit_expr(lower_node) if isinstance(lower_node, dict) else "0"
+                upper = self._emit_expr(upper_node) if isinstance(upper_node, dict) else owner + ".length"
+                return owner + ".slice(" + lower + ", " + upper + ")"
+            index = self._emit_expr(slice_node)
             return owner + "(" + index + ")"
         if kind == "List":
             elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
             return "mutable.ArrayBuffer(" + ", ".join(elems) + ")"
+        if kind == "Dict":
+            keys = self._list(node, "keys")
+            values = self._list(node, "values")
+            pairs: list[str] = []
+            for key_node, value_node in zip(keys, values):
+                pairs.append("(" + self._emit_expr(key_node) + ", " + self._emit_expr(value_node) + ")")
+            return "mutable.LinkedHashMap(" + ", ".join(pairs) + ")"
         if kind == "Unbox" or kind == "Box":
             return self._emit_expr(node.get("value"))
+        if kind == "BoolOp":
+            op = " && " if self._str(node, "op") == "And" else " || "
+            values = [self._emit_expr(elem) for elem in self._list(node, "values")]
+            return "(" + op.join(values) + ")"
+        if kind == "IfExp":
+            test = self._emit_expr(node.get("test"))
+            body = self._emit_expr(node.get("body"))
+            orelse = self._emit_expr(node.get("orelse"))
+            return "(if (" + test + ") " + body + " else " + orelse + ")"
+        if kind == "IsInstance":
+            value = self._emit_expr(node.get("value"))
+            expected = self._emit_expr(node.get("expected_type_id"))
+            return "pytraIsInstance(" + value + ", " + expected + ")"
+        if kind == "ObjTypeId":
+            value = self._emit_expr(node.get("value"))
+            return "pyTidRuntimeTypeId(" + value + ")"
+        if kind == "IsSubtype":
+            actual = self._emit_expr(node.get("actual_type_id"))
+            expected = self._emit_expr(node.get("expected_type_id"))
+            return "pyTidIsSubtype(" + actual + ", " + expected + ")"
         if kind == "Call":
             func = node.get("func")
             func_name = self._emit_expr(func)

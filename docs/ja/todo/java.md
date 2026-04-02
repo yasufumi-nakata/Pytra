@@ -44,8 +44,8 @@
 
 ### P1-SCALA-EMITTER: Scala emitter を toolchain2 に新規実装する
 
-1. [ ] [ID: P1-SCALA-EMITTER-S1] `src/toolchain2/emit/scala/` に Scala emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/scala/` と TS emitter を参考にする
-2. [ ] [ID: P1-SCALA-EMITTER-S2] `src/runtime/scala/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
+1. [x] [ID: P1-SCALA-EMITTER-S1] `src/toolchain2/emit/scala/` に Scala emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/scala/` と TS emitter を参考にする
+2. [x] [ID: P1-SCALA-EMITTER-S2] `src/runtime/scala/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
 3. [ ] [ID: P1-SCALA-EMITTER-S3] fixture 全件の Scala emit 成功を確認する
 4. [ ] [ID: P1-SCALA-EMITTER-S4] Scala runtime を toolchain2 の emit 出力と整合させる
 5. [ ] [ID: P1-SCALA-EMITTER-S5] fixture の Scala run parity を通す（`scala`）
@@ -54,8 +54,8 @@
 
 ### P1-KOTLIN-EMITTER: Kotlin emitter を toolchain2 に新規実装する
 
-1. [ ] [ID: P1-KOTLIN-EMITTER-S1] `src/toolchain2/emit/kotlin/` に Kotlin emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/kotlin/` と TS emitter を参考にする
-2. [ ] [ID: P1-KOTLIN-EMITTER-S2] `src/runtime/kotlin/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
+1. [x] [ID: P1-KOTLIN-EMITTER-S1] `src/toolchain2/emit/kotlin/` に Kotlin emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/kotlin/` と TS emitter を参考にする
+2. [x] [ID: P1-KOTLIN-EMITTER-S2] `src/runtime/kotlin/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
 3. [ ] [ID: P1-KOTLIN-EMITTER-S3] fixture 全件の Kotlin emit 成功を確認する
 4. [ ] [ID: P1-KOTLIN-EMITTER-S4] Kotlin runtime を toolchain2 の emit 出力と整合させる
 5. [ ] [ID: P1-KOTLIN-EMITTER-S5] fixture の Kotlin run parity を通す（`kotlinc` + `java -jar`）
@@ -64,8 +64,8 @@
 
 ### P2-JVM-LINT: emitter hardcode lint の Scala / Kotlin 違反を解消する
 
-1. [ ] [ID: P2-JVM-LINT-S1] `check_emitter_hardcode_lint.py --lang scala` で全カテゴリ 0 件になることを確認する
-2. [ ] [ID: P2-JVM-LINT-S2] `check_emitter_hardcode_lint.py --lang kotlin` で全カテゴリ 0 件になることを確認する
+1. [x] [ID: P2-JVM-LINT-S1] `check_emitter_hardcode_lint.py --lang scala` で全カテゴリ 0 件になることを確認する
+2. [x] [ID: P2-JVM-LINT-S2] `check_emitter_hardcode_lint.py --lang kotlin` で全カテゴリ 0 件になることを確認する
 
 ### P3-JAVA-SELFHOST: Java emitter で toolchain2 を Java に変換し build を通す
 
