@@ -30,7 +30,8 @@ P0-CPP-VARIANT (variant 移行) の完了後に着手。variant 移行で `objec
    - 完了: `src/runtime/cpp/core/py_scalar_types.h` から `PYTRA_TID_*` 公開定数を削除し、C++ runtime 内部では `src/runtime/cpp/core/py_types.h` の `pytra::runtime::cpp::detail::kTypeId*` に置き換えた。あわせて `src/toolchain2/emit/cpp/emitter.py` も built-in type id を数値 literal へ落とすように更新し、生成 C++ から `PYTRA_TID_*` 直参照を除去した。
 2. [x] [ID: P0-CPP-TYPEID-CLN-S2] `src/runtime/cpp/core/type_id_support.h` を削除する
    - 完了: `src/runtime/cpp/core/type_id_support.h` を削除し、`py_runtime_value_exact_is` は `src/runtime/cpp/built_in/base_ops.h` に移設した。`src/toolchain2/link/{runtime_discovery.py,dependencies.py,linker.py}` と `src/toolchain2/emit/cpp/emitter.py` を更新して、C++ link/emitter では `py_runtime_object_type_id` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` の wrapper と `pytra.built_in.type_id` 自動依存を使わない構成にした。
-3. [ ] [ID: P0-CPP-TYPEID-CLN-S3] fixture + sample + stdlib parity に回帰がないことを確認する
+3. [x] [ID: P0-CPP-TYPEID-CLN-S3] fixture + sample + stdlib parity に回帰がないことを確認する
+   - 完了: `runtime_parity_check_fast --case-root fixture --targets cpp --cmd-timeout-sec 300` で `139/139 PASS`、`--case-root sample` で `18/18 PASS`、`--case-root stdlib` で `16/16 PASS` を確認した。残件だった `type_ignore_from_import` / `callable_higher_order` / `json_{extended,indent_optional,unicode_escape}` は `src/toolchain2/emit/cpp/emitter.py` の callable expected-type 解決と optional cast 正規化を修正して解消した。
 
 ### P0-CPP-VARIANT: C++ を std::variant ベースに移行し object/box/unbox を廃止する
 
@@ -105,7 +106,8 @@ monostate → `std::optional<std::variant<...>>` 移行（commit f8c4c618b）で
    - 完了: `src/toolchain2/emit/cpp/types.py` に `JsonVal` の nominal 正規化と alias union 展開を追加し、`src/runtime/cpp/mapping.json` / `src/toolchain2/emit/cpp/runtime_paths.py` / `src/toolchain2/emit/cpp/header_gen.py` / `src/toolchain2/emit/cpp/emitter.py` を更新した。linked EAST3 で `list[Any]` / `dict[str,Any]` に崩れていた `JsonVal` を emitter 内で `JsonVal`, `list[JsonVal]`, `dict[str,JsonVal]` へ戻し、recursive alias header を `struct JsonVal : ::std::optional<::std::variant<...>>` として一貫して出力するようにした。
 2. [x] [ID: P0-CPP-OPT-VAR-S2] json_extended / json_indent_optional / json_nested が C++ parity PASS することを確認する
    - 完了: `src/toolchain2/emit/cpp/emitter.py` で local container storage を正規化し、recursive `JsonVal` container local が `.as<...>()` に落ちないように修正した。`src/toolchain2/emit/cpp/header_gen.py` では `py_to_string(const JsonVal&)` forwarder を生成し、`src/runtime/cpp/built_in/base_ops.h` に `py_to_string(bool)` を追加して `dumps(True)` を Python と同じ `"true"` に揃えた。`PYTHONPATH=/workspace/Pytra/src python3 src/pytra-cli2.py -build test/stdlib/source/py/json/json_extended.py -o work/tmp/json_extended_build --target cpp` と `... json_indent_optional.py ...` の emit 後、`runtime_parity_check._run_cpp_emit_dir(...)` で compile + run を確認した。現行ツリーに `json_nested.py` は存在しないため、std/json 配下の実在 2 case で確認している。
-3. [ ] [ID: P0-CPP-OPT-VAR-S3] fixture + sample に回帰がないことを確認する
+3. [x] [ID: P0-CPP-OPT-VAR-S3] fixture + sample に回帰がないことを確認する
+   - 完了: C++ broad parity の fresh rerun で `runtime_parity_check_fast --case-root fixture --targets cpp --cmd-timeout-sec 300` が `139/139 PASS`、`--case-root sample` が `18/18 PASS` となり、`optional<variant>` 移行後も fixture/sample に回帰がないことを確認した。JSON 3件の compile failure は `P0-COMMON-BOX-UNBOX-NORM` と重なる emitter 修正で解消済み。
 
 ### P0-COMMON-BOX-UNBOX-NORM: box/unbox 正規化を CommonRenderer へ寄せる
 

@@ -60,6 +60,7 @@ class CppEmitContext:
     class_type_info: dict[str, dict[str, int]] = field(default_factory=dict)
     class_symbol_fqcns: dict[str, str] = field(default_factory=dict)
     function_mutable_param_indexes: dict[str, set[int]] = field(default_factory=dict)
+    function_defs: dict[str, dict[str, JsonVal]] = field(default_factory=dict)
     current_class: str = ""
     current_return_type: str = ""
     current_function_scope: str = ""
@@ -784,8 +785,14 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
         return _emit_expr(ctx, boxed)
     if target_type in ("Callable", "callable"):
         kind = _str(node, "kind")
-        if kind in ("Name", "Attribute", "Lambda"):
+        if kind == "Lambda":
             return _emit_expr(ctx, node)
+        if kind in ("Name", "Attribute"):
+            callable_name = _emit_expr(ctx, node)
+            static_type = _expr_static_type(ctx, node)
+            if static_type not in ("", "unknown", "Callable", "callable"):
+                return callable_name
+            return "([&](object) -> object { " + callable_name + "(); return object(); })"
     return _emit_expr(ctx, node)
 
 
@@ -1632,10 +1639,14 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     func = node.get("func")
     args = _list(node, "args")
     expected_arg_types: list[str] = []
+    if isinstance(func, dict) and _str(func, "kind") == "Name":
+        fn_name = _str(func, "id")
+        if fn_name in ctx.function_defs:
+            expected_arg_types = [arg_type for _, arg_type, _ in _function_param_meta(ctx.function_defs[fn_name], ctx)]
     method_sig = _dict(node, "method_signature_v1")
-    if len(method_sig) > 0:
+    if len(expected_arg_types) == 0 and len(method_sig) > 0:
         expected_arg_types = [arg_type for _, arg_type, _ in _function_param_meta(method_sig, ctx)]
-    else:
+    elif len(expected_arg_types) == 0:
         function_sig = _dict(node, "function_signature_v1")
         if len(function_sig) > 0:
             expected_arg_types = [arg_type for _, arg_type, _ in _function_param_meta(function_sig, ctx)]
@@ -4285,6 +4296,10 @@ def emit_cpp_module(
     ctx.import_aliases = build_import_alias_map(meta)
     ctx.runtime_imports = build_runtime_import_map(meta, mapping)
     for s in body:
+        if isinstance(s, dict) and _str(s, "kind") == "FunctionDef":
+            fn_name = _str(s, "name")
+            if fn_name != "":
+                ctx.function_defs[fn_name] = s
         if isinstance(s, dict) and _str(s, "kind") == "ClassDef":
             class_name = _str(s, "name")
             base_name = _str(s, "base")
