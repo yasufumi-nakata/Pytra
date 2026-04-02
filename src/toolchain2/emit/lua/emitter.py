@@ -941,6 +941,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                             return "__pytra_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
                         if len(arg_strs) >= 1:
                             return "__pytra_dict_get(" + owner + ", " + arg_strs[0] + ", nil)"
+                    if attr == "clear":
+                        return "__pytra_dict_clear(" + owner + ")"
                     if attr == "items":
                         return "__pytra_dict_items(" + owner + ")"
                     if attr == "keys":
@@ -964,6 +966,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if owner_rt == "bytearray":
                     if attr == "append" and len(arg_strs) >= 1:
                         return "__pytra_bytearray_append(" + owner + ", " + arg_strs[0] + ")"
+                    if attr == "extend" and len(arg_strs) >= 1:
+                        return "__pytra_bytearray_extend(" + owner + ", " + arg_strs[0] + ")"
                 # Path methods
                 if owner_rt in LUA_PATH_TYPE_NAMES:
                     return _emit_path_method(ctx, owner, attr, arg_strs)

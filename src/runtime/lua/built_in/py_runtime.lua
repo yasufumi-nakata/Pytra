@@ -320,6 +320,30 @@ function __pytra_bytearray_append(self, value)
     self[#self + 1] = math.ceil(n)
 end
 
+function __pytra_bytearray_extend(self, other)
+    if type(other) ~= "table" then
+        return
+    end
+    local base = #self
+    for i = 1, #other do
+        local v = other[i]
+        if type(v) == "number" then
+            if v >= 0 then
+                self[base + i] = math.floor(v)
+            else
+                self[base + i] = math.ceil(v)
+            end
+        else
+            local n = tonumber(v) or 0
+            if n >= 0 then
+                self[base + i] = math.floor(n)
+            else
+                self[base + i] = math.ceil(n)
+            end
+        end
+    end
+end
+
 function __pytra_list_append(items, value)
     items[#items + 1] = value
     return nil
@@ -1508,6 +1532,12 @@ function __pytra_dict_pop(d, key)
     local v = d[key]
     d[key] = nil
     return v
+end
+
+function __pytra_dict_clear(d)
+    for k, _ in pairs(d) do
+        d[k] = nil
+    end
 end
 
 function __pytra_dict_update(d, other)
