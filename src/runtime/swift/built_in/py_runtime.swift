@@ -120,6 +120,7 @@ func __pytra_float(_ v: Any?) -> Double {
 func __pytra_str(_ v: Any?) -> String {
     guard let value = v else { return "" }
     if let s = value as? String { return s }
+    if let b = value as? Bool { return b ? "True" : "False" }
     return String(describing: value)
 }
 
@@ -307,7 +308,7 @@ func __pytra_print(_ args: Any...) {
         Swift.print()
         return
     }
-    Swift.print(args.map { String(describing: $0) }.joined(separator: " "))
+    Swift.print(args.map { __pytra_str($0) }.joined(separator: " "))
 }
 
 func __pytra_py_print(_ args: Any...) {
@@ -315,7 +316,7 @@ func __pytra_py_print(_ args: Any...) {
         Swift.print()
         return
     }
-    Swift.print(args.map { String(describing: $0) }.joined(separator: " "))
+    Swift.print(args.map { __pytra_str($0) }.joined(separator: " "))
 }
 
 func __pytra_static_cast(_ v: Any?) -> Int64 {
