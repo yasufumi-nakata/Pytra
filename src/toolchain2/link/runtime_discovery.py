@@ -11,7 +11,8 @@ from pytra.std.pathlib import Path
 from pytra.std import json
 
 
-_RUNTIME_EAST_ROOT = Path("src").joinpath("runtime").joinpath("east")
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_RUNTIME_EAST_ROOT = _REPO_ROOT.joinpath("src").joinpath("runtime").joinpath("east")
 
 _RUNTIME_MODULE_BUCKETS: dict[str, str] = {
     "pytra.built_in.": "built_in",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -24,6 +25,7 @@ from toolchain2.link.manifest_loader import load_linked_output
 from toolchain2.link.runtime_discovery import discover_runtime_modules
 from toolchain2.link.runtime_discovery import is_runtime_internal_helper_module
 from toolchain2.link.runtime_discovery import is_runtime_namespace_module
+from toolchain2.link.runtime_discovery import resolve_runtime_east_path
 from toolchain2.link.runtime_discovery import resolve_runtime_module_rel_tail
 from toolchain2.link.type_id import build_type_id_table
 from toolchain2.common.jv import deep_copy_json
@@ -1475,6 +1477,18 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertTrue(is_runtime_namespace_module("pytra.std"))
         self.assertTrue(is_runtime_namespace_module("pytra.core"))
         self.assertFalse(is_runtime_namespace_module("pytra.std.json"))
+
+    def test_runtime_discovery_resolves_runtime_east_path_independent_of_cwd(self) -> None:
+        prev_cwd = os.getcwd()
+        path = ""
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                os.chdir(tmp)
+                path = resolve_runtime_east_path("pytra.utils.assertions")
+        finally:
+            os.chdir(prev_cwd)
+        self.assertTrue(path.endswith("src/runtime/east/utils/assertions.east"))
+        self.assertTrue(Path(path).exists())
 
     def test_cpp_runtime_paths_delegate_rel_tail_to_shared_runtime_loader(self) -> None:
         self.assertEqual(runtime_rel_tail_for_module("pytra.std.json"), "std/json")
