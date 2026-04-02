@@ -278,4 +278,8 @@ def make_noncpp_build_plan(
         build_cmd.append(str(output_path))
         return NonCppBuildPlan(build_cmd=build_cmd, run_cmd=None)
 
+    if target == "dart":
+        run_cmd = ["dart", "run", str(output_path)] if run_after_build else None
+        return NonCppBuildPlan(build_cmd=None, run_cmd=run_cmd)
+
     raise RuntimeError(unsupported_noncpp_build_target_message(target))

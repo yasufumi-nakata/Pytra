@@ -45,6 +45,7 @@ from toolchain2.emit.java.emitter import emit_java_module  # type: ignore
 from toolchain2.emit.java.types import java_module_class_name  # type: ignore
 from toolchain2.emit.rs.emitter import emit_rs_module  # type: ignore
 from toolchain2.emit.ts.emitter import emit_ts_module  # type: ignore
+from toolchain2.emit.dart.emitter import emit_dart_module  # type: ignore
 from toolchain2.emit.ruby.emitter import transpile_to_ruby as emit_ruby_module  # type: ignore
 from toolchain2.emit.lua.emitter import emit_lua_module  # type: ignore
 from toolchain2.emit.php.emitter import emit_php_module  # type: ignore
@@ -302,6 +303,20 @@ def _transpile_in_memory(
                     code, encoding="utf-8"
                 )
             _copy_php_runtime(emit_dir)
+        elif target == "dart":
+            for m in link_result.linked_modules:
+                _inject_dart_emit_context(
+                    m.east_doc,
+                    m.module_id,
+                    is_entry=bool(getattr(m, "is_entry", False)),
+                )
+                code = emit_dart_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                out_path = emit_dir / _dart_rel_output_path(m.module_id)
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(code, encoding="utf-8")
+            _copy_dart_runtime(emit_dir)
         else:
             return False, f"unsupported target: {target}"
 
@@ -318,6 +333,44 @@ def _copy_go_runtime(emit_dir: Path) -> None:
     for f in sorted(go_runtime.rglob("*.go")):
         dest = emit_dir / f.name
         shutil.copy2(f, dest)
+
+
+def _dart_rel_output_path(module_id: str) -> Path:
+    rel_module = module_id
+    if rel_module.startswith("pytra."):
+        rel_module = rel_module[len("pytra."):]
+    return Path(rel_module.replace(".", "/") + ".dart")
+
+
+def _inject_dart_emit_context(
+    east_doc: dict[str, object],
+    module_id: str,
+    *,
+    is_entry: bool,
+) -> None:
+    meta = east_doc.get("meta")
+    if not isinstance(meta, dict):
+        meta = {}
+        east_doc["meta"] = meta
+    rel_path = _dart_rel_output_path(module_id)
+    depth = len(rel_path.parts) - 1
+    root_rel_prefix = "../" * depth if depth > 0 else "./"
+    meta["emit_context"] = {
+        "module_id": module_id,
+        "root_rel_prefix": root_rel_prefix,
+        "is_entry": is_entry,
+    }
+
+
+def _copy_dart_runtime(emit_dir: Path) -> None:
+    dart_runtime = ROOT / "src" / "runtime" / "dart"
+    if not dart_runtime.exists():
+        return
+    for runtime_file in sorted(dart_runtime.rglob("*.dart")):
+        rel = runtime_file.relative_to(dart_runtime)
+        dest = emit_dir / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(runtime_file, dest)
 
 
 def _copy_rs_runtime(emit_dir: Path) -> None:
@@ -664,6 +717,16 @@ def _run_target(
             return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_php}")
         return run_shell(
             f"php {shlex.quote(str(entry_php))}",
+            cwd=work_dir, env=env, timeout_sec=timeout_sec,
+        )
+
+    if target == "dart":
+        stem = case_path.stem
+        entry_dart = emit_dir / (stem + ".dart")
+        if not entry_dart.exists():
+            return subprocess.CompletedProcess("", 1, "", f"entry file not found: {entry_dart}")
+        return run_shell(
+            f"dart run {shlex.quote(str(entry_dart))}",
             cwd=work_dir, env=env, timeout_sec=timeout_sec,
         )
 
