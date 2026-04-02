@@ -13,6 +13,7 @@
 | C++ backend | [cpp.md](./cpp.md) |
 | Rust backend | [rust.md](./rust.md) |
 | C# backend | [cs.md](./cs.md) |
+| PowerShell backend | [powershell.md](./powershell.md) |
 | TS/JS backend | [ts.md](./ts.md) |
 | Dart backend | [dart.md](./dart.md) |
 | Go backend | [go.md](./go.md) |
@@ -22,6 +23,8 @@
 | Lua backend | [lua.md](./lua.md) |
 | PHP backend | [php.md](./php.md) |
 | Nim backend | [nim.md](./nim.md) |
+| Julia backend | [julia.md](./julia.md) |
+| Zig backend | [zig.md](./zig.md) |
 | インフラ・ツール | [infra.md](./infra.md) |
 
 完了済みタスクは [アーカイブ](archive/index.md) に移動済み。
