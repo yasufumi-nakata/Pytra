@@ -341,11 +341,11 @@ func __pytra_dict_setdefault(_ dict: inout [AnyHashable: Any], _ key: Any?, _ de
     return stored
 }
 
-func __pytra_get(_ dict: Any?, _ key: Any?, _ defaultValue: Any?) -> Any {
+func __pytra_get(_ dict: Any?, _ key: Any?, _ defaultValue: Any? = nil) -> Any? {
     if let map = dict as? [AnyHashable: Any] {
-        return map[AnyHashable(__pytra_str(key))] ?? (defaultValue ?? __pytra_any_default())
+        return map[AnyHashable(__pytra_str(key))] ?? defaultValue
     }
-    return defaultValue ?? __pytra_any_default()
+    return defaultValue
 }
 
 func __pytra_keys(_ dict: Any?) -> [Any] {
@@ -557,6 +557,10 @@ func __pytra_reversed(_ v: Any?) -> [Any] {
     return []
 }
 
+func __pytra_py_reversed_object(_ v: Any?) -> [Any] {
+    return __pytra_reversed(v)
+}
+
 func __pytra_sorted(_ v: Any?) -> [Any] {
     if let list = v as? [Any] {
         return list.sorted { __pytra_float($0) < __pytra_float($1) }
@@ -584,6 +588,22 @@ func __pytra_strip(_ v: Any?) -> String {
     return __pytra_str(v).trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
+func __pytra_lstrip(_ v: Any?) -> String {
+    return __pytra_str(v).replacingOccurrences(
+        of: #"^\s+"#,
+        with: "",
+        options: .regularExpression
+    )
+}
+
+func __pytra_rstrip(_ v: Any?) -> String {
+    return __pytra_str(v).replacingOccurrences(
+        of: #"\s+$"#,
+        with: "",
+        options: .regularExpression
+    )
+}
+
 func __pytra_startswith(_ v: Any?, _ prefix: Any?) -> Bool {
     return __pytra_str(v).hasPrefix(__pytra_str(prefix))
 }
@@ -599,8 +619,37 @@ func __pytra_find(_ v: Any?, _ sub: Any?) -> Int64 {
     return -1
 }
 
+func __pytra_index_str(_ v: Any?, _ sub: Any?) -> Int64 {
+    return __pytra_find(v, sub)
+}
+
+func __pytra_isalnum(_ v: Any?) -> Bool {
+    let s = __pytra_str(v)
+    if s.isEmpty { return false }
+    return s.unicodeScalars.allSatisfy {
+        CharacterSet.alphanumerics.contains($0)
+    }
+}
+
 func __pytra_upper(_ v: Any?) -> String { return __pytra_str(v).uppercased() }
 func __pytra_lower(_ v: Any?) -> String { return __pytra_str(v).lowercased() }
+
+func __pytra_extend(_ items: inout [Any], _ extra: Any?) {
+    items.append(contentsOf: __pytra_as_list(extra))
+}
+
+func __pytra_set_ctor() -> [Any] {
+    return []
+}
+
+func __pytra_discard(_ items: inout [Any], _ value: Any?) {
+    let needle = __pytra_str(value)
+    items.removeAll { __pytra_str($0) == needle }
+}
+
+func __pytra_remove(_ items: inout [Any], _ value: Any?) {
+    __pytra_discard(&items, value)
+}
 
 // --- Any arithmetic operators (for untyped variables used in arithmetic) ---
 
@@ -763,12 +812,12 @@ func __pytra_save_gif(_ path: Any?, _ width: Any?, _ height: Any?, _ frames: Any
     try? data.write(to: URL(fileURLWithPath: p))
 }
 
-func __pytra_dict_get(_ dict: Any?, _ key: Any?, _ default_val: Any? = nil) -> Any {
+func __pytra_dict_get(_ dict: Any?, _ key: Any?, _ default_val: Any? = nil) -> Any? {
     if let d = dict as? [AnyHashable: Any] {
         let k = AnyHashable(__pytra_str(key))
         if let v = d[k] { return v }
     }
-    return default_val ?? __pytra_any_default()
+    return default_val
 }
 
 // --- json ---

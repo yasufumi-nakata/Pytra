@@ -294,7 +294,7 @@ def _swift_type(type_name: Any, *, allow_void: bool) -> str:
         return "Void" if allow_void else "Any"
     if type_name in {"int", "int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64", "byte"}:
         return "Int64"
-    if type_name in {"float", "float64"}:
+    if type_name in {"float", "float32", "float64"}:
         return "Double"
     if type_name == "bool":
         return "Bool"
@@ -308,9 +308,12 @@ def _swift_type(type_name: Any, *, allow_void: bool) -> str:
         return "[AnyHashable: Any]"
     if type_name in {"bytes", "bytearray"}:
         return "[Any]"
-    if type_name in {"unknown", "object", "any"}:
+    if type_name in {"unknown", "object", "any", "JsonVal"}:
         return "Any"
     if ts3.isidentifier():
+        base_type = _CLASS_BASES[0].get(ts3, "")
+        if base_type in {"IntEnum", "IntFlag"}:
+            return "Int64"
         return _safe_ident(type_name, "Any")
     return "Any"
 
@@ -1217,6 +1220,8 @@ def _render_call_via_runtime_call(
                     return owner_expr + ".init(" + ", ".join(rendered_runtime_args) + ")"
                 if method_name == "clear":
                     return owner_expr + ".removeAll()"
+                if method_name == "extend" and len(args) == 1:
+                    return "__pytra_extend(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
                 if method_name == "reverse":
                     return owner_expr + ".reverse()"
                 if method_name == "sort":
@@ -1225,6 +1230,10 @@ def _render_call_via_runtime_call(
                     return owner_expr + ".append(" + _render_expr(args[0]) + ")"
                 if method_name == "add" and len(args) == 1:
                     return "__pytra_set_add(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
+                if method_name == "discard" and len(args) == 1:
+                    return "__pytra_discard(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
+                if method_name == "remove" and len(args) == 1:
+                    return "__pytra_remove(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
                 if method_name == "pop" and owner_type.startswith("dict[") and len(args) == 1:
                     return _cast_from_any(
                         "__pytra_dict_pop(&" + owner_expr + ", " + _render_expr(args[0]) + ")",
@@ -1434,6 +1443,18 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             rendered_args.append(_render_expr(args[i]))
             i += 1
         return "__pytra_open(" + ", ".join(rendered_args) + ")"
+    if callee_name in {"__pytra_extend", "__pytra_discard", "__pytra_remove", "__pytra_set_add"} and len(args) >= 1:
+        rendered_args: list[str] = []
+        first_arg = args[0]
+        if isinstance(first_arg, dict) and first_arg.get("kind") == "Name":
+            rendered_args.append("&" + _render_expr(first_arg))
+        else:
+            rendered_args.append(_render_expr(first_arg))
+        i = 1
+        while i < len(args):
+            rendered_args.append(_render_expr(args[i]))
+            i += 1
+        return callee_name + "(" + ", ".join(rendered_args) + ")"
 
     func_any = expr.get("func")
     if callee_name == "__pytra___init__" and len(args) >= 1:
@@ -1485,6 +1506,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "__pytra_isdigit(" + _render_expr(owner_any) + ")"
         if attr_name == "isalpha" and len(args) == 0:
             return "__pytra_isalpha(" + _render_expr(owner_any) + ")"
+        if attr_name == "index" and len(args) == 1:
+            return "__pytra_index_str(" + _render_expr(owner_any) + ", " + _render_expr(args[0]) + ")"
         owner_expr = _render_expr(owner_any)
         owner_type = owner_any.get("resolved_type", "") if isinstance(owner_any, dict) else ""
         if isinstance(owner_type, str):
@@ -1498,6 +1521,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     return owner_expr + ".removeAll()"
                 if (owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}) and attr_name == "append" and len(args) == 1:
                     return owner_expr + ".append(" + _render_expr(args[0]) + ")"
+                if owner_type.startswith("list[") and attr_name == "extend" and len(args) == 1:
+                    return "__pytra_extend(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
                 if owner_type == "deque" and attr_name == "append" and len(args) == 1:
                     return owner_expr + ".append(" + _render_expr(args[0]) + ")"
                 if owner_type == "deque" and attr_name == "appendleft" and len(args) == 1:
@@ -1516,6 +1541,10 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     return "__pytra_dict_setdefault(&" + owner_expr + ", " + _render_expr(args[0]) + ", " + _render_expr(args[1]) + ")"
                 if owner_type.startswith("set[") and attr_name == "add" and len(args) == 1:
                     return "__pytra_set_add(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
+                if owner_type.startswith("set[") and attr_name == "discard" and len(args) == 1:
+                    return "__pytra_discard(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
+                if owner_type.startswith("set[") and attr_name == "remove" and len(args) == 1:
+                    return "__pytra_remove(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
         if attr_name == "get":
             if len(args) >= 2:
                 return "__pytra_dict_get(" + owner_expr + ", " + _render_expr(args[0]) + ", " + _render_expr(args[1]) + ")"
@@ -1604,6 +1633,21 @@ def _render_expr(expr: Any) -> str:
         return _render_attribute_expr(expr)
     if kind == "Call":
         return _render_call_expr(expr)
+    if kind == "Lambda":
+        args_any = ed2.get("args")
+        args = args_any if isinstance(args_any, list) else []
+        rendered_args: list[str] = []
+        i = 0
+        while i < len(args):
+            arg_any = args[i]
+            if isinstance(arg_any, dict):
+                arg_name = _safe_ident(arg_any.get("arg"), "arg")
+                arg_type = _swift_type(arg_any.get("resolved_type"), allow_void=False)
+                rendered_args.append("_ " + arg_name + ": " + arg_type)
+            i += 1
+        return_type = _function_return_swift_type(ed2, allow_void=True)
+        body_expr = _render_expr(ed2.get("body"))
+        return "{ (" + ", ".join(rendered_args) + ") -> " + return_type + " in return " + body_expr + " }"
 
     if kind == "List" or kind == "Tuple":
         elements_any = ed2.get("elements")
@@ -2063,6 +2107,8 @@ def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
             return "Any"
         if name in _CLASS_NAMES[0]:
             return name
+    if kind == "Lambda":
+        return _swift_type(ed.get("resolved_type"), allow_void=False)
     if kind == "BinOp":
         op = ed.get("op")
         if op == "Div":
@@ -3057,7 +3103,10 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     extends = ": " + ", ".join(supertypes) if len(supertypes) > 0 else ""
 
     lines: list[str] = []
-    lines.append(indent + ("protocol " if is_trait else "class ") + class_name + extends + " {")
+    if base_name in {"IntEnum", "IntFlag"}:
+        lines.append(indent + "enum " + class_name + " {")
+    else:
+        lines.append(indent + ("protocol " if is_trait else "class ") + class_name + extends + " {")
 
     field_types_any = cls.get("field_types")
     field_types = field_types_any if isinstance(field_types_any, dict) else {}
@@ -3079,7 +3128,7 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
             i += 1
         lines.append(indent + "}")
         return lines
-    if base_name == "Enum":
+    if base_name in {"Enum", "IntEnum", "IntFlag"}:
         i = 0
         while i < len(body):
             node = body[i]
@@ -3089,7 +3138,10 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
                     member_name = _safe_ident(target_any.get("id"), "")
                     value_any = node.get("value")
                     if member_name != "" and isinstance(value_any, dict):
-                        lines.append(indent + "    static let " + member_name + " = " + class_name + "(" + _render_expr(value_any) + ")")
+                        if base_name == "Enum":
+                            lines.append(indent + "    static let " + member_name + " = " + class_name + "(" + _render_expr(value_any) + ")")
+                        else:
+                            lines.append(indent + "    static let " + member_name + ": Int64 = " + _to_int_expr(_render_expr(value_any)))
             i += 1
         lines.append(indent + "}")
         return lines
