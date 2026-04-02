@@ -82,12 +82,26 @@ class Enum: CustomStringConvertible {
     }
 }
 
+final class PytraNone: CustomStringConvertible {
+    static let shared = PytraNone()
+
+    private init() {}
+
+    var description: String {
+        return "None"
+    }
+}
+
 func ==(lhs: Enum, rhs: Enum) -> Bool {
     return type(of: lhs) == type(of: rhs) && lhs.value == rhs.value
 }
 
 func __pytra_any_default() -> Any {
     return Int64(0)
+}
+
+func __pytra_none() -> Any {
+    return PytraNone.shared
 }
 
 func __pytra_assert(_ args: Any...) -> String {
@@ -116,12 +130,23 @@ func __pytra_assert_all(_ items: Any?, _ label: Any? = nil) -> Bool {
     return __pytra_truthy(items)
 }
 
+func __pytra_is_none(_ v: Any?) -> Bool {
+    guard let value = v else { return true }
+    if value is PytraNone { return true }
+    let mirror = Mirror(reflecting: value)
+    if mirror.displayStyle == .optional {
+        return mirror.children.first == nil
+    }
+    return false
+}
+
 func __pytra_perf_counter() -> Double {
     return Date().timeIntervalSince1970
 }
 
 func __pytra_truthy(_ v: Any?) -> Bool {
     guard let value = v else { return false }
+    if value is PytraNone { return false }
     if let b = value as? Bool { return b }
     if let i = value as? Int64 { return i != 0 }
     if let i = value as? Int { return i != 0 }
@@ -134,6 +159,7 @@ func __pytra_truthy(_ v: Any?) -> Bool {
 
 func __pytra_int(_ v: Any?) -> Int64 {
     guard let value = v else { return 0 }
+    if value is PytraNone { return 0 }
     if let i = value as? Int64 { return i }
     if let i = value as? Int { return Int64(i) }
     if let d = value as? Double { return Int64(d) }
@@ -144,6 +170,7 @@ func __pytra_int(_ v: Any?) -> Int64 {
 
 func __pytra_float(_ v: Any?) -> Double {
     guard let value = v else { return 0.0 }
+    if value is PytraNone { return 0.0 }
     let mirror = Mirror(reflecting: value)
     if mirror.displayStyle == .optional {
         if let child = mirror.children.first {
@@ -162,6 +189,7 @@ func __pytra_float(_ v: Any?) -> Double {
 
 func __pytra_str(_ v: Any?) -> String {
     guard let value = v else { return "" }
+    if value is PytraNone { return "None" }
     let mirror = Mirror(reflecting: value)
     if mirror.displayStyle == .optional {
         if let child = mirror.children.first {
@@ -190,6 +218,7 @@ func __pytra_py_to_string(_ v: Any?) -> String {
 
 func __pytra_repr_item(_ v: Any?) -> String {
     guard let value = v else { return "" }
+    if value is PytraNone { return "None" }
     let mirror = Mirror(reflecting: value)
     if mirror.displayStyle == .optional {
         if let child = mirror.children.first {

@@ -625,6 +625,14 @@ def _is_int_literal(node: Any, expected: int) -> bool:
     return isinstance(value, int) and value == expected
 
 
+def _is_none_constant(node: Any) -> bool:
+    if not isinstance(node, dict):
+        return False
+    if node.get("kind") != "Constant":
+        return False
+    return node.get("value") is None
+
+
 def _cast_from_any(expr: str, swift_type: str) -> str:
     if swift_type == "Int64":
         return _to_int_expr(expr)
@@ -666,7 +674,7 @@ def _render_constant_expr(expr: dict[str, Any]) -> str:
             return "false"
         if resolved == "str":
             return '""'
-        return "__pytra_any_default()"
+        return "__pytra_none()"
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, int):
@@ -817,6 +825,18 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
         comp_node = comps[i]
         right = _render_expr(comp_node)
         op = ops[i]
+
+        left_node = expr.get("left") if i == 0 else comps[i - 1]
+        if op in {"Is", "IsNot"} and (_is_none_constant(left_node) or _is_none_constant(comp_node)):
+            probe_node = comp_node if _is_none_constant(left_node) else left_node
+            probe_expr = _render_expr(probe_node)
+            is_none_expr = "__pytra_is_none(" + probe_expr + ")"
+            if op == "IsNot":
+                is_none_expr = "(!" + is_none_expr + ")"
+            parts.append("(" + is_none_expr + ")")
+            cur_left = right
+            i += 1
+            continue
 
         if op == "In" or op == "NotIn":
             expr_txt = "__pytra_contains(" + right + ", " + cur_left + ")"
@@ -1661,6 +1681,19 @@ def _render_expr(expr: Any) -> str:
         return _render_attribute_expr(expr)
     if kind == "Call":
         return _render_call_expr(expr)
+    if kind == "JoinedStr":
+        values_any = ed2.get("values")
+        values = values_any if isinstance(values_any, list) else []
+        if len(values) == 0:
+            return '""'
+        rendered_parts: list[str] = []
+        i = 0
+        while i < len(values):
+            rendered_parts.append(_render_expr(values[i]))
+            i += 1
+        return "(" + " + ".join(rendered_parts) + ")"
+    if kind == "FormattedValue":
+        return _to_str_expr(_render_expr(ed2.get("value")))
     if kind == "Lambda":
         args_any = ed2.get("args")
         args = args_any if isinstance(args_any, list) else []
@@ -2977,6 +3010,7 @@ def _emit_function(
     decorators_any = fn.get("decorators")
     decorators = decorators_any if isinstance(decorators_any, list) else []
     is_staticmethod = receiver_name is not None and "staticmethod" in decorators
+    is_property = receiver_name is not None and "property" in decorators
 
     # @extern functions → delegate to _native module
     if "extern" in decorators and receiver_name is None:
@@ -3005,7 +3039,10 @@ def _emit_function(
     params = _function_params(fn, drop_self=drop_self)
 
     lines: list[str] = []
-    if is_init:
+    if is_property:
+        prop_sig = indent + "var " + name + ": " + return_type + " {"
+        lines.append(prop_sig)
+    elif is_init:
         init_prefix = "override " if receiver_name is not None and in_class_name is not None and _class_has_base_method(in_class_name, "__init__") else ""
         lines.append(indent + init_prefix + "init(" + ", ".join(params) + ") {")
     else:
