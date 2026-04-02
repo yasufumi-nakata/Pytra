@@ -5505,6 +5505,47 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertNotIn(".unbox<int64>()", cpp_code)
         self.assertNotIn("static_cast<int64>(object(42))", cpp_code)
 
+    def test_cpp_emitter_builtin_int_skips_boxed_scalar_runtime_object_path(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "cast_value",
+                    "arg_order": [],
+                    "arg_types": {},
+                    "arg_usage": {},
+                    "arg_defaults": {},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "lowered_kind": "BuiltinCall",
+                                "runtime_call": "int",
+                                "func": {"kind": "Name", "id": "int", "resolved_type": "callable"},
+                                "args": [
+                                    {
+                                        "kind": "Box",
+                                        "resolved_type": "object",
+                                        "value": {"kind": "Constant", "value": 42, "resolved_type": "int64"},
+                                    }
+                                ],
+                                "resolved_type": "int64",
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return 42;", cpp_code)
+        self.assertNotIn(".unbox<int64>()", cpp_code)
+        self.assertNotIn("static_cast<int64>(object(42))", cpp_code)
+
     def test_cpp_header_gen_preserves_exception_class_inheritance(self) -> None:
         doc = _module_doc(
             "pytra.built_in.error",

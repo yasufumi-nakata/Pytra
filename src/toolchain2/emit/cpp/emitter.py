@@ -1943,6 +1943,8 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         ct = cpp_signature_type(rt)
         if len(args) >= 1 and isinstance(args[0], dict):
             arg_kind = _str(args[0], "kind")
+            if arg_kind == "Box" and rt not in ("", "unknown", "Any", "Obj", "object"):
+                return _emit_expr_as_type(ctx, args[0], rt)
             arg_type = _expanded_union_type(_str(args[0], "resolved_type"))
             storage_type = _expanded_union_type(_expr_storage_type(ctx, args[0]))
             if _optional_inner_type(storage_type) == rt:
