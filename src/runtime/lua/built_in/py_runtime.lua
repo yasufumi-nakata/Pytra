@@ -181,6 +181,14 @@ function __pytra_repeat_seq(a, b)
     if type(seq) ~= "table" then
         return (tonumber(a) or 0) * (tonumber(b) or 0)
     end
+    if #seq == 1 then
+        local out = {}
+        local item = seq[1]
+        for i = 1, n do
+            out[i] = item
+        end
+        return out
+    end
     local out = {}
     for _ = 1, n do
         for i = 1, #seq do
@@ -297,14 +305,14 @@ function __pytra_bytearray(v)
         local n = math.max(0, __pytra_int(v))
         local out = {}
         for i = 1, n do
-            out[#out + 1] = 0
+            out[i] = 0
         end
         return out
     end
     if type(v) == "table" then
         local out = {}
         for i = 1, #v do
-            out[#out + 1] = v[i]
+            out[i] = v[i]
         end
         return out
     end
@@ -312,6 +320,18 @@ function __pytra_bytearray(v)
 end
 
 function __pytra_bytearray_append(self, value)
+    if type(value) == "number" then
+        if value >= 0 and value < 256 and math.floor(value) == value then
+            self[#self + 1] = value
+            return
+        end
+        if value >= 0 then
+            self[#self + 1] = math.floor(value)
+            return
+        end
+        self[#self + 1] = math.ceil(value)
+        return
+    end
     local n = tonumber(value) or 0
     if n >= 0 then
         self[#self + 1] = math.floor(n)
@@ -328,7 +348,9 @@ function __pytra_bytearray_extend(self, other)
     for i = 1, #other do
         local v = other[i]
         if type(v) == "number" then
-            if v >= 0 then
+            if v >= 0 and v < 256 and math.floor(v) == v then
+                self[base + i] = v
+            elseif v >= 0 then
                 self[base + i] = math.floor(v)
             else
                 self[base + i] = math.ceil(v)
@@ -369,7 +391,9 @@ function __pytra_bytearray_extend_slice(self, other, start_idx, stop_idx)
     for k = from, to do
         local v = other[k]
         if type(v) == "number" then
-            if v >= 0 then
+            if v >= 0 and v < 256 and math.floor(v) == v then
+                self[base + out_i] = v
+            elseif v >= 0 then
                 self[base + out_i] = math.floor(v)
             else
                 self[base + out_i] = math.ceil(v)
@@ -465,21 +489,21 @@ function __pytra_bytes(v)
         local n = math.max(0, __pytra_int(v))
         local out = {}
         for i = 1, n do
-            out[#out + 1] = 0
+            out[i] = 0
         end
         return out
     end
     if type(v) == "table" then
         local out = {}
         for i = 1, #v do
-            out[#out + 1] = v[i]
+            out[i] = v[i]
         end
         return out
     end
     if type(v) == "string" then
         local out = {}
         for i = 1, #v do
-            out[#out + 1] = string.byte(v, i)
+            out[i] = string.byte(v, i)
         end
         return out
     end
@@ -493,8 +517,33 @@ function __pytra_bytes_alias(v)
     return __pytra_bytes(v)
 end
 
+function __pytra_write_byte_table(f, data)
+    local n = #data
+    local i = 1
+    local chunk_size = 4096
+    while i <= n do
+        local stop = i + chunk_size - 1
+        if stop > n then
+            stop = n
+        end
+        local parts = {}
+        local out_i = 1
+        local j = i
+        while j <= stop do
+            parts[out_i] = string.char((tonumber(data[j]) or 0) % 256)
+            out_i = out_i + 1
+            j = j + 1
+        end
+        f:write(table.concat(parts))
+        i = stop + 1
+    end
+end
+
 function __pytra_seq_get_checked(seq, idx)
     local n = #seq
+    if type(idx) == "number" and idx >= 0 and idx < n and math.floor(idx) == idx then
+        return seq[idx + 1], nil
+    end
     local i = tonumber(idx) or 0
     if i < 0 then
         i = i + n
@@ -507,6 +556,10 @@ end
 
 function __pytra_str_get_checked(s, idx)
     local n = #s
+    if type(idx) == "number" and idx >= 0 and idx < n and math.floor(idx) == idx then
+        local j_fast = idx + 1
+        return string.sub(s, j_fast, j_fast), nil
+    end
     local i = tonumber(idx) or 0
     if i < 0 then
         i = i + n
@@ -520,6 +573,9 @@ end
 
 function __pytra_str_byte_get_checked(s, idx)
     local n = #s
+    if type(idx) == "number" and idx >= 0 and idx < n and math.floor(idx) == idx then
+        return string.byte(s, idx + 1), nil
+    end
     local i = tonumber(idx) or 0
     if i < 0 then
         i = i + n
@@ -1356,11 +1412,7 @@ function open(path, mode)
     local wrapper = {}
     function wrapper:write(data)
         if type(data) == "table" then
-            local parts = {}
-            for i = 1, #data do
-                parts[i] = string.char(data[i] % 256)
-            end
-            f:write(table.concat(parts))
+            __pytra_write_byte_table(f, data)
         else
             f:write(tostring(data))
         end
@@ -1800,9 +1852,7 @@ function __pytra_open(path, mode)
     local wrapper = {}
     function wrapper:write(data)
         if type(data) == "table" then
-            local parts = {}
-            for i = 1, #data do parts[i] = string.char(data[i] % 256) end
-            f:write(table.concat(parts))
+            __pytra_write_byte_table(f, data)
         else
             f:write(tostring(data))
         end
