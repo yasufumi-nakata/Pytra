@@ -1778,6 +1778,41 @@ def f(flag: bool) -> float | None:
         self.assertEqual(value.get("kind"), "Call")
         self.assertEqual(value.get("runtime_call"), "py_iter_or_raise")
 
+    def test_compile_typed_enumerate_avoids_object_runtime_helper_for_cpp(self) -> None:
+        source = """
+def f(values: list[int]) -> int:
+    total = 0
+    for i, v in enumerate(values):
+        total += i + v
+    return total
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(east2, target_language="cpp")
+
+        runtime_calls = [
+            node.get("runtime_call")
+            for node in _walk(east3)
+            if isinstance(node, dict) and isinstance(node.get("runtime_call"), str)
+        ]
+        self.assertNotIn("py_enumerate_object", runtime_calls)
+
+        for_core = next(node for node in _walk(east3) if node.get("kind") == "ForCore")
+        iter_plan = for_core.get("iter_plan", {})
+        self.assertEqual(iter_plan.get("kind"), "RuntimeIterForPlan")
+        iter_expr = iter_plan.get("iter_expr", {})
+        self.assertEqual(iter_expr.get("kind"), "Name")
+        self.assertEqual(iter_expr.get("resolved_type"), "list[int64]")
+        target_plan = for_core.get("target_plan", {})
+        self.assertEqual(target_plan.get("target_type"), "int64")
+
+        object_nodes = [
+            node
+            for node in _walk(east3)
+            if isinstance(node, dict) and node.get("resolved_type") == "object"
+        ]
+        self.assertEqual(object_nodes, [])
+
     def test_compile_narrows_union_names_inside_isinstance_guard(self) -> None:
         source = """
 type Scalar = int | float
