@@ -1491,6 +1491,31 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertTrue(path.endswith("src/runtime/east/utils/assertions.east"))
         self.assertTrue(Path(path).exists())
 
+    def test_cpp_runtime_bundle_emits_variant_assertions_header_from_runtime_east(self) -> None:
+        runtime_path = resolve_runtime_east_path("pytra.utils.assertions")
+        doc = json.loads(Path(runtime_path).read_text(encoding="utf-8"))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            header_path, source_path = emit_runtime_module_artifacts(
+                "pytra.utils.assertions",
+                doc,
+                output_dir=Path(tmp),
+            )
+
+            self.assertTrue(Path(header_path).exists())
+            self.assertTrue(Path(source_path).exists())
+            header_text = Path(header_path).read_text(encoding="utf-8")
+            self.assertIn(
+                "bool py_assert_eq(const ::std::variant<int64, str, bool>& actual, "
+                "const ::std::variant<int64, str, bool>& expected, const str& label = str(\"\"));",
+                header_text,
+            )
+            self.assertIn(
+                "bool py_assert_stdout(const Object<list<str>>& expected_lines, "
+                "const ::std::function<object(object)>& fn);",
+                header_text,
+            )
+
     def test_cpp_runtime_paths_delegate_rel_tail_to_shared_runtime_loader(self) -> None:
         self.assertEqual(runtime_rel_tail_for_module("pytra.std.json"), "std/json")
         self.assertEqual(runtime_rel_tail_for_module("pytra.core.py_runtime"), "core/py_runtime")
