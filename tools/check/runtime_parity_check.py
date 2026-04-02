@@ -36,11 +36,7 @@ _LOCAL_TOOL_FALLBACKS: dict[str, tuple[Path, ...]] = {
 
 # Backend-declared unsupported fixtures are tracked explicitly.
 # FAIL is recorded as FAIL in .parity-results/ and shown in progress matrix.
-_LANG_UNSUPPORTED_FIXTURES: dict[str, set[str]] = {
-    "dart": {
-        "ok_typed_varargs_representative",
-    },
-}
+_LANG_UNSUPPORTED_FIXTURES: dict[str, set[str]] = {}
 
 
 @dataclass

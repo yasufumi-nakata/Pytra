@@ -8,7 +8,6 @@ from typing import Any
 from toolchain.emit.common.emitter.code_emitter import (
     build_import_alias_map,
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
-    reject_backend_typed_vararg_signatures,
 )
 
 from toolchain.frontends.runtime_symbol_index import (
@@ -1436,6 +1435,9 @@ class DartNativeEmitter:
         name = _safe_ident(stmt.get("name"), "fn")
         arg_order_any = stmt.get("arg_order")
         args = arg_order_any if isinstance(arg_order_any, list) else []
+        vararg_name_any = stmt.get("vararg_name")
+        if isinstance(vararg_name_any, str) and vararg_name_any.strip() != "":
+            args = list(args) + [vararg_name_any]
         arg_defaults_any = stmt.get("arg_defaults")
         arg_defaults = arg_defaults_any if isinstance(arg_defaults_any, dict) else {}
         arg_names: list[str] = []
@@ -1678,6 +1680,9 @@ class DartNativeEmitter:
         is_static = "staticmethod" in decorators
         arg_order_any = stmt.get("arg_order")
         arg_order = arg_order_any if isinstance(arg_order_any, list) else []
+        vararg_name_any = stmt.get("vararg_name")
+        if isinstance(vararg_name_any, str) and vararg_name_any.strip() != "":
+            arg_order = list(arg_order) + [vararg_name_any]
         arg_defaults_any = stmt.get("arg_defaults")
         arg_defaults = arg_defaults_any if isinstance(arg_defaults_any, dict) else {}
         args: list[str] = []
@@ -2544,7 +2549,7 @@ class DartNativeEmitter:
             if attr == "append" and len(rendered_args) == 1:
                 return owner + ".add(" + rendered_args[0] + ")"
             if attr == "extend" and len(rendered_args) == 1:
-                return owner + ".addAll(" + rendered_args[0] + ")"
+                return owner + ".addAll(" + self._coerce_iterable_arg(owner_type, rendered_args[0]) + ")"
             if attr == "pop":
                 if len(rendered_args) == 0:
                     return owner + ".removeLast()"
@@ -2577,7 +2582,7 @@ class DartNativeEmitter:
             if attr == "items":
                 return "((" + owner + ") as Map).entries.map((e) => [e.key, e.value]).toList()"
             if attr == "update" and len(rendered_args) == 1:
-                return owner + ".addAll(" + rendered_args[0] + ")"
+                return owner + ".addAll(" + self._coerce_iterable_arg(owner_type, rendered_args[0]) + ")"
             return owner + "." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
         # Lambda immediate call: (lambda x: body)(arg) → ((x) => body)(arg)
         if isinstance(func_any, dict) and func_any.get("kind") == "Lambda":
@@ -2720,6 +2725,16 @@ class DartNativeEmitter:
                         return dart_t + ".from(" + value_expr + ")"
         return value_expr
 
+    def _coerce_iterable_arg(self, owner_type: str, value_expr: str) -> str:
+        dart_t = self._dart_type(owner_type) if owner_type != "" else ""
+        if dart_t.startswith("List<"):
+            return dart_t + ".from(" + value_expr + ")"
+        if dart_t.startswith("Set<"):
+            return dart_t + ".from(" + value_expr + ")"
+        if dart_t.startswith("Map<"):
+            return dart_t + ".from(" + value_expr + ")"
+        return value_expr
+
     def _render_set_comp(self, ed: dict[str, Any]) -> str:
         gens_any = ed.get("generators")
         gens = gens_any if isinstance(gens_any, list) else []
@@ -2818,7 +2833,6 @@ def emit_dart_module(east_doc: dict[str, Any]) -> str:
     # Skip modules that have hand-written runtime replacements
     if _has_handwritten_runtime(module_id):
         return ""
-    reject_backend_typed_vararg_signatures(east_doc, backend_name="Dart backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Dart backend")
     return DartNativeEmitter(east_doc).transpile()
 
