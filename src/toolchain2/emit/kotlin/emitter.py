@@ -25,6 +25,53 @@ class KotlinRenderer(CommonRenderer):
         self.import_symbols: dict[str, str] = {}
         self.module_function_names: set[str] = set()
         self.local_function_aliases: dict[str, str] = {}
+        self.module_class_names: set[str] = set()
+        self.class_has_init: dict[str, bool] = {}
+
+    def _collect_class_fields(self, node: dict[str, JsonVal]) -> list[tuple[str, str]]:
+        fields: list[tuple[str, str]] = []
+        field_types = node.get("field_types")
+        if isinstance(field_types, dict) and len(field_types) > 0:
+            for field_name, field_type in field_types.items():
+                if isinstance(field_name, str) and isinstance(field_type, str):
+                    fields.append((field_name, field_type))
+            return fields
+        for stmt in self._list(node, "body"):
+            if not isinstance(stmt, dict):
+                continue
+            if self._str(stmt, "kind") not in ("FunctionDef", "ClosureDef") or self._str(stmt, "name") != "__init__":
+                continue
+            for init_stmt in self._list(stmt, "body"):
+                if not isinstance(init_stmt, dict):
+                    continue
+                if self._str(init_stmt, "kind") not in ("Assign", "AnnAssign"):
+                    continue
+                target = init_stmt.get("target")
+                if not isinstance(target, dict) or self._str(target, "kind") != "Attribute":
+                    continue
+                owner = target.get("value")
+                if not isinstance(owner, dict) or self._str(owner, "id") != "self":
+                    continue
+                attr = self._str(target, "attr")
+                decl_type = self._str(init_stmt, "decl_type")
+                if decl_type == "":
+                    decl_type = self._str(init_stmt, "resolved_type")
+                if decl_type == "":
+                    decl_type = "Any"
+                fields.append((attr, decl_type))
+        return fields
+
+    def _emit_store_target(self, target: JsonVal, value_code: str) -> None:
+        if not isinstance(target, dict):
+            raise RuntimeError("kotlin emitter: store target must be dict")
+        kind = self._str(target, "kind")
+        if kind == "Name":
+            self._emit(_safe_kotlin_ident(self._str(target, "id")) + " = " + value_code)
+            return
+        if kind == "Attribute":
+            self._emit(self._emit_expr(target) + " = " + value_code)
+            return
+        raise RuntimeError("kotlin emitter: unsupported store target: " + kind)
 
     def render_module(self, east3_doc: dict[str, JsonVal]) -> str:
         module_id = self._str(east3_doc, "module_id")
@@ -47,6 +94,22 @@ class KotlinRenderer(CommonRenderer):
             for stmt in self._list(east3_doc, "body")
             if isinstance(stmt, dict) and self._str(stmt, "kind") in ("FunctionDef", "ClosureDef")
         }
+        self.module_class_names = {
+            self._str(stmt, "name")
+            for stmt in self._list(east3_doc, "body")
+            if isinstance(stmt, dict) and self._str(stmt, "kind") == "ClassDef"
+        }
+        self.class_has_init = {}
+        for stmt in self._list(east3_doc, "body"):
+            if not isinstance(stmt, dict) or self._str(stmt, "kind") != "ClassDef":
+                continue
+            class_name = self._str(stmt, "name")
+            self.class_has_init[class_name] = any(
+                isinstance(item, dict)
+                and self._str(item, "kind") in ("FunctionDef", "ClosureDef")
+                and self._str(item, "name") == "__init__"
+                for item in self._list(stmt, "body")
+            )
         self.local_function_aliases = {}
         for emitted_name in self.module_function_names:
             if emitted_name.startswith("__pytra_") and len(emitted_name) > len("__pytra_"):
@@ -92,14 +155,20 @@ class KotlinRenderer(CommonRenderer):
             raise RuntimeError("kotlin emitter: stmt node must be dict")
         kind = self._str(node, "kind")
         if kind == "Pass":
-            self._emit("Unit")
+            if self.current_class_name is None:
+                self._emit("Unit")
+            else:
+                self._emit("// pass")
             return
         if kind == "AnnAssign":
             target = node.get("target")
-            target_name = _safe_kotlin_ident(self._str(target, "id"))
             decl_type = self._str(node, "decl_type")
             value = self._emit_expr(node.get("value"))
-            self._emit("val " + target_name + ": " + kotlin_type(decl_type) + " = " + value)
+            if isinstance(target, dict) and self._str(target, "kind") == "Attribute":
+                self._emit(self._emit_expr(target) + " = " + value)
+                return
+            target_name = _safe_kotlin_ident(self._str(target, "id"))
+            self._emit("var " + target_name + ": " + kotlin_type(decl_type) + " = " + value)
             return
         if kind == "Assign":
             target = node.get("target")
@@ -125,6 +194,18 @@ class KotlinRenderer(CommonRenderer):
             return
         if kind == "ClassDef":
             self._emit_class_def(node)
+            return
+        if kind == "Swap":
+            left = node.get("left")
+            right = node.get("right")
+            left_code = self._emit_expr(left)
+            right_code = self._emit_expr(right)
+            tmp_type = "Any?"
+            if isinstance(left, dict):
+                tmp_type = kotlin_type(self._str(left, "resolved_type"))
+            self._emit("val __pytraSwapTmp: " + tmp_type + " = " + left_code)
+            self._emit_store_target(left, right_code)
+            self._emit_store_target(right, "__pytraSwapTmp")
             return
         if kind == "ForCore":
             self._emit_for_core(node)
@@ -171,7 +252,11 @@ class KotlinRenderer(CommonRenderer):
                 self._emit("return Unit")
             return
         if kind == "Expr":
-            self._emit(self._emit_expr(node.get("value")))
+            value = node.get("value")
+            if isinstance(value, dict) and self._str(value, "kind") == "Constant" and isinstance(value.get("value"), str):
+                self._emit("// " + str(value.get("value")))
+            else:
+                self._emit(self._emit_expr(value))
             return
         if kind == "Raise":
             exc = node.get("exc")
@@ -232,9 +317,17 @@ class KotlinRenderer(CommonRenderer):
         class_name = _safe_kotlin_ident(self._str(node, "name"))
         prev_class_name = self.current_class_name
         self.current_class_name = class_name
+        instance_fields = self._collect_class_fields(node)
         class_fields: list[tuple[str, str, str]] = []
         self._emit("class " + class_name + " {")
         self.state.indent_level += 1
+        seen_instance_fields: set[str] = set()
+        for field_name, decl_type in instance_fields:
+            safe_field_name = _safe_kotlin_ident(field_name)
+            if safe_field_name in seen_instance_fields:
+                continue
+            seen_instance_fields.add(safe_field_name)
+            self._emit("var " + safe_field_name + ": " + kotlin_type(decl_type) + " = " + kotlin_zero_value(decl_type))
         for stmt in self._list(node, "body"):
             if not isinstance(stmt, dict):
                 continue
@@ -244,8 +337,9 @@ class KotlinRenderer(CommonRenderer):
                 field_name = _safe_kotlin_ident(self._str(target, "id"))
                 decl_type = self._str(stmt, "decl_type")
                 value_node = stmt.get("value")
-                value = self._emit_expr(value_node) if isinstance(value_node, dict) else kotlin_zero_value(decl_type)
-                class_fields.append((field_name, decl_type, value))
+                if isinstance(value_node, dict):
+                    value = self._emit_expr(value_node)
+                    class_fields.append((field_name, decl_type, value))
                 continue
             if kind == "Assign":
                 target = stmt.get("target")
@@ -354,7 +448,7 @@ class KotlinRenderer(CommonRenderer):
                 upper = self._emit_expr(upper_node) if isinstance(upper_node, dict) else owner + ".size"
                 return owner + ".slice(" + lower + " until " + upper + ")"
             index = self._emit_expr(slice_node)
-            return owner + "[" + index + "]"
+            return owner + "[(" + index + ").toInt()]"
         if kind == "List":
             elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
             return "mutableListOf(" + ", ".join(elems) + ")"
@@ -418,29 +512,49 @@ class KotlinRenderer(CommonRenderer):
                 owner_expr = self._emit_expr(owner_node)
                 owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
                 arg_nodes = self._list(node, "args")
+                if owner_type in ("str", "string"):
+                    if attr == "join" and len(arg_nodes) == 1:
+                        return "__pytra_join(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
                 if owner_type.startswith("dict[") and attr == "get" and len(arg_nodes) == 2:
-                    return owner_expr + ".getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
+                    return owner_expr + ".getOrElse(" + self._emit_expr(arg_nodes[0]) + ") { " + self._emit_expr(arg_nodes[1]) + " }"
+                if owner_type.startswith("list[") or owner_type in ("list", "bytes", "bytearray"):
+                    if attr == "append" and len(arg_nodes) == 1:
+                        return owner_expr + ".add(" + self._emit_expr(arg_nodes[0]) + ")"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
                 mapped = self.mapping.calls.get(func_id)
                 if isinstance(mapped, str) and mapped != "":
                     func_name = mapped
+                elif func_id in self.module_class_names or self._str(node, "resolved_type") == func_id:
+                    ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                    class_name = func_name if "." in func_name else _safe_kotlin_ident(func_id)
+                    tmp_name = "__pytraObj"
+                    if self.class_has_init.get(func_id, True):
+                        return "run { val " + tmp_name + " = " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
+                    return class_name + "(" + ", ".join(ctor_args) + ")"
             args: list[str] = []
             for arg in self._list(node, "args"):
                 if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
                     arg_id = self._str(arg, "id")
                     resolved_type = self._str(arg, "resolved_type")
-                    if arg_id in self.module_function_names or resolved_type.startswith("callable[") or resolved_type.startswith("Callable["):
-                        args.append("{ " + _safe_kotlin_ident(arg_id) + "() }")
+                    if arg_id in self.module_function_names:
+                        args.append("::" + _safe_kotlin_ident(arg_id))
+                        continue
+                    if resolved_type.startswith("callable[") or resolved_type.startswith("Callable["):
+                        args.append(_safe_kotlin_ident(arg_id))
                         continue
                 args.append(self._emit_expr(arg))
+            if isinstance(func, dict) and self._str(func, "kind") == "Lambda":
+                return "(" + func_name + ")(" + ", ".join(args) + ")"
             return func_name + "(" + ", ".join(args) + ")"
         if kind == "BinOp":
             left = self._emit_expr(node.get("left"))
             right = self._emit_expr(node.get("right"))
             op = self._str(node, "op")
+            if op == "Div":
+                return left + ".toDouble() / " + right + ".toDouble()"
             op_text = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/"}.get(op, op)
-            return left + " " + op_text + " " + right
+            return "(" + left + " " + op_text + " " + right + ")"
         if kind == "Compare":
             left = self._emit_expr(node.get("left"))
             comparators = self._list(node, "comparators")

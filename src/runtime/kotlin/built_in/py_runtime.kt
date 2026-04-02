@@ -51,8 +51,13 @@ fun __pytra_float(v: Any?): Double {
 }
 
 fun __pytra_str(v: Any?): String {
-    if (v == null) return ""
+    if (v == null) return "None"
+    if (v is Boolean) return if (v) "True" else "False"
     return v.toString()
+}
+
+fun __pytra_join(sep: Any?, items: Any?): String {
+    return __pytra_as_list(items).joinToString(__pytra_str(sep)) { __pytra_str(it) }
 }
 
 fun __pytra_len(v: Any?): Long {
@@ -210,9 +215,10 @@ fun __pytra_bytes(v: Any?): MutableList<Any?> {
 fun __pytra_list_repeat(value: Any?, count: Any?): MutableList<Any?> {
     val out = mutableListOf<Any?>()
     val n = __pytra_int(count)
+    val items = __pytra_as_list(value)
     var i = 0L
     while (i < n) {
-        out.add(value)
+        out.addAll(items)
         i += 1L
     }
     return out
