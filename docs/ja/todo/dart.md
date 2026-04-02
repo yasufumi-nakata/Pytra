@@ -20,6 +20,7 @@
 
 ## 参考資料
 
+- 旧 toolchain1 の Dart emitter: `src/toolchain/emit/dart/`
 - toolchain2 の TS emitter（参考実装）: `src/toolchain2/emit/ts/`
 - 既存の Dart runtime: `src/runtime/dart/`
 - emitter 実装ガイドライン: `docs/ja/spec/spec-emitter-guide.md`
@@ -27,4 +28,16 @@
 
 ## 未完了タスク
 
-（現時点ではタスクなし。Dart emitter の新規実装や parity 改善が発生したらここに追加する。）
+### P1-DART-EMITTER: Dart emitter を toolchain2 に新規実装する
+
+1. [ ] [ID: P1-DART-EMITTER-S1] `src/toolchain2/emit/dart/` に Dart emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/dart/` と TS emitter を参考にする
+2. [ ] [ID: P1-DART-EMITTER-S2] `src/runtime/dart/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
+3. [ ] [ID: P1-DART-EMITTER-S3] fixture 全件の Dart emit 成功を確認する
+4. [ ] [ID: P1-DART-EMITTER-S4] Dart runtime を toolchain2 の emit 出力と整合させる
+5. [ ] [ID: P1-DART-EMITTER-S5] fixture の Dart run parity を通す（`dart run`）
+6. [ ] [ID: P1-DART-EMITTER-S6] stdlib の Dart parity を通す（`--case-root stdlib`）
+7. [ ] [ID: P1-DART-EMITTER-S7] sample の Dart parity を通す（`--case-root sample`）
+
+### P2-DART-LINT: emitter hardcode lint の Dart 違反を解消する
+
+1. [ ] [ID: P2-DART-LINT-S1] `check_emitter_hardcode_lint.py --lang dart` で全カテゴリ 0 件になることを確認する

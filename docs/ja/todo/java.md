@@ -27,12 +27,12 @@
 - Java runtime: `src/runtime/java/`
 
 ### Scala
-- toolchain2 の Scala emitter: `src/toolchain2/emit/scala/`
+- 旧 toolchain1 の Scala emitter: `src/toolchain/emit/scala/`
 - Scala runtime: `src/runtime/scala/`
 
 ### Kotlin
-- toolchain2 の Kotlin emitter: `src/toolchain2/emit/kotlin/`（未実装の場合あり）
-- Kotlin runtime: `src/runtime/kotlin/`（未実装の場合あり）
+- 旧 toolchain1 の Kotlin emitter: `src/toolchain/emit/kotlin/`
+- Kotlin runtime: `src/runtime/kotlin/`
 
 ### 共通
 - toolchain2 の TS emitter（参考実装）: `src/toolchain2/emit/ts/`
@@ -40,6 +40,31 @@
 - mapping.json 仕様: `docs/ja/spec/spec-runtime-mapping.md`
 
 ## 未完了タスク
+
+### P1-SCALA-EMITTER: Scala emitter を toolchain2 に新規実装する
+
+1. [ ] [ID: P1-SCALA-EMITTER-S1] `src/toolchain2/emit/scala/` に Scala emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/scala/` と TS emitter を参考にする
+2. [ ] [ID: P1-SCALA-EMITTER-S2] `src/runtime/scala/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
+3. [ ] [ID: P1-SCALA-EMITTER-S3] fixture 全件の Scala emit 成功を確認する
+4. [ ] [ID: P1-SCALA-EMITTER-S4] Scala runtime を toolchain2 の emit 出力と整合させる
+5. [ ] [ID: P1-SCALA-EMITTER-S5] fixture の Scala run parity を通す（`scala`）
+6. [ ] [ID: P1-SCALA-EMITTER-S6] stdlib の Scala parity を通す（`--case-root stdlib`）
+7. [ ] [ID: P1-SCALA-EMITTER-S7] sample の Scala parity を通す（`--case-root sample`）
+
+### P1-KOTLIN-EMITTER: Kotlin emitter を toolchain2 に新規実装する
+
+1. [ ] [ID: P1-KOTLIN-EMITTER-S1] `src/toolchain2/emit/kotlin/` に Kotlin emitter を新規実装する — CommonRenderer + override 構成。旧 `src/toolchain/emit/kotlin/` と TS emitter を参考にする
+2. [ ] [ID: P1-KOTLIN-EMITTER-S2] `src/runtime/kotlin/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
+3. [ ] [ID: P1-KOTLIN-EMITTER-S3] fixture 全件の Kotlin emit 成功を確認する
+4. [ ] [ID: P1-KOTLIN-EMITTER-S4] Kotlin runtime を toolchain2 の emit 出力と整合させる
+5. [ ] [ID: P1-KOTLIN-EMITTER-S5] fixture の Kotlin run parity を通す（`kotlinc` + `java -jar`）
+6. [ ] [ID: P1-KOTLIN-EMITTER-S6] stdlib の Kotlin parity を通す（`--case-root stdlib`）
+7. [ ] [ID: P1-KOTLIN-EMITTER-S7] sample の Kotlin parity を通す（`--case-root sample`）
+
+### P2-JVM-LINT: emitter hardcode lint の Scala / Kotlin 違反を解消する
+
+1. [ ] [ID: P2-JVM-LINT-S1] `check_emitter_hardcode_lint.py --lang scala` で全カテゴリ 0 件になることを確認する
+2. [ ] [ID: P2-JVM-LINT-S2] `check_emitter_hardcode_lint.py --lang kotlin` で全カテゴリ 0 件になることを確認する
 
 ### P3-JAVA-SELFHOST: Java emitter で toolchain2 を Java に変換し build を通す
 
