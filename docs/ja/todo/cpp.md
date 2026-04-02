@@ -37,7 +37,8 @@
    - 完了メモ: `src/pytra-cli2.py`, `tools/check/runtime_parity_check.py`, `tools/check/runtime_parity_check_fast.py`, `tools/check/check_all_target_sample_parity.py`, `src/toolchain2/optimize/optimizer.py` で user-facing flag を `--opt-level` に統一した。`runtime_parity_check_fast --opt-level 1` の single-case parity と各スクリプトの `--help` / `py_compile` を確認済み。
 2. [x] [ID: P0-OPT-LEVEL-S2] `--opt-level` が `negative_index_mode` / `bounds_check_mode` のデフォルトを決定し、個別オプションで上書きできるようにする
    - 完了メモ: `src/toolchain2/optimize/optimizer.py` の `resolve_negative_index_mode()` / `resolve_bounds_check_mode()` を `opt_level` aware にし、未指定時の default を `0 -> always/always`, `1 -> const_only/off`, `2 -> off/off` に変更した。`src/pytra-cli2.py` と `tools/check/runtime_parity_check_fast.py` から `opt_level` を引き回し、明示 `--negative-index-mode` / `--bounds-check-mode` は従来どおり個別 override として維持した。`runtime_parity_check_fast --opt-level 0/2` の summary で mode 決定を確認済み。
-3. [ ] [ID: P0-OPT-LEVEL-S3] spec-options.md / spec-east3-optimizer.md / tutorial を更新する
+3. [x] [ID: P0-OPT-LEVEL-S3] spec-options.md / spec-east3-optimizer.md / tutorial を更新する
+   - 完了メモ: 正本 `docs/ja/` の `spec-east3-optimizer.md`, `spec-tools-parity.md`, `tutorial/dev-operations.md` を `--opt-level` 表記へ更新し、`O0/O1/O2` と `negative_index_mode` / `bounds_check_mode` の既定対応も追記した。旧 `--east3-opt-level` 表記は plan / archive の履歴記述を除き、正本 spec/tutorial から除去済み。
 4. [ ] [ID: P0-OPT-LEVEL-S4] fixture + sample + stdlib parity に回帰がないことを確認する
 
 ### P0-CPP-VARIANT: C++ を std::variant ベースに移行し object/box/unbox を廃止する

@@ -262,7 +262,10 @@ fail-closed 規則:
 
 推奨オプション:
 
-- `--east3-opt-level {0,1,2}`（既定 `1`）
+- `--opt-level {0,1,2}`（既定 `1`）
+  - `0`: `negative_index_mode=always`, `bounds_check_mode=always`
+  - `1`: `negative_index_mode=const_only`, `bounds_check_mode=off`
+  - `2`: `negative_index_mode=off`, `bounds_check_mode=off`
 - `--east3-opt-pass +PASS,-PASS`（個別 on/off）
 - `--dump-east3-before-opt <path>`
 - `--dump-east3-after-opt <path>`
@@ -289,22 +292,22 @@ python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
 
 ```bash
 python3 src/pytra-cli.py sample/py/01_mandelbrot.py --target cpp -o out.cpp \
-  --east3-opt-level 2 \
+  --opt-level 2 \
   --east3-opt-pass -RangeForCanonicalizationPass,-UnusedLoopVarElisionPass
 ```
 
-3. `O0/O1/O2` の互換性は `runtime_parity_check.py --east3-opt-level` で同一手順比較する。
+3. `O0/O1/O2` の互換性は `runtime_parity_check.py --opt-level` で同一手順比較する。
 
 ```bash
 python tools/check/runtime_parity_check.py --case-root sample \
   --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
-  --east3-opt-level 0 --summary-json work/logs/east3_opt_parity_o0.json
+  --opt-level 0 --summary-json work/logs/east3_opt_parity_o0.json
 python tools/check/runtime_parity_check.py --case-root sample \
   --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
-  --east3-opt-level 1 --summary-json work/logs/east3_opt_parity_o1.json
+  --opt-level 1 --summary-json work/logs/east3_opt_parity_o1.json
 python tools/check/runtime_parity_check.py --case-root sample \
   --targets cpp,rs,cs,js,ts --ignore-unstable-stdout \
-  --east3-opt-level 2 --summary-json work/logs/east3_opt_parity_o2.json
+  --opt-level 2 --summary-json work/logs/east3_opt_parity_o2.json
 ```
 
 ## 11. テスト契約

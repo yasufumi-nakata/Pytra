@@ -32,7 +32,7 @@ python3 tools/check/runtime_parity_check.py \
   --targets cpp \
   --case-root sample \
   --all-samples \
-  --east3-opt-level 2 \
+  --opt-level 2 \
   --cpp-codegen-opt 3
 
 python3 tools/check/runtime_parity_check.py \
@@ -40,21 +40,21 @@ python3 tools/check/runtime_parity_check.py \
   --case-root sample \
   --all-samples \
   --ignore-unstable-stdout \
-  --east3-opt-level 2
+  --opt-level 2
 
 python3 tools/check/runtime_parity_check.py \
   --targets rs,cs,go,java,kotlin,swift,scala \
   --case-root sample \
   --all-samples \
   --ignore-unstable-stdout \
-  --east3-opt-level 2
+  --opt-level 2
 
 python3 tools/check/runtime_parity_check.py \
   --targets ruby,lua,php,nim \
   --case-root sample \
   --all-samples \
   --ignore-unstable-stdout \
-  --east3-opt-level 2
+  --opt-level 2
 ```
 
 - 実行時間短縮のためにケースを分割する場合（運用例）:
