@@ -1,8 +1,10 @@
-<a href="../../en/plans/p1-dart-toolchain2-emitter-bootstrap.md">
+<a href="../../../en/plans/archive/20260402-p1-dart-toolchain2-emitter-bootstrap.md">
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
 # P1: Dart toolchain2 emitter bootstrap
+
+最終更新: 2026-04-02
 
 ## 対象
 
@@ -14,7 +16,7 @@
 1. `toolchain2` 側に Dart emitter の正式な入口を追加する。
 2. EAST3 lowering 用 profile と runtime mapping を追加し、`target_language="dart"` を有効化する。
 3. parity で必要な multi-file 出力と runtime コピーを `tools/check/runtime_parity_check_fast.py` に接続する。
-4. 既存 Dart native emitter の出力をまず再利用し、toolchain2 側の配線を先に成立させる。
+4. CommonRenderer ベースの toolchain2 正本 emitter に必要な runtime / parity 導線を揃える。
 
 ## 非対象
 
@@ -30,4 +32,5 @@
 
 ## 決定ログ
 
-- 2026-04-02: 旧 Dart native emitter の生成品質を維持しつつ、toolchain2 側の入口と検証導線を先に立ち上げる方針を採用。
+- 2026-04-02: toolchain2 側の入口、lower profile、runtime mapping、parity 導線、smoke test を追加。
+- 2026-04-02: 旧 `src/toolchain/emit/dart/` への依存は emitter 実装ガイドライン違反のため撤回し、最終的に `src/toolchain2/emit/dart/` を正本として fixture 140/140、stdlib 16/16、sample 18/18 PASS を達成。
