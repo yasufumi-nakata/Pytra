@@ -966,8 +966,39 @@ def main() -> int:
         out_path.write_text(json.dumps(summary_obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     _save_parity_results(records, args.case_root, enabled_targets)
+    _maybe_refresh_selfhost_python()
     _maybe_regenerate_progress()
     return exit_code
+
+
+def _maybe_refresh_selfhost_python() -> None:
+    """Auto-re-aggregate selfhost_python.json if >2 minutes since last update.
+
+    Reads existing .parity-results/*.json and writes selfhost_python.json so
+    that gen_backend_progress.py always has up-to-date selfhost matrix data.
+    呼び出しは _maybe_regenerate_progress() の前に置くこと。
+    こうすることで「今サイクルの parity 結果 → selfhost_python.json → progress summary」
+    の順に反映され、1サイクル遅延なく最新状態が summary に出る。
+    クールダウンは changelog 書き込みと同じ 120 秒に統一。
+    """
+    marker = ROOT / ".parity-results" / "selfhost_python.json"
+    if marker.exists() and (time.time() - marker.stat().st_mtime) < _CHANGELOG_COOLDOWN_SEC:
+        return
+    run_script = ROOT / "tools" / "run" / "run_selfhost_parity.py"
+    if not run_script.exists():
+        return
+    parity_dir = ROOT / ".parity-results"
+    if not parity_dir.exists() or not any(parity_dir.glob("*_sample.json")):
+        return
+    try:
+        subprocess.run(
+            ["python3", str(run_script), "--selfhost-lang", "python"],
+            cwd=str(ROOT),
+            timeout=60,
+            capture_output=True,
+        )
+    except Exception:
+        pass
 
 
 def _maybe_regenerate_progress() -> None:
