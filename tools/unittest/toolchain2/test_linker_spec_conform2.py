@@ -1512,7 +1512,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
             )
             self.assertIn(
                 "bool py_assert_stdout(const Object<list<str>>& expected_lines, "
-                "const ::std::function<object(object)>& fn);",
+                "const ::std::function<void()>& fn);",
                 header_text,
             )
 
