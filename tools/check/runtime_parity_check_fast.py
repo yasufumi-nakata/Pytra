@@ -45,6 +45,7 @@ from toolchain2.emit.java.emitter import emit_java_module  # type: ignore
 from toolchain2.emit.java.types import java_module_class_name  # type: ignore
 from toolchain2.emit.scala.emitter import emit_scala_module  # type: ignore
 from toolchain2.emit.kotlin.emitter import emit_kotlin_module  # type: ignore
+from toolchain2.emit.swift.emitter import emit_swift_module  # type: ignore
 from toolchain2.emit.rs.emitter import emit_rs_module  # type: ignore
 from toolchain2.emit.ts.emitter import emit_ts_module  # type: ignore
 from toolchain2.emit.dart.emitter import emit_dart_module  # type: ignore
@@ -338,6 +339,20 @@ def _transpile_in_memory(
                     code, encoding="utf-8"
                 )
             _copy_php_runtime(emit_dir)
+        elif target == "swift":
+            for m in link_result.linked_modules:
+                _inject_basic_module_id(
+                    m.east_doc,
+                    m.module_id,
+                    is_entry=bool(getattr(m, "is_entry", False)),
+                )
+                code = emit_swift_module(m.east_doc)
+                if code.strip() == "":
+                    continue
+                emit_dir.joinpath(m.module_id.replace(".", "_") + ".swift").write_text(
+                    code, encoding="utf-8"
+                )
+            _copy_swift_runtime(emit_dir)
         elif target == "dart":
             for m in link_result.linked_modules:
                 _inject_dart_emit_context(
@@ -483,6 +498,22 @@ def _copy_cs_runtime(emit_dir: Path) -> None:
             dest = emit_dir / "std" / cs_file.name
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(cs_file, dest)
+
+
+def _copy_swift_runtime(emit_dir: Path) -> None:
+    swift_runtime = ROOT / "src" / "runtime" / "swift"
+    if not swift_runtime.exists():
+        return
+    built_in = swift_runtime / "built_in" / "py_runtime.swift"
+    if built_in.exists():
+        shutil.copy2(built_in, emit_dir / "py_runtime.swift")
+    image_runtime = swift_runtime / "image_runtime.swift"
+    if image_runtime.exists():
+        shutil.copy2(image_runtime, emit_dir / "image_runtime.swift")
+    std_dir = swift_runtime / "std"
+    if std_dir.exists():
+        for swift_file in sorted(std_dir.glob("*.swift")):
+            shutil.copy2(swift_file, emit_dir / swift_file.name)
 
 
 def _run_cs_via_dotnet(
@@ -740,6 +771,29 @@ def _run_target(
             return build
         return run_shell(
             "mono " + shlex.quote(str(exe_path)),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+
+    if target == "swift":
+        swift_files = sorted(str(p) for p in emit_dir.rglob("*.swift"))
+        if len(swift_files) == 0:
+            return subprocess.CompletedProcess("", 1, "", "no .swift files found")
+        exe_path = emit_dir / (case_path.stem + "_swift.out")
+        build = run_shell(
+            "swiftc -O "
+            + " ".join(shlex.quote(f) for f in swift_files)
+            + " -o "
+            + shlex.quote(str(exe_path)),
+            cwd=work_dir,
+            env=env,
+            timeout_sec=timeout_sec,
+        )
+        if build.returncode != 0:
+            return build
+        return run_shell(
+            shlex.quote(str(exe_path)),
             cwd=work_dir,
             env=env,
             timeout_sec=timeout_sec,

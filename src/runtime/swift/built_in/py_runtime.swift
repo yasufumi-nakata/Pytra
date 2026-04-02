@@ -59,6 +59,27 @@ func __pytra_assert(_ args: Any...) -> String {
     return "True"
 }
 
+func __pytra_assert_true(_ cond: Any?, _ label: Any? = nil) -> Bool {
+    _ = label
+    return __pytra_truthy(cond)
+}
+
+func __pytra_assert_eq(_ actual: Any?, _ expected: Any?, _ label: Any? = nil) -> Bool {
+    _ = label
+    return __pytra_str(actual) == __pytra_str(expected)
+}
+
+func __pytra_assert_all(_ items: Any?, _ label: Any? = nil) -> Bool {
+    _ = label
+    if let arr = items as? [Any] {
+        for item in arr {
+            if !__pytra_truthy(item) { return false }
+        }
+        return true
+    }
+    return __pytra_truthy(items)
+}
+
 func __pytra_perf_counter() -> Double {
     return Date().timeIntervalSince1970
 }
@@ -239,6 +260,39 @@ func __pytra_as_dict(_ v: Any?) -> [AnyHashable: Any] {
     return [:]
 }
 
+func __pytra_set_literal(_ items: [Any]) -> [Any] {
+    var out: [Any] = []
+    for item in items {
+        if !__pytra_contains(out, item) {
+            out.append(item)
+        }
+    }
+    return out
+}
+
+func __pytra_set_add(_ items: inout [Any], _ value: Any?) {
+    if !__pytra_contains(items, value) {
+        items.append(value as Any)
+    }
+}
+
+func __pytra_dict_pop(_ dict: inout [AnyHashable: Any], _ key: Any?) -> Any {
+    let hashed = AnyHashable(__pytra_str(key))
+    let value = dict[hashed] ?? __pytra_any_default()
+    dict.removeValue(forKey: hashed)
+    return value
+}
+
+func __pytra_dict_setdefault(_ dict: inout [AnyHashable: Any], _ key: Any?, _ defaultValue: Any?) -> Any {
+    let hashed = AnyHashable(__pytra_str(key))
+    if let value = dict[hashed] {
+        return value
+    }
+    let stored = defaultValue as Any
+    dict[hashed] = stored
+    return stored
+}
+
 func __pytra_ifexp(_ cond: Bool, _ a: Any, _ b: Any) -> Any {
     return cond ? a : b
 }
@@ -254,6 +308,18 @@ func __pytra_print(_ args: Any...) {
         return
     }
     Swift.print(args.map { String(describing: $0) }.joined(separator: " "))
+}
+
+func __pytra_py_print(_ args: Any...) {
+    if args.isEmpty {
+        Swift.print()
+        return
+    }
+    Swift.print(args.map { String(describing: $0) }.joined(separator: " "))
+}
+
+func __pytra_static_cast(_ v: Any?) -> Int64 {
+    return __pytra_int(v)
 }
 
 func __pytra_min(_ a: Any?, _ b: Any?) -> Any {

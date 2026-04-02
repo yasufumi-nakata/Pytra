@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "language": "swift",
+
+  "types": {
+    "int8": "Int64",
+    "uint8": "Int64",
+    "int16": "Int64",
+    "uint16": "Int64",
+    "int32": "Int64",
+    "uint32": "Int64",
+    "int64": "Int64",
+    "uint64": "Int64",
+    "float32": "Double",
+    "float64": "Double",
+    "bool": "Bool",
+    "str": "String",
+    "None": "Void",
+    "Any": "Any",
+    "Path": "String"
+  },
+
+  "generic_types": {
+    "list": "[{T}]",
+    "dict": "[{K}: {V}]",
+    "set": "Set<{T}>",
+    "tuple": "[Any]",
+    "optional": "{T}?"
+  },
+
+  "operators": {
+    "bin": {
+      "FloorDiv": "__floordiv",
+      "Pow": "__pow"
+    },
+    "bool": {
+      "And": "&&",
+      "Or": "||"
+    },
+    "unary": {
+      "Not": "!"
+    }
+  },
+
+  "syntax": {
+    "if": "if ({cond}) {",
+    "elif": "} else if ({cond}) {",
+    "else": "} else {",
+    "while": "while ({cond}) {",
+    "block_close": "}",
+    "return": "return",
+    "break": "break",
+    "continue": "continue",
+    "comment_prefix": "//"
+  },
+
+  "lowering": {
+    "tuple_unpack_style": "individual_temps",
+    "container_covariance": false,
+    "closure_style": "closure_syntax",
+    "with_style": "defer",
+    "property_style": "method_call",
+    "swap_style": "temp_var",
+    "none_literal": "nil",
+    "bool_literals": ["true", "false"],
+    "self_keyword": "self",
+    "type_position": "postfix_colon",
+    "condition_parens": true,
+    "block_braces": "braces",
+    "stmt_terminator": "",
+    "string_type_owned": true,
+    "exception_style": "native_throw"
+  }
+}
