@@ -99,7 +99,8 @@ selfhost で必要な動的型パターン（`dict[str, object]` の items() unp
    - 2026-04-02: `toolchain2` build / parity pathで linked runtime module にも optimizer を再適用し、`utils/png.cpp` の hot loop 3 箇所が `py_list_at_ref` から direct `operator[]` に変わることを確認。`runtime_parity_check_fast --case-root sample --targets cpp 01_mandelbrot` は PASS、手元 build の run-only 計測では `elapsed_sec ≈ 0.82s`。
 6. [x] [ID: P0-SUB-BOUNDS-S5] fixture + sample + stdlib parity に回帰がないことを確認する
    - 完了: `runtime_parity_check_fast --case-root fixture --targets cpp --cmd-timeout-sec 300` が `139/139 PASS`、`--case-root sample` が `18/18 PASS`、`--case-root stdlib` が `16/16 PASS`。`negative_index_mode=const_only` / `bounds_check_mode=off` の optimizer metadata 分岐を有効にした状態でも C++ parity に回帰がないことを確認した。
-7. [ ] [ID: P0-SUB-BOUNDS-S6] negative index の回帰 fixture を追加する（`a[-1]` が optimizer の誤判定で壊れないことを検証）
+7. [x] [ID: P0-SUB-BOUNDS-S6] negative index の回帰 fixture を追加する（`a[-1]` が optimizer の誤判定で壊れないことを検証）
+   - 完了: `test/fixture/source/py/collections/negative_index_comprehensive.py` が追加済みで、list / str / bytes / bytearray の負数 index と mutation 後アクセスを網羅している。`runtime_parity_check_fast --case-root fixture --targets cpp negative_index negative_index_comprehensive --cmd-timeout-sec 300` を実行し、2 case とも PASS を確認した。
 
 ### P0-CPP-OPT-VARIANT: optional\<variant\> 移行後の JSON stdlib parity 回復
 
