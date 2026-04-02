@@ -819,9 +819,15 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
                 return cpp_signature_type(target_type) + "(" + _emit_set_literal_for_target_type(ctx, node, lane) + ")"
         expr = _emit_expr(ctx, node)
         direct_source_type = ""
-        if storage_type not in ("", "unknown") and not _has_variant_storage(storage_type) and not _needs_object_cast(storage_type):
+        storage_optional_inner = _optional_inner_type(storage_type)
+        if (
+            storage_type not in ("", "unknown")
+            and storage_optional_inner == ""
+            and not _has_variant_storage(storage_type)
+            and not _needs_object_cast(storage_type)
+        ):
             direct_source_type = _expanded_union_type(storage_type)
-        else:
+        elif storage_optional_inner == "":
             static_value_type = _expr_static_type(ctx, node)
             static_union_type = _expanded_union_type(static_value_type)
             if (
@@ -1776,9 +1782,15 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         if expected_type != "" and _is_top_level_union_type(expected_type) and isinstance(a, dict):
             direct_source_type = ""
             storage_type = _expanded_union_type(_expr_storage_type(ctx, a))
-            if storage_type not in ("", "unknown") and not _is_top_level_union_type(storage_type) and not _needs_object_cast(storage_type):
+            storage_optional_inner = _optional_inner_type(storage_type)
+            if (
+                storage_type not in ("", "unknown")
+                and storage_optional_inner == ""
+                and not _is_top_level_union_type(storage_type)
+                and not _needs_object_cast(storage_type)
+            ):
                 direct_source_type = storage_type
-            else:
+            elif storage_optional_inner == "":
                 static_type = _expanded_union_type(_expr_static_type(ctx, a))
                 if static_type not in ("", "unknown") and not _is_top_level_union_type(static_type) and not _needs_object_cast(static_type):
                     direct_source_type = static_type
@@ -2802,6 +2814,15 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return value_expr
     bridge = _dict(node, "bridge_lane_v1")
     if _str(bridge, "value_category") == "optional":
+        if _is_top_level_union_type(target):
+            bridge_value = _dict(bridge, "value")
+            source_type = _str(bridge_value, "mirror")
+            if source_type == "":
+                source_type = _expanded_union_type(_expr_storage_type(ctx, value))
+            if source_type == "":
+                source_type = _expanded_union_type(_effective_resolved_type(value))
+            if source_type != "":
+                return _emit_union_narrow_expr(value_expr, source_type, target)
         return "(*(" + value_expr + "))"
     if _str(bridge, "value_category") == "general_union":
         bridge_value = _dict(bridge, "value")
@@ -4404,9 +4425,15 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
             return lane_expr
     if _is_top_level_union_type(target_name):
         direct_source_type = ""
-        if storage_type not in ("", "unknown") and not _has_variant_storage(storage_type) and not _needs_object_cast(storage_type):
+        storage_optional_inner = _optional_inner_type(storage_type)
+        if (
+            storage_type not in ("", "unknown")
+            and storage_optional_inner == ""
+            and not _has_variant_storage(storage_type)
+            and not _needs_object_cast(storage_type)
+        ):
             direct_source_type = union_storage_type
-        elif static_value_type not in ("", "unknown"):
+        elif storage_optional_inner == "" and static_value_type not in ("", "unknown"):
             static_union_type = _expanded_union_type(static_value_type)
             if not _is_top_level_union_type(static_union_type) and not _needs_object_cast(static_union_type):
                 direct_source_type = static_union_type

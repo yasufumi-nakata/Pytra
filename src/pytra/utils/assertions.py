@@ -10,7 +10,11 @@ def py_assert_true(cond: bool, label: str = "") -> bool:
     return False
 
 
-def py_assert_eq(actual: int | str | bool | None, expected: int | str | bool | None, label: str = "") -> bool:
+def py_assert_eq(
+    actual: int | str | bool | None | list[int],
+    expected: int | str | bool | None | list[int],
+    label: str = "",
+) -> bool:
     ok: bool = str(actual) == str(expected)
     if ok:
         return True

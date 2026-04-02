@@ -28,6 +28,7 @@
     "dict.keys": "py_dict_keys",
     "dict.values": "py_dict_values",
     "set.add": "py_set_add_mut",
+    "set.clear": "py_set_clear_mut",
     "set.discard": "py_set_discard_mut",
     "set.remove": "py_set_remove_mut",
     "str.strip": "py_strip",

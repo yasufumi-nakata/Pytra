@@ -51,4 +51,14 @@ static inline void py_set_remove_mut(Object<set<T>>& values, const U& item) {
     py_set_remove_mut(*values, item);
 }
 
+template <class T>
+static inline void py_set_clear_mut(set<T>& values) {
+    values.clear();
+}
+
+template <class T>
+static inline void py_set_clear_mut(Object<set<T>>& values) {
+    py_set_clear_mut(*values);
+}
+
 #endif  // PYTRA_NATIVE_BUILT_IN_SET_OPS_H

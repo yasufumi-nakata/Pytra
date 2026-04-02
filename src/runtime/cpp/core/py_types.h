@@ -281,6 +281,22 @@ static inline Target py_variant_narrow(const ::std::optional<::std::variant<Ts..
     }
 }
 
+template <class Target, class T>
+static inline Target py_variant_narrow(const ::std::optional<T>& value) {
+    if constexpr (::std::is_constructible_v<Target, const ::std::optional<T>&>) {
+        return Target(value);
+    } else {
+        if (!value.has_value()) {
+            return Target(::std::nullopt);
+        }
+        if constexpr (::std::is_constructible_v<Target, T>) {
+            return Target(*value);
+        } else {
+            return py_variant_narrow<Target>(*value);
+        }
+    }
+}
+
 // POD boxing for Object<void> (= object)
 // These create a heap-allocated boxed value wrapped in ControlBlock.
 template<typename T>

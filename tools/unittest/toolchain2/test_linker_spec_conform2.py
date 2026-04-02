@@ -1506,8 +1506,8 @@ def has_key(env: dict[str, int], name: str) -> bool:
             self.assertTrue(Path(source_path).exists())
             header_text = Path(header_path).read_text(encoding="utf-8")
             self.assertIn(
-                "bool py_assert_eq(const ::std::optional<::std::variant<int64, str, bool>>& actual, "
-                "const ::std::optional<::std::variant<int64, str, bool>>& expected, const str& label = str(\"\"));",
+                "bool py_assert_eq(const ::std::optional<::std::variant<int64, str, bool, Object<list<int64>>>>& actual, "
+                "const ::std::optional<::std::variant<int64, str, bool, Object<list<int64>>>>& expected, const str& label = str(\"\"));",
                 header_text,
             )
             self.assertIn(
@@ -5421,6 +5421,76 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("static inline Target py_variant_narrow(const Source& value)", header_text)
         self.assertIn("static inline Target py_variant_narrow(const ::std::variant<Ts...>& value)", header_text)
         self.assertIn("static inline Target py_variant_narrow(const ::std::optional<::std::variant<Ts...>>& value)", header_text)
+        self.assertIn("static inline Target py_variant_narrow(const ::std::optional<T>& value)", header_text)
+
+    def test_cpp_emitter_unboxes_optional_to_general_union_without_deref(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "arg_order": ["a"],
+                    "arg_types": {"a": "int64 | None"},
+                    "arg_usage": {"a": "readonly"},
+                    "arg_defaults": {},
+                    "return_type": "bool",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "py_assert_eq"},
+                                "function_signature_v1": {
+                                    "arg_order": ["actual", "expected", "label"],
+                                    "arg_types": {
+                                        "actual": "int64 | str | bool | None | list[int64]",
+                                        "expected": "int64 | str | bool | None | list[int64]",
+                                        "label": "str",
+                                    },
+                                    "arg_defaults": {"label": {"kind": "Constant", "value": "", "resolved_type": "str"}},
+                                    "return_type": "bool",
+                                },
+                                "args": [
+                                    {
+                                        "kind": "Unbox",
+                                        "target": "int64|str|bool|list[int64]|None",
+                                        "resolved_type": "int64|str|bool|list[int64]|None",
+                                        "value": {"kind": "Name", "id": "a", "resolved_type": "int64 | None"},
+                                        "bridge_lane_v1": {
+                                            "schema_version": 1,
+                                            "target": {
+                                                "kind": "UnionType",
+                                                "category": "general_union",
+                                                "mirror": "int64|str|bool|list[int64]|None",
+                                                "union_mode": "general",
+                                            },
+                                            "target_category": "general_union",
+                                            "value": {
+                                                "kind": "OptionalType",
+                                                "category": "optional",
+                                                "mirror": "int64 | None",
+                                                "inner_mirror": "int64",
+                                                "inner_category": "static",
+                                            },
+                                            "value_category": "optional",
+                                        },
+                                    },
+                                    {"kind": "Constant", "value": None, "resolved_type": "None"},
+                                    {"kind": "Constant", "value": "a", "resolved_type": "str"},
+                                ],
+                                "resolved_type": "bool",
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("py_variant_narrow<::std::optional<::std::variant<int64, str, bool, Object<list<int64>>>>>(a)", cpp_code)
+        self.assertNotIn("(*(a))", cpp_code)
 
     def test_cpp_emitter_passes_named_callable_without_object_lambda_bridge(self) -> None:
         doc = _module_doc(
