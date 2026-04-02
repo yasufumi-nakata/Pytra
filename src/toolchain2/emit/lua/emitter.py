@@ -193,7 +193,7 @@ def _isinstance_lua_check(obj: str, type_name: str) -> str:
         return '(type(' + obj + ') == "string")'
     if type_name in ("list", "tuple", "dict", "set", "object"):
         return '(type(' + obj + ') == "table")'
-    return "__pytra_isinstance(" + obj + ", " + _safe_lua_ident(type_name) + ")"
+    return LUA_PYTRA_ISINSTANCE_NAME + "(" + obj + ", " + _safe_lua_ident(type_name) + ")"
 
 
 def _emit_linked_type_id_isinstance(ctx: EmitContext, args: list[JsonVal]) -> str | None:
@@ -369,6 +369,28 @@ def _emit_cast_call(ctx: EmitContext, node: dict[str, JsonVal], args: list[JsonV
     return value_code
 
 
+def _emit_bytearray_extend_arg(ctx: EmitContext, owner: str, arg_node: JsonVal) -> str:
+    if not isinstance(arg_node, dict):
+        return "__pytra_bytearray_extend(" + owner + ", " + _emit_expr(ctx, arg_node) + ")"
+    if _str(arg_node, "kind") != "Subscript":
+        return "__pytra_bytearray_extend(" + owner + ", " + _emit_expr(ctx, arg_node) + ")"
+    slice_node = arg_node.get("slice")
+    if not isinstance(slice_node, dict) or _str(slice_node, "kind") != "Slice":
+        return "__pytra_bytearray_extend(" + owner + ", " + _emit_expr(ctx, arg_node) + ")"
+    value_node = arg_node.get("value")
+    if not isinstance(value_node, dict):
+        return "__pytra_bytearray_extend(" + owner + ", " + _emit_expr(ctx, arg_node) + ")"
+    source_rt = _str(value_node, "resolved_type")
+    if source_rt not in ("bytes", "bytearray"):
+        return "__pytra_bytearray_extend(" + owner + ", " + _emit_expr(ctx, arg_node) + ")"
+    source_code = _emit_expr(ctx, value_node)
+    lower = slice_node.get("lower")
+    upper = slice_node.get("upper")
+    lower_code = _emit_expr(ctx, lower) if isinstance(lower, dict) else "nil"
+    upper_code = _emit_expr(ctx, upper) if isinstance(upper, dict) else "nil"
+    return "__pytra_bytearray_extend_slice(" + owner + ", " + source_code + ", " + lower_code + ", " + upper_code + ")"
+
+
 def _emit_error_propagation(ctx: EmitContext, err_code: str, *, allow_current_catch: bool) -> None:
     if len(ctx.catch_stack) > 0:
         target_index = len(ctx.catch_stack) - 1 if allow_current_catch else len(ctx.catch_stack) - 2
@@ -469,7 +491,7 @@ def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if exc_type == "":
                 cond = "true"
             else:
-                cond = "__pytra_isinstance(" + catch_err_var + ", " + _safe_lua_ident(exc_type) + ")"
+                cond = LUA_PYTRA_ISINSTANCE_NAME + "(" + catch_err_var + ", " + _safe_lua_ident(exc_type) + ")"
             prefix = "if " if first else "elseif "
             _emit(ctx, prefix + cond + " then")
             ctx.indent_level += 1
@@ -982,7 +1004,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     if attr == "append" and len(arg_strs) >= 1:
                         return "__pytra_bytearray_append(" + owner + ", " + arg_strs[0] + ")"
                     if attr == "extend" and len(arg_strs) >= 1:
-                        return "__pytra_bytearray_extend(" + owner + ", " + arg_strs[0] + ")"
+                        return _emit_bytearray_extend_arg(ctx, owner, args[0])
                 # Path methods
                 if owner_rt in LUA_PATH_TYPE_NAMES:
                     return _emit_path_method(ctx, owner, attr, arg_strs)
@@ -2538,7 +2560,7 @@ def _match_pattern_cond(ctx: EmitContext, subject: str, pattern: dict[str, JsonV
     pk = _str(pattern, "kind")
     if pk == "VariantPattern":
         variant_name = _str(pattern, "variant_name")
-        return "__pytra_isinstance(" + subject + ", " + _safe_lua_ident(variant_name) + ")"
+        return LUA_PYTRA_ISINSTANCE_NAME + "(" + subject + ", " + _safe_lua_ident(variant_name) + ")"
     return "true"
 
 
@@ -2617,8 +2639,89 @@ def _collect_module_class_info(ctx: EmitContext, body: list[JsonVal]) -> None:
 
 def _emit_module_header(ctx: EmitContext, body: list[JsonVal]) -> None:
     """Emit the Lua module header with dofile for runtime."""
-    # Runtime is loaded via dofile
-    pass
+    _emit(ctx, "function " + LUA_PYTRA_ISINSTANCE_NAME + "(obj, class_tbl)")
+    ctx.indent_level += 1
+    _emit(ctx, 'if type(class_tbl) == "number" then')
+    ctx.indent_level += 1
+    _emit(ctx, "if class_tbl == PYTRA_TID_OBJECT then")
+    ctx.indent_level += 1
+    _emit(ctx, "return true")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "if class_tbl == PYTRA_TID_STR then")
+    ctx.indent_level += 1
+    _emit(ctx, 'return type(obj) == "string"')
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "if class_tbl == PYTRA_TID_BOOL then")
+    ctx.indent_level += 1
+    _emit(ctx, 'return type(obj) == "boolean"')
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "if class_tbl == PYTRA_TID_INT or class_tbl == PYTRA_TID_FLOAT then")
+    ctx.indent_level += 1
+    _emit(ctx, 'return type(obj) == "number"')
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "if class_tbl == PYTRA_TID_LIST then")
+    ctx.indent_level += 1
+    _emit(ctx, 'if type(obj) ~= "table" then')
+    ctx.indent_level += 1
+    _emit(ctx, "return false")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "local n = #obj")
+    _emit(ctx, "local key_count = 0")
+    _emit(ctx, "for k, _ in pairs(obj) do")
+    ctx.indent_level += 1
+    _emit(ctx, "key_count = key_count + 1")
+    _emit(ctx, 'if type(k) ~= "number" or k < 1 or math.floor(k) ~= k or k > n then')
+    ctx.indent_level += 1
+    _emit(ctx, "return false")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "return key_count == n")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "if class_tbl == PYTRA_TID_DICT or class_tbl == PYTRA_TID_SET then")
+    ctx.indent_level += 1
+    _emit(ctx, 'return type(obj) == "table"')
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "return false")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, 'if type(obj) ~= "table" then')
+    ctx.indent_level += 1
+    _emit(ctx, "return false")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "local mt = getmetatable(obj)")
+    _emit(ctx, "while mt do")
+    ctx.indent_level += 1
+    _emit(ctx, "if mt == class_tbl then")
+    ctx.indent_level += 1
+    _emit(ctx, "return true")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "local parent = getmetatable(mt)")
+    _emit(ctx, 'if type(parent) == "table" and type(parent.__index) == "table" then')
+    ctx.indent_level += 1
+    _emit(ctx, "mt = parent.__index")
+    ctx.indent_level -= 1
+    _emit(ctx, "else")
+    ctx.indent_level += 1
+    _emit(ctx, "mt = nil")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit(ctx, "return false")
+    ctx.indent_level -= 1
+    _emit(ctx, "end")
+    _emit_blank(ctx)
 
 
 # ---------------------------------------------------------------------------
@@ -2706,6 +2809,8 @@ def emit_lua_module(east3_doc: dict[str, JsonVal]) -> str:
 
     # First pass: collect class info
     _collect_module_class_info(ctx, body)
+
+    _emit_module_header(ctx, body)
 
     # Emit runtime dofile for entry modules
     if ctx.is_entry:

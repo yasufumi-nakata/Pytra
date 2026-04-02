@@ -111,7 +111,7 @@
     "py_slice": "__pytra_slice",
     "py_truthy": "__pytra_truthy",
     "py_in": "__pytra_contains",
-    "py_isinstance": "__pytra_isinstance",
+    "py_isinstance": "pytra_isinstance",
     "module_ctor.math": "__pytra_math_module",
     "py_assert_stdout": "__pytra_assert_stdout",
     "py_assert_true": "__pytra_assert_true",
