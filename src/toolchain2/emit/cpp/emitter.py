@@ -800,7 +800,7 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
         expr = _emit_expr(ctx, node)
         if _optional_inner_type(union_storage_type) == target_type:
             return "(*(" + expr + "))"
-        if _is_top_level_union_type(union_storage_type):
+        if _has_variant_storage(storage_type):
             lane_expr = _emit_union_get_expr(expr, union_storage_type, target_type)
             if lane_expr != expr:
                 return lane_expr
@@ -818,10 +818,28 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
             if lane != "":
                 return cpp_signature_type(target_type) + "(" + _emit_set_literal_for_target_type(ctx, node, lane) + ")"
         expr = _emit_expr(ctx, node)
+        direct_source_type = ""
+        if storage_type not in ("", "unknown") and not _has_variant_storage(storage_type) and not _needs_object_cast(storage_type):
+            direct_source_type = _expanded_union_type(storage_type)
+        else:
+            static_value_type = _expr_static_type(ctx, node)
+            static_union_type = _expanded_union_type(static_value_type)
+            if (
+                static_union_type not in ("", "unknown")
+                and not _is_top_level_union_type(static_union_type)
+                and not _needs_object_cast(static_union_type)
+            ):
+                direct_source_type = static_union_type
+        if direct_source_type != "":
+            lane = _select_union_lane(target_type, direct_source_type)
+            if lane != "":
+                return cpp_signature_type(target_type) + "(" + _emit_expr_as_type(ctx, node, direct_source_type) + ")"
         if node_type == target_type:
+            if _has_variant_storage(storage_type):
+                return expr
             return expr
         source_union_type = ""
-        if _is_top_level_union_type(union_storage_type):
+        if _has_variant_storage(storage_type):
             source_union_type = union_storage_type
         elif storage_type in ("", "unknown") and _is_top_level_union_type(node_type):
             source_union_type = node_type
@@ -845,7 +863,7 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
             source_type = node_type
         if node_type == target_type and source_type == target_type:
             return expr
-        if _is_top_level_union_type(source_type):
+        if _has_variant_storage(source_type):
             lane = _select_union_lane(source_type, target_type)
             if lane != "":
                 return _emit_union_get_expr(expr, source_type, lane)
@@ -995,6 +1013,17 @@ def _split_top_level_union_type(type_name: str) -> list[str]:
 
 def _is_top_level_union_type(type_name: str) -> bool:
     return len(_split_top_level_union_type(type_name)) > 1
+
+
+def _has_variant_storage(type_name: str) -> bool:
+    if type_name in ("", "unknown"):
+        return False
+    normalized = normalize_cpp_nominal_adt_type(type_name)
+    cpp_t = cpp_signature_type(normalized)
+    if cpp_t.startswith("::std::variant<") or cpp_t.startswith("::std::optional<::std::variant<"):
+        return True
+    expanded = _expanded_union_type(normalized)
+    return expanded != normalized and _is_top_level_union_type(expanded)
 
 
 def _union_lane_matches_expected(lane: str, expected_name: str) -> bool:
@@ -1158,22 +1187,12 @@ def _emit_union_narrow_expr(value_expr: str, source_type: str, target_type: str)
     target_cpp = cpp_signature_type(target_type)
     if source_type == target_type:
         return value_expr
-    return (
-        "::std::visit([&](const auto& __pytra_v) -> " + target_cpp + " { "
-        + "using __PytraLane = ::std::decay_t<decltype(__pytra_v)>; "
-        + "if constexpr (::std::is_constructible_v<" + target_cpp + ", __PytraLane>) { "
-        + "return " + target_cpp + "(__pytra_v); "
-        + "} "
-        + "throw ::std::runtime_error(\"variant narrowing failed\"); "
-        + "}, "
-        + value_expr
-        + ")"
-    )
+    return "py_variant_narrow<" + target_cpp + ">(" + value_expr + ")"
 
 
 def _union_compare_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
     storage_type = _expanded_union_type(_expr_storage_type(ctx, node))
-    if _is_top_level_union_type(storage_type):
+    if _has_variant_storage(_expr_storage_type(ctx, node)):
         return storage_type
     if not isinstance(node, dict):
         return ""
@@ -1754,6 +1773,25 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         expected_type = expected_arg_types[index] if index < len(expected_arg_types) else ""
         if expected_type == "" and isinstance(a, dict):
             expected_type = _str(a, "call_arg_type")
+        if expected_type != "" and _is_top_level_union_type(expected_type) and isinstance(a, dict):
+            direct_source_type = ""
+            storage_type = _expanded_union_type(_expr_storage_type(ctx, a))
+            if storage_type not in ("", "unknown") and not _is_top_level_union_type(storage_type) and not _needs_object_cast(storage_type):
+                direct_source_type = storage_type
+            else:
+                static_type = _expanded_union_type(_expr_static_type(ctx, a))
+                if static_type not in ("", "unknown") and not _is_top_level_union_type(static_type) and not _needs_object_cast(static_type):
+                    direct_source_type = static_type
+            if direct_source_type != "":
+                lane = _select_union_lane(expected_type, direct_source_type)
+                if lane != "":
+                    arg_strs.append(
+                        cpp_signature_type(expected_type)
+                        + "("
+                        + _emit_expr_as_type(ctx, a, direct_source_type)
+                        + ")"
+                    )
+                    continue
         if isinstance(a, dict) and _str(a, "kind") == "Box" and expected_type not in ("", "Obj", "Any", "object"):
             boxed_value = a.get("value")
             arg_strs.append(_emit_expr_as_type(ctx, boxed_value, expected_type))
@@ -2774,7 +2812,7 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 return lane_expr
     if _optional_inner_type(union_storage_type) == target:
         return "(*(" + value_expr + "))"
-    if _is_top_level_union_type(union_storage_type):
+    if _has_variant_storage(storage_type) or _is_top_level_union_type(union_storage_type):
         lane_expr = _emit_union_get_expr(value_expr, union_storage_type, target)
         if lane_expr != value_expr:
             return lane_expr
@@ -3624,6 +3662,11 @@ def _emit_tuple_unpack(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     tuple_type = cpp_signature_type(source_type)
     if tuple_type == "auto" or _cpp_type_is_unknownish(source_type):
         tuple_type = "auto"
+    source_parts = _container_type_args(source_type)
+    source_item_type = ""
+    if source_type.startswith("list[") or source_type in ("bytes", "bytearray"):
+        if len(source_parts) == 1:
+            source_item_type = source_parts[0]
     _emit(ctx, tuple_type + " " + temp_name + " = " + tuple_expr + ";")
     for idx, target in enumerate(targets):
         if not isinstance(target, dict) or _str(target, "kind") not in ("Name", "NameTarget"):
@@ -3634,6 +3677,11 @@ def _emit_tuple_unpack(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         resolved_type = _str(target, "resolved_type")
         if resolved_type in ("", "unknown") and idx < len(target_types) and isinstance(target_types[idx], str):
             resolved_type = target_types[idx]
+        if resolved_type in ("", "unknown"):
+            if source_type.startswith("tuple[") and idx < len(source_parts):
+                resolved_type = source_parts[idx]
+            elif source_item_type != "":
+                resolved_type = source_item_type
         if source_type.startswith("tuple[") or _cpp_type_is_unknownish(source_type):
             assign_expr = "::std::get<" + str(idx) + ">(" + temp_name + ")"
         elif source_type.startswith("list[") or source_type in ("bytes", "bytearray"):
@@ -4328,7 +4376,7 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
         if value_kind == "Name" and isinstance(value_node, dict):
             return "(*(" + _emit_name_storage(value_node) + "))"
         return "(*(" + value_expr + "))"
-    if _is_top_level_union_type(union_storage_type):
+    if _has_variant_storage(storage_type):
         source_lane = _select_union_lane(union_storage_type, target_name)
         lane_expr = _emit_union_get_expr(value_expr, union_storage_type, target_name)
         if lane_expr != value_expr:
@@ -4340,7 +4388,7 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
                     target_type=target_name,
                 )
             return lane_expr
-    if _is_top_level_union_type(union_value_type):
+    if storage_type in ("", "unknown") and _is_top_level_union_type(union_value_type):
         if _is_top_level_union_type(target_name):
             return _emit_union_narrow_expr(value_expr, union_value_type, target_name)
         source_lane = _select_union_lane(union_value_type, target_name)
@@ -4354,9 +4402,25 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
                     target_type=target_name,
                 )
             return lane_expr
+    if _is_top_level_union_type(target_name):
+        direct_source_type = ""
+        if storage_type not in ("", "unknown") and not _has_variant_storage(storage_type) and not _needs_object_cast(storage_type):
+            direct_source_type = union_storage_type
+        elif static_value_type not in ("", "unknown"):
+            static_union_type = _expanded_union_type(static_value_type)
+            if not _is_top_level_union_type(static_union_type) and not _needs_object_cast(static_union_type):
+                direct_source_type = static_union_type
+        if direct_source_type != "":
+            lane = _select_union_lane(target_name, direct_source_type)
+            if lane != "":
+                return cpp_signature_type(target_name) + "(" + _emit_expr_as_type(ctx, value_node, direct_source_type) + ")"
     scalar_target = target_name
     if scalar_target == "int":
         scalar_target = "int64"
+    if scalar_target in ("str", "int64", "float64", "bool") and _is_top_level_union_type(union_value_type):
+        lane_expr = _emit_union_get_expr(value_expr, union_value_type, scalar_target)
+        if lane_expr != value_expr:
+            return lane_expr
     if scalar_target in ("str", "int64", "float64", "bool"):
         scalar_cpp = cpp_signature_type(scalar_target)
         if storage_cpp.startswith("::std::optional<::std::variant<"):

@@ -5414,6 +5414,14 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("return (*(indent));", cpp_code)
         self.assertNotIn("return (*((*(indent))));", cpp_code)
 
+    def test_cpp_runtime_supports_py_variant_narrow_helper(self) -> None:
+        header_text = (ROOT / "src" / "runtime" / "cpp" / "core" / "py_types.h").read_text(encoding="utf-8")
+
+        self.assertIn("template <class Target, class Source>", header_text)
+        self.assertIn("static inline Target py_variant_narrow(const Source& value)", header_text)
+        self.assertIn("static inline Target py_variant_narrow(const ::std::variant<Ts...>& value)", header_text)
+        self.assertIn("static inline Target py_variant_narrow(const ::std::optional<::std::variant<Ts...>>& value)", header_text)
+
     def test_cpp_emitter_passes_named_callable_without_object_lambda_bridge(self) -> None:
         doc = _module_doc(
             "app.main",

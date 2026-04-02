@@ -241,6 +241,46 @@ static inline Object<set<T>> rc_from_value(Object<set<T>> v) {
     return v;
 }
 
+template <class Target, class Source>
+static inline Target py_variant_narrow(const Source& value) {
+    if constexpr (::std::is_constructible_v<Target, Source>) {
+        return Target(value);
+    } else {
+        throw ::std::runtime_error("variant narrowing failed");
+    }
+}
+
+template <class Target, class... Ts>
+static inline Target py_variant_narrow(const ::std::variant<Ts...>& value) {
+    if constexpr (::std::is_constructible_v<Target, const ::std::variant<Ts...>&>) {
+        return Target(value);
+    } else {
+        return ::std::visit(
+            [&](const auto& item) -> Target {
+                using __PytraLane = ::std::decay_t<decltype(item)>;
+                if constexpr (::std::is_constructible_v<Target, __PytraLane>) {
+                    return Target(item);
+                } else {
+                    throw ::std::runtime_error("variant narrowing failed");
+                }
+            },
+            value
+        );
+    }
+}
+
+template <class Target, class... Ts>
+static inline Target py_variant_narrow(const ::std::optional<::std::variant<Ts...>>& value) {
+    if constexpr (::std::is_constructible_v<Target, const ::std::optional<::std::variant<Ts...>>&>) {
+        return Target(value);
+    } else {
+        if (!value.has_value()) {
+            return Target(::std::nullopt);
+        }
+        return py_variant_narrow<Target>(*value);
+    }
+}
+
 // POD boxing for Object<void> (= object)
 // These create a heap-allocated boxed value wrapped in ControlBlock.
 template<typename T>
