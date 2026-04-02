@@ -63,6 +63,7 @@ _CLASS_METHODS: list[dict[str, set[str]]] = [{}]
 _MAIN_CALL_ALIAS: list[str] = [""]
 _RELATIVE_IMPORT_NAME_ALIASES: list[dict[str, str]] = [{}]
 _THROWING_FUNCTIONS: list[set[str]] = [set()]
+_INOUT_PARAM_POSITIONS: list[dict[str, set[int]]] = [{}]
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -363,10 +364,32 @@ def _stmt_has_raise_or_try(stmt: Any) -> bool:
     for value in stmt.values():
         if isinstance(value, dict) and _stmt_has_raise_or_try(value):
             return True
+        if isinstance(value, dict) and _expr_has_subscript(value):
+            return True
         if isinstance(value, list):
             for item in value:
                 if _stmt_has_raise_or_try(item):
                     return True
+                if _expr_has_subscript(item):
+                    return True
+    return False
+
+
+def _expr_has_subscript(expr: Any) -> bool:
+    if not isinstance(expr, dict):
+        return False
+    if expr.get("kind") == "Subscript":
+        return True
+    for value in expr.values():
+        if isinstance(value, dict):
+            if _expr_has_subscript(value):
+                return True
+        elif isinstance(value, list):
+            i = 0
+            while i < len(value):
+                if _expr_has_subscript(value[i]):
+                    return True
+                i += 1
     return False
 
 
@@ -416,6 +439,56 @@ def _collect_throwing_functions(east_doc: dict[str, Any]) -> set[str]:
                 throwing.add(name)
                 changed = True
     return throwing
+
+
+def _stmt_mutates_param(stmt: Any, params: set[str]) -> set[str]:
+    out: set[str] = set()
+    if not isinstance(stmt, dict):
+        return out
+    kind = stmt.get("kind")
+    if kind == "Assign":
+        targets_any = stmt.get("targets")
+        targets = targets_any if isinstance(targets_any, list) else []
+        if len(targets) == 0 and isinstance(stmt.get("target"), dict):
+            targets = [stmt.get("target")]
+        i = 0
+        while i < len(targets):
+            tgt = targets[i]
+            if isinstance(tgt, dict) and tgt.get("kind") == "Subscript":
+                owner = tgt.get("value")
+                if isinstance(owner, dict) and owner.get("kind") == "Name":
+                    owner_id = _safe_ident(owner.get("id"), "")
+                    if owner_id in params:
+                        out.add(owner_id)
+            i += 1
+    for value in stmt.values():
+        if isinstance(value, dict):
+            out |= _stmt_mutates_param(value, params)
+        elif isinstance(value, list):
+            i = 0
+            while i < len(value):
+                out |= _stmt_mutates_param(value[i], params)
+                i += 1
+    return out
+
+
+def _collect_inout_param_positions(fn: dict[str, Any], *, drop_self: bool) -> set[int]:
+    names = _function_param_names(fn, drop_self=drop_self)
+    params = set(names)
+    body_any = fn.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    mutated: set[str] = set()
+    i = 0
+    while i < len(body):
+        mutated |= _stmt_mutates_param(body[i], params)
+        i += 1
+    out: set[int] = set()
+    i = 0
+    while i < len(names):
+        if names[i] in mutated:
+            out.add(i)
+        i += 1
+    return out
 
 
 def _default_return_expr(swift_type: str) -> str:
@@ -1614,9 +1687,13 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
 
     func_expr = _render_expr(expr.get("func"))
     rendered_args = []
+    inout_positions = _INOUT_PARAM_POSITIONS[0].get(callee_name, set())
     i = 0
     while i < len(args):
-        rendered_args.append(_render_expr(args[i]))
+        rendered_arg = _render_expr(args[i])
+        if i in inout_positions and isinstance(args[i], dict) and args[i].get("kind") == "Name":
+            rendered_arg = "&" + rendered_arg
+        rendered_args.append(rendered_arg)
         i += 1
     call_code = func_expr + "(" + ", ".join(rendered_args) + ")"
     if callee_name in _THROWING_FUNCTIONS[0]:
@@ -1931,7 +2008,7 @@ def _render_expr(expr: Any) -> str:
             return "__pytra_slice(" + owner + ", " + lower + ", " + upper + ")"
 
         index = _render_expr(index_any)
-        base = "__pytra_getIndex(" + owner + ", " + index + ")"
+        base = "try __pytra_getIndex(" + owner + ", " + index + ")"
         resolved = ed2.get("resolved_type")
         swift_t = _swift_type(resolved, allow_void=False)
         return _cast_from_any(base, swift_t)
@@ -1974,6 +2051,7 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool, use_any: bool = Fal
     arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
     names = _function_param_names(fn, drop_self=drop_self)
     reassigned = collect_reassigned_params(fn)
+    inout_positions = _collect_inout_param_positions(fn, drop_self=drop_self)
     out: list[str] = []
     i = 0
     while i < len(names):
@@ -1981,6 +2059,8 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool, use_any: bool = Fal
         param_name = mutable_param_name(name) if name in reassigned else name
         original_type = _swift_type(arg_types.get(name), allow_void=False)
         param_type = "Any" if use_any else original_type
+        if i in inout_positions:
+            param_type = "inout " + param_type
         out.append("_ " + param_name + ": " + param_type)
         i += 1
     return out
@@ -3076,6 +3156,7 @@ def _emit_function(
     param_names = _function_param_names(fn, drop_self=drop_self)
     arg_types_any = fn.get("arg_types")
     arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
+    inout_positions = _collect_inout_param_positions(fn, drop_self=drop_self)
     # Swift parameters are immutable (let); detect reassigned params
     reassigned = collect_reassigned_params(fn)
     mutable_copies: list[tuple[str, str]] = []
@@ -3096,6 +3177,9 @@ def _emit_function(
     j = 0
     while j < len(param_names):
         p = param_names[j]
+        if j in inout_positions:
+            j += 1
+            continue
         original_type = _swift_type(arg_types.get(p), allow_void=False)
         if original_type != "Any" and p not in reassigned:
             cast_fn = ""
@@ -3723,6 +3807,7 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
     _MAIN_CALL_ALIAS[0] = ""
     _THROWING_FUNCTIONS[0] = _collect_throwing_functions(east_doc)
     _RELATIVE_IMPORT_NAME_ALIASES[0] = _collect_relative_import_name_aliases(east_doc)
+    _INOUT_PARAM_POSITIONS[0] = {}
     meta = east_doc.get("meta") if isinstance(east_doc.get("meta"), dict) else {}
     pass  # import alias resolution handled by emit_context
     i = 0
@@ -3791,6 +3876,13 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
         _MAIN_CALL_ALIAS[0] = "__pytra_main"
     elif has_user_main:
         _MAIN_CALL_ALIAS[0] = "main"
+
+    i = 0
+    while i < len(functions):
+        fn_name = _safe_ident(functions[i].get("name"), "")
+        if fn_name != "":
+            _INOUT_PARAM_POSITIONS[0][fn_name] = _collect_inout_param_positions(functions[i], drop_self=False)
+        i += 1
 
     i = 0
     while i < len(functions):

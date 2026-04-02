@@ -264,11 +264,11 @@ func __pytra_index(_ i: Int64, _ n: Int64) -> Int64 {
     return i
 }
 
-func __pytra_getIndex(_ container: Any?, _ index: Any?) -> Any {
+func __pytra_getIndex(_ container: Any?, _ index: Any?) throws -> Any {
     if let list = container as? [Any] {
-        if list.isEmpty { return __pytra_any_default() }
+        if list.isEmpty { throw IndexError("list index out of range") }
         let i = __pytra_index(__pytra_int(index), Int64(list.count))
-        if i < 0 || i >= Int64(list.count) { return __pytra_any_default() }
+        if i < 0 || i >= Int64(list.count) { throw IndexError("list index out of range") }
         return list[Int(i)]
     }
     if let dict = container as? [AnyHashable: Any] {
@@ -277,9 +277,9 @@ func __pytra_getIndex(_ container: Any?, _ index: Any?) -> Any {
     }
     if let s = container as? String {
         let chars = Array(s)
-        if chars.isEmpty { return "" }
+        if chars.isEmpty { throw IndexError("string index out of range") }
         let i = __pytra_index(__pytra_int(index), Int64(chars.count))
-        if i < 0 || i >= Int64(chars.count) { return "" }
+        if i < 0 || i >= Int64(chars.count) { throw IndexError("string index out of range") }
         return String(chars[Int(i)])
     }
     return __pytra_any_default()
