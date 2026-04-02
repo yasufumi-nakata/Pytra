@@ -346,6 +346,29 @@ def _is_guaranteed_lua_truthy_expr(node: JsonVal) -> bool:
     return False
 
 
+def _emit_cast_call(ctx: EmitContext, node: dict[str, JsonVal], args: list[JsonVal]) -> str:
+    if len(args) == 0:
+        return "nil"
+    value_node = args[-1]
+    value_code = _emit_expr(ctx, value_node)
+    target_type = _str(node, "resolved_type")
+    if len(args) >= 2 and isinstance(args[0], dict):
+        explicit_type = _str(args[0], "type_object_of")
+        if explicit_type == "":
+            explicit_type = _str(args[0], "id")
+        if explicit_type != "":
+            target_type = explicit_type
+    if target_type in ("int", "int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"):
+        return "__pytra_int(" + value_code + ")"
+    if target_type in ("float", "float64", "float32"):
+        return "__pytra_float(" + value_code + ")"
+    if target_type in ("str", "string"):
+        return "__pytra_to_string(" + value_code + ")"
+    if target_type in ("bool", "boolean"):
+        return "__pytra_truthy(" + value_code + ")"
+    return value_code
+
+
 def _emit_error_propagation(ctx: EmitContext, err_code: str, *, allow_current_catch: bool) -> None:
     if len(ctx.catch_stack) > 0:
         target_index = len(ctx.catch_stack) - 1 if allow_current_catch else len(ctx.catch_stack) - 2
@@ -692,11 +715,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
     # Special markers
     if call_name == "__CAST__":
-        if len(arg_strs) >= 2:
-            return arg_strs[1]
-        if len(arg_strs) == 1:
-            return arg_strs[0]
-        return "nil"
+        return _emit_cast_call(ctx, node, args)
 
     if call_name == "__PANIC__":
         msg = arg_strs[0] if len(arg_strs) > 0 else '"error"'
@@ -883,11 +902,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             mapped = ctx.mapping.calls.get(func_id, "")
             if mapped != "":
                 if mapped == "__CAST__":
-                    if len(arg_strs) >= 2:
-                        return arg_strs[1]
-                    if len(arg_strs) == 1:
-                        return arg_strs[0]
-                    return "nil"
+                    return _emit_cast_call(ctx, node, args)
                 if mapped == "__PANIC__":
                     msg = arg_strs[0] if len(arg_strs) > 0 else '"error"'
                     return "error(" + msg + ")"
