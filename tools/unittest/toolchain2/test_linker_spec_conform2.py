@@ -1506,8 +1506,8 @@ def has_key(env: dict[str, int], name: str) -> bool:
             self.assertTrue(Path(source_path).exists())
             header_text = Path(header_path).read_text(encoding="utf-8")
             self.assertIn(
-                "bool py_assert_eq(const ::std::variant<int64, str, bool>& actual, "
-                "const ::std::variant<int64, str, bool>& expected, const str& label = str(\"\"));",
+                "bool py_assert_eq(const ::std::optional<::std::variant<int64, str, bool>>& actual, "
+                "const ::std::optional<::std::variant<int64, str, bool>>& expected, const str& label = str(\"\"));",
                 header_text,
             )
             self.assertIn(

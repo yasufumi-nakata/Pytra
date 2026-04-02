@@ -519,6 +519,10 @@ def _expr_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
             ret = _extract_callable_return_type(func_type)
             if ret not in ("", "unknown"):
                 return ret
+    if kind == "Unbox":
+        target = normalize_cpp_container_alias(_str(node, "target"))
+        if target not in ("", "unknown", "Obj", "Any", "object"):
+            return target
     if kind == "BinOp":
         left_type = _expr_storage_type(ctx, node.get("left"))
         right_type = _expr_storage_type(ctx, node.get("right"))
@@ -762,6 +766,28 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
         inner_type = "int64" if optional_inner == "int" else optional_inner
         inner_cpp = cpp_signature_type(inner_type)
         target_cpp = cpp_signature_type(target_type)
+        if node_kind == "Unbox":
+            boxed_value = node.get("value")
+            boxed_storage = _expr_storage_type(ctx, boxed_value)
+            boxed_inner = _optional_inner_type(boxed_storage)
+            if (
+                isinstance(boxed_value, dict)
+                and boxed_inner not in ("", "unknown")
+                and not _is_top_level_union_type(boxed_inner)
+                and _is_top_level_union_type(inner_type)
+            ):
+                boxed_expr = _emit_expr(ctx, boxed_value)
+                return (
+                    "([&]() -> "
+                    + target_cpp
+                    + " { auto&& __pytra_opt = "
+                    + boxed_expr
+                    + "; if (__pytra_opt) return "
+                    + target_cpp
+                    + "("
+                    + inner_cpp
+                    + "(*(__pytra_opt))); return ::std::nullopt; })()"
+                )
         expr = _emit_expr(ctx, node)
         storage_cpp = cpp_signature_type(storage_type) if storage_type not in ("", "unknown") else ""
         if storage_cpp.startswith("::std::optional<::std::variant<") and inner_type in ("str", "int64", "float64", "bool"):
@@ -794,8 +820,13 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
         expr = _emit_expr(ctx, node)
         if node_type == target_type:
             return expr
-        if _is_top_level_union_type(node_type):
-            return _emit_union_narrow_expr(expr, node_type, target_type)
+        source_union_type = ""
+        if _is_top_level_union_type(union_storage_type):
+            source_union_type = union_storage_type
+        elif storage_type in ("", "unknown") and _is_top_level_union_type(node_type):
+            source_union_type = node_type
+        if source_union_type != "":
+            return _emit_union_narrow_expr(expr, source_union_type, target_type)
         lane = _select_union_lane(target_type, node_type)
         if lane != "" and is_container_resolved_type(node_type) and is_container_resolved_type(lane) and node_type != lane:
             return cpp_signature_type(target_type) + "(" + _emit_covariant_copy_expr(
