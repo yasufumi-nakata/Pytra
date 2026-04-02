@@ -43,7 +43,10 @@ if str(ROOT / "tools" / "check") not in sys.path:
 if str(ROOT / "tools" / "unregistered") not in sys.path:
     sys.path.insert(0, str(ROOT / "tools" / "unregistered"))
 
-from cpp_runtime_deps import collect_runtime_cpp_sources
+try:
+    from cpp_runtime_deps import collect_runtime_cpp_sources  # type: ignore
+except ModuleNotFoundError:
+    collect_runtime_cpp_sources = None  # type: ignore  # only needed for cpp selfhost builds
 
 PARITY_DIR = ROOT / ".parity-results"
 
