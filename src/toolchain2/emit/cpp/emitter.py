@@ -651,6 +651,10 @@ def _wrap_expr_for_target_type(ctx: CppEmitContext, target_type: str, value_expr
         return value_expr
     if isinstance(value_node, dict):
         value_kind = _str(value_node, "kind")
+        if value_kind == "Box":
+            inner = value_node.get("value")
+            if isinstance(inner, dict):
+                return _emit_expr_as_type(ctx, inner, target_type)
         if value_kind == "Dict":
             return _emit_dict_literal_for_target_type(ctx, value_node, target_type)
         if value_kind == "List":
@@ -707,6 +711,9 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
     if storage_type == target_type:
         kind = _str(node, "kind")
         if kind in ("Name", "NameTarget"):
+            name = _str(node, "id")
+            if name in ("self", "this") and target_type == ctx.current_class and ctx.current_class != "":
+                return "(*this)"
             return _emit_name_storage(node)
         return _emit_expr(ctx, node)
     node_type = _effective_resolved_type(node)
@@ -775,6 +782,12 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
             "value": node,
         }
         return _emit_expr(ctx, boxed)
+    if target_type in ("Callable", "callable"):
+        if _str(node, "kind") == "Name":
+            callable_name = _emit_expr(ctx, node)
+            static_type = _expr_static_type(ctx, node)
+            if static_type in ("", "unknown", "Callable", "callable"):
+                return "([&](object) -> object { " + callable_name + "(); return object(); })"
     return _emit_expr(ctx, node)
 
 
@@ -1636,6 +1649,8 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         if isinstance(a, dict) and _str(a, "kind") == "Box" and expected_type not in ("", "Obj", "Any", "object"):
             boxed_value = a.get("value")
             arg_strs.append(_emit_expr_as_type(ctx, boxed_value, expected_type))
+        elif expected_type in ("Callable", "callable") and isinstance(a, dict):
+            arg_strs.append(_emit_expr_as_type(ctx, a, expected_type))
         elif expected_type in ("Obj", "Any", "object") and isinstance(a, dict):
             arg_strs.append(_emit_expr_as_type(ctx, a, "object"))
         else:
@@ -3070,6 +3085,11 @@ def _emit_return(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         _emit(ctx, "(void)(" + _emit_expr(ctx, value) + ");")
         _emit(ctx, "return;")
     else:
+        if isinstance(value, dict) and _str(value, "kind") == "Name":
+            name = _str(value, "id")
+            if name in ("self", "this") and ctx.current_return_type == ctx.current_class and ctx.current_class != "":
+                _emit(ctx, "return (*this);")
+                return
         _emit(ctx, "return " + _emit_expr_as_type(ctx, value, ctx.current_return_type) + ";")
 
 

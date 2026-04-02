@@ -2117,6 +2117,133 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         self.assertIn("this->items = rc_from_value(py_list_slice_copy(this->items, 0, 0));", cpp_code)
 
+    def test_cpp_emitter_unwraps_boxed_container_for_container_target(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "AnnAssign",
+                    "target": {"kind": "Name", "id": "ns", "resolved_type": "dict[str,object]"},
+                    "decl_type": "dict[str,object]",
+                    "resolved_type": "dict[str,object]",
+                    "value": {
+                        "kind": "Box",
+                        "resolved_type": "dict[str,object]",
+                        "value": {
+                            "kind": "Call",
+                            "resolved_type": "dict[str,ArgValue]",
+                            "func": {
+                                "kind": "Attribute",
+                                "value": {"kind": "Name", "id": "p", "resolved_type": "ArgumentParser"},
+                                "attr": "parse_args",
+                            },
+                            "args": [
+                                {
+                                    "kind": "List",
+                                    "resolved_type": "list[str]",
+                                    "elements": [{"kind": "Constant", "value": "a.py", "resolved_type": "str"}],
+                                }
+                            ],
+                            "runtime_call": "ArgumentParser.parse_args",
+                            "resolved_runtime_call": "ArgumentParser.parse_args",
+                        },
+                    },
+                }
+            ],
+            meta_extra={
+                "import_bindings": [
+                    {
+                        "module_id": "pytra.std.argparse",
+                        "runtime_module_id": "pytra.std.argparse",
+                        "binding_kind": "symbol",
+                        "local_name": "ArgumentParser",
+                        "export_name": "ArgumentParser",
+                    }
+                ]
+            },
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("Object<dict<str, object>> ns = ", cpp_code)
+        self.assertIn("p.parse_args", cpp_code)
+        self.assertNotIn("= object(p.parse_args", cpp_code)
+
+    def test_cpp_emitter_returns_self_by_value_as_dereferenced_this(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "ClassDef",
+                    "name": "Value",
+                    "field_types": {},
+                    "body": [
+                        {
+                            "kind": "FunctionDef",
+                            "name": "__pow__",
+                            "arg_types": {"self": "Value", "other": "Value"},
+                            "arg_order": ["self", "other"],
+                            "arg_defaults": {},
+                            "arg_usage": {"self": "readonly", "other": "readonly"},
+                            "return_type": "Value",
+                            "body": [{"kind": "Return", "value": {"kind": "Name", "id": "self", "resolved_type": "Value"}}],
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return (*this);", cpp_code)
+
+    def test_cpp_emitter_adapts_zero_arg_function_to_bare_callable(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "takes_cb",
+                    "arg_types": {"cb": "Callable"},
+                    "arg_order": ["cb"],
+                    "arg_defaults": {},
+                    "arg_usage": {"cb": "readonly"},
+                    "return_type": "bool",
+                    "body": [{"kind": "Return", "value": {"kind": "Constant", "value": True, "resolved_type": "bool"}}],
+                },
+                {
+                    "kind": "FunctionDef",
+                    "name": "main",
+                    "arg_types": {},
+                    "arg_order": [],
+                    "arg_defaults": {},
+                    "arg_usage": {},
+                    "return_type": "None",
+                    "body": [],
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "takes_cb"},
+                        "args": [{"kind": "Name", "id": "main", "resolved_type": "Callable", "call_arg_type": "Callable"}],
+                        "function_signature_v1": {
+                            "arg_types": {"cb": "Callable"},
+                            "arg_order": ["cb"],
+                            "arg_defaults": {},
+                            "arg_usage": {"cb": "readonly"},
+                            "return_type": "bool",
+                        },
+                        "resolved_type": "bool",
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("::takes_cb(([&](object) -> object { __pytra_main(); return object(); }))", cpp_code)
+
     def test_go_emitter_wraps_container_builtin_results_as_ref_handles(self) -> None:
         doc = _module_doc(
             "app.main",

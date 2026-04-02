@@ -82,6 +82,12 @@ struct hash<::std::tuple<Ts...>> {
 template <class T>
 struct py_runtime_builtin_type_id;
 
+template <class T, class = void>
+struct py_has_builtin_type_id : ::std::false_type {};
+
+template <class T>
+struct py_has_builtin_type_id<T, ::std::void_t<decltype(py_runtime_builtin_type_id<T>::value)>> : ::std::true_type {};
+
 template <class T>
 struct py_runtime_builtin_type_id<list<T>> {
     static constexpr pytra_type_id value = ::pytra::runtime::cpp::detail::kTypeIdList;
@@ -97,7 +103,7 @@ struct py_runtime_builtin_type_id<set<T>> {
     static constexpr pytra_type_id value = ::pytra::runtime::cpp::detail::kTypeIdSet;
 };
 
-template <typename T, typename... Args>
+template <typename T, typename... Args, typename = ::std::enable_if_t<py_has_builtin_type_id<T>::value>>
 Object<T> make_object(Args&&... args) {
     return make_object<T>(py_runtime_builtin_type_id<T>::value, ::std::forward<Args>(args)...);
 }
