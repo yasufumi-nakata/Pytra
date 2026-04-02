@@ -45,6 +45,7 @@ class CompileContext:
     # legacy compat bridge フラグ (lower.py が参照)
     legacy_compat_bridge: bool = True
     lowering_profile: LoweringProfile = field(default_factory=lambda: load_lowering_profile("core"))
+    target_language: str = "core"
 
     # passes.py のカウンター
     comp_counter: int = 0

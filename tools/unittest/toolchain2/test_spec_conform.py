@@ -1621,6 +1621,82 @@ def f(flag: bool) -> float | None:
         self.assertEqual(cast_value.get("resolved_type"), "float64")
         self.assertEqual(cast_value.get("args", [])[0].get("value"), 1)
 
+    def test_compile_keeps_iter_boundary_for_core_target(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "arg_types": {"xs": "Any"},
+                    "arg_order": ["xs"],
+                    "arg_defaults": {},
+                    "arg_usage": {"xs": "readonly"},
+                    "return_type": "Any",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "lowered_kind": "BuiltinCall",
+                                "runtime_call": "py_iter_or_raise",
+                                "semantic_tag": "iter.init",
+                                "resolved_type": "unknown",
+                                "func": {"kind": "Name", "id": "iter", "resolved_type": "unknown"},
+                                "args": [{"kind": "Name", "id": "xs", "resolved_type": "Any"}],
+                                "keywords": [],
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+        east3 = lower_east2_to_east3(east2, target_language="core")
+
+        return_stmt = next(node for node in _walk(east3) if node.get("kind") == "Return")
+        value = return_stmt.get("value", {})
+
+        self.assertEqual(value.get("kind"), "ObjIterInit")
+        self.assertEqual(value.get("resolved_type"), "object")
+
+    def test_compile_skips_iter_boundary_for_cpp_target(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "arg_types": {"xs": "Any"},
+                    "arg_order": ["xs"],
+                    "arg_defaults": {},
+                    "arg_usage": {"xs": "readonly"},
+                    "return_type": "Any",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "lowered_kind": "BuiltinCall",
+                                "runtime_call": "py_iter_or_raise",
+                                "semantic_tag": "iter.init",
+                                "resolved_type": "unknown",
+                                "func": {"kind": "Name", "id": "iter", "resolved_type": "unknown"},
+                                "args": [{"kind": "Name", "id": "xs", "resolved_type": "Any"}],
+                                "keywords": [],
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+        east3 = lower_east2_to_east3(east2, target_language="cpp")
+
+        return_stmt = next(node for node in _walk(east3) if node.get("kind") == "Return")
+        value = return_stmt.get("value", {})
+
+        self.assertEqual(value.get("kind"), "Call")
+        self.assertEqual(value.get("runtime_call"), "py_iter_or_raise")
+
     def test_compile_narrows_union_names_inside_isinstance_guard(self) -> None:
         source = """
 type Scalar = int | float

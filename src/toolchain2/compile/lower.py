@@ -2031,6 +2031,7 @@ def _lower_call_expr(call: Node, *, dispatch_mode: str, ctx: CompileContext) -> 
     a0t = expr_type_name(ctx, a0)
     if not _is_any_like_type(a0t, ctx):
         return out
+    suppress_iter_boundary = ctx.target_language == "cpp"
     st = jv_str(out.get("semantic_tag", ""))
     if st == "cast.bool":
         return _make_boundary_expr(kind=jv_str(OBJ_BOOL), value_key="value", value_node=a0, resolved_type="bool", source_expr=out, ctx=ctx)
@@ -2038,9 +2039,9 @@ def _lower_call_expr(call: Node, *, dispatch_mode: str, ctx: CompileContext) -> 
         return _make_boundary_expr(kind=jv_str(OBJ_LEN), value_key="value", value_node=a0, resolved_type="int64", source_expr=out, ctx=ctx)
     if st == "cast.str":
         return _make_boundary_expr(kind=jv_str(OBJ_STR), value_key="value", value_node=a0, resolved_type="str", source_expr=out, ctx=ctx)
-    if st == "iter.init":
+    if st == "iter.init" and not suppress_iter_boundary:
         return _make_boundary_expr(kind=jv_str(OBJ_ITER_INIT), value_key="value", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
-    if st == "iter.next":
+    if st == "iter.next" and not suppress_iter_boundary:
         return _make_boundary_expr(kind=jv_str(OBJ_ITER_NEXT), value_key="iter", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
     rc = jv_str(out.get("runtime_call", ""))
     if rc == "py_to_bool":
@@ -2049,9 +2050,9 @@ def _lower_call_expr(call: Node, *, dispatch_mode: str, ctx: CompileContext) -> 
         return _make_boundary_expr(kind=jv_str(OBJ_LEN), value_key="value", value_node=a0, resolved_type="int64", source_expr=out, ctx=ctx)
     if rc == "py_to_string":
         return _make_boundary_expr(kind=jv_str(OBJ_STR), value_key="value", value_node=a0, resolved_type="str", source_expr=out, ctx=ctx)
-    if rc == "py_iter_or_raise":
+    if rc == "py_iter_or_raise" and not suppress_iter_boundary:
         return _make_boundary_expr(kind=jv_str(OBJ_ITER_INIT), value_key="value", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
-    if rc == "py_next_or_stop":
+    if rc == "py_next_or_stop" and not suppress_iter_boundary:
         return _make_boundary_expr(kind=jv_str(OBJ_ITER_NEXT), value_key="iter", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
     if out.get("lowered_kind") != BUILTIN_CALL:
         return out
@@ -2069,9 +2070,9 @@ def _lower_call_expr(call: Node, *, dispatch_mode: str, ctx: CompileContext) -> 
         if func_node2.get("kind") != NAME:
             return out
         fn2 = func_node2.get("id")
-        if fn2 == "iter":
+        if fn2 == "iter" and not suppress_iter_boundary:
             return _make_boundary_expr(kind=jv_str(OBJ_ITER_INIT), value_key="value", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
-        if fn2 == "next":
+        if fn2 == "next" and not suppress_iter_boundary:
             return _make_boundary_expr(kind=jv_str(OBJ_ITER_NEXT), value_key="iter", value_node=a0, resolved_type="object", source_expr=out, ctx=ctx)
     return out
 
@@ -2155,6 +2156,7 @@ def lower_east2_to_east3(east_module: Node, object_dispatch_mode: str = "", targ
 
     ctx: CompileContext = CompileContext()
     ctx.lowering_profile = load_lowering_profile(target_language)
+    ctx.target_language = target_language
     ctx.nominal_adt_table = collect_nominal_adt_table(east_module)
     ctx.legacy_compat_bridge = True
     if isinstance(meta_obj, dict):
