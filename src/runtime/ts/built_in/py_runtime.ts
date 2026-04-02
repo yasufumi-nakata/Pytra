@@ -590,6 +590,9 @@ class _GrowBytes {
     return this._n;
   }
   [Symbol.iterator]() { return this._d.subarray(0, this._n).values(); }
+  slice(start?: number, end?: number): number[] {
+    return Array.from(this._d.subarray(0, this._n).slice(start, end), (item) => item & 255);
+  }
   /** Snapshot current content as a Uint8Array view (no copy). */
   _snap(): Uint8Array { return this._d.subarray(0, this._n); }
   [PYTRA_TRY_LEN]() { return this._n; }
@@ -1526,10 +1529,21 @@ export function pyupdate<K, V>(d: Map<K, V>, other: Map<K, V>): void {
 }
 
 /** Python dict.pop(key, default?) — remove key from d and return its value. */
+export function pypop<K, V>(d: Map<K, V>, key: K): V;
+export function pypop<K, V>(d: Map<K, V>, key: K, def: V | null): V | null;
 export function pypop<K, V>(d: Map<K, V>, key: K, def: V | null = null): V | null {
   const v = d.has(key) ? (d.get(key) as V) : def;
   d.delete(key);
   return v;
+}
+
+/** Python dict.setdefault(key, default) — return existing value or store default. */
+export function pysetdefault<K, V>(d: Map<K, V>, key: K, def: V): V {
+  if (d.has(key)) {
+    return d.get(key) as V;
+  }
+  d.set(key, def);
+  return def;
 }
 
 /** Python list.extend(other) — append all items from other to lst. */
@@ -1542,8 +1556,13 @@ export function pysort<T>(lst: T[]): void {
   lst.sort((a: any, b: any) => a < b ? -1 : a > b ? 1 : 0);
 }
 
-/** Python list.clear() or dict.clear() — clear container in-place. */
-export function pyclear(c: Map<any, any> | any[]): void {
+/** Python list.reverse() — reverse lst in-place. */
+export function pyreverse<T>(lst: T[]): void {
+  lst.reverse();
+}
+
+/** Python list.clear(), dict.clear(), or set.clear() — clear container in-place. */
+export function pyclear(c: Map<any, any> | Set<any> | any[]): void {
   if (Array.isArray(c)) c.splice(0); else c.clear();
 }
 

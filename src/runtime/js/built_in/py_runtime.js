@@ -1128,7 +1128,24 @@ function pyglob(pattern) {
     return entries.filter((e) => re.test(e)).map((e) => dir === "." ? e : dir + "/" + e);
   } catch { return []; }
 }
+function pyupdate(d, other) { for (const [k, v] of other) d.set(k, v); }
+function pypop(d, key, def = null) {
+  const v = d.has(key) ? d.get(key) : def;
+  d.delete(key);
+  return v;
+}
+function pysetdefault(d, key, def) {
+  if (d.has(key)) {
+    return d.get(key);
+  }
+  d.set(key, def);
+  return def;
+}
 function pyextend(lst, other) { for (const item of other) lst.push(item); }
+function pysort(lst) { lst.sort((a, b) => a < b ? -1 : a > b ? 1 : 0); }
+function pyreverse(lst) { lst.reverse(); }
+function pyclear(c) { if (Array.isArray(c)) c.splice(0); else c.clear(); }
+function pydel(d, key) { d.delete(key); }
 function dict() { return new Map(); }
 function list() { return []; }
 function set_() { return new Set(); }
@@ -1293,7 +1310,14 @@ export {
   pymakedirs,
   pywrite_rgb_png,
   pyglob,
+  pyupdate,
+  pypop,
+  pysetdefault,
   pyextend,
+  pysort,
+  pyreverse,
+  pyclear,
+  pydel,
   dict,
   list,
   set_,
