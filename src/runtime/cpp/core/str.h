@@ -351,15 +351,15 @@ struct hash<str> {
 }  // namespace std
 
 static inline bool py_isdigit(const str& ch) {
-    return ch.size() == 1 && ::std::isdigit(static_cast<unsigned char>(static_cast<const ::std::string&>(ch)[0])) != 0;
+    return ch.isdigit();
 }
 
 static inline bool py_isalpha(const str& ch) {
-    return ch.size() == 1 && ::std::isalpha(static_cast<unsigned char>(static_cast<const ::std::string&>(ch)[0])) != 0;
+    return ch.isalpha();
 }
 
 static inline bool py_isalnum(const str& ch) {
-    return ch.size() == 1 && ::std::isalnum(static_cast<unsigned char>(static_cast<const ::std::string&>(ch)[0])) != 0;
+    return ch.isalnum();
 }
 
 static inline int64 py_str_index(const str& s, const str& sub) {
