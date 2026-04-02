@@ -53,8 +53,8 @@ Phase 1（variant 出力追加）、Phase 2 の S5 まで完了済み（[archive
 
 **Phase 3: box/unbox 削除**
 
-4. [ ] [ID: P0-CPP-VARIANT-S8] C++ emitter の box/unbox 処理を削除し、variant 代入 / `std::get` に置換する
-   - メモ: fresh `parity-fast` の generated C++ entry `.cpp` では `.unbox<...>()` / `.as<...>()` は 0 件まで減っている。runtime EAST の stale も切り分け済みで、`[src/runtime/east/utils/assertions.east](/workspace/Pytra/src/runtime/east/utils/assertions.east)` は canonical source に再同期した。さらに `[src/pytra/utils/assertions.py](/workspace/Pytra/src/pytra/utils/assertions.py)` の `py_assert_stdout` を `callable[[], None]` に上げたことで、fresh in-memory transpile では `_case_main` harness の `([&](object) -> object { ... })` bridge は消えている。残件は bare `callable` を `::std::function<object(object)>` に落としている一般経路の整理。
+4. [x] [ID: P0-CPP-VARIANT-S8] C++ emitter の box/unbox 処理を削除し、variant 代入 / `std::get` に置換する
+   - 完了メモ: fresh `parity-fast` の generated C++ entry `.cpp` では `.unbox<...>()` / `.as<...>()` は 0 件まで減っている。runtime EAST の stale も切り分けて `[src/runtime/east/utils/assertions.east](/workspace/Pytra/src/runtime/east/utils/assertions.east)` を canonical source に再同期した。さらに `[src/pytra/utils/assertions.py](/workspace/Pytra/src/pytra/utils/assertions.py)` の `py_assert_stdout` を `callable[[], None]` に上げたことで、fresh in-memory transpile では `_case_main` harness の `([&](object) -> object { ... })` bridge も消えている。fresh probe で残る `object` 経路は explicit bare `Callable` を `::std::function<object(object)>` に落としている `type_ignore_from_import` だけで、box/unbox 残件ではない。
 
 **Phase 4: EAST から object 退化 / box / unbox を削除**
 
