@@ -2772,16 +2772,51 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     class_name = _safe_ident(cls.get("name"), "PytraClass")
     base_any = cls.get("base")
     base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
-    extends = ": " + base_name if base_name != "" else ""
     is_dataclass = bool(cls.get("dataclass"))
+    meta_any = cls.get("meta")
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    is_trait = isinstance(meta.get("trait_v1"), dict) or "trait" in (cls.get("decorators") or [])
+    implements_traits: list[str] = []
+    implements_meta = meta.get("implements_v1")
+    if isinstance(implements_meta, dict):
+        traits_any = implements_meta.get("traits")
+        if isinstance(traits_any, list):
+            for trait_any in traits_any:
+                if isinstance(trait_any, str) and trait_any != "":
+                    implements_traits.append(_safe_ident(trait_any, "Trait"))
+    supertypes: list[str] = []
+    if base_name != "":
+        supertypes.append(base_name)
+    i = 0
+    while i < len(implements_traits):
+        if implements_traits[i] not in supertypes:
+            supertypes.append(implements_traits[i])
+        i += 1
+    extends = ": " + ", ".join(supertypes) if len(supertypes) > 0 else ""
 
     lines: list[str] = []
-    lines.append(indent + "class " + class_name + extends + " {")
+    lines.append(indent + ("protocol " if is_trait else "class ") + class_name + extends + " {")
 
     field_types_any = cls.get("field_types")
     field_types = field_types_any if isinstance(field_types_any, dict) else {}
     body_any = cls.get("body")
     body = body_any if isinstance(body_any, list) else []
+    if is_trait:
+        i = 0
+        while i < len(body):
+            node = body[i]
+            if isinstance(node, dict) and node.get("kind") in {"FunctionDef", "ClosureDef"}:
+                fn_name = _safe_ident(node.get("name"), "func")
+                drop_self = True
+                params = _function_params(node, drop_self=drop_self, use_any=False)
+                return_type = _swift_type(node.get("return_type"), allow_void=True)
+                sig = indent + "    func " + fn_name + "(" + ", ".join(params) + ")"
+                if return_type != "Void":
+                    sig += " -> " + return_type
+                lines.append(sig)
+            i += 1
+        lines.append(indent + "}")
+        return lines
     annassign_specs: dict[str, tuple[str, str | None]] = {}
     i = 0
     while i < len(body):

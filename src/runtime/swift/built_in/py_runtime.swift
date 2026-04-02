@@ -479,6 +479,14 @@ func __pytra_range(_ start: Any?, _ stop: Any?, _ step: Any?) -> [Any] {
     return result
 }
 
+func __pytra_py_range(_ stop: Any?) -> [Any] {
+    return __pytra_range(Int64(0), stop, Int64(1))
+}
+
+func __pytra_py_range(_ start: Any?, _ stop: Any?, _ step: Any?) -> [Any] {
+    return __pytra_range(start, stop, step)
+}
+
 func __pytra_abs(_ v: Any?) -> Any {
     if let i = v as? Int64 { return i < 0 ? -i : i }
     if let d = v as? Double { return Swift.abs(d) }
