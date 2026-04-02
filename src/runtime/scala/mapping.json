@@ -2,8 +2,8 @@
   "builtin_prefix": "__pytra_",
   "calls": {
     "env.target": "\"scala\"",
-    "print": "println",
-    "py_print": "println",
+    "print": "__pytra_print",
+    "py_print": "__pytra_print",
     "py_len": "__pytra_len",
     "len": "__pytra_len",
     "str": "__pytra_str",
