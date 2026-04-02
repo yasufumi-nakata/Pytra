@@ -454,8 +454,7 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict"
     if is_dict_type:
         return owner + "[" + slice_code + "]"
-    # For list/str: handle negative index
-    return owner + "[" + slice_code + "]"
+    return "__pytra_get_index(" + owner + ", " + slice_code + ")"
 
 
 def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -1125,6 +1124,8 @@ def _emit_method_call(
     mapped = ctx.mapping.calls.get(runtime_key, "")
     if mapped == "__LIST_APPEND__":
         return _emit_method_call_on_first_arg_strs(builtin_args_strs, "push")
+    if mapped == "__LIST_EXTEND__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "concat")
     if mapped == "__LIST_POP__":
         return _emit_list_pop_strs(builtin_args_strs)
     if mapped == "__LIST_CLEAR__":
@@ -1275,6 +1276,22 @@ def _emit_list_index_strs(arg_strs: list[str]) -> str:
     if len(arg_strs) < 2:
         return "nil"
     return arg_strs[0] + ".index(" + arg_strs[1] + ")"
+
+
+def _emit_lvalue(ctx: EmitContext, node: JsonVal) -> str:
+    if not isinstance(node, dict):
+        return "_"
+    kind = _str(node, "kind")
+    if kind == "Name":
+        name = _str(node, "id")
+        return _safe_ruby_ident(name) if name != "" else "_"
+    if kind == "Attribute":
+        return _emit_attribute(ctx, node)
+    if kind == "Subscript":
+        owner = _emit_expr(ctx, node.get("value"))
+        slice_code = _emit_expr(ctx, node.get("slice"))
+        return owner + "[" + slice_code + "]"
+    return _emit_expr(ctx, node)
 
 
 def _emit_dict_get_strs(arg_strs: list[str]) -> str:
@@ -1600,7 +1617,7 @@ def _emit_aug_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     target = node.get("target")
     value = node.get("value")
     op = _str(node, "op")
-    target_code = _emit_expr(ctx, target)
+    target_code = _emit_lvalue(ctx, target)
     value_code = _emit_expr(ctx, value)
     op_map: dict[str, str] = {
         "Add": "+=", "Sub": "-=", "Mult": "*=",
@@ -1816,8 +1833,8 @@ def _emit_var_decl(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 def _emit_swap(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     left = node.get("left")
     right = node.get("right")
-    left_code = _emit_expr(ctx, left) if isinstance(left, dict) else "_"
-    right_code = _emit_expr(ctx, right) if isinstance(right, dict) else "_"
+    left_code = _emit_lvalue(ctx, left) if isinstance(left, dict) else "_"
+    right_code = _emit_lvalue(ctx, right) if isinstance(right, dict) else "_"
     _emit(ctx, left_code + ", " + right_code + " = " + right_code + ", " + left_code)
 
 

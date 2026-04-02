@@ -198,7 +198,7 @@ def __pytra_get_index(container, index)
   if container.is_a?(Array)
     i = __pytra_int(index)
     i += container.length if i < 0
-    return nil if i < 0 || i >= container.length
+    raise IndexError, "list index out of range" if i < 0 || i >= container.length
     return container[i]
   end
   if container.is_a?(Hash)
@@ -207,7 +207,7 @@ def __pytra_get_index(container, index)
   if container.is_a?(String)
     i = __pytra_int(index)
     i += container.length if i < 0
-    return "" if i < 0 || i >= container.length
+    raise IndexError, "string index out of range" if i < 0 || i >= container.length
     return container[i] || ""
   end
   nil
