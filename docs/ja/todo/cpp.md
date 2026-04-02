@@ -107,6 +107,16 @@ monostate → `std::optional<std::variant<...>>` 移行（commit f8c4c618b）で
    - 完了: `src/toolchain2/emit/cpp/emitter.py` で local container storage を正規化し、recursive `JsonVal` container local が `.as<...>()` に落ちないように修正した。`src/toolchain2/emit/cpp/header_gen.py` では `py_to_string(const JsonVal&)` forwarder を生成し、`src/runtime/cpp/built_in/base_ops.h` に `py_to_string(bool)` を追加して `dumps(True)` を Python と同じ `"true"` に揃えた。`PYTHONPATH=/workspace/Pytra/src python3 src/pytra-cli2.py -build test/stdlib/source/py/json/json_extended.py -o work/tmp/json_extended_build --target cpp` と `... json_indent_optional.py ...` の emit 後、`runtime_parity_check._run_cpp_emit_dir(...)` で compile + run を確認した。現行ツリーに `json_nested.py` は存在しないため、std/json 配下の実在 2 case で確認している。
 3. [ ] [ID: P0-CPP-OPT-VAR-S3] fixture + sample に回帰がないことを確認する
 
+### P0-COMMON-BOX-UNBOX-NORM: box/unbox 正規化を CommonRenderer へ寄せる
+
+文脈: [docs/ja/plans/p0-common-renderer-box-unbox-normalization.md](../plans/p0-common-renderer-box-unbox-normalization.md)
+
+C++ parity で発生した `optional` の二重 deref や callable 引数の不要 bridge は、backend 固有の記法ではなく box/unbox/cast 正規化の共通不足が原因である。backend ごとの止血を減らすため、backend 非依存の冪等化は CommonRenderer に移す。
+
+1. [ ] [ID: P0-CMN-BOXUNBOX-S1] CommonRenderer に box/unbox/cast 正規化の共通入口を追加する
+2. [ ] [ID: P0-CMN-BOXUNBOX-S2] C++ emitter の optional / callable / target-type path を共通正規化へ切り替える
+3. [ ] [ID: P0-CMN-BOXUNBOX-S3] `json_extended`, `json_indent_optional`, `json_unicode_escape`, `callable_higher_order` の C++ parity が PASS することを確認する
+
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す
 
 文脈: [docs/ja/plans/p4-cpp-selfhost.md](../plans/p4-cpp-selfhost.md)
