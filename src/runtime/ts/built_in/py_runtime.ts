@@ -27,7 +27,6 @@ export const PY_TYPE_OBJECT = 7;
 export const PYTRA_TRUTHY = Symbol.for("pytra.py_truthy");
 export const PYTRA_TRY_LEN = Symbol.for("pytra.py_try_len");
 export const PYTRA_STR = Symbol.for("pytra.py_str");
-const PYTRA_TYPE_ID = Symbol.for("pytra.type_id");
 
 const PYTRA_USER_TYPE_ID_BASE = 1000;
 let pyNextTypeId = PYTRA_USER_TYPE_ID_BASE;
@@ -273,7 +272,6 @@ export function pyIsInstance(value: unknown, expectedTypeId: number): boolean {
 }
 
 type PytraTagged = {
-  [PYTRA_TYPE_ID]?: number;
   [PYTRA_TRUTHY]?: () => unknown;
   [PYTRA_TRY_LEN]?: () => unknown;
   [PYTRA_STR]?: () => unknown;
@@ -297,13 +295,6 @@ export function pyTypeId(value: unknown): number {
   if (Array.isArray(value)) return PY_TYPE_ARRAY;
   if (value instanceof Map) return PY_TYPE_MAP;
   if (value instanceof Set) return PY_TYPE_SET;
-  const tagged = asTagged(value);
-  if (tagged !== null) {
-    const raw = tagged[PYTRA_TYPE_ID];
-    if (typeof raw === "number" && Number.isInteger(raw)) {
-      return raw;
-    }
-  }
   return PY_TYPE_OBJECT;
 }
 
@@ -324,17 +315,18 @@ export function pyTruthy(value: unknown): boolean {
     case PY_TYPE_MAP:
     case PY_TYPE_SET:
       return (value as Map<unknown, unknown> | Set<unknown>).size !== 0;
-    case PY_TYPE_OBJECT:
+    case PY_TYPE_OBJECT: {
+      const tagged = asTagged(value);
+      if (tagged !== null) {
+        const hook = tagged[PYTRA_TRUTHY];
+        if (typeof hook === "function") {
+          return Boolean(hook.call(tagged));
+        }
+      }
       return true;
+    }
     default:
       break;
-  }
-  const tagged = asTagged(value);
-  if (tagged !== null) {
-    const hook = tagged[PYTRA_TRUTHY];
-    if (typeof hook === "function") {
-      return Boolean(hook.call(tagged));
-    }
   }
   return true;
 }
@@ -407,18 +399,19 @@ export function pyStr(value: unknown): string {
       const entries = Array.from((value as Set<unknown>).values()).map((v) => pyToString(v));
       return `{${entries.join(", ")}}`;
     }
-    case PY_TYPE_OBJECT:
+    case PY_TYPE_OBJECT: {
+      const tagged = asTagged(value);
+      if (tagged !== null) {
+        const hook = tagged[PYTRA_STR];
+        if (typeof hook === "function") {
+          return String(hook.call(tagged));
+        }
+      }
       if (value instanceof Error) return value.message;
       return String(value);
+    }
     default:
       break;
-  }
-  const tagged = asTagged(value);
-  if (tagged !== null) {
-    const hook = tagged[PYTRA_STR];
-    if (typeof hook === "function") {
-      return String(hook.call(tagged));
-    }
   }
   if (value instanceof Error) return value.message;
   return String(value);

@@ -10,6 +10,7 @@
     "py_to_string": "pyStr",
     "static_cast": "__CAST__",
     "int": "Math.trunc",
+    "bool": "pyBool",
     "float": "Number",
     "max": "Math.max",
     "min": "Math.min",

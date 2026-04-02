@@ -8,6 +8,10 @@ import unittest
 from pathlib import Path
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
+JS_RUNTIME = ROOT / "src" / "runtime" / "js" / "built_in" / "py_runtime.js"
+TS_RUNTIME = ROOT / "src" / "runtime" / "ts" / "built_in" / "py_runtime.ts"
+JS_JSON_RUNTIME = ROOT / "src" / "runtime" / "js" / "generated" / "std" / "json.js"
+TS_JSON_RUNTIME = ROOT / "src" / "runtime" / "ts" / "generated" / "std" / "json.ts"
 
 
 class JsTsRuntimeDispatchTest(unittest.TestCase):
@@ -24,14 +28,14 @@ class JsTsRuntimeDispatchTest(unittest.TestCase):
             )
 
     def test_runtime_sources_do_not_use_name_dispatch(self) -> None:
-        js_src = (ROOT / "src" / "runtime" / "js" / "native" / "built_in" / "py_runtime.js").read_text(encoding="utf-8")
-        ts_src = (ROOT / "src" / "runtime" / "ts" / "native" / "built_in" / "py_runtime.ts").read_text(encoding="utf-8")
+        js_src = JS_RUNTIME.read_text(encoding="utf-8")
+        ts_src = TS_RUNTIME.read_text(encoding="utf-8")
         self.assertNotIn("constructor.name", js_src)
         self.assertNotIn("constructor.name", ts_src)
         self.assertIn("function pyTypeId", js_src)
         self.assertIn("export function pyTypeId", ts_src)
-        self.assertIn("PYTRA_TYPE_ID", js_src)
-        self.assertIn("PYTRA_TYPE_ID", ts_src)
+        self.assertNotIn("PYTRA_TYPE_ID", js_src)
+        self.assertNotIn("PYTRA_TYPE_ID", ts_src)
 
     def test_js_runtime_type_id_dispatch_and_hooks(self) -> None:
         script = r"""
@@ -39,13 +43,12 @@ const assert = require("assert");
 const rt = require(process.cwd() + "/src/runtime/js/built_in/py_runtime.js");
 
 const custom = {
-  [rt.PYTRA_TYPE_ID]: 7001,
   [rt.PYTRA_TRUTHY]: () => false,
   [rt.PYTRA_TRY_LEN]: () => 7,
   [rt.PYTRA_STR]: () => "custom",
 };
 
-assert.equal(rt.pyTypeId(custom), 7001);
+assert.equal(rt.pyTypeId(custom), rt.PY_TYPE_OBJECT);
 assert.equal(rt.pyBool(custom), false);
 assert.equal(rt.pyLen(custom), 7);
 assert.equal(rt.pyToString(custom), "custom");
@@ -61,11 +64,9 @@ const baseType = rt.pyRegisterClassType([rt.PY_TYPE_OBJECT]);
 const childType = rt.pyRegisterClassType([baseType]);
 const siblingBase = rt.pyRegisterClassType([rt.PY_TYPE_OBJECT]);
 const siblingChild = rt.pyRegisterClassType([siblingBase]);
-const taggedChild = { [rt.PYTRA_TYPE_ID]: childType };
 assert.equal(rt.pyIsSubtype(childType, baseType), true);
 assert.equal(rt.pyIsSubtype(childType, siblingBase), false);
 assert.equal(rt.pyIsSubtype(siblingChild, baseType), false);
-assert.equal(rt.pyIsInstance(taggedChild, baseType), true);
 
 let threw = false;
 try {
@@ -81,11 +82,11 @@ console.log("ok");
         self.assertIn("ok", proc.stdout)
 
     def test_ts_runtime_exports_type_id_dispatch_apis(self) -> None:
-        src = (ROOT / "src" / "runtime" / "ts" / "native" / "built_in" / "py_runtime.ts").read_text(encoding="utf-8")
-        self.assertIn("export const PYTRA_TYPE_ID", src)
+        src = TS_RUNTIME.read_text(encoding="utf-8")
         self.assertIn("export const PYTRA_TRUTHY", src)
         self.assertIn("export const PYTRA_TRY_LEN", src)
         self.assertIn("export const PYTRA_STR", src)
+        self.assertNotIn("PYTRA_TYPE_ID", src)
         self.assertIn("export function pyTypeId", src)
         self.assertIn("export function pyRegisterType", src)
         self.assertIn("export function pyRegisterClassType", src)
@@ -97,6 +98,8 @@ console.log("ok");
         self.assertIn("switch (typeId)", src)
 
     def test_js_generated_json_runtime_round_trips_compare_lane(self) -> None:
+        if not JS_JSON_RUNTIME.exists():
+            self.skipTest("generated JS json runtime is not present in this checkout")
         script = r"""
 const assert = require("assert");
 const json = require(process.cwd() + "/src/runtime/js/generated/std/json.js");
@@ -120,7 +123,9 @@ console.log("ok");
         self.assertIn("ok", proc.stdout)
 
     def test_ts_generated_json_runtime_source_exports_compare_lane_symbols(self) -> None:
-        src = (ROOT / "src" / "runtime" / "ts" / "generated" / "std" / "json.ts").read_text(encoding="utf-8")
+        if not TS_JSON_RUNTIME.exists():
+            self.skipTest("generated TS json runtime is not present in this checkout")
+        src = TS_JSON_RUNTIME.read_text(encoding="utf-8")
         self.assertIn('from "../../native/built_in/py_runtime"', src)
         self.assertIn("export class JsonObj", src)
         self.assertIn("export class JsonArr", src)

@@ -227,6 +227,17 @@ def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
     return ([], inner)
 
 
+def _needs_array_group(type_expr: str) -> bool:
+    return ("|" in type_expr) or ("=>" in type_expr) or ("&" in type_expr)
+
+
+def ts_array_type(elem_type: str) -> str:
+    elem = elem_type.strip()
+    if _needs_array_group(elem):
+        return "(" + elem + ")[]"
+    return elem + "[]"
+
+
 def ts_type(resolved_type: str, *, for_return: bool = False) -> str:
     """Convert an EAST3 resolved_type to a TypeScript type string.
 
@@ -262,7 +273,7 @@ def ts_type(resolved_type: str, *, for_return: bool = False) -> str:
     # list[T] → T[]
     if resolved_type.startswith("list[") and resolved_type.endswith("]"):
         inner = resolved_type[5:-1]
-        return ts_type(inner) + "[]"
+        return ts_array_type(ts_type(inner))
 
     # dict[K, V] → Map<K, V>
     if resolved_type.startswith("dict[") and resolved_type.endswith("]"):

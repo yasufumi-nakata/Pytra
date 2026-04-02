@@ -15,7 +15,7 @@ from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
 from toolchain2.emit.ts.types import (
-    ts_type, ts_zero_value, _safe_ts_ident, _split_generic_args,
+    ts_type, ts_zero_value, ts_array_type, _safe_ts_ident, _split_generic_args,
     TS_BUILTIN_RUNTIME_SYMBOLS, TS_BUILTIN_EXCEPTION_NAMES, TS_BUILTIN_EXCEPTION_MAP,
 )
 from toolchain2.emit.common.code_emitter import (
@@ -333,7 +333,7 @@ def _emit_list_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if ctx.strip_types or elem_type == "":
         return "[" + ", ".join(elem_strs) + "]"
     ts_elem = ts_type(elem_type)
-    return "<" + ts_elem + "[]>[" + ", ".join(elem_strs) + "]"
+    return "<" + ts_array_type(ts_elem) + ">[" + ", ".join(elem_strs) + "]"
 
 
 def _emit_dict_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -714,7 +714,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return "Array.from(" + all_arg_strs[0] + ")"
                 if not ctx.strip_types and rt.startswith("list[") and rt.endswith("]"):
                     elem_type = ts_type(rt[5:-1])
-                    return "<" + elem_type + "[]>[]"
+                    return "<" + ts_array_type(elem_type) + ">[]"
                 return "[]"
             if fn_name == "__TUPLE_CTOR__":
                 return "[" + ", ".join(all_arg_strs) + "]"
@@ -781,16 +781,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return fn_name_safe + "(" + ", ".join(builtin_arg_strs) + ")"
         if fn_name == "__CAST__":
             if len(all_arg_strs) >= 1:
-                # int(float_val) must emit Math.trunc, not a no-op cast
                 fn_id_cast = _str(func, "id") if isinstance(func, dict) else ""
                 if fn_id_cast in ctx.mapping.calls:
                     mapped_cast = ctx.mapping.calls[fn_id_cast]
                     if isinstance(mapped_cast, str) and mapped_cast not in ("", "__CAST__"):
-                        arg_node = args[0] if len(args) > 0 else None
-                        arg_rt = _str(arg_node, "resolved_type") if isinstance(arg_node, dict) else ""
-                        if _is_float_type(arg_rt):
-                            mapped_safe = mapped_cast if "." in mapped_cast else _safe_ts_ident(mapped_cast)
-                            return mapped_safe + "(" + all_arg_strs[0] + ")"
+                        mapped_safe = mapped_cast if "." in mapped_cast else _safe_ts_ident(mapped_cast)
+                        return mapped_safe + "(" + all_arg_strs[0] + ")"
                 return all_arg_strs[0]
             return "null"
         if fn_name == "__PANIC__":
@@ -879,11 +875,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if func_kind == "Name":
             fn_id = _str(func, "id")
 
-            if fn_id == "pytra_isinstance":
-                linked_isinstance = _emit_linked_type_id_isinstance(ctx, args)
-                if linked_isinstance is not None:
-                    return linked_isinstance
-
             if fn_id in ("__init__", "py__init__") and len(args) >= 1:
                 first_arg = args[0]
                 if isinstance(first_arg, dict) and _str(first_arg, "kind") == "Call":
@@ -919,6 +910,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             # runtime import
             if fn_id in ctx.runtime_imports:
                 resolved = ctx.runtime_imports[fn_id]
+                if resolved == "pyIsInstance":
+                    linked_isinstance = _emit_linked_type_id_isinstance(ctx, args)
+                    if linked_isinstance is not None:
+                        return linked_isinstance
                 if resolved == "pyPrint":
                     wrapped_ri: list[str] = []
                     for i, a_node in enumerate(args):
@@ -937,6 +932,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     adapter_kind = "builtin"
                 name = resolve_runtime_call(runtime_call, fn_id, adapter_kind, ctx.mapping)
                 if name != "" and name != "__CAST__":
+                    if name == "pyIsInstance":
+                        linked_isinstance = _emit_linked_type_id_isinstance(ctx, args)
+                        if linked_isinstance is not None:
+                            return linked_isinstance
                     if name == "pyPrint":
                         wrapped: list[str] = []
                         for i, a_node in enumerate(args):
@@ -950,6 +949,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if fn_id in ctx.mapping.calls:
                 mapped = ctx.mapping.calls[fn_id]
                 if isinstance(mapped, str) and mapped != "" and mapped != "__CAST__":
+                    if mapped == "pyIsInstance":
+                        linked_isinstance = _emit_linked_type_id_isinstance(ctx, args)
+                        if linked_isinstance is not None:
+                            return linked_isinstance
                     # For pyPrint: wrap float-typed args with pyFloatStr to preserve "2.0" format
                     if mapped == "pyPrint":
                         print_arg_strs: list[str] = []
@@ -2518,7 +2521,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         if ctx.strip_types:
             params.append("..." + safe_varg)
         else:
-            params.append("..." + safe_varg + ": " + varg_elem_ts + "[]")
+            params.append("..." + safe_varg + ": " + ts_array_type(varg_elem_ts))
 
     # Return type annotation (constructor has no return type annotation in TS)
     if fn_name == "constructor":

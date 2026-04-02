@@ -16,7 +16,6 @@ const PY_TYPE_OBJECT = 7;
 const PYTRA_TRUTHY = Symbol.for("pytra.py_truthy");
 const PYTRA_TRY_LEN = Symbol.for("pytra.py_try_len");
 const PYTRA_STR = Symbol.for("pytra.py_str");
-const PYTRA_TYPE_ID = Symbol.for("pytra.type_id");
 
 const PYTRA_USER_TYPE_ID_BASE = 1000;
 let _pyNextTypeId = PYTRA_USER_TYPE_ID_BASE;
@@ -275,12 +274,6 @@ function pyTypeId(value) {
   if (Array.isArray(value)) return PY_TYPE_ARRAY;
   if (value instanceof Map) return PY_TYPE_MAP;
   if (value instanceof Set) return PY_TYPE_SET;
-  if ((ty === "object" || ty === "function") && value !== null) {
-    const tagged = value[PYTRA_TYPE_ID];
-    if (typeof tagged === "number" && Number.isInteger(tagged)) {
-      return tagged;
-    }
-  }
   return PY_TYPE_OBJECT;
 }
 
@@ -302,15 +295,15 @@ function pyTruthy(value) {
     case PY_TYPE_SET:
       return value.size !== 0;
     case PY_TYPE_OBJECT:
+      if ((typeof value === "object" || typeof value === "function") && value !== null) {
+        const hook = value[PYTRA_TRUTHY];
+        if (typeof hook === "function") {
+          return Boolean(hook.call(value));
+        }
+      }
       return true;
     default:
       break;
-  }
-  if ((typeof value === "object" || typeof value === "function") && value !== null) {
-    const hook = value[PYTRA_TRUTHY];
-    if (typeof hook === "function") {
-      return Boolean(hook.call(value));
-    }
   }
   return true;
 }
@@ -368,15 +361,15 @@ function pyStr(value) {
       return `{${entries.join(", ")}}`;
     }
     case PY_TYPE_OBJECT:
+      if ((typeof value === "object" || typeof value === "function") && value !== null) {
+        const hook = value[PYTRA_STR];
+        if (typeof hook === "function") {
+          return String(hook.call(value));
+        }
+      }
       return String(value);
     default:
       break;
-  }
-  if ((typeof value === "object" || typeof value === "function") && value !== null) {
-    const hook = value[PYTRA_STR];
-    if (typeof hook === "function") {
-      return String(hook.call(value));
-    }
   }
   return String(value);
 }
