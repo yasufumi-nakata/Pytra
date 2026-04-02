@@ -2698,6 +2698,9 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_box(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
+    normalized = _normalize_cpp_boundary_expr(ctx, node)
+    if isinstance(normalized, dict):
+        node = normalized
     value = node.get("value")
     target_type = _str(node, "resolved_type")
     if target_type in ("Any", "Obj", "object") and isinstance(value, dict):
