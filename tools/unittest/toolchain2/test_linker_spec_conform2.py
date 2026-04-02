@@ -3276,6 +3276,62 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("Exception::Exception(const str& msg) : BaseException(msg) {", cpp_code)
         self.assertIn("ValueError::ValueError(const str& msg) : Exception(msg) {", cpp_code)
 
+    def test_cpp_emitter_catches_std_out_of_range_for_unnamed_index_error_handler(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "handle",
+                    "arg_types": {"items": "list[int64]"},
+                    "arg_order": ["items"],
+                    "arg_defaults": {},
+                    "arg_index": {"items": 0},
+                    "return_type": "bool",
+                    "arg_usage": {"items": "readonly"},
+                    "renamed_symbols": {},
+                    "docstring": None,
+                    "body": [
+                        {
+                            "kind": "Try",
+                            "body": [
+                                {
+                                    "kind": "Expr",
+                                    "value": {
+                                        "kind": "Subscript",
+                                        "value": {"kind": "Name", "id": "items", "resolved_type": "list[int64]"},
+                                        "slice": {
+                                            "kind": "UnaryOp",
+                                            "op": "USub",
+                                            "operand": {"kind": "Constant", "value": 100, "resolved_type": "int64"},
+                                            "resolved_type": "int64",
+                                        },
+                                        "resolved_type": "int64",
+                                    },
+                                }
+                            ],
+                            "handlers": [
+                                {
+                                    "kind": "ExceptHandler",
+                                    "type": {"kind": "Name", "id": "IndexError"},
+                                    "name": None,
+                                    "body": [{"kind": "Return", "value": {"kind": "Constant", "value": True, "resolved_type": "bool"}}],
+                                }
+                            ],
+                            "finalbody": [],
+                            "orelse": [],
+                        },
+                        {"kind": "Return", "value": {"kind": "Constant", "value": False, "resolved_type": "bool"}},
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("catch (const IndexError&) {", cpp_code)
+        self.assertIn("catch (const ::std::out_of_range&) {", cpp_code)
+
     def test_cpp_emitter_closure_constructor_drops_super_init_body_call_when_init_list_is_used(self) -> None:
         doc = _module_doc(
             "app.main",
@@ -5972,7 +6028,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         cpp_code = emit_cpp_module(doc)
 
-        self.assertIn("return py_str_slice(digits, i, (i + int64(1)));", cpp_code)
+        self.assertIn("return digits[i];", cpp_code)
 
     def test_cpp_emitter_fails_fast_on_unsupported_expr_kind(self) -> None:
         doc = _module_doc(

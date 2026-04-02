@@ -73,6 +73,7 @@ if i < 0 or i >= len(a):
 - 判定ロジック:
   - `ForRange` ループ変数による添字 → `negative_index: "skip"`, `bounds_check: "off"`（常に安全）
   - lowering 済みリテラル（非負確定）→ `negative_index: "skip"`
+  - 負数リテラル → `negative_index: "normalize"`, `bounds_check: "full"`（正規化後も範囲外になり得るため fail-closed）
   - 変数インデックス → `negative_index_mode` 設定に従う
   - `bounds_check` → `bounds_check_mode` 設定に従う
 

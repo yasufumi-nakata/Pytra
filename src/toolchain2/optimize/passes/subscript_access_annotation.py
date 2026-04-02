@@ -239,6 +239,7 @@ class SubscriptAccessAnnotationPass(East3OptimizerPass):
                 reason = "non_negative_constant"
             elif _is_negative_int_literal(slice_node):
                 negative_index = "normalize"
+                bounds_check = "full"
                 reason = "negative_literal"
             elif _stripped(slice_node.get("kind")) == "Name":
                 name_id = slice_node.get("id")

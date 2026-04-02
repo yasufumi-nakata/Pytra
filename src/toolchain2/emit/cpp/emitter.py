@@ -234,6 +234,34 @@ class _CppStmtCommonRenderer(CommonRenderer):
         self.ctx.indent_level = self.state.indent_level
         self._emit("}")
 
+    def emit_try_stmt(self, node: dict[str, JsonVal]) -> None:
+        if len(self._list(node, "orelse")) > 0:
+            raise RuntimeError("try/except/else is not supported in common renderer")
+        body = self._list(node, "body")
+        handlers = self._list(node, "handlers")
+        self.emit_try_setup(node)
+        if len(handlers) == 0:
+            self.emit_body(body)
+            self.emit_try_teardown(node)
+            return
+        self._emit("try {")
+        self.state.indent_level += 1
+        self.emit_body(body)
+        self.state.indent_level -= 1
+        self._emit("}")
+        for raw_handler in handlers:
+            if not isinstance(raw_handler, dict):
+                continue
+            catch_opens = [self.render_except_open(raw_handler)]
+            catch_opens.extend(_render_except_alternates(self.ctx, raw_handler))
+            for catch_open in catch_opens:
+                self._emit(catch_open)
+                self.state.indent_level += 1
+                self.emit_try_handler_body(raw_handler)
+                self.state.indent_level -= 1
+                self._emit("}")
+        self.emit_try_teardown(node)
+
     def emit_try_handler_body(self, handler: dict[str, JsonVal]) -> None:
         handler_name = self._str(handler, "name")
         saved_type = ""
@@ -2308,9 +2336,10 @@ def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         iv = sl.get("value")
         if isinstance(iv, int) and iv >= 0:
             return "::std::get<" + str(iv) + ">(" + value + ")"
-    idx = _emit_subscript_index(ctx, value, sl)
     if value_type == "str":
-        return "py_str_slice(" + value + ", " + idx + ", (" + idx + " + int64(1)))"
+        raw_idx = _emit_expr(ctx, sl)
+        return value + "[" + raw_idx + "]"
+    idx = _emit_subscript_index(ctx, value, sl)
     if value_type.startswith("list[") or value_type in ("bytes", "bytearray"):
         hint = _subscript_access_hint(node)
         if hint is not None and _str(hint, "bounds_check") == "off":
@@ -3618,6 +3647,16 @@ def _render_except_open(ctx: CppEmitContext, handler: dict[str, JsonVal]) -> str
     if handler_name != "":
         catch_decl += " " + handler_name
     return "catch (" + catch_decl + ") {"
+
+
+def _render_except_alternates(ctx: CppEmitContext, handler: dict[str, JsonVal]) -> list[str]:
+    handler_name = _str(handler, "name")
+    if handler_name != "":
+        return []
+    handler_type = _handler_type_name(handler)
+    if handler_type in ("IndexError", "KeyError"):
+        return ["catch (const ::std::out_of_range&) {"]
+    return []
 
 
 def _render_raise_value(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:

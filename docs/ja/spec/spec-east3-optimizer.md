@@ -155,7 +155,7 @@ v1 判定規則:
   - `reason = "non_negative_constant"`
 - 負数リテラル添字:
   - `negative_index = "normalize"`
-  - `bounds_check` は option 既定に従う
+  - `bounds_check = "full"`
   - `reason = "negative_literal"`
 - それ以外:
   - `negative_index` / `bounds_check` は optimizer option に従う
@@ -164,6 +164,7 @@ v1 判定規則:
 fail-closed 規則:
 
 - loop induction 由来・非負保証・negative literal のいずれも静的に証明できない場合、annotation は option 既定以上に弱めてはならない。
+- 負数リテラルは正規化後も範囲外になり得るため、v1 では `bounds_check = "full"` へ fail-closed する。
 - `subscript_access_v1` を生成できない/破損した場合、backend は direct index ではなく full-check helper を選ぶ。
 - backend は `subscript_access_v1` がある場合でも surrounding AST を見て上書き判断してはならない。
 

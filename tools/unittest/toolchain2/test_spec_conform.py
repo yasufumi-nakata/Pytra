@@ -162,6 +162,38 @@ class Toolchain2SpecConformTests(unittest.TestCase):
             },
         )
 
+    def test_subscript_access_annotation_keeps_negative_literal_fail_closed_when_bounds_default_off(self) -> None:
+        negative = {
+            "kind": "Subscript",
+            "value": {"kind": "Name", "id": "xs", "resolved_type": "list[int64]"},
+            "slice": {"kind": "UnaryOp", "op": "USub", "operand": {"kind": "Constant", "value": 100}},
+            "resolved_type": "int64",
+        }
+        doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [{"kind": "Expr", "value": negative}],
+        }
+
+        result = SubscriptAccessAnnotationPass().run(
+            doc,
+            make_pass_context(
+                opt_level=1,
+                debug_flags={"negative_index_mode": "const_only", "bounds_check_mode": "off"},
+            ),
+        )
+
+        self.assertTrue(result.changed)
+        self.assertEqual(
+            negative.get("meta", {}).get("subscript_access_v1"),
+            {
+                "schema_version": "subscript_access_v1",
+                "negative_index": "normalize",
+                "bounds_check": "full",
+                "reason": "negative_literal",
+            },
+        )
+
     def test_subscript_access_annotation_marks_monotonic_while_index_fastpath(self) -> None:
         subscript = {
             "kind": "Subscript",
