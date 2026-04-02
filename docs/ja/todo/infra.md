@@ -20,6 +20,24 @@
 
 ## 未完了タスク
 
+### P0-ITER-OPS-REMOVAL: iter_ops.py を削除し typed lowering に完全移行する
+
+`src/pytra/built_in/iter_ops.py` は `object` ベースの `py_reversed_object` / `py_enumerate_object` を定義しているが、EAST3 の typed lowering が整備された現在は不要。この object ベースのヘルパーが残っていることで、C++ の object 退化削除（P0-CPP-VARIANT Phase 4）がブロックされている。
+
+手順:
+1. compile/lower で `reversed(list[T])` / `enumerate(str)` の typed lowering を実装し、`py_reversed_object` / `py_enumerate_object` への fallback を止める
+2. EAST3 golden を再生成して `py_reversed_object` / `py_enumerate_object` が消えたことを確認
+3. `src/pytra/built_in/iter_ops.py` を削除
+4. 全言語の mapping.json から `py_reversed_object` / `py_enumerate_object` を削除
+5. `src/runtime/east/built_in/iter_ops.east` を削除
+
+1. [ ] [ID: P0-ITER-OPS-S1] compile/lower で `reversed(list[T])` の typed lowering を実装する（object fallback を止める）
+2. [ ] [ID: P0-ITER-OPS-S2] `enumerate(str)` が typed path に乗らないケースを修正する（`enumerate_basic` fixture）
+3. [ ] [ID: P0-ITER-OPS-S3] EAST3 golden を再生成し、`py_reversed_object` / `py_enumerate_object` が EAST3 に出現しないことを確認する
+4. [ ] [ID: P0-ITER-OPS-S4] `src/pytra/built_in/iter_ops.py` と `src/runtime/east/built_in/iter_ops.east` を削除する
+5. [ ] [ID: P0-ITER-OPS-S5] 全言語の mapping.json から `py_reversed_object` / `py_enumerate_object` エントリを削除する
+6. [ ] [ID: P0-ITER-OPS-S6] fixture + sample + stdlib parity に全言語で回帰がないことを確認する
+
 ### P0-RUNTIME-CALL-COVERAGE: EAST runtime_call と mapping.json の双方向カバレッジ lint
 
 EAST3 が生成する `runtime_call` と mapping.json の `calls` テーブルの整合を自動検証する。
