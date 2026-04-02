@@ -97,7 +97,20 @@ def __pytra_bytes(v = nil)
   out
 end
 
-def __pytra_range(start_v, stop_v, step_v)
+def __pytra_range(*args)
+  if args.length == 1
+    start_v = 0
+    stop_v = args[0]
+    step_v = 1
+  elsif args.length == 2
+    start_v = args[0]
+    stop_v = args[1]
+    step_v = 1
+  else
+    start_v = args[0]
+    stop_v = args[1]
+    step_v = args[2]
+  end
   out = []
   step = __pytra_int(step_v)
   return out if step == 0
@@ -202,6 +215,7 @@ end
 def __pytra_contains(container, item)
   return false if container.nil?
   return container.key?(item) if container.is_a?(Hash)
+  return container.include?(item) if container.is_a?(Set)
   return container.include?(item) if container.is_a?(Array)
   return container.include?(__pytra_str(item)) if container.is_a?(String)
   false
@@ -289,15 +303,6 @@ class String
   end
   def endswith(suffix)
     self.end_with?(suffix)
-  end
-  def strip
-    super
-  end
-  def lstrip
-    super
-  end
-  def rstrip
-    super
   end
   def upper
     self.upcase

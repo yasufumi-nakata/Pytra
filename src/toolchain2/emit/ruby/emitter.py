@@ -325,6 +325,10 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return _ruby_class_name(name)
     if name in ctx.function_names:
         return "method(:" + _ruby_symbol_name(ctx, name) + ")"
+    resolved_name = _ruby_symbol_name(ctx, name)
+    for fn_name in ctx.function_names:
+        if _ruby_symbol_name(ctx, fn_name) == resolved_name:
+            return "method(:" + resolved_name + ")"
     return _ruby_symbol_name(ctx, name)
 
 
@@ -343,14 +347,15 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             mod_id = _str(node, "runtime_module_id")
             if mod_id == "" or not _should_skip_module_ruby(mod_id, ctx.mapping):
                 mod_id = ctx.import_alias_modules.get(owner_id, "")
-            if _should_skip_module_ruby(mod_id, ctx.mapping):
-                runtime_symbol = _str(node, "runtime_symbol")
-                if runtime_symbol == "":
-                    runtime_symbol = attr
+            runtime_symbol = _str(node, "runtime_symbol")
+            if runtime_symbol == "":
+                runtime_symbol = attr
+            if mod_id != "":
                 mod_short = mod_id.rsplit(".", 1)[-1]
                 qualified_key = mod_short + "." + runtime_symbol
                 if qualified_key in ctx.mapping.calls:
                     return ctx.mapping.calls[qualified_key]
+            if _should_skip_module_ruby(mod_id, ctx.mapping):
                 resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping)
                 return resolved
     # Property access
@@ -362,6 +367,8 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return _ruby_class_name(owner_id) + "::" + attr
             return _ruby_class_name(owner_id) + "." + _ruby_method_name(attr)
     owner = _emit_expr(ctx, owner_node)
+    if attr == "__name__":
+        return owner + ".name"
     if len(attr) > 0 and attr[0].isupper():
         return owner + "::" + attr
     return owner + "." + _ruby_method_name(attr)
@@ -612,6 +619,24 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         "str": "String", "bool": "TrueClass", "list": "Array",
         "dict": "Hash", "set": "Set", "tuple": "Array",
     }
+    if type_name.startswith("PYTRA_TID_"):
+        tid_name = type_name[len("PYTRA_TID_"):]
+        if tid_name == "DICT":
+            type_name = "dict"
+        elif tid_name == "LIST":
+            type_name = "list"
+        elif tid_name == "SET":
+            type_name = "set"
+        elif tid_name == "TUPLE":
+            type_name = "tuple"
+        elif tid_name == "STR":
+            type_name = "str"
+        elif tid_name == "INT":
+            type_name = "int"
+        elif tid_name == "FLOAT":
+            type_name = "float"
+        elif tid_name == "BOOL":
+            type_name = "bool"
     ruby_cls = type_map.get(type_name, type_name)
     return value_code + ".is_a?(" + ruby_cls + ")"
 
@@ -730,20 +755,36 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         call_key = resolved_runtime_call
     # Extract builtin_name from func node
     builtin_name = ""
+    module_attr_owner_skip = False
+    module_attr_owner_transpiled = False
     if isinstance(func, dict):
         func_kind = _str(func, "kind")
         if func_kind == "Attribute":
             builtin_name = _str(func, "attr")
+            owner_node = func.get("value")
+            if isinstance(owner_node, dict):
+                owner_id = _str(owner_node, "id")
+                owner_mod = ctx.import_alias_modules.get(owner_id, "")
+                module_attr_owner_skip = owner_mod != "" and _should_skip_module_ruby(owner_mod, ctx.mapping)
+                module_attr_owner_transpiled = owner_mod != "" and not _should_skip_module_ruby(owner_mod, ctx.mapping)
         else:
             builtin_name = _str(func, "id")
             if builtin_name == "":
                 builtin_name = _str(func, "repr")
     should_resolve_runtime = call_key != "" or adapter_kind != ""
+    if isinstance(func, dict) and _str(func, "kind") == "Attribute":
+        owner_node = func.get("value")
+        if isinstance(owner_node, dict):
+            owner_id = _str(owner_node, "id")
+            owner_mod = ctx.import_alias_modules.get(owner_id, "")
+            if owner_mod != "" and not _should_skip_module_ruby(owner_mod, ctx.mapping):
+                should_resolve_runtime = False
     if not should_resolve_runtime and builtin_name in ctx.runtime_imports:
         should_resolve_runtime = True
     if (
         not should_resolve_runtime
         and builtin_name in ctx.mapping.calls
+        and not module_attr_owner_transpiled
         and builtin_name not in ctx.function_names
         and builtin_name not in ctx.class_names
         and builtin_name not in ctx.var_types
@@ -764,7 +805,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         method_owner = _emit_expr(ctx, owner_val)
         # For builtin calls, prepend owner as first arg
         if mapped != "":
-            builtin_args_strs: list[str] = [method_owner]
+            builtin_args_strs = []
+            if not module_attr_owner_skip:
+                builtin_args_strs.append(method_owner)
             for a in args:
                 builtin_args_strs.append(_emit_expr(ctx, a))
         else:
@@ -773,6 +816,14 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         builtin_args_strs = []
         for a in args:
             builtin_args_strs.append(_emit_expr(ctx, a))
+
+    if isinstance(func, dict) and _str(func, "kind") == "Attribute":
+        owner_val = func.get("value")
+        if _is_super_receiver(owner_val) and builtin_name == "__init__":
+            arg_strs_super: list[str] = []
+            for a in args:
+                arg_strs_super.append(_emit_expr(ctx, a))
+            return _render_super_call(arg_strs_super)
 
     # Special markers
     if mapped == "__CAST__":
@@ -890,7 +941,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 arg_strs4.append(_emit_expr(ctx, a))
             fn_type = _str(func, "resolved_type")
             local_type = ctx.var_types.get(safe_fn, "")
-            if (fn_type.startswith("callable[") or local_type.startswith("callable[")) and safe_fn not in ctx.runtime_imports:
+            if (
+                fn_type == "callable"
+                or local_type == "callable"
+                or fn_type.startswith("callable[")
+                or local_type.startswith("callable[")
+            ) and safe_fn not in ctx.runtime_imports and fn_name not in ctx.function_names and fn_name not in ctx.import_alias_modules:
                 return safe_fn + ".call(" + ", ".join(arg_strs4) + ")"
             return safe_fn + "(" + ", ".join(arg_strs4) + ")"
 
@@ -902,6 +958,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     arg_strs5: list[str] = []
     for a in args:
         arg_strs5.append(_emit_expr(ctx, a))
+    if isinstance(func, dict) and _str(func, "kind") == "Lambda":
+        return "(" + func_code + ").call(" + ", ".join(arg_strs5) + ")"
     return func_code + "(" + ", ".join(arg_strs5) + ")"
 
 
@@ -923,6 +981,17 @@ def _emit_method_call(ctx: EmitContext, func: dict[str, JsonVal], args: list[Jso
     elif owner_type == "list" or owner_type.startswith("list[") or owner_type == "bytearray" or owner_type == "bytes":
         runtime_key = "list." + attr
     builtin_args_strs = [owner_code] + arg_strs
+    if isinstance(owner_node, dict):
+        owner_id = _str(owner_node, "id")
+        owner_mod = ctx.import_alias_modules.get(owner_id, "")
+        if owner_mod != "":
+            mod_short = owner_mod.rsplit(".", 1)[-1]
+            qualified_key = mod_short + "." + attr
+            if qualified_key in ctx.mapping.calls:
+                mapped_mod = ctx.mapping.calls[qualified_key]
+                return mapped_mod + "(" + ", ".join(arg_strs) + ")"
+            if not _should_skip_module_ruby(owner_mod, ctx.mapping):
+                return _ruby_method_name(attr) + "(" + ", ".join(arg_strs) + ")"
     mapped = ctx.mapping.calls.get(runtime_key, "")
     if mapped == "__LIST_APPEND__":
         return _emit_method_call_on_first_arg_strs(builtin_args_strs, "push")
@@ -1293,6 +1362,12 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         name = _str(target, "repr")
     safe_name = _safe_ruby_ident(name)
     value_code = _emit_expr(ctx, value)
+    if isinstance(value, dict):
+        value_type = _str(value, "resolved_type")
+        if value_type == "" and _str(value, "kind") == "Lambda":
+            value_type = "callable"
+        if value_type != "":
+            ctx.var_types[safe_name] = value_type
     # Check for extern_var_v1
     meta = _dict(node, "meta")
     extern_v1 = meta.get("extern_var_v1")
@@ -1832,6 +1907,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     if is_closure:
         # ClosureDef -> lambda or proc
+        ctx.var_types[_safe_ruby_ident(name)] = "callable"
         if len(params) > 0:
             _emit(ctx, fn_name + " = lambda { |" + ", ".join(params) + "|")
         else:
@@ -1891,6 +1967,8 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     if ctx.current_class == "":
         _emit_blank(ctx)
 
+    if is_closure:
+        saved_vars[_safe_ruby_ident(name)] = "callable"
     ctx.var_types = saved_vars
     ctx.current_return_type = saved_ret
 
