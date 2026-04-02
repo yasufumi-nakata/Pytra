@@ -23,3 +23,4 @@ EAST1 パーサーが `Callable` 型注釈を認識し、`resolved_type` に `ca
 ## 決定ログ
 
 - 2026-03-22: PS 担当が Callable 引数の型追跡不足を報告。全 backend 共通の改善として起票。
+- 2026-04-02: C++ `P0-CPP-VARIANT-S7` の残件が `type_ignore_from_import` の bare `Callable` のみになったため、本 plan を variant/object 移行の blocker として参照する。

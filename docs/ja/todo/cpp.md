@@ -51,7 +51,7 @@ Phase 1（variant 出力追加）、Phase 2 の S5 まで完了済み（[archive
 2. [x] [ID: P0-CPP-VARIANT-S6A] C++ runtime / emitter に残っている不要な `PYTRA_TID_OBJECT` / object-type-id 正規化の残骸を削除する
    - 完了メモ: `isinstance(x, object)` / `issubclass(X, object)` は lower で constant `True` に潰すようにし、`_builtin_type_id_symbol()` から `object -> PYTRA_TID_OBJECT` を削除した。あわせて C++ emitter の `PYTRA_TID_OBJECT -> object` 正規化も撤去し、`src/toolchain2/emit/cpp`, `src/toolchain2/compile`, `src/runtime/cpp` 直下の `PYTRA_TID_OBJECT` 残件は 0 を確認した。
 3. [ ] [ID: P0-CPP-VARIANT-S7] fixture 全件 + sample 全件が `object` 型なしで PASS することを確認する
-   - メモ: fresh in-memory probe では `in_membership`, `iterable`, `callable_higher_order`, `finally`, `float` の generated C++ から `object(` / `.unbox<...>()` / `.as<...>()` は消えている。残る blocker は `type_ignore_from_import` の explicit bare `Callable` だけで、`Callable` を `::std::function<object(object)>` と `([&](object) -> object { ... })` bridge に落としている。これは box/unbox 残件ではなく callable 型情報不足の問題。
+   - メモ: fresh in-memory probe では `in_membership`, `iterable`, `callable_higher_order`, `finally`, `float` の generated C++ から `object(` / `.unbox<...>()` / `.as<...>()` は消えている。残る blocker は `type_ignore_from_import` の explicit bare `Callable` だけで、`Callable` を `::std::function<object(object)>` と `([&](object) -> object { ... })` bridge に落としている。これは box/unbox 残件ではなく callable 型情報不足の問題で、完了には [p0-callable-type-tracking.md](../plans/p0-callable-type-tracking.md) の `P0-CALLABLE-TYPE-TRACKING-01/02` が必要。
 
 **Phase 3: box/unbox 削除**
 
