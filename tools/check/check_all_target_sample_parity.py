@@ -44,7 +44,7 @@ def group_targets(name: str) -> tuple[str, ...]:
 def build_group_command(
     group_name: str,
     *,
-    east3_opt_level: str,
+    opt_level: str,
     cpp_codegen_opt: str,
     summary_json: Path | None,
 ) -> list[str]:
@@ -57,8 +57,8 @@ def build_group_command(
         "sample",
         "--all-samples",
         "--ignore-unstable-stdout",
-        "--east3-opt-level",
-        east3_opt_level,
+        "--opt-level",
+        opt_level,
     ]
     if group_name == "cpp":
         cmd.extend(["--cpp-codegen-opt", cpp_codegen_opt])
@@ -67,7 +67,7 @@ def build_group_command(
     return cmd
 
 
-def merge_summary_json(summary_dir: Path, selected_groups: list[str], east3_opt_level: str, cpp_codegen_opt: str) -> dict[str, object]:
+def merge_summary_json(summary_dir: Path, selected_groups: list[str], opt_level: str, cpp_codegen_opt: str) -> dict[str, object]:
     group_summaries: dict[str, object] = {}
     all_targets: list[str] = []
     all_cases: list[str] = []
@@ -105,7 +105,7 @@ def merge_summary_json(summary_dir: Path, selected_groups: list[str], east3_opt_
         "case_fail": case_fail,
         "category_counts": category_counts,
         "records": records,
-        "east3_opt_level": east3_opt_level,
+        "opt_level": opt_level,
         "cpp_codegen_opt": cpp_codegen_opt,
         "group_summaries": group_summaries,
     }
@@ -118,7 +118,7 @@ def main() -> int:
         default=",".join(group_names()),
         help="comma-separated subset of groups: " + ",".join(group_names()),
     )
-    parser.add_argument("--east3-opt-level", default="2")
+    parser.add_argument("--opt-level", default="2")
     parser.add_argument("--cpp-codegen-opt", default="3")
     parser.add_argument(
         "--summary-dir",
@@ -143,7 +143,7 @@ def main() -> int:
         group_summary = None if summary_dir is None else summary_dir / f"{group_name}.json"
         cmd = build_group_command(
             group_name,
-            east3_opt_level=str(args.east3_opt_level),
+            opt_level=str(args.opt_level),
             cpp_codegen_opt=str(args.cpp_codegen_opt),
             summary_json=group_summary,
         )
@@ -152,7 +152,7 @@ def main() -> int:
             failed_groups.append(group_name)
 
     if summary_dir is not None:
-        merged = merge_summary_json(summary_dir, selected_groups, str(args.east3_opt_level), str(args.cpp_codegen_opt))
+        merged = merge_summary_json(summary_dir, selected_groups, str(args.opt_level), str(args.cpp_codegen_opt))
         merged_path = summary_dir / "all-target-summary.json"
         merged_path.write_text(json.dumps(merged, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 

@@ -147,7 +147,7 @@ def _transpile_in_memory(
     case_path: Path,
     target: str,
     output_dir: Path,
-    east3_opt_level: int = 1,
+    opt_level: int = 1,
     negative_index_mode: str = "",
     bounds_check_mode: str = "",
 ) -> tuple[bool, str]:
@@ -176,7 +176,7 @@ def _transpile_in_memory(
         # 4. Optimize
         east3_opt, _report = optimize_east3_document(
             east3_doc,
-            opt_level=east3_opt_level,
+            opt_level=opt_level,
             debug_flags=optimizer_debug_flags,
         )
 
@@ -191,7 +191,7 @@ def _transpile_in_memory(
         link_result = link_modules([str(link_path)], target=pipeline_target, dispatch_mode="native")
         _optimize_linked_runtime_modules_in_place(
             link_result.linked_modules,
-            opt_level=east3_opt_level,
+            opt_level=opt_level,
             debug_flags=optimizer_debug_flags,
         )
 
@@ -898,7 +898,7 @@ def check_case(
     enabled_targets: set[str],
     *,
     case_root: str,
-    east3_opt_level: int = 1,
+    opt_level: int = 1,
     cmd_timeout_sec: int = 120,
     negative_index_mode: str = "",
     bounds_check_mode: str = "",
@@ -986,7 +986,7 @@ def check_case(
                 case_path,
                 target_name,
                 out_dir,
-                east3_opt_level,
+                opt_level,
                 negative_index_mode,
                 bounds_check_mode,
             )
@@ -1084,7 +1084,7 @@ def main() -> int:
     parser.add_argument("--case-root", default="fixture", choices=("fixture", "sample", "stdlib"))
     parser.add_argument("--targets", default="cpp", help="comma separated targets (default: cpp)")
     parser.add_argument("--category", default="", help="fixture subdirectory (e.g. oop, control)")
-    parser.add_argument("--east3-opt-level", default=1, type=int, choices=(0, 1, 2))
+    parser.add_argument("--opt-level", default=1, type=int, choices=(0, 1, 2))
     parser.add_argument("--negative-index-mode", default="", choices=("", "always", "const_only", "off"))
     parser.add_argument("--bounds-check-mode", default="", choices=("", "always", "debug", "off"))
     parser.add_argument("--cmd-timeout-sec", default=120, type=int)
@@ -1127,7 +1127,7 @@ def main() -> int:
             stem,
             enabled_targets,
             case_root=args.case_root,
-            east3_opt_level=args.east3_opt_level,
+            opt_level=args.opt_level,
             cmd_timeout_sec=args.cmd_timeout_sec,
             negative_index_mode=args.negative_index_mode,
             bounds_check_mode=args.bounds_check_mode,
@@ -1148,7 +1148,7 @@ def main() -> int:
     print(
         f"SUMMARY cases={len(stems)} pass={pass_cases} fail={fail_cases} "
         f"targets={','.join(sorted(enabled_targets))} "
-        f"east3_opt_level={args.east3_opt_level} "
+        f"opt_level={args.opt_level} "
         f"negative_index_mode={resolve_negative_index_mode(args.negative_index_mode)} "
         f"bounds_check_mode={resolve_bounds_check_mode(args.bounds_check_mode)} "
         f"elapsed={elapsed:.1f}s"
@@ -1161,7 +1161,7 @@ def main() -> int:
     if args.summary_json != "":
         summary = {
             "case_root": args.case_root,
-            "east3_opt_level": args.east3_opt_level,
+            "opt_level": args.opt_level,
             "negative_index_mode": resolve_negative_index_mode(args.negative_index_mode),
             "bounds_check_mode": resolve_bounds_check_mode(args.bounds_check_mode),
             "targets": sorted(enabled_targets),

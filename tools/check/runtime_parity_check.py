@@ -401,11 +401,11 @@ def resolve_case_stems(cases: list[str], case_root: str, all_samples: bool = Fal
 def build_targets(
     case_stem: str,
     case_path: Path,
-    east3_opt_level: str,
+    opt_level: str,
     cpp_codegen_opt: str = "",
 ) -> list[Target]:
     case_src = case_path.as_posix()
-    opt_arg = "--east3-opt-level " + shlex.quote(str(east3_opt_level))
+    opt_arg = "--opt-level " + shlex.quote(str(opt_level))
 
     _pid = str(os.getpid())
 
@@ -453,7 +453,7 @@ def check_case(
     *,
     case_root: str,
     ignore_stdout: bool,
-    east3_opt_level: str,
+    opt_level: str,
     cpp_codegen_opt: str = "",
     cmd_timeout_sec: int = 120,
     records: list[CheckRecord] | None = None,
@@ -525,7 +525,7 @@ def check_case(
             expected_artifact_crc32 = _file_crc32(expected_artifact_path)
 
         mismatches: list[str] = []
-        for target in build_targets(case_stem, case_path, east3_opt_level, cpp_codegen_opt):
+        for target in build_targets(case_stem, case_path, opt_level, cpp_codegen_opt):
             if target.name not in enabled_targets:
                 continue
             if not can_run(target):
@@ -868,10 +868,10 @@ def main() -> int:
         help="optional path to write machine-readable summary json",
     )
     parser.add_argument(
-        "--east3-opt-level",
+        "--opt-level",
         default="1",
         choices=("0", "1", "2"),
-        help="EAST3 optimizer level passed to transpilers (default: 1)",
+        help="optimizer level passed to transpilers (default: 1)",
     )
     parser.add_argument(
         "--cpp-codegen-opt",
@@ -915,7 +915,7 @@ def main() -> int:
             enabled_targets,
             case_root=args.case_root,
             ignore_stdout=args.ignore_unstable_stdout,
-            east3_opt_level=args.east3_opt_level,
+            opt_level=args.opt_level,
             cpp_codegen_opt="" if args.cpp_codegen_opt is None else str(args.cpp_codegen_opt),
             cmd_timeout_sec=args.cmd_timeout_sec,
             records=records,
@@ -934,7 +934,7 @@ def main() -> int:
         "SUMMARY "
         + f"cases={len(stems)} pass={pass_cases} fail={fail_cases} "
         + f"targets={','.join(sorted(enabled_targets))} "
-        + f"east3_opt_level={args.east3_opt_level}"
+        + f"opt_level={args.opt_level}"
     )
     if len(category_counts) > 0:
         print("SUMMARY_CATEGORIES")
@@ -944,7 +944,7 @@ def main() -> int:
     if args.summary_json != "":
         summary_obj = {
             "case_root": args.case_root,
-            "east3_opt_level": args.east3_opt_level,
+            "opt_level": args.opt_level,
             "targets": sorted(enabled_targets),
             "cases": stems,
             "case_total": len(stems),

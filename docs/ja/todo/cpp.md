@@ -33,7 +33,8 @@
 | `1`（デフォルト） | `const_only` | `off` |
 | `2` | `off` | `off` |
 
-1. [ ] [ID: P0-OPT-LEVEL-S1] `pytra-cli2.py` / `runtime_parity_check_fast.py` / optimizer の `--east3-opt-level` を `--opt-level` に改名する
+1. [x] [ID: P0-OPT-LEVEL-S1] `pytra-cli2.py` / `runtime_parity_check_fast.py` / optimizer の `--east3-opt-level` を `--opt-level` に改名する
+   - 完了メモ: `src/pytra-cli2.py`, `tools/check/runtime_parity_check.py`, `tools/check/runtime_parity_check_fast.py`, `tools/check/check_all_target_sample_parity.py`, `src/toolchain2/optimize/optimizer.py` で user-facing flag を `--opt-level` に統一した。`runtime_parity_check_fast --opt-level 1` の single-case parity と各スクリプトの `--help` / `py_compile` を確認済み。
 2. [ ] [ID: P0-OPT-LEVEL-S2] `--opt-level` が `negative_index_mode` / `bounds_check_mode` のデフォルトを決定し、個別オプションで上書きできるようにする
 3. [ ] [ID: P0-OPT-LEVEL-S3] spec-options.md / spec-east3-optimizer.md / tutorial を更新する
 4. [ ] [ID: P0-OPT-LEVEL-S4] fixture + sample + stdlib parity に回帰がないことを確認する

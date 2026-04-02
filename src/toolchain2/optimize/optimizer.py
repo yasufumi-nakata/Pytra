@@ -172,8 +172,8 @@ class PassManager:
         return out
 
 
-def resolve_east3_opt_level(opt_level: str | int) -> int:
-    """Normalize --east3-opt-level value."""
+def resolve_opt_level(opt_level: str | int) -> int:
+    """Normalize --opt-level value."""
     if isinstance(opt_level, int):
         level = opt_level
     elif isinstance(opt_level, str):
@@ -183,12 +183,17 @@ def resolve_east3_opt_level(opt_level: str | int) -> int:
         elif text == "0" or text == "1" or text == "2":
             level = int(text)
         else:
-            raise ValueError("invalid --east3-opt-level: " + text)
+            raise ValueError("invalid --opt-level: " + text)
     else:
-        raise ValueError("invalid --east3-opt-level")
+        raise ValueError("invalid --opt-level")
     if level < 0 or level > 2:
-        raise ValueError("invalid --east3-opt-level: " + str(level))
+        raise ValueError("invalid --opt-level: " + str(level))
     return level
+
+
+def resolve_east3_opt_level(opt_level: str | int) -> int:
+    """Backward-compatible alias for legacy callers."""
+    return resolve_opt_level(opt_level)
 
 
 def resolve_negative_index_mode(mode: str) -> str:
@@ -264,7 +269,7 @@ def optimize_east3_document(
     if not isinstance(stage_val, int) or stage_val != 3:
         raise RuntimeError("EAST3 document must have east_stage=3")
 
-    level = resolve_east3_opt_level(opt_level)
+    level = resolve_opt_level(opt_level)
     enabled, disabled = parse_east3_opt_pass_overrides(opt_pass_spec)
     context = make_pass_context(
         opt_level=level,

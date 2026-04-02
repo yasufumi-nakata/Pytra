@@ -538,6 +538,7 @@ def _optimize_one(
     input_path: Path,
     output_text: str,
     pretty: bool,
+    opt_level: int,
     negative_index_mode: str,
     bounds_check_mode: str,
 ) -> int:
@@ -555,7 +556,7 @@ def _optimize_one(
     typed_east3_doc: dict[str, JsonVal] = east3_doc
     optimized_doc = optimize_east3_doc_only(
         typed_east3_doc,
-        opt_level=1,
+        opt_level=opt_level,
         debug_flags=_optimizer_debug_flags(negative_index_mode, bounds_check_mode),
     )
     out_path = Path(output_text) if output_text != "" else input_path
@@ -575,6 +576,7 @@ def cmd_optimize(args: list[str]) -> int:
     inputs: list[str] = []
     output_text = ""
     pretty = False
+    opt_level = 1
     negative_index_mode = ""
     bounds_check_mode = ""
 
@@ -592,6 +594,20 @@ def cmd_optimize(args: list[str]) -> int:
             pretty = True
             i += 1
             continue
+        if tok == "--opt-level":
+            if i + 1 >= len(args):
+                print("error: missing value for --opt-level")
+                return 1
+            try:
+                opt_level = int(args[i + 1])
+            except ValueError:
+                print("error: invalid --opt-level: " + args[i + 1])
+                return 1
+            if opt_level not in (0, 1, 2):
+                print("error: invalid --opt-level: " + str(opt_level))
+                return 1
+            i += 2
+            continue
         if tok == "--negative-index-mode":
             if i + 1 >= len(args):
                 print("error: missing value for --negative-index-mode")
@@ -607,7 +623,7 @@ def cmd_optimize(args: list[str]) -> int:
             i += 2
             continue
         if tok == "-h" or tok == "--help":
-            print("usage: pytra-cli2 -optimize INPUT.east3 [-o OUTPUT.east3] [--pretty] [--negative-index-mode MODE] [--bounds-check-mode MODE]")
+            print("usage: pytra-cli2 -optimize INPUT.east3 [-o OUTPUT.east3] [--pretty] [--opt-level {0,1,2}] [--negative-index-mode MODE] [--bounds-check-mode MODE]")
             print("       pytra-cli2 -optimize INPUT1.east3 INPUT2.east3 ...  (multiple files)")
             return 0
         if not tok.startswith("-"):
@@ -625,7 +641,7 @@ def cmd_optimize(args: list[str]) -> int:
     exit_code = 0
     for inp in inputs:
         input_path = Path(inp)
-        rc = _optimize_one(input_path, output_text, pretty, negative_index_mode, bounds_check_mode)
+        rc = _optimize_one(input_path, output_text, pretty, opt_level, negative_index_mode, bounds_check_mode)
         if rc != 0:
             exit_code = rc
     return exit_code
@@ -916,6 +932,7 @@ def cmd_build(args: list[str]) -> int:
     inputs: list[str] = []
     output_dir_text = ""
     target = "cpp"
+    opt_level = 1
     rs_package = False
     negative_index_mode = ""
     bounds_check_mode = ""
@@ -941,6 +958,20 @@ def cmd_build(args: list[str]) -> int:
             rs_package = True
             i += 1
             continue
+        if tok == "--opt-level":
+            if i + 1 >= len(args):
+                print("error: missing value for --opt-level")
+                return 1
+            try:
+                opt_level = int(args[i + 1])
+            except ValueError:
+                print("error: invalid --opt-level: " + args[i + 1])
+                return 1
+            if opt_level not in (0, 1, 2):
+                print("error: invalid --opt-level: " + str(opt_level))
+                return 1
+            i += 2
+            continue
         if tok == "--negative-index-mode":
             if i + 1 >= len(args):
                 print("error: missing value for --negative-index-mode")
@@ -956,7 +987,7 @@ def cmd_build(args: list[str]) -> int:
             i += 2
             continue
         if tok == "-h" or tok == "--help":
-            print("usage: pytra-cli2 -build INPUT.py [-o OUTPUT_DIR] [--target TARGET] [--rs-package] [--negative-index-mode MODE] [--bounds-check-mode MODE]")
+            print("usage: pytra-cli2 -build INPUT.py [-o OUTPUT_DIR] [--target TARGET] [--rs-package] [--opt-level {0,1,2}] [--negative-index-mode MODE] [--bounds-check-mode MODE]")
             return 0
         if not tok.startswith("-"):
             inputs.append(tok)
@@ -975,6 +1006,7 @@ def cmd_build(args: list[str]) -> int:
             inputs,
             output_dir_text,
             target,
+            opt_level=opt_level,
             rs_package=rs_package,
             negative_index_mode=negative_index_mode,
             bounds_check_mode=bounds_check_mode,
@@ -989,6 +1021,7 @@ def _build_pipeline(
     output_dir_text: str,
     target: str,
     *,
+    opt_level: int = 1,
     rs_package: bool = False,
     negative_index_mode: str = "",
     bounds_check_mode: str = "",
@@ -1021,7 +1054,7 @@ def _build_pipeline(
     for inp, east3_doc in east3_docs:
         east3_opt_docs.append((
             inp,
-            optimize_east3_doc_only(east3_doc, opt_level=1, debug_flags=optimizer_debug_flags),
+            optimize_east3_doc_only(east3_doc, opt_level=opt_level, debug_flags=optimizer_debug_flags),
         ))
     print("build: optimized " + str(len(east3_opt_docs)) + " files")
 
@@ -1051,7 +1084,7 @@ def _build_pipeline(
     link_result = link_modules(east3_opt_paths, target=target, dispatch_mode="native")
     _optimize_linked_runtime_modules(
         link_result.linked_modules,
-        opt_level=1,
+        opt_level=opt_level,
         debug_flags=optimizer_debug_flags,
     )
     # Only the first input is the actual entry module; demote others
