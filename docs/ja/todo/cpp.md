@@ -58,7 +58,7 @@ Phase 1（variant 出力追加）、Phase 2 の S5 まで完了済み（[archive
 **Phase 4: EAST から object 退化 / box / unbox を削除**
 
 5. [ ] [ID: P0-CPP-VARIANT-S10] lower.py の Boxing（`resolved_type="object"` 生成）と iter boundary を削除する
-   - メモ: C++ backend は direct `ObjIterInit` / `ObjIterNext` を採用せず、`target_language="cpp"` では iter boundary lower を抑止して `py_iter_or_raise` / `py_next_or_stop` call をそのまま残す方針に固定した。`CompileContext.target_language` を追加し、`test_compile_keeps_iter_boundary_for_core_target` / `test_compile_skips_iter_boundary_for_cpp_target` で core/cpp の差分を固定済み。`iterable`, `typed_container_access` の C++ parity PASS を確認した。
+   - メモ: C++ backend は direct `ObjIterInit` / `ObjIterNext` を採用せず、`target_language="cpp"` では iter boundary lower を抑止して `py_iter_or_raise` / `py_next_or_stop` call をそのまま残す方針に固定した。`CompileContext.target_language` を追加し、`test_compile_keeps_iter_boundary_for_core_target` / `test_compile_skips_iter_boundary_for_cpp_target` で core/cpp の差分を固定済み。さらに C++ 向け dynamic target `Box` では `resolved_type="object"` を固定せず target type を保持するようにし、代表ケースに対して `resolved_type="object"` が出ないことを `test_compile_uses_dynamic_target_resolved_type_for_cpp_box` / `test_compile_uses_union_target_resolved_type_for_cpp_box` / `test_compile_cpp_lowering_avoids_object_resolved_type_for_representative_dynamic_cases` で固定済み。`iterable`, `typed_container_access`, `object_container_access` の C++ parity PASS を確認した。残件は explicit object target と core 専用 iter boundary を除く broad 走査の確定。
 6. [ ] [ID: P0-CPP-VARIANT-S11] EAST3 validation に「`resolved_type: "object"` ならエラー」を追加する
 7. [ ] [ID: P0-CPP-VARIANT-S12] 全言語の fixture + sample が PASS することを確認する
 
