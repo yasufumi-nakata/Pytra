@@ -5350,6 +5350,84 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertIn("(py_is_none(a) ? object() : object(*a))", cpp_code)
         self.assertNotIn("std::visit", cpp_code)
 
+    def test_cpp_emitter_target_type_object_uses_common_box_normalization(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "func": {"kind": "Name", "id": "py_assert_eq"},
+                        "args": [
+                            {
+                                "kind": "Box",
+                                "resolved_type": "object",
+                                "value": {
+                                    "kind": "Box",
+                                    "resolved_type": "object",
+                                    "value": {"kind": "Constant", "value": 42, "resolved_type": "int64"},
+                                },
+                            },
+                            {"kind": "Box", "resolved_type": "object", "value": {"kind": "Constant", "value": 42, "resolved_type": "int64"}},
+                        ],
+                        "resolved_type": "bool",
+                    },
+                }
+            ],
+        )
+        doc["meta"] = {"module_id": "app.main"}
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("object(42)", cpp_code)
+        self.assertNotIn("object(object(", cpp_code)
+
+    def test_cpp_emitter_cast_expr_uses_common_unbox_normalization(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "FunctionDef",
+                    "name": "indent_value",
+                    "arg_order": ["indent"],
+                    "arg_types": {"indent": "int64 | None"},
+                    "arg_usage": {"indent": "readonly"},
+                    "arg_defaults": {},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "cast"},
+                                "args": [
+                                    {"kind": "Name", "id": "int64", "resolved_type": "type"},
+                                    {
+                                        "kind": "Unbox",
+                                        "target": "int64",
+                                        "resolved_type": "int64",
+                                        "value": {
+                                            "kind": "Unbox",
+                                            "target": "int64",
+                                            "resolved_type": "int64",
+                                            "value": {"kind": "Name", "id": "indent", "resolved_type": "int64"},
+                                        },
+                                    },
+                                ],
+                                "resolved_type": "int64",
+                            },
+                        }
+                    ],
+                }
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("return (*(indent));", cpp_code)
+        self.assertNotIn("return (*((*(indent))));", cpp_code)
+
     def test_cpp_header_gen_preserves_exception_class_inheritance(self) -> None:
         doc = _module_doc(
             "pytra.built_in.error",

@@ -704,6 +704,7 @@ def _object_box_container_target(resolved_type: str) -> str:
 def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> str:
     if not isinstance(node, dict):
         return _emit_expr(ctx, node)
+    node = _normalize_cpp_boundary_expr(ctx, node)
     if _str(node, "kind") == "Box" and target_type not in ("Any", "Obj", "object"):
         inner = node.get("value")
         if isinstance(inner, dict):
@@ -1269,6 +1270,13 @@ def _emit_expr(ctx: CppEmitContext, node: JsonVal) -> str:
         _emit_fail(ctx, "invalid_expr", "expected dict expression node")
     renderer = _CppExprCommonRenderer(ctx)
     return renderer.render_expr(node)
+
+
+def _normalize_cpp_boundary_expr(ctx: CppEmitContext, node: JsonVal) -> JsonVal:
+    if not isinstance(node, dict):
+        return node
+    renderer = _CppExprCommonRenderer(ctx)
+    return renderer._normalize_boundary_expr(node)
 
 
 def _emit_expr_extension(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
@@ -2596,6 +2604,9 @@ def _emit_covariant_copy_expr(
 
 
 def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
+    normalized = _normalize_cpp_boundary_expr(ctx, node)
+    if isinstance(normalized, dict):
+        node = normalized
     value = node.get("value")
     target = _str(node, "target")
     if target == "":
@@ -4122,6 +4133,7 @@ def _node_mutates_self_fields(node: JsonVal) -> bool:
 
 
 def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonVal) -> str:
+    value_node = _normalize_cpp_boundary_expr(ctx, value_node)
     target_name = _node_type_mirror(target_node)
     if target_name == "":
         target_name = _effective_resolved_type(target_node)
