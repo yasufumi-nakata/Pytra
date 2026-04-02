@@ -102,7 +102,6 @@
     "py_slice": "__pytra_slice",
     "py_truthy": "__pytra_truthy",
     "py_in": "__pytra_contains",
-    "py_isinstance": "__pytra_isinstance",
     "py_assert_stdout": "__pytra_assert",
     "py_assert_true": "__pytra_assert",
     "py_assert_eq": "__pytra_assert",
@@ -122,16 +121,13 @@
   "skip_modules": [
     "pytra.built_in.",
     "pytra.typing",
-    "pytra.std",
     "pytra.std.glob",
     "pytra.std.math",
     "pytra.std.os",
     "pytra.std.os_path",
-    "pytra.std.random",
     "pytra.std.sys",
     "pytra.std.time",
     "pytra.core.",
-    "pytra.utils.assertions",
     "pytra.enum"
   ],
   "skip_modules_exact": [

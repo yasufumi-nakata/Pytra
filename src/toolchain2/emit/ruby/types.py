@@ -158,3 +158,26 @@ def ruby_exception_class(resolved_type: str) -> str:
         "StopIteration": "StopIteration",
     }
     return mapping.get(resolved_type, "RuntimeError")
+
+
+def ruby_is_builtin_exception(type_name: str) -> bool:
+    """Return True when the type is a builtin exception handled by the runtime mapping."""
+    return type_name in {
+        "Exception",
+        "RuntimeError",
+        "ValueError",
+        "TypeError",
+        "IndexError",
+        "KeyError",
+        "BaseException",
+        "ZeroDivisionError",
+        "FileNotFoundError",
+        "OverflowError",
+        "NotImplementedError",
+        "StopIteration",
+        "ArithmeticError",
+        "LookupError",
+        "AttributeError",
+        "IOError",
+        "OSError",
+    }

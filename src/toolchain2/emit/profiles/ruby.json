@@ -68,10 +68,10 @@
   "lowering": {
     "tuple_unpack_style": "individual_temps",
     "container_covariance": false,
-    "closure_style": "nested_function",
+    "closure_style": "closure_syntax",
     "with_style": "try_finally",
     "property_style": "method_call",
-    "swap_style": "parallel_assign",
+    "swap_style": "multi_assign",
     "none_literal": "nil",
     "bool_literals": ["true", "false"],
     "self_keyword": "self",

@@ -14,7 +14,7 @@ from pytra.std.pathlib import Path
 
 from toolchain2.emit.ruby.types import (
     ruby_type, ruby_zero_value, ruby_exception_class,
-    _safe_ruby_ident, _split_generic_args,
+    ruby_is_builtin_exception, _safe_ruby_ident, _split_generic_args,
 )
 from toolchain2.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
@@ -54,6 +54,7 @@ class EmitContext:
     class_property_methods: dict[str, set[str]] = field(default_factory=dict)
     class_instance_methods: dict[str, dict[str, dict[str, JsonVal]]] = field(default_factory=dict)
     class_fields: dict[str, dict[str, str]] = field(default_factory=dict)
+    function_names: set[str] = field(default_factory=set)
     enum_bases: dict[str, str] = field(default_factory=dict)
     enum_members: dict[str, dict[str, dict[str, JsonVal]]] = field(default_factory=dict)
     # Current class context
@@ -127,24 +128,66 @@ def _ruby_symbol_name(ctx: EmitContext, name: str) -> str:
     return _safe_ruby_ident(name)
 
 
-_KNOWN_EXCEPTION_TYPES: set[str] = {
-    "Exception", "RuntimeError", "ValueError", "TypeError",
-    "IndexError", "KeyError", "BaseException",
-    "ZeroDivisionError", "FileNotFoundError",
-    "NotImplementedError", "StopIteration",
-    "OverflowError", "ArithmeticError", "LookupError",
-    "AttributeError", "IOError", "OSError",
-}
-
-
 def _is_exception_type_name(ctx: EmitContext, name: str) -> bool:
-    if name in _KNOWN_EXCEPTION_TYPES:
+    if ruby_is_builtin_exception(name):
         return True
     # Check if its base is an exception type
     base = ctx.class_bases.get(name, "")
-    if base in _KNOWN_EXCEPTION_TYPES:
-        return True
-    return False
+    if base == "":
+        return False
+    return _is_exception_type_name(ctx, base)
+
+
+def _is_super_receiver(node: JsonVal) -> bool:
+    if not isinstance(node, dict):
+        return False
+    if _str(node, "kind") != "Call":
+        return False
+    func = node.get("func")
+    if not isinstance(func, dict):
+        return False
+    return _str(func, "kind") == "Name" and _str(func, "id") == "super"
+
+
+def _render_super_call(args: list[str]) -> str:
+    return "super" + "(" + ", ".join(args) + ")"
+
+
+def _ruby_method_name(name: str) -> str:
+    method_map: dict[str, str] = {
+        "__init__": "initialize",
+        "__str__": "to_s",
+        "__len__": "length",
+        "__repr__": "inspect",
+        "__eq__": "==",
+        "__lt__": "<",
+        "__le__": "<=",
+        "__gt__": ">",
+        "__ge__": ">=",
+        "__hash__": "hash",
+        "__contains__": "include?",
+        "__getitem__": "[]",
+        "__setitem__": "[]=",
+    }
+    if name in method_map:
+        return method_map[name]
+    return _safe_ruby_ident(name)
+
+
+def _target_binding_name(node: JsonVal) -> str:
+    if not isinstance(node, dict):
+        return "_item"
+    kind = _str(node, "kind")
+    if kind == "Name" or kind == "NameTarget":
+        name = _str(node, "id")
+        return _safe_ruby_ident(name) if name != "" else "_item"
+    if kind == "Tuple" or kind == "TupleTarget":
+        elems = _list(node, "elements")
+        names: list[str] = []
+        for elem in elems:
+            names.append(_target_binding_name(elem))
+        return ", ".join(names) if len(names) > 0 else "_item"
+    return "_item"
 
 
 # ---------------------------------------------------------------------------
@@ -211,6 +254,10 @@ def _emit_expr(ctx: EmitContext, node: JsonVal) -> str:
         return "__pytra_truthy(" + _emit_expr(ctx, arg) + ")"
     if kind == "ListComp":
         return _emit_list_comp(ctx, node)
+    if kind == "DictComp":
+        return _emit_dict_comp(ctx, node)
+    if kind == "SetComp":
+        return _emit_set_comp(ctx, node)
     if kind == "GeneratorExp":
         return _emit_list_comp(ctx, node)
     if kind == "RangeExpr":
@@ -255,8 +302,12 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "true"
     if name == "False":
         return "false"
+    if name == "super":
+        return "super"
     if name in ctx.runtime_imports:
         return ctx.runtime_imports[name]
+    if name in ctx.function_names:
+        return "method(:" + _ruby_symbol_name(ctx, name) + ")"
     return _ruby_symbol_name(ctx, name)
 
 
@@ -290,9 +341,13 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         owner_id = _str(owner_node, "id")
         # Class.static_method / Class.member
         if owner_id in ctx.class_names:
-            return owner_id + "." + attr
+            if len(attr) > 0 and attr[0].isupper():
+                return owner_id + "::" + attr
+            return owner_id + "." + _ruby_method_name(attr)
     owner = _emit_expr(ctx, owner_node)
-    return owner + "." + attr
+    if len(attr) > 0 and attr[0].isupper():
+        return owner + "::" + attr
+    return owner + "." + _ruby_method_name(attr)
 
 
 def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -516,6 +571,12 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             type_name = _str(type_node, "repr")
     if type_name == "":
         type_name = _str(node, "type_name")
+    if type_name == "":
+        expected_node = node.get("expected_type_id")
+        if isinstance(expected_node, dict):
+            type_name = _str(expected_node, "id")
+            if type_name == "":
+                type_name = _str(expected_node, "repr")
     # Map to Ruby type check
     type_map: dict[str, str] = {
         "int": "Integer", "int64": "Integer", "float": "Float", "float64": "Float",
@@ -567,6 +628,51 @@ def _emit_list_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return "(" + iter_code + ").map { |" + safe_target + "| " + elt_code + " }"
 
 
+def _emit_dict_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    generators = _list(node, "generators")
+    key_node = node.get("key")
+    value_node = node.get("value")
+    if len(generators) == 0:
+        return "{}"
+    gen = generators[0]
+    if not isinstance(gen, dict):
+        return "{}"
+    target_code = _target_binding_name(gen.get("target"))
+    iter_code = _emit_expr(ctx, gen.get("iter"))
+    key_code = _emit_expr(ctx, key_node)
+    value_code = _emit_expr(ctx, value_node)
+    ifs = _list(gen, "ifs")
+    body_code = "acc[" + key_code + "] = " + value_code
+    if len(ifs) > 0:
+        cond_parts: list[str] = []
+        for cond in ifs:
+            cond_parts.append(_emit_expr(ctx, cond))
+        body_code = body_code + " if " + " && ".join(cond_parts)
+    return "(" + iter_code + ").each_with_object({}) { |" + target_code + ", acc| " + body_code + " }"
+
+
+def _emit_set_comp(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    generators = _list(node, "generators")
+    elt_node = node.get("elt")
+    if len(generators) == 0:
+        return "Set.new"
+    gen = generators[0]
+    if not isinstance(gen, dict):
+        return "Set.new"
+    target_code = _target_binding_name(gen.get("target"))
+    iter_code = _emit_expr(ctx, gen.get("iter"))
+    elt_code = _emit_expr(ctx, elt_node)
+    ifs = _list(gen, "ifs")
+    mapped = "(" + iter_code + ")"
+    if len(ifs) > 0:
+        cond_parts: list[str] = []
+        for cond in ifs:
+            cond_parts.append(_emit_expr(ctx, cond))
+        mapped = mapped + ".select { |" + target_code + "| " + " && ".join(cond_parts) + " }"
+    mapped = mapped + ".map { |" + target_code + "| " + elt_code + " }"
+    return "Set.new(" + mapped + ")"
+
+
 def _emit_range_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     start = node.get("start")
     stop = node.get("stop")
@@ -599,9 +705,18 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         builtin_name = _str(func, "id")
         if builtin_name == "":
             builtin_name = _str(func, "repr")
-    mapped = ""
-    if call_key != "":
-        mapped = resolve_runtime_call(call_key, builtin_name, adapter_kind, ctx.mapping)
+    should_resolve_runtime = call_key != "" or adapter_kind != ""
+    if not should_resolve_runtime and builtin_name in ctx.runtime_imports:
+        should_resolve_runtime = True
+    if (
+        not should_resolve_runtime
+        and builtin_name in ctx.mapping.calls
+        and builtin_name not in ctx.function_names
+        and builtin_name not in ctx.class_names
+        and builtin_name not in ctx.var_types
+    ):
+        should_resolve_runtime = True
+    mapped = resolve_runtime_call(call_key, builtin_name, adapter_kind, ctx.mapping) if should_resolve_runtime else ""
 
     # When func is Attribute (method call), prepend owner to builtin args
     builtin_args = list(args)
@@ -704,6 +819,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             fn_name = _str(func, "id")
             if fn_name == "":
                 fn_name = _str(func, "repr")
+            if fn_name == "super":
+                arg_strs0: list[str] = []
+                for a in args:
+                    arg_strs0.append(_emit_expr(ctx, a))
+                return _render_super_call(arg_strs0)
             # Class constructors
             if fn_name in ctx.class_names:
                 arg_strs2: list[str] = []
@@ -723,6 +843,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             arg_strs4: list[str] = []
             for a in args:
                 arg_strs4.append(_emit_expr(ctx, a))
+            fn_type = _str(func, "resolved_type")
+            local_type = ctx.var_types.get(safe_fn, "")
+            if (fn_type.startswith("callable[") or local_type.startswith("callable[")) and safe_fn not in ctx.runtime_imports:
+                return safe_fn + ".call(" + ", ".join(arg_strs4) + ")"
             return safe_fn + "(" + ", ".join(arg_strs4) + ")"
 
         if func_kind == "Attribute":
@@ -740,9 +864,77 @@ def _emit_method_call(ctx: EmitContext, func: dict[str, JsonVal], args: list[Jso
     owner_node = func.get("value")
     attr = _str(func, "attr")
     owner_code = _emit_expr(ctx, owner_node)
+    owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
     arg_strs: list[str] = []
     for a in args:
         arg_strs.append(_emit_expr(ctx, a))
+    runtime_key = ""
+    if owner_type == "str":
+        runtime_key = "str." + attr
+    elif owner_type == "dict" or owner_type.startswith("dict["):
+        runtime_key = "dict." + attr
+    elif owner_type == "set" or owner_type.startswith("set["):
+        runtime_key = "set." + attr
+    elif owner_type == "list" or owner_type.startswith("list[") or owner_type == "bytearray" or owner_type == "bytes":
+        runtime_key = "list." + attr
+    builtin_args_strs = [owner_code] + arg_strs
+    mapped = ctx.mapping.calls.get(runtime_key, "")
+    if mapped == "__LIST_APPEND__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "push")
+    if mapped == "__LIST_POP__":
+        return _emit_list_pop_strs(builtin_args_strs)
+    if mapped == "__LIST_CLEAR__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "clear")
+    if mapped == "__LIST_INDEX__":
+        return _emit_list_index_strs(builtin_args_strs)
+    if mapped == "__DICT_GET__":
+        return _emit_dict_get_strs(builtin_args_strs)
+    if mapped == "__DICT_ITEMS__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "items")
+    if mapped == "__DICT_KEYS__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "keys")
+    if mapped == "__DICT_VALUES__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "values")
+    if mapped == "__SET_ADD__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "add")
+    if mapped == "__SET_DISCARD__":
+        return _emit_set_discard_strs(builtin_args_strs)
+    if mapped == "__SET_REMOVE__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "delete")
+    if mapped == "__STR_STRIP__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "strip")
+    if mapped == "__STR_LSTRIP__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "lstrip")
+    if mapped == "__STR_RSTRIP__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "rstrip")
+    if mapped == "__STR_STARTSWITH__":
+        return _emit_str_method_strs(builtin_args_strs, "start_with?")
+    if mapped == "__STR_ENDSWITH__":
+        return _emit_str_method_strs(builtin_args_strs, "end_with?")
+    if mapped == "__STR_REPLACE__":
+        return _emit_str_replace_strs(builtin_args_strs)
+    if mapped == "__STR_FIND__":
+        return _emit_str_method_strs(builtin_args_strs, "find")
+    if mapped == "__STR_RFIND__":
+        return _emit_str_method_strs(builtin_args_strs, "rfind")
+    if mapped == "__STR_SPLIT__":
+        return _emit_str_split_strs(builtin_args_strs)
+    if mapped == "__STR_JOIN__":
+        return _emit_str_join_strs(builtin_args_strs)
+    if mapped == "__STR_UPPER__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "upcase")
+    if mapped == "__STR_LOWER__":
+        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "downcase")
+    if mapped == "__STR_COUNT__":
+        return _emit_str_method_strs(builtin_args_strs, "count")
+    if mapped == "__STR_INDEX__":
+        return _emit_str_method_strs(builtin_args_strs, "index")
+    if mapped == "__STR_ISALNUM__":
+        return _emit_str_isalnum_strs(builtin_args_strs)
+    if mapped == "__STR_ISSPACE__":
+        return _emit_str_isspace_strs(builtin_args_strs)
+    if mapped != "":
+        return mapped + "(" + ", ".join(builtin_args_strs) + ")"
     # self.method() -> method() with self context
     if isinstance(owner_node, dict) and _str(owner_node, "id") == "self":
         return attr + "(" + ", ".join(arg_strs) + ")"
@@ -752,14 +944,14 @@ def _emit_method_call(ctx: EmitContext, func: dict[str, JsonVal], args: list[Jso
         if owner_id in ctx.class_names:
             static_set = ctx.class_static_methods.get(owner_id, set())
             if attr in static_set:
-                return owner_id + "." + attr + "(" + ", ".join(arg_strs) + ")"
+                return owner_id + "." + _ruby_method_name(attr) + "(" + ", ".join(arg_strs) + ")"
     # super().__init__(*args) -> super(*args)
-    if isinstance(owner_node, dict) and _str(owner_node, "repr") == "super()":
+    if _is_super_receiver(owner_node):
         if attr == "__init__":
-            return "super(" + ", ".join(arg_strs) + ")"
-        return "super." + attr + "(" + ", ".join(arg_strs) + ")"
+            return _render_super_call(arg_strs)
+        return "super." + _ruby_method_name(attr) + "(" + ", ".join(arg_strs) + ")"
     # Regular method
-    return owner_code + "." + attr + "(" + ", ".join(arg_strs) + ")"
+    return owner_code + "." + _ruby_method_name(attr) + "(" + ", ".join(arg_strs) + ")"
 
 
 def _emit_cast_call(ctx: EmitContext, node: dict[str, JsonVal], args: list[JsonVal]) -> str:
@@ -1171,27 +1363,13 @@ def _emit_while(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     target_node = node.get("target")
+    if not isinstance(target_node, dict):
+        target_node = node.get("target_plan")
     iter_plan = node.get("iter_plan")
     body = _list(node, "body")
     orelse = _list(node, "orelse")
 
-    target_name = ""
-    if isinstance(target_node, dict):
-        tk = _str(target_node, "kind")
-        if tk == "Name":
-            target_name = _str(target_node, "id")
-        elif tk == "Tuple":
-            elems = _list(target_node, "elements")
-            names: list[str] = []
-            for e in elems:
-                if isinstance(e, dict):
-                    names.append(_safe_ruby_ident(_str(e, "id")))
-                else:
-                    names.append("_")
-            target_name = ", ".join(names)
-    if target_name == "":
-        target_name = "_item"
-    safe_target = _safe_ruby_ident(target_name) if "," not in target_name else target_name
+    safe_target = _target_binding_name(target_node)
 
     if isinstance(iter_plan, dict):
         plan_kind = _str(iter_plan, "kind")
@@ -1203,6 +1381,14 @@ def _emit_for_core(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             if iter_node is None:
                 iter_node = iter_plan.get("iter")
             iter_code = _emit_expr(ctx, iter_node) if isinstance(iter_node, dict) else "[]"
+            if isinstance(iter_node, dict) and _str(iter_node, "resolved_type") == "str":
+                iter_code = "(" + iter_code + ").each_char"
+                _emit(ctx, iter_code + " do |" + safe_target + "|")
+                ctx.indent_level += 1
+                _emit_body(ctx, body)
+                ctx.indent_level -= 1
+                _emit(ctx, "end")
+                return
             _emit(ctx, "(" + iter_code + ").each do |" + safe_target + "|")
             ctx.indent_level += 1
             _emit_body(ctx, body)
@@ -1479,10 +1665,7 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         # Skip standard library and built-in modules
         if should_skip_module(module, ctx.mapping):
             return
-        # Convert module path to require_relative
-        rel_path = module.replace(".", "/")
-        if rel_path.startswith("pytra/"):
-            rel_path = rel_path[len("pytra/"):]
+        rel_path = module.replace(".", "_")
         _emit(ctx, 'require_relative "' + rel_path + '"')
     elif kind == "Import":
         names = _list(node, "names")
@@ -1493,7 +1676,7 @@ def _emit_import_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             elif isinstance(name_item, str):
                 mod_name = name_item
             if mod_name != "" and not should_skip_module(mod_name, ctx.mapping):
-                rel_path = mod_name.replace(".", "/")
+                rel_path = mod_name.replace(".", "_")
                 _emit(ctx, 'require_relative "' + rel_path + '"')
 
 
@@ -1508,7 +1691,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     return_type = _str(node, "return_type")
     body = _list(node, "body")
     decorators = _list(node, "decorators")
-    is_closure = _str(node, "kind") == "ClosureDef"
+    is_closure = _str(node, "kind") == "ClosureDef" and ctx.current_class == ""
     defaults = _dict(node, "defaults")
 
     # Skip extern declarations (will be provided by native module)
@@ -1556,7 +1739,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     elif name == "__setitem__" and ctx.current_class != "":
         fn_name = "[]="
     else:
-        fn_name = _safe_ruby_ident(name)
+        fn_name = _ruby_method_name(name)
 
     saved_vars = dict(ctx.var_types)
     saved_ret = ctx.current_return_type
@@ -1641,7 +1824,7 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                             has_super_call = True
                             break
                 if not has_super_call and not _is_exception_type_name(ctx, base_class):
-                    _emit(ctx, "super()")
+                    _emit(ctx, _render_super_call([]))
         _emit_body(ctx, body)
         ctx.indent_level -= 1
         _emit(ctx, "end")
@@ -1762,6 +1945,30 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         for fname, _ in fields:
             field_names.append(":" + fname)
         _emit(ctx, "attr_accessor " + ", ".join(field_names))
+    class_member_names: list[str] = []
+    for stmt in body:
+        if not isinstance(stmt, dict):
+            continue
+        sk = _str(stmt, "kind")
+        if sk != "AnnAssign" and sk != "Assign":
+            continue
+        target = stmt.get("target")
+        target_name = ""
+        if isinstance(target, dict):
+            target_name = _str(target, "id")
+        if target_name == "" or target_name[0].isupper():
+            continue
+        if target_name not in class_member_names:
+            class_member_names.append(target_name)
+    if len(class_member_names) > 0:
+        _emit(ctx, "class << self")
+        ctx.indent_level += 1
+        names: list[str] = []
+        for member_name in class_member_names:
+            names.append(":" + _safe_ruby_ident(member_name))
+        _emit(ctx, "attr_accessor " + ", ".join(names))
+        ctx.indent_level -= 1
+        _emit(ctx, "end")
 
     # Emit body
     for stmt in body:
@@ -1781,7 +1988,11 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     target_name = _str(target, "id")
                 if target_name != "":
                     value_code = _emit_expr(ctx, value)
-                    _emit(ctx, _safe_ruby_ident(target_name) + " = " + value_code)
+                    safe_target_name = _safe_ruby_ident(target_name)
+                    if target_name[0].isupper():
+                        _emit(ctx, safe_target_name + " = " + value_code)
+                    else:
+                        _emit(ctx, "self." + safe_target_name + " = " + value_code)
             continue
         if sk == "Assign":
             # Class-level assignments (constants, enum members, etc.)
@@ -1792,7 +2003,10 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 if target_name != "" and isinstance(value, dict):
                     value_code = _emit_expr(ctx, value)
                     safe_tname = _safe_ruby_ident(target_name)
-                    _emit(ctx, safe_tname + " = " + value_code)
+                    if target_name[0].isupper():
+                        _emit(ctx, safe_tname + " = " + value_code)
+                    else:
+                        _emit(ctx, "self." + safe_tname + " = " + value_code)
             continue
         _emit_stmt(ctx, stmt)
 
@@ -1809,6 +2023,13 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 def _collect_module_class_info(ctx: EmitContext, body: list[JsonVal]) -> None:
     """Pre-scan body to collect class names, bases, static methods, enum info."""
+    for stmt in body:
+        if not isinstance(stmt, dict):
+            continue
+        if _str(stmt, "kind") == "FunctionDef":
+            name = _str(stmt, "name")
+            if name != "":
+                ctx.function_names.add(name)
     for stmt in body:
         if not isinstance(stmt, dict):
             continue
@@ -1963,6 +2184,7 @@ def transpile_to_ruby(east3_doc: dict[str, JsonVal]) -> str:
         emit_ctx_obj = _dict(meta, "emit_context")
         root_rel = _str(emit_ctx_obj, "root_rel_prefix") if emit_ctx_obj else "./"
         _emit(ctx, 'require_relative "' + root_rel + 'built_in/py_runtime"')
+    _emit(ctx, "require 'set'")
 
     # Emit imports
     _emit_module_header(ctx, body)

@@ -84,7 +84,7 @@ def __pytra_bytearray(v = nil)
   out
 end
 
-def __pytra_bytes(v)
+def __pytra_bytes(v = nil)
   return [] if v.nil?
   return v.bytes if v.is_a?(String)
   src = __pytra_as_list(v)
@@ -123,12 +123,13 @@ def __pytra_list_comp_range(start_v, stop_v, step_v)
   out
 end
 
-def __pytra_enumerate(v)
+def __pytra_enumerate(v, start = 0)
   src = __pytra_as_list(v)
   out = []
   i = 0
+  base = __pytra_int(start)
   while i < src.length
-    out << [i, src[i]]
+    out << [base + i, src[i]]
     i += 1
   end
   out
@@ -257,10 +258,10 @@ class Hash
     self.key?(key) ? self[key] : default_val
   end
   def keys
-    super
+    self.map { |k, _| k }
   end
   def values
-    super
+    self.map { |_, v| v }
   end
   def pop(key, *default_val)
     if self.key?(key)
@@ -437,10 +438,6 @@ end
 def __pytra_makedirs(path, *args)
   require 'fileutils'
   FileUtils.mkdir_p(__pytra_str(path))
-end
-
-def __pytra_isinstance(obj, type_cls)
-  obj.is_a?(type_cls)
 end
 
 # sum built-in
