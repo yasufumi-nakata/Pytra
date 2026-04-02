@@ -222,6 +222,8 @@ def _transpile_in_memory(
             _copy_java_runtime(emit_dir)
         elif target == "scala":
             for m in link_result.linked_modules:
+                if m.module_kind == "runtime" and (m.module_id.startswith("pytra.built_in.") or m.module_id.startswith("pytra.core.")):
+                    continue
                 _inject_basic_module_id(
                     m.east_doc,
                     m.module_id,
@@ -236,6 +238,8 @@ def _transpile_in_memory(
             _copy_scala_runtime(emit_dir)
         elif target == "kotlin":
             for m in link_result.linked_modules:
+                if m.module_kind == "runtime" and (m.module_id.startswith("pytra.built_in.") or m.module_id.startswith("pytra.core.")):
+                    continue
                 _inject_basic_module_id(
                     m.east_doc,
                     m.module_id,

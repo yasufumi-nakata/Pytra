@@ -48,6 +48,21 @@ def _safe_scala_ident(name: str) -> str:
 
 
 def scala_type(resolved_type: str) -> str:
+    if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
+        prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
+        inner = resolved_type[prefix_len:-1]
+        parts = _split_generic_args(inner)
+        if len(parts) == 2:
+            arg_spec = parts[0].strip()
+            ret_spec = parts[1].strip()
+            arg_types: list[str] = []
+            if arg_spec.startswith("[") and arg_spec.endswith("]"):
+                for item in _split_generic_args(arg_spec[1:-1]):
+                    arg_types.append(scala_type(item))
+            if len(arg_types) == 0:
+                return "() => " + scala_type(ret_spec)
+            return "(" + ", ".join(arg_types) + ") => " + scala_type(ret_spec)
+        return "() => Any"
     if resolved_type in ("Callable", "callable"):
         return "() => Any"
     if resolved_type in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"):
@@ -76,9 +91,7 @@ def scala_type(resolved_type: str) -> str:
             return "scala.collection.mutable.LinkedHashMap[" + scala_type(parts[0]) + ", " + scala_type(parts[1]) + "]"
         return "scala.collection.mutable.LinkedHashMap[Any, Any]"
     if resolved_type.startswith("tuple["):
-        return "Product"
-    if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
-        return "() => Any"
+        return "scala.collection.mutable.ArrayBuffer[Any]"
     if "|" in resolved_type:
         return "Any"
     return _safe_scala_ident(resolved_type)

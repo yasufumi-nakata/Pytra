@@ -232,6 +232,7 @@ class KotlinRenderer(CommonRenderer):
         class_name = _safe_kotlin_ident(self._str(node, "name"))
         prev_class_name = self.current_class_name
         self.current_class_name = class_name
+        class_fields: list[tuple[str, str, str]] = []
         self._emit("class " + class_name + " {")
         self.state.indent_level += 1
         for stmt in self._list(node, "body"):
@@ -244,9 +245,27 @@ class KotlinRenderer(CommonRenderer):
                 decl_type = self._str(stmt, "decl_type")
                 value_node = stmt.get("value")
                 value = self._emit_expr(value_node) if isinstance(value_node, dict) else kotlin_zero_value(decl_type)
-                self._emit("var " + field_name + ": " + kotlin_type(decl_type) + " = " + value)
+                class_fields.append((field_name, decl_type, value))
                 continue
+            if kind == "Assign":
+                target = stmt.get("target")
+                if isinstance(target, dict) and self._str(target, "kind") == "Name":
+                    field_name = _safe_kotlin_ident(self._str(target, "id"))
+                    decl_type = self._str(stmt, "decl_type")
+                    if decl_type == "":
+                        decl_type = self._str(target, "resolved_type")
+                    value_node = stmt.get("value")
+                    value = self._emit_expr(value_node) if isinstance(value_node, dict) else kotlin_zero_value(decl_type)
+                    class_fields.append((field_name, decl_type, value))
+                    continue
             self._emit_stmt(stmt)
+        if len(class_fields) > 0:
+            self._emit("companion object {")
+            self.state.indent_level += 1
+            for field_name, decl_type, value in class_fields:
+                self._emit("var " + field_name + ": " + kotlin_type(decl_type) + " = " + value)
+            self.state.indent_level -= 1
+            self._emit("}")
         self.state.indent_level -= 1
         self._emit("}")
         self.current_class_name = prev_class_name
@@ -342,12 +361,31 @@ class KotlinRenderer(CommonRenderer):
         if kind == "Tuple":
             elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
             return "mutableListOf(" + ", ".join(elems) + ")"
+        if kind == "Lambda":
+            arg_order = self._list(node, "arg_order")
+            arg_types = node.get("arg_types")
+            arg_type_map = arg_types if isinstance(arg_types, dict) else {}
+            params: list[str] = []
+            for arg in arg_order:
+                if isinstance(arg, str):
+                    arg_type = arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"
+                    params.append(_safe_kotlin_ident(arg) + ": " + kotlin_type(arg_type))
+            return "{ " + ", ".join(params) + " -> " + self._emit_expr(node.get("body")) + " }"
         if kind == "Dict":
-            keys = self._list(node, "keys")
-            values = self._list(node, "values")
             pairs: list[str] = []
-            for key_node, value_node in zip(keys, values):
-                pairs.append(self._emit_expr(key_node) + " to " + self._emit_expr(value_node))
+            entries = node.get("entries")
+            if isinstance(entries, list) and len(entries) > 0:
+                for entry in entries:
+                    if isinstance(entry, dict):
+                        key_node = entry.get("key")
+                        value_node = entry.get("value")
+                        if isinstance(key_node, dict) and isinstance(value_node, dict):
+                            pairs.append(self._emit_expr(key_node) + " to " + self._emit_expr(value_node))
+            else:
+                keys = self._list(node, "keys")
+                values = self._list(node, "values")
+                for key_node, value_node in zip(keys, values):
+                    pairs.append(self._emit_expr(key_node) + " to " + self._emit_expr(value_node))
             return "linkedMapOf(" + ", ".join(pairs) + ")"
         if kind == "Unbox" or kind == "Box":
             return self._emit_expr(node.get("value"))
@@ -374,6 +412,14 @@ class KotlinRenderer(CommonRenderer):
         if kind == "Call":
             func = node.get("func")
             func_name = self._emit_expr(func)
+            if isinstance(func, dict) and self._str(func, "kind") == "Attribute":
+                owner_node = func.get("value")
+                attr = self._str(func, "attr")
+                owner_expr = self._emit_expr(owner_node)
+                owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+                arg_nodes = self._list(node, "args")
+                if owner_type.startswith("dict[") and attr == "get" and len(arg_nodes) == 2:
+                    return owner_expr + ".getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
                 mapped = self.mapping.calls.get(func_id)

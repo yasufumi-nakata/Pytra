@@ -46,6 +46,21 @@ def _safe_kotlin_ident(name: str) -> str:
 
 
 def kotlin_type(resolved_type: str) -> str:
+    if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
+        prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
+        inner = resolved_type[prefix_len:-1]
+        parts = _split_generic_args(inner)
+        if len(parts) == 2:
+            arg_spec = parts[0].strip()
+            ret_spec = parts[1].strip()
+            arg_types: list[str] = []
+            if arg_spec.startswith("[") and arg_spec.endswith("]"):
+                for item in _split_generic_args(arg_spec[1:-1]):
+                    arg_types.append(kotlin_type(item))
+            if len(arg_types) == 0:
+                return "() -> " + kotlin_type(ret_spec)
+            return "(" + ", ".join(arg_types) + ") -> " + kotlin_type(ret_spec)
+        return "() -> Any?"
     if resolved_type in ("Callable", "callable"):
         return "() -> Any?"
     if resolved_type in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"):
@@ -73,8 +88,6 @@ def kotlin_type(resolved_type: str) -> str:
         return "MutableMap<Any?, Any?>"
     if resolved_type.startswith("tuple["):
         return "List<Any?>"
-    if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
-        return "() -> Any?"
     if "|" in resolved_type:
         return "Any?"
     return _safe_kotlin_ident(resolved_type)
