@@ -70,6 +70,8 @@
    - 2026-04-04: subset native renderer が object parameter field update (`x.v += ...`) も扱えるようになり、`alias_arg` を native path へ乗せた
    - 2026-04-04: subset native renderer に `IsInstance` の Julia type mapping (`PYTRA_TID_*`, `dict/list/tuple/set/str/int/float/bool`) を追加し、`union_basic`, `union_dict_items`, `isinstance_pod_exact`, `isinstance_tuple_check` を native path へ乗せた
    - 2026-04-04: subset native renderer に type-only `ImportFrom(pytra.std.json)`、`str.isdigit()`、`Expr(Name("continue"|"break"))` の吸収を追加し、`union_return_errorcheck` と `isinstance_narrowing` も native path / parity PASS に寄せた
+   - 2026-04-04: subset native renderer に `TypeAlias` no-op と `str.upper()` を追加し、`type_alias_pep695` と `callable_higher_order` を native path / parity PASS に寄せた
+   - 2026-04-04: subset native renderer の `str(...)` / `bool(...)` / `str.isdigit()` を Julia runtime helper (`__pytra_str`, `__pytra_truthy`, `__pytra_str_isdigit`) に揃え、`union_list_mixed` を native path / parity PASS に寄せた
 2. [x] [ID: P1-JULIA-EMITTER-S2] `src/runtime/julia/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
    - 2026-04-02: `src/runtime/julia/mapping.json` を追加し、toolchain2 Julia emitter bootstrap が参照する runtime call/type mapping を整備
 3. [x] [ID: P1-JULIA-EMITTER-S3] fixture 全件の Julia emit 成功を確認する

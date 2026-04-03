@@ -389,6 +389,7 @@ def _expr_supported(node: JsonVal) -> bool:
                 "write_rgb_png",
                 "startswith",
                 "strip",
+                "upper",
             }:
                 return True
             if owner_type not in {"", "str", "bytearray"} and not owner_type.startswith(("list[", "dict[", "set[")):
@@ -511,6 +512,8 @@ def _stmt_supported(node: JsonVal) -> bool:
         return False
     if kind == "FunctionDef":
         return all(_stmt_supported(stmt) for stmt in _list(node, "body"))
+    if kind == "TypeAlias":
+        return True
     if kind == "ClassDef":
         return _simple_class_supported(node) or _exception_class_supported(node)
     return False
@@ -716,7 +719,7 @@ class JuliaSubsetRenderer:
                 if attr == "find" and len(args) == 1:
                     return "__pytra_str_find(" + owner + ", " + args[0] + ")"
                 if attr == "isdigit" and len(args) == 0:
-                    return "(!isempty(" + owner + ") && all(isdigit, collect(" + owner + ")))"
+                    return "__pytra_str_isdigit(" + owner + ")"
                 if attr == "index" and len(args) == 1:
                     return "__pytra_str_find(" + owner + ", " + args[0] + ")"
                 if attr == "isalnum" and len(args) == 0:
@@ -753,6 +756,8 @@ class JuliaSubsetRenderer:
                     return "strip(" + owner + ")"
                 if attr == "rstrip" and len(args) == 0:
                     return "rstrip(" + owner + ")"
+                if attr == "upper" and len(args) == 0:
+                    return "uppercase(" + owner + ")"
                 if attr == "startswith" and len(args) == 1:
                     return "startswith(" + owner + ", " + args[0] + ")"
                 if attr == "endswith" and len(args) == 1:
@@ -803,7 +808,9 @@ class JuliaSubsetRenderer:
                         + " + 1))"
                     )
             if func == "str" and len(args) == 1:
-                return "string(" + args[0] + ")"
+                return "__pytra_str(" + args[0] + ")"
+            if func == "bool" and len(args) == 1:
+                return "__pytra_truthy(" + args[0] + ")"
             if func == "set" and len(args) == 0:
                 return "Set()"
             if func == "bytearray" and len(args) == 1:
@@ -1101,6 +1108,8 @@ class JuliaSubsetRenderer:
                 self._emit_stmt(stmt)
             self.indent_level -= 1
             self._emit("end")
+            return
+        if kind == "TypeAlias":
             return
         if kind == "ClassDef":
             if _exception_class_supported(node):

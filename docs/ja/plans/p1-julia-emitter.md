@@ -70,3 +70,5 @@
 - 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer が object parameter field update (`x.v += ...`) も扱えるようになり、`alias_arg` も native path に寄せた。
 - 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `IsInstance` の Julia type mapping を追加し、`union_basic`, `union_dict_items`, `isinstance_pod_exact`, `isinstance_tuple_check` を native path に寄せた。
 - 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer に type-only `ImportFrom(pytra.std.json)`、`str.isdigit()`、`Expr(Name("continue"|"break"))` の吸収を追加し、`union_return_errorcheck` と `isinstance_narrowing` も native path / parity PASS に寄せた。
+- 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `TypeAlias` no-op と `str.upper()` を追加し、`type_alias_pep695` と `callable_higher_order` を native path / parity PASS に寄せた。
+- 2026-04-04: [ID: P1-JULIA-EMITTER-S1] subset native renderer の `str(...)` / `bool(...)` / `str.isdigit()` を Julia runtime helper に揃え、`union_list_mixed` も native path / parity PASS に寄せた。
