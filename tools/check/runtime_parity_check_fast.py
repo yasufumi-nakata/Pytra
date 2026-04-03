@@ -1065,15 +1065,9 @@ def _maybe_run_emitter_lint() -> None:
     lint_script = ROOT / "tools" / "check" / "check_emitter_hardcode_lint.py"
     if not lint_script.exists():
         return
-    try:
-        subprocess.run(
-            ["python3", str(lint_script), "--include-runtime"],
-            cwd=str(ROOT),
-            timeout=120,
-            capture_output=True,
-        )
-    except Exception:
-        pass
+    # Lint is run manually or via run_local_ci.py, not during parity check.
+    # Removed auto-run to avoid adding 1-2 minutes to every parity check.
+    pass
 
 
 # ---------------------------------------------------------------------------
