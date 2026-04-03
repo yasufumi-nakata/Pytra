@@ -349,12 +349,24 @@ pub fn str_strip(s: []const u8) []const u8 {
     return std.mem.trim(u8, s, " \t\r\n");
 }
 
+pub fn str_strip_chars(s: []const u8, chars: []const u8) []const u8 {
+    return std.mem.trim(u8, s, chars);
+}
+
 pub fn str_lstrip(s: []const u8) []const u8 {
     return std.mem.trimLeft(u8, s, " \t\r\n");
 }
 
+pub fn str_lstrip_chars(s: []const u8, chars: []const u8) []const u8 {
+    return std.mem.trimLeft(u8, s, chars);
+}
+
 pub fn str_rstrip(s: []const u8) []const u8 {
     return std.mem.trimRight(u8, s, " \t\r\n");
+}
+
+pub fn str_rstrip_chars(s: []const u8, chars: []const u8) []const u8 {
+    return std.mem.trimRight(u8, s, chars);
 }
 
 pub fn str_startswith(s: []const u8, prefix: []const u8) bool {
@@ -799,6 +811,10 @@ pub fn union_wrap(value: anytype) *UnionVal {
 
 pub fn union_is_dict(value: *UnionVal) bool {
     return value.* == .dict_;
+}
+
+pub fn union_is_none(value: *UnionVal) bool {
+    return value.* == .none;
 }
 
 pub fn union_is_list(value: *UnionVal) bool {
