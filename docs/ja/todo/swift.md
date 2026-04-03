@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-02
+最終更新: 2026-04-03
 
 ## 運用ルール
 
@@ -35,11 +35,16 @@
    完了メモ: `src/toolchain2/emit/swift/` を追加し、`emit_swift_module()` と Swift parity harness の入口を接続。代表 fixture (`add`, `assign`, `alias_arg`, `class`, `class_instance`) で emit + compile + run を確認。文脈: `docs/ja/plans/p1-swift-toolchain2-bootstrap.md`
 2. [x] [ID: P1-SWIFT-EMITTER-S2] `src/runtime/swift/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
    完了メモ: `src/runtime/swift/mapping.json` を追加し、`runtime_parity_check_fast.py` の Swift 導線と併せて toolchain2 から Swift target を起動可能にした。文脈: `docs/ja/plans/p1-swift-toolchain2-bootstrap.md`
-3. [ ] [ID: P1-SWIFT-EMITTER-S3] fixture 全件の Swift emit 成功を確認する
-4. [ ] [ID: P1-SWIFT-EMITTER-S4] Swift runtime を toolchain2 の emit 出力と整合させる
-5. [ ] [ID: P1-SWIFT-EMITTER-S5] fixture の Swift run parity を通す（`swiftc` でビルド後実行）
-6. [ ] [ID: P1-SWIFT-EMITTER-S6] stdlib の Swift parity を通す（`--case-root stdlib`）
-7. [ ] [ID: P1-SWIFT-EMITTER-S7] sample の Swift parity を通す（`--case-root sample`）
+3. [x] [ID: P1-SWIFT-EMITTER-S3] fixture 全件の Swift emit 成功を確認する
+   完了メモ: Swift emitter の expression / statement / class / exception / collection / lambda / enum / bytes 系サポートを広げ、fixture の全 emit 成功を確認。文脈: `docs/ja/plans/p1-swift-toolchain2-bootstrap.md`
+4. [x] [ID: P1-SWIFT-EMITTER-S4] Swift runtime を toolchain2 の emit 出力と整合させる
+   完了メモ: `src/runtime/swift/built_in/py_runtime.swift` と handwritten stdlib shim を拡張し、`gif/png/json/pathlib/sys/re`、container mutation、`min/max`、bytes/bytearray、Python 互換 repr など emitter 出力が要求する helper を整備。文脈: `docs/ja/plans/p1-swift-toolchain2-bootstrap.md`
+5. [x] [ID: P1-SWIFT-EMITTER-S5] fixture の Swift run parity を通す（`swiftc` でビルド後実行）
+   完了メモ: `python3 tools/check/runtime_parity_check_fast.py --targets swift --case-root fixture` で Swift fixture parity を完了。文脈: `docs/ja/plans/p1-swift-toolchain2-bootstrap.md`
+6. [x] [ID: P1-SWIFT-EMITTER-S6] stdlib の Swift parity を通す（`--case-root stdlib`）
+   完了メモ: `python3 tools/check/runtime_parity_check_fast.py --targets swift --case-root stdlib` で `16/16 PASS` を確認。文脈: `docs/ja/plans/p1-swift-toolchain2-bootstrap.md`
+7. [x] [ID: P1-SWIFT-EMITTER-S7] sample の Swift parity を通す（`--case-root sample`）
+   完了メモ: `python3 tools/check/runtime_parity_check_fast.py --targets swift --case-root sample` で `18/18 PASS` を確認し、sample golden も現行 Python baseline に同期。文脈: `docs/ja/plans/p1-swift-toolchain2-bootstrap.md`
 
 ### P2-SWIFT-LINT: emitter hardcode lint の Swift 違反を解消する
 
