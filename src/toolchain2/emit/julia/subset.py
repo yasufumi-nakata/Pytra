@@ -283,14 +283,20 @@ def _expr_supported(node: JsonVal) -> bool:
                 "appendleft",
                 "clear",
                 "endswith",
+                "find",
                 "get",
+                "index",
+                "isalnum",
                 "join",
+                "lower",
+                "lstrip",
                 "popleft",
                 "pop",
                 "replace",
                 "reverse",
                 "rstrip",
                 "setdefault",
+                "split",
                 "sort",
                 "startswith",
                 "strip",
@@ -548,6 +554,16 @@ class JuliaSubsetRenderer:
                     return "pushfirst!(" + owner + ", " + args[0] + ")"
                 if attr == "clear" and len(args) == 0:
                     return "empty!(" + owner + ")"
+                if attr == "find" and len(args) == 1:
+                    return "__pytra_str_find(" + owner + ", " + args[0] + ")"
+                if attr == "index" and len(args) == 1:
+                    return "__pytra_str_find(" + owner + ", " + args[0] + ")"
+                if attr == "isalnum" and len(args) == 0:
+                    return "__pytra_str_isalnum(" + owner + ")"
+                if attr == "lower" and len(args) == 0:
+                    return "lowercase(" + owner + ")"
+                if attr == "lstrip" and len(args) == 0:
+                    return "lstrip(" + owner + ")"
                 if attr == "sort" and len(args) == 0:
                     return "sort!(" + owner + ")"
                 if attr == "reverse" and len(args) == 0:
@@ -562,6 +578,8 @@ class JuliaSubsetRenderer:
                     return "pop!(" + owner + ")"
                 if attr == "setdefault" and len(args) == 2:
                     return "get!(" + owner + ", " + args[0] + ", " + args[1] + ")"
+                if attr == "split" and len(args) == 1:
+                    return "split(" + owner + ", " + args[0] + ")"
                 if attr == "join" and len(args) == 1:
                     return "join(" + args[0] + ", " + owner + ")"
                 if attr == "strip" and len(args) == 0:
