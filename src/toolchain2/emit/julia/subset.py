@@ -257,6 +257,8 @@ def _expr_supported(node: JsonVal) -> bool:
             and _expr_supported(item.get("value"))
             for item in _list(node, "entries")
         )
+    if kind == "Set":
+        return all(_expr_supported(item) for item in _list(node, "elements"))
     if kind == "BinOp":
         return _str(node, "op") in _BINOP_TEXT and _expr_supported(node.get("left")) and _expr_supported(node.get("right"))
     if kind == "BoolOp":
@@ -359,6 +361,8 @@ def _stmt_supported(node: JsonVal) -> bool:
         return value is None or _expr_supported(value)
     if kind == "Pass":
         return True
+    if kind == "VarDecl":
+        return isinstance(node.get("name"), str) and node.get("name") != ""
     if kind == "Raise":
         exc = node.get("exc")
         cause = node.get("cause")
@@ -506,6 +510,9 @@ class JuliaSubsetRenderer:
                 if isinstance(item, dict):
                     parts.append(self._render_expr(item.get("key")) + " => " + self._render_expr(item.get("value")))
             return "Dict(" + ", ".join(parts) + ")"
+        if kind == "Set":
+            elems = [self._render_expr(item) for item in _list(node, "elements")]
+            return "Set([" + ", ".join(elems) + "])"
         if kind == "BinOp":
             op = _str(node, "op")
             left = self._render_expr(node.get("left"))
@@ -552,12 +559,12 @@ class JuliaSubsetRenderer:
                 comparator_type = _str(comparators[0], "resolved_type")
                 if comparator_type.startswith("dict["):
                     return "haskey(" + right + ", " + left + ")"
-                return "in(" + left + ", " + right + ")"
+                return "__pytra_contains(" + right + ", " + left + ")"
             if op == "NotIn":
                 comparator_type = _str(comparators[0], "resolved_type")
                 if comparator_type.startswith("dict["):
                     return "(!haskey(" + right + ", " + left + "))"
-                return "(!in(" + left + ", " + right + "))"
+                return "(!__pytra_contains(" + right + ", " + left + "))"
             return "(" + left + " " + _CMP_TEXT[op] + " " + right + ")"
         if kind == "UnaryOp":
             op = _str(node, "op")
@@ -642,10 +649,35 @@ class JuliaSubsetRenderer:
                 return "__pytra_int(" + args[0] + ")"
             if func == "len" and len(args) == 1:
                 return "length(" + args[0] + ")"
+            if func == "range":
+                if len(args) == 1:
+                    return "0:(" + args[0] + " - 1)"
+                if len(args) == 2:
+                    return args[0] + ":(" + args[1] + " - 1)"
+                if len(args) == 3:
+                    step = args[2]
+                    if step == "1":
+                        return args[0] + ":(" + args[1] + " - 1)"
+                    if step.startswith("-"):
+                        return args[0] + ":" + step + ":(" + args[1] + " + 1)"
+                    return (
+                        args[0]
+                        + ":"
+                        + step
+                        + ":(("
+                        + step
+                        + ") > 0 ? ("
+                        + args[1]
+                        + " - 1) : ("
+                        + args[1]
+                        + " + 1))"
+                    )
             if func == "str" and len(args) == 1:
                 return "string(" + args[0] + ")"
             if func == "bytearray" and len(args) == 1:
                 return "__pytra_bytearray(" + args[0] + ")"
+            if func == "reversed" and len(args) == 1:
+                return "reverse(" + args[0] + ")"
             if func in _EXCEPTION_CTOR_TEXT:
                 if len(args) == 0:
                     return _EXCEPTION_CTOR_TEXT[func] + "()"
@@ -823,6 +855,9 @@ class JuliaSubsetRenderer:
             return
         if kind == "Pass":
             self._emit("nothing")
+            return
+        if kind == "VarDecl":
+            self._emit(_ident(_str(node, "name")) + " = nothing")
             return
         if kind == "Raise":
             exc = node.get("exc")

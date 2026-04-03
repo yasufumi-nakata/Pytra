@@ -57,3 +57,4 @@
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `str` extended method 群（`lower/find/index/isalnum/lstrip/split`）を追加し、追加の string fixture も native path へ寄せた。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `Import(math)` と `ImportFrom(pytra.std.math)` を追加し、math module / symbol import fixture も native path に寄せた。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `Import(pytra.std.env/os, pytra.utils.png)` と keyword `os.makedirs(..., exist_ok=...)`、文字列連結の Julia 化を追加し、PNG import fixture も native path に寄せた。
+- 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `VarDecl` / `Set` / expression `range(...)` / `reversed(...)` と membership の `__pytra_contains` lowering を追加し、`enumerate_basic`, `reversed_enumerate`, `in_membership_iterable` も native path に寄せた。
