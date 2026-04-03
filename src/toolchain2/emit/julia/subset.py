@@ -275,6 +275,20 @@ def _importfrom_supported(module_name: str, names: list[JsonVal]) -> bool:
     return all(isinstance(item, dict) and _str(item, "name") in allowed for item in names)
 
 
+def _assign_target_supported(node: JsonVal) -> bool:
+    if not isinstance(node, dict):
+        return False
+    kind = _str(node, "kind")
+    if kind == "Name":
+        return True
+    if kind == "Subscript":
+        return _expr_supported(node.get("value")) and _expr_supported(node.get("slice"))
+    if kind in {"Tuple", "List"}:
+        elements = _list(node, "elements")
+        return len(elements) > 0 and all(_assign_target_supported(item) for item in elements)
+    return False
+
+
 def _ident(name: str) -> str:
     if name in _JULIA_RESERVED_NAMES:
         return name + "_py"
@@ -461,6 +475,8 @@ def _stmt_supported(node: JsonVal) -> bool:
             return _expr_supported(node.get("value"))
         if target_kind == "Subscript":
             return _expr_supported(target.get("value")) and _expr_supported(target.get("slice")) and _expr_supported(node.get("value"))
+        if target_kind in {"Tuple", "List"}:
+            return _assign_target_supported(target) and _expr_supported(node.get("value"))
         return False
     if kind == "Swap":
         left = node.get("left")
@@ -894,6 +910,32 @@ class JuliaSubsetRenderer:
             return "for " + target_name + " in " + self._render_expr(iter_plan.get("iter_expr"))
         raise RuntimeError("julia subset: unsupported ForCore plan: " + iter_kind)
 
+    def _emit_assign_target(self, target: dict[str, JsonVal], value_expr: str) -> None:
+        kind = _str(target, "kind")
+        if kind == "Name":
+            self._emit(_ident(_str(target, "id")) + " = " + value_expr)
+            return
+        if kind == "Subscript":
+            owner_node = target.get("value")
+            owner = self._render_expr(owner_node)
+            owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+            index = self._render_expr(target.get("slice"))
+            if owner_type == "bytearray":
+                self._emit(owner + "[__pytra_idx(" + index + ", length(" + owner + "))] = " + value_expr)
+                return
+            self._emit(owner + "[" + index + "] = " + value_expr)
+            return
+        if kind in {"Tuple", "List"}:
+            seq_tmp = self._next_tmp("__pytra_unpack_")
+            self._emit(seq_tmp + " = " + value_expr)
+            for index, item in enumerate(_list(target, "elements")):
+                if not isinstance(item, dict):
+                    raise RuntimeError("julia subset: unpack target must be dict")
+                item_expr = seq_tmp + "[__pytra_idx(" + str(index) + ", length(" + seq_tmp + "))]"
+                self._emit_assign_target(item, item_expr)
+            return
+        raise RuntimeError("julia subset: unsupported assign target kind: " + kind)
+
     def _emit_stmt(self, node: JsonVal) -> None:
         if not isinstance(node, dict):
             raise RuntimeError("julia subset: stmt must be dict")
@@ -1055,6 +1097,9 @@ class JuliaSubsetRenderer:
                     self._emit(owner + "[__pytra_idx(" + index + ", length(" + owner + "))] = " + value)
                     return
                 self._emit(owner + "[" + index + "] = " + value)
+                return
+            if isinstance(target, dict) and _str(target, "kind") in {"Tuple", "List"}:
+                self._emit_assign_target(target, self._render_expr(node.get("value")))
                 return
             self._emit(_ident(_str(target, "id")) + " = " + self._render_expr(node.get("value")))
             return
