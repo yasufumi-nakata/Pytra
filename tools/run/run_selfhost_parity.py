@@ -72,6 +72,11 @@ def _now() -> str:
 # Python selfhost: aggregate from existing parity results
 # ---------------------------------------------------------------------------
 
+_LANG_SHORT: dict[str, str] = {
+    "powershell": "ps1",
+}
+
+
 def _load_parity_counts(lang: str, case_root: str) -> tuple[int, int]:
     """Return (pass_count, fail_count) from .parity-results/{lang}_{case_root}.json.
 
@@ -79,6 +84,11 @@ def _load_parity_counts(lang: str, case_root: str) -> tuple[int, int]:
     Returns (-1, -1) if file not found (untested).
     """
     path = PARITY_DIR / f"{lang}_{case_root}.json"
+    if not path.exists():
+        # Try short name (e.g. powershell → ps1_fixture.json)
+        short = _LANG_SHORT.get(lang, lang)
+        if short != lang:
+            path = PARITY_DIR / f"{short}_{case_root}.json"
     if not path.exists():
         return -1, -1
     try:
