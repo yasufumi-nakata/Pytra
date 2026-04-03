@@ -268,8 +268,8 @@ def _collect_build_sources(inputs: list[str]) -> list[tuple[str, dict[str, JsonV
 # ---------------------------------------------------------------------------
 
 def _default_east1_output_path(input_path: Path) -> Path:
-    """a.py → a.py.east1 (同一ディレクトリ)"""
-    return input_path.parent.joinpath(input_path.name + ".east1")
+    """a.py → work/tmp/east1/a.py.east1"""
+    return Path("work").joinpath("tmp").joinpath("east1").joinpath(input_path.name + ".east1")
 
 
 def _parse_one(input_path: Path, output_text: str, pretty: bool) -> int:
@@ -351,7 +351,17 @@ def _resolve_one(input_path: Path, output_text: str, pretty: bool) -> int:
     registry = load_builtin_registry(builtins_path, containers_path, stdlib_dir)
 
     result = resolve_file(input_path, registry=registry)
-    out_path = Path(output_text) if output_text != "" else east2_output_path_from_east1(input_path)
+    if output_text != "":
+        out_path = Path(output_text)
+    else:
+        name = input_path.name
+        if name.endswith(".py.east1"):
+            base = name[:len(name) - len(".py.east1")]
+        elif name.endswith(".east1"):
+            base = name[:len(name) - len(".east1")]
+        else:
+            base = name
+        out_path = Path("work").joinpath("tmp").joinpath("east2").joinpath(base + ".east2")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     indent = 2 if pretty else None
@@ -419,13 +429,13 @@ def cmd_resolve(args: list[str]) -> int:
 # ---------------------------------------------------------------------------
 
 def _default_east3_output_path(input_path: Path) -> Path:
-    """a.east2 → a.east3 (同一ディレクトリ)"""
+    """a.east2 → work/tmp/east3/a.east3"""
     name = input_path.name
     if name.endswith(".east2"):
         name = name[:-6] + ".east3"
     else:
         name = name + ".east3"
-    return input_path.parent.joinpath(name)
+    return Path("work").joinpath("tmp").joinpath("east3").joinpath(name)
 
 
 def _compile_one(input_path: Path, output_text: str, pretty: bool) -> int:
@@ -528,7 +538,10 @@ def _optimize_one(
         opt_level=opt_level,
         debug_flags=_optimizer_debug_flags(opt_level, negative_index_mode, bounds_check_mode),
     )
-    out_path = Path(output_text) if output_text != "" else input_path
+    if output_text != "":
+        out_path = Path(output_text)
+    else:
+        out_path = Path("work").joinpath("tmp").joinpath("east3-opt").joinpath(input_path.name)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     indent = 2 if pretty else None
