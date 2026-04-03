@@ -872,6 +872,13 @@ class JuliaSubsetRenderer:
             return use_mapped_runtime + "(" + ", ".join(args) + ")"
         return ""
 
+    def _render_constructor_call(self, func: str, args: list[str]) -> str:
+        if func in self.exception_class_names:
+            return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
+        if func in self.class_names:
+            return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
+        return ""
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -1091,10 +1098,9 @@ class JuliaSubsetRenderer:
             name_call = self._render_name_call(func, args, runtime_call, builtin_name, result_type, use_mapped_runtime)
             if name_call != "":
                 return name_call
-            if func in self.exception_class_names:
-                return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
-            if func in self.class_names:
-                return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
+            constructor_call = self._render_constructor_call(func, args)
+            if constructor_call != "":
+                return constructor_call
             return func + "(" + ", ".join(args) + ")"
         if kind in {"Box", "Unbox"}:
             return self._render_expr(node.get("value"))
