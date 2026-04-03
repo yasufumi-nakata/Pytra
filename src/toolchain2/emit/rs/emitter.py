@@ -181,10 +181,15 @@ def _iter_import_runtime_ids(meta: dict[str, JsonVal]) -> list[tuple[str, str]]:
         mod_id = runtime_module_id if isinstance(runtime_module_id, str) and runtime_module_id != "" else module_id
         local_name = binding.get("local_name")
         imported_name = binding.get("imported_name")
+        runtime_symbol = binding.get("runtime_symbol")
+        runtime_symbol_kind = binding.get("runtime_symbol_kind")
         if (
             isinstance(mod_id, str)
-            and mod_id in ("json", "pytra.std.json")
             and resolved_kind == "symbol"
+            and isinstance(runtime_symbol, str)
+            and runtime_symbol == "JsonVal"
+            and isinstance(runtime_symbol_kind, str)
+            and runtime_symbol_kind == "type"
             and (
                 local_name == "JsonVal"
                 or imported_name == "JsonVal"
@@ -546,6 +551,12 @@ def _is_path_type_name(ctx: RsEmitContext, type_name: str) -> bool:
         return True
     mapped_path = ctx.mapping.types.get("Path", "")
     return mapped_path != "" and type_name == mapped_path
+
+
+def _resolve_import_module_ctor(ctx: RsEmitContext, module_name: str) -> str:
+    if module_name == "":
+        return ""
+    return ctx.mapping.calls.get("__import__." + module_name, "")
 
 
 def _collect_signature_type_params(
@@ -1611,8 +1622,9 @@ def _emit_attribute(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         qualified = obj_id + "." + attr if obj_id != "" else ""
         if qualified in ctx.mapping.calls:
             return ctx.mapping.calls[qualified]
-        if module_id == "os" and attr == "environ":
-            return "py_import_os().environ()"
+        module_qualified = module_id + "." + attr if module_id != "" else ""
+        if module_qualified in ctx.mapping.calls:
+            return ctx.mapping.calls[module_qualified]
         is_emitted_pytra_module = (
             module_id.startswith("pytra.")
             and not should_skip_module(module_id, ctx.mapping)
@@ -2235,10 +2247,10 @@ def _emit_call(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 
     if func_name == "__import__" and len(args) >= 1 and isinstance(args[0], dict) and _str(args[0], "kind") == "Constant":
         mod_name = args[0].get("value")
-        if mod_name == "os":
-            return "py_import_os()"
-        if mod_name == "subprocess":
-            return "py_import_subprocess()"
+        if isinstance(mod_name, str):
+            resolved_ctor = _resolve_import_module_ctor(ctx, mod_name)
+            if resolved_ctor != "":
+                return resolved_ctor + "()"
 
     if func_name == "dict" and len(args) == 1:
         arg_expr = _emit_call_arg(ctx, args[0])
@@ -3149,8 +3161,6 @@ def _emit_method_call(
 
     path_like_types = {obj_type, obj_actual_type, _resolved_type_in_context(ctx, obj)}
     if any(_is_path_type_name(ctx, t) for t in path_like_types if t != ""):
-        if method == "glob" and len(rendered_args) == 1:
-            return obj_str + ".glob(" + rendered_args[0] + ")"
         if method == "read_text":
             return obj_str + ".read_text()"
         if method == "write_text" and len(rendered_args) >= 1:
@@ -4400,7 +4410,7 @@ def _emit_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 call_args = _list(value, "args")
                 if func_name == "__import__" and len(call_args) >= 1 and isinstance(call_args[0], dict) and _str(call_args[0], "kind") == "Constant":
                     mod_name = call_args[0].get("value")
-                    if mod_name in ("os", "subprocess"):
+                    if isinstance(mod_name, str) and _resolve_import_module_ctor(ctx, mod_name) != "":
                         ctx.var_types[target_name] = "py_imported_module"
                 elif func_name == "dict" and len(call_args) == 1 and isinstance(call_args[0], dict):
                     arg_type = _actual_type_in_context(ctx, call_args[0])
