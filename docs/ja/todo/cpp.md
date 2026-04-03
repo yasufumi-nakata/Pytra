@@ -21,6 +21,20 @@
 
 ## 未完了タスク
 
+### P0-OBJECT-ZERO: resolved_type:"object" 残存ノードをゼロにする
+
+`resolved_type: "object"` を EAST3 validator で全面禁止するための前提。現在 3 fixture に 6 ノード残存:
+
+- `trait_basic` / `trait_with_inheritance`: trait デコレータの `__call__` が `cls: object` を返す → `@template` の型パラメータ `T` にすべき（EAST compile/resolve の変更）
+- `typed_container_access`: `dict.get()` の結果が `object` に退化 → EAST3 の型推論バグ（compile/resolve の変更）
+
+trait の `cls` を型パラメータにするのと `dict.get` の型推論修正は EAST compile/resolve の変更。修正後に S11（validator で全面禁止）に着手。
+
+1. [ ] [ID: P0-OBJ-ZERO-S1] trait デコレータの `cls` を `@template` 型パラメータ `T` に変更する（EAST compile/resolve）
+2. [ ] [ID: P0-OBJ-ZERO-S2] `typed_container_access` の `dict.get()` が value 型を返すように型推論を修正する（EAST compile/resolve）
+3. [ ] [ID: P0-OBJ-ZERO-S3] 影響する fixture の EAST3 golden を再生成し、`resolved_type: "object"` がゼロであることを確認する（対象 fixture のみ再生成）
+4. [ ] [ID: P0-OBJ-ZERO-S4] P0-CPP-VARIANT-S11 を実行する（EAST3 validator に「`resolved_type: "object"` ならエラー」を追加）
+
 ### P0-CPP-VARIANT: C++ を std::variant ベースに移行し object/box/unbox を廃止する
 
 文脈: [docs/ja/plans/plan-cpp-variant-migration.md](../plans/plan-cpp-variant-migration.md)
