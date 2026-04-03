@@ -28,6 +28,7 @@ class ScalaRenderer(CommonRenderer):
         self.module_function_names: set[str] = set()
         self.local_function_aliases: dict[str, str] = {}
         self.module_class_names: set[str] = set()
+        self.class_method_names: dict[str, set[str]] = {}
         self.current_class_base: str | None = None
         self.class_has_init: dict[str, bool] = {}
         self.local_decl_stack: list[set[str]] = []
@@ -199,6 +200,7 @@ class ScalaRenderer(CommonRenderer):
             if isinstance(stmt, dict) and self._str(stmt, "kind") == "ClassDef"
         }
         self.class_has_init = {}
+        self.class_method_names = {}
         for stmt in self._list(east3_doc, "body"):
             if not isinstance(stmt, dict) or self._str(stmt, "kind") != "ClassDef":
                 continue
@@ -209,6 +211,11 @@ class ScalaRenderer(CommonRenderer):
                 and self._str(item, "name") == "__init__"
                 for item in self._list(stmt, "body")
             )
+            self.class_method_names[class_name] = {
+                self._str(item, "name")
+                for item in self._list(stmt, "body")
+                if isinstance(item, dict) and self._str(item, "kind") in ("FunctionDef", "ClosureDef")
+            }
         self.local_function_aliases = {}
         self._tmp_counter = 0
         for emitted_name in self.module_function_names:
@@ -438,7 +445,8 @@ class ScalaRenderer(CommonRenderer):
             params.append(_safe_scala_ident(arg) + ": " + scala_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
         return_type = scala_type(self._str(node, "return_type"))
         method_prefix = ""
-        if is_method and name != "__init__" and self.current_class_base not in (None, "", "None", "object", "Obj"):
+        base_methods = self.class_method_names.get(self.current_class_base or "", set())
+        if is_method and self.current_class_base not in (None, "", "None", "object", "Obj") and name in base_methods:
             method_prefix = "override "
         self._emit(method_prefix + "def " + name + "(" + ", ".join(params) + "): " + return_type + " = {")
         self.state.indent_level += 1
@@ -469,7 +477,31 @@ class ScalaRenderer(CommonRenderer):
         self.current_class_base = base_name
         instance_fields = self._collect_class_fields(node)
         static_fields: list[tuple[str, str, str]] = []
+        static_methods: list[dict[str, JsonVal]] = []
+        dataclass_fields: list[tuple[str, str, str | None]] = []
+        is_dataclass = any(isinstance(dec, str) and dec == "dataclass" for dec in self._list(node, "decorators"))
+        if is_dataclass:
+            for stmt in self._list(node, "body"):
+                if not isinstance(stmt, dict) or self._str(stmt, "kind") != "AnnAssign":
+                    continue
+                target = stmt.get("target")
+                if not isinstance(target, dict) or self._str(target, "kind") != "Name":
+                    continue
+                field_name = _safe_scala_ident(self._str(target, "id"))
+                decl_type = self._str(stmt, "decl_type") or self._str(stmt, "resolved_type") or self._str(target, "resolved_type") or "Any"
+                value_node = stmt.get("value")
+                default_value = self._emit_expr(value_node) if isinstance(value_node, dict) else None
+                dataclass_fields.append((field_name, decl_type, default_value))
+        dataclass_field_names = {field_name for field_name, _, _ in dataclass_fields}
         class_head = "class " + class_name
+        if len(dataclass_fields) > 0:
+            ctor_parts: list[str] = []
+            for field_name, decl_type, default_value in dataclass_fields:
+                part = "var " + field_name + ": " + scala_type(decl_type)
+                if default_value is not None:
+                    part += " = " + default_value
+                ctor_parts.append(part)
+            class_head += "(" + ", ".join(ctor_parts) + ")"
         if base_name not in ("", "None", "object", "Obj", "Enum", "IntEnum", "IntFlag"):
             class_head += " extends " + _safe_scala_ident(base_name)
         self._emit(class_head + " {")
@@ -477,6 +509,8 @@ class ScalaRenderer(CommonRenderer):
         seen_instance_fields: set[str] = set()
         for field_name, decl_type in instance_fields:
             safe_field_name = _safe_scala_ident(field_name)
+            if safe_field_name in dataclass_field_names:
+                continue
             if safe_field_name in seen_instance_fields:
                 continue
             seen_instance_fields.add(safe_field_name)
@@ -487,6 +521,8 @@ class ScalaRenderer(CommonRenderer):
             kind = self._str(stmt, "kind")
             if kind == "AnnAssign":
                 target = stmt.get("target")
+                if is_dataclass and isinstance(target, dict) and self._str(target, "kind") == "Name":
+                    continue
                 field_name = _safe_scala_ident(self._str(target, "id"))
                 decl_type = self._str(stmt, "decl_type")
                 value_node = stmt.get("value")
@@ -505,14 +541,21 @@ class ScalaRenderer(CommonRenderer):
                     value = self._emit_expr(value_node) if isinstance(value_node, dict) else scala_zero_value(decl_type)
                     static_fields.append((field_name, decl_type, value))
                     continue
+            if kind in ("FunctionDef", "ClosureDef"):
+                decorators = self._list(stmt, "decorators")
+                if any(isinstance(dec, str) and dec == "staticmethod" for dec in decorators):
+                    static_methods.append(stmt)
+                    continue
             self._emit_stmt(stmt)
         self.state.indent_level -= 1
         self._emit("}")
-        if len(static_fields) > 0:
+        if len(static_fields) > 0 or len(static_methods) > 0:
             self._emit("object " + class_name + " {")
             self.state.indent_level += 1
             for field_name, decl_type, value in static_fields:
                 self._emit("var " + field_name + ": " + scala_type(decl_type) + " = " + value)
+            for method in static_methods:
+                self._emit_function_def(method, False)
             self.state.indent_level -= 1
             self._emit("}")
         self.current_class_name = prev_class_name
@@ -616,6 +659,8 @@ class ScalaRenderer(CommonRenderer):
             return _safe_scala_ident(ident)
         if kind == "Attribute":
             owner_node = node.get("value")
+            if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Call" and self._str(owner_node, "special_form") == "super":
+                return "super." + _safe_scala_ident(self._str(node, "attr"))
             if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":
                 owner_id = self._str(owner_node, "id")
                 module_id = self.import_modules.get(owner_id, "")
