@@ -536,6 +536,8 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # EAST3 IsInstance uses expected_type_id node with type_object_of/id for class name
     type_name = _str(node, "type_name")
     if type_name == "":
+        type_name = _str(node, "expected_type_name")
+    if type_name == "":
         expected_type_id = node.get("expected_type_id")
         if isinstance(expected_type_id, dict):
             type_name = _str(expected_type_id, "type_object_of")

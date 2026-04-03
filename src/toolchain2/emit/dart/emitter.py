@@ -2372,27 +2372,32 @@ class DartNativeEmitter:
         if kind == "IsInstance":
             value = self._render_expr(ed.get("value"))
             expected_any = ed.get("expected_type_id")
+            expected = ""
+            expected_name_any = ed.get("expected_type_name")
+            if isinstance(expected_name_any, str) and expected_name_any != "":
+                expected = expected_name_any
             if isinstance(expected_any, dict) and expected_any.get("kind") == "Name":
                 expected_raw = expected_any.get("id")
-                expected = expected_raw if isinstance(expected_raw, str) and expected_raw != "" else "object"
-                if expected in {"int", "int64", "PYTRA_TID_INT"}:
-                    return "(" + value + " is int)"
-                if expected in {"float", "float64", "PYTRA_TID_FLOAT"}:
-                    return "(" + value + " is double)"
-                if expected in {"str", "string", "PYTRA_TID_STR"}:
-                    return "(" + value + " is String)"
-                if expected in {"bool", "PYTRA_TID_BOOL"}:
-                    return "(" + value + " is bool)"
-                if expected in {"list", "PYTRA_TID_LIST"}:
-                    return "(" + value + " is List)"
-                if expected in {"dict", "PYTRA_TID_DICT"}:
-                    return "(" + value + " is Map)"
-                if expected in {"set_"}:
-                    return "(" + value + " is Set)"
-                if expected in {"tuple"}:
-                    return "(" + value + " is List)"
-                if expected in self.class_names:
-                    return "(" + value + " is " + expected + ")"
+                if expected == "":
+                    expected = expected_raw if isinstance(expected_raw, str) and expected_raw != "" else "object"
+            if expected in {"int", "int64", "PYTRA_TID_INT"}:
+                return "(" + value + " is int)"
+            if expected in {"float", "float64", "PYTRA_TID_FLOAT"}:
+                return "(" + value + " is double)"
+            if expected in {"str", "string", "PYTRA_TID_STR"}:
+                return "(" + value + " is String)"
+            if expected in {"bool", "PYTRA_TID_BOOL"}:
+                return "(" + value + " is bool)"
+            if expected in {"list", "PYTRA_TID_LIST"}:
+                return "(" + value + " is List)"
+            if expected in {"dict", "PYTRA_TID_DICT"}:
+                return "(" + value + " is Map)"
+            if expected in {"set_"}:
+                return "(" + value + " is Set)"
+            if expected in {"tuple"}:
+                return "(" + value + " is List)"
+            if expected in self.class_names:
+                return "(" + value + " is " + expected + ")"
             return "false"
         if kind == "IsSubtype" or kind == "IsSubclass":
             return "false"
@@ -2701,6 +2706,17 @@ class DartNativeEmitter:
                     return "(" + owner + " = " + owner + ".reversed.toList())"
                 if attr == "copy":
                     return "List.from(" + owner + ")"
+            if owner_type == "deque":
+                if attr == "append" and len(rendered_args) == 1:
+                    return owner + ".add(" + rendered_args[0] + ")"
+                if attr == "appendleft" and len(rendered_args) == 1:
+                    return owner + ".appendleft(" + rendered_args[0] + ")"
+                if attr == "popleft" and len(rendered_args) == 0:
+                    return owner + ".popleft()"
+                if attr == "pop" and len(rendered_args) == 0:
+                    return owner + ".removeLast()"
+                if attr == "clear" and len(rendered_args) == 0:
+                    return owner + ".clear()"
             if owner_type.startswith("set[") or owner_type == "set":
                 if attr == "discard" and len(rendered_args) == 1:
                     return owner + ".remove(" + rendered_args[0] + ")"

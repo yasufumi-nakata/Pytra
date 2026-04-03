@@ -252,6 +252,8 @@ def ts_type(resolved_type: str, *, for_return: bool = False) -> str:
     """
     if resolved_type == "" or resolved_type == "unknown":
         return "any"
+    if len(resolved_type) == 1 and resolved_type.isupper():
+        return "any"
 
     # Callable types
     if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
