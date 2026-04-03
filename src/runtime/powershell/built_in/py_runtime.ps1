@@ -1,19 +1,30 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-function __pytra_print {
-    param(
-        [Parameter(ValueFromRemainingArguments = $true)]
-        [object[]] $items
-    )
+# Built-in exception base constructors
+function Exception { param($self, $msg = ""); $self["__type__"] = "Exception"; $self["__msg__"] = if ($msg -eq $null) { "" } else { [string]$msg } }
+function BaseException { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "BaseException" }
+function ValueError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "ValueError" }
+function TypeError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "TypeError" }
+function RuntimeError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "RuntimeError" }
+function KeyError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "KeyError" }
+function IndexError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "IndexError" }
+function AttributeError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "AttributeError" }
+function NotImplementedError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "NotImplementedError" }
+function StopIteration { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "StopIteration" }
+function OverflowError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "OverflowError" }
+function ZeroDivisionError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "ZeroDivisionError" }
+function OSError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "OSError" }
+function IOError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "IOError" }
+function FileNotFoundError { param($self, $msg = ""); Exception $self $msg; $self["__type__"] = "FileNotFoundError" }
 
-    if ($items.Count -eq 0) {
+function __pytra_print {
+    if ($args.Count -eq 0) {
         [Console]::Out.WriteLine("")
         return
     }
-
     $parts = New-Object System.Collections.Generic.List[string]
-    foreach ($item in $items) {
+    foreach ($item in $args) {
         $parts.Add((__pytra_str $item))
     }
     [Console]::Out.WriteLine(($parts -join " "))
@@ -28,10 +39,51 @@ function __pytra_len {
     return 0
 }
 
+function __pytra_repr {
+    param([object]$value)
+    if ($value -eq $null) { return "None" }
+    if ($value -is [bool]) { return $(if ($value) { "True" } else { "False" }) }
+    if ($value -is [string]) { return "'" + $value.Replace("\", "\\").Replace("'", "\'") + "'" }
+    # array (PS1 native array) → tuple repr (a, b) or (a,)
+    if ($value -is [array]) {
+        $parts2 = [System.Collections.Generic.List[string]]::new()
+        foreach ($item in $value) { $parts2.Add((__pytra_repr $item)) }
+        if ($parts2.Count -eq 1) { return "(" + $parts2[0] + ",)" }
+        return "(" + ($parts2 -join ", ") + ")"
+    }
+    # IList (List[object]) → list repr [a, b]
+    if ($value -is [System.Collections.IList]) {
+        $parts2 = [System.Collections.Generic.List[string]]::new()
+        foreach ($item in $value) { $parts2.Add((__pytra_repr $item)) }
+        return "[" + ($parts2 -join ", ") + "]"
+    }
+    # hashtable → dict repr {'k': v} or class __str__
+    if ($value -is [hashtable]) {
+        if ($value.ContainsKey("__type__")) { return (__pytra_str $value) }
+        $parts2 = [System.Collections.Generic.List[string]]::new()
+        foreach ($k in ($value.Keys | Sort-Object)) { $parts2.Add((__pytra_repr $k) + ": " + (__pytra_repr $value[$k])) }
+        return "{" + ($parts2 -join ", ") + "}"
+    }
+    return (__pytra_str $value)
+}
+
 function __pytra_str {
     param([object]$value)
     if ($value -eq $null) { return "None" }
     if ($value -is [bool]) { return $(if ($value) { "True" } else { "False" }) }
+    # array (PS1 native array) → tuple repr
+    if ($value -is [array]) {
+        $parts2 = [System.Collections.Generic.List[string]]::new()
+        foreach ($item in $value) { $parts2.Add((__pytra_repr $item)) }
+        if ($parts2.Count -eq 1) { return "(" + $parts2[0] + ",)" }
+        return "(" + ($parts2 -join ", ") + ")"
+    }
+    # IList (List[object]) → list repr
+    if ($value -is [System.Collections.IList]) {
+        $parts2 = [System.Collections.Generic.List[string]]::new()
+        foreach ($item in $value) { $parts2.Add((__pytra_repr $item)) }
+        return "[" + ($parts2 -join ", ") + "]"
+    }
     # Hashtable-based class with __str__ method
     if ($value -is [hashtable] -and $value.ContainsKey("__type__")) {
         $tn = $value["__type__"]
@@ -39,8 +91,20 @@ function __pytra_str {
         if (Get-Command $str_fn -ErrorAction SilentlyContinue) {
             return [string](& (Get-Command $str_fn) $value)
         }
+        # Exception-like: return __msg__ if present
+        if ($value.ContainsKey("__msg__")) { return [string]$value["__msg__"] }
     }
-    if ($value -is [hashtable]) { return "hashtable" }
+    # Plain hashtable → dict repr (sorted keys for determinism)
+    if ($value -is [hashtable]) {
+        $parts2 = [System.Collections.Generic.List[string]]::new()
+        foreach ($k in ($value.Keys | Sort-Object)) { $parts2.Add((__pytra_repr $k) + ": " + (__pytra_repr $value[$k])) }
+        return "{" + ($parts2 -join ", ") + "}"
+    }
+    if ($value -is [double] -or $value -is [float]) {
+        $sv = [string]$value
+        if ($sv -notmatch '\.' -and $sv -notmatch 'E' -and $sv -notmatch 'e' -and $sv -ne "NaN" -and $sv -ne "Infinity" -and $sv -ne "-Infinity") { $sv = $sv + ".0" }
+        return $sv
+    }
     return [string]$value
 }
 
@@ -136,24 +200,28 @@ function __pytra_list {
     return @()
 }
 
+function __pytra_set_key {
+    param([object]$item)
+    if ($item -is [System.Array]) {
+        $parts = foreach ($e in $item) {
+            if ($e -is [System.Array]) { (__pytra_set_key $e) } else { [string]$e }
+        }
+        return "(__t__:" + ($parts -join ",") + ")"
+    }
+    return $item
+}
+
 function __pytra_set {
     param([object[]]$values)
     $result = @{}
     foreach ($item in $values) {
-        $result["$item"] = $true
+        $result[(__pytra_set_key $item)] = $true
     }
     return $result
 }
 
 function __pytra_dict {
     param([object]$value = $null)
-    if ($value -is [hashtable]) {
-        $copy = @{}
-        foreach ($key in $value.Keys) {
-            $copy[$key] = $value[$key]
-        }
-        return $copy
-    }
     if ($value -is [System.Collections.IDictionary]) {
         $copy = @{}
         foreach ($entry in $value.GetEnumerator()) {
@@ -299,7 +367,7 @@ function __pytra_file_write {
 function __pytra_in {
     param($item, $collection)
     if ($collection -is [hashtable] -or $collection -is [System.Collections.IDictionary]) {
-        return $collection.ContainsKey($item)
+        return $collection.Contains((__pytra_set_key $item))
     }
     if ($collection -is [string]) {
         return $collection.Contains([string]$item)
@@ -318,22 +386,71 @@ function __pytra_not_in {
     return -not (__pytra_in $item $collection)
 }
 
+function __pytra_list_index {
+    param([object]$list, [object]$item)
+    if ($item -is [char]) { $item = [string]$item }
+    if ($list -is [System.Collections.IList]) { return $list.IndexOf($item) }
+    return [array]::IndexOf($list, $item)
+}
+
 function __pytra_list_pop {
-    param([object]$list)
-    if ($list -eq $null -or $list.Length -eq 0) { return $null }
-    return $list[-1]
+    param([object]$list, [object]$idx = -1)
+    if ($list -eq $null) { return $null }
+    # Handle deque objects
+    if ($list -is [hashtable] -and $list.ContainsKey("__type__") -and $list["__type__"] -eq "deque") {
+        $data = $list["__data__"]
+        if ($data.Count -eq 0) { throw "pop from empty deque" }
+        $val = $data.Last.Value
+        $data.RemoveLast()
+        return ,$val
+    }
+    $cnt = if ($list -is [System.Collections.IList]) { $list.Count } else { $list.Length }
+    if ($cnt -eq 0) { throw "pop from empty list" }
+    $i = [int]$idx
+    if ($i -lt 0) { $i = $cnt + $i }
+    if ($i -lt 0 -or $i -ge $cnt) { throw "pop index out of range" }
+    $val = $list[$i]
+    $list.RemoveAt($i)
+    return ,$val
+}
+
+function __pytra_list_idx {
+    param([object]$list, [object]$idx)
+    $i = [int]$idx
+    if ($list -is [System.Collections.IList]) {
+        if ($i -lt 0) { $i = $list.Count + $i }
+        return $list[$i]
+    }
+    if ($i -lt 0) { $i = $list.Length + $i }
+    return $list[$i]
+}
+
+function __pytra_seq_len {
+    param([object]$s)
+    if ($s -is [System.Collections.IList]) { return $s.Count }
+    return $s.Length
 }
 
 function __pytra_str_slice {
     param($s, $start, $stop)
     if ($s -eq $null) { return "" }
-    if ($s -is [array] -or $s -is [System.Collections.IList]) {
+    if ($s -is [System.Collections.IList]) {
+        $len = $s.Count
+        if ($start -lt 0) { $start = [Math]::Max(0, $len + $start) }
+        if ($stop -lt 0) { $stop = [Math]::Max(0, $len + $stop) }
+        if ($stop -gt $len) { $stop = $len }
+        if ($start -ge $stop) { return [System.Collections.Generic.List[object]]::new() }
+        $result = [System.Collections.Generic.List[object]]::new()
+        for ($__i = $start; $__i -lt $stop; $__i++) { [void]$result.Add($s[$__i]) }
+        return ,$result
+    }
+    if ($s -is [array]) {
         $len = $s.Length
         if ($start -lt 0) { $start = [Math]::Max(0, $len + $start) }
         if ($stop -lt 0) { $stop = [Math]::Max(0, $len + $stop) }
         if ($stop -gt $len) { $stop = $len }
         if ($start -ge $stop) { return @() }
-        return @($s[$start..($stop - 1)])
+        return ,@($s[$start..($stop - 1)])
     }
     $len = $s.Length
     if ($start -lt 0) { $start = [Math]::Max(0, $len + $start) }
@@ -359,10 +476,12 @@ function __pytra_reversed {
 function __pytra_zip {
     param([object]$a, [object]$b)
     if ($a -eq $null -or $b -eq $null) { return @() }
+    $aArr = if ($a -is [System.Collections.IList]) { $a.ToArray() } else { @($a) }
+    $bArr = if ($b -is [System.Collections.IList]) { $b.ToArray() } else { @($b) }
     $result = @()
-    $len = [Math]::Min($a.Length, $b.Length)
+    $len = [Math]::Min($aArr.Count, $bArr.Count)
     for ($i = 0; $i -lt $len; $i++) {
-        $result += ,@($a[$i], $b[$i])
+        $result += ,@($aArr[$i], $bArr[$i])
     }
     return $result
 }
@@ -389,6 +508,14 @@ function __pytra_filter {
     return $result
 }
 
+function __pytra_sum {
+    param([object]$items, [object]$start = 0)
+    if ($items -eq $null) { return $start }
+    $acc = $start
+    foreach ($item in $items) { $acc = $acc + $item }
+    return $acc
+}
+
 function __pytra_list_remove {
     param([object]$list, [object]$value)
     $idx = [array]::IndexOf($list, $value)
@@ -404,11 +531,11 @@ function __pytra_list_remove {
 
 function __pytra_getattr {
     param([object]$obj, [string]$attr)
-    if ($obj -is [hashtable]) {
+    if ($obj -is [hashtable] -or $obj -is [System.Collections.IDictionary]) {
         # Direct key access first
-        if ($obj.ContainsKey($attr)) { return $obj[$attr] }
-        # Try property getter: ClassName_attr($obj)
-        if ($obj.ContainsKey("__type__")) {
+        if ($obj.Contains($attr)) { return $obj[$attr] }
+        # Try property getter: ClassName_attr($obj) (class instances only)
+        if ($obj -is [hashtable] -and $obj.ContainsKey("__type__")) {
             $getter = $obj["__type__"] + "_" + $attr
             if (Get-Command $getter -ErrorAction SilentlyContinue) {
                 return (& (Get-Command $getter) $obj)
@@ -451,6 +578,20 @@ function __pytra_isinstance {
             if ($base -eq $null -or $base -eq "" -or $base -eq $current) { break }
             $current = $base
         }
+    }
+    return $false
+}
+
+function __pytra_exc_is {
+    param([string]$thrown_type, [string]$handler_type)
+    if ($thrown_type -eq "" -or $handler_type -eq "") { return $true }
+    $current = $thrown_type
+    while ($current -ne $null -and $current -ne "") {
+        if ($current -eq $handler_type) { return $true }
+        $base = $null
+        if (Test-Path variable:__pytra_bases) { $base = $__pytra_bases[$current] }
+        if ($null -eq $base -or $base -eq "" -or $base -eq $current) { break }
+        $current = $base
     }
     return $false
 }
@@ -550,7 +691,7 @@ function __pytra_list_reverse {
 function __pytra_dict_pop {
     param([object]$dict, [object]$key, [object]$default = $null)
     if ($dict -eq $null) { return $default }
-    if ($dict.ContainsKey($key)) {
+    if ($dict.Contains($key)) {
         $val = $dict[$key]
         $dict.Remove($key)
         return $val
@@ -561,7 +702,7 @@ function __pytra_dict_pop {
 function __pytra_dict_setdefault {
     param([object]$dict, [object]$key, [object]$default = $null)
     if ($dict -eq $null) { return $default }
-    if (-not $dict.ContainsKey($key)) {
+    if (-not $dict.Contains($key)) {
         $dict[$key] = $default
     }
     return $dict[$key]
@@ -601,10 +742,26 @@ function __pytra_str_find {
     param([object]$s, [object]$sub) return [string]$s.IndexOf([string]$sub)
 }
 
+function __pytra_str_index {
+    param([object]$s, [object]$sub)
+    $idx = [string]$s.IndexOf([string]$sub)
+    if ($idx -lt 0) { throw "substring not found" }
+    return $idx
+}
+
+function __pytra_str_count {
+    param([object]$s, [object]$sub)
+    $str = [string]$s; $substr = [string]$sub
+    if ($substr.Length -eq 0) { return $str.Length + 1 }
+    $count = 0; $pos = 0
+    while ($true) { $idx = $str.IndexOf($substr, $pos); if ($idx -lt 0) { break }; $count++; $pos = $idx + $substr.Length }
+    return $count
+}
+
 function __pytra_str_split {
     param([object]$s, [object]$sep = $null)
     if ($sep -eq $null) { return [System.Collections.Generic.List[object]]($s.Split([char[]]@(' ',"`t","`n","`r"), [System.StringSplitOptions]::RemoveEmptyEntries)) }
-    $parts = [string]$s.Split([string]$sep)
+    $parts = ([string]$s).Split([string]$sep)
     $result = [System.Collections.Generic.List[object]]::new()
     foreach ($p in $parts) { [void]$result.Add($p) }
     return ,$result
@@ -650,11 +807,7 @@ function __pytra_list_extend {
     foreach ($item in $items) { [void]$list.Add($item) }
 }
 
-function __pytra_list_index {
-    param([object]$list, [object]$value)
-    $arr = @($list)
-    return [array]::IndexOf($arr, $value)
-}
+# (duplicate removed - see __pytra_list_index above)
 
 function __pytra_dict_clear {
     param([object]$dict)
@@ -671,12 +824,161 @@ function __pytra_set_clear {
 function __pytra_set_discard {
     param([object]$set_, [object]$value)
     if ($set_ -eq $null) { return }
-    [void]$set_.Remove($value)
+    [void]$set_.Remove((__pytra_set_key $value))
 }
 
 function __pytra_set_remove {
     param([object]$set_, [object]$value)
     if ($set_ -eq $null) { return }
-    if (-not $set_.ContainsKey($value)) { throw "KeyError: $value" }
-    [void]$set_.Remove($value)
+    $k = (__pytra_set_key $value)
+    if (-not $set_.ContainsKey($k)) { throw "KeyError: $value" }
+    [void]$set_.Remove($k)
+}
+
+# ---------------------------------------------------------------------------
+# py_format_value — Python format spec mini-language implementation
+# ---------------------------------------------------------------------------
+
+function __pytra_fv_insert_grouping {
+    param([string]$digits, [string]$sep, [int]$sz)
+    $n = $digits.Length
+    if ($n -le $sz) { return $digits }
+    $result = ""
+    $pos = $n
+    while ($pos -gt 0) {
+        $start = [Math]::Max(0, $pos - $sz)
+        $chunk = $digits.Substring($start, $pos - $start)
+        if ($result -ne "") { $result = $chunk + $sep + $result }
+        else { $result = $chunk }
+        $pos = $start
+    }
+    return $result
+}
+
+function py_format_value {
+    param([object]$value, [string]$spec)
+    $ic = [System.Globalization.CultureInfo]::InvariantCulture
+    if ($spec -eq "") { return (__pytra_str $value) }
+
+    # Parse spec: [[fill]align][sign][z][#][0][width][grouping][.precision][type]
+    $fill = ""; $align = ""; $sign = ""; $width = ""; $grouping = ""; $precision = ""; $typec = ""
+    $pos = 0; $n = $spec.Length
+    if ($n -ge 2 -and ($spec[1] -eq '<' -or $spec[1] -eq '>' -or $spec[1] -eq '^' -or $spec[1] -eq '=')) {
+        $fill = [string]$spec[0]; $align = [string]$spec[1]; $pos = 2
+    } elseif ($n -ge 1 -and ($spec[0] -eq '<' -or $spec[0] -eq '>' -or $spec[0] -eq '^' -or $spec[0] -eq '=')) {
+        $align = [string]$spec[0]; $pos = 1
+    }
+    if ($pos -lt $n -and ($spec[$pos] -eq '+' -or $spec[$pos] -eq '-' -or $spec[$pos] -eq ' ')) {
+        $sign = [string]$spec[$pos]; $pos++
+    }
+    if ($pos -lt $n -and $spec[$pos] -eq 'z') { $pos++ }
+    if ($pos -lt $n -and $spec[$pos] -eq '#') { $pos++ }
+    if ($pos -lt $n -and $spec[$pos] -eq '0') {
+        if ($fill -eq "" -and $align -eq "") { $fill = "0"; $align = "=" }
+        $pos++
+    }
+    $ws = $pos
+    while ($pos -lt $n -and $spec[$pos] -ge '0' -and $spec[$pos] -le '9') { $pos++ }
+    if ($pos -gt $ws) { $width = $spec.Substring($ws, $pos - $ws) }
+    if ($pos -lt $n -and ($spec[$pos] -eq ',' -or $spec[$pos] -eq '_')) { $grouping = [string]$spec[$pos]; $pos++ }
+    if ($pos -lt $n -and $spec[$pos] -eq '.') {
+        $pos++; $ps2 = $pos
+        while ($pos -lt $n -and $spec[$pos] -ge '0' -and $spec[$pos] -le '9') { $pos++ }
+        $precision = $spec.Substring($ps2, $pos - $ps2)
+    }
+    if ($pos -lt $n) { $typec = [string]$spec[$pos] }
+
+    # Format core
+    $raw = ""
+    $is_str_type = $typec -eq "s" -or ($typec -eq "" -and $value -is [string])
+
+    if ($is_str_type) {
+        $raw = (__pytra_str $value)
+        if ($precision -ne "") { $plen = [int]$precision; if ($raw.Length -gt $plen) { $raw = $raw.Substring(0, $plen) } }
+    } elseif ($value -is [bool]) {
+        $raw = if ($value) { "True" } else { "False" }
+    } elseif ($value -is [int] -or $value -is [long]) {
+        $ival = [long]$value
+        $is_neg = $ival -lt 0
+        $absv = if ($is_neg) { -$ival } else { $ival }
+        if ($typec -eq "x") { $raw = [Convert]::ToString($absv, 16) }
+        elseif ($typec -eq "X") { $raw = ([Convert]::ToString($absv, 16)).ToUpper() }
+        elseif ($typec -eq "o") { $raw = [Convert]::ToString($absv, 8) }
+        elseif ($typec -eq "b") { $raw = [Convert]::ToString($absv, 2) }
+        elseif ($typec -eq "f" -or $typec -eq "F" -or $typec -eq "e" -or $typec -eq "E" -or $typec -eq "g" -or $typec -eq "G" -or $typec -eq "%") {
+            # Delegate int with float-type spec to float path
+            return py_format_value ([double]$value) $spec
+        }
+        else { $raw = [string]$absv }
+        if ($grouping -eq ",") { $raw = (__pytra_fv_insert_grouping $raw "," 3) }
+        elseif ($grouping -eq "_") {
+            $gsz = if ($typec -eq "x" -or $typec -eq "X" -or $typec -eq "b" -or $typec -eq "o") { 4 } else { 3 }
+            $raw = (__pytra_fv_insert_grouping $raw "_" $gsz)
+        }
+        if ($is_neg) { $raw = "-" + $raw }
+        elseif ($sign -eq "+") { $raw = "+" + $raw }
+        elseif ($sign -eq " ") { $raw = " " + $raw }
+    } elseif ($value -is [double] -or $value -is [float]) {
+        $dval = [double]$value
+        $is_neg = $dval -lt 0
+        $absv = if ($is_neg) { -$dval } else { $dval }
+        $prec = if ($precision -ne "") { [int]$precision } else { 6 }
+        if ($typec -eq "f" -or $typec -eq "F" -or $typec -eq "") {
+            $raw = $absv.ToString("F$prec", $ic)
+        } elseif ($typec -eq "e") {
+            $raw = $absv.ToString("e$prec", $ic)
+            # Python uses e+XX not e+0XX, normalize
+            $raw = [System.Text.RegularExpressions.Regex]::Replace($raw, 'e([+-])0+(\d{2,})', 'e$1$2')
+            $raw = [System.Text.RegularExpressions.Regex]::Replace($raw, 'e([+-])(\d)$', 'e${1}0$2')
+        } elseif ($typec -eq "E") {
+            $raw = $absv.ToString("E$prec", $ic)
+            $raw = [System.Text.RegularExpressions.Regex]::Replace($raw, 'E([+-])0+(\d{2,})', 'E$1$2')
+            $raw = [System.Text.RegularExpressions.Regex]::Replace($raw, 'E([+-])(\d)$', 'E${1}0$2')
+        } elseif ($typec -eq "g" -or $typec -eq "G") {
+            $gprec = if ($prec -eq 0) { 1 } else { $prec }
+            $raw = $absv.ToString("G$gprec", $ic)
+            if ($typec -eq "g") { $raw = $raw.ToLower() }
+        } elseif ($typec -eq "%") {
+            $raw = ($absv * 100.0).ToString("F$prec", $ic) + "%"
+        } else {
+            $raw = $absv.ToString("F$prec", $ic)
+        }
+        if ($grouping -ne "") {
+            $dot_pos = $raw.IndexOf('.')
+            $pct_pos = $raw.IndexOf('%')
+            if ($dot_pos -ge 0) {
+                $ip = $raw.Substring(0, $dot_pos)
+                $fp = $raw.Substring($dot_pos)
+                $raw = (__pytra_fv_insert_grouping $ip $grouping 3) + $fp
+            } elseif ($pct_pos -ge 0) {
+                $raw = (__pytra_fv_insert_grouping $raw.Substring(0, $pct_pos) $grouping 3) + "%"
+            } else {
+                $raw = (__pytra_fv_insert_grouping $raw $grouping 3)
+            }
+        }
+        if ($is_neg) { $raw = "-" + $raw }
+        elseif ($sign -eq "+") { $raw = "+" + $raw }
+        elseif ($sign -eq " ") { $raw = " " + $raw }
+    } else {
+        $raw = (__pytra_str $value)
+    }
+
+    # Apply width / alignment
+    if ($width -eq "") { return $raw }
+    $w = [int]$width
+    if ($raw.Length -ge $w) { return $raw }
+    if ($fill -eq "") { $fill = " " }
+    $pad = $w - $raw.Length
+    $padding = $fill * $pad
+    if ($align -eq "<") { return $raw + $padding }
+    if ($align -eq "^") { $lp = [int]($pad / 2); $rp = $pad - $lp; return ($fill * $lp) + $raw + ($fill * $rp) }
+    if ($align -eq "=") {
+        if ($raw.Length -gt 0 -and ($raw[0] -eq '-' -or $raw[0] -eq '+' -or $raw[0] -eq ' ')) {
+            return [string]$raw[0] + $padding + $raw.Substring(1)
+        }
+        return $padding + $raw
+    }
+    # Default: right-align for numbers, left-align for strings
+    if ($is_str_type) { return $raw + $padding }
+    return $padding + $raw
 }
