@@ -891,13 +891,30 @@ class KotlinRenderer(CommonRenderer):
                     if attr == "pop" and len(arg_nodes) == 1:
                         result_type = self._str(node, "resolved_type")
                         zero = kotlin_zero_value(result_type)
-                        return "(__pytra_as_dict(" + owner_expr + ").remove(" + self._emit_expr(arg_nodes[0]) + ") ?: " + zero + ")"
+                        expr = "(__pytra_as_dict(" + owner_expr + ").remove(" + self._emit_expr(arg_nodes[0]) + ") ?: " + zero + ")"
+                        if result_type not in ("", "unknown", "Any", "object"):
+                            return "(" + expr + " as " + self._render_type(result_type) + ")"
+                        return expr
                     if attr == "setdefault" and len(arg_nodes) == 2:
-                        return "__pytra_as_dict(" + owner_expr + ").getOrPut(" + self._emit_expr(arg_nodes[0]) + ") { " + self._emit_expr(arg_nodes[1]) + " }"
+                        expr = "__pytra_as_dict(" + owner_expr + ").getOrPut(" + self._emit_expr(arg_nodes[0]) + ") { " + self._emit_expr(arg_nodes[1]) + " }"
+                        result_type = self._str(node, "resolved_type")
+                        if result_type not in ("", "unknown", "Any", "object"):
+                            return "(" + expr + " as " + self._render_type(result_type) + ")"
+                        return expr
                     if attr == "keys" and len(arg_nodes) == 0:
-                        return "__pytra_as_dict(" + owner_expr + ").keys.toMutableList()"
+                        value_type = "Any?"
+                        if owner_type.startswith("dict[") and owner_type.endswith("]"):
+                            parts = _split_generic_args(owner_type[5:-1])
+                            if len(parts) == 2:
+                                value_type = self._render_type(parts[0])
+                        return "(__pytra_as_dict(" + owner_expr + ").keys.toMutableList() as MutableList<" + value_type + ">)"
                     if attr == "values" and len(arg_nodes) == 0:
-                        return "__pytra_as_dict(" + owner_expr + ").values.toMutableList()"
+                        value_type = "Any?"
+                        if owner_type.startswith("dict[") and owner_type.endswith("]"):
+                            parts = _split_generic_args(owner_type[5:-1])
+                            if len(parts) == 2:
+                                value_type = self._render_type(parts[1])
+                        return "(__pytra_as_dict(" + owner_expr + ").values.toMutableList() as MutableList<" + value_type + ">)"
                     if attr == "items" and len(arg_nodes) == 0:
                         return "__pytra_dict_items(__pytra_as_dict(" + owner_expr + "))"
                 if owner_type.startswith("list[") or owner_type in ("list", "bytes", "bytearray"):
