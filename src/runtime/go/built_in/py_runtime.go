@@ -476,10 +476,6 @@ func pytraTypeRangeMax(tid int64) int64 {
 	return id_table.items[int(tid*2+1)]
 }
 
-func pytra_isinstance(actualTypeId int64, tid int64) bool {
-	return py_runtime_type_id_is_subtype(actualTypeId, tid)
-}
-
 func pytraNewBaseException(msg string) *PytraErrorCarrier {
 	return &PytraErrorCarrier{TypeId: pytraTypeRangeMin(BASE_EXCEPTION_TID), TypeMin: pytraTypeRangeMin(BASE_EXCEPTION_TID), TypeMax: pytraTypeRangeMax(BASE_EXCEPTION_TID), Name: "BaseException", Msg: msg}
 }
