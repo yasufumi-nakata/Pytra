@@ -906,6 +906,40 @@ class JuliaSubsetRenderer:
             use_mapped_runtime = ""
         return runtime_call, builtin_name, use_mapped_runtime
 
+    def _render_isinstance_expr(self, node: dict[str, JsonVal]) -> str:
+        value = self._render_expr(node.get("value"))
+        expected_name = _isinstance_expected_name(node)
+        mapped = self.mapping.predicate_types.get(expected_name, "")
+        if mapped == "":
+            mapped = self.mapping.types.get(expected_name, "")
+        if mapped != "":
+            return "(isa(" + value + ", " + mapped + "))"
+        if expected_name in self.class_names or expected_name in self.exception_class_names:
+            return "(isa(" + value + ", " + expected_name + "))"
+        return "false"
+
+    def _render_subscript_expr(self, node: dict[str, JsonVal]) -> str:
+        owner_node = node.get("value")
+        owner = self._render_expr(owner_node)
+        owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+        slice_node = node.get("slice")
+        if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Slice":
+            lower = slice_node.get("lower")
+            upper = slice_node.get("upper")
+            lower_text = self._render_expr(lower) if isinstance(lower, dict) else "0"
+            upper_text = self._render_expr(upper) if isinstance(upper, dict) else "nothing"
+            if owner_type == "str":
+                return "__pytra_str_slice(" + owner + ", " + lower_text + ", " + upper_text + ")"
+            if upper_text == "nothing":
+                return owner + "[(" + lower_text + " + 1):end]"
+            return owner + "[(" + lower_text + " + 1):" + upper_text + "]"
+        index = self._render_expr(slice_node)
+        if owner_type.startswith("dict["):
+            return owner + "[" + index + "]"
+        if owner_type == "str":
+            return "string(" + owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))])"
+        return owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))]"
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -1084,16 +1118,7 @@ class JuliaSubsetRenderer:
             body = self._render_expr(node.get("body"))
             return "((" + ", ".join(args) + ") -> " + body + ")"
         if kind == "IsInstance":
-            value = self._render_expr(node.get("value"))
-            expected_name = _isinstance_expected_name(node)
-            mapped = self.mapping.predicate_types.get(expected_name, "")
-            if mapped == "":
-                mapped = self.mapping.types.get(expected_name, "")
-            if mapped != "":
-                return "(isa(" + value + ", " + mapped + "))"
-            if expected_name in self.class_names or expected_name in self.exception_class_names:
-                return "(isa(" + value + ", " + expected_name + "))"
-            return "false"
+            return self._render_isinstance_expr(node)
         if kind == "Call":
             func_node = node.get("func")
             attr_call = self._render_attribute_call_maybe(node, func_node)
@@ -1113,26 +1138,7 @@ class JuliaSubsetRenderer:
         if kind in {"Box", "Unbox"}:
             return self._render_expr(node.get("value"))
         if kind == "Subscript":
-            owner_node = node.get("value")
-            owner = self._render_expr(owner_node)
-            owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
-            slice_node = node.get("slice")
-            if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Slice":
-                lower = slice_node.get("lower")
-                upper = slice_node.get("upper")
-                lower_text = self._render_expr(lower) if isinstance(lower, dict) else "0"
-                upper_text = self._render_expr(upper) if isinstance(upper, dict) else "nothing"
-                if owner_type == "str":
-                    return "__pytra_str_slice(" + owner + ", " + lower_text + ", " + upper_text + ")"
-                if upper_text == "nothing":
-                    return owner + "[(" + lower_text + " + 1):end]"
-                return owner + "[(" + lower_text + " + 1):" + upper_text + "]"
-            index = self._render_expr(slice_node)
-            if owner_type.startswith("dict["):
-                return owner + "[" + index + "]"
-            if owner_type == "str":
-                return "string(" + owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))])"
-            return owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))]"
+            return self._render_subscript_expr(node)
         raise RuntimeError("julia subset: unsupported expr kind: " + kind)
 
     def _render_for_header(self, node: dict[str, JsonVal]) -> str:
