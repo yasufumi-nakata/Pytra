@@ -662,6 +662,51 @@ class JuliaSubsetRenderer:
             return mapped + "(" + ", ".join([owner] + args) + ")"
         return ""
 
+    def _render_collection_method_call(self, owner: str, owner_type: str, attr: str, args: list[str]) -> str:
+        if attr == "append" and len(args) == 1:
+            return "push!(" + owner + ", " + args[0] + ")"
+        if attr == "add" and len(args) == 1:
+            return "push!(" + owner + ", " + args[0] + ")"
+        if attr == "appendleft" and len(args) == 1:
+            return "pushfirst!(" + owner + ", " + args[0] + ")"
+        if attr == "clear" and len(args) == 0:
+            return "empty!(" + owner + ")"
+        if attr == "discard" and len(args) == 1:
+            return "delete!(" + owner + ", " + args[0] + ")"
+        if attr == "extend" and len(args) == 1:
+            return "append!(" + owner + ", " + args[0] + ")"
+        if attr == "index" and len(args) == 1:
+            if owner_type.startswith("list["):
+                return "(findfirst(==(" + args[0] + "), " + owner + ") - 1)"
+            return "__pytra_str_find(" + owner + ", " + args[0] + ")"
+        if attr == "items" and len(args) == 0:
+            return "collect(pairs(" + owner + "))"
+        if attr == "sort" and len(args) == 0:
+            return "sort!(" + owner + ")"
+        if attr == "reverse" and len(args) == 0:
+            return "reverse!(" + owner + ")"
+        if attr == "popleft" and len(args) == 0:
+            return "popfirst!(" + owner + ")"
+        if attr == "get" and len(args) == 2:
+            return "get(" + owner + ", " + args[0] + ", " + args[1] + ")"
+        if attr == "get" and len(args) == 1:
+            return "get(" + owner + ", " + args[0] + ", nothing)"
+        if attr == "pop" and len(args) == 1:
+            return "pop!(" + owner + ", " + args[0] + ")"
+        if attr == "pop" and len(args) == 0:
+            return "pop!(" + owner + ")"
+        if attr == "setdefault" and len(args) == 2:
+            return "get!(" + owner + ", " + args[0] + ", " + args[1] + ")"
+        if attr == "join" and len(args) == 1:
+            return "join(" + args[0] + ", " + owner + ")"
+        if attr == "keys" and len(args) == 0:
+            return "collect(keys(" + owner + "))"
+        if attr == "remove" and len(args) == 1:
+            return "delete!(" + owner + ", " + args[0] + ")"
+        if attr == "values" and len(args) == 0:
+            return "collect(values(" + owner + "))"
+        return ""
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -881,50 +926,15 @@ class JuliaSubsetRenderer:
                 mapped_method = self._render_mapped_method_call(node, owner, args)
                 if mapped_method != "":
                     return mapped_method
-                if attr == "append" and len(args) == 1:
-                    return "push!(" + owner + ", " + args[0] + ")"
-                if attr == "add" and len(args) == 1:
-                    return "push!(" + owner + ", " + args[0] + ")"
-                if attr == "appendleft" and len(args) == 1:
-                    return "pushfirst!(" + owner + ", " + args[0] + ")"
-                if attr == "clear" and len(args) == 0:
-                    return "empty!(" + owner + ")"
-                if attr == "discard" and len(args) == 1:
-                    return "delete!(" + owner + ", " + args[0] + ")"
-                if attr == "extend" and len(args) == 1:
-                    return "append!(" + owner + ", " + args[0] + ")"
-                if attr == "index" and len(args) == 1:
-                    if owner_type.startswith("list["):
-                        return "(findfirst(==(" + args[0] + "), " + owner + ") - 1)"
-                    return "__pytra_str_find(" + owner + ", " + args[0] + ")"
-                if attr == "items" and len(args) == 0:
-                    return "collect(pairs(" + owner + "))"
+                collection_method = self._render_collection_method_call(owner, owner_type, attr, args)
+                if collection_method != "":
+                    return collection_method
                 if attr == "lstrip" and len(args) == 0:
                     return "lstrip(" + owner + ")"
                 if attr == "makedirs" and len(args) == 1 and len(keywords) == 1 and keywords[0].get("arg") == "exist_ok":
                     return owner + ".makedirs(" + args[0] + ", " + self._render_expr(keywords[0].get("value")) + ")"
-                if attr == "sort" and len(args) == 0:
-                    return "sort!(" + owner + ")"
-                if attr == "reverse" and len(args) == 0:
-                    return "reverse!(" + owner + ")"
-                if attr == "popleft" and len(args) == 0:
-                    return "popfirst!(" + owner + ")"
-                if attr == "get" and len(args) == 2:
-                    return "get(" + owner + ", " + args[0] + ", " + args[1] + ")"
-                if attr == "get" and len(args) == 1:
-                    return "get(" + owner + ", " + args[0] + ", nothing)"
-                if attr == "pop" and len(args) == 1:
-                    return "pop!(" + owner + ", " + args[0] + ")"
-                if attr == "pop" and len(args) == 0:
-                    return "pop!(" + owner + ")"
-                if attr == "setdefault" and len(args) == 2:
-                    return "get!(" + owner + ", " + args[0] + ", " + args[1] + ")"
                 if attr == "split" and len(args) == 1:
                     return "split(" + owner + ", " + args[0] + ")"
-                if attr == "join" and len(args) == 1:
-                    return "join(" + args[0] + ", " + owner + ")"
-                if attr == "keys" and len(args) == 0:
-                    return "collect(keys(" + owner + "))"
                 if attr == "strip" and len(args) == 0:
                     return "strip(" + owner + ")"
                 if attr == "rstrip" and len(args) == 0:
@@ -935,10 +945,6 @@ class JuliaSubsetRenderer:
                     return "endswith(" + owner + ", " + args[0] + ")"
                 if attr == "replace" and len(args) == 2:
                     return "replace(" + owner + ", " + args[0] + " => " + args[1] + ")"
-                if attr == "remove" and len(args) == 1:
-                    return "delete!(" + owner + ", " + args[0] + ")"
-                if attr == "values" and len(args) == 0:
-                    return "collect(values(" + owner + "))"
                 if attr in self.class_static_method_names.get(owner_name, set()) and len(keywords) == 0:
                     return _ident(attr) + "(" + ", ".join(args) + ")"
                 if attr in self.class_method_names.get(owner_type, set()) and len(keywords) == 0:
