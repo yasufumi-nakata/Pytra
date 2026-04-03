@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	goreflect "reflect"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -58,6 +59,31 @@ func (p *PyList[T]) pyListItemAny(i int) any {
 	return p.items[i]
 }
 
+func (p *PyList[T]) clear_items() {
+	if p == nil {
+		return
+	}
+	p.items = p.items[:0]
+}
+
+func (p *PyList[T]) reverse_items() {
+	if p == nil {
+		return
+	}
+	for i, j := 0, len(p.items)-1; i < j; i, j = i+1, j-1 {
+		p.items[i], p.items[j] = p.items[j], p.items[i]
+	}
+}
+
+func (p *PyList[T]) sort_items() {
+	if p == nil {
+		return
+	}
+	sort.Slice(p.items, func(i, j int) bool {
+		return py_less_any(p.items[i], p.items[j])
+	})
+}
+
 func (p *PyList[T]) __str__() string {
 	if p == nil {
 		return "[]"
@@ -83,6 +109,13 @@ func PyDictFromMap[K comparable, V any](items map[K]V) *PyDict[K, V] {
 
 // pyIsDictView marks *PyDict[K,V] as a dict type for py_is_dict checks.
 func (d *PyDict[K, V]) pyIsDictView() {}
+
+func (d *PyDict[K, V]) clear_items() {
+	if d == nil {
+		return
+	}
+	clear(d.items)
+}
 
 // pyMapStringAny converts a PyDict with string-compatible keys to map[string]any.
 // Used by py_to_map_string_any to handle *PyDict[string, V] without external reflection.
@@ -113,6 +146,13 @@ func PySetFromMap[T comparable](items map[T]struct{}) *PySet[T] {
 		out[k] = struct{}{}
 	}
 	return &PySet[T]{items: out}
+}
+
+func (s *PySet[T]) clear_items() {
+	if s == nil {
+		return
+	}
+	clear(s.items)
 }
 
 func py_print(args ...any) {
@@ -419,11 +459,12 @@ func py_len(v any) int64 {
 	}
 }
 
-func py_clear[K comparable, V any](d *PyDict[K, V]) {
-	if d == nil {
+func py_clear(v any) {
+	switch t := v.(type) {
+	case interface{ clear_items() }:
+		t.clear_items()
 		return
 	}
-	clear(d.items)
 }
 
 func py_pop[K comparable, V any](d *PyDict[K, V], key K, defaultValue ...V) V {
@@ -585,6 +626,42 @@ func py_eq(a any, b any) bool {
 		return goreflect.DeepEqual(a, bv.Convert(av.Type()).Interface())
 	}
 	return false
+}
+
+func py_less_any(a any, b any) bool {
+	av := goreflect.ValueOf(a)
+	bv := goreflect.ValueOf(b)
+	if av.IsValid() && bv.IsValid() && av.Type().ConvertibleTo(bv.Type()) {
+		a = av.Convert(bv.Type()).Interface()
+	}
+	switch x := a.(type) {
+	case int:
+		return x < b.(int)
+	case int8:
+		return x < b.(int8)
+	case int16:
+		return x < b.(int16)
+	case int32:
+		return x < b.(int32)
+	case int64:
+		return x < b.(int64)
+	case uint8:
+		return x < b.(uint8)
+	case uint16:
+		return x < b.(uint16)
+	case uint32:
+		return x < b.(uint32)
+	case uint64:
+		return x < b.(uint64)
+	case float32:
+		return x < b.(float32)
+	case float64:
+		return x < b.(float64)
+	case string:
+		return x < b.(string)
+	default:
+		return py_str(a) < py_str(b)
+	}
 }
 
 func py_contains(haystack any, needle any) bool {
@@ -816,10 +893,22 @@ func py_concat_slice[T any](left []T, right []T) []T {
 	return out
 }
 
-func py_index[T comparable](items []T, needle T) int64 {
-	for i, item := range items {
-		if item == needle {
-			return int64(i)
+func py_index(items any, needle any) int64 {
+	switch seq := items.(type) {
+	case pyListView:
+		for i := 0; i < seq.pyListLen(); i++ {
+			if py_eq(seq.pyListItemAny(i), needle) {
+				return int64(i)
+			}
+		}
+		panic("value is not in list")
+	}
+	rv := goreflect.ValueOf(items)
+	if rv.IsValid() && (rv.Kind() == goreflect.Slice || rv.Kind() == goreflect.Array) {
+		for i := 0; i < rv.Len(); i++ {
+			if py_eq(rv.Index(i).Interface(), needle) {
+				return int64(i)
+			}
 		}
 	}
 	panic("value is not in list")
@@ -1026,6 +1115,19 @@ func py_reversed[T any](seq *PyList[T]) *PyList[T] {
 		out[len(src)-1-i] = src[i]
 	}
 	return &PyList[T]{items: out}
+}
+
+func py_reverse(v any) {
+	if t, ok := v.(interface{ reverse_items() }); ok {
+		t.reverse_items()
+		return
+	}
+}
+
+func py_sort(v any) {
+	if t, ok := v.(interface{ sort_items() }); ok {
+		t.sort_items()
+	}
 }
 
 func py_discard[K comparable](s any, key K) {
