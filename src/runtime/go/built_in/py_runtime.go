@@ -859,6 +859,28 @@ func py_contains(haystack any, needle any) bool {
 		case byte:
 			return strings.Contains(h, string([]byte{n}))
 		}
+	case pyListView:
+		for i := 0; i < h.pyListLen(); i++ {
+			if py_eq(h.pyListItemAny(i), needle) {
+				return true
+			}
+		}
+		return false
+	case pyDictAccessor:
+		rv := py_unwrap_dict_value(h)
+		if rv.IsValid() && rv.Kind() == goreflect.Map {
+			kv := goreflect.ValueOf(needle)
+			if !kv.IsValid() {
+				return false
+			}
+			if kv.Type().AssignableTo(rv.Type().Key()) {
+				return rv.MapIndex(kv).IsValid()
+			}
+			if kv.Type().ConvertibleTo(rv.Type().Key()) {
+				return rv.MapIndex(kv.Convert(rv.Type().Key())).IsValid()
+			}
+		}
+		return false
 	}
 	rv := goreflect.ValueOf(haystack)
 	if !rv.IsValid() {

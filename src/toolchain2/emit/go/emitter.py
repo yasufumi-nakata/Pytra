@@ -660,6 +660,8 @@ def _is_wrapper_container_expr(ctx: EmitContext, node: JsonVal, rendered: str) -
         return False
     kind = _str(node, "kind")
     if kind == "Call":
+        if _is_container_resolved_type(_str(node, "resolved_type")):
+            return True
         func_node = node.get("func")
         if isinstance(func_node, dict) and _str(func_node, "kind") == "Name":
             fn_name = _str(func_node, "id")
@@ -3155,7 +3157,7 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     value = _wrapper_container_storage_expr(ctx, value_node, value)
     slice_node = node.get("slice")
     if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Slice":
-        return _emit_slice_access(ctx, value, slice_node)
+        return _emit_slice_access(ctx, value, slice_node, _str(node, "resolved_type"))
     idx = _emit_expr(ctx, slice_node)
 
     # Tuple subscript: __tup_N[i] → safe type conversion from any
@@ -3255,12 +3257,24 @@ def _emit_raw_string_subscript(ctx: EmitContext, node: JsonVal) -> str:
     return value + "[" + idx + "]"
 
 
-def _emit_slice_access(ctx: EmitContext, value: str, slice_node: dict[str, JsonVal]) -> str:
+def _emit_slice_access(
+    ctx: EmitContext,
+    value: str,
+    slice_node: dict[str, JsonVal],
+    resolved_type: str = "",
+) -> str:
     lower = slice_node.get("lower")
     upper = slice_node.get("upper")
     lo = _emit_slice_bound(ctx, value, lower) if lower is not None else ""
     hi = _emit_slice_bound(ctx, value, upper) if upper is not None else ""
-    return value + "[" + lo + ":" + hi + "]"
+    rendered = value + "[" + lo + ":" + hi + "]"
+    if resolved_type == "list" or resolved_type.startswith("list["):
+        elem_rt = "any"
+        if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+            elem_rt = resolved_type[5:-1]
+        elem_gt = _go_signature_type(ctx, elem_rt)
+        return "PyListFromSlice[" + elem_gt + "](" + rendered + ")"
+    return rendered
 
 
 def _emit_slice_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
