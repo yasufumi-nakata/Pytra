@@ -27,7 +27,8 @@
 
 前提: infra の P0-ISINSTANCE-DETID (S1-S3) が完了し、EAST3 の `IsInstance` ノードが `expected_type_name` を持つようになった後に着手。
 
-1. [ ] [ID: P0-ISINS-DETID-CPP-S1] C++ emitter の `PYTRA_TID_*` → 型名の逆引きテーブルを削除し、`expected_type_name` を直接参照する
+1. [x] [ID: P0-ISINS-DETID-CPP-S1] C++ emitter の `PYTRA_TID_*` → 型名の逆引きテーブルを削除し、`expected_type_name` を直接参照する
+   - 完了メモ: `src/toolchain2/emit/cpp/emitter.py` の `IsInstance` は `expected_type_name` を優先参照し、fallback しても plain type name だけを見るように変更した。`_normalize_expected_type_name` と `PYTRA_TID_*` 逆引きテーブルは削除し、残る型名正規化は `int -> int64`, `float -> float64` だけに縮小した。targeted unittest 4 本と `isinstance_narrowing`, `isinstance_pod_exact`, `isinstance_tuple_check`, `isinstance_user_class` の C++ parity `4/4 PASS` を確認済み。
 2. [ ] [ID: P0-ISINS-DETID-CPP-S2] fixture + sample + stdlib の C++ parity に回帰がないことを確認する
 
 ### P0-CPP-VARIANT: C++ を std::variant ベースに移行し object/box/unbox を廃止する

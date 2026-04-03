@@ -1033,7 +1033,7 @@ def _has_variant_storage(type_name: str) -> bool:
 
 
 def _union_lane_matches_expected(lane: str, expected_name: str) -> bool:
-    expected_name = _normalize_expected_type_name(expected_name)
+    expected_name = _canonical_expected_type_name(expected_name)
     if expected_name in ("int", "int64"):
         return lane in ("int", "int64")
     if expected_name in ("float", "float64"):
@@ -1065,21 +1065,16 @@ def _union_lane_matches_nominal_expected(
     return _is_known_class_subtype(ctx, lane, expected_name)
 
 
-def _normalize_expected_type_name(expected_name: str) -> str:
-    return {
-        "PYTRA_TID_NONE": "None",
-        "PYTRA_TID_BOOL": "bool",
-        "PYTRA_TID_INT": "int64",
-        "PYTRA_TID_FLOAT": "float64",
-        "PYTRA_TID_STR": "str",
-        "PYTRA_TID_LIST": "list",
-        "PYTRA_TID_DICT": "dict",
-        "PYTRA_TID_SET": "set",
-    }.get(expected_name, expected_name)
+def _canonical_expected_type_name(expected_name: str) -> str:
+    if expected_name == "int":
+        return "int64"
+    if expected_name == "float":
+        return "float64"
+    return expected_name
 
 
 def _builtin_type_id_value(type_name: str) -> int | None:
-    normalized = _normalize_expected_type_name(type_name)
+    normalized = _canonical_expected_type_name(type_name)
     return {
         "None": 0,
         "none": 0,
@@ -1096,7 +1091,7 @@ def _builtin_type_id_value(type_name: str) -> int | None:
 
 
 def _emit_builtin_isinstance(value_expr: str, expected_name: str) -> str:
-    normalized = _normalize_expected_type_name(expected_name)
+    normalized = _canonical_expected_type_name(expected_name)
     if normalized in ("None", "none"):
         return "py_is_none(" + value_expr + ")"
     if normalized in ("int", "int64"):
@@ -1119,7 +1114,7 @@ def _emit_builtin_isinstance(value_expr: str, expected_name: str) -> str:
 
 
 def _emit_static_type_id_expr(ctx: CppEmitContext, type_name: str) -> str:
-    normalized = _normalize_expected_type_name(type_name)
+    normalized = _canonical_expected_type_name(type_name)
     builtin_id = _builtin_type_id_value(normalized)
     if builtin_id is not None:
         return "static_cast<pytra_type_id>(" + str(builtin_id) + ")"
@@ -1701,7 +1696,7 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_range_call_contains_expr(ctx: CppEmitContext, range_node: JsonVal, needle_expr: str) -> str:
     if not isinstance(range_node, dict) or _str(range_node, "kind") != "Call":
         return ""
-    if _str(range_node, "builtin_name") != "range":
+    if _str(range_node, "runtime_call") != "py_range":
         return ""
     args = _list(range_node, "args")
     if len(args) == 0 or len(args) > 3:
@@ -1836,7 +1831,6 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             runtime_symbol = _str(func, "runtime_symbol")
             runtime_call = _str(node, "runtime_call")
             resolved_runtime_call = _str(node, "resolved_runtime_call")
-            builtin_name = _str(node, "builtin_name")
             if attr == "append" and len(args) >= 1:
                 item_type = ""
                 if owner_type.startswith("list[") and owner_type.endswith("]"):
@@ -1885,10 +1879,10 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                     fallback_symbol=attr,
                 )
                 return _qualify_runtime_call_symbol(symbol_name) + "(" + ", ".join(call_arg_strs) + ")"
-            if runtime_call != "" or resolved_runtime_call != "" or builtin_name != "":
+            if runtime_call != "" or resolved_runtime_call != "":
                 mapped_name = resolve_runtime_call(
                     resolved_runtime_call if resolved_runtime_call != "" else runtime_call,
-                    builtin_name if builtin_name != "" else attr,
+                    attr,
                     adapter,
                     ctx.mapping,
                 )
@@ -1921,7 +1915,6 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             if fn == "": fn = _str(func, "repr")
             runtime_call = _str(node, "runtime_call")
             resolved_runtime_call = _str(node, "resolved_runtime_call")
-            builtin_name = _str(node, "builtin_name")
             func_runtime_module_id = _str(func, "runtime_module_id")
             if fn == "cast" and len(args) >= 2:
                 return _emit_cast_expr(ctx, args[0], args[1])
@@ -1953,10 +1946,10 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 and not should_skip_module(call_runtime_module_id, ctx.mapping)
             ):
                 return "::" + _safe_cpp_ident(fn) + "(" + ", ".join(call_arg_strs) + ")"
-            if runtime_call != "" or resolved_runtime_call != "" or builtin_name != "":
+            if runtime_call != "" or resolved_runtime_call != "":
                 mapped_name = resolve_runtime_call(
                     resolved_runtime_call if resolved_runtime_call != "" else runtime_call,
-                    builtin_name if builtin_name != "" else fn,
+                    fn,
                     adapter,
                     ctx.mapping,
                 )
@@ -2025,7 +2018,6 @@ def _emit_condition_expr(ctx: CppEmitContext, node: JsonVal) -> str:
 
 def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     rc = _str(node, "runtime_call")
-    bn = _str(node, "builtin_name")
     args = _list(node, "args")
     arg_strs = [_emit_expr(ctx, a) for a in args]
     func = node.get("func")
@@ -2092,10 +2084,10 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             rendered_args.append(_emit_expr(ctx, args[1]))
         return "py_dict_setdefault_mut(" + ", ".join([owner_expr] + rendered_args) + ")"
 
-    if bn in ("min", "max") and len(args) >= 2:
+    if rc in ("py_min", "py_max") and len(args) >= 2:
         target_type = _str(node, "resolved_type")
         forced_args = [_emit_expr_with_forced_literal_type(ctx, arg, target_type) for arg in args]
-        resolved = resolve_runtime_call(rc, bn, _str(node, "runtime_call_adapter_kind"), ctx.mapping)
+        resolved = resolve_runtime_call(rc, "", _str(node, "runtime_call_adapter_kind"), ctx.mapping)
         if resolved != "":
             return resolved + "(" + ", ".join(forced_args) + ")"
 
@@ -2205,19 +2197,19 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if adapter_policy == "ref_arg" and len(arg_strs) >= 1:
         return rc + "(" + ", ".join(arg_strs) + ")"
     # Container constructor builtins: list(), dict(), set()
-    if rc == "list_ctor" or (bn == "list" and len(arg_strs) == 0):
+    if rc == "list_ctor":
         rt = _str(node, "resolved_type")
         if rt.startswith("list[") and rt.endswith("]"):
             inner = cpp_signature_type(rt[5:-1])
             return "rc_list_new<" + inner + ">()"
         return "rc_list_new<object>()"
-    if rc == "set_ctor" or (bn == "set" and len(arg_strs) == 0):
+    if rc == "set_ctor":
         rt = _str(node, "resolved_type")
         if rt.startswith("set[") and rt.endswith("]"):
             inner = cpp_signature_type(rt[4:-1])
             return "rc_from_value(set<" + inner + ">{})"
         return "rc_set_new<object>()"
-    if rc == "dict_ctor" or (bn == "dict" and len(arg_strs) == 0):
+    if rc == "dict_ctor":
         rt = _str(node, "resolved_type")
         if rt.startswith("dict[") and rt.endswith("]"):
             dparts = _container_type_args(rt)
@@ -2226,9 +2218,9 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 v = cpp_signature_type(dparts[1])
                 return "rc_dict_new<" + k + ", " + v + ">()"
         return "rc_dict_new<str, object>()"
-    if bn in ("RuntimeError", "ValueError", "TypeError") or rc == "std::runtime_error":
+    if rc == "std::runtime_error":
         if len(arg_strs) >= 1: return "throw std::runtime_error(" + arg_strs[0] + ")"
-        return 'throw std::runtime_error("' + bn + '")'
+        return 'throw std::runtime_error("error")'
     if rc in ("py_write_text", "pathlib.write_text"):
         if isinstance(func, dict):
             owner = _emit_expr(ctx, func.get("value"))
@@ -2236,14 +2228,13 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
     # Mapping resolution
     adapter = _str(node, "runtime_call_adapter_kind")
-    resolved = resolve_runtime_call(rc, bn, adapter, ctx.mapping)
+    resolved = resolve_runtime_call(rc, "", adapter, ctx.mapping)
     if resolved != "":
         return _wrap_container_result_if_needed(node, resolved + "(" + ", ".join(call_arg_strs) + ")")
-    fn = rc if rc != "" else bn
-    if fn != "":
-        if "." in fn:
-            _emit_fail(ctx, "unmapped_runtime_call", fn)
-        return ctx.mapping.builtin_prefix + fn + "(" + ", ".join(call_arg_strs) + ")"
+    if rc != "":
+        if "." in rc:
+            _emit_fail(ctx, "unmapped_runtime_call", rc)
+        return ctx.mapping.builtin_prefix + rc + "(" + ", ".join(call_arg_strs) + ")"
     _emit_fail(ctx, "unknown_builtin", repr(node))
 
 
@@ -3010,8 +3001,11 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     expected_trait_fqcn = _str(node, "expected_trait_fqcn")
     if expected_trait_fqcn != "":
         _emit_fail(ctx, "unexpected_trait_isinstance", expected_trait_fqcn)
-    expected = node.get("expected_type_id")
-    expected_name = _normalize_expected_type_name(_str(expected, "id") if isinstance(expected, dict) else "")
+    expected_name = _str(node, "expected_type_name")
+    if expected_name == "":
+        expected = node.get("expected_type_id")
+        expected_name = _str(expected, "id") if isinstance(expected, dict) else ""
+    expected_name = _canonical_expected_type_name(expected_name)
     value_expr = _emit_expr(ctx, value)
     value_type = _expanded_union_type(_effective_resolved_type(value))
     storage_type = _expanded_union_type(_expr_storage_type(ctx, value))
@@ -3762,15 +3756,12 @@ def _render_except_alternates(ctx: CppEmitContext, handler: dict[str, JsonVal]) 
 def _render_raise_value(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     exc = node.get("exc")
     if isinstance(exc, dict):
-        bn = _str(exc, "builtin_name")
         rc = _str(exc, "runtime_call")
-        if (bn != "" and is_builtin_exception_type_name(bn)) or rc == "std::runtime_error":
+        if rc == "std::runtime_error":
             ea = _list(exc, "args")
             if len(ea) >= 1:
-                ctor_name = bn if bn != "" else "RuntimeError"
-                return ctor_name + "(" + _emit_expr(ctx, ea[0]) + ")"
-            ctor_name2 = bn if bn != "" else "RuntimeError"
-            return ctor_name2 + "(" + _cpp_string(ctor_name2) + ")"
+                return "RuntimeError(" + _emit_expr(ctx, ea[0]) + ")"
+            return "RuntimeError(" + _cpp_string("RuntimeError") + ")"
         else:
             return _emit_expr(ctx, exc)
     if exc is None:

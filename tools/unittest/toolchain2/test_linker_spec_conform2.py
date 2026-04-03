@@ -5053,7 +5053,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
                     "value": {
                         "kind": "IsInstance",
                         "value": {"kind": "Name", "id": "x16", "resolved_type": "int16"},
-                        "expected_type_id": {"kind": "Name", "id": "int16"},
+                        "expected_type_name": "int16",
                         "resolved_type": "bool",
                     },
                 }
@@ -5073,7 +5073,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
                     "value": {
                         "kind": "IsInstance",
                         "value": {"kind": "Name", "id": "dyn", "resolved_type": "object"},
-                        "expected_type_id": {"kind": "Name", "id": "list"},
+                        "expected_type_name": "list",
                         "resolved_type": "bool",
                     },
                 },
@@ -5082,7 +5082,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
                     "value": {
                         "kind": "IsInstance",
                         "value": {"kind": "Name", "id": "items", "resolved_type": "dict[str,int64]"},
-                        "expected_type_id": {"kind": "Name", "id": "dict"},
+                        "expected_type_name": "dict",
                         "resolved_type": "bool",
                     },
                 },
@@ -5260,7 +5260,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
                     "value": {
                         "kind": "IsInstance",
                         "value": {"kind": "Name", "id": "x", "resolved_type": "Base | Child"},
-                        "expected_type_id": {"kind": "Name", "id": "Base", "resolved_type": "type"},
+                        "expected_type_name": "Base",
                         "resolved_type": "bool",
                     },
                 },
@@ -5271,6 +5271,26 @@ def has_key(env: dict[str, int], name: str) -> bool:
 
         self.assertIn("::std::holds_alternative<Base>(x)", cpp_code)
         self.assertIn("::std::holds_alternative<Child>(x)", cpp_code)
+
+    def test_cpp_emitter_isinstance_falls_back_to_plain_expected_type_id_name(self) -> None:
+        doc = _module_doc(
+            "app.main",
+            body=[
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "IsInstance",
+                        "value": {"kind": "Name", "id": "items", "resolved_type": "dict[str,int64]"},
+                        "expected_type_id": {"kind": "Name", "id": "dict", "resolved_type": "type"},
+                        "resolved_type": "bool",
+                    },
+                },
+            ],
+        )
+
+        cpp_code = emit_cpp_module(doc)
+
+        self.assertIn("py_is_dict(items)", cpp_code)
 
     def test_cpp_emitter_cast_optional_inner_uses_deref_not_std_get(self) -> None:
         doc = _module_doc(
