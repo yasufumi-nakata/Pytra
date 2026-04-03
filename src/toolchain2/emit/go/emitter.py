@@ -2170,6 +2170,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     if a0_rt in ("int64", "int32", "int"):
                         # bytearray(N) → make([]byte, N)
                         return "make([]byte, " + arg_strs[0] + ")"
+                    if fn_name == "bytes" and a0_rt in ("bytes", "bytearray", "list[uint8]"):
+                        return "append([]byte{}, " + arg_strs[0] + "...)"
                 return "[]byte(" + arg_strs[0] + ")"
             if fn_name == "cast":
                 if len(arg_strs) >= 2:
@@ -2433,6 +2435,7 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if len(args) >= 1 and isinstance(args[0], dict):
             a0_kind = _str(args[0], "kind")
             a0_rt = _str(args[0], "resolved_type")
+            result_rt = _str(node, "resolved_type")
             if a0_kind == "List":
                 # bytearray([1,2,3]) → []byte{byte(1),byte(2),byte(3)}
                 elems = _list(args[0], "elements")
@@ -2440,6 +2443,8 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return "[]byte{" + ", ".join(parts) + "}"
             if a0_rt in ("int64", "int32", "int", "uint8", "int8"):
                 return "make([]byte, " + arg_strs[0] + ")"
+            if result_rt == "bytes" and a0_rt in ("bytes", "bytearray", "list[uint8]"):
+                return "append([]byte{}, " + arg_strs[0] + "...)"
             return "[]byte(" + arg_strs[0] + ")"
         if len(arg_strs) >= 1:
             return "[]byte(" + arg_strs[0] + ")"
