@@ -46,6 +46,8 @@ def _safe_kotlin_ident(name: str) -> str:
 
 
 def kotlin_type(resolved_type: str) -> str:
+    if resolved_type in ("", "_unnamed") or resolved_type.startswith("_unnamed"):
+        return "Any?"
     if resolved_type in ("pytra.std.json.JsonVal", "pytra_std_json.JsonVal"):
         return "Any?"
     if (resolved_type.startswith("callable[") or resolved_type.startswith("Callable[")) and resolved_type.endswith("]"):
@@ -99,7 +101,7 @@ def kotlin_type(resolved_type: str) -> str:
             return "MutableMap<" + kotlin_type(parts[0]) + ", " + kotlin_type(parts[1]) + ">"
         return "MutableMap<Any?, Any?>"
     if resolved_type.startswith("tuple["):
-        return "List<Any?>"
+        return "MutableList<Any?>"
     if "|" in resolved_type:
         return "Any?"
     return _safe_kotlin_ident(resolved_type)
