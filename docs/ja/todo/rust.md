@@ -78,6 +78,19 @@ selfhost で必要な 4 パターン（dict.items() tuple unpack, typed dict.get
 3. [x] [ID: P0-RS-SKIP-PURE-S3] `check_emitter_hardcode_lint.py --lang rs` で `skip_pure_python` が 0 件になることを確認する
 4. [x] [ID: P0-RS-SKIP-PURE-S4] fixture + sample parity に回帰がないことを確認する
 
+### P5-RS-CLI-COMMON: Rust cli.py を共通ランナーに移行する
+
+文脈: [docs/ja/plans/p5-rs-cli-common-runner.md](../plans/p5-rs-cli-common-runner.md)
+
+全17言語中 Rust のみ独自 cli.py（235行）。type_id テーブル廃止（P0-RS-TYPEID-CLN）後に共通ランナーへ移行可能。
+
+前提: P0-RS-TYPEID-CLN 完了（type_id テーブル不要化）
+
+1. [ ] [ID: P5-RS-CLI-S1] Rust emitter を `expected_type_name` ベースに移行する
+2. [ ] [ID: P5-RS-CLI-S2] `_generate_type_id_table_rs` と `_manifest_type_id_table` を削除する
+3. [ ] [ID: P5-RS-CLI-S3] runtime コピーと package mode を `post_emit` に移動し、共通ランナーに委譲する
+4. [ ] [ID: P5-RS-CLI-S4] Rust parity に回帰がないことを確認する
+
 ### P9-RS-SELFHOST: Rust emitter で toolchain2 を Rust に変換し cargo build を通す
 
 前提: P7-RS-EMITTER 完了後に着手。
