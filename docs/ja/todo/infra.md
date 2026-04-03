@@ -36,26 +36,17 @@
 
 文脈: [docs/ja/plans/p10-legacy-toolchain-removal.md](../plans/p10-legacy-toolchain-removal.md)
 
-全言語の toolchain2 emitter 実装（各言語の P1-*-EMITTER-S1）が完了した時点で、旧パイプラインを削除する。
+**開始はユーザーの合図待ち。** 全担当が停止しているタイミングで実行する。
 
 削除対象:
 - `src/toolchain/`（旧 emitter、旧 compile、旧 frontends、旧 misc）
 - `src/pytra-cli.py`（旧 CLI。`src/pytra-cli2.py` が正本）
 - 旧パイプラインを参照している test/spec/docs の記述
 
-前提条件（全て S1 完了が必要）:
-- [x] C++ / Rust / C# / TS-JS / Go / Java / Ruby / Lua / PHP / Nim / Dart
-- [x] Scala / Kotlin（S1-S2 完了）
-- [x] Swift（S1-S2 完了）
-- [ ] Julia（S1 進行中、fixture 85/145）
-- [ ] Zig（S1 未完了）
-- [ ] PowerShell（S1 未着手）
-
-1. [ ] [ID: P10-LEGACY-RM-S1] 全言語の P1-*-EMITTER-S1 完了を確認する（ゲート）
-2. [ ] [ID: P10-LEGACY-RM-S2] `src/toolchain/` を削除する
-3. [ ] [ID: P10-LEGACY-RM-S3] `src/pytra-cli.py` を削除し、`src/pytra-cli2.py` を `src/pytra-cli.py` にリネームする
-4. [ ] [ID: P10-LEGACY-RM-S4] spec / tutorial / README の旧パイプライン参照を更新する
-5. [ ] [ID: P10-LEGACY-RM-S5] `run_local_ci.py` 等のツールから旧パイプライン参照を削除する
+1. [ ] [ID: P10-LEGACY-RM-S1] `src/toolchain/` を削除する
+2. [ ] [ID: P10-LEGACY-RM-S2] `src/pytra-cli.py` を削除し、`src/pytra-cli2.py` を `src/pytra-cli.py` にリネームする
+3. [ ] [ID: P10-LEGACY-RM-S3] spec / tutorial / README の旧パイプライン参照を更新する
+4. [ ] [ID: P10-LEGACY-RM-S4] `run_local_ci.py` 等のツールから旧パイプライン参照を削除する
 
 ### P20-DATA-DRIVEN-TESTS: パイプライン系テストのデータ駆動化
 

@@ -8,15 +8,9 @@ Pytra のトランスパイルパイプラインは旧 toolchain（`src/toolchai
 
 全18言語の emitter が toolchain2 に実装（P1-*-EMITTER-S1 完了）された時点で、旧パイプラインへの依存がゼロになるため、削除できる。
 
-## 前提条件（ゲート）
+## 開始条件
 
-全言語の toolchain2 emitter 実装が完了していること。具体的には各言語の `src/toolchain2/emit/<lang>/emitter.py` が存在し、`cli.py` 経由で parity check が動作すること。
-
-2026-04-03 時点の状況:
-- 完了: C++ / Rust / C# / TS-JS / Go / Java / Ruby / Lua / PHP / Nim / Dart / Scala / Kotlin / Swift
-- 進行中: Julia（fixture 85/145）
-- 未完了: Zig（fixture 進行中）
-- 着手済み: PowerShell（S1-S3 完了、S4 以降未着手）
+**ユーザーの合図で開始する。** 全担当が停止しているタイミングで実行すること。
 
 ## 削除対象
 
