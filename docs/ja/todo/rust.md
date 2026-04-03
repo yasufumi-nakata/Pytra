@@ -28,60 +28,6 @@
 
 ## 未完了タスク
 
-### P0-RS-TYPE-ID-CLEANUP: Rust runtime から PYTRA_TID_* / type_id テーブルを削除する
-
-仕様: [docs/ja/spec/spec-adt.md](../spec/spec-adt.md) §6
-
-Rust emitter が `instanceof` をネイティブ pattern match で処理するようになったら、runtime の `PYTRA_TID_*` 定数と type_id テーブルを削除する。
-
-1. [x] [ID: P0-RS-TYPEID-CLN-S1] `src/runtime/rs/built_in/py_runtime.rs` から `PYTRA_TID_*` 定数と type_id テーブルを削除する
-   - 完了: Rust runtime の `PYTRA_TID_*` / `PyTypeInfo` / `py_register_type_info` / `PyRuntimeTypeId` を削除し、`PyAny::TypeId` + `py_builtin_type_id_pyany` / `py_builtin_type_id_any` に置換。CLI/package emit でも type-id table を必要時のみ生成するように変更した。
-2. [x] [ID: P0-RS-TYPEID-CLN-S2] `pytra_isinstance` / `py_is_subtype` を削除し、emitter は `match` / `if let` を使う
-   - 完了: Rust emitter の user-class `isinstance` を `PyAny::TypeId` と downcast ベースへ移行し、`py_is_subtype` / `py_runtime_type_id` / `py_register_type_info` 依存を emit しない形に整理。`trait_basic`, `trait_with_inheritance`, `isinstance_user_class`, `class_inherit_basic`, `object_container_access` の Rust parity `5/5 PASS` を確認。
-3. [x] [ID: P0-RS-TYPEID-CLN-S3] fixture + sample + stdlib parity に回帰がないことを確認する
-   - 完了: Rust emitter/runtime の `json_*`, `optional_none`, `property_method_call`, `str_repr_containers`, `union_basic`, `union_dict_items` などの回帰を修正し、`runtime_parity_check_fast` で `stdlib 16/16 PASS`, `sample 18/18 PASS`, `fixture 145/145 PASS` を確認。
-
-### P0-RS-OBJECT-CONTAINER: object_container_access fixture の Rust parity を通す
-
-文脈: [docs/ja/plans/plan-object-container-access-parity.md](../plans/plan-object-container-access-parity.md)
-
-selfhost で必要な動的型パターン（`dict[str, object]` の items() unpack / get()、`list[object]` の index、str 不要 unbox、`set[tuple[str,str]]`）を網羅する fixture。EAST3 には全て情報が載っている。
-
-1. [x] [ID: P0-RS-OBJ-CONT-S1] `object_container_access` fixture が Rust で compile + run parity PASS することを確認する（失敗なら emitter を修正）
-   - 完了: Rust emitter の generic method signature と union container (`dict[str, str | int]`, `list[int | str]`) の `PyAny` coercion を修正し、`runtime_parity_check_fast --case-root fixture --targets rs object_container_access` で PASS を確認。
-
-### P0-RS-TUPLE-UNPACK: tuple_unpack_variants fixture の Rust parity を通す
-
-文脈: [docs/ja/plans/plan-east-tuple-unpack-bugs.md](../plans/plan-east-tuple-unpack-bugs.md)
-
-前提: P0-EAST-TUPLE-UNPACK（infra TODO）で EAST 側のバグ 3 件（括弧付き左辺、comprehension + unpack）が修正された後に着手。
-
-1. [x] [ID: P0-RS-TUPLE-UNPACK-S1] `tuple_unpack_variants` fixture が Rust で compile + run parity PASS することを確認する（失敗なら emitter を修正）
-
-### P0-RS-TYPED-CONTAINER: typed_container_access fixture の Rust parity を通す
-
-文脈: [docs/ja/plans/plan-typed-container-access-parity.md](../plans/plan-typed-container-access-parity.md)
-
-selfhost で必要な 4 パターン（dict.items() tuple unpack, typed dict.get(), typed list index, str cast）を網羅する fixture。EAST3 には全て情報が載っており、emitter が既存フィールドを正しく読めば解決する。
-
-1. [x] [ID: P0-RS-TYPED-S1] `typed_container_access` fixture が Rust で compile + run parity PASS することを確認する（失敗なら emitter を修正）
-
-### P0-LINKER-RECEIVER-HINT: linker に receiver_storage_hint を追加
-
-文脈: [docs/ja/plans/plan-common-renderer-peer-class-info.md](../plans/plan-common-renderer-peer-class-info.md)
-
-1. [x] S1〜S4 完了（linker pass 追加、Rust emitter borrow() 挿入、pathlib parity PASS）
-2. [x] [ID: P0-RECV-HINT-S5] fixture + sample の全件 parity に回帰がないことを確認する
-
-### P0-RS-SKIP-PURE-PY: skip_modules から pure Python モジュールを外す
-
-`check_emitter_hardcode_lint.py --lang rs` で `skip_pure_python` 違反 2 件。`mapping.json` の `skip_modules` に `pytra.std.pathlib` と `pytra.std.env` が入っているが、両方とも `@extern` なしの pure Python モジュールであり transpile すべき。正本ソースに `@extern` マーカーを足して lint を黙らせるのは禁止。
-
-1. [x] [ID: P0-RS-SKIP-PURE-S1] `src/runtime/rs/mapping.json` の `skip_modules` から `pytra.std.pathlib` と `pytra.std.env` を削除する
-2. [x] [ID: P0-RS-SKIP-PURE-S2] transpile された pathlib / env が Rust で compile できることを確認する（必要なら emitter / runtime を修正）
-3. [x] [ID: P0-RS-SKIP-PURE-S3] `check_emitter_hardcode_lint.py --lang rs` で `skip_pure_python` が 0 件になることを確認する
-4. [x] [ID: P0-RS-SKIP-PURE-S4] fixture + sample parity に回帰がないことを確認する
-
 ### P5-RS-CLI-COMMON: Rust cli.py を共通ランナーに移行する
 
 文脈: [docs/ja/plans/p5-rs-cli-common-runner.md](../plans/p5-rs-cli-common-runner.md)

@@ -21,22 +21,6 @@
 
 ## 未完了タスク
 
-### P0-CPP-RT-TID-REMOVAL: C++ runtime から py_tid_* 残骸を削除する
-
-`src/runtime/cpp/core/py_runtime.h` に以下の関数宣言が残っている（lint `rt: type_id` 違反）:
-
-- `py_tid_is_subtype`
-- `py_tid_issubclass`
-- `py_tid_isinstance`
-- `py_tid_register_class_type`
-
-emitter からは呼ばれなくなっている（P0-ISINS-DETID-CPP 完了済み）。宣言と実装を削除する。
-
-1. [x] [ID: P0-CPP-RT-TID-S1] `py_runtime.h` から `py_tid_*` 関数宣言を削除し、対応する実装があれば削除する
-   - 完了メモ: `src/runtime/cpp/core/py_runtime.h` にだけ残っていた `py_tid_is_subtype`, `py_tid_issubclass`, `py_tid_isinstance`, `py_tid_register_class_type` の宣言を削除した。runtime 配下に対応実装の残骸は無いことも `rg` で確認した。
-2. [x] [ID: P0-CPP-RT-TID-S2] `check_emitter_hardcode_lint.py --lang cpp --include-runtime` で `rt: type_id` が 0 件になることを確認する
-   - 完了メモ: `python3 tools/check/check_emitter_hardcode_lint.py --lang cpp --include-runtime` で `rt: type_id` が `🟩` になったことを確認した。残る `rt: call_cov` は別カテゴリで、本タスクの対象外。
-
 ### P0-CPP-VARIANT: C++ を std::variant ベースに移行し object/box/unbox を廃止する
 
 文脈: [docs/ja/plans/plan-cpp-variant-migration.md](../plans/plan-cpp-variant-migration.md)
