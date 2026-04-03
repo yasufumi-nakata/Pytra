@@ -3819,6 +3819,8 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 _emit(ctx, "var " + name + " any = " + val_code)
             else:
                 _emit(ctx, name + " := " + val_code)
+            if not at_module_scope and name != "_":
+                _emit(ctx, "_ = " + name)
         if use_ref_decl:
             ctx.ref_container_locals.add(name)
         else:
@@ -3826,6 +3828,8 @@ def _emit_ann_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     else:
         if declare_new:
             _emit(ctx, "var " + name + " " + gt + " = " + _decl_go_zero_value(ctx, rt, name))
+            if not at_module_scope and name != "_":
+                _emit(ctx, "_ = " + name)
             if _is_container_resolved_type(rt) and not _prefer_value_container_local(ctx, name, rt):
                 ctx.ref_container_locals.add(name)
             else:
@@ -3951,6 +3955,8 @@ def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                         _emit(ctx, "var " + gn + " any = " + val_code)
                     else:
                         _emit(ctx, gn + " := " + val_code)
+                if not at_module_scope and gn != "_":
+                    _emit(ctx, "_ = " + gn)
                 if use_ref_decl:
                     ctx.ref_container_locals.add(gn)
                 else:
