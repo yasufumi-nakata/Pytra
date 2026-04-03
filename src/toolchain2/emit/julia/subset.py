@@ -228,7 +228,8 @@ def _ident(name: str) -> str:
 
 
 def _import_supported(names: list[JsonVal]) -> bool:
-    return all(isinstance(item, dict) and _str(item, "name") == "math" for item in names)
+    allowed = {"math", "pytra.std.env", "pytra.std.os", "pytra.utils.png"}
+    return all(isinstance(item, dict) and _str(item, "name") in allowed for item in names)
 
 
 def _expr_supported(node: JsonVal) -> bool:
@@ -276,12 +277,20 @@ def _expr_supported(node: JsonVal) -> bool:
         return all(isinstance(arg, dict) and isinstance(arg.get("arg"), str) for arg in args) and _expr_supported(node.get("body"))
     if kind == "Call":
         func = node.get("func")
+        keywords = _list(node, "keywords")
         if isinstance(func, dict) and _str(func, "kind") == "Attribute":
             owner = func.get("value")
             attr = _str(func, "attr")
             if not _expr_supported(owner):
                 return False
             if not all(_expr_supported(arg) for arg in _list(node, "args")):
+                return False
+            if not all(
+                isinstance(item, dict)
+                and isinstance(item.get("arg"), str)
+                and _expr_supported(item.get("value"))
+                for item in keywords
+            ):
                 return False
             return attr in {
                 "append",
@@ -297,6 +306,7 @@ def _expr_supported(node: JsonVal) -> bool:
                 "join",
                 "lower",
                 "lstrip",
+                "makedirs",
                 "popleft",
                 "pop",
                 "replace",
@@ -306,10 +316,20 @@ def _expr_supported(node: JsonVal) -> bool:
                 "split",
                 "sort",
                 "sqrt",
+                "write_rgb_png",
                 "startswith",
                 "strip",
             }
-        return _expr_supported(node.get("func")) and all(_expr_supported(arg) for arg in _list(node, "args"))
+        return (
+            _expr_supported(node.get("func"))
+            and all(_expr_supported(arg) for arg in _list(node, "args"))
+            and all(
+                isinstance(item, dict)
+                and isinstance(item.get("arg"), str)
+                and _expr_supported(item.get("value"))
+                for item in keywords
+            )
+        )
     if kind in {"Box", "Unbox"}:
         return _expr_supported(node.get("value"))
     if kind == "Subscript":
@@ -492,6 +512,13 @@ class JuliaSubsetRenderer:
             right = self._render_expr(node.get("right"))
             if op == "FloorDiv":
                 return "div(" + left + ", " + right + ")"
+            if op == "Add":
+                left_node = node.get("left")
+                right_node = node.get("right")
+                lhs_resolved = _str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
+                rhs_resolved = _str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
+                if lhs_resolved == "str" or rhs_resolved == "str":
+                    return "(" + left + " * " + right + ")"
             if op == "Mult":
                 left_node = node.get("left")
                 right_node = node.get("right")
@@ -558,6 +585,7 @@ class JuliaSubsetRenderer:
                 owner = self._render_expr(func_node.get("value"))
                 attr = _str(func_node, "attr")
                 args = [self._render_expr(arg) for arg in _list(node, "args")]
+                keywords = [item for item in _list(node, "keywords") if isinstance(item, dict)]
                 if attr == "append" and len(args) == 1:
                     return "push!(" + owner + ", " + args[0] + ")"
                 if attr == "appendleft" and len(args) == 1:
@@ -574,6 +602,8 @@ class JuliaSubsetRenderer:
                     return "lowercase(" + owner + ")"
                 if attr == "lstrip" and len(args) == 0:
                     return "lstrip(" + owner + ")"
+                if attr == "makedirs" and len(args) == 1 and len(keywords) == 1 and keywords[0].get("arg") == "exist_ok":
+                    return owner + ".makedirs(" + args[0] + ", " + self._render_expr(keywords[0].get("value")) + ")"
                 if attr == "sort" and len(args) == 0:
                     return "sort!(" + owner + ")"
                 if attr == "reverse" and len(args) == 0:
@@ -602,6 +632,8 @@ class JuliaSubsetRenderer:
                     return "endswith(" + owner + ", " + args[0] + ")"
                 if attr == "replace" and len(args) == 2:
                     return "replace(" + owner + ", " + args[0] + " => " + args[1] + ")"
+                if attr == "write_rgb_png" and len(args) == 4 and len(keywords) == 0:
+                    return owner + ".write_rgb_png(" + ", ".join(args) + ")"
             func = self._render_expr(func_node)
             args = [self._render_expr(arg) for arg in _list(node, "args")]
             if func == "print":
@@ -699,6 +731,25 @@ class JuliaSubsetRenderer:
                         + " = (ceil=__MathNative.ceil, cos=__MathNative.cos, e=__MathNative.e, exp=__MathNative.exp, "
                         + "fabs=__MathNative.fabs, floor=__MathNative.floor, log=__MathNative.log, log10=__MathNative.log10, "
                         + "pi=__MathNative.pi, pow=__MathNative.pow, sin=__MathNative.sin, sqrt=__MathNative.sqrt, tan=__MathNative.tan)"
+                    )
+                elif source_name == "pytra.std.env":
+                    self._emit(bound_name + ' = (target="julia",)')
+                elif source_name == "pytra.std.os":
+                    self._emit('include(joinpath(@__DIR__, "std", "os_native.jl"))')
+                    self._emit('include(joinpath(@__DIR__, "std", "os_path_native.jl"))')
+                    self._emit(
+                        bound_name
+                        + " = (getcwd=__OsNative.getcwd, makedirs=__OsNative.makedirs, mkdir=__OsNative.mkdir, "
+                        + "path=(join=__OsPathNative.join, splitext=__OsPathNative.splitext, "
+                        + "basename=__OsPathNative.basename, dirname=__OsPathNative.dirname, exists=__OsPathNative.exists))"
+                    )
+                elif source_name == "pytra.utils.png":
+                    self._emit('include(joinpath(@__DIR__, "utils", "png.jl"))')
+                    self._emit(
+                        bound_name
+                        + " = (_adler32=_adler32, _chunk=_chunk, _crc32=_crc32, _png_append_list=_png_append_list, "
+                        + "_png_u16le=_png_u16le, _png_u32be=_png_u32be, _zlib_deflate_store=_zlib_deflate_store, "
+                        + "write_rgb_png=write_rgb_png)"
                     )
             return
         if kind == "ImportFrom":
