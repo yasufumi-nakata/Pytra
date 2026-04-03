@@ -1123,16 +1123,44 @@ def check_case(
             (work / "sample" / "py").symlink_to(ROOT / "sample" / "py", target_is_directory=True)
             (work / "sample" / "out").mkdir(parents=True, exist_ok=True)
 
+        # eo_ prefix: emit-only fixture (no Python run, no target run)
+        is_emit_only = case_stem.startswith("eo_")
+
         _purge_case_artifacts(work, case_stem)
-        py_cmd = f"python {shlex.quote(case_path.as_posix())}"
-        py_env = {"PYTHONPATH": "src"}
-        py_t0 = time.monotonic()
-        py = run_shell(py_cmd, cwd=work, env=py_env, timeout_sec=cmd_timeout_sec)
-        py_elapsed_sec: float | None = round(time.monotonic() - py_t0, 3) if do_bench else None
-        if py.returncode != 0:
-            print(f"[ERROR] python:{case_stem} failed")
-            _record("python", "python_failed", py.stderr.strip())
-            return 1
+        if is_emit_only:
+            py = None
+            py_elapsed_sec = None
+        else:
+            py_cmd = f"python {shlex.quote(case_path.as_posix())}"
+            py_env = {"PYTHONPATH": "src"}
+            py_t0 = time.monotonic()
+            py = run_shell(py_cmd, cwd=work, env=py_env, timeout_sec=cmd_timeout_sec)
+            py_elapsed_sec = round(time.monotonic() - py_t0, 3) if do_bench else None
+            if py.returncode != 0:
+                print(f"[ERROR] python:{case_stem} failed")
+                _record("python", "python_failed", py.stderr.strip())
+                return 1
+
+        if is_emit_only:
+            # emit-only: just transpile, check emit success, skip run
+            emit_ok_count = 0
+            emit_fail_targets: list[str] = []
+            for target_name in sorted(enabled_targets):
+                target_work = work / "transpile" / target_name
+                target_work.mkdir(parents=True, exist_ok=True)
+                ok, err = _transpile_in_memory(case_path, target_name, target_work, opt_level, negative_index_mode, bounds_check_mode)
+                if ok:
+                    print(f"[OK] {case_stem}:{target_name} (emit-only)", flush=True)
+                    _record(target_name, "ok", "emit-only")
+                    emit_ok_count += 1
+                else:
+                    print(f"[FAIL] {case_stem}:{target_name} emit failed: {err}", flush=True)
+                    _record(target_name, "emit_failed", err)
+                    emit_fail_targets.append(target_name)
+            if len(emit_fail_targets) > 0:
+                return 1
+            print(f"[PASS] {case_stem} (emit-only)", flush=True)
+            return 0
 
         if do_bench:
             _record("python", "ok", "", elapsed_sec=py_elapsed_sec)

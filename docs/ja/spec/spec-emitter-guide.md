@@ -1300,6 +1300,17 @@ sample の実行時間は parity check の sample 実行時に自動計測され
 3. stdout の正規化比較（`elapsed_sec` 等のタイミング行は除外）
 4. artifact のサイズ + CRC32 比較
 
+### emit-only fixture（`eo_` プレフィックス）
+
+ファイル名が `eo_` で始まる fixture は **emit-only**。Python 実行もターゲット実行も行わず、emit（transpile）が成功することだけを検証する。
+
+用途: `@extern class` のように実体がなく Python でも実行できないが、emit できることを保証したいケース。
+
+```
+test/fixture/source/py/oop/eo_extern_opaque_basic.py  ← emit-only
+test/fixture/source/py/oop/class_instance.py           ← 通常（run parity）
+```
+
 ### 既存ツールとの関係
 
 | ツール | 用途 | 正本か |
