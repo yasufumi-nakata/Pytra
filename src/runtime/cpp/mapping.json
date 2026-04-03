@@ -38,6 +38,7 @@
     "str.endswith": "py_endswith",
     "str.replace": "py_replace",
     "str.find": "py_find",
+    "str.rfind": "py_rfind",
     "str.split": "py_split",
     "str.join": "py_join",
     "str.upper": "py_upper",
