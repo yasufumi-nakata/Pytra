@@ -316,7 +316,8 @@ def __pytra_ifexp(cond: Boolean, a: Any, b: Any): Any = {
     if (cond) a else b
 }
 
-def __pytra_bytearray(initValue: Any): mutable.ArrayBuffer[Long] = {
+def __pytra_bytearray(initValue: Any = null): mutable.ArrayBuffer[Long] = {
+    if (initValue == null) return mutable.ArrayBuffer[Long]()
     initValue match {
         case n: Long =>
             val out = mutable.ArrayBuffer[Long]()
@@ -346,7 +347,8 @@ def __pytra_bytearray(initValue: Any): mutable.ArrayBuffer[Long] = {
     }
 }
 
-def __pytra_bytes(v: Any): mutable.ArrayBuffer[Long] = {
+def __pytra_bytes(v: Any = null): mutable.ArrayBuffer[Long] = {
+    if (v == null) return mutable.ArrayBuffer[Long]()
     val src = __pytra_as_list(v)
     val out = mutable.ArrayBuffer[Long]()
     var i = 0

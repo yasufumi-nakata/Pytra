@@ -258,7 +258,7 @@ class ScalaRenderer(CommonRenderer):
             return
         if kind == "If":
             test = self._emit_expr(node.get("test"))
-            self._emit("if (" + test + ") {")
+            self._emit("if (__pytra_truthy(" + test + ")) {")
             self.state.indent_level += 1
             for stmt in self._list(node, "body"):
                 self._emit_stmt(stmt)
@@ -276,7 +276,7 @@ class ScalaRenderer(CommonRenderer):
             return
         if kind == "While":
             test = self._emit_expr(node.get("test"))
-            self._emit("while (" + test + ") {")
+            self._emit("while (__pytra_truthy(" + test + ")) {")
             self.state.indent_level += 1
             for stmt in self._list(node, "body"):
                 self._emit_stmt(stmt)
@@ -575,7 +575,7 @@ class ScalaRenderer(CommonRenderer):
             test = self._emit_expr(node.get("test"))
             body = self._emit_expr(node.get("body"))
             orelse = self._emit_expr(node.get("orelse"))
-            return "(if (" + test + ") " + body + " else " + orelse + ")"
+            return "(if (__pytra_truthy(" + test + ")) " + body + " else " + orelse + ")"
         if kind == "IsInstance":
             value = self._emit_expr(node.get("value"))
             expected = self._emit_expr(node.get("expected_type_id"))
@@ -729,7 +729,7 @@ class ScalaRenderer(CommonRenderer):
             operand = self._emit_expr(node.get("operand"))
             op = self._str(node, "op")
             if op == "Not":
-                return "!" + operand
+                return "!__pytra_truthy(" + operand + ")"
             if op == "USub":
                 return "-" + operand
             if op == "Invert":
