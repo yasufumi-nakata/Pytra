@@ -125,6 +125,11 @@ def _load_results(case_root: str) -> dict[str, dict[str, dict[str, object]]]:
     for lang in PARITY_LANGS:
         path = PARITY_DIR / f"{lang}_{case_root}.json"
         if not path.exists():
+            # Try short name (e.g. powershell → ps1_fixture.json)
+            short = _LANG_SHORT.get(lang, lang)
+            if short != lang:
+                path = PARITY_DIR / f"{short}_{case_root}.json"
+        if not path.exists():
             data[lang] = {}
             continue
         try:
