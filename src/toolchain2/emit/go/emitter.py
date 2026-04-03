@@ -1444,11 +1444,13 @@ def _container_wrapper_go_type(resolved_type: str) -> str:
 def _maybe_coerce_expr_to_type(ctx: EmitContext, value_node: JsonVal, value_code: str, target_type: str) -> str:
     if not isinstance(value_node, dict):
         return value_code
+    source_type = _str(value_node, "resolved_type")
+    if target_type.startswith("tuple[") and source_type.startswith("tuple[") and _str(value_node, "kind") == "Call":
+        return "py_tuple_any(" + value_code + ")"
     if _is_container_resolved_type(target_type):
         if _is_wrapper_container_expr(ctx, value_node, value_code):
             return value_code
         return _wrap_ref_container_value_code(ctx, value_code, target_type)
-    source_type = _str(value_node, "resolved_type")
     if _str(value_node, "kind") == "Call" and source_type in ("", "unknown"):
         target_gt = go_type(target_type)
         if target_gt != "" and target_gt != "any":
@@ -1854,10 +1856,14 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if op_str == "In":
             if isinstance(comp_node, dict):
                 right = _wrapper_container_storage_expr(ctx, comp_node, right)
+                if comp_rt.startswith("tuple[") and _str(comp_node, "kind") == "Call":
+                    right = "py_tuple_any(" + right + ")"
             parts.append("py_contains(" + right + ", " + prev + ")")
         elif op_str == "NotIn":
             if isinstance(comp_node, dict):
                 right = _wrapper_container_storage_expr(ctx, comp_node, right)
+                if comp_rt.startswith("tuple[") and _str(comp_node, "kind") == "Call":
+                    right = "py_tuple_any(" + right + ")"
             parts.append("!py_contains(" + right + ", " + prev + ")")
         elif op_str == "Is":
             parts.append("(" + prev + " == " + right + ")")
@@ -2003,6 +2009,16 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     mod_id = _str(owner_node, "runtime_module_id") if isinstance(owner_node, dict) else ""
                 if mod_id == "":
                     mod_id = ctx.import_alias_modules.get(owner_id, "")
+                module_symbol_keys: list[str] = []
+                if owner_id != "":
+                    module_symbol_keys.append(owner_id + "." + attr)
+                if mod_id != "":
+                    module_symbol_keys.append(mod_id + "." + attr)
+                for symbol_key in module_symbol_keys:
+                    mapped_name = ctx.mapping.calls.get(symbol_key)
+                    if isinstance(mapped_name, str) and mapped_name != "":
+                        wrapped_args = _wrap_container_call_args(ctx, args, call_arg_strs)
+                        return mapped_name + "(" + ", ".join(wrapped_args) + ")"
                 runtime_symbol = _str(node, "runtime_symbol")
                 if runtime_symbol == "":
                     runtime_symbol = _str(func, "runtime_symbol")
@@ -2895,6 +2911,17 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             mod_id = _str(owner_node, "runtime_module_id") if isinstance(owner_node, dict) else ""
         if mod_id == "":
             mod_id = ctx.import_alias_modules.get(owner_id, "")
+        module_symbol_keys: list[str] = []
+        if owner_id != "":
+            module_symbol_keys.append(owner_id + "." + attr)
+        if mod_id != "":
+            module_symbol_keys.append(mod_id + "." + attr)
+        for symbol_key in module_symbol_keys:
+            mapped_value = ctx.mapping.calls.get(symbol_key)
+            if isinstance(mapped_value, str) and mapped_value != "":
+                if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", mapped_value):
+                    return _safe_go_ident(mapped_value)
+                return mapped_value
         if mod_id != "" and should_skip_module(mod_id, ctx.mapping):
             runtime_symbol = _str(node, "runtime_symbol")
             if runtime_symbol == "":

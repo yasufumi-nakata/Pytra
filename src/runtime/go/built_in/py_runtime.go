@@ -36,6 +36,10 @@ func PyListFromSlice[T any](items []T) *PyList[T] {
 	return &PyList[T]{items: out}
 }
 
+func py_tuple_any(values ...any) []any {
+	return values
+}
+
 func (p *PyList[T]) pyListLen() int {
 	if p == nil {
 		return 0
@@ -718,6 +722,39 @@ func py_append_byte(s []byte, v any) []byte {
 	default:
 		return s
 	}
+}
+
+func py_range(args ...int64) *PyList[int64] {
+	var start int64 = 0
+	var stop int64 = 0
+	var step int64 = 1
+	switch len(args) {
+	case 1:
+		stop = args[0]
+	case 2:
+		start = args[0]
+		stop = args[1]
+	case 3:
+		start = args[0]
+		stop = args[1]
+		step = args[2]
+	default:
+		panic("py_range: expected 1..3 arguments")
+	}
+	if step == 0 {
+		panic("py_range: step must not be zero")
+	}
+	out := NewPyList[int64]()
+	if step > 0 {
+		for cur := start; cur < stop; cur += step {
+			out.items = append(out.items, cur)
+		}
+		return out
+	}
+	for cur := start; cur > stop; cur += step {
+		out.items = append(out.items, cur)
+	}
+	return out
 }
 
 func py_list_pop(seq any, args ...int64) any {
