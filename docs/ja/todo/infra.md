@@ -20,6 +20,17 @@
 
 ## 未完了タスク
 
+### P5-PARITY-EMIT-UNIFY: runtime_parity_check_fast.py の emit ロジックを共通化する
+
+文脈: [docs/ja/plans/p5-parity-check-emit-unification.md](../plans/p5-parity-check-emit-unification.md)
+
+parity check の `_transpile_in_memory` に 18 言語分の if/elif チェーンがある。各言語の cli.py が共通ランナーに移行済みなので、parity check も動的 import + 共通ループで統一する。新しい言語追加時に parity check を修正する必要がなくなる。
+
+1. [ ] [ID: P5-PARITY-EMIT-S1] 各言語の emitter.py で emit 関数名を `emit_<lang>_module` に統一する
+2. [ ] [ID: P5-PARITY-EMIT-S2] `_transpile_in_memory` の emit ループを動的 import + 共通ループに置換する
+3. [ ] [ID: P5-PARITY-EMIT-S3] parity check 内の `_copy_<lang>_runtime` 重複実装を削除し、cli.py の post_emit に委譲する
+4. [ ] [ID: P5-PARITY-EMIT-S4] 全言語の parity check（fixture 代表ケース）に回帰がないことを確認する
+
 ### P10-LEGACY-TOOLCHAIN-REMOVAL: 旧 toolchain + pytra-cli.py を削除する
 
 全言語の toolchain2 emitter 実装（各言語の P1-*-EMITTER-S1）が完了した時点で、旧パイプラインを削除する。
