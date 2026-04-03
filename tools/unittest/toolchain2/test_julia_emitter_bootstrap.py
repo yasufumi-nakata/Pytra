@@ -315,6 +315,16 @@ class JuliaEmitterBootstrapTests(unittest.TestCase):
         rewritten = self.rewriter.rewrite_document(prepared)
         self.assertEqual(can_render_module_natively(rewritten), True)
 
+    def test_subset_accepts_try_raise_fixture(self) -> None:
+        doc = _load_east3_for_julia("try_raise")
+        _module_id, prepared = prepare_module_for_emit(doc)
+        self.assertEqual(can_render_module_natively(prepared), True)
+
+    def test_subset_accepts_finally_fixture(self) -> None:
+        doc = _load_east3_for_julia("finally")
+        _module_id, prepared = prepare_module_for_emit(doc)
+        self.assertEqual(can_render_module_natively(prepared), True)
+
     def test_renderer_uses_subset_for_range_fixture(self) -> None:
         source = self.renderer.render_module(_load_east3_for_julia("for_range"))
         self.assertIn("for i in 0:(n - 1)", source)
@@ -413,6 +423,20 @@ class JuliaEmitterBootstrapTests(unittest.TestCase):
         self.assertIn("while __pytra_truthy((i < n))", source)
         self.assertIn("push!(__yield_values, i)", source)
         self.assertIn("for v in gen(5)", source)
+
+    def test_renderer_uses_subset_for_try_raise_fixture(self) -> None:
+        source = self.renderer.render_module(_load_east3_for_julia("try_raise"))
+        self.assertIn("try", source)
+        self.assertIn('throw(Exception("fail-19"))', source)
+        self.assertIn("catch __pytra_err", source)
+        self.assertIn("if __pytra_err isa Exception", source)
+        self.assertIn("finally", source)
+
+    def test_renderer_uses_subset_for_finally_fixture(self) -> None:
+        source = self.renderer.render_module(_load_east3_for_julia("finally"))
+        self.assertIn('throw(Exception("fail-20"))', source)
+        self.assertIn("value = 20", source)
+        self.assertIn("value = (value + 3)", source)
 
     def test_emit_nested_closure_fixture_through_toolchain2_entrypoint(self) -> None:
         source = transpile_to_julia_native(_load_east3_for_julia("nested_closure_def"))

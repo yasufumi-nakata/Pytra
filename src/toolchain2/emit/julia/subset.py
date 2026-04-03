@@ -88,6 +88,15 @@ def _simple_class_supported(node: dict[str, JsonVal]) -> bool:
     return True
 
 
+def _except_handler_supported(node: JsonVal) -> bool:
+    if not isinstance(node, dict) or _str(node, "kind") != "ExceptHandler":
+        return False
+    type_node = node.get("type")
+    if type_node is not None and (not isinstance(type_node, dict) or _str(type_node, "kind") != "Name"):
+        return False
+    return all(_stmt_supported(stmt) for stmt in _list(node, "body"))
+
+
 def _expr_supported(node: JsonVal) -> bool:
     if not isinstance(node, dict):
         return False
@@ -166,6 +175,10 @@ def _stmt_supported(node: JsonVal) -> bool:
         return value is None or _expr_supported(value)
     if kind == "Pass":
         return True
+    if kind == "Raise":
+        exc = node.get("exc")
+        cause = node.get("cause")
+        return (exc is None or _expr_supported(exc)) and (cause is None or _expr_supported(cause))
     if kind == "AnnAssign":
         target = node.get("target")
         return isinstance(target, dict) and _str(target, "kind") == "Name" and _expr_supported(node.get("value"))
@@ -196,6 +209,13 @@ def _stmt_supported(node: JsonVal) -> bool:
     if kind == "While":
         return _expr_supported(node.get("test")) and all(_stmt_supported(stmt) for stmt in _list(node, "body")) and all(
             _stmt_supported(stmt) for stmt in _list(node, "orelse")
+        )
+    if kind == "Try":
+        return (
+            all(_stmt_supported(stmt) for stmt in _list(node, "body"))
+            and all(_except_handler_supported(handler) for handler in _list(node, "handlers"))
+            and len(_list(node, "orelse")) == 0
+            and all(_stmt_supported(stmt) for stmt in _list(node, "finalbody"))
         )
     if kind == "ForCore":
         target_plan = node.get("target_plan")
@@ -437,6 +457,13 @@ class JuliaSubsetRenderer:
         if kind == "Pass":
             self._emit("nothing")
             return
+        if kind == "Raise":
+            exc = node.get("exc")
+            if exc is None:
+                self._emit("rethrow()")
+            else:
+                self._emit("throw(" + self._render_expr(exc) + ")")
+            return
         if kind == "Return":
             value = node.get("value")
             if value is None:
@@ -487,6 +514,9 @@ class JuliaSubsetRenderer:
             self.indent_level -= 1
             self._emit("end")
             return
+        if kind == "Try":
+            self._emit_try(node)
+            return
         if kind == "ForCore":
             self._emit(self._render_for_header(node))
             self.indent_level += 1
@@ -509,6 +539,49 @@ class JuliaSubsetRenderer:
             self._emit_class(node)
             return
         raise RuntimeError("julia subset: unsupported stmt kind: " + kind)
+
+    def _emit_try(self, node: dict[str, JsonVal]) -> None:
+        handlers = _list(node, "handlers")
+        finalbody = _list(node, "finalbody")
+        self._emit("try")
+        self.indent_level += 1
+        for stmt in _list(node, "body"):
+            self._emit_stmt(stmt)
+        self.indent_level -= 1
+        if len(handlers) > 0:
+            err_name = "__pytra_err"
+            self._emit("catch " + err_name)
+            self.indent_level += 1
+            for index, handler in enumerate(handlers):
+                if not isinstance(handler, dict):
+                    continue
+                type_node = handler.get("type")
+                type_name = self._render_expr(type_node) if isinstance(type_node, dict) else ""
+                cond = "true" if type_name == "" else err_name + " isa " + type_name
+                if index == 0:
+                    self._emit("if " + cond)
+                else:
+                    self._emit("elseif " + cond)
+                self.indent_level += 1
+                bound_name = handler.get("name")
+                if isinstance(bound_name, str) and bound_name != "":
+                    self._emit(bound_name + " = " + err_name)
+                for stmt in _list(handler, "body"):
+                    self._emit_stmt(stmt)
+                self.indent_level -= 1
+            self._emit("else")
+            self.indent_level += 1
+            self._emit("rethrow()")
+            self.indent_level -= 1
+            self._emit("end")
+            self.indent_level -= 1
+        if len(finalbody) > 0:
+            self._emit("finally")
+            self.indent_level += 1
+            for stmt in finalbody:
+                self._emit_stmt(stmt)
+            self.indent_level -= 1
+        self._emit("end")
 
     def _emit_class(self, node: dict[str, JsonVal]) -> None:
         class_name = _str(node, "name")

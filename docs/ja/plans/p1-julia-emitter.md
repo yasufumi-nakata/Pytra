@@ -48,3 +48,4 @@
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset 判定を bootstrap rewrite 後に寄せ、空 `ClassDef` を no-op として扱う段階移行に切り替えた。これで static class attr と closure rewrite 後の一部 fixture も native path に含められる。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に最小 class support を追加し、empty class・simple `__init__`・class call・instance field access を native 化した。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `While` を追加し、generator lowering 後の control fixture も native path に取り込んだ。
+- 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `Try` / `Raise` を追加し、標準例外と finally を使う control fixture 群を native path に移した。

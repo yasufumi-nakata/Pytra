@@ -53,6 +53,8 @@
    - 2026-04-03: `tools/unittest/toolchain2/test_julia_emitter_bootstrap.py` は 50 tests PASS、`tools/unittest/emit/julia/test_py2julia_smoke.py` は 39 tests `OK (skipped=1)` を再確認
    - 2026-04-03: subset native renderer に `While` を追加し、generator lowering 後の `yield_generator_min` を native path へ乗せた。現時点の native coverage は `core` 22件、`control` 9件
    - 2026-04-03: `tools/unittest/toolchain2/test_julia_emitter_bootstrap.py` は 52 tests PASS、`tools/unittest/emit/julia/test_py2julia_smoke.py` は 39 tests `OK (skipped=1)` を再確認
+   - 2026-04-03: subset native renderer に `Try` / `Raise` を追加し、`try_raise`, `finally`, `exception_bare_reraise`, `exception_finally_order`, `exception_propagation_raise_from`, `exception_propagation_two_frames` を native path へ乗せた。残る control 側の legacy 依存は `exception_user_defined_multi_handler` のみ
+   - 2026-04-03: `tools/unittest/toolchain2/test_julia_emitter_bootstrap.py` は 56 tests PASS、`tools/unittest/emit/julia/test_py2julia_smoke.py` は 39 tests `OK (skipped=1)` を再確認。現時点の native coverage は `core` 22件、`control` 15件
 2. [x] [ID: P1-JULIA-EMITTER-S2] `src/runtime/julia/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
    - 2026-04-02: `src/runtime/julia/mapping.json` を追加し、toolchain2 Julia emitter bootstrap が参照する runtime call/type mapping を整備
 3. [x] [ID: P1-JULIA-EMITTER-S3] fixture 全件の Julia emit 成功を確認する
