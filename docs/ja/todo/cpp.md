@@ -21,6 +21,13 @@
 
 ## 未完了タスク
 
+### P0-ISINS-DETID-CPP: C++ emitter の PYTRA_TID_* 逆引きを削除し型名ベースに移行する
+
+前提: infra の P0-ISINSTANCE-DETID (S1-S3) が完了し、EAST3 の `IsInstance` ノードが `expected_type_name` を持つようになった後に着手。
+
+1. [ ] [ID: P0-ISINS-DETID-CPP-S1] C++ emitter の `PYTRA_TID_*` → 型名の逆引きテーブルを削除し、`expected_type_name` を直接参照する
+2. [ ] [ID: P0-ISINS-DETID-CPP-S2] fixture + sample + stdlib の C++ parity に回帰がないことを確認する
+
 ### P0-OPT-LEVEL-RENAME: `--east3-opt-level` を `--opt-level` に改名し最適化プリセットとして統合する
 
 文脈: [docs/ja/plans/p0-subscript-bounds-east-optimizer.md](../plans/p0-subscript-bounds-east-optimizer.md)
