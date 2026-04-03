@@ -1394,8 +1394,12 @@ def check_case(
                 _record(target_name, "unsupported_feature", "unsupported feature")
                 continue
 
-            profile = get_target_profile(target_name)
-            target_obj_needs = profile.runner_needs
+            _PS1_NEEDS = ("python", "pwsh")
+            if target_name == "ps1":
+                target_obj_needs = _PS1_NEEDS
+            else:
+                profile = get_target_profile(target_name)
+                target_obj_needs = profile.runner_needs
             from runtime_parity_check import Target
             dummy_target = Target(name=target_name, transpile_cmd="", run_cmd="", needs=target_obj_needs)
             if not can_run(dummy_target):
