@@ -20,7 +20,7 @@
 
 ## 未完了タスク
 
-### P0-LEGACY-TOOLCHAIN-REMOVAL: 旧 toolchain + pytra-cli.py を削除する
+### P10-LEGACY-TOOLCHAIN-REMOVAL: 旧 toolchain + pytra-cli.py を削除する
 
 全言語の toolchain2 emitter 実装（各言語の P1-*-EMITTER-S1）が完了した時点で、旧パイプラインを削除する。
 
@@ -37,11 +37,11 @@
 - [ ] Zig（S1 未完了）
 - [ ] PowerShell（S1 未着手）
 
-1. [ ] [ID: P0-LEGACY-RM-S1] 全言語の P1-*-EMITTER-S1 完了を確認する（ゲート）
-2. [ ] [ID: P0-LEGACY-RM-S2] `src/toolchain/` を削除する
-3. [ ] [ID: P0-LEGACY-RM-S3] `src/pytra-cli.py` を削除し、`src/pytra-cli2.py` を `src/pytra-cli.py` にリネームする
-4. [ ] [ID: P0-LEGACY-RM-S4] spec / tutorial / README の旧パイプライン参照を更新する
-5. [ ] [ID: P0-LEGACY-RM-S5] `run_local_ci.py` 等のツールから旧パイプライン参照を削除する
+1. [ ] [ID: P10-LEGACY-RM-S1] 全言語の P1-*-EMITTER-S1 完了を確認する（ゲート）
+2. [ ] [ID: P10-LEGACY-RM-S2] `src/toolchain/` を削除する
+3. [ ] [ID: P10-LEGACY-RM-S3] `src/pytra-cli.py` を削除し、`src/pytra-cli2.py` を `src/pytra-cli.py` にリネームする
+4. [ ] [ID: P10-LEGACY-RM-S4] spec / tutorial / README の旧パイプライン参照を更新する
+5. [ ] [ID: P10-LEGACY-RM-S5] `run_local_ci.py` 等のツールから旧パイプライン参照を削除する
 
 ### P0-ISINSTANCE-DETID: EAST3 の IsInstance ノードから PYTRA_TID_* を廃止し型名を直接持たせる
 
