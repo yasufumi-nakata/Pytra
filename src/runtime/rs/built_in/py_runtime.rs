@@ -114,12 +114,26 @@ impl<T> PyList<T> {
 impl<T: Clone> PyList<T> {
     pub fn get(&self, idx: i64) -> T {
         let v = self.inner.borrow();
-        let i = if idx < 0 { (v.len() as i64 + idx) as usize } else { idx as usize };
+        let mut adj = idx;
+        if adj < 0 {
+            adj += v.len() as i64;
+        }
+        if adj < 0 || adj >= v.len() as i64 {
+            panic!("IndexError");
+        }
+        let i = adj as usize;
         v[i].clone()
     }
     pub fn set(&self, idx: i64, val: T) {
         let mut v = self.inner.borrow_mut();
-        let i = if idx < 0 { (v.len() as i64 + idx) as usize } else { idx as usize };
+        let mut adj = idx;
+        if adj < 0 {
+            adj += v.len() as i64;
+        }
+        if adj < 0 || adj >= v.len() as i64 {
+            panic!("IndexError");
+        }
+        let i = adj as usize;
         v[i] = val;
     }
     pub fn pop(&self) -> Option<T> {
@@ -187,10 +201,48 @@ pub trait PyStringify {
     fn py_stringify(&self) -> String;
 }
 
-impl<T: PyStringify> PyStringify for PyList<T> {
+fn py_repr_string_literal(s: &str) -> String {
+    "'" .to_string() + &s.replace("\\", "\\\\").replace("'", "\\'") + "'"
+}
+
+fn py_repr_pyany(value: &PyAny) -> String {
+    match value {
+        PyAny::Int(n) => n.to_string(),
+        PyAny::TypeId(n) => n.to_string(),
+        PyAny::Float(f) => py_float_string(*f),
+        PyAny::Bool(b) => if *b { "True".to_string() } else { "False".to_string() },
+        PyAny::Str(s) => py_repr_string_literal(s),
+        PyAny::Dict(d) => {
+            let items: Vec<String> = d.iter().map(|(k, v)| py_repr_string_literal(k) + ": " + &py_repr_pyany(v)).collect();
+            "{".to_string() + &items.join(", ") + "}"
+        }
+        PyAny::List(items) => {
+            let parts: Vec<String> = items.iter().map(py_repr_pyany).collect();
+            "[".to_string() + &parts.join(", ") + "]"
+        }
+        PyAny::Set(items) => {
+            let parts: Vec<String> = items.iter().map(py_repr_pyany).collect();
+            "{".to_string() + &parts.join(", ") + "}"
+        }
+        PyAny::None => "None".to_string(),
+    }
+}
+
+fn py_repr_item<T: PyStringify + 'static>(value: &T) -> String {
+    let any = value as &dyn std::any::Any;
+    if let Some(s) = any.downcast_ref::<String>() {
+        return py_repr_string_literal(s);
+    }
+    if let Some(pyany) = any.downcast_ref::<PyAny>() {
+        return py_repr_pyany(pyany);
+    }
+    value.py_stringify()
+}
+
+impl<T: PyStringify + 'static> PyStringify for PyList<T> {
     fn py_stringify(&self) -> String {
         let inner = self.py_borrow();
-        let items: Vec<String> = inner.iter().map(|x| x.py_stringify()).collect();
+        let items: Vec<String> = inner.iter().map(py_repr_item).collect();
         "[".to_string() + &items.join(", ") + "]"
     }
 }
@@ -204,17 +256,30 @@ impl<T: PyStringify> PyStringify for Option<T> {
     }
 }
 
-impl<T: PyStringify> PyStringify for Vec<T> {
+impl<T: PyStringify + 'static> PyStringify for Vec<T> {
     fn py_stringify(&self) -> String {
-        let items: Vec<String> = self.iter().map(|x| x.py_stringify()).collect();
+        let items: Vec<String> = self.iter().map(py_repr_item).collect();
         "[".to_string() + &items.join(", ") + "]"
     }
 }
 
-impl<K: PyStringify, V: PyStringify> PyStringify for HashMap<K, V> {
+impl<K: PyStringify + 'static, V: PyStringify + 'static> PyStringify for HashMap<K, V> {
     fn py_stringify(&self) -> String {
-        let items: Vec<String> = self.iter().map(|(k, v)| k.py_stringify() + ": " + &v.py_stringify()).collect();
+        let mut items: Vec<String> = self.iter().map(|(k, v)| py_repr_item(k) + ": " + &py_repr_item(v)).collect();
+        items.sort();
         "{".to_string() + &items.join(", ") + "}"
+    }
+}
+
+impl<A: PyStringify + 'static> PyStringify for (A,) {
+    fn py_stringify(&self) -> String {
+        "(".to_string() + &py_repr_item(&self.0) + ",)"
+    }
+}
+
+impl<A: PyStringify + 'static, B: PyStringify + 'static> PyStringify for (A, B) {
+    fn py_stringify(&self) -> String {
+        "(".to_string() + &py_repr_item(&self.0) + ", " + &py_repr_item(&self.1) + ")"
     }
 }
 
@@ -500,12 +565,26 @@ pub fn py_str_isspace(s: &str) -> bool {
 }
 
 pub fn py_str_char_at(s: &str, i: i64) -> i64 {
-    let idx = if i < 0 { (s.chars().count() as i64 + i) as usize } else { i as usize };
-    s.chars().nth(idx).map(|c| c as i64).unwrap_or(0)
+    let len = s.chars().count() as i64;
+    let mut idx = i;
+    if idx < 0 {
+        idx += len;
+    }
+    if idx < 0 || idx >= len {
+        panic!("IndexError");
+    }
+    s.chars().nth(idx as usize).map(|c| c as i64).unwrap_or_else(|| panic!("IndexError"))
 }
 pub fn py_str_get_at(s: &str, i: i64) -> String {
-    let idx = if i < 0 { (s.chars().count() as i64 + i) as usize } else { i as usize };
-    s.chars().nth(idx).map(|c| c.to_string()).unwrap_or_default()
+    let len = s.chars().count() as i64;
+    let mut idx = i;
+    if idx < 0 {
+        idx += len;
+    }
+    if idx < 0 || idx >= len {
+        panic!("IndexError");
+    }
+    s.chars().nth(idx as usize).map(|c| c.to_string()).unwrap_or_else(|| panic!("IndexError"))
 }
 pub fn py_str_strip(s: &str) -> String { s.trim().to_string() }
 pub fn py_str_strip_chars(s: &str, chars: &str) -> String {
@@ -649,6 +728,13 @@ pub fn py_reversed<T: Clone>(items: &PyList<T>) -> PyList<T> {
     let mut v = items.py_borrow().clone();
     v.reverse();
     PyList::<T>::from_vec(v)
+}
+
+pub fn py_sum<T>(items: PyList<T>) -> T
+where
+    T: std::iter::Sum<T> + Clone,
+{
+    items.iter_snapshot().into_iter().sum::<T>()
 }
 
 /// Python `set(iterable)` constructor.
