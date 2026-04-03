@@ -52,3 +52,4 @@
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] emitter の検証は guide に従い parity check 正本へ戻し、専用 bootstrap unit test は持たない方針に修正した。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] parity runner の Julia 実行は実体バイナリ優先へ寄せ、subset native renderer でも `str(...)` と negative-step `range(...)` を吸収して control parity 16/16 を維持した。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `ImportFrom(math/time/pytra.utils.png)` と `int` / `bytearray` の最小 mapping、Julia 予約語 identifier mangle を追加し、単純 import fixture も native path へ寄せ始めた。
+- 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `str` method 群、list mutation、`JoinedStr` / `FormattedValue` を追加し、単純 string/list fixture も native path へ寄せた。

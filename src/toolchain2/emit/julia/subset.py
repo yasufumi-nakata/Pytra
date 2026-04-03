@@ -231,6 +231,10 @@ def _expr_supported(node: JsonVal) -> bool:
     kind = _str(node, "kind")
     if kind in {"Name", "Constant"}:
         return True
+    if kind == "FormattedValue":
+        return _expr_supported(node.get("value"))
+    if kind == "JoinedStr":
+        return all(_expr_supported(item) for item in _list(node, "values"))
     if kind == "ObjStr":
         return _expr_supported(node.get("value"))
     if kind == "Attribute":
@@ -269,11 +273,23 @@ def _expr_supported(node: JsonVal) -> bool:
         if isinstance(func, dict) and _str(func, "kind") == "Attribute":
             owner = func.get("value")
             attr = _str(func, "attr")
-            if not isinstance(owner, dict) or _str(owner, "kind") != "Name":
+            if not _expr_supported(owner):
                 return False
             if not all(_expr_supported(arg) for arg in _list(node, "args")):
                 return False
-            return attr in {"append", "get", "join"}
+            return attr in {
+                "append",
+                "clear",
+                "endswith",
+                "get",
+                "join",
+                "replace",
+                "reverse",
+                "rstrip",
+                "sort",
+                "startswith",
+                "strip",
+            }
         return _expr_supported(node.get("func")) and all(_expr_supported(arg) for arg in _list(node, "args"))
     if kind in {"Box", "Unbox"}:
         return _expr_supported(node.get("value"))
@@ -413,6 +429,17 @@ class JuliaSubsetRenderer:
             return _ident(name)
         if kind == "Attribute":
             return self._render_expr(node.get("value")) + "." + _str(node, "attr")
+        if kind == "FormattedValue":
+            return "string(" + self._render_expr(node.get("value")) + ")"
+        if kind == "JoinedStr":
+            values = _list(node, "values")
+            if len(values) == 0:
+                return '""'
+            parts = [self._render_expr(item) for item in values]
+            expr = parts[0]
+            for part in parts[1:]:
+                expr = "(" + expr + " * " + part + ")"
+            return expr
         if kind == "ObjStr":
             return "string(" + self._render_expr(node.get("value")) + ")"
         if kind == "Constant":
@@ -512,10 +539,26 @@ class JuliaSubsetRenderer:
                 args = [self._render_expr(arg) for arg in _list(node, "args")]
                 if attr == "append" and len(args) == 1:
                     return "push!(" + owner + ", " + args[0] + ")"
+                if attr == "clear" and len(args) == 0:
+                    return "empty!(" + owner + ")"
+                if attr == "sort" and len(args) == 0:
+                    return "sort!(" + owner + ")"
+                if attr == "reverse" and len(args) == 0:
+                    return "reverse!(" + owner + ")"
                 if attr == "get" and len(args) == 2:
                     return "get(" + owner + ", " + args[0] + ", " + args[1] + ")"
                 if attr == "join" and len(args) == 1:
                     return "join(" + args[0] + ", " + owner + ")"
+                if attr == "strip" and len(args) == 0:
+                    return "strip(" + owner + ")"
+                if attr == "rstrip" and len(args) == 0:
+                    return "rstrip(" + owner + ")"
+                if attr == "startswith" and len(args) == 1:
+                    return "startswith(" + owner + ", " + args[0] + ")"
+                if attr == "endswith" and len(args) == 1:
+                    return "endswith(" + owner + ", " + args[0] + ")"
+                if attr == "replace" and len(args) == 2:
+                    return "replace(" + owner + ", " + args[0] + " => " + args[1] + ")"
             func = self._render_expr(func_node)
             args = [self._render_expr(arg) for arg in _list(node, "args")]
             if func == "print":
