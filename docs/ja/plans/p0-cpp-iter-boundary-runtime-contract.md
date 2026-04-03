@@ -1,6 +1,6 @@
 # P0 C++ iter boundary runtime contract
 
-最終更新: 2026-04-02
+最終更新: 2026-04-03
 
 ## 目的
 
@@ -11,7 +11,7 @@
 - `src/toolchain2/compile/lower.py` は `iter.init` / `iter.next` を `ObjIterInit` / `ObjIterNext` として生成する
 - `src/toolchain2/emit/cpp/emitter.py` は direct `ObjIterInit` / `ObjIterNext` を処理しない
 - `src/runtime/cpp/` には `py_iter_or_raise` / `py_next_or_stop` free helper が存在しない
-- さらに linked runtime の [iter_ops.east](../../runtime/east/built_in/iter_ops.east) 自体が `values: object`, `list[object]`, `ObjIterInit`, `ObjIterNext` を前提にしている
+- さらに linked runtime の generic helper、現状では [predicates.east](../../runtime/east/built_in/predicates.east) の `py_any` / `py_all` が `ForCore(iter_plan.init_op=ObjIterInit, next_op=ObjIterNext)` を前提にしている
 
 この状態では、`lower.py` から iter boundary を消す作業と、C++ runtime / emitter の契約整理が密結合になる。
 
@@ -24,13 +24,22 @@
      - free helper を再導入する
      - method call 契約を runtime core に戻す
    - 追加前提:
-     - `src/runtime/east/built_in/iter_ops.east` の object-based runtime をどう置き換えるかも同時に決める
-     - ここを変えない限り、user module 側の iter boundary だけ削っても linked runtime から `object` seam が再流入する
+     - linked runtime の generic iter helper をどう置き換えるかも同時に決める
+     - 現状は `src/runtime/east/built_in/predicates.east` の `py_any` / `py_all` が C++ backend に iter boundary seam を再流入させる
 
 2. `P0-CPP-VARIANT-S10`
    - 上記契約に沿って `lower.py` から `resolved_type="object"` Boxing と iter boundary を段階的に削る
 
+## 2026-04-03 時点の整理
+
+- canonical source から `iter_ops.py` は消えており、旧 blocker は現状の repo には存在しない
+- C++ 向け lower の fixture 全走査では、non-explicit dynamic path の `resolved_type="object"` は 0
+- residual seam は
+  - explicit object 契約: `trait_basic`, `trait_with_inheritance`, `typed_container_access`
+  - bare `Callable -> object` 境界
+  - runtime generic iter helper: `src/runtime/east/built_in/predicates.east` の `py_any` / `py_all`
+
 ## 完了条件
 
-- C++ backend で `ObjIterInit` / `ObjIterNext` の受け口が定義されている
-- `lower.py` の iter boundary 削除が runtime 契約未整備で止まらない
+- iter boundary の residual seam が explicit object / bare `Callable` とは別契約として切り分けられている
+- runtime generic iter helper の依存先が `predicates.east` であることを記録し、`S10` 本体から独立に追跡できる

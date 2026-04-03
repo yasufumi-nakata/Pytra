@@ -57,8 +57,8 @@ Phase 1（variant 出力追加）、Phase 2 の S5 まで完了済み（[archive
 
 5. [x] [ID: P0-CPP-VARIANT-S10A] lower.py の non-explicit dynamic path から `resolved_type="object"` 生成を除去する
    - 完了メモ: C++ backend は `target_language="cpp"` では iter boundary lower を抑止して `py_iter_or_raise` / `py_next_or_stop` call をそのまま残す方針に固定した。さらに C++ 向け dynamic target `Box` では `resolved_type="object"` を固定せず target type を保持するようにし、代表ケースに対して `resolved_type="object"` が出ないことを `test_compile_uses_dynamic_target_resolved_type_for_cpp_box` / `test_compile_uses_union_target_resolved_type_for_cpp_box` / `test_compile_cpp_lowering_avoids_object_resolved_type_for_representative_dynamic_cases` で固定済み。fixture 全体を C++ 向けに lower して走査した結果、残る `resolved_type="object"` は `trait_basic`, `trait_with_inheritance`, `typed_container_access` の explicit dynamic/object 契約 6 ノードだけで、non-explicit dynamic path の残件は 0 を確認した。
-6. [ ] [ID: P0-CPP-VARIANT-S10B] iter boundary と explicit object / bare `Callable` 境界の残件を別契約として整理し、削除順を固定する
-   - メモ: `ObjIterInit` / `ObjIterNext` は [p0-cpp-iter-boundary-runtime-contract.md](../plans/p0-cpp-iter-boundary-runtime-contract.md) に切り出した。現時点の C++ lower で残る `resolved_type="object"` は trait decorator の `cls: object` と `dict[str, object].get(..., "")` のような explicit dynamic/object 契約、および bare `Callable -> object` 境界が中心で、variant/object 移行とは別に callable type tracking・iter runtime 契約と合わせて詰める必要がある。
+6. [x] [ID: P0-CPP-VARIANT-S10B] iter boundary と explicit object / bare `Callable` 境界の残件を別契約として整理し、削除順を固定する
+   - 完了メモ: C++ 向け lower の fixture 全走査を取り直し、non-explicit dynamic path の `resolved_type="object"` は 0、残件は `trait_basic`, `trait_with_inheritance`, `typed_container_access` の explicit object 契約 6 ノードだけであることを再確認した。あわせて iter boundary seam は旧 `iter_ops` ではなく `src/runtime/east/built_in/predicates.east` の generic `py_any` / `py_all` に残っていることを確認し、[p0-cpp-iter-boundary-runtime-contract.md](../plans/p0-cpp-iter-boundary-runtime-contract.md) を更新した。これにより `S10` 本体の残件は explicit object / bare `Callable` / runtime generic iter helper の 3 系統へ固定された。
 7. [ ] [ID: P0-CPP-VARIANT-S11] EAST3 validation に「`resolved_type: "object"` ならエラー」を追加する
 8. [ ] [ID: P0-CPP-VARIANT-S12] 全言語の fixture + sample が PASS することを確認する
 
