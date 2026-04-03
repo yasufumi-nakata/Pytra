@@ -17,6 +17,9 @@ _BINOP_TEXT = {
     "Div": "/",
     "FloorDiv": "div",
     "Mod": "%",
+    "BitAnd": "&",
+    "BitOr": "|",
+    "BitXor": "xor",
 }
 
 _CMP_TEXT = {
@@ -36,6 +39,7 @@ _UNARY_TEXT = {
     "USub": "-",
     "UAdd": "+",
     "Not": "!",
+    "Invert": "~",
 }
 
 _EXCEPTION_CTOR_TEXT = {
@@ -555,6 +559,8 @@ class JuliaSubsetRenderer:
             right = self._render_expr(node.get("right"))
             if op == "FloorDiv":
                 return "div(" + left + ", " + right + ")"
+            if op == "BitXor":
+                return "xor(" + left + ", " + right + ")"
             if op == "Add":
                 left_node = node.get("left")
                 right_node = node.get("right")

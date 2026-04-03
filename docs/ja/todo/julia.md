@@ -63,6 +63,7 @@
    - 2026-04-03: subset native renderer に `dict.items()` と `list.extend()` を追加し、`typed_container_access` を native path へ乗せた
    - 2026-04-03: `object_container_access` が既存 subset の組み合わせ (`dict.items/get`, `list.extend`, tuple-in-set, union container access) で native path / parity PASS になることを確認
    - 2026-04-03: subset native renderer に property getter / instance method を含む最小 class support を追加し、`property_method_call` を native path へ乗せた
+   - 2026-04-03: subset native renderer に bitwise `~`, `&`, `|`, `^` を追加し、`bitwise_invert_basic` を native path へ乗せた
 2. [x] [ID: P1-JULIA-EMITTER-S2] `src/runtime/julia/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions` を定義
    - 2026-04-02: `src/runtime/julia/mapping.json` を追加し、toolchain2 Julia emitter bootstrap が参照する runtime call/type mapping を整備
 3. [x] [ID: P1-JULIA-EMITTER-S3] fixture 全件の Julia emit 成功を確認する

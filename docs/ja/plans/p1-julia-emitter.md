@@ -63,3 +63,4 @@
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に `dict.items()` と `list.extend()` を追加し、`typed_container_access` も native path に寄せた。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] `object_container_access` は追加実装なしで subset native path / parity PASS に入ることを確認した。残る近傍の gap は `property_method_call` の class/property method lowering。
 - 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に property getter / instance method を含む最小 class support を追加し、`property_method_call` も native path に寄せた。
+- 2026-04-03: [ID: P1-JULIA-EMITTER-S1] subset native renderer に bitwise `~`, `&`, `|`, `^` を追加し、`bitwise_invert_basic` も native path に寄せた。
