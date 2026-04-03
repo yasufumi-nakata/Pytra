@@ -718,6 +718,39 @@ class JuliaSubsetRenderer:
             return "__pytra_str(" + args[0] + ")"
         return ""
 
+    def _render_super_method_call(self, owner_type: str, attr: str, args: list[str]) -> str:
+        base_name = self._base_name(owner_type)
+        if base_name == "" and self.current_class_name != "":
+            base_name = self._base_name(self.current_class_name)
+        if base_name == "":
+            return ""
+        if attr == "__init__":
+            pieces = ["__pytra_base = __pytra_new_" + base_name + "(" + ", ".join(args) + ")"]
+            for field_name in self._collect_field_names(base_name):
+                pieces.append("self." + field_name + " = __pytra_base." + field_name)
+            pieces.append("nothing")
+            return "(begin " + "; ".join(pieces) + "; end)"
+        return self._method_impl_name(base_name, attr) + "(self" + (", " if len(args) > 0 else "") + ", ".join(args) + ")"
+
+    def _render_class_dispatch_call(
+        self,
+        owner: str,
+        owner_type: str,
+        owner_name: str,
+        attr: str,
+        args: list[str],
+        keywords: list[dict[str, JsonVal]],
+    ) -> str:
+        if len(keywords) != 0:
+            return ""
+        if attr in self.class_static_method_names.get(owner_name, set()):
+            return _ident(attr) + "(" + ", ".join(args) + ")"
+        if attr in self.class_method_names.get(owner_type, set()):
+            call_args = [owner]
+            call_args.extend(args)
+            return _ident(attr) + "(" + ", ".join(call_args) + ")"
+        return ""
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -923,17 +956,9 @@ class JuliaSubsetRenderer:
                     and _str(owner_node.get("func"), "kind") == "Name"
                     and _str(owner_node.get("func"), "id") == "super"
                 ):
-                    base_name = self._base_name(owner_type)
-                    if base_name == "" and self.current_class_name != "":
-                        base_name = self._base_name(self.current_class_name)
-                    if base_name != "":
-                        if attr == "__init__":
-                            pieces = ["__pytra_base = __pytra_new_" + base_name + "(" + ", ".join(args) + ")"]
-                            for field_name in self._collect_field_names(base_name):
-                                pieces.append("self." + field_name + " = __pytra_base." + field_name)
-                            pieces.append("nothing")
-                            return "(begin " + "; ".join(pieces) + "; end)"
-                        return self._method_impl_name(base_name, attr) + "(self" + (", " if len(args) > 0 else "") + ", ".join(args) + ")"
+                    super_call = self._render_super_method_call(owner_type, attr, args)
+                    if super_call != "":
+                        return super_call
                 mapped_method = self._render_mapped_method_call(node, owner, args)
                 if mapped_method != "":
                     return mapped_method
@@ -956,12 +981,9 @@ class JuliaSubsetRenderer:
                     return "endswith(" + owner + ", " + args[0] + ")"
                 if attr == "replace" and len(args) == 2:
                     return "replace(" + owner + ", " + args[0] + " => " + args[1] + ")"
-                if attr in self.class_static_method_names.get(owner_name, set()) and len(keywords) == 0:
-                    return _ident(attr) + "(" + ", ".join(args) + ")"
-                if attr in self.class_method_names.get(owner_type, set()) and len(keywords) == 0:
-                    call_args = [owner]
-                    call_args.extend(args)
-                    return _ident(attr) + "(" + ", ".join(call_args) + ")"
+                class_call = self._render_class_dispatch_call(owner, owner_type, owner_name, attr, args, keywords)
+                if class_call != "":
+                    return class_call
             func = self._render_expr(func_node)
             args = [self._render_expr(arg) for arg in _list(node, "args")]
             runtime_call = _str(node, "resolved_runtime_call")
