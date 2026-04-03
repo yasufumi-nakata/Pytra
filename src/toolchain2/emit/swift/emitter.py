@@ -976,16 +976,16 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
 
         symbol = _compare_op_symbol(op)
         if left_type == "str" or right_type == "str":
-            lhs = _to_str_expr(cur_left)
-            rhs = _to_str_expr(right)
+            lhs = cur_left if (isinstance(left_node, dict) and not _needs_cast(left_node, "String")) else _to_str_expr(cur_left)
+            rhs = right if (isinstance(comp_node, dict) and not _needs_cast(comp_node, "String")) else _to_str_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         elif left_type in {"int", "int64", "uint8"} or right_type in {"int", "int64", "uint8"}:
-            lhs = _to_int_expr(cur_left)
-            rhs = _to_int_expr(right)
+            lhs = cur_left if (isinstance(left_node, dict) and not _needs_cast(left_node, "Int64")) else _to_int_expr(cur_left)
+            rhs = right if (isinstance(comp_node, dict) and not _needs_cast(comp_node, "Int64")) else _to_int_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         elif left_type in {"float", "float64"} or right_type in {"float", "float64"}:
-            lhs = _to_float_expr(cur_left)
-            rhs = _to_float_expr(right)
+            lhs = cur_left if (isinstance(left_node, dict) and not _needs_cast(left_node, "Double")) else _to_float_expr(cur_left)
+            rhs = right if (isinstance(comp_node, dict) and not _needs_cast(comp_node, "Double")) else _to_float_expr(right)
             parts.append("(" + lhs + " " + symbol + " " + rhs + ")")
         else:
             if op in {"Eq", "NotEq"}:
@@ -2150,7 +2150,13 @@ def _render_expr(expr: Any) -> str:
 
     if kind == "IsInstance":
         lhs = _render_expr(ed2.get("value"))
-        return _render_isinstance_check(lhs, ed2.get("expected_type_id"))
+        expected_type = ed2.get("expected_type_id")
+        if not isinstance(expected_type, dict):
+            expected_type_name_any = ed2.get("expected_type_name")
+            expected_type_name = expected_type_name_any if isinstance(expected_type_name_any, str) else ""
+            if expected_type_name != "":
+                expected_type = {"kind": "Name", "id": expected_type_name}
+        return _render_isinstance_check(lhs, expected_type)
 
     if kind == "ObjLen":
         return "__pytra_len(" + _render_expr(ed2.get("value")) + ")"
