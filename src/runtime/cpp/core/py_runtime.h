@@ -28,11 +28,6 @@
 // emitter が必要に応じて個別に include を生成する。
 // py_runtime.h からは include しない。
 
-bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id);
-bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id);
-bool py_tid_isinstance(const object& value, int64 expected_type_id);
-int64 py_tid_register_class_type(int64 base_type_id);
-
 // py_div / py_floordiv / py_mod は built_in/scalar_ops.h へ移動済み。
 
 #endif  // PYTRA_BUILT_IN_PY_RUNTIME_H
