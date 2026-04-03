@@ -1403,16 +1403,13 @@ class JuliaSubsetRenderer:
     def _emit_exception_class(self, node: dict[str, JsonVal]) -> None:
         class_name = _str(node, "name")
         base_name = _str(node, "base")
-        base_map = {
-            "Exception": "PytraException",
-            "ValueError": "PytraValueError",
-            "TypeError": "PytraTypeError",
-            "RuntimeError": "PytraRuntimeError",
-        }
+        base_type = self.mapping.predicate_types.get(base_name, "")
+        if base_type == "":
+            raise ValueError("unsupported Julia exception base: " + base_name)
         field_types = node.get("field_types")
         field_names = list(field_types.keys()) if isinstance(field_types, dict) else []
         self._emit("# inherits from " + base_name)
-        self._emit("mutable struct " + class_name + " <: " + base_map[base_name])
+        self._emit("mutable struct " + class_name + " <: " + base_type)
         self.indent_level += 1
         self._emit("__pytra_message")
         for field_name in field_names:
