@@ -40,9 +40,6 @@ from toolchain2.resolve.py.builtin_registry import load_builtin_registry
 from toolchain2.resolve.py.resolver import east2_output_path_from_east1
 from toolchain2.resolve.py.resolver import resolve_east1_to_east2
 from toolchain2.resolve.py.resolver import resolve_file
-from toolchain2.emit.cs.emitter import emit_cs_module
-from toolchain2.emit.scala.emitter import emit_scala_module
-from toolchain2.emit.kotlin.emitter import emit_kotlin_module
 
 
 def _repo_root() -> Path:
@@ -88,17 +85,6 @@ def _java_module_class_name(_module_id: str) -> str:
     return ""
 
 
-def _emit_cs_module(_east_doc: dict[str, JsonVal]) -> str:
-    return emit_cs_module(_east_doc)
-
-
-def _emit_scala_module(_east_doc: dict[str, JsonVal]) -> str:
-    return emit_scala_module(_east_doc)
-
-
-def _emit_kotlin_module(_east_doc: dict[str, JsonVal]) -> str:
-    return emit_kotlin_module(_east_doc)
-
 
 def _emit_rs_module(_east_doc: dict[str, JsonVal], package_mode: bool = False) -> str:
     _ = package_mode
@@ -115,6 +101,7 @@ def _emit_ts_module(_east_doc: dict[str, JsonVal], strip_types: bool = False) ->
     _ = strip_types
     _unsupported_target_attr("toolchain2.emit.ts.emitter", "emit_ts_module")
     return ""
+
 
 
 def _builtin_registry_paths() -> tuple[Path, Path, Path]:
@@ -144,27 +131,6 @@ def _copy_go_runtime_files(output_dir: Path) -> int:
     return copied
 
 
-def _copy_cs_runtime_files(output_dir: Path) -> int:
-    """Copy C# runtime files into the emit directory."""
-    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("cs")
-    copied = 0
-    if not runtime_root.exists():
-        return copied
-    built_in = runtime_root.joinpath("built_in").joinpath("py_runtime.cs")
-    if built_in.exists():
-        dst = output_dir.joinpath("built_in").joinpath("py_runtime.cs")
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_text(built_in.read_text(encoding="utf-8"), encoding="utf-8")
-        copied += 1
-    std_dir = runtime_root.joinpath("std")
-    if std_dir.exists():
-        for cs_file in std_dir.glob("*.cs"):
-            dst2 = output_dir.joinpath("std").joinpath(cs_file.name)
-            dst2.parent.mkdir(parents=True, exist_ok=True)
-            dst2.write_text(cs_file.read_text(encoding="utf-8"), encoding="utf-8")
-            copied += 1
-    return copied
-
 
 def _copy_java_runtime_files(output_dir: Path) -> int:
     """Copy Java runtime files into the flat emit directory."""
@@ -182,37 +148,6 @@ def _copy_java_runtime_files(output_dir: Path) -> int:
             copied += 1
     return copied
 
-
-def _copy_scala_runtime_files(output_dir: Path) -> int:
-    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("scala")
-    copied = 0
-    if not runtime_root.exists():
-        return copied
-    for bucket in ["built_in", "std"]:
-        bucket_dir = runtime_root.joinpath(bucket)
-        if not bucket_dir.exists():
-            continue
-        for scala_file in bucket_dir.glob("*.scala"):
-            dst = output_dir.joinpath(scala_file.name)
-            dst.write_text(scala_file.read_text(encoding="utf-8"), encoding="utf-8")
-            copied += 1
-    return copied
-
-
-def _copy_kotlin_runtime_files(output_dir: Path) -> int:
-    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("kotlin")
-    copied = 0
-    if not runtime_root.exists():
-        return copied
-    for bucket in ["built_in", "std"]:
-        bucket_dir = runtime_root.joinpath(bucket)
-        if not bucket_dir.exists():
-            continue
-        for kt_file in bucket_dir.glob("*.kt"):
-            dst = output_dir.joinpath(kt_file.name)
-            dst.write_text(kt_file.read_text(encoding="utf-8"), encoding="utf-8")
-            copied += 1
-    return copied
 
 
 def _module_source_path(module_id: str) -> Path:
@@ -795,44 +730,9 @@ def _emit_go(manifest_path: Path, output_dir: Path) -> int:
 
 
 def _emit_cs(manifest_path: Path, output_dir: Path) -> int:
-    """C# emit: linked output → C# source files."""
-    manifest_doc = json.loads_obj(manifest_path.read_text(encoding="utf-8"))
-    if manifest_doc is None:
-        print("error: invalid manifest: " + str(manifest_path))
-        return 1
-    modules = manifest_doc.get_arr("modules")
-    if modules is None:
-        print("error: invalid manifest.modules: " + str(manifest_path))
-        return 1
-    output_dir.mkdir(parents=True, exist_ok=True)
-    emitted = 0
-    for item in modules.raw:
-        item_obj = json.JsonValue(item).as_obj()
-        if item_obj is None:
-            continue
-        module_id = item_obj.get_str("module_id")
-        rel_output = item_obj.get_str("output")
-        if module_id is None or module_id == "":
-            continue
-        if rel_output is None or rel_output == "":
-            continue
-        east_path = manifest_path.parent.joinpath(rel_output)
-        if not east_path.exists():
-            print("error: linked east3 missing: " + str(east_path))
-            return 1
-        east_doc_obj = json.loads_obj(east_path.read_text(encoding="utf-8"))
-        if east_doc_obj is None:
-            print("error: invalid east3 document: " + str(east_path))
-            return 1
-        code = _emit_cs_module(east_doc_obj.raw)
-        if code.strip() == "":
-            continue
-        out_path = output_dir.joinpath(module_id.replace(".", "_") + ".cs")
-        out_path.write_text(code, encoding="utf-8")
-        emitted += 1
-    _copy_cs_runtime_files(output_dir)
-    print("emitted: " + str(output_dir) + " (" + str(emitted) + " files)")
-    return 0
+    """C# emit: linked output → subprocess delegated C# emitter."""
+    cmd = [_python(), "-m", "toolchain2.emit.cs.cli", str(manifest_path), "--output-dir", str(output_dir)]
+    return _run_subprocess(cmd)
 
 
 def _emit_java(manifest_path: Path, output_dir: Path) -> int:
@@ -844,79 +744,21 @@ def _emit_java(manifest_path: Path, output_dir: Path) -> int:
 
 
 def _emit_scala(manifest_path: Path, output_dir: Path) -> int:
-    manifest_doc = json.loads_obj(manifest_path.read_text(encoding="utf-8"))
-    if manifest_doc is None:
-        print("error: invalid manifest: " + str(manifest_path))
-        return 1
-    modules = manifest_doc.get_arr("modules")
-    if modules is None:
-        print("error: invalid manifest.modules: " + str(manifest_path))
-        return 1
-    output_dir.mkdir(parents=True, exist_ok=True)
-    emitted = 0
-    for item in modules.raw:
-        item_obj = json.JsonValue(item).as_obj()
-        if item_obj is None:
-            continue
-        module_id = item_obj.get_str("module_id")
-        rel_output = item_obj.get_str("output")
-        if module_id is None or module_id == "" or rel_output is None or rel_output == "":
-            continue
-        east_path = manifest_path.parent.joinpath(rel_output)
-        if not east_path.exists():
-            print("error: linked east3 missing: " + str(east_path))
-            return 1
-        east_doc_obj = json.loads_obj(east_path.read_text(encoding="utf-8"))
-        if east_doc_obj is None:
-            print("error: invalid east3 document: " + str(east_path))
-            return 1
-        code = _emit_scala_module(east_doc_obj.raw)
-        if code.strip() == "":
-            continue
-        out_path = output_dir.joinpath(module_id.replace(".", "_") + ".scala")
-        out_path.write_text(code, encoding="utf-8")
-        emitted += 1
-    _copy_scala_runtime_files(output_dir)
-    print("emitted: " + str(output_dir) + " (" + str(emitted) + " files)")
-    return 0
+    """Scala emit: linked output → subprocess delegated Scala emitter."""
+    cmd = [_python(), "-m", "toolchain2.emit.scala.cli", str(manifest_path), "--output-dir", str(output_dir)]
+    return _run_subprocess(cmd)
 
 
 def _emit_kotlin(manifest_path: Path, output_dir: Path) -> int:
-    manifest_doc = json.loads_obj(manifest_path.read_text(encoding="utf-8"))
-    if manifest_doc is None:
-        print("error: invalid manifest: " + str(manifest_path))
-        return 1
-    modules = manifest_doc.get_arr("modules")
-    if modules is None:
-        print("error: invalid manifest.modules: " + str(manifest_path))
-        return 1
-    output_dir.mkdir(parents=True, exist_ok=True)
-    emitted = 0
-    for item in modules.raw:
-        item_obj = json.JsonValue(item).as_obj()
-        if item_obj is None:
-            continue
-        module_id = item_obj.get_str("module_id")
-        rel_output = item_obj.get_str("output")
-        if module_id is None or module_id == "" or rel_output is None or rel_output == "":
-            continue
-        east_path = manifest_path.parent.joinpath(rel_output)
-        if not east_path.exists():
-            print("error: linked east3 missing: " + str(east_path))
-            return 1
-        east_doc_obj = json.loads_obj(east_path.read_text(encoding="utf-8"))
-        if east_doc_obj is None:
-            print("error: invalid east3 document: " + str(east_path))
-            return 1
-        code = _emit_kotlin_module(east_doc_obj.raw)
-        if code.strip() == "":
-            continue
-        out_path = output_dir.joinpath(module_id.replace(".", "_") + ".kt")
-        out_path.write_text(code, encoding="utf-8")
-        emitted += 1
-    _copy_kotlin_runtime_files(output_dir)
-    print("emitted: " + str(output_dir) + " (" + str(emitted) + " files)")
-    return 0
+    """Kotlin emit: linked output → subprocess delegated Kotlin emitter."""
+    cmd = [_python(), "-m", "toolchain2.emit.kotlin.cli", str(manifest_path), "--output-dir", str(output_dir)]
+    return _run_subprocess(cmd)
+
+
+def _emit_zig(manifest_path: Path, output_dir: Path) -> int:
+    """Zig emit: linked output → subprocess delegated Zig emitter."""
+    cmd = [_python(), "-m", "toolchain2.emit.zig.cli", str(manifest_path), "--output-dir", str(output_dir)]
+    return _run_subprocess(cmd)
 
 
 def cmd_emit(args: list[str]) -> int:
@@ -1007,7 +849,10 @@ def cmd_emit(args: list[str]) -> int:
     if target == "nim":
         return _emit_nim(manifest_path, Path(output_dir_text))
 
-    print("error: unsupported target: " + target + " (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim)")
+    if target == "zig":
+        return _emit_zig(manifest_path, Path(output_dir_text))
+
+    print("error: unsupported target: " + target + " (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, zig)")
     return 1
 
 
@@ -1123,7 +968,7 @@ def cmd_build(args: list[str]) -> int:
         return 1
 
     if target not in ["cpp", "go", "rs", "cs", "java", "scala", "kotlin", "ts", "js"]:
-        print("error: unsupported target: " + target + " (available: cpp, go, rs, cs, java, scala, kotlin, ts, js)")
+        print("error: unsupported target: " + target + " (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, zig)")
         return 1
 
     try:
