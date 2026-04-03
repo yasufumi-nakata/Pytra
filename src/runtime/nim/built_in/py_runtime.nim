@@ -13,18 +13,96 @@ import std/algorithm
 # ---------------------------------------------------------------------------
 type PyObj* = ref RootObj
 type PyPath* = string
+type PyFile* = File
+
+template py_instanceof*(v: typed, T: typedesc): bool =
+  when compiles(v of T):
+    v of T
+  elif compiles(v is T):
+    v is T
+  else:
+    false
+
+template py_is_dict*(v: typed): bool =
+  when v is Table:
+    true
+  else:
+    false
+
+template py_is_list*(v: typed): bool =
+  when v is seq:
+    true
+  else:
+    false
+
+template py_is_str*(v: typed): bool =
+  when v is string:
+    true
+  else:
+    false
+
+template py_is_int*(v: typed): bool =
+  when v is SomeInteger:
+    true
+  else:
+    false
+
+template py_is_bool*(v: typed): bool =
+  when v is bool:
+    true
+  else:
+    false
+
+template py_is_float*(v: typed): bool =
+  when v is SomeFloat:
+    true
+  else:
+    false
+
+proc py_open*(path: string, mode: string): PyFile =
+  var f: File
+  var file_mode = fmRead
+  if mode == "wb":
+    file_mode = fmWrite
+  elif mode == "ab":
+    file_mode = fmAppend
+  elif mode == "rb":
+    file_mode = fmRead
+  if not open(f, path, file_mode):
+    raise newException(IOError, "failed to open file: " & path)
+  return f
+
+proc write*(f: var PyFile, data: seq[uint8]): int =
+  if data.len > 0:
+    discard writeBytes(f, data, 0, data.len)
+  return data.len
+
+proc close*(f: var PyFile) =
+  system.close(f)
+
+proc py_to_string*(v: auto): string
 
 # ---------------------------------------------------------------------------
 # Print
 # ---------------------------------------------------------------------------
-proc py_print*() =
-  echo ""
+var py_capture_stdout_active = false
+var py_capture_stdout_lines: seq[string] = @[]
 
-proc py_print*(args: varargs[string, `$`]) =
+proc py_print*() =
+  if py_capture_stdout_active:
+    py_capture_stdout_lines.add("")
+  else:
+    echo ""
+
+proc py_print*(args: varargs[string, py_to_string]) =
   var parts: seq[string] = @[]
   for a in args:
     parts.add(a)
-  echo parts.join(" ")
+  let line = parts.join(" ")
+  if py_capture_stdout_active:
+    py_capture_stdout_lines.add(line)
+  else:
+    echo line
 
 # ---------------------------------------------------------------------------
 # Conversions
@@ -47,12 +125,20 @@ proc py_float*(v: auto): float =
 proc py_str*(v: auto): string =
   when v is bool:
     if v: "True" else: "False"
+  elif v is typeof(nil):
+    "None"
+  elif v is ref CatchableError:
+    if v.isNil: "" else: v.msg
   else:
     $v
 
 proc py_to_string*(v: auto): string =
   when v is bool:
     if v: "True" else: "False"
+  elif v is typeof(nil):
+    "None"
+  elif v is ref CatchableError:
+    if v.isNil: "" else: v.msg
   else:
     $v
 
@@ -122,9 +208,9 @@ proc py_len*[T](v: HashSet[T]): int = v.len
 template py_truthy*(v: auto): bool =
   when v is bool:
     v
-  elif v is int or v is float:
+  elif v is SomeInteger or v is SomeFloat:
     v != 0
-  elif v is string or v is seq or v is Table:
+  elif v is string or v is seq or v is Table or v is HashSet:
     v.len > 0
   else:
     not v.isNil
@@ -153,6 +239,14 @@ proc py_reversed*[T](items: seq[T]): seq[T] =
 proc py_enumerate*[T](items: seq[T]): seq[(int, T)] =
   var result_seq: seq[(int, T)] = @[]
   var i = 0
+  for item in items:
+    result_seq.add((i, item))
+    i += 1
+  return result_seq
+
+proc py_enumerate*[T](items: seq[T], start: int): seq[(int, T)] =
+  var result_seq: seq[(int, T)] = @[]
+  var i = start
   for item in items:
     result_seq.add((i, item))
     i += 1
@@ -210,22 +304,41 @@ proc pop*[T](s: var seq[T], idx: int): T =
 # ---------------------------------------------------------------------------
 # Assertions (test framework)
 # ---------------------------------------------------------------------------
-proc py_assert_true*(cond: bool) =
+proc py_assert_true*(cond: bool, msg: string = ""): bool =
   if not cond:
+    if msg.len > 0:
+      raise newException(AssertionDefect, msg & ": assertion failed")
     raise newException(AssertionDefect, "assertion failed")
+  return true
 
-proc py_assert_eq*[T](a, b: T) =
+proc py_assert_eq*[T](a, b: T, msg: string = ""): bool =
   if a != b:
-    raise newException(AssertionDefect, "assertion failed: " & $a & " != " & $b)
+    let detail = if msg != "": msg & ": " else: ""
+    raise newException(AssertionDefect, detail & "assertion failed: " & $a & " != " & $b)
+  return true
 
-proc py_assert_stdout*(expected: seq[string], fn: proc()) =
-  # Simplified: just run the function (full stdout capture requires more work)
+proc py_assert_stdout*(expected: seq[string], fn: proc()): bool =
+  py_capture_stdout_active = true
+  py_capture_stdout_lines = @[]
   fn()
+  let captured = py_capture_stdout_lines
+  py_capture_stdout_active = false
+  py_capture_stdout_lines = @[]
+  if captured.len != expected.len:
+    return false
+  var i = 0
+  while i < captured.len:
+    if captured[i] != expected[i]:
+      return false
+    i += 1
+  return true
 
-proc py_assert_all*(items: seq[bool]) =
+proc py_assert_all*(items: seq[bool], msg: string = ""): bool =
   for item in items:
     if not item:
-      raise newException(AssertionDefect, "assert_all failed")
+      let detail = if msg != "": msg & ": " else: ""
+      raise newException(AssertionDefect, detail & "assert_all failed")
+  return true
 
 # ---------------------------------------------------------------------------
 # Format helper

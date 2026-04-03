@@ -108,7 +108,14 @@
     "py_assert_stdout": "pyAssertStdout",
     "py_assert_true": "pyAssertTrue",
     "py_assert_eq": "pyAssertEq",
-    "py_assert_all": "pyAssertAll"
+    "py_assert_all": "pyAssertAll",
+    "dict.clear": "pyclear",
+    "dict.pop": "pypop",
+    "dict.setdefault": "pysetdefault",
+    "list.extend": "pyextend",
+    "list.reverse": "pyreverse",
+    "list.sort": "pysort",
+    "set.clear": "pyclear"
   },
   "skip_modules": [
     "pytra.built_in.",

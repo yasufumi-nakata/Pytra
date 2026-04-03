@@ -36,22 +36,22 @@ pub fn print3(a: anytype, b: anytype, c: anytype) void {
 fn printValue(writer: anytype, value: anytype) void {
     const T = @TypeOf(value);
     switch (@typeInfo(T)) {
-        .Int, .ComptimeInt => {
+        .int, .comptime_int => {
             writer.print("{d}", .{value}) catch {};
         },
-        .Float, .ComptimeFloat => {
+        .float, .comptime_float => {
             printFloat(writer, value);
         },
-        .Bool => {
+        .bool => {
             writer.writeAll(if (value) "True" else "False") catch {};
         },
-        .Pointer => |ptr_info| {
-            if (ptr_info.size == .Slice and ptr_info.child == u8) {
+        .pointer => |ptr_info| {
+            if (ptr_info.size == .slice and ptr_info.child == u8) {
                 writer.writeAll(value) catch {};
-            } else if (ptr_info.size == .One) {
+            } else if (ptr_info.size == .one) {
                 // *const [N:0]u8 (string literal) → coerce to slice
                 const child_info = @typeInfo(ptr_info.child);
-                if (child_info == .Array and child_info.Array.child == u8) {
+                if (child_info == .array and child_info.array.child == u8) {
                     writer.writeAll(value) catch {};
                 } else {
                     writer.print("{any}", .{value}) catch {};
@@ -60,17 +60,17 @@ fn printValue(writer: anytype, value: anytype) void {
                 writer.print("{any}", .{value}) catch {};
             }
         },
-        .Optional => {
+        .optional => {
             if (value) |v| {
                 printValue(writer, v);
             } else {
                 writer.writeAll("None") catch {};
             }
         },
-        .Null => {
+        .null => {
             writer.writeAll("None") catch {};
         },
-        .Void => {
+        .void => {
             writer.writeAll("None") catch {};
         },
         else => {
@@ -95,13 +95,13 @@ fn printFloat(writer: anytype, value: anytype) void {
 pub fn truthy(value: anytype) bool {
     const T = @TypeOf(value);
     switch (@typeInfo(T)) {
-        .Bool => return value,
-        .Int, .ComptimeInt => return value != 0,
-        .Float, .ComptimeFloat => return value != 0.0,
-        .Optional => return value != null,
-        .Null => return false,
-        .Pointer => |ptr_info| {
-            if (ptr_info.size == .Slice) {
+        .bool => return value,
+        .int, .comptime_int => return value != 0,
+        .float, .comptime_float => return value != 0.0,
+        .optional => return value != null,
+        .null => return false,
+        .pointer => |ptr_info| {
+            if (ptr_info.size == .slice) {
                 return value.len > 0;
             }
             return true;
@@ -115,7 +115,7 @@ pub fn to_str(value: anytype) []const u8 {
     const T = @TypeOf(value);
     const alloc = std.heap.page_allocator;
     switch (@typeInfo(T)) {
-        .Int, .ComptimeInt => {
+        .int, .comptime_int => {
             // Format integer to string
             var v: i64 = @intCast(value);
             var neg = false;
@@ -144,18 +144,24 @@ pub fn to_str(value: anytype) []const u8 {
             @memcpy(result, buf[pos..]);
             return result;
         },
-        .Float, .ComptimeFloat => {
+        .float, .comptime_float => {
             // Simple float formatting
             const fv: f64 = @floatCast(value);
             const iv: i64 = @intFromFloat(fv);
             return to_str(iv);
         },
-        .Bool => {
+        .bool => {
             return if (value) "True" else "False";
         },
-        .Pointer => |ptr_info| {
-            if (ptr_info.size == .Slice and ptr_info.child == u8) {
+        .pointer => |ptr_info| {
+            if (ptr_info.size == .slice and ptr_info.child == u8) {
                 return value;
+            }
+            if (ptr_info.size == .one) {
+                const child_info = @typeInfo(ptr_info.child);
+                if (child_info == .array and child_info.array.child == u8) {
+                    return value;
+                }
             }
             return "<object>";
         },
@@ -169,6 +175,15 @@ pub fn str_concat(a: []const u8, b: []const u8) []const u8 {
     const buf = alloc.alloc(u8, a.len + b.len) catch return "";
     @memcpy(buf[0..a.len], a);
     @memcpy(buf[a.len..], b);
+    return buf;
+}
+
+pub fn str_upper(s: []const u8) []const u8 {
+    const alloc = std.heap.page_allocator;
+    const buf = alloc.alloc(u8, s.len) catch return "";
+    for (s, 0..) |ch, i| {
+        buf[i] = if (ch >= 'a' and ch <= 'z') ch - 32 else ch;
+    }
     return buf;
 }
 
@@ -236,8 +251,29 @@ pub fn isinstance_check(obj: anytype, typ: anytype) bool {
 pub fn contains(haystack: anytype, needle: anytype) bool {
     const HT = @TypeOf(haystack);
     // StringHashMap: check if key exists
-    if (@typeInfo(HT) == .Struct and @hasDecl(HT, "contains")) {
+    if (@typeInfo(HT) == .@"struct" and @hasDecl(HT, "contains")) {
         return haystack.contains(needle);
+    }
+    if (HT == Obj) {
+        const NT = @TypeOf(needle);
+        if (NT == i64 or NT == comptime_int) {
+            for (list_items(haystack, i64)) |v| {
+                if (v == needle) return true;
+            }
+            return false;
+        }
+        if (NT == bool) {
+            for (list_items(haystack, bool)) |v| {
+                if (v == needle) return true;
+            }
+            return false;
+        }
+        if (NT == []const u8) {
+            for (list_items(haystack, []const u8)) |v| {
+                if (std.mem.eql(u8, v, needle)) return true;
+            }
+            return false;
+        }
     }
     return false;
 }
@@ -370,6 +406,19 @@ pub fn bytearray(size: anytype) Obj {
     const p = alloc.create(std.ArrayList(u8)) catch @panic("alloc failed");
     p.* = std.ArrayList(u8).initCapacity(alloc, n) catch std.ArrayList(u8).init(alloc);
     p.appendNTimes(0, n) catch {};
+    const rc = alloc.create(usize) catch @panic("alloc failed");
+    rc.* = 1;
+    return Obj{ .data = @ptrCast(p), .vtable = @ptrCast(&EMPTY_VT), .rc = rc, .drop_fn = null };
+}
+
+/// Copy bytes/bytearray Obj as an independent ArrayList(u8).
+pub fn bytes_copy(src: Obj) Obj {
+    const alloc = std.heap.page_allocator;
+    const src_list: *std.ArrayList(u8) = @ptrCast(@alignCast(src.data));
+    const p = alloc.create(std.ArrayList(u8)) catch @panic("alloc failed");
+    p.* = std.ArrayList(u8).init(alloc);
+    p.ensureTotalCapacity(src_list.items.len) catch {};
+    p.appendSlice(src_list.items) catch {};
     const rc = alloc.create(usize) catch @panic("alloc failed");
     rc.* = 1;
     return Obj{ .data = @ptrCast(p), .vtable = @ptrCast(&EMPTY_VT), .rc = rc, .drop_fn = null };
@@ -543,7 +592,7 @@ pub fn file_write(handle: PyObject, data: anytype) void {
     if (T == Obj) {
         // Obj wrapping ArrayList — write as bytes
         file_write_obj(p, data);
-    } else if (@typeInfo(T) == .Pointer) {
+    } else if (@typeInfo(T) == .pointer) {
         p.writeAll(data) catch {};
     }
 }

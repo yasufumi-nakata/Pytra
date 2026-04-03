@@ -83,7 +83,23 @@
     "math.tau": "tau",
     "sys.argv": "sys.argv",
     "sys.path": "sys.path",
-    "makedirs": "makedirs"
+    "makedirs": "makedirs",
+    "dict.clear": "pytraclear",
+    "dict.pop": "pytrapop",
+    "dict.setdefault": "pytrasetdefault",
+    "list.extend": "pytraextend",
+    "list.index": "pytraindex",
+    "list.reverse": "pytrareverse",
+    "list.sort": "pytrasort",
+    "list_ctor": "pytralist",
+    "py_chr": "pytrachr",
+    "py_float_from_str": "pytraFloat",
+    "py_int_from_str": "pytraInt",
+    "py_max": "pytramax",
+    "py_min": "pytramin",
+    "py_ord": "pytraord",
+    "set.clear": "pytraclear",
+    "set_ctor": "pytraset"
   },
   "types": {
     "int": "int",
@@ -107,24 +123,78 @@
     "Exception": "Exception"
   },
   "implicit_promotions": [
-    ["int8", "int"],
-    ["uint8", "int"],
-    ["int16", "int"],
-    ["uint16", "int"],
-    ["int32", "int"],
-    ["uint32", "int"],
-    ["int64", "int"],
-    ["uint64", "int"],
-    ["int", "double"],
-    ["int8", "double"],
-    ["uint8", "double"],
-    ["int16", "double"],
-    ["uint16", "double"],
-    ["int32", "double"],
-    ["uint32", "double"],
-    ["int64", "double"],
-    ["uint64", "double"],
-    ["float32", "double"]
+    [
+      "int8",
+      "int"
+    ],
+    [
+      "uint8",
+      "int"
+    ],
+    [
+      "int16",
+      "int"
+    ],
+    [
+      "uint16",
+      "int"
+    ],
+    [
+      "int32",
+      "int"
+    ],
+    [
+      "uint32",
+      "int"
+    ],
+    [
+      "int64",
+      "int"
+    ],
+    [
+      "uint64",
+      "int"
+    ],
+    [
+      "int",
+      "double"
+    ],
+    [
+      "int8",
+      "double"
+    ],
+    [
+      "uint8",
+      "double"
+    ],
+    [
+      "int16",
+      "double"
+    ],
+    [
+      "uint16",
+      "double"
+    ],
+    [
+      "int32",
+      "double"
+    ],
+    [
+      "uint32",
+      "double"
+    ],
+    [
+      "int64",
+      "double"
+    ],
+    [
+      "uint64",
+      "double"
+    ],
+    [
+      "float32",
+      "double"
+    ]
   ],
   "skip_modules": [
     "pytra.built_in.",

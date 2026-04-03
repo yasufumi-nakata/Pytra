@@ -115,7 +115,9 @@
     "py_assert_true": "__pytra_assert_true",
     "py_assert_eq": "__pytra_assert_eq",
     "py_assert_all": "__pytra_assert_all",
-    "pytra_isinstance": "__pytra_isinstance"
+    "pytra_isinstance": "__pytra_isinstance",
+    "dict.clear": "__pytra_clear",
+    "dict.setdefault": "__pytra_setdefault"
   },
   "types": {
     "int64": "int",
@@ -130,8 +132,14 @@
     "Path": "string"
   },
   "implicit_promotions": [
-    ["int64", "float64"],
-    ["int", "float"]
+    [
+      "int64",
+      "float64"
+    ],
+    [
+      "int",
+      "float"
+    ]
   ],
   "skip_modules": [
     "pytra.built_in.",

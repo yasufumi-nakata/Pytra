@@ -56,7 +56,37 @@
     "math.ceil": "math_native.ceil",
     "math.pow": "math_native.pow",
     "math.pi": "math_native.pi",
-    "math.e": "math_native.e"
+    "math.e": "math_native.e",
+    "dict.clear": "py_runtime.clear",
+    "dict.get": "py_runtime.get",
+    "dict.pop": "py_runtime.pop",
+    "dict.setdefault": "py_runtime.setdefault",
+    "list.clear": "py_runtime.clear",
+    "list.extend": "py_runtime.extend",
+    "list.index": "py_runtime.index",
+    "list.reverse": "py_runtime.reverse",
+    "list.sort": "py_runtime.sort",
+    "list_ctor": "py_runtime.list",
+    "py_max": "py_runtime.max",
+    "py_min": "py_runtime.min",
+    "py_range": "py_runtime.range",
+    "set.clear": "py_runtime.clear",
+    "set_ctor": "py_runtime.set",
+    "str.endswith": "py_runtime.endswith",
+    "str.find": "py_runtime.find",
+    "str.isalnum": "py_runtime.isalnum",
+    "str.isalpha": "py_runtime.py_isalpha",
+    "str.isdigit": "py_runtime.py_isdigit",
+    "str.join": "py_runtime.join",
+    "str.lower": "py_runtime.lower",
+    "str.lstrip": "py_runtime.lstrip",
+    "str.replace": "py_runtime.replace",
+    "str.rfind": "py_runtime.rfind",
+    "str.rstrip": "py_runtime.rstrip",
+    "str.split": "py_runtime.split",
+    "str.startswith": "py_runtime.startswith",
+    "str.strip": "py_runtime.strip",
+    "str.upper": "py_runtime.upper"
   },
   "types": {
     "int": "long",
@@ -114,21 +144,69 @@
     "pytra.built_in.error"
   ],
   "implicit_promotions": [
-    ["byte", "long"],
-    ["sbyte", "long"],
-    ["short", "long"],
-    ["ushort", "long"],
-    ["int", "long"],
-    ["uint", "long"],
-    ["long", "double"],
-    ["float", "double"],
-    ["int64", "float64"],
-    ["int32", "int64"],
-    ["uint32", "int64"],
-    ["uint8", "int64"],
-    ["int8", "int64"],
-    ["int16", "int64"],
-    ["uint16", "int64"],
-    ["float32", "float64"]
+    [
+      "byte",
+      "long"
+    ],
+    [
+      "sbyte",
+      "long"
+    ],
+    [
+      "short",
+      "long"
+    ],
+    [
+      "ushort",
+      "long"
+    ],
+    [
+      "int",
+      "long"
+    ],
+    [
+      "uint",
+      "long"
+    ],
+    [
+      "long",
+      "double"
+    ],
+    [
+      "float",
+      "double"
+    ],
+    [
+      "int64",
+      "float64"
+    ],
+    [
+      "int32",
+      "int64"
+    ],
+    [
+      "uint32",
+      "int64"
+    ],
+    [
+      "uint8",
+      "int64"
+    ],
+    [
+      "int8",
+      "int64"
+    ],
+    [
+      "int16",
+      "int64"
+    ],
+    [
+      "uint16",
+      "int64"
+    ],
+    [
+      "float32",
+      "float64"
+    ]
   ]
 }

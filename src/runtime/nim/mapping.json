@@ -11,8 +11,6 @@
     "py_min": "min",
     "py_int_from_str": "parseInt",
     "set_ctor": "__SET_CTOR__",
-    "py_enumerate_object": "py_enumerate",
-    "py_reversed_object": "py_reversed",
     "list.append": "__LIST_APPEND__",
     "list.pop": "__LIST_POP__",
     "list.clear": "__LIST_CLEAR__",
@@ -38,12 +36,23 @@
     "str.isdigit": "py_str_isdigit",
     "str.isalpha": "py_str_isalpha",
     "str.isalnum": "py_str_isalnum",
-    "write_rgb_png": "py_write_rgb_png",
     "py_range": "py_range",
     "py_assert_stdout": "py_assert_stdout",
     "py_assert_true": "py_assert_true",
     "py_assert_eq": "py_assert_eq",
-    "py_assert_all": "py_assert_all"
+    "py_assert_all": "py_assert_all",
+    "dict.clear": "py_clear",
+    "dict.pop": "py_pop",
+    "dict.setdefault": "py_setdefault",
+    "list.extend": "py_extend",
+    "list.reverse": "py_reverse",
+    "list.sort": "py_sort",
+    "list_ctor": "py_list",
+    "py_chr": "py_chr",
+    "py_float_from_str": "py_float",
+    "py_ord": "py_ord",
+    "set.clear": "py_clear",
+    "str.rfind": "py_rfind"
   },
   "types": {
     "int8": "int8",
@@ -63,12 +72,30 @@
     "Exception": "ref CatchableError"
   },
   "implicit_promotions": [
-    ["uint8", "int64"],
-    ["int8", "int64"],
-    ["int16", "int64"],
-    ["uint16", "int64"],
-    ["int32", "int64"],
-    ["uint32", "int64"]
+    [
+      "uint8",
+      "int64"
+    ],
+    [
+      "int8",
+      "int64"
+    ],
+    [
+      "int16",
+      "int64"
+    ],
+    [
+      "uint16",
+      "int64"
+    ],
+    [
+      "int32",
+      "int64"
+    ],
+    [
+      "uint32",
+      "int64"
+    ]
   ],
   "skip_modules": [
     "pytra.built_in.",

@@ -90,7 +90,24 @@
     "os.path.splitext": "PyRuntime.__pytra_splitext",
     "os.path.basename": "PyRuntime.__pytra_basename",
     "os.path.dirname": "PyRuntime.__pytra_dirname",
-    "os.path.exists": "PyRuntime.__pytra_exists"
+    "os.path.exists": "PyRuntime.__pytra_exists",
+    "dict.clear": "PyRuntime.__pytra_clear",
+    "dict.pop": "PyRuntime.__pytra_pop",
+    "dict.setdefault": "PyRuntime.__pytra_setdefault",
+    "list.clear": "PyRuntime.__pytra_clear",
+    "list.reverse": "PyRuntime.__pytra_reverse",
+    "list.sort": "PyRuntime.__pytra_sort",
+    "py_chr": "PyRuntime.__pytra_chr",
+    "py_max": "PyRuntime.__pytra_max",
+    "py_min": "PyRuntime.__pytra_min",
+    "py_ord": "PyRuntime.__pytra_ord",
+    "set.clear": "PyRuntime.__pytra_clear",
+    "str.find": "PyRuntime.__pytra_find",
+    "str.isalnum": "PyRuntime.__pytra_isalnum",
+    "str.lower": "PyRuntime.__pytra_lower",
+    "str.lstrip": "PyRuntime.__pytra_lstrip",
+    "str.rfind": "PyRuntime.__pytra_rfind",
+    "str.split": "PyRuntime.__pytra_split"
   },
   "types": {
     "int": "long",
@@ -137,8 +154,14 @@
     "Path": "pathlib.Path"
   },
   "implicit_promotions": [
-    ["long", "double"],
-    ["boolean", "long"]
+    [
+      "long",
+      "double"
+    ],
+    [
+      "boolean",
+      "long"
+    ]
   ],
   "skip_modules": [
     "pytra.built_in.",

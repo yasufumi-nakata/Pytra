@@ -22,7 +22,48 @@
     "perf_counter": "__pytra_perf_counter",
     "sqrt": "math_native.sqrt",
     "floor": "math_native.floor",
-    "time.perf_counter": "time_native.perf_counter"
+    "time.perf_counter": "time_native.perf_counter",
+    "dict.clear": "pytraclear",
+    "dict.get": "pytraget",
+    "dict.items": "pytraitems",
+    "dict.keys": "pytrakeys",
+    "dict.pop": "pytrapop",
+    "dict.setdefault": "pytrasetdefault",
+    "dict.values": "pytravalues",
+    "list.append": "pytraappend",
+    "list.clear": "pytraclear",
+    "list.extend": "pytraextend",
+    "list.index": "pytraindex",
+    "list.pop": "pytrapop",
+    "list.reverse": "pytrareverse",
+    "list.sort": "pytrasort",
+    "list_ctor": "pytralist",
+    "py_chr": "pytrachr",
+    "py_float_from_str": "__pytra_float",
+    "py_int_from_str": "__pytra_int",
+    "py_max": "pytramax",
+    "py_min": "pytramin",
+    "py_ord": "pytraord",
+    "set.add": "pytraadd",
+    "set.clear": "pytraclear",
+    "set.discard": "pytradiscard",
+    "set.remove": "pytraremove",
+    "set_ctor": "pytraset",
+    "str.endswith": "pytraendswith",
+    "str.find": "pytrafind",
+    "str.isalnum": "pytraisalnum",
+    "str.isalpha": "pytraisalpha",
+    "str.isdigit": "pytraisdigit",
+    "str.join": "pytrajoin",
+    "str.lower": "pytralower",
+    "str.lstrip": "pytralstrip",
+    "str.replace": "pytrareplace",
+    "str.rfind": "pytrarfind",
+    "str.rstrip": "pytrarstrip",
+    "str.split": "pytrasplit",
+    "str.startswith": "pytrastartswith",
+    "str.strip": "pytrastrip",
+    "str.upper": "pytraupper"
   },
   "types": {
     "int": "Int64",
@@ -46,14 +87,38 @@
     "Exception": "Error"
   },
   "implicit_promotions": [
-    ["int8", "int64"],
-    ["uint8", "int64"],
-    ["int16", "int64"],
-    ["uint16", "int64"],
-    ["int32", "int64"],
-    ["uint32", "int64"],
-    ["int64", "float64"],
-    ["float32", "float64"]
+    [
+      "int8",
+      "int64"
+    ],
+    [
+      "uint8",
+      "int64"
+    ],
+    [
+      "int16",
+      "int64"
+    ],
+    [
+      "uint16",
+      "int64"
+    ],
+    [
+      "int32",
+      "int64"
+    ],
+    [
+      "uint32",
+      "int64"
+    ],
+    [
+      "int64",
+      "float64"
+    ],
+    [
+      "float32",
+      "float64"
+    ]
   ],
   "skip_modules": [
     "pytra.built_in.",

@@ -119,7 +119,13 @@
     "py_assert_true": "__pytra_assert",
     "py_assert_eq": "__pytra_assert",
     "py_assert_all": "__pytra_assert",
-    "pytra_isinstance": "pytra_isinstance"
+    "pytra_isinstance": "pytra_isinstance",
+    "dict.clear": "__pytra_clear",
+    "dict.pop": "__pytra_pop",
+    "dict.setdefault": "__pytra_setdefault",
+    "list.reverse": "__pytra_reverse",
+    "list.sort": "__pytra_sort",
+    "set.clear": "__pytra_clear"
   },
   "types": {
     "int64": "Integer",

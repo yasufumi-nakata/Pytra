@@ -1,6 +1,55 @@
 # Pytra Julia runtime helpers
 # Generated runtime support for Python→Julia transpilation.
 
+abstract type PytraBuiltinException <: Base.Exception end
+mutable struct __PytraException <: PytraBuiltinException
+    msg
+end
+Base.show(io::IO, e::__PytraException) = print(io, e.msg)
+Base.showerror(io::IO, e::__PytraException) = print(io, e.msg)
+
+abstract type ValueError <: PytraBuiltinException end
+mutable struct __PytraValueError <: ValueError
+    msg
+end
+Base.show(io::IO, e::__PytraValueError) = print(io, e.msg)
+Base.showerror(io::IO, e::__PytraValueError) = print(io, e.msg)
+ValueError(msg="error") = __PytraValueError(msg)
+
+abstract type RuntimeError <: PytraBuiltinException end
+mutable struct __PytraRuntimeError <: RuntimeError
+    msg
+end
+Base.show(io::IO, e::__PytraRuntimeError) = print(io, e.msg)
+Base.showerror(io::IO, e::__PytraRuntimeError) = print(io, e.msg)
+RuntimeError(msg="error") = __PytraRuntimeError(msg)
+
+abstract type TypeError <: PytraBuiltinException end
+mutable struct __PytraTypeError <: TypeError
+    msg
+end
+Base.show(io::IO, e::__PytraTypeError) = print(io, e.msg)
+Base.showerror(io::IO, e::__PytraTypeError) = print(io, e.msg)
+TypeError(msg="error") = __PytraTypeError(msg)
+
+abstract type AssertionError <: PytraBuiltinException end
+mutable struct __PytraAssertionError <: AssertionError
+    msg
+end
+Base.show(io::IO, e::__PytraAssertionError) = print(io, e.msg)
+Base.showerror(io::IO, e::__PytraAssertionError) = print(io, e.msg)
+AssertionError(msg="error") = __PytraAssertionError(msg)
+
+__pytra_exception_message(v::__PytraException) = string(v.msg)
+__pytra_exception_message(v::__PytraValueError) = string(v.msg)
+__pytra_exception_message(v::__PytraRuntimeError) = string(v.msg)
+__pytra_exception_message(v::__PytraTypeError) = string(v.msg)
+__pytra_exception_message(v::__PytraAssertionError) = string(v.msg)
+
+function __pytra_exception_message(v)
+    return string(v)
+end
+
 function __pytra_print(args...)
     if length(args) == 0
         println()

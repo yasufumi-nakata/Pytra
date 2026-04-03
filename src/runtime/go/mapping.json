@@ -43,7 +43,22 @@
     "str.isalpha": "py_str_isalpha",
     "str.isalnum": "py_str_isalnum",
     "str.isspace": "py_str_isspace",
-    "py_floordiv": "py_floordiv"
+    "py_floordiv": "py_floordiv",
+    "dict.clear": "py_clear",
+    "dict.pop": "py_pop",
+    "dict.setdefault": "py_setdefault",
+    "list.extend": "py_extend",
+    "list.index": "py_index",
+    "list.reverse": "py_reverse",
+    "list.sort": "py_sort",
+    "py_chr": "py_chr",
+    "py_max": "py_max",
+    "py_min": "py_min",
+    "py_ord": "py_ord",
+    "py_range": "py_range",
+    "set.clear": "py_clear",
+    "set.discard": "py_discard",
+    "set.remove": "py_remove"
   },
   "go_pkg_imports": {
     "float_math": "math",
@@ -55,20 +70,53 @@
   },
   "go_class_names": {
     "exception_type_bounds": {
-      "PytraError":    [9, 15],
-      "BaseException": [9, 15],
-      "Exception":     [10, 15],
-      "RuntimeError":  [11, 11],
-      "ValueError":    [12, 12],
-      "TypeError":     [13, 13],
-      "IndexError":    [14, 14],
-      "KeyError":      [15, 15]
+      "PytraError": [
+        9,
+        15
+      ],
+      "BaseException": [
+        9,
+        15
+      ],
+      "Exception": [
+        10,
+        15
+      ],
+      "RuntimeError": [
+        11,
+        11
+      ],
+      "ValueError": [
+        12,
+        12
+      ],
+      "TypeError": [
+        13,
+        13
+      ],
+      "IndexError": [
+        14,
+        14
+      ],
+      "KeyError": [
+        15,
+        15
+      ]
     },
     "exception_ctor_types": [
-      "PytraError", "BaseException", "Exception", "RuntimeError",
-      "ValueError", "TypeError", "IndexError", "KeyError",
-      "FileNotFoundError", "PermissionError", "NameError",
-      "NotImplementedError", "OverflowError"
+      "PytraError",
+      "BaseException",
+      "Exception",
+      "RuntimeError",
+      "ValueError",
+      "TypeError",
+      "IndexError",
+      "KeyError",
+      "FileNotFoundError",
+      "PermissionError",
+      "NameError",
+      "NotImplementedError",
+      "OverflowError"
     ],
     "path_type": "Path",
     "argparse_type": "ArgumentParser"

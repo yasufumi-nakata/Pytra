@@ -178,9 +178,9 @@ fun __pytra_ifexp(cond: Boolean, a: Any?, b: Any?): Any? {
     return if (cond) a else b
 }
 
-fun __pytra_bytearray(initValue: Any?): MutableList<Any?> {
+fun __pytra_bytearray(initValue: Any? = null): MutableList<Long> {
     if (initValue is Long) {
-        val out = mutableListOf<Any?>()
+        val out = mutableListOf<Long>()
         var i = 0L
         while (i < initValue) {
             out.add(0L)
@@ -189,7 +189,7 @@ fun __pytra_bytearray(initValue: Any?): MutableList<Any?> {
         return out
     }
     if (initValue is Int) {
-        val out = mutableListOf<Any?>()
+        val out = mutableListOf<Long>()
         var i = 0
         while (i < initValue) {
             out.add(0L)
@@ -198,24 +198,28 @@ fun __pytra_bytearray(initValue: Any?): MutableList<Any?> {
         return out
     }
     if (initValue is MutableList<*>) {
-        @Suppress("UNCHECKED_CAST")
-        return (initValue as MutableList<Any?>).toMutableList()
+        val out = mutableListOf<Long>()
+        for (item in initValue) out.add(__pytra_int(item))
+        return out
     }
     if (initValue is List<*>) {
-        @Suppress("UNCHECKED_CAST")
-        return (initValue as List<Any?>).toMutableList()
+        val out = mutableListOf<Long>()
+        for (item in initValue) out.add(__pytra_int(item))
+        return out
     }
     return mutableListOf()
 }
 
-fun __pytra_bytes(v: Any?): MutableList<Any?> {
+fun __pytra_bytes(v: Any? = null): MutableList<Long> {
     if (v is MutableList<*>) {
-        @Suppress("UNCHECKED_CAST")
-        return (v as MutableList<Any?>).toMutableList()
+        val out = mutableListOf<Long>()
+        for (item in v) out.add(__pytra_int(item))
+        return out
     }
     if (v is List<*>) {
-        @Suppress("UNCHECKED_CAST")
-        return (v as List<Any?>).toMutableList()
+        val out = mutableListOf<Long>()
+        for (item in v) out.add(__pytra_int(item))
+        return out
     }
     return mutableListOf()
 }
