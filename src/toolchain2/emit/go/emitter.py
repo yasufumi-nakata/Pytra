@@ -1361,6 +1361,18 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         ctx.imports_needed.add(ctx.go_pkg_math)
         return "math.Pow(float64(" + left_code + "), float64(" + right_code + "))"
 
+    int_like_types = {
+        "int8", "int16", "int32", "int64",
+        "uint8", "uint16", "uint32", "uint64",
+        "int",
+    }
+    if op in ("Add", "Sub", "Mult") and rt in int_like_types and left_rt in int_like_types and right_rt in int_like_types:
+        target_gt = go_type(rt)
+        left_gt = go_type(left_rt)
+        right_gt = go_type(right_rt)
+        if target_gt not in ("", "any") and (left_gt != target_gt or right_gt != target_gt):
+            return "(" + target_gt + "(" + left_code + ") " + go_op + " " + target_gt + "(" + right_code + "))"
+
     return "(" + left_code + " " + go_op + " " + right_code + ")"
 
 
@@ -1448,19 +1460,21 @@ def _maybe_coerce_expr_to_type(ctx: EmitContext, value_node: JsonVal, value_code
     source_type = _str(value_node, "resolved_type")
     if target_type.startswith("tuple[") and source_type.startswith("tuple[") and _str(value_node, "kind") == "Call":
         return "py_tuple_any(" + value_code + ")"
+    target_gt = go_type(target_type)
+    int_like_gts = {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64", "int"}
+    if _str(value_node, "kind") == "BinOp" and target_gt in int_like_gts:
+        return target_gt + "(" + value_code + ")"
     if _is_container_resolved_type(target_type):
         if _is_wrapper_container_expr(ctx, value_node, value_code):
             return value_code
         return _wrap_ref_container_value_code(ctx, value_code, target_type)
     if _str(value_node, "kind") == "Call" and source_type in ("", "unknown"):
-        target_gt = go_type(target_type)
         if target_gt != "" and target_gt != "any":
             return value_code
     if target_type == "str" and _str(value_node, "kind") == "BinOp":
         return value_code
     if source_type == "" or source_type == target_type:
         return value_code
-    target_gt = go_type(target_type)
     source_gt = go_type(source_type)
     if target_gt == "" or target_gt == "any" or source_gt == target_gt:
         return value_code
@@ -1491,6 +1505,8 @@ def _maybe_coerce_expr_to_type(ctx: EmitContext, value_node: JsonVal, value_code
     # Scalar numeric widening: int64 → float64 etc.
     _INT_GTS = ("int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64")
     if source_gt in _INT_GTS and target_gt in ("float64", "float32"):
+        return target_gt + "(" + value_code + ")"
+    if source_gt in _INT_GTS and target_gt in _INT_GTS and source_gt != target_gt:
         return target_gt + "(" + value_code + ")"
     return value_code
 
