@@ -1118,6 +1118,23 @@ class JuliaSubsetRenderer:
             return "string(" + self._render_expr(node.get("value")) + ")"
         return ""
 
+    def _render_call_expr(self, node: dict[str, JsonVal]) -> str:
+        func_node = node.get("func")
+        attr_call = self._render_attribute_call_maybe(node, func_node)
+        if attr_call != "":
+            return attr_call
+        func = self._render_expr(func_node)
+        args = [self._render_expr(arg) for arg in _list(node, "args")]
+        runtime_call, builtin_name, use_mapped_runtime = self._resolve_call_runtime_target(node, func_node)
+        result_type = _str(node, "resolved_type")
+        name_call = self._render_name_call(func, args, runtime_call, builtin_name, result_type, use_mapped_runtime)
+        if name_call != "":
+            return name_call
+        constructor_call = self._render_constructor_call(func, args)
+        if constructor_call != "":
+            return constructor_call
+        return func + "(" + ", ".join(args) + ")"
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -1138,21 +1155,7 @@ class JuliaSubsetRenderer:
         if kind == "IsInstance":
             return self._render_isinstance_expr(node)
         if kind == "Call":
-            func_node = node.get("func")
-            attr_call = self._render_attribute_call_maybe(node, func_node)
-            if attr_call != "":
-                return attr_call
-            func = self._render_expr(func_node)
-            args = [self._render_expr(arg) for arg in _list(node, "args")]
-            runtime_call, builtin_name, use_mapped_runtime = self._resolve_call_runtime_target(node, func_node)
-            result_type = _str(node, "resolved_type")
-            name_call = self._render_name_call(func, args, runtime_call, builtin_name, result_type, use_mapped_runtime)
-            if name_call != "":
-                return name_call
-            constructor_call = self._render_constructor_call(func, args)
-            if constructor_call != "":
-                return constructor_call
-            return func + "(" + ", ".join(args) + ")"
+            return self._render_call_expr(node)
         if kind in {"Box", "Unbox"}:
             return self._render_expr(node.get("value"))
         if kind == "Subscript":
