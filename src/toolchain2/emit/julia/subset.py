@@ -1589,6 +1589,21 @@ class JuliaSubsetRenderer:
         self._emit_class_ctor(node, class_name, impl_name, field_names)
         self._emit_class_methods(node, class_name)
 
+    def _emit_exception_ctor_body(self, init_fn: dict[str, JsonVal]) -> None:
+        for stmt in _list(init_fn, "body"):
+            if not isinstance(stmt, dict):
+                continue
+            if _str(stmt, "kind") == "Expr":
+                value = stmt.get("value")
+                if isinstance(value, dict):
+                    call_args = [self._render_expr(arg) for arg in _list(value, "args")]
+                    if len(call_args) == 1:
+                        self._emit("self.__pytra_message = string(" + call_args[0] + ")")
+                continue
+            target = stmt.get("target")
+            if isinstance(target, dict):
+                self._emit("self." + _str(target, "attr") + " = " + self._render_expr(stmt.get("value")))
+
     def _emit_exception_class(self, node: dict[str, JsonVal]) -> None:
         class_name = _str(node, "name")
         base_name = _str(node, "base")
@@ -1617,19 +1632,7 @@ class JuliaSubsetRenderer:
         self.indent_level += 1
         ctor_args = ['""'] + ["nothing" for _ in field_names]
         self._emit("self = " + class_name + "(" + ", ".join(ctor_args) + ")")
-        for stmt in _list(init_fn, "body"):
-            if not isinstance(stmt, dict):
-                continue
-            if _str(stmt, "kind") == "Expr":
-                value = stmt.get("value")
-                if isinstance(value, dict):
-                    call_args = [self._render_expr(arg) for arg in _list(value, "args")]
-                    if len(call_args) == 1:
-                        self._emit("self.__pytra_message = string(" + call_args[0] + ")")
-                continue
-            target = stmt.get("target")
-            if isinstance(target, dict):
-                self._emit("self." + _str(target, "attr") + " = " + self._render_expr(stmt.get("value")))
+        self._emit_exception_ctor_body(init_fn)
         self._emit("return self")
         self.indent_level -= 1
         self._emit("end")
