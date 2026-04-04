@@ -3615,10 +3615,11 @@ class ZigNativeEmitter:
         type_node = node.get("expected_type_id")
         target_type = ""
         if isinstance(type_node, dict):
-            target_type = _safe_ident(type_node.get("id"), "")
+            raw_type_id = type_node.get("id")
+            target_type = self._normalize_type(str(raw_type_id)) if isinstance(raw_type_id, str) else ""
         expected_name = node.get("expected_type_name")
         if target_type == "" and isinstance(expected_name, str):
-            target_type = _safe_ident(expected_name, "")
+            target_type = self._normalize_type(expected_name)
         if not isinstance(value_node, dict) or target_type == "":
             return "false"
         obj_type = self._get_expr_type(value_node)
