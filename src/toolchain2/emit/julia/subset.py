@@ -7,6 +7,8 @@ Unsupported modules must fall back to the legacy bridge.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from pytra.std.json import JsonVal
 
 from toolchain2.emit.common.code_emitter import RuntimeMapping
@@ -1797,6 +1799,18 @@ class JuliaSubsetRenderer:
             self.class_property_names[class_name] = inherited_properties
             self.class_static_method_names[class_name] = static_methods
 
+    def _collect_top_level_names(self, east3_doc: dict[str, JsonVal], kind: str, pred: Callable[[dict[str, JsonVal]], bool] | None = None) -> set[str]:
+        names: set[str] = set()
+        for stmt in _list(east3_doc, "body"):
+            if not isinstance(stmt, dict) or _str(stmt, "kind") != kind:
+                continue
+            if pred is not None and not pred(stmt):
+                continue
+            name = _str(stmt, "name")
+            if name != "":
+                names.add(name)
+        return names
+
     def _emit_module_prelude(self) -> None:
         self._emit('include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))')
         self.emitted_native_files.add("built_in/py_runtime.jl")
@@ -1821,16 +1835,8 @@ class JuliaSubsetRenderer:
         self.import_alias_modules = build_import_alias_map(self.meta)
         self.runtime_imports = build_runtime_import_map(self.meta, self.mapping)
         self.emitted_native_files = set()
-        self.function_names = {
-            _str(stmt, "name")
-            for stmt in _list(east3_doc, "body")
-            if isinstance(stmt, dict) and _str(stmt, "kind") == "FunctionDef"
-        }
-        self.class_names = {
-            _str(stmt, "name")
-            for stmt in _list(east3_doc, "body")
-            if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef"
-        }
+        self.function_names = self._collect_top_level_names(east3_doc, "FunctionDef")
+        self.class_names = self._collect_top_level_names(east3_doc, "ClassDef")
         self.class_base_names = {}
         self.class_subclasses = {}
         self.class_direct_field_names = {}
@@ -1840,11 +1846,7 @@ class JuliaSubsetRenderer:
         self.class_static_method_names = {}
         self.current_class_name = ""
         self._populate_class_metadata(east3_doc)
-        self.exception_class_names = {
-            _str(stmt, "name")
-            for stmt in _list(east3_doc, "body")
-            if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef" and _exception_class_supported(stmt)
-        }
+        self.exception_class_names = self._collect_top_level_names(east3_doc, "ClassDef", _exception_class_supported)
         self._emit_module_prelude()
         self._emit_module_body(east3_doc)
         if len(_list(east3_doc, "main_guard_body")) > 0:
