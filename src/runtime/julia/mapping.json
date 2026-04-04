@@ -230,7 +230,6 @@
     "pytra.typing",
     "pytra.std",
     "pytra.std.glob",
-    "pytra.std.collections",
     "pytra.std.math",
     "pytra.std.os",
     "pytra.std.os_path",

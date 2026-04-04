@@ -279,8 +279,6 @@ def _call_keywords_supported(keywords: list[JsonVal]) -> bool:
 
 def _attribute_call_supported(node: dict[str, JsonVal], func: dict[str, JsonVal], keywords: list[JsonVal]) -> bool:
     owner = func.get("value")
-    attr = _str(func, "attr")
-    owner_type = _str(owner, "resolved_type") if isinstance(owner, dict) else ""
     runtime_call = _str(node, "resolved_runtime_call")
     if runtime_call == "":
         runtime_call = _str(node, "runtime_call")
@@ -292,42 +290,7 @@ def _attribute_call_supported(node: dict[str, JsonVal], func: dict[str, JsonVal]
         return False
     if runtime_call != "":
         return True
-    if attr in {
-        "add",
-        "append",
-        "appendleft",
-        "clear",
-        "discard",
-        "endswith",
-        "extend",
-        "find",
-        "get",
-        "isdigit",
-        "index",
-        "isalnum",
-        "items",
-        "join",
-        "keys",
-        "lower",
-        "lstrip",
-        "popleft",
-        "pop",
-        "replace",
-        "remove",
-        "reverse",
-        "rstrip",
-        "setdefault",
-        "split",
-        "sort",
-        "values",
-        "startswith",
-        "strip",
-        "upper",
-    }:
-        return True
-    if owner_type not in {"", "str", "bytearray"} and not owner_type.startswith(("list[", "dict[", "set[")):
-        return len(keywords) == 0
-    return False
+    return len(keywords) == 0
 
 
 def _expr_supported(node: JsonVal) -> bool:
