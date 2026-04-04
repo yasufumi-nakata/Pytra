@@ -314,6 +314,8 @@ class ZigNativeEmitter:
         self._local_type_stack: list[dict[str, str]] = []
         self._ref_var_stack: list[set[str]] = []
         self._local_var_stack: list[set[str]] = []
+        self._decl_line_stack: list[dict[str, int]] = []
+        self._reassigned_name_stack: list[set[str]] = []
         self._mutated_var_stack: list[set[str]] = []
         self._hoisted_var_names: set[str] = set()
         # タプル型の名前付き typedef: normalized_type → zig_name
@@ -483,6 +485,10 @@ class ZigNativeEmitter:
             kind = stmt.get("kind")
             if kind in {"AnnAssign", "Assign"}:
                 target = stmt.get("target")
+                if not isinstance(target, dict):
+                    targets = stmt.get("targets")
+                    if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
+                        target = targets[0]
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     declared.add(_safe_ident(target.get("id"), ""))
         # 同一スコープ内の Assign 重複（2回目は再代入）+ ネスト内の再代入を検出
@@ -491,6 +497,10 @@ class ZigNativeEmitter:
             kind = stmt.get("kind")
             if kind in {"Assign", "AnnAssign"}:
                 target = stmt.get("target")
+                if not isinstance(target, dict):
+                    targets = stmt.get("targets")
+                    if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
+                        target = targets[0]
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     n = _safe_ident(target.get("id"), "")
                     if n in assign_seen:
@@ -513,7 +523,46 @@ class ZigNativeEmitter:
                         if isinstance(h, dict):
                             self._scan_reassign_to_declared(h.get("body"), declared, mutated)
                 self._scan_reassign_to_declared(stmt.get("finalbody"), declared, mutated)
+        assign_counts = self._collect_assigned_name_counts(body_any)
+        for name, count in assign_counts.items():
+            if count > 1:
+                mutated.add(name)
         return mutated
+
+    def _collect_assigned_name_counts(self, node: Any) -> dict[str, int]:
+        counts: dict[str, int] = {}
+
+        def add(name: str) -> None:
+            counts[name] = counts.get(name, 0) + 1
+
+        def walk(cur: Any) -> None:
+            if isinstance(cur, list):
+                for item in cur:
+                    walk(item)
+                return
+            if not isinstance(cur, dict):
+                return
+            kind = str(cur.get("kind") or "")
+            if kind in {"Assign", "AnnAssign", "AugAssign"}:
+                target = cur.get("target")
+                if not isinstance(target, dict):
+                    targets = cur.get("targets")
+                    if isinstance(targets, list):
+                        for item in targets:
+                            if isinstance(item, dict) and item.get("kind") == "Name":
+                                add(_safe_ident(item.get("id"), ""))
+                    target = None
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    add(_safe_ident(target.get("id"), ""))
+            for key, value in cur.items():
+                if key in {"repr", "source_span", "resolved_type", "semantic_tag",
+                           "runtime_call", "resolved_runtime_call", "runtime_module_id",
+                           "runtime_symbol", "escape_summary", "type_expr_summary_v1"}:
+                    continue
+                walk(value)
+
+        walk(node)
+        return counts
 
     def _scan_reassign_to_declared(self, body_any: Any, declared: set[str], mutated: set[str]) -> None:
         """declared に含まれる変数名への Assign/AugAssign をネスト含めて検出する。"""
@@ -700,6 +749,9 @@ class ZigNativeEmitter:
         self._local_type_stack.append(type_map)
         self._ref_var_stack.append(ref_vars)
         self._local_var_stack.append(local_vars)
+        self._decl_line_stack.append({})
+        reassigned = {name for name, count in self._collect_assigned_name_counts(stmt.get("body")).items() if count > 1}
+        self._reassigned_name_stack.append(reassigned)
         self._mutated_var_stack.append(self._scan_mutated_vars(stmt.get("body")))
         self._lambda_local_stack.append(set())
         ret_any = stmt.get("return_type")
@@ -729,7 +781,7 @@ class ZigNativeEmitter:
             if nested and isinstance(target, dict) and target.get("kind") == "Name":
                 names.add(_safe_ident(target.get("id"), "value"))
             return names
-        child_nested = nested or kind in {"If", "Try", "ExceptHandler", "With"}
+        child_nested = nested or kind in {"If", "Try", "ExceptHandler", "With", "While", "ForCore", "ForRange"}
         for key, value in node.items():
             if key in {"repr", "source_span", "resolved_type", "semantic_tag",
                        "runtime_call", "resolved_runtime_call", "runtime_module_id",
@@ -773,6 +825,33 @@ class ZigNativeEmitter:
                     names.add(_safe_ident(target.get("id"), "value"))
         return names
 
+    def _expr_is_float_like(self, node: Any) -> bool:
+        if not isinstance(node, dict):
+            return False
+        node_type = self._lookup_expr_type(node) or self._get_expr_type(node)
+        if node_type in {"float", "float32", "float64"}:
+            return True
+        kind = str(node.get("kind") or "")
+        if kind == "Constant":
+            value = node.get("value")
+            return isinstance(value, float)
+        if kind == "BinOp":
+            if str(node.get("op") or "") == "Div":
+                return True
+            return self._expr_is_float_like(node.get("left")) or self._expr_is_float_like(node.get("right"))
+        if kind == "UnaryOp":
+            return self._expr_is_float_like(node.get("operand"))
+        if kind in {"Call", "Attribute", "IfExp"}:
+            for key in ("func", "value", "test", "body", "orelse"):
+                if self._expr_is_float_like(node.get(key)):
+                    return True
+            args = node.get("args")
+            if isinstance(args, list):
+                for arg in args:
+                    if self._expr_is_float_like(arg):
+                        return True
+        return False
+
     def _pop_function_context(self) -> None:
         if len(self._local_type_stack) > 0:
             self._local_type_stack.pop()
@@ -780,6 +859,10 @@ class ZigNativeEmitter:
             self._ref_var_stack.pop()
         if len(self._local_var_stack) > 0:
             self._local_var_stack.pop()
+        if len(self._decl_line_stack) > 0:
+            self._decl_line_stack.pop()
+        if len(self._reassigned_name_stack) > 0:
+            self._reassigned_name_stack.pop()
         if len(self._mutated_var_stack) > 0:
             self._mutated_var_stack.pop()
         if len(self._lambda_local_stack) > 0:
@@ -802,6 +885,36 @@ class ZigNativeEmitter:
         if ret_type == "[]const u8":
             return "return \"\";"
         return "return undefined;"
+
+    def _record_decl_line(self, name: str) -> None:
+        if len(self._decl_line_stack) == 0:
+            return
+        self._decl_line_stack[-1][name] = len(self.lines) - 1
+
+    def _mark_decl_mutable(self, name: str) -> None:
+        candidates: list[int] = []
+        if len(self._decl_line_stack) > 0:
+            line_idx = self._decl_line_stack[-1].get(name)
+            if isinstance(line_idx, int):
+                candidates.append(line_idx)
+        i = len(self.lines) - 1
+        while i >= 0:
+            candidates.append(i)
+            i -= 1
+        seen: set[int] = set()
+        for line_idx in candidates:
+            if line_idx in seen or line_idx < 0 or line_idx >= len(self.lines):
+                continue
+            seen.add(line_idx)
+            line = self.lines[line_idx]
+            stripped = line.lstrip()
+            if stripped.startswith("const " + name):
+                indent = line[: len(line) - len(stripped)]
+                self.lines[line_idx] = indent + "var " + stripped[len("const "):]
+                return
+
+    def _is_name_reassigned(self, name: str) -> bool:
+        return len(self._reassigned_name_stack) > 0 and name in self._reassigned_name_stack[-1]
 
     def _is_top_level_decl(self, stmt: dict[str, Any]) -> bool:
         """トップレベル宣言（関数/クラス/import/型エイリアス）かどうか判定する。"""
@@ -943,10 +1056,11 @@ class ZigNativeEmitter:
         """後処理: 未使用 const に _ = を挿入、未 mutated var を const に降格。"""
         import re
         decl_re = re.compile(r"^(\s+)(const|var)\s+(\w+)\s*:")
+        obj_decl_re = re.compile(r"^(\s*)(const|var)\s+(\w+)\s*:\s*pytra\.Obj\s*=")
         undefined_decl_re = re.compile(r"^\s*(const|var)\s+\w+\s*:\s*[^=]+\s*=\s*undefined;\s*$")
         # mutation パターン: var_name = / var_name += / var_name -= etc.
         import re as _re_mut
-        def _is_mutated_after(var_name: str, start: int) -> bool:
+        def _is_mutated_after(var_name: str, start: int, decl_indent_len: int) -> bool:
             # var_name の mutation を検出:
             # 1. var_name = / += / -= 等（直接代入）
             # 2. var_name.field = （フィールド代入）
@@ -955,7 +1069,12 @@ class ZigNativeEmitter:
             pat_method = _re_mut.compile(r'\b' + _re_mut.escape(var_name) + r'\.(put|append|extend|pop)\s*\(')
             j = start
             while j < len(self.lines):
-                if pat_assign.search(self.lines[j]) or pat_method.search(self.lines[j]):
+                line = self.lines[j]
+                stripped = line.strip()
+                indent_len = len(line) - len(line.lstrip())
+                if stripped == "}" and indent_len < decl_indent_len:
+                    return False
+                if pat_assign.search(line) or pat_method.search(line):
                     return True
                 j += 1
             return False
@@ -970,6 +1089,7 @@ class ZigNativeEmitter:
                 indent = m.group(1)
                 kw = m.group(2)
                 var_name = m.group(3)
+                decl_indent_len = len(indent)
                 # 後続行で var_name が使用されているか
                 used = False
                 j = i + 1
@@ -979,6 +1099,10 @@ class ZigNativeEmitter:
                     if jm is not None and jm.group(3) == var_name:
                         j += 1
                         continue
+                    stripped = line.strip()
+                    indent_len = len(line) - len(line.lstrip())
+                    if stripped == "}" and indent_len < decl_indent_len:
+                        break
                     if _re_mut.search(r"\b" + _re_mut.escape(var_name) + r"\b", line) and line.strip() != "_ = " + var_name + ";":
                         used = True
                         break
@@ -999,9 +1123,20 @@ class ZigNativeEmitter:
                         # 未使用 var → const に降格 + _ = 挿入
                         replacements.append((i, "var " + var_name, "const " + var_name))
                         insertions.append((i + 1, indent + "_ = " + var_name + ";"))
-                elif kw == "var" and not _is_mutated_after(var_name, i + 1):
+                elif kw == "var" and not _is_mutated_after(var_name, i + 1, decl_indent_len):
                     # 使用されるが mutation されない var → const に降格
                     replacements.append((i, "var " + var_name, "const " + var_name))
+            i += 1
+        i = 0
+        while i < len(self.lines):
+            m_obj = obj_decl_re.match(self.lines[i])
+            if m_obj is not None:
+                var_name = m_obj.group(3)
+                decl_indent_len = len(m_obj.group(1))
+                if _is_mutated_after(var_name, i + 1, decl_indent_len) and m_obj.group(2) == "const":
+                    replacements.append((i, "const " + var_name, "var " + var_name))
+            if "@import(" in self.lines[i] and "var " in self.lines[i]:
+                replacements.append((i, "var ", "const "))
             i += 1
         for line_idx, old, new in replacements:
             self.lines[line_idx] = self.lines[line_idx].replace(old, new, 1)
@@ -1019,7 +1154,8 @@ class ZigNativeEmitter:
             if re.match(r"^const _unused\s*:\s*.+\s*=\s*.+;\s*$", stripped):
                 skip_next_unused = True
                 continue
-            if re.match(r"^\s*var\s+\w+\s*:\s*pytra\.Obj\s*=\s*pytra\.make_list\(", line):
+            m_obj_make = re.match(r"^\s*var\s+(\w+)\s*:\s*pytra\.Obj\s*=\s*pytra\.make_list\(", line)
+            if m_obj_make is not None and not _is_mutated_after(m_obj_make.group(1), len(cleaned) + 1, len(m_obj_make.group(0)) - len(m_obj_make.group(0).lstrip())):
                 line = line.replace("var ", "const ", 1)
             cleaned.append(line)
         self.lines = cleaned
@@ -1031,6 +1167,8 @@ class ZigNativeEmitter:
         seen_undefined_decl: dict[str, int] = {}
         for line in self.lines:
             stripped = line.strip()
+            if re.match(r"^(pub fn|fn)\s+\w+\(", stripped):
+                seen_undefined_decl = {}
             if stripped == "_ = _unused;":
                 continue
             m_decl = decl_re.match(line)
@@ -1043,7 +1181,8 @@ class ZigNativeEmitter:
                 if var_name in seen_undefined_decl:
                     old_idx = seen_undefined_decl.pop(var_name)
                     final_lines[old_idx] = ""
-            if re.match(r"^\s*var\s+\w+\s*:\s*pytra\.Obj\s*=\s*pytra\.make_list\(", line):
+            m_obj_make2 = re.match(r"^\s*var\s+(\w+)\s*:\s*pytra\.Obj\s*=\s*pytra\.make_list\(", line)
+            if m_obj_make2 is not None and not _is_mutated_after(m_obj_make2.group(1), len(final_lines) + 1, len(m_obj_make2.group(0)) - len(m_obj_make2.group(0).lstrip())):
                 line = line.replace("var ", "const ", 1)
             final_lines.append(line)
         collapsed_lines: list[str] = []
@@ -1603,12 +1742,13 @@ class ZigNativeEmitter:
                     return
                 if len(self._local_var_stack) > 0:
                     self._current_local_vars().add(target_name)
-                decl_kw = "var" if (self._is_var_mutated(target_name) or self._needs_var_for_type(decl_type)) else "const"
+                decl_kw = "var" if (self._is_var_mutated(target_name) or self._is_name_reassigned(target_name) or self._needs_var_for_type(decl_type) or zig_ty == "pytra.Obj") else "const"
                 if value_node is None and bool(stmt.get("declare")):
                     self._emit_line("var " + target + ": " + zig_ty + " = undefined;")
                 else:
                     if is_lambda_value or is_callable_decl:
                         self._emit_line(decl_kw + " " + target + " = " + value + ";")
+                        self._record_decl_line(target_name)
                         return
                     # 空 dict リテラル: decl_type の値型で初期化
                     if isinstance(value_node, dict) and value_node.get("kind") == "Dict":
@@ -1624,12 +1764,13 @@ class ZigNativeEmitter:
                     _INT_T = {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}
                     _FLOAT_T = {"float64", "float32", "float"}
                     norm_decl = self._normalize_type(decl_type)
-                    if norm_decl in _INT_T and val_type in _FLOAT_T:
+                    if norm_decl in _INT_T and (val_type in _FLOAT_T or self._expr_is_float_like(value_node)) and "@intFromFloat(" not in value:
                         value = "@as(i64, @intFromFloat(" + value + "))"
-                    elif norm_decl in _FLOAT_T and val_type in _INT_T:
+                    elif norm_decl in _FLOAT_T and val_type in _INT_T and not self._expr_is_float_like(value_node):
                         value = "@as(f64, @floatFromInt(" + value + "))"
                     value = self._coerce_value_to_zig_type(zig_ty, value_node, value)
                     self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
+                    self._record_decl_line(target_name)
                     norm_type = self._normalize_type(decl_type)
                     if norm_type in self.class_names and self._has_vtable(norm_type) and not (self._is_subclass_of(norm_type, "IntEnum") or self._is_subclass_of(norm_type, "IntFlag")):
                         self._emit_line("defer " + target + ".release();")
@@ -1715,18 +1856,21 @@ class ZigNativeEmitter:
                                     decl_type,
                                     stmt.get("decl_type_expr"),
                                 )
-                        decl_kw = "var" if (self._is_var_mutated(target_name) or self._needs_var_for_type(decl_type)) else "const"
+                        decl_kw = "var" if (self._is_var_mutated(target_name) or self._is_name_reassigned(target_name) or self._needs_var_for_type(decl_type) or zig_ty == "pytra.Obj") else "const"
                         if is_lambda_value or is_callable_decl:
                             self._emit_line(decl_kw + " " + target + " = " + value + ";")
+                            self._record_decl_line(target_name)
                             return
                         value = self._coerce_value_to_zig_type(zig_ty, stmt.get("value"), value)
                         self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
+                        self._record_decl_line(target_name)
                         norm_type = self._normalize_type(decl_type)
                         if norm_type in self.class_names and self._has_vtable(norm_type) and not (self._is_subclass_of(norm_type, "IntEnum") or self._is_subclass_of(norm_type, "IntFlag")):
                             self._emit_line("defer " + target + ".release();")
                         return
                 # 既存変数への再代入 — pytra.Obj なら release + retain
                 if td2.get("kind") == "Name":
+                    self._mark_decl_mutable(target_name)
                     old_type = self._current_type_map().get(target_name, "")
                     if self._normalize_type(old_type) in self.class_names and self._has_vtable(self._normalize_type(old_type)):
                         self._emit_line(target + ".release();")
@@ -1739,9 +1883,9 @@ class ZigNativeEmitter:
                     norm_var = self._normalize_type(var_type)
                     _INT_T = {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}
                     _FLOAT_T = {"float64", "float32", "float"}
-                    if norm_var in _INT_T and val_type in _FLOAT_T:
+                    if norm_var in _INT_T and (val_type in _FLOAT_T or self._expr_is_float_like(stmt.get("value"))) and "@intFromFloat(" not in value:
                         value = "@as(i64, @intFromFloat(" + value + "))"
-                    elif norm_var in _FLOAT_T and val_type in _INT_T:
+                    elif norm_var in _FLOAT_T and val_type in _INT_T and not self._expr_is_float_like(stmt.get("value")):
                         value = "@as(f64, @floatFromInt(" + value + "))"
                     value = self._coerce_value_to_zig_type(self._zig_type(var_type), stmt.get("value"), value)
                 self._emit_line(target + " = " + value + ";")
@@ -1789,13 +1933,16 @@ class ZigNativeEmitter:
                                     decl_type,
                                     stmt.get("decl_type_expr"),
                                 )
-                        decl_kw = "var" if (self._is_var_mutated(target_name) or self._needs_var_for_type(decl_type)) else "const"
+                        decl_kw = "var" if (self._is_var_mutated(target_name) or self._is_name_reassigned(target_name) or self._needs_var_for_type(decl_type) or zig_ty == "pytra.Obj") else "const"
                         if is_lambda_value or is_callable_decl:
                             self._emit_line(decl_kw + " " + target + " = " + value + ";")
+                            self._record_decl_line(target_name)
                             return
                         value = self._coerce_value_to_zig_type(zig_ty, stmt.get("value"), value)
                         self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
+                        self._record_decl_line(target_name)
                         return
+                    self._mark_decl_mutable(target_name)
                     value = self._coerce_value_to_zig_type(self._zig_type(self._current_type_map().get(target_name, "")), stmt.get("value"), value)
                 self._emit_line(target + " = " + value + ";")
                 return
@@ -2008,15 +2155,18 @@ class ZigNativeEmitter:
         self._hoisted_var_names.add(name)
         # object/unknown 型は具体型を推論 (PyObject は i64 alias なので float 代入に不適)
         if var_type in {"object", "unknown", "Any", ""}:
-            inferred = self._infer_hoisted_var_type_from_body(name)
+            scope_body = stmt.get("scope_body")
+            inferred = self._infer_hoisted_var_type_from_body(name, scope_body if isinstance(scope_body, list) else None)
             if inferred != "":
                 var_type = inferred
                 self._current_type_map()[name] = var_type
         zig_ty = self._zig_type(var_type) if var_type != "" else "pytra.PyObject"
         self._emit_line("var " + name + ": " + zig_ty + " = undefined;")
 
-    def _infer_hoisted_var_type_from_body(self, name: str) -> str:
+    def _infer_hoisted_var_type_from_body(self, name: str, scope_body: list[dict[str, Any]] | None = None) -> str:
         """VarDecl の型が object/unknown の場合、EAST 全体の Assign から具体型を推論。"""
+        if isinstance(scope_body, list):
+            return self._find_first_assign_type(scope_body, name)
         body = self._dict_list(self.east_doc.get("body"))
         main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
         result = self._find_first_assign_type(body, name)
@@ -2033,6 +2183,9 @@ class ZigNativeEmitter:
                 target = node.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     if _safe_ident(target.get("id"), "") == name:
+                        decl_type = self._infer_decl_type(node)
+                        if decl_type != "" and decl_type != "unknown":
+                            return decl_type
                         val = node.get("value")
                         if isinstance(val, dict):
                             t = self._lookup_expr_type(val)
@@ -2257,7 +2410,7 @@ class ZigNativeEmitter:
         top_level_assigned = self._collect_top_level_assigned_names(stmt.get("body"))
         for hoisted_name in sorted(self._collect_branch_assigned_names(stmt.get("body"))):
             if hoisted_name not in existing_vardecls and hoisted_name not in top_level_assigned and hoisted_name not in self._current_local_vars():
-                self._emit_var_decl({"kind": "VarDecl", "name": hoisted_name})
+                self._emit_var_decl({"kind": "VarDecl", "name": hoisted_name, "scope_body": stmt.get("body")})
         self._emit_block(stmt.get("body"))
         self._pop_function_context()
         self._param_rename_stack.pop()
@@ -3165,11 +3318,15 @@ class ZigNativeEmitter:
             # int/float 混合演算: int 側を @floatFromInt でラップ
             _INT_TYPES = {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}
             _FLOAT_TYPES = {"float64", "float32", "float"}
+            left_float_like = self._expr_is_float_like(ed.get("left"))
+            right_float_like = self._expr_is_float_like(ed.get("right"))
             if op not in {"LShift", "RShift", "BitOr", "BitXor", "BitAnd", "FloorDiv"}:
-                if left_type in _INT_TYPES and right_type in _FLOAT_TYPES:
-                    left = "@as(f64, @floatFromInt(" + left + "))"
-                elif left_type in _FLOAT_TYPES and right_type in _INT_TYPES:
-                    right = "@as(f64, @floatFromInt(" + right + "))"
+                if left_type in _INT_TYPES and (right_type in _FLOAT_TYPES or right_float_like):
+                    if not left_float_like:
+                        left = "@as(f64, @floatFromInt(" + left + "))"
+                elif (left_type in _FLOAT_TYPES or left_float_like) and right_type in _INT_TYPES:
+                    if not right_float_like:
+                        right = "@as(f64, @floatFromInt(" + right + "))"
             if op == "Add":
                 if left_type == "str" or right_type == "str":
                     return "pytra.str_concat(" + left + ", " + right + ")"
@@ -4028,12 +4185,13 @@ class ZigNativeEmitter:
                         arg_t = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
                         if arg_t == "":
                             arg_t = self._get_expr_type(args[0]) if len(args) > 0 else ""
+                        arg_float_like = self._expr_is_float_like(args[0]) if len(args) > 0 and isinstance(args[0], dict) else False
                         norm_arg_t = self._normalize_type(arg_t)
                         if arg_t == "str":
                             return "pytra.str_to_int(" + arg_strs[0] + ")"
                         if norm_arg_t != "" and (self._is_subclass_of(norm_arg_t, "IntEnum") or self._is_subclass_of(norm_arg_t, "IntFlag")):
                             return "@as(i64, " + arg_strs[0] + ")"
-                        if arg_t in {"float64", "float32", "float"}:
+                        if arg_t in {"float64", "float32", "float"} or arg_float_like:
                             return "@as(i64, @intFromFloat(" + arg_strs[0] + "))"
                         if arg_t in {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}:
                             return "@as(i64, @intCast(" + arg_strs[0] + "))"
@@ -4438,7 +4596,17 @@ class ZigNativeEmitter:
                             a_type = self._lookup_expr_type(args[j]) if j < len(args) else ""
                             if a_type == "":
                                 a_type = self._get_expr_type(args[j]) if isinstance(args[j], dict) else ""
-                            if a_type in _INT_TYPES_M:
+                            raw_expr_type = self._get_expr_type(args[j]) if j < len(args) and isinstance(args[j], dict) else ""
+                            if attr == "sqrt" and j < len(args) and (
+                                raw_expr_type in _INT_TYPES_M
+                                or (not self._expr_is_float_like(args[j]) if isinstance(args[j], dict) else False)
+                                or (arg_strs[j].startswith("@as(f64, ") and "@floatFromInt(" not in arg_strs[j])
+                            ):
+                                raw_arg = arg_strs[j]
+                                if raw_arg.startswith("@as(f64, ") and raw_arg.endswith(")"):
+                                    raw_arg = raw_arg[len("@as(f64, "):-1]
+                                coerced_args.append("@as(f64, @floatFromInt(" + raw_arg + "))")
+                            elif a_type in _INT_TYPES_M:
                                 coerced_args.append("@as(f64, @floatFromInt(" + arg_strs[j] + "))")
                             else:
                                 coerced_args.append(arg_strs[j])

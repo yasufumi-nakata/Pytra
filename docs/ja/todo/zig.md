@@ -43,7 +43,8 @@
    - 完了メモ (2026-04-04): `python3 tools/check/runtime_parity_check_fast.py --targets zig` の結果が `SUMMARY cases=146 pass=146 fail=0` となり、fixture parity を完了した。
 6. [x] [ID: P1-ZIG-EMITTER-S6] stdlib の Zig parity を通す（`--case-root stdlib`）
    - 完了メモ (2026-04-04): `python3 tools/check/runtime_parity_check_fast.py --targets zig --case-root stdlib` の結果が `SUMMARY cases=16 pass=16 fail=0` となり、stdlib parity を完了した。
-7. [ ] [ID: P1-ZIG-EMITTER-S7] sample の Zig parity を通す（`--case-root sample`）
+7. [x] [ID: P1-ZIG-EMITTER-S7] sample の Zig parity を通す（`--case-root sample`）
+   - 完了メモ (2026-04-04): `python3 tools/check/runtime_parity_check_fast.py --targets zig --case-root sample` の結果が `SUMMARY cases=18 pass=18 fail=0` となり、sample parity を完了した。
 
 ### P2-ZIG-LINT: emitter hardcode lint の Zig 違反を解消する
 
