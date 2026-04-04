@@ -1546,18 +1546,24 @@ class JuliaSubsetRenderer:
         finally:
             self.current_class_name = prev_class_name
 
+    def _emit_new_ctor_header(self, class_name: str, args: list[str]) -> None:
+        self._emit("function __pytra_new_" + class_name + "(" + ", ".join(args) + ")")
+        self.indent_level += 1
+
+    def _emit_ctor_return_self(self) -> None:
+        self._emit("return self")
+        self.indent_level -= 1
+        self._emit("end")
+
     def _emit_class_ctor(self, node: dict[str, JsonVal], class_name: str, impl_name: str, field_names: list[str]) -> None:
         init_fn = _find_init_function(node)
         ctor_args = [_ident(arg) for arg in _ctor_arg_order(node)]
-        self._emit("function __pytra_new_" + class_name + "(" + ", ".join(ctor_args) + ")")
-        self.indent_level += 1
+        self._emit_new_ctor_header(class_name, ctor_args)
         ctor_init_args = ", ".join("nothing" for _ in field_names)
         self._emit("self = " + impl_name + "(" + ctor_init_args + ")")
         if init_fn is not None:
             self._emit_class_scoped_block(class_name, _list(init_fn, "body"))
-        self._emit("return self")
-        self.indent_level -= 1
-        self._emit("end")
+        self._emit_ctor_return_self()
 
     def _emit_class_methods(self, node: dict[str, JsonVal], class_name: str) -> None:
         for stmt in _list(node, "body"):
@@ -1727,14 +1733,11 @@ class JuliaSubsetRenderer:
         if init_fn is None:
             raise ValueError("julia subset: exception class missing __init__: " + class_name)
         args = _ctor_arg_order(node)
-        self._emit("function __pytra_new_" + class_name + "(" + ", ".join(args) + ")")
-        self.indent_level += 1
+        self._emit_new_ctor_header(class_name, args)
         ctor_args = ['""'] + ["nothing" for _ in field_names]
         self._emit("self = " + class_name + "(" + ", ".join(ctor_args) + ")")
         self._emit_exception_ctor_body(init_fn)
-        self._emit("return self")
-        self.indent_level -= 1
-        self._emit("end")
+        self._emit_ctor_return_self()
 
     def _collect_class_member_sets(self, node: dict[str, JsonVal]) -> tuple[set[str], set[str], set[str]]:
         methods: set[str] = set()
