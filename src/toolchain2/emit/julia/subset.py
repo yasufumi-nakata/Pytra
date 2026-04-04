@@ -1634,6 +1634,48 @@ class JuliaSubsetRenderer:
         self.indent_level -= 1
         self._emit("end")
 
+    def _collect_class_member_sets(self, node: dict[str, JsonVal]) -> tuple[set[str], set[str], set[str]]:
+        methods: set[str] = set()
+        properties: set[str] = set()
+        static_methods: set[str] = set()
+        for item in _list(node, "body"):
+            if not isinstance(item, dict) or _str(item, "kind") != "FunctionDef":
+                continue
+            name = _str(item, "name")
+            if name == "__init__":
+                continue
+            decorators = [value for value in _list(item, "decorators") if isinstance(value, str)]
+            if "staticmethod" in decorators:
+                static_methods.add(name)
+            elif "property" in decorators:
+                properties.add(name)
+            else:
+                methods.add(name)
+        return methods, properties, static_methods
+
+    def _populate_class_metadata(self, east3_doc: dict[str, JsonVal]) -> None:
+        for stmt in _list(east3_doc, "body"):
+            if not isinstance(stmt, dict) or _str(stmt, "kind") != "ClassDef":
+                continue
+            class_name = _str(stmt, "name")
+            base_name = _str(stmt, "base")
+            self.class_base_names[class_name] = base_name
+            if base_name != "":
+                self.class_subclasses.setdefault(base_name, set()).add(class_name)
+            field_types = stmt.get("field_types")
+            self.class_direct_field_names[class_name] = list(field_types.keys()) if isinstance(field_types, dict) else []
+            methods, properties, static_methods = self._collect_class_member_sets(stmt)
+            inherited_methods = set(methods)
+            inherited_properties = set(properties)
+            walk_base = base_name
+            while walk_base != "":
+                inherited_methods |= self.class_method_names.get(walk_base, set())
+                inherited_properties |= self.class_property_names.get(walk_base, set())
+                walk_base = self.class_base_names.get(walk_base, "")
+            self.class_method_names[class_name] = inherited_methods
+            self.class_property_names[class_name] = inherited_properties
+            self.class_static_method_names[class_name] = static_methods
+
     def render_module(self, east3_doc: dict[str, JsonVal]) -> str:
         self.lines = []
         self.indent_level = 0
@@ -1661,42 +1703,7 @@ class JuliaSubsetRenderer:
         self.class_property_names = {}
         self.class_static_method_names = {}
         self.current_class_name = ""
-        for stmt in _list(east3_doc, "body"):
-            if not isinstance(stmt, dict) or _str(stmt, "kind") != "ClassDef":
-                continue
-            class_name = _str(stmt, "name")
-            base_name = _str(stmt, "base")
-            self.class_base_names[class_name] = base_name
-            if base_name != "":
-                self.class_subclasses.setdefault(base_name, set()).add(class_name)
-            field_types = stmt.get("field_types")
-            self.class_direct_field_names[class_name] = list(field_types.keys()) if isinstance(field_types, dict) else []
-            methods: set[str] = set()
-            properties: set[str] = set()
-            static_methods: set[str] = set()
-            for item in _list(stmt, "body"):
-                if not isinstance(item, dict) or _str(item, "kind") != "FunctionDef":
-                    continue
-                name = _str(item, "name")
-                if name == "__init__":
-                    continue
-                decorators = [value for value in _list(item, "decorators") if isinstance(value, str)]
-                if "staticmethod" in decorators:
-                    static_methods.add(name)
-                elif "property" in decorators:
-                    properties.add(name)
-                else:
-                    methods.add(name)
-            inherited_methods = set(methods)
-            inherited_properties = set(properties)
-            walk_base = base_name
-            while walk_base != "":
-                inherited_methods |= self.class_method_names.get(walk_base, set())
-                inherited_properties |= self.class_property_names.get(walk_base, set())
-                walk_base = self.class_base_names.get(walk_base, "")
-            self.class_method_names[class_name] = inherited_methods
-            self.class_property_names[class_name] = inherited_properties
-            self.class_static_method_names[class_name] = static_methods
+        self._populate_class_metadata(east3_doc)
         self.exception_class_names = {
             _str(stmt, "name")
             for stmt in _list(east3_doc, "body")
