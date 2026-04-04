@@ -1501,7 +1501,7 @@ class KotlinRenderer(CommonRenderer):
             if op == "Add" and ((left_type.startswith("list[") or left_type in ("list", "tuple", "bytes", "bytearray")) or (right_type.startswith("list[") or right_type in ("list", "tuple", "bytes", "bytearray"))):
                 return "(__pytra_list_concat(" + left + ", " + right + ") as " + self._render_type(self._str(node, "resolved_type")) + ")"
             if op == "Div":
-                return left + ".toDouble() / " + right + ".toDouble()"
+                return "((" + left + ").toDouble() / (" + right + ").toDouble())"
             if op == "BitAnd":
                 return "((" + left + ") and (" + right + "))"
             if op == "BitOr":

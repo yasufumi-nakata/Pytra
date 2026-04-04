@@ -374,6 +374,11 @@ def _transpile_in_memory(
                     "pytra.std.env",
                     "pytra.std.os",
                     "pytra.std.os_path",
+                    "pytra.std.sys",
+                    "pytra.std.argparse",
+                    "pytra.utils.assertions",
+                    "pytra.utils.png",
+                    "pytra.utils.gif",
                 ):
                     continue
                 # Zig requires detecting is_entry from source path when flag is unset

@@ -1305,10 +1305,12 @@ class ScalaRenderer(CommonRenderer):
                 return "((" + left + ") << (" + right + ").toInt)"
             if op == "RShift":
                 return "((" + left + ") >> (" + right + ").toInt)"
+            if op == "Div":
+                return "((" + left + ").toDouble / (" + right + ").toDouble)"
             if op == "FloorDiv":
                 return "scala.math.floor((" + left + ").toDouble / (" + right + ").toDouble).toLong"
             op_text = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/", "Mod": "%"}.get(op, op)
-            return left + " " + op_text + " " + right
+            return "(" + left + " " + op_text + " " + right + ")"
         if kind == "Compare":
             left = self._emit_expr(node.get("left"))
             comparators = self._list(node, "comparators")
