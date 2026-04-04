@@ -1411,11 +1411,6 @@ class KotlinRenderer(CommonRenderer):
                     arg_nodes = self._list(node, "args")
                     arg_expr = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "null"
                     return "__pytra_truthy(" + arg_expr + ")"
-                if func_id.endswith("Error") or func_id.endswith("Exception"):
-                    ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
-                    class_name = _safe_kotlin_ident(func_id)
-                    tmp_name = "__pytraObj"
-                    return "run { val " + tmp_name + " = " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                 if func_id in self.import_symbols:
                     import_path = self.import_symbols[func_id]
                     func_name = import_path
@@ -1430,6 +1425,11 @@ class KotlinRenderer(CommonRenderer):
                     if self.class_has_init.get(func_id, True):
                         return "run { val " + tmp_name + " = " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                     return class_name + "(" + ", ".join(ctor_args) + ")"
+                if func_id.endswith("Error") or func_id.endswith("Exception"):
+                    ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                    class_name = _safe_kotlin_ident(func_id)
+                    tmp_name = "__pytraObj"
+                    return "run { val " + tmp_name + " = " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
             if func_name.startswith("pytra_built_in_error.") and (func_name.endswith("Error") or func_name.endswith("Exception")):
                 bare_name = _safe_kotlin_ident(func_name.split(".")[-1])
                 ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
@@ -1502,6 +1502,8 @@ class KotlinRenderer(CommonRenderer):
                 return "(__pytra_list_concat(" + left + ", " + right + ") as " + self._render_type(self._str(node, "resolved_type")) + ")"
             if op == "Div":
                 return "((" + left + ").toDouble() / (" + right + ").toDouble())"
+            if op == "FloorDiv":
+                return "kotlin.math.floor(((" + left + ").toDouble() / (" + right + ").toDouble())).toLong()"
             if op == "BitAnd":
                 return "((" + left + ") and (" + right + "))"
             if op == "BitOr":
