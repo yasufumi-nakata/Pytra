@@ -281,12 +281,17 @@ def _attribute_call_supported(node: dict[str, JsonVal], func: dict[str, JsonVal]
     owner = func.get("value")
     attr = _str(func, "attr")
     owner_type = _str(owner, "resolved_type") if isinstance(owner, dict) else ""
+    runtime_call = _str(node, "resolved_runtime_call")
+    if runtime_call == "":
+        runtime_call = _str(node, "runtime_call")
     if not _expr_supported(owner):
         return False
     if not all(_expr_supported(arg) for arg in _list(node, "args")):
         return False
     if not _call_keywords_supported(keywords):
         return False
+    if runtime_call != "":
+        return True
     if attr in {
         "add",
         "append",
@@ -295,9 +300,7 @@ def _attribute_call_supported(node: dict[str, JsonVal], func: dict[str, JsonVal]
         "discard",
         "endswith",
         "extend",
-        "fabs",
         "find",
-        "floor",
         "get",
         "isdigit",
         "index",
@@ -307,7 +310,6 @@ def _attribute_call_supported(node: dict[str, JsonVal], func: dict[str, JsonVal]
         "keys",
         "lower",
         "lstrip",
-        "makedirs",
         "popleft",
         "pop",
         "replace",
@@ -317,9 +319,7 @@ def _attribute_call_supported(node: dict[str, JsonVal], func: dict[str, JsonVal]
         "setdefault",
         "split",
         "sort",
-        "sqrt",
         "values",
-        "write_rgb_png",
         "startswith",
         "strip",
         "upper",
