@@ -37,15 +37,15 @@ _ZIG_KEYWORDS = {
 # not shadow.  Names used by the Pytra runtime (print, math, etc.) are
 # excluded since _safe_ident cannot distinguish user vs runtime references.
 _ZIG_RESERVED_BUILTINS = {
-    "std",
-    "i8", "i16", "i32", "i64", "i128",
-    "u8", "u16", "u32", "u64", "u128",
-    "f16", "f32", "f64", "f128",
-    "usize", "isize", "bool",
-    "void", "anyerror",
-    "allocator", "ArrayList", "HashMap",
-    "mem", "fmt", "debug", "heap", "io", "os", "fs",
-    "testing", "log",
+    'std',
+    'i8', 'i16', 'i32', 'i64', 'i128',
+    'u8', 'u16', 'u32', 'u64', 'u128',
+    'f16', 'f32', 'f64', 'f128',
+    'usize', 'isize', 'bool',
+    'void', 'anyerror',
+    'allocator', 'ArrayList', 'HashMap',
+    'mem', 'fmt', 'debug', 'heap', 'io', 'os', 'fs',
+    'testing', 'log',
 }
 _NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool", "str"}
 _COMPILETIME_STD_IMPORT_SYMBOLS = {"abi", "template", "extern"}
@@ -236,11 +236,11 @@ def _runtime_symbol_semantic_tag(runtime_module_id: str, runtime_symbol: str) ->
 
 def _is_math_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
     tag = _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol)
-    return tag == "math"
+    return tag == 'math'
 
 
 def _is_perf_counter_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
-    return runtime_symbol == "perf_counter" or runtime_symbol == "perf_counter_ns"
+    return runtime_symbol == 'perf_counter' or runtime_symbol == 'perf_counter_ns'
 
 
 def _is_compile_time_std_import_symbol(module_id: str, symbol: str) -> bool:
@@ -446,7 +446,7 @@ class ZigNativeEmitter:
                         owner = func.get("value")
                         if isinstance(owner, dict) and owner.get("kind") == "Name":
                             attr = _safe_ident(func.get("attr"), "")
-                            if attr in {"clear", "pop", "setdefault", "append", "extend"}:
+                            if attr in {'clear', 'pop', 'setdefault', 'append', 'extend'}:
                                 mutated.add(_safe_ident(owner.get("id"), ""))
             elif kind == "If":
                 mutated.update(self._scan_mutated_vars(stmt.get("body")))
@@ -1567,12 +1567,12 @@ class ZigNativeEmitter:
         import_bindings_any = meta.get("import_bindings")
         import_bindings = import_bindings_any if isinstance(import_bindings_any, list) else []
         known_nominals_by_module = {
-            "pytra.std.json": {"JsonObj", "JsonArr", "JsonValue"},
-            "pytra.std.pathlib": {"Path"},
-            "pytra.std.argparse": {"ArgumentParser", "Namespace"},
+            'pytra.std.json': {'JsonObj', 'JsonArr', 'JsonValue'},
+            'pytra.std.pathlib': {'Path'},
+            'pytra.std.argparse': {'ArgumentParser', 'Namespace'},
         }
         known_properties_by_nominal = {
-            "Path": {"parent", "name", "stem", "suffix"},
+            'Path': {'parent', 'name', 'stem', 'suffix'},
         }
         for binding in import_bindings:
             if not isinstance(binding, dict):
@@ -1607,10 +1607,10 @@ class ZigNativeEmitter:
                 continue
             candidate_module = runtime_module_id if runtime_module_id != "" else module_id
             imported_module = candidate_module
-            if candidate_module == "math":
+            if candidate_module == 'math':
                 import_path = self._root_rel_prefix() + "std/math_native.zig"
                 safe_mod = "math_native"
-            elif candidate_module == "time":
+            elif candidate_module == 'time':
                 import_path = self._root_rel_prefix() + "std/time_native.zig"
                 safe_mod = "time_native"
             else:
@@ -4585,7 +4585,7 @@ class ZigNativeEmitter:
                         i += 1
                     arg_strs = filled_args
                 # math.* → サブモジュール内は math_native.*、メインモジュールはそのまま
-                if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") == "Name" and str(obj_node_for_attr.get("id")) == "math":
+                if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") == "Name" and str(obj_node_for_attr.get("id")) == 'math':
                     if attr in {"sin", "cos", "tan", "asin", "acos", "atan", "exp", "log", "log2", "log10", "sqrt", "fabs", "floor", "ceil", "round", "fmod", "hypot", "atan2", "pow", "log_"}:
                         zig_attr = attr if attr != "log_" else "log"
                         # math 関数は f64 引数を期待 — int 引数を自動変換
@@ -4614,9 +4614,9 @@ class ZigNativeEmitter:
                         if self.is_submodule:
                             return "math_native." + zig_attr + "(" + ", ".join(coerced_args) + ")"
                         return obj + "." + zig_attr + "(" + ", ".join(coerced_args) + ")"
-                if attr == "isdigit":
+                if attr == 'isdigit':
                     return "pytra.char_isdigit(" + obj + ")"
-                if attr == "isalpha":
+                if attr == 'isalpha':
                     return "pytra.char_isalpha(" + obj + ")"
                 if attr == "isspace":
                     return "pytra.str_isspace(" + obj + ")"
@@ -4645,21 +4645,21 @@ class ZigNativeEmitter:
                     return "pytra.str_upper(" + obj + ")"
                 if attr == "lower":
                     return "pytra.str_lower(" + obj + ")"
-                if attr == "strip":
+                if attr == 'strip':
                     if len(arg_strs) > 0:
                         return "pytra.str_strip_chars(" + obj + ", " + arg_strs[0] + ")"
                     return "pytra.str_strip(" + obj + ")"
-                if attr == "lstrip":
+                if attr == 'lstrip':
                     if len(arg_strs) > 0:
                         return "pytra.str_lstrip_chars(" + obj + ", " + arg_strs[0] + ")"
                     return "pytra.str_lstrip(" + obj + ")"
-                if attr == "rstrip":
+                if attr == 'rstrip':
                     if len(arg_strs) > 0:
                         return "pytra.str_rstrip_chars(" + obj + ", " + arg_strs[0] + ")"
                     return "pytra.str_rstrip(" + obj + ")"
-                if attr == "startswith" and len(arg_strs) > 0:
+                if attr == 'startswith' and len(arg_strs) > 0:
                     return "pytra.str_startswith(" + obj + ", " + arg_strs[0] + ")"
-                if attr == "endswith" and len(arg_strs) > 0:
+                if attr == 'endswith' and len(arg_strs) > 0:
                     return "pytra.str_endswith(" + obj + ", " + arg_strs[0] + ")"
                 if attr == "find" and len(arg_strs) > 0:
                     return "pytra.str_find(" + obj + ", " + arg_strs[0] + ")"
@@ -4672,9 +4672,9 @@ class ZigNativeEmitter:
                         return "pytra.list_index(" + obj + ", " + elem_type + ", " + arg_strs[0] + ")"
                 if attr == "replace" and len(arg_strs) >= 2:
                     return "pytra.str_replace(" + obj + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
-                if attr == "isalnum":
+                if attr == 'isalnum':
                     return "pytra.str_isalnum(" + obj + ")"
-                if attr == "split":
+                if attr == 'split':
                     if len(arg_strs) > 0:
                         return "pytra.str_split(" + obj + ", " + arg_strs[0] + ")"
                     return "pytra.str_split(" + obj + ", \" \")"
@@ -4695,7 +4695,7 @@ class ZigNativeEmitter:
                         if len(arg_strs) == 1:
                             default_expr = "pytra.union_new_none()" if self._is_union_storage_zig(val_zig) else self._zig_zero_value(val_zig)
                             return "pytra.dict_get_default(" + val_zig + ", " + obj + ", " + key_expr + ", " + default_expr + ")"
-                if attr == "clear":
+                if attr == 'clear':
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     if obj_type.startswith("dict["):
                         return "@constCast(&" + obj + ").clearRetainingCapacity()"
@@ -4721,7 +4721,7 @@ class ZigNativeEmitter:
                         if len(parts) == 2:
                             val_zig = self._zig_type(parts[1].strip())
                         return "pytra.dict_values(" + val_zig + ", " + obj + ")"
-                if attr == "append":
+                if attr == 'append':
                     if len(arg_strs) > 0:
                         obj_type = self._lookup_expr_type(obj_node_for_attr)
                         elem_type = "i64"
@@ -4747,30 +4747,30 @@ class ZigNativeEmitter:
                         if elem_type in {"u8", "i8", "i16", "u16", "i32", "u32", "i64", "u64"}:
                             return "pytra.set_add(" + obj + ", " + elem_type + ", @intCast(" + arg_strs[0] + "))"
                         return "pytra.set_add(" + obj + ", " + elem_type + ", " + arg_strs[0] + ")"
-                if attr == "discard":
+                if attr == 'discard':
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     if obj_type.startswith("set[") and len(arg_strs) > 0:
                         elem_type = self._zig_type(obj_type[4:-1].strip()) if obj_type.endswith("]") else "i64"
                         if elem_type in {"u8", "i8", "i16", "u16", "i32", "u32", "i64", "u64"}:
                             return "pytra.set_discard(" + obj + ", " + elem_type + ", @intCast(" + arg_strs[0] + "))"
                         return "pytra.set_discard(" + obj + ", " + elem_type + ", " + arg_strs[0] + ")"
-                if attr == "remove":
+                if attr == 'remove':
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     if obj_type.startswith("set[") and len(arg_strs) > 0:
                         elem_type = self._zig_type(obj_type[4:-1].strip()) if obj_type.endswith("]") else "i64"
                         if elem_type in {"u8", "i8", "i16", "u16", "i32", "u32", "i64", "u64"}:
                             return "pytra.set_remove(" + obj + ", " + elem_type + ", @intCast(" + arg_strs[0] + "))"
                         return "pytra.set_remove(" + obj + ", " + elem_type + ", " + arg_strs[0] + ")"
-                if attr == "sort":
+                if attr == 'sort':
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     if obj_type == "list[int]" or obj_type == "list[int64]":
                         return "pytra.list_sort_i64(" + obj + ")"
-                if attr == "reverse":
+                if attr == 'reverse':
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     if obj_type.startswith("list["):
                         elem_type = self._zig_type(obj_type[5:-1].strip()) if obj_type.endswith("]") else "i64"
                         return "pytra.list_reverse(" + obj + ", " + elem_type + ")"
-                if attr == "join":
+                if attr == 'join':
                     # Only str.join → str_join_sep; module.join passes through
                     owner_type = self._lookup_expr_type(obj_node_for_attr) if isinstance(obj_node_for_attr, dict) else ""
                     if owner_type == "str":
@@ -4780,7 +4780,7 @@ class ZigNativeEmitter:
                                 return "pytra.str_join_sep(" + obj + ", pytra.list_items(" + arg_strs[0] + ", []const u8))"
                             return "pytra.str_join_sep(" + obj + ", " + arg_strs[0] + ")"
                         return "pytra.str_join_sep(" + obj + ", &.{})"
-                if attr == "pop":
+                if attr == 'pop':
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     elem_type = "i64"
                     if obj_type.startswith("dict["):
@@ -4802,7 +4802,7 @@ class ZigNativeEmitter:
                     else:
                         return obj + "." + attr + "(" + ", ".join(arg_strs) + ")"
                     return "pytra.list_pop(" + obj + ", " + elem_type + ")"
-                if attr == "setdefault":
+                if attr == 'setdefault':
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     if obj_type.startswith("dict["):
                         parts = self._split_generic(obj_type[5:-1])
@@ -4814,7 +4814,7 @@ class ZigNativeEmitter:
                             if self._normalize_type(parts[0].strip()) != "str" and len(arg_strs) > 0:
                                 key_expr = "pytra.to_str(" + arg_strs[0] + ")"
                         return "pytra.dict_setdefault(" + val_zig + ", @constCast(&" + obj + "), " + key_expr + ", " + default_expr + ")"
-                if attr == "extend":
+                if attr == 'extend':
                     if len(arg_strs) > 0:
                         obj_type = self._lookup_expr_type(obj_node_for_attr)
                         elem_type = "i64"
@@ -5817,7 +5817,7 @@ class ZigNativeEmitter:
                     return self._normalize_type(sig[1])
             if isinstance(func, dict) and func.get("kind") == "Attribute":
                 obj_node = func.get("value")
-                if isinstance(obj_node, dict) and obj_node.get("kind") == "Name" and str(obj_node.get("id")) == "json":
+                if isinstance(obj_node, dict) and obj_node.get("kind") == "Name" and str(obj_node.get("id")) == 'json':
                     attr = str(func.get("attr"))
                     if attr == "loads":
                         return "JsonValue"
@@ -5833,7 +5833,7 @@ class ZigNativeEmitter:
                     method_ret = self._class_return_types.get(obj_type, {}).get(attr, "")
                     if method_ret != "":
                         return self._normalize_type(method_ret)
-                if isinstance(obj_node, dict) and obj_node.get("kind") == "Name" and str(obj_node.get("id")) == "math":
+                if isinstance(obj_node, dict) and obj_node.get("kind") == "Name" and str(obj_node.get("id")) == 'math':
                     attr = str(func.get("attr"))
                     if attr in {"sin", "cos", "tan", "asin", "acos", "atan", "exp", "log", "log2", "log10", "sqrt", "fabs", "floor", "ceil", "round", "fmod", "hypot", "atan2", "pow"}:
                         return "float64"

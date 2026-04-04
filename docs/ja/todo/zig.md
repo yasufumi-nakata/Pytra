@@ -48,4 +48,5 @@
 
 ### P2-ZIG-LINT: emitter hardcode lint の Zig 違反を解消する
 
-1. [ ] [ID: P2-ZIG-LINT-S1] `check_emitter_hardcode_lint.py --lang zig` で全カテゴリ 0 件になることを確認する
+1. [x] [ID: P2-ZIG-LINT-S1] `check_emitter_hardcode_lint.py --lang zig` で全カテゴリ 0 件になることを確認する
+   - 完了メモ (2026-04-04): `python3 tools/check/check_emitter_hardcode_lint.py --lang zig --verbose --no-write` の結果が `0 件の違反` となり、`module name` / `runtime symbol` / `class name` / `skip pure py` / `rt: call_cov` を解消した。
