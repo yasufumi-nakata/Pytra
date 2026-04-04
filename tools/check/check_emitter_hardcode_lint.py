@@ -74,6 +74,32 @@ CATEGORIES: dict[str, list[str]] = {
         r'"write_rgb_png"',
         r'"save_gif"',
         r'"grayscale_palette"',
+        # Python メソッド名のハードコード（EAST3 の runtime_call / semantic_tag で判定すべき）
+        # Python メソッド名のハードコード（EAST3 の runtime_call / semantic_tag で判定すべき）
+        # 除外: "values","keys","items","get","index","add","upper","lower","replace" は
+        #        EAST3 フィールド名・演算子名・slice フィールド名と衝突するため
+        r'"append"',
+        r'"extend"',
+        r'"insert"',
+        r'"pop"',
+        r'"clear"',
+        r'"sort"',
+        r'"reverse"',
+        r'"remove"',
+        r'"discard"',
+        r'"setdefault"',
+        r'"update"',
+        r'"split"',
+        r'"join"',
+        r'"strip"',
+        r'"lstrip"',
+        r'"rstrip"',
+        r'"startswith"',
+        r'"endswith"',
+        r'"rfind"',
+        r'"isdigit"',
+        r'"isalpha"',
+        r'"isalnum"',
     ],
     "target_constant": [
         # mapping.json の calls テーブルの責務を emitter が横取りしている
