@@ -660,8 +660,35 @@ class JuliaSubsetRenderer:
             if len(args) == 1 and len(kw_items) == 1 and kw_items[0].get("arg") == "exist_ok":
                 return "__pytra_makedirs(" + args[0] + ", " + self._render_expr(kw_items[0].get("value")) + ")"
             return ""
+        scalar_expr = self._render_scalar_runtime_call(mapped, args)
+        if scalar_expr != "":
+            return scalar_expr
+        collection_expr = self._render_collection_runtime_call(mapped, args)
+        if collection_expr != "":
+            return collection_expr
+        string_expr = self._render_string_runtime_call(mapped, args)
+        if string_expr != "":
+            return string_expr
+        range_expr = self._render_range_runtime_call(mapped, args)
+        if range_expr != "":
+            return range_expr
+        if len(args) == 0:
+            return mapped + "()"
+        return mapped + "(" + ", ".join(args) + ")"
+
+    def _render_scalar_runtime_call(self, mapped: str, args: list[str]) -> str:
         if mapped == "__INT__" and len(args) == 1:
             return "__pytra_int(" + args[0] + ")"
+        if mapped == "__BYTES_CTOR__":
+            if len(args) == 0:
+                return "UInt8[]"
+            if len(args) == 1:
+                return "__pytra_bytes(" + args[0] + ")"
+        if mapped == "__SET_CTOR__" and len(args) == 0:
+            return "Set()"
+        return ""
+
+    def _render_collection_runtime_call(self, mapped: str, args: list[str]) -> str:
         if mapped == "__LIST_APPEND__" and len(args) == 2:
             return "push!(" + args[0] + ", " + args[1] + ")"
         if mapped == "__LIST_POP__":
@@ -710,14 +737,9 @@ class JuliaSubsetRenderer:
             return "delete!(" + args[0] + ", " + args[1] + ")"
         if mapped == "__SET_REMOVE__" and len(args) == 2:
             return "delete!(" + args[0] + ", " + args[1] + ")"
-        if mapped == "__SET_CTOR__" and len(args) == 0:
-            return "Set()"
-        if mapped == "__BYTES_CTOR__":
-            if len(args) == 0:
-                return "UInt8[]"
-            if len(args) == 1:
-                return "__pytra_bytes(" + args[0] + ")"
-            return ""
+        return ""
+
+    def _render_string_runtime_call(self, mapped: str, args: list[str]) -> str:
         if mapped == "__STR_REPLACE__" and len(args) == 3:
             return "replace(" + args[0] + ", " + args[1] + " => " + args[2] + ")"
         if mapped == "__STR_JOIN__" and len(args) == 2:
@@ -728,33 +750,34 @@ class JuliaSubsetRenderer:
             return "__pytra_str_find(" + args[0] + ", " + args[1] + ")"
         if mapped == "__STR_ISSPACE__" and len(args) == 1:
             return "((length(" + args[0] + ") != 0) && all(isspace, " + args[0] + "))"
-        if mapped == "__RANGE__":
-            if len(args) == 1:
-                return "0:(" + args[0] + " - 1)"
-            if len(args) == 2:
-                return args[0] + ":(" + args[1] + " - 1)"
-            if len(args) == 3:
-                step = args[2]
-                if step == "1":
-                    return args[0] + ":(" + args[1] + " - 1)"
-                if step.startswith("-"):
-                    return args[0] + ":" + step + ":(" + args[1] + " + 1)"
-                return (
-                    args[0]
-                    + ":"
-                    + step
-                    + ":(("
-                    + step
-                    + ") > 0 ? ("
-                    + args[1]
-                    + " - 1) : ("
-                    + args[1]
-                    + " + 1))"
-                )
+        return ""
+
+    def _render_range_runtime_call(self, mapped: str, args: list[str]) -> str:
+        if mapped != "__RANGE__":
             return ""
-        if len(args) == 0:
-            return mapped + "()"
-        return mapped + "(" + ", ".join(args) + ")"
+        if len(args) == 1:
+            return "0:(" + args[0] + " - 1)"
+        if len(args) == 2:
+            return args[0] + ":(" + args[1] + " - 1)"
+        if len(args) == 3:
+            step = args[2]
+            if step == "1":
+                return args[0] + ":(" + args[1] + " - 1)"
+            if step.startswith("-"):
+                return args[0] + ":" + step + ":(" + args[1] + " + 1)"
+            return (
+                args[0]
+                + ":"
+                + step
+                + ":(("
+                + step
+                + ") > 0 ? ("
+                + args[1]
+                + " - 1) : ("
+                + args[1]
+                + " + 1))"
+            )
+        return ""
 
     def _fallback_method_runtime_key(self, owner_type: str, attr: str) -> str:
         if owner_type == "str":
