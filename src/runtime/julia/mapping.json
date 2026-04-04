@@ -104,7 +104,7 @@
     "write_rgb_png": "write_rgb_png",
     "open": "__pytra_open",
     "pyopen": "__pytra_open",
-    "makedirs": "__pytra_makedirs",
+    "makedirs": "__MAKEDIRS__",
     "perf_counter": "__TimeNative.perf_counter",
     "time.perf_counter": "__TimeNative.perf_counter",
     "py_floordiv": "__pytra_floordiv",

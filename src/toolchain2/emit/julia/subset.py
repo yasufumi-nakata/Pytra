@@ -648,11 +648,18 @@ class JuliaSubsetRenderer:
         args: list[str],
         result_type: str,
         builtin_name: str = "",
+        source_type: str = "",
+        keywords: list[dict[str, JsonVal]] | None = None,
     ) -> str:
+        kw_items = keywords if isinstance(keywords, list) else []
         if mapped == "":
             return ""
         if mapped == "__CAST__":
-            return self._render_static_cast_call(builtin_name, result_type, args)
+            return self._render_static_cast_call(builtin_name, result_type, args, source_type)
+        if mapped == "__MAKEDIRS__":
+            if len(args) == 1 and len(kw_items) == 1 and kw_items[0].get("arg") == "exist_ok":
+                return "__pytra_makedirs(" + args[0] + ", " + self._render_expr(kw_items[0].get("value")) + ")"
+            return ""
         if mapped == "__INT__" and len(args) == 1:
             return "__pytra_int(" + args[0] + ")"
         if mapped == "__LIST_APPEND__" and len(args) == 2:
@@ -776,19 +783,28 @@ class JuliaSubsetRenderer:
         mapped = self.mapping.calls.get(runtime_call, "")
         if mapped == "":
             return ""
-        return self._render_mapped_runtime_call(mapped, [owner] + args, _str(node, "resolved_type"))
+        owner_node = node.get("func")
+        source_type = ""
+        if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Attribute":
+            value_node = owner_node.get("value")
+            if isinstance(value_node, dict):
+                source_type = _str(value_node, "resolved_type")
+        return self._render_mapped_runtime_call(mapped, [owner] + args, _str(node, "resolved_type"), source_type=source_type)
 
-    def _render_static_cast_call(self, builtin_name: str, result_type: str, args: list[str]) -> str:
+    def _render_static_cast_call(self, builtin_name: str, result_type: str, args: list[str], source_type: str) -> str:
         if len(args) != 1:
             return ""
+        if source_type != "" and self.mapping.is_implicit_cast(source_type, result_type):
+            return args[0]
         if builtin_name == "int" or result_type in {"int", "int64"}:
             return "__pytra_int(" + args[0] + ")"
-        if result_type.startswith("int") or result_type.startswith("uint"):
-            return args[0]
         if builtin_name == "bool" or result_type == "bool":
             return "__pytra_truthy(" + args[0] + ")"
         if builtin_name == "str" or result_type in {"str", "string"}:
             return "__pytra_str(" + args[0] + ")"
+        target_type = self.mapping.types.get(result_type, "")
+        if target_type != "":
+            return target_type + "(" + args[0] + ")"
         return ""
 
     def _render_super_method_call(self, owner_type: str, attr: str, args: list[str]) -> str:
@@ -857,14 +873,16 @@ class JuliaSubsetRenderer:
             fallback_expr = self._render_mapped_runtime_call(fallback_mapped, [owner] + args, _str(node, "resolved_type"))
             if fallback_expr != "":
                 return fallback_expr
-        if runtime_call == "makedirs" and len(args) == 1 and len(keywords) == 1 and keywords[0].get("arg") == "exist_ok":
-            mapped = self.mapping.calls.get(runtime_call, "")
-            if mapped != "":
-                return self._render_mapped_runtime_call(
-                    mapped,
-                    [args[0], self._render_expr(keywords[0].get("value"))],
-                    _str(node, "resolved_type"),
-                )
+        mapped_runtime = self.mapping.calls.get(runtime_call, "")
+        if mapped_runtime != "":
+            mapped_expr = self._render_mapped_runtime_call(
+                mapped_runtime,
+                args,
+                _str(node, "resolved_type"),
+                keywords=keywords,
+            )
+            if mapped_expr != "":
+                return mapped_expr
         return self._render_class_dispatch_call(owner, owner_type, owner_name, attr, args, keywords)
 
     def _render_name_call(
@@ -875,9 +893,16 @@ class JuliaSubsetRenderer:
         builtin_name: str,
         result_type: str,
         use_mapped_runtime: str,
+        source_type: str,
     ) -> str:
         if use_mapped_runtime != "":
-            mapped_expr = self._render_mapped_runtime_call(use_mapped_runtime, args, result_type, builtin_name)
+            mapped_expr = self._render_mapped_runtime_call(
+                use_mapped_runtime,
+                args,
+                result_type,
+                builtin_name=builtin_name,
+                source_type=source_type,
+            )
             if mapped_expr != "":
                 return mapped_expr
         return ""
@@ -1137,7 +1162,19 @@ class JuliaSubsetRenderer:
         args = [self._render_expr(arg) for arg in _list(node, "args")]
         runtime_call, builtin_name, use_mapped_runtime = self._resolve_call_runtime_target(node, func_node)
         result_type = _str(node, "resolved_type")
-        name_call = self._render_name_call(func, args, runtime_call, builtin_name, result_type, use_mapped_runtime)
+        source_type = ""
+        arg_nodes = _list(node, "args")
+        if len(arg_nodes) >= 1 and isinstance(arg_nodes[0], dict):
+            source_type = _str(arg_nodes[0], "resolved_type")
+        name_call = self._render_name_call(
+            func,
+            args,
+            runtime_call,
+            builtin_name,
+            result_type,
+            use_mapped_runtime,
+            source_type,
+        )
         if name_call != "":
             return name_call
         constructor_call = self._render_constructor_call(func, args)
