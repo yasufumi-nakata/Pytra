@@ -1473,15 +1473,16 @@ class JuliaSubsetRenderer:
             fn_name = _ident(_str(stmt, "name"))
             impl_fn_name = self._method_impl_name(class_name, fn_name)
             decorators = [value for value in _list(stmt, "decorators") if isinstance(value, str)]
+            is_static = "staticmethod" in decorators
+            arg_order = [arg for arg in _list(stmt, "arg_order") if isinstance(arg, str)]
             args = []
-            for arg in _list(stmt, "arg_order"):
-                if isinstance(arg, str):
-                    if arg == "self":
-                        args.append("self::" + class_name)
-                    else:
-                        args.append(_ident(arg))
-            if "staticmethod" in decorators:
-                self._emit("function " + fn_name + "(" + ", ".join(arg for arg in args if not arg.startswith("self::")) + ")")
+            for index, arg in enumerate(arg_order):
+                if not is_static and index == 0:
+                    args.append("self::" + class_name)
+                else:
+                    args.append(_ident(arg))
+            if is_static:
+                self._emit("function " + fn_name + "(" + ", ".join(args) + ")")
             else:
                 self._emit("function " + impl_fn_name + "(" + ", ".join(args) + ")")
             self.indent_level += 1
@@ -1492,10 +1493,10 @@ class JuliaSubsetRenderer:
             self.current_class_name = prev_class_name
             self.indent_level -= 1
             self._emit("end")
-            if "staticmethod" not in decorators:
+            if not is_static:
                 self._emit("function " + fn_name + "(" + ", ".join(args) + ")")
                 self.indent_level += 1
-                call_args = [_ident(arg) for arg in _list(stmt, "arg_order") if isinstance(arg, str)]
+                call_args = [_ident(arg) for arg in arg_order]
                 self._emit("return " + impl_fn_name + "(" + ", ".join(call_args) + ")")
                 self.indent_level -= 1
                 self._emit("end")
