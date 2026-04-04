@@ -1676,6 +1676,21 @@ class JuliaSubsetRenderer:
             self.class_property_names[class_name] = inherited_properties
             self.class_static_method_names[class_name] = static_methods
 
+    def _emit_module_prelude(self) -> None:
+        self._emit('include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))')
+        self.emitted_native_files.add("built_in/py_runtime.jl")
+        self._emit_blank()
+
+    def _emit_module_body(self, east3_doc: dict[str, JsonVal]) -> None:
+        for stmt in _list(east3_doc, "body"):
+            self._emit_stmt(stmt)
+            if _str(stmt, "kind") == "FunctionDef":
+                self._emit_blank()
+
+    def _emit_main_guard_body(self, east3_doc: dict[str, JsonVal]) -> None:
+        for stmt in _list(east3_doc, "main_guard_body"):
+            self._emit_stmt(stmt)
+
     def render_module(self, east3_doc: dict[str, JsonVal]) -> str:
         self.lines = []
         self.indent_level = 0
@@ -1709,15 +1724,8 @@ class JuliaSubsetRenderer:
             for stmt in _list(east3_doc, "body")
             if isinstance(stmt, dict) and _str(stmt, "kind") == "ClassDef" and _exception_class_supported(stmt)
         }
-        self._emit('include(joinpath(@__DIR__, "built_in", "py_runtime.jl"))')
-        self.emitted_native_files.add("built_in/py_runtime.jl")
-        self._emit_blank()
-        for stmt in _list(east3_doc, "body"):
-            self._emit_stmt(stmt)
-            if _str(stmt, "kind") == "FunctionDef":
-                self._emit_blank()
-        main_guard_body = _list(east3_doc, "main_guard_body")
-        if len(main_guard_body) > 0:
-            for stmt in main_guard_body:
-                self._emit_stmt(stmt)
+        self._emit_module_prelude()
+        self._emit_module_body(east3_doc)
+        if len(_list(east3_doc, "main_guard_body")) > 0:
+            self._emit_main_guard_body(east3_doc)
         return "\n".join(self.lines).rstrip() + "\n"
