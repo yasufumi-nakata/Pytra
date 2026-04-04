@@ -13,8 +13,8 @@ const os_path_native = @import("os_path_native.zig");
 pub const Path = struct {
     _value: []const u8,
 
-    pub fn init(value: []const u8) Path {
-        return Path{ ._value = value };
+    pub fn init(value: anytype) Path {
+        return Path{ ._value = pytra.union_as_str(value) };
     }
 
     pub fn __str__(self: *const Path) []const u8 {
@@ -64,16 +64,17 @@ pub const Path = struct {
         return os_path_native.exists(self._value);
     }
 
-    pub fn mkdir(self: *const Path, _: bool, _: bool) void {
-        os_native.mkdir(self._value, false);
+    pub fn mkdir(self: *const Path) void {
+        os_native.makedirs(self._value, true);
     }
 
-    pub fn read_text(self: *const Path, _: []const u8) []const u8 {
-        _ = self;
-        return "";
+    pub fn read_text(self: *const Path) []const u8 {
+        const file = std.fs.cwd().openFile(self._value, .{}) catch return "";
+        defer file.close();
+        return file.readToEndAlloc(std.heap.page_allocator, 1 << 20) catch "";
     }
 
-    pub fn write_text(self: *const Path, text: []const u8, _: []const u8) void {
+    pub fn write_text(self: *const Path, text: []const u8) void {
         const f = std.fs.cwd().createFile(self._value, .{}) catch return;
         defer f.close();
         f.writeAll(text) catch {};
@@ -81,5 +82,9 @@ pub const Path = struct {
 
     pub fn resolve(self: *const Path) *Path {
         return pytra.make_object(Path, Path.init(self._value));
+    }
+
+    pub fn joinpath(self: *const Path, rhs: []const u8) *Path {
+        return pytra.make_object(Path, Path.init(os_path_native.join(self._value, rhs)));
     }
 };

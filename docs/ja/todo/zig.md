@@ -41,7 +41,8 @@
    - 完了メモ (2026-04-04): `src/runtime/zig/built_in/py_runtime.zig` と Zig runtime copier を更新し、toolchain2 emitter の union/container/callable/exception/property/super lowering と整合させた。
 5. [x] [ID: P1-ZIG-EMITTER-S5] fixture の Zig run parity を通す（`zig build-exe -OReleaseFast`）
    - 完了メモ (2026-04-04): `python3 tools/check/runtime_parity_check_fast.py --targets zig` の結果が `SUMMARY cases=146 pass=146 fail=0` となり、fixture parity を完了した。
-6. [ ] [ID: P1-ZIG-EMITTER-S6] stdlib の Zig parity を通す（`--case-root stdlib`）
+6. [x] [ID: P1-ZIG-EMITTER-S6] stdlib の Zig parity を通す（`--case-root stdlib`）
+   - 完了メモ (2026-04-04): `python3 tools/check/runtime_parity_check_fast.py --targets zig --case-root stdlib` の結果が `SUMMARY cases=16 pass=16 fail=0` となり、stdlib parity を完了した。
 7. [ ] [ID: P1-ZIG-EMITTER-S7] sample の Zig parity を通す（`--case-root sample`）
 
 ### P2-ZIG-LINT: emitter hardcode lint の Zig 違反を解消する

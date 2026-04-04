@@ -2,6 +2,7 @@
 // source: src/pytra/std/os.py
 
 const std = @import("std");
+pub const path = @import("os_path_native.zig");
 
 pub fn getcwd() []const u8 {
     // Stub: return "." for now

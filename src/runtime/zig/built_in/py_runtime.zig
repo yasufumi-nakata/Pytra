@@ -153,6 +153,18 @@ pub fn print3(a: anytype, b: anytype, c: anytype) void {
     writer.writeAll("\n") catch {};
 }
 
+pub fn print4(a: anytype, b: anytype, c: anytype, d: anytype) void {
+    const writer = std.io.getStdOut().writer();
+    printValue(writer, a);
+    writer.writeAll(" ") catch {};
+    printValue(writer, b);
+    writer.writeAll(" ") catch {};
+    printValue(writer, c);
+    writer.writeAll(" ") catch {};
+    printValue(writer, d);
+    writer.writeAll("\n") catch {};
+}
+
 fn printValue(writer: anytype, value: anytype) void {
     const T = @TypeOf(value);
     switch (@typeInfo(T)) {
@@ -173,6 +185,10 @@ fn printValue(writer: anytype, value: anytype) void {
                 const child_info = @typeInfo(ptr_info.child);
                 if (child_info == .array and child_info.array.child == u8) {
                     writer.writeAll(value) catch {};
+                } else if ((child_info == .@"struct" or child_info == .@"union" or child_info == .@"enum" or child_info == .@"opaque") and @hasDecl(ptr_info.child, "__str__")) {
+                    writer.writeAll(value.__str__()) catch {};
+                } else if ((child_info == .@"struct" or child_info == .@"union" or child_info == .@"enum" or child_info == .@"opaque") and @hasDecl(ptr_info.child, "__fspath__")) {
+                    writer.writeAll(value.__fspath__()) catch {};
                 } else {
                     writer.print("{any}", .{value}) catch {};
                 }
@@ -207,7 +223,12 @@ fn printFloat(writer: anytype, value: anytype) void {
     if (v == truncated and !std.math.isNan(v) and !std.math.isInf(v)) {
         writer.print("{d}.0", .{@as(i64, @intFromFloat(truncated))}) catch {};
     } else {
-        writer.print("{d}", .{v}) catch {};
+        const abs_v = @abs(v);
+        if (abs_v != 0.0 and (abs_v < 0.0001 or abs_v >= 1.0e16)) {
+            writer.print("{e}", .{v}) catch {};
+        } else {
+            writer.print("{d}", .{v}) catch {};
+        }
     }
 }
 
@@ -310,6 +331,12 @@ pub fn to_str(value: anytype) []const u8 {
                 const child_info = @typeInfo(ptr_info.child);
                 if (child_info == .array and child_info.array.child == u8) {
                     return value;
+                }
+                if ((child_info == .@"struct" or child_info == .@"union" or child_info == .@"enum" or child_info == .@"opaque") and @hasDecl(ptr_info.child, "__str__")) {
+                    return value.__str__();
+                }
+                if ((child_info == .@"struct" or child_info == .@"union" or child_info == .@"enum" or child_info == .@"opaque") and @hasDecl(ptr_info.child, "__fspath__")) {
+                    return value.__fspath__();
                 }
             }
             return "<object>";
@@ -432,6 +459,14 @@ pub fn str_isalnum(s: []const u8) bool {
         const is_alpha = (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z');
         const is_digit = ch >= '0' and ch <= '9';
         if (!is_alpha and !is_digit) return false;
+    }
+    return true;
+}
+
+pub fn str_isspace(s: []const u8) bool {
+    if (s.len == 0) return false;
+    for (s) |ch| {
+        if (!(ch == ' ' or ch == '\t' or ch == '\r' or ch == '\n')) return false;
     }
     return true;
 }
@@ -914,8 +949,30 @@ pub fn union_as_list(value: *UnionVal) Obj {
     return value.list_;
 }
 
-pub fn union_as_str(value: *UnionVal) []const u8 {
-    return value.str_;
+pub fn union_as_str(value: anytype) []const u8 {
+    const T = @TypeOf(value);
+    if (T == *UnionVal) return value.str_;
+    if (T == []const u8) return value;
+    if (T == *const [0:0]u8) return "";
+    switch (@typeInfo(T)) {
+        .pointer => |ptr| {
+            if (ptr.size == .one and ptr.child == u8 and ptr.sentinel() != null) {
+                return std.mem.span(value);
+            }
+            if (ptr.size == .one) {
+                switch (@typeInfo(ptr.child)) {
+                    .@"struct", .@"union", .@"enum", .@"opaque" => {
+                        if (@hasDecl(ptr.child, "__fspath__")) {
+                            return value.__fspath__();
+                        }
+                    },
+                    else => {},
+                }
+            }
+        },
+        else => {},
+    }
+    return to_str(value);
 }
 
 pub fn union_to_int(value: *UnionVal) i64 {
@@ -1391,8 +1448,16 @@ pub fn file_open(path: []const u8) PyObject {
     return @as(PyObject, @intCast(@intFromPtr(p)));
 }
 
-pub fn file_write(handle: PyObject, data: anytype) void {
-    const p: *std.fs.File = @ptrFromInt(@as(usize, @intCast(handle)));
+fn file_handle_from_any(handle: anytype) PyObject {
+    const T = @TypeOf(handle);
+    if (T == *UnionVal) return union_to_int(handle);
+    if (T == ?*UnionVal) return if (handle) |v| union_to_int(v) else 0;
+    return handle;
+}
+
+pub fn file_write(handle: anytype, data: anytype) void {
+    const raw_handle: PyObject = file_handle_from_any(handle);
+    const p: *std.fs.File = @ptrFromInt(@as(usize, @intCast(raw_handle)));
     const T = @TypeOf(data);
     if (T == Obj) {
         // Obj wrapping ArrayList — write as bytes
@@ -1410,7 +1475,8 @@ fn file_write_obj(p: *std.fs.File, obj: Obj) void {
     }
 }
 
-pub fn file_close(handle: PyObject) void {
-    const p: *std.fs.File = @ptrFromInt(@as(usize, @intCast(handle)));
+pub fn file_close(handle: anytype) void {
+    const raw_handle: PyObject = file_handle_from_any(handle);
+    const p: *std.fs.File = @ptrFromInt(@as(usize, @intCast(raw_handle)));
     p.close();
 }

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from typing import Any
+from pathlib import Path
 
 from toolchain.emit.common.emitter.code_emitter import (
     CodeEmitter,
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
     reject_backend_typed_vararg_signatures,
 )
+from toolchain2.emit.common.code_emitter import load_runtime_mapping
 
 # CodeEmitter のユーティリティを standalone で使うためのインスタンス
 _code_emitter_utils = CodeEmitter.__new__(CodeEmitter)
@@ -329,6 +331,8 @@ class ZigNativeEmitter:
         self._return_type_stack: list[str] = []
         self._function_depth: int = 0
         self._try_depth: int = 0
+        mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "zig" / "mapping.json"
+        self._runtime_mapping = load_runtime_mapping(mapping_path)
 
     def _union_storage_zig(self) -> str:
         return "*pytra.UnionVal"
@@ -701,6 +705,73 @@ class ZigNativeEmitter:
         ret_any = stmt.get("return_type")
         ret_type = ret_any.strip() if isinstance(ret_any, str) else ""
         self._return_type_stack.append(self._zig_type(ret_type) if ret_type != "" else "void")
+
+    def _collect_branch_assigned_names(self, node: Any, nested: bool = False) -> set[str]:
+        names: set[str] = set()
+        if isinstance(node, list):
+            for item in node:
+                names.update(self._collect_branch_assigned_names(item, nested))
+            return names
+        if not isinstance(node, dict):
+            return names
+        kind = str(node.get("kind") or "")
+        if kind == "Assign":
+            target = node.get("target")
+            if not isinstance(target, dict):
+                targets = node.get("targets")
+                if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
+                    target = targets[0]
+            if nested and isinstance(target, dict) and target.get("kind") == "Name":
+                names.add(_safe_ident(target.get("id"), "value"))
+            return names
+        if kind == "AnnAssign":
+            target = node.get("target")
+            if nested and isinstance(target, dict) and target.get("kind") == "Name":
+                names.add(_safe_ident(target.get("id"), "value"))
+            return names
+        child_nested = nested or kind in {"If", "Try", "ExceptHandler", "With"}
+        for key, value in node.items():
+            if key in {"repr", "source_span", "resolved_type", "semantic_tag",
+                       "runtime_call", "resolved_runtime_call", "runtime_module_id",
+                       "runtime_symbol", "escape_summary", "type_expr_summary_v1"}:
+                continue
+            names.update(self._collect_branch_assigned_names(value, child_nested))
+        return names
+
+    def _collect_existing_vardecl_names(self, node: Any) -> set[str]:
+        names: set[str] = set()
+        if isinstance(node, list):
+            for item in node:
+                names.update(self._collect_existing_vardecl_names(item))
+            return names
+        if not isinstance(node, dict):
+            return names
+        if str(node.get("kind") or "") == "VarDecl":
+            names.add(_safe_ident(node.get("name"), "var_"))
+        for value in node.values():
+            names.update(self._collect_existing_vardecl_names(value))
+        return names
+
+    def _collect_top_level_assigned_names(self, body_any: Any) -> set[str]:
+        names: set[str] = set()
+        body = body_any if isinstance(body_any, list) else []
+        for stmt in body:
+            if not isinstance(stmt, dict):
+                continue
+            kind = str(stmt.get("kind") or "")
+            if kind == "Assign":
+                target = stmt.get("target")
+                if not isinstance(target, dict):
+                    targets = stmt.get("targets")
+                    if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
+                        target = targets[0]
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    names.add(_safe_ident(target.get("id"), "value"))
+            if kind == "AnnAssign":
+                target = stmt.get("target")
+                if isinstance(target, dict) and target.get("kind") == "Name":
+                    names.add(_safe_ident(target.get("id"), "value"))
+        return names
 
     def _pop_function_context(self) -> None:
         if len(self._local_type_stack) > 0:
@@ -1338,6 +1409,9 @@ class ZigNativeEmitter:
 
     def _module_id_to_import_path(self, module_id: str) -> str:
         """module_id から Zig import パスを機械的に生成（spec-emitter-guide §3）。"""
+        native_file = self._runtime_mapping.module_native_files.get(module_id, "")
+        if native_file != "":
+            return self._root_rel_prefix() + native_file
         rel = module_id
         if rel.startswith("pytra."):
             rel = rel[len("pytra."):]
@@ -1358,6 +1432,9 @@ class ZigNativeEmitter:
             "pytra.std.pathlib": {"Path"},
             "pytra.std.argparse": {"ArgumentParser", "Namespace"},
         }
+        known_properties_by_nominal = {
+            "Path": {"parent", "name", "stem", "suffix"},
+        }
         for binding in import_bindings:
             if not isinstance(binding, dict):
                 continue
@@ -1372,7 +1449,7 @@ class ZigNativeEmitter:
             # Skip pytra.built_in (provided by py_runtime.zig)
             if module_id.startswith("pytra.built_in"):
                 continue
-            if module_id in {"pytra.types", "typing", "typing.cast"} or module_id.startswith("pytra.types."):
+            if module_id in {"pytra.types", "pytra.typing", "typing", "typing.cast"} or module_id.startswith("pytra.types.") or module_id.startswith("pytra.typing."):
                 if not (module_id == "typing" and binding.get("export_name") != "cast"):
                     continue
             if module_id == "typing" and binding.get("export_name") == "cast":
@@ -1386,30 +1463,20 @@ class ZigNativeEmitter:
             for nominal in known_nominals_by_module.get(nominal_module_id, set()):
                 self._import_alias_map[nominal] = nominal
                 self._known_imported_nominals.add(nominal)
+                self._class_properties[nominal] = set(known_properties_by_nominal.get(nominal, set()))
             if isinstance(export_name, str) and export_name in _DECORATORS:
                 continue
-            imported_module = module_id
-            if module_id == "math":
+            candidate_module = runtime_module_id if runtime_module_id != "" else module_id
+            imported_module = candidate_module
+            if candidate_module == "math":
                 import_path = self._root_rel_prefix() + "std/math_native.zig"
                 safe_mod = "math_native"
-            elif module_id == "time":
+            elif candidate_module == "time":
                 import_path = self._root_rel_prefix() + "std/time_native.zig"
                 safe_mod = "time_native"
             else:
-                if not module_id.startswith("pytra.") and not module_id.startswith("."):
+                if not candidate_module.startswith("pytra.") and not candidate_module.startswith("."):
                     continue
-                # Mechanically derive import path from module_id (§3)
-                rel = module_id
-                if binding_kind == "module" and runtime_module_id != "":
-                    imported_module = runtime_module_id
-                    rel = runtime_module_id
-                if rel.startswith("pytra."):
-                    rel = rel[len("pytra."):]
-                # Parent module with symbol binding → sub-module
-                if "." not in rel and binding_kind == "symbol" and isinstance(export_name, str) and export_name != "":
-                    if export_name in _DECORATORS:
-                        continue
-                    imported_module = module_id + "." + export_name
                 import_path = self._module_id_to_import_path(imported_module)
                 safe_mod = _safe_ident(imported_module.split(".")[-1], "mod")
             if safe_mod not in emitted:
@@ -2186,6 +2253,11 @@ class ZigNativeEmitter:
                 self._emit_line("_ = &" + orig_name + ";")
         self._param_rename_stack.append({})
         self._push_function_context(stmt, arg_names, args)
+        existing_vardecls = self._collect_existing_vardecl_names(stmt.get("body"))
+        top_level_assigned = self._collect_top_level_assigned_names(stmt.get("body"))
+        for hoisted_name in sorted(self._collect_branch_assigned_names(stmt.get("body"))):
+            if hoisted_name not in existing_vardecls and hoisted_name not in top_level_assigned and hoisted_name not in self._current_local_vars():
+                self._emit_var_decl({"kind": "VarDecl", "name": hoisted_name})
         self._emit_block(stmt.get("body"))
         self._pop_function_context()
         self._param_rename_stack.pop()
@@ -2383,6 +2455,9 @@ class ZigNativeEmitter:
                     elif iter_type in {"bytearray", "bytes"}:
                         elem = "u8"
                     iter_expr = "pytra.list_items(" + iter_expr + ", " + elem + ")"
+                elif iter_type.startswith("set["):
+                    elem = self._zig_type(iter_type[4:-1].strip()) if iter_type.endswith("]") else "i64"
+                    iter_expr = "pytra.list_items(" + iter_expr + ", " + elem + ")"
                 elif iter_type.startswith("dict["):
                     val_zig, _key_is_str, _stringify_values = self._dict_storage_spec(iter_type)
                     iter_expr = "pytra.list_items(pytra.dict_keys(" + val_zig + ", " + iter_expr + "), []const u8)"
@@ -2424,6 +2499,9 @@ class ZigNativeEmitter:
                 elem = self._zig_type(iter_type[5:-1].strip())
             elif iter_type in {"bytearray", "bytes"}:
                 elem = "u8"
+            iter_expr = "pytra.list_items(" + iter_expr + ", " + elem + ")"
+        elif iter_type.startswith("set["):
+            elem = self._zig_type(iter_type[4:-1].strip()) if iter_type.endswith("]") else "i64"
             iter_expr = "pytra.list_items(" + iter_expr + ", " + elem + ")"
         elif iter_type.startswith("dict["):
             val_zig, _key_is_str, _stringify_values = self._dict_storage_spec(iter_type)
@@ -3321,7 +3399,7 @@ class ZigNativeEmitter:
             )
             if norm_val_type in self.class_names and self._zig_type(norm_val_type) == "pytra.Obj" and not is_self_receiver:
                 return obj + ".as(" + norm_val_type + ")." + attr
-            if norm_val_type in self.class_names and attr in self._class_properties.get(norm_val_type, set()):
+            if (norm_val_type in self.class_names or norm_val_type in self._known_imported_nominals) and attr in self._class_properties.get(norm_val_type, set()):
                 return obj + "." + attr + "()"
             if (
                 isinstance(val_node, dict)
@@ -3924,6 +4002,8 @@ class ZigNativeEmitter:
                         return "pytra.print2(" + arg_strs[0] + ", " + arg_strs[1] + ")"
                     if len(arg_strs) == 3:
                         return "pytra.print3(" + arg_strs[0] + ", " + arg_strs[1] + ", " + arg_strs[2] + ")"
+                    if len(arg_strs) == 4:
+                        return "pytra.print4(" + arg_strs[0] + ", " + arg_strs[1] + ", " + arg_strs[2] + ", " + arg_strs[3] + ")"
                     return "pytra.print(" + arg_strs[0] + ")"
                 if fname == "len":
                     if len(args) > 0:
@@ -4064,9 +4144,16 @@ class ZigNativeEmitter:
                         return arg_strs[0]
                     return "0"
                 if fname == "open":
+                    result_type = self._lookup_expr_type(node) or self._get_expr_type(node)
                     if len(arg_strs) > 0:
-                        return "pytra.file_open(" + arg_strs[0] + ")"
-                    return "pytra.file_open(\"\")"
+                        expr = "pytra.file_open(" + arg_strs[0] + ")"
+                        if self._is_union_storage_zig(self._zig_type(result_type)):
+                            return "pytra.union_wrap(" + expr + ")"
+                        return expr
+                    expr = "pytra.file_open(\"\")"
+                    if self._is_union_storage_zig(self._zig_type(result_type)):
+                        return "pytra.union_wrap(" + expr + ")"
+                    return expr
                 if fname == "range":
                     return "pytra.empty_list()"
                 if fname == "enumerate":
@@ -4296,6 +4383,8 @@ class ZigNativeEmitter:
                                 return "self._base = " + base + ".init(" + ", ".join(arg_strs) + ")"
                             return "self._base." + attr + "(" + ", ".join(arg_strs) + ")"
                 obj = self._render_expr(obj_node_for_attr)
+                if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
+                    obj = "(" + obj + ")"
                 if runtime_symbol == "ArgumentParser.add_argument":
                     filled = ["\"\"", "\"\"", "\"\"", "\"\"", "\"\"", "\"\"", "pytra.empty_list()", "pytra.union_new_none()"]
                     i = 0
@@ -4361,6 +4450,29 @@ class ZigNativeEmitter:
                     return "pytra.char_isdigit(" + obj + ")"
                 if attr == "isalpha":
                     return "pytra.char_isalpha(" + obj + ")"
+                if attr == "isspace":
+                    return "pytra.str_isspace(" + obj + ")"
+                if attr == "splitext" and len(arg_strs) > 0:
+                    blk = "__splitext_blk_" + str(self.tmp_seq)
+                    self.tmp_seq += 1
+                    tmp = "__splitext_tmp_" + str(self.tmp_seq)
+                    self.tmp_seq += 1
+                    return (
+                        blk
+                        + ": { const "
+                        + tmp
+                        + " = "
+                        + obj
+                        + ".splitext("
+                        + arg_strs[0]
+                        + "); break :"
+                        + blk
+                        + " .{ ._0 = "
+                        + tmp
+                        + "._0, ._1 = "
+                        + tmp
+                        + "._1 }; }"
+                    )
                 if attr == "upper":
                     return "pytra.str_upper(" + obj + ")"
                 if attr == "lower":
