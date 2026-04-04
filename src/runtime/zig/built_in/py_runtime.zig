@@ -386,6 +386,20 @@ pub fn str_index_of(s: []const u8, needle: []const u8) i64 {
     return str_find(s, needle);
 }
 
+pub fn chr(code: i64) []const u8 {
+    const alloc = std.heap.page_allocator;
+    const cp: u21 = @intCast(@max(@as(i64, 0), code));
+    var buf = alloc.alloc(u8, 4) catch return "";
+    const len = std.unicode.utf8Encode(cp, buf) catch return "";
+    return buf[0..len];
+}
+
+pub fn ord(ch: []const u8) i64 {
+    if (ch.len == 0) return 0;
+    const cp = std.unicode.utf8Decode(ch) catch return @as(i64, ch[0]);
+    return @intCast(cp);
+}
+
 pub fn list_index(obj: Obj, comptime T: type, needle: T) i64 {
     const items = list_items(obj, T);
     var i: usize = 0;
@@ -815,6 +829,36 @@ pub fn union_is_dict(value: *UnionVal) bool {
 
 pub fn union_is_none(value: *UnionVal) bool {
     return value.* == .none;
+}
+
+pub fn is_none_any(value: anytype) bool {
+    const T = @TypeOf(value);
+    if (T == *UnionVal) {
+        return union_is_none(value);
+    }
+    if (T == ?*UnionVal) {
+        return if (value) |v| union_is_none(v) else true;
+    }
+    return switch (@typeInfo(T)) {
+        .optional => value == null,
+        else => false,
+    };
+}
+
+pub fn as_list_any(value: anytype) Obj {
+    const T = @TypeOf(value);
+    if (T == *UnionVal) {
+        return union_as_list(value);
+    }
+    return value;
+}
+
+pub fn as_dict_any(value: anytype) UnionDict {
+    const T = @TypeOf(value);
+    if (T == *UnionVal) {
+        return union_as_dict(value);
+    }
+    return value;
 }
 
 pub fn union_is_list(value: *UnionVal) bool {
