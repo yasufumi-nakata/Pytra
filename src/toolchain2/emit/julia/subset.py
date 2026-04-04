@@ -940,6 +940,57 @@ class JuliaSubsetRenderer:
             return "string(" + owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))])"
         return owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))]"
 
+    def _render_literal_or_comp_expr(self, node: dict[str, JsonVal], kind: str) -> str:
+        if kind == "Constant":
+            value = node.get("value")
+            if value is None:
+                return "nothing"
+            if isinstance(value, bool):
+                return "true" if value else "false"
+            if isinstance(value, str):
+                return _quote_string(value)
+            return str(value)
+        if kind == "List":
+            elems = [self._render_expr(item) for item in _list(node, "elements")]
+            return "[" + ", ".join(elems) + "]"
+        if kind == "Tuple":
+            elems = [self._render_expr(item) for item in _list(node, "elements")]
+            if len(elems) == 1:
+                return "(" + elems[0] + ",)"
+            return "(" + ", ".join(elems) + ")"
+        if kind == "Dict":
+            parts: list[str] = []
+            for item in _list(node, "entries"):
+                if isinstance(item, dict):
+                    parts.append(self._render_expr(item.get("key")) + " => " + self._render_expr(item.get("value")))
+            return "Dict(" + ", ".join(parts) + ")"
+        if kind == "Set":
+            elems = [self._render_expr(item) for item in _list(node, "elements")]
+            return "Set([" + ", ".join(elems) + "])"
+        if kind == "ListComp":
+            generator = _list(node, "generators")[0]
+            assert isinstance(generator, dict)
+            elt = self._render_expr(node.get("elt"))
+            loop_var = self._render_comp_target(generator.get("target"))
+            iter_expr = self._render_comp_iter(generator.get("iter"))
+            return "[" + elt + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + "]"
+        if kind == "SetComp":
+            generator = _list(node, "generators")[0]
+            assert isinstance(generator, dict)
+            elt = self._render_expr(node.get("elt"))
+            loop_var = self._render_comp_target(generator.get("target"))
+            iter_expr = self._render_comp_iter(generator.get("iter"))
+            return "Set([" + elt + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + "])"
+        if kind == "DictComp":
+            generator = _list(node, "generators")[0]
+            assert isinstance(generator, dict)
+            key_expr = self._render_expr(node.get("key"))
+            value_expr = self._render_expr(node.get("value"))
+            loop_var = self._render_comp_target(generator.get("target"))
+            iter_expr = self._render_comp_iter(generator.get("iter"))
+            return "Dict(" + key_expr + " => " + value_expr + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + ")"
+        return ""
+
     def _next_tmp(self, prefix: str) -> str:
         self.tmp_counter += 1
         return prefix + str(self.tmp_counter)
@@ -992,54 +1043,9 @@ class JuliaSubsetRenderer:
             return expr
         if kind == "ObjStr":
             return "string(" + self._render_expr(node.get("value")) + ")"
-        if kind == "Constant":
-            value = node.get("value")
-            if value is None:
-                return "nothing"
-            if isinstance(value, bool):
-                return "true" if value else "false"
-            if isinstance(value, str):
-                return _quote_string(value)
-            return str(value)
-        if kind == "List":
-            elems = [self._render_expr(item) for item in _list(node, "elements")]
-            return "[" + ", ".join(elems) + "]"
-        if kind == "Tuple":
-            elems = [self._render_expr(item) for item in _list(node, "elements")]
-            if len(elems) == 1:
-                return "(" + elems[0] + ",)"
-            return "(" + ", ".join(elems) + ")"
-        if kind == "Dict":
-            parts: list[str] = []
-            for item in _list(node, "entries"):
-                if isinstance(item, dict):
-                    parts.append(self._render_expr(item.get("key")) + " => " + self._render_expr(item.get("value")))
-            return "Dict(" + ", ".join(parts) + ")"
-        if kind == "Set":
-            elems = [self._render_expr(item) for item in _list(node, "elements")]
-            return "Set([" + ", ".join(elems) + "])"
-        if kind == "ListComp":
-            generator = _list(node, "generators")[0]
-            assert isinstance(generator, dict)
-            elt = self._render_expr(node.get("elt"))
-            loop_var = self._render_comp_target(generator.get("target"))
-            iter_expr = self._render_comp_iter(generator.get("iter"))
-            return "[" + elt + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + "]"
-        if kind == "SetComp":
-            generator = _list(node, "generators")[0]
-            assert isinstance(generator, dict)
-            elt = self._render_expr(node.get("elt"))
-            loop_var = self._render_comp_target(generator.get("target"))
-            iter_expr = self._render_comp_iter(generator.get("iter"))
-            return "Set([" + elt + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + "])"
-        if kind == "DictComp":
-            generator = _list(node, "generators")[0]
-            assert isinstance(generator, dict)
-            key_expr = self._render_expr(node.get("key"))
-            value_expr = self._render_expr(node.get("value"))
-            loop_var = self._render_comp_target(generator.get("target"))
-            iter_expr = self._render_comp_iter(generator.get("iter"))
-            return "Dict(" + key_expr + " => " + value_expr + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + ")"
+        literal_or_comp = self._render_literal_or_comp_expr(node, kind)
+        if literal_or_comp != "":
+            return literal_or_comp
         if kind == "BinOp":
             op = _str(node, "op")
             left = self._render_expr(node.get("left"))
