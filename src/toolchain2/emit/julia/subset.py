@@ -1527,6 +1527,18 @@ class JuliaSubsetRenderer:
             self._emit_stmt(stmt)
         self.indent_level -= 1
 
+    def _emit_stmt_block(self, body: list[JsonVal]) -> None:
+        for stmt in body:
+            self._emit_stmt(stmt)
+
+    def _emit_class_scoped_block(self, class_name: str, body: list[JsonVal]) -> None:
+        prev_class_name = self.current_class_name
+        self.current_class_name = class_name
+        try:
+            self._emit_stmt_block(body)
+        finally:
+            self.current_class_name = prev_class_name
+
     def _emit_class_ctor(self, node: dict[str, JsonVal], class_name: str, impl_name: str, field_names: list[str]) -> None:
         init_fn = _find_init_function(node)
         ctor_args = [_ident(arg) for arg in _ctor_arg_order(node)]
@@ -1535,11 +1547,7 @@ class JuliaSubsetRenderer:
         ctor_init_args = ", ".join("nothing" for _ in field_names)
         self._emit("self = " + impl_name + "(" + ctor_init_args + ")")
         if init_fn is not None:
-            prev_class_name = self.current_class_name
-            self.current_class_name = class_name
-            for stmt in _list(init_fn, "body"):
-                self._emit_stmt(stmt)
-            self.current_class_name = prev_class_name
+            self._emit_class_scoped_block(class_name, _list(init_fn, "body"))
         self._emit("return self")
         self.indent_level -= 1
         self._emit("end")
@@ -1557,11 +1565,7 @@ class JuliaSubsetRenderer:
             else:
                 self._emit("function " + impl_fn_name + "(" + ", ".join(args) + ")")
             self.indent_level += 1
-            prev_class_name = self.current_class_name
-            self.current_class_name = class_name
-            for inner in _list(stmt, "body"):
-                self._emit_stmt(inner)
-            self.current_class_name = prev_class_name
+            self._emit_class_scoped_block(class_name, _list(stmt, "body"))
             self.indent_level -= 1
             self._emit("end")
             if not is_static:
