@@ -991,61 +991,7 @@ class JuliaSubsetRenderer:
             return "Dict(" + key_expr + " => " + value_expr + " for " + loop_var + " in " + iter_expr + self._render_comp_if_suffix(generator) + ")"
         return ""
 
-    def _next_tmp(self, prefix: str) -> str:
-        self.tmp_counter += 1
-        return prefix + str(self.tmp_counter)
-
-    def _render_expr(self, node: JsonVal) -> str:
-        if not isinstance(node, dict):
-            raise RuntimeError("julia subset: expr must be dict")
-        kind = _str(node, "kind")
-        if kind == "Name":
-            name = _str(node, "id")
-            if name == "main" and "__pytra_main" in self.function_names:
-                return "__pytra_main"
-            return _ident(name)
-        if kind == "Attribute":
-            owner_node = node.get("value")
-            if (
-                isinstance(owner_node, dict)
-                and _str(owner_node, "kind") == "Call"
-                and isinstance(owner_node.get("func"), dict)
-                and _str(owner_node.get("func"), "kind") == "Name"
-                and _str(owner_node.get("func"), "id") == "type"
-                and _str(node, "attr") == "__name__"
-            ):
-                args = _list(owner_node, "args")
-                if len(args) >= 1:
-                    return "string(nameof(typeof(" + self._render_expr(args[0]) + ")))"
-            owner = self._render_expr(owner_node)
-            owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
-            attr = _str(node, "attr")
-            if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Name":
-                owner_name = _str(owner_node, "id")
-                if attr in self.class_static_method_names.get(owner_name, set()):
-                    return _ident(attr)
-            if attr in self.class_property_names.get(owner_type, set()):
-                return _ident(attr) + "(" + owner + ")"
-            return owner + "." + attr
-        if kind == "FormattedValue":
-            format_spec = node.get("format_spec")
-            if isinstance(format_spec, str) and format_spec != "":
-                return "__pytra_format(" + self._render_expr(node.get("value")) + ", " + _quote_string(format_spec) + ")"
-            return "string(" + self._render_expr(node.get("value")) + ")"
-        if kind == "JoinedStr":
-            values = _list(node, "values")
-            if len(values) == 0:
-                return '""'
-            parts = [self._render_expr(item) for item in values]
-            expr = parts[0]
-            for part in parts[1:]:
-                expr = "(" + expr + " * " + part + ")"
-            return expr
-        if kind == "ObjStr":
-            return "string(" + self._render_expr(node.get("value")) + ")"
-        literal_or_comp = self._render_literal_or_comp_expr(node, kind)
-        if literal_or_comp != "":
-            return literal_or_comp
+    def _render_operator_expr(self, node: dict[str, JsonVal], kind: str) -> str:
         if kind == "BinOp":
             op = _str(node, "op")
             left = self._render_expr(node.get("left"))
@@ -1123,6 +1069,66 @@ class JuliaSubsetRenderer:
                         args.append(name)
             body = self._render_expr(node.get("body"))
             return "((" + ", ".join(args) + ") -> " + body + ")"
+        return ""
+
+    def _next_tmp(self, prefix: str) -> str:
+        self.tmp_counter += 1
+        return prefix + str(self.tmp_counter)
+
+    def _render_expr(self, node: JsonVal) -> str:
+        if not isinstance(node, dict):
+            raise RuntimeError("julia subset: expr must be dict")
+        kind = _str(node, "kind")
+        if kind == "Name":
+            name = _str(node, "id")
+            if name == "main" and "__pytra_main" in self.function_names:
+                return "__pytra_main"
+            return _ident(name)
+        if kind == "Attribute":
+            owner_node = node.get("value")
+            if (
+                isinstance(owner_node, dict)
+                and _str(owner_node, "kind") == "Call"
+                and isinstance(owner_node.get("func"), dict)
+                and _str(owner_node.get("func"), "kind") == "Name"
+                and _str(owner_node.get("func"), "id") == "type"
+                and _str(node, "attr") == "__name__"
+            ):
+                args = _list(owner_node, "args")
+                if len(args) >= 1:
+                    return "string(nameof(typeof(" + self._render_expr(args[0]) + ")))"
+            owner = self._render_expr(owner_node)
+            owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+            attr = _str(node, "attr")
+            if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Name":
+                owner_name = _str(owner_node, "id")
+                if attr in self.class_static_method_names.get(owner_name, set()):
+                    return _ident(attr)
+            if attr in self.class_property_names.get(owner_type, set()):
+                return _ident(attr) + "(" + owner + ")"
+            return owner + "." + attr
+        if kind == "FormattedValue":
+            format_spec = node.get("format_spec")
+            if isinstance(format_spec, str) and format_spec != "":
+                return "__pytra_format(" + self._render_expr(node.get("value")) + ", " + _quote_string(format_spec) + ")"
+            return "string(" + self._render_expr(node.get("value")) + ")"
+        if kind == "JoinedStr":
+            values = _list(node, "values")
+            if len(values) == 0:
+                return '""'
+            parts = [self._render_expr(item) for item in values]
+            expr = parts[0]
+            for part in parts[1:]:
+                expr = "(" + expr + " * " + part + ")"
+            return expr
+        if kind == "ObjStr":
+            return "string(" + self._render_expr(node.get("value")) + ")"
+        literal_or_comp = self._render_literal_or_comp_expr(node, kind)
+        if literal_or_comp != "":
+            return literal_or_comp
+        operator_expr = self._render_operator_expr(node, kind)
+        if operator_expr != "":
+            return operator_expr
         if kind == "IsInstance":
             return self._render_isinstance_expr(node)
         if kind == "Call":
