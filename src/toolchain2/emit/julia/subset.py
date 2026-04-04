@@ -145,6 +145,10 @@ def _class_member_bucket(node: dict[str, JsonVal]) -> str:
     return "method"
 
 
+def _method_call_args(arg_order: list[str]) -> list[str]:
+    return [_ident(arg) for arg in arg_order]
+
+
 def _is_init_name(name: str) -> bool:
     return name == "__init__"
 
@@ -574,6 +578,17 @@ class JuliaSubsetRenderer:
 
     def _method_impl_name(self, class_name: str, method_name: str) -> str:
         return "__pytra_method_" + class_name + "_" + method_name
+
+    def _method_signature_args(self, class_name: str, stmt: dict[str, JsonVal]) -> tuple[bool, list[str], list[str]]:
+        is_static = _is_static_method(stmt)
+        arg_order = _function_arg_order(stmt)
+        args: list[str] = []
+        for index, arg in enumerate(arg_order):
+            if not is_static and index == 0:
+                args.append("self::" + class_name)
+            else:
+                args.append(_ident(arg))
+        return is_static, arg_order, args
 
     def _resolve_exception_base_type(self, base_name: str) -> str:
         base_type = self.mapping.predicate_types.get(base_name, "")
@@ -1536,14 +1551,7 @@ class JuliaSubsetRenderer:
             self._emit_blank()
             fn_name = _ident(_str(stmt, "name"))
             impl_fn_name = self._method_impl_name(class_name, fn_name)
-            is_static = _is_static_method(stmt)
-            arg_order = _function_arg_order(stmt)
-            args = []
-            for index, arg in enumerate(arg_order):
-                if not is_static and index == 0:
-                    args.append("self::" + class_name)
-                else:
-                    args.append(_ident(arg))
+            is_static, arg_order, args = self._method_signature_args(class_name, stmt)
             if is_static:
                 self._emit("function " + fn_name + "(" + ", ".join(args) + ")")
             else:
@@ -1559,7 +1567,7 @@ class JuliaSubsetRenderer:
             if not is_static:
                 self._emit("function " + fn_name + "(" + ", ".join(args) + ")")
                 self.indent_level += 1
-                call_args = [_ident(arg) for arg in arg_order]
+                call_args = _method_call_args(arg_order)
                 self._emit("return " + impl_fn_name + "(" + ", ".join(call_args) + ")")
                 self.indent_level -= 1
                 self._emit("end")
