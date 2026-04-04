@@ -18,6 +18,8 @@ open class Exception : RuntimeException() {
 
 open class ValueError : Exception()
 open class TypeError : Exception()
+open class RuntimeError : Exception()
+open class IndexError : Exception()
 
 fun __pytra_noop(vararg args: Any?) { }
 
@@ -225,19 +227,27 @@ fun __pytra_index(i: Long, n: Long): Long {
 
 fun __pytra_get_index(container: Any?, index: Any?): Any? {
     if (container is List<*>) {
-        if (container.isEmpty()) return __pytra_any_default()
+        if (container.isEmpty()) {
+            throw run { val __pytraObj = IndexError(); __pytraObj.__init__("list index out of range"); __pytraObj }
+        }
         val i = __pytra_index(__pytra_int(index), container.size.toLong())
-        if (i < 0L || i >= container.size.toLong()) return __pytra_any_default()
+        if (i < 0L || i >= container.size.toLong()) {
+            throw run { val __pytraObj = IndexError(); __pytraObj.__init__("list index out of range"); __pytraObj }
+        }
         return container[i.toInt()]
     }
     if (container is Map<*, *>) {
         return container[index] ?: __pytra_any_default()
     }
     if (container is String) {
-        if (container.isEmpty()) return ""
+        if (container.isEmpty()) {
+            throw run { val __pytraObj = IndexError(); __pytraObj.__init__("string index out of range"); __pytraObj }
+        }
         val chars = container.toCharArray()
         val i = __pytra_index(__pytra_int(index), chars.size.toLong())
-        if (i < 0L || i >= chars.size.toLong()) return ""
+        if (i < 0L || i >= chars.size.toLong()) {
+            throw run { val __pytraObj = IndexError(); __pytraObj.__init__("string index out of range"); __pytraObj }
+        }
         return chars[i.toInt()].toString()
     }
     return __pytra_any_default()

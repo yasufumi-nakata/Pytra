@@ -26,6 +26,7 @@ class KotlinRenderer(CommonRenderer):
         self.import_symbols: dict[str, str] = {}
         self.import_modules: dict[str, str] = {}
         self.module_function_names: set[str] = set()
+        self.module_function_varargs: dict[str, tuple[int, str]] = {}
         self.local_function_aliases: dict[str, str] = {}
         self.module_class_names: set[str] = set()
         self.subclassed_class_names: set[str] = set()
@@ -275,6 +276,13 @@ class KotlinRenderer(CommonRenderer):
             self._str(stmt, "name")
             for stmt in self._list(east3_doc, "body")
             if isinstance(stmt, dict) and self._str(stmt, "kind") in ("FunctionDef", "ClosureDef")
+        }
+        self.module_function_varargs = {
+            self._str(stmt, "name"): (len(self._list(stmt, "arg_order")), self._str(stmt, "vararg_name"))
+            for stmt in self._list(east3_doc, "body")
+            if isinstance(stmt, dict)
+            and self._str(stmt, "kind") in ("FunctionDef", "ClosureDef")
+            and self._str(stmt, "vararg_name") != ""
         }
         self.module_class_names = {
             self._str(stmt, "name")
@@ -577,6 +585,8 @@ class KotlinRenderer(CommonRenderer):
         arg_type_map = arg_types if isinstance(arg_types, dict) else {}
         arg_usage = node.get("arg_usage")
         arg_usage_map = arg_usage if isinstance(arg_usage, dict) else {}
+        vararg_name = self._str(node, "vararg_name")
+        vararg_type = self._str(node, "vararg_type")
         decorators = self._list(node, "decorators")
         is_property = any(isinstance(d, str) and d == "property" for d in decorators)
         params: list[str] = []
@@ -594,6 +604,10 @@ class KotlinRenderer(CommonRenderer):
                 rebinding.append((safe_arg, param_name))
             params.append(param_name + ": " + self._render_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
             local_scope.add(safe_arg)
+        if vararg_name != "":
+            safe_vararg = _safe_kotlin_ident(vararg_name)
+            params.append("vararg " + safe_vararg + ": " + self._render_type(vararg_type if vararg_type != "" else "Any"))
+            local_scope.add(safe_vararg)
         return_type_name = self._str(node, "return_type")
         if return_type_name in ("", "None", "none", "Unit"):
             for stmt in self._list(node, "body"):
@@ -627,6 +641,8 @@ class KotlinRenderer(CommonRenderer):
             if isinstance(arg, str):
                 arg_type = arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"
                 self._record_local_type(_safe_kotlin_ident(arg), arg_type)
+        if vararg_name != "":
+            self._record_local_type(_safe_kotlin_ident(vararg_name), "list[" + (vararg_type if vararg_type != "" else "Any") + "]")
         for local_name, param_name in rebinding:
             self._emit("var " + local_name + " = " + param_name)
             self._record_local_type(local_name, self._lookup_local_type(param_name))
@@ -841,7 +857,7 @@ class KotlinRenderer(CommonRenderer):
             stop = self._emit_expr(iter_plan.get("stop"))
             step_node = iter_plan.get("step")
             step = self._emit_expr(step_node) if isinstance(step_node, dict) else "1L"
-            idx_name = "_idx_" + target_name
+            idx_name = self._next_tmp("_idx_")
             descending = self._str(iter_plan, "range_mode") == "descending" or step.strip().startswith("-")
             cmp_op = ">" if descending else "<"
             update = idx_name + " = " + idx_name + " + (" + step + ")"
@@ -1002,9 +1018,9 @@ class KotlinRenderer(CommonRenderer):
                         key_code = self._emit_expr(key_node)
                 return owner + "[" + key_code + "]"
             if owner_type in ("str", "string"):
-                return owner + "[__pytra_index(__pytra_int(" + index + "), " + owner + ".length.toLong()).toInt()].toString()"
+                return "(__pytra_get_index(" + owner + ", " + index + ") as String)"
             if owner_type.startswith("list[") or owner_type.startswith("tuple[") or owner_type in ("list", "tuple", "bytes", "bytearray"):
-                expr = owner + "[__pytra_index(__pytra_int(" + index + "), " + owner + ".size.toLong()).toInt()]"
+                expr = "__pytra_get_index(" + owner + ", " + index + ")"
                 resolved = self._str(node, "resolved_type")
                 if resolved not in ("", "unknown", "Any", "object"):
                     return "(" + expr + " as " + self._render_type(resolved) + ")"
@@ -1278,6 +1294,7 @@ class KotlinRenderer(CommonRenderer):
                 mapped = self.mapping.calls.get(func_id)
                 if isinstance(mapped, str) and mapped != "":
                     func_name = mapped
+                    func_is_named_function = True
                 elif func_id == "sum":
                     return "(__pytra_sum(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ") as " + self._render_type(self._str(node, "resolved_type")) + ")"
                 elif func_id == "zip":
@@ -1308,8 +1325,16 @@ class KotlinRenderer(CommonRenderer):
                 ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                 tmp_name = "__pytraObj"
                 return "run { val " + tmp_name + " = " + bare_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
+            raw_args = self._list(node, "args")
+            if isinstance(func, dict) and self._str(func, "kind") == "Name":
+                func_id = self._str(func, "id")
+                vararg_info = self.module_function_varargs.get(func_id)
+                if vararg_info is not None and len(raw_args) >= vararg_info[0] + 1:
+                    last_arg = raw_args[-1]
+                    if isinstance(last_arg, dict) and self._str(last_arg, "kind") == "List":
+                        raw_args = raw_args[:-1] + self._list(last_arg, "elements")
             args: list[str] = []
-            for arg in self._list(node, "args"):
+            for arg in raw_args:
                 if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
                     arg_id = self._str(arg, "id")
                     resolved_type = self._str(arg, "resolved_type")
@@ -1325,8 +1350,31 @@ class KotlinRenderer(CommonRenderer):
                 args.append(self._emit_expr(arg))
             if isinstance(func, dict) and self._str(func, "kind") == "Lambda":
                 return "(" + func_name + ")(" + ", ".join(args) + ")"
-            callable_type = self._callable_type(local_callable_type)
+            if isinstance(func, dict) and self._str(func, "kind") == "Attribute":
+                func_is_named_function = True
+            if "." in func_name or func_name.startswith("__pytra_"):
+                func_is_named_function = True
+            callable_source_type = local_callable_type if local_callable_type != "" else func_resolved_type
+            callable_type = self._callable_type(callable_source_type)
             if not func_is_named_function and callable_type != "":
+                expected_arg_types: list[str] = []
+                if (callable_source_type.startswith("callable[") or callable_source_type.startswith("Callable[")) and callable_source_type.endswith("]"):
+                    prefix_len = len("Callable[") if callable_source_type.startswith("Callable[") else len("callable[")
+                    inner = callable_source_type[prefix_len:-1]
+                    parts = _split_generic_args(inner)
+                    if len(parts) == 2:
+                        arg_spec = parts[0].strip()
+                        if arg_spec.startswith("[") and arg_spec.endswith("]"):
+                            expected_arg_types = [item.strip() for item in _split_generic_args(arg_spec[1:-1])]
+                coerced_args: list[str] = []
+                for idx, arg in enumerate(raw_args):
+                    rendered = args[idx]
+                    if idx < len(expected_arg_types) and isinstance(arg, dict):
+                        arg_rt = self._str(arg, "resolved_type")
+                        if expected_arg_types[idx] in ("float", "float32", "float64") and arg_rt in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"):
+                            rendered = "__pytra_float(" + self._emit_expr(arg) + ")"
+                    coerced_args.append(rendered)
+                args = coerced_args
                 if len(args) == 0:
                     invoke_type = "() -> Any?"
                 else:

@@ -77,14 +77,24 @@ def scala_type(resolved_type: str) -> str:
         return "String"
     if resolved_type in ("None", "none"):
         return "Unit"
-    if resolved_type in ("Any", "Obj", "object", "unknown", "JsonVal"):
+    if resolved_type in ("Any", "object", "unknown", "JsonVal", "_unnamed", ""):
         return "Any"
+    if resolved_type == "Obj":
+        return "Obj"
     if resolved_type == "Path":
         return "java.nio.file.Path"
     if resolved_type == "deque":
         return "pytra_std_collections.deque"
     if resolved_type in ("bytes", "bytearray"):
         return "scala.collection.mutable.ArrayBuffer[Long]"
+    if resolved_type == "list":
+        return "scala.collection.mutable.ArrayBuffer[Any]"
+    if resolved_type == "set":
+        return "scala.collection.mutable.LinkedHashSet[Any]"
+    if resolved_type == "dict":
+        return "scala.collection.mutable.LinkedHashMap[Any, Any]"
+    if resolved_type == "tuple":
+        return "scala.collection.mutable.ArrayBuffer[Any]"
     if resolved_type.startswith("list[") and resolved_type.endswith("]"):
         inner = resolved_type[5:-1]
         return "scala.collection.mutable.ArrayBuffer[" + scala_type(inner) + "]"

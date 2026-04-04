@@ -9,6 +9,10 @@ trait PytraEnumLike {
     def value: Long
 }
 
+class PyTuple(items: Iterable[Any] = Nil) extends mutable.ArrayBuffer[Any] {
+    this.addAll(items)
+}
+
 class Exception extends RuntimeException {
     var __pytra_message: String = ""
     def __init__(msg: Any): Unit = {
@@ -20,6 +24,8 @@ class Exception extends RuntimeException {
 
 class ValueError extends Exception
 class TypeError extends Exception
+class RuntimeError extends Exception
+class IndexError extends Exception
 
 def __pytra_noop(args: Any*): Unit = { }
 
@@ -184,6 +190,9 @@ def __pytra_repr(v: Any): String = {
     v match {
         case b: Boolean => if (b) "True" else "False"
         case s: String => "'" + s.replace("\\", "\\\\").replace("'", "\\'") + "'"
+        case xs: PyTuple =>
+            val inner = xs.map(x => __pytra_repr(x.asInstanceOf[Any])).mkString(", ")
+            if (xs.size == 1) "(" + inner + ",)" else "(" + inner + ")"
         case xs: mutable.ArrayBuffer[?] =>
             "[" + xs.map(x => __pytra_repr(x.asInstanceOf[Any])).mkString(", ") + "]"
         case m: mutable.LinkedHashMap[?, ?] =>
@@ -197,6 +206,9 @@ def __pytra_str(v: Any): String = {
     if (v == null) return "None"
     v match {
         case b: Boolean => if (b) "True" else "False"
+        case xs: PyTuple =>
+            val inner = xs.map(x => __pytra_repr(x.asInstanceOf[Any])).mkString(", ")
+            if (xs.size == 1) "(" + inner + ",)" else "(" + inner + ")"
         case xs: mutable.ArrayBuffer[?] =>
             "[" + xs.map(x => __pytra_repr(x.asInstanceOf[Any])).mkString(", ") + "]"
         case m: mutable.LinkedHashMap[?, ?] =>
@@ -205,6 +217,8 @@ def __pytra_str(v: Any): String = {
         case _ => v.toString
     }
 }
+
+def __pytra_tuple(items: Any*): PyTuple = new PyTuple(items)
 
 def __pytra_len(v: Any): Long = {
     if (v == null) return 0L
@@ -231,7 +245,11 @@ def __pytra_get_index(container: Any, index: Any): Any = {
     container match {
         case s: String =>
             val i = __pytra_index(__pytra_int(index), s.length.toLong)
-            if (i < 0L || i >= s.length.toLong) throw new RuntimeException("string index out of range")
+            if (i < 0L || i >= s.length.toLong) {
+                val err = new IndexError()
+                err.__init__("string index out of range")
+                throw err
+            }
             s.charAt(i.toInt).toString
         case m: mutable.LinkedHashMap[?, ?] =>
             m.asInstanceOf[mutable.LinkedHashMap[Any, Any]].getOrElse(index, __pytra_any_default())
@@ -241,7 +259,9 @@ def __pytra_get_index(container: Any, index: Any): Any = {
             val list = __pytra_as_list(container)
             val i = __pytra_index(__pytra_int(index), list.size.toLong)
             if (i >= 0L && i < list.size.toLong) return list(i.toInt)
-            throw new RuntimeException("list index out of range")
+            val err = new IndexError()
+            err.__init__("list index out of range")
+            throw err
     }
 }
 
@@ -545,6 +565,7 @@ def __pytra_pop_last(v: mutable.ArrayBuffer[Any]): mutable.ArrayBuffer[Any] = {
 
 def __pytra_type_name(v: Any): String = {
     if (v == null) "NoneType"
+    else if (v.isInstanceOf[PyTuple]) "tuple"
     else {
         val n = v.getClass.getSimpleName
         if (n == null || n.isEmpty) v.getClass.getName.split("\\.").last else n
@@ -588,7 +609,7 @@ def __pytra_max(a: Any, b: Any): Any = {
 def __pytra_dict_items(d: Any): mutable.ArrayBuffer[Any] = {
     val m = __pytra_as_dict(d)
     val out = mutable.ArrayBuffer[Any]()
-    m.foreach { case (k, v) => out.append(mutable.ArrayBuffer[Any](k, v)) }
+    m.foreach { case (k, v) => out.append(__pytra_tuple(k, v)) }
     out
 }
 
@@ -634,7 +655,7 @@ def __pytra_zip(a: Any, b: Any): mutable.ArrayBuffer[Any] = {
     val out = mutable.ArrayBuffer[Any]()
     var i = 0
     while (i < n) {
-        out.append(mutable.ArrayBuffer[Any](la(i), lb(i)))
+        out.append(__pytra_tuple(la(i), lb(i)))
         i += 1
     }
     out
@@ -671,7 +692,8 @@ def __pytra_is_instance(v: Any, expected: String): Boolean = {
         case "float" | "float32" | "float64" =>
             v.isInstanceOf[Double] || v.isInstanceOf[Float]
         case "str" => v.isInstanceOf[String]
-        case "list" | "tuple" | "bytes" | "bytearray" => v.isInstanceOf[scala.collection.Seq[?]]
+        case "list" | "bytes" | "bytearray" => v.isInstanceOf[scala.collection.Seq[?]] && !v.isInstanceOf[PyTuple]
+        case "tuple" => v.isInstanceOf[PyTuple]
         case "set" => v.isInstanceOf[scala.collection.Set[?]]
         case "dict" => v.isInstanceOf[scala.collection.Map[?, ?]]
         case "Path" => v.isInstanceOf[java.nio.file.Path]

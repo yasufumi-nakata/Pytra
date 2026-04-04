@@ -26,6 +26,7 @@ class ScalaRenderer(CommonRenderer):
         self.import_symbols: dict[str, str] = {}
         self.import_modules: dict[str, str] = {}
         self.module_function_names: set[str] = set()
+        self.module_function_varargs: dict[str, tuple[int, str]] = {}
         self.local_function_aliases: dict[str, str] = {}
         self.module_class_names: set[str] = set()
         self.class_property_names: dict[str, set[str]] = {}
@@ -234,6 +235,13 @@ class ScalaRenderer(CommonRenderer):
             for stmt in self._list(east3_doc, "body")
             if isinstance(stmt, dict) and self._str(stmt, "kind") in ("FunctionDef", "ClosureDef")
         }
+        self.module_function_varargs = {
+            self._str(stmt, "name"): (len(self._list(stmt, "arg_order")), self._str(stmt, "vararg_name"))
+            for stmt in self._list(east3_doc, "body")
+            if isinstance(stmt, dict)
+            and self._str(stmt, "kind") in ("FunctionDef", "ClosureDef")
+            and self._str(stmt, "vararg_name") != ""
+        }
         self.module_class_names = {
             self._str(stmt, "name")
             for stmt in self._list(east3_doc, "body")
@@ -302,7 +310,12 @@ class ScalaRenderer(CommonRenderer):
         elif is_entry:
             self._emit("def main(args: Array[String]): Unit = {")
             self.state.indent_level += 1
-            self._emit("_case_main()")
+            if "main" in self.module_function_names:
+                self._emit("main()")
+            elif "_case_main" in self.module_function_names:
+                self._emit("_case_main()")
+            else:
+                self._emit("()")
             self.state.indent_level -= 1
             self._emit("}")
         self.state.indent_level -= 1
@@ -442,7 +455,16 @@ class ScalaRenderer(CommonRenderer):
                 self._emit("return ()")
             return
         if kind == "Expr":
-            self._emit(self._emit_expr(node.get("value")))
+            value = node.get("value")
+            if isinstance(value, dict) and self._str(value, "kind") == "Name":
+                ident = self._str(value, "id")
+                if ident == "continue":
+                    self._emit("()")
+                    return
+                if ident == "break":
+                    self._emit("()")
+                    return
+            self._emit(self._emit_expr(value))
             return
         if kind == "Raise":
             exc = node.get("exc")
@@ -520,15 +542,23 @@ class ScalaRenderer(CommonRenderer):
         arg_order = self._list(node, "arg_order")
         arg_types = node.get("arg_types")
         arg_type_map = arg_types if isinstance(arg_types, dict) else {}
+        arg_usage = node.get("arg_usage")
+        arg_usage_map = arg_usage if isinstance(arg_usage, dict) else {}
         decorators = self._list(node, "decorators")
         is_property = any(isinstance(d, str) and d == "property" for d in decorators)
         params: list[str] = []
+        rebinding: list[tuple[str, str]] = []
         for arg in arg_order:
             if not isinstance(arg, str):
                 continue
             if is_method and arg == "self":
                 continue
-            params.append(_safe_scala_ident(arg) + ": " + scala_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
+            safe_arg = _safe_scala_ident(arg)
+            param_name = safe_arg
+            if isinstance(arg_usage_map.get(arg), str) and arg_usage_map.get(arg) == "reassigned":
+                param_name = safe_arg + "__in"
+                rebinding.append((safe_arg, param_name))
+            params.append(param_name + ": " + scala_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
         return_type = scala_type(self._str(node, "return_type"))
         method_prefix = ""
         base_methods = self.class_method_names.get(self.current_class_base or "", set())
@@ -547,6 +577,9 @@ class ScalaRenderer(CommonRenderer):
             if isinstance(arg, str):
                 arg_type = arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"
                 self._record_local_type(_safe_scala_ident(arg), arg_type)
+        for local_name, param_name in rebinding:
+            self._emit("var " + local_name + " = " + param_name)
+            self._record_local_type(local_name, self._lookup_local_type(param_name))
         body = self._list(node, "body")
         if len(body) == 0:
             self._emit("()")
@@ -725,8 +758,25 @@ class ScalaRenderer(CommonRenderer):
         iter_type = self._str(iter_node, "resolved_type") if isinstance(iter_node, dict) else ""
         if iter_type in ("str", "string"):
             iter_expr = "__pytra_as_list(" + iter_expr + ")"
-        self._emit("for (" + target_name + " <- " + iter_expr + ") {")
+        loop_var = target_name
+        prelude: list[str] = []
+        if isinstance(target_node, dict):
+            resolved_target_type = self._str(target_node, "resolved_type")
+            if resolved_target_type in ("", "unknown", "Any", "object"):
+                if iter_type.startswith("list[") and iter_type.endswith("]"):
+                    resolved_target_type = iter_type[5:-1]
+                elif iter_type.startswith("tuple[") and iter_type.endswith("]"):
+                    resolved_target_type = "Any"
+                elif iter_type.startswith("set[") and iter_type.endswith("]"):
+                    resolved_target_type = iter_type[4:-1]
+            if resolved_target_type not in ("", "unknown", "Any", "object"):
+                loop_var = self._next_tmp("__iter_tmp_")
+                prelude.append("val " + target_name + " = " + loop_var + ".asInstanceOf[" + scala_type(resolved_target_type) + "]")
+            self._record_local_type(target_name, resolved_target_type if resolved_target_type != "" else "Any")
+        self._emit("for (" + loop_var + " <- " + iter_expr + ") {")
         self.state.indent_level += 1
+        for line in prelude:
+            self._emit(line)
         for stmt in body:
             self._emit_stmt(stmt)
         self.state.indent_level -= 1
@@ -757,7 +807,10 @@ class ScalaRenderer(CommonRenderer):
             if ident == "self" and self.current_class_name is not None:
                 return "this"
             if ident in self.import_symbols:
-                return self.import_symbols[ident]
+                import_path = self.import_symbols[ident]
+                if import_path.startswith("pytra_built_in_error.") and (ident.endswith("Error") or ident.endswith("Exception")):
+                    return _safe_scala_ident(import_path.split(".")[-1])
+                return import_path
             if ident in self.import_modules:
                 module_id = self.import_modules[ident]
                 if module_id in ("math", "pytra.std.math"):
@@ -792,6 +845,8 @@ class ScalaRenderer(CommonRenderer):
                 owner_id = self._str(owner_node, "id")
                 module_id = self.import_modules.get(owner_id, "")
                 attr = _safe_scala_ident(self._str(node, "attr"))
+                if module_id in ("pytra.built_in.error", "pytra_built_in_error") and (attr.endswith("Error") or attr.endswith("Exception")):
+                    return attr
                 if module_id in ("math", "pytra.std.math"):
                     return "math_native." + attr
                 if module_id in ("time", "pytra.std.time"):
@@ -825,7 +880,7 @@ class ScalaRenderer(CommonRenderer):
             return "mutable.ArrayBuffer(" + ", ".join(elems) + ")"
         if kind == "Tuple":
             elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
-            return "mutable.ArrayBuffer(" + ", ".join(elems) + ")"
+            return "__pytra_tuple(" + ", ".join(elems) + ")"
         if kind == "Set":
             elems = [self._emit_expr(elem) for elem in self._list(node, "elements")]
             return "mutable.LinkedHashSet(" + ", ".join(elems) + ")"
@@ -886,6 +941,8 @@ class ScalaRenderer(CommonRenderer):
             resolved_type = self._str(node, "resolved_type")
             if target == "str":
                 return "__pytra_str(" + value_code + ")"
+            if target == "Obj":
+                return value_code
             if target == "bool":
                 return "__pytra_truthy(" + value_code + ")"
             if target in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"):
@@ -944,6 +1001,20 @@ class ScalaRenderer(CommonRenderer):
                 owner_expr = self._emit_expr(owner_node)
                 owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
                 arg_nodes = self._list(node, "args")
+                if owner_expr == "pytra_built_in_error" and attr.endswith("Error"):
+                    first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
+                    return "{ val __pytra_obj = new " + _safe_scala_ident(attr) + "(); __pytra_obj.__init__(" + first_arg + "); __pytra_obj }"
+                dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal")
+                if dynamic_dict_owner and attr == "get" and len(arg_nodes) == 1:
+                    return "__pytra_as_dict(" + owner_expr + ").get(" + self._emit_expr(arg_nodes[0]) + ")"
+                if dynamic_dict_owner and attr == "get" and len(arg_nodes) == 2:
+                    return "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
+                if dynamic_dict_owner and attr == "items" and len(arg_nodes) == 0:
+                    return "__pytra_dict_items(__pytra_as_dict(" + owner_expr + "))"
+                if dynamic_dict_owner and attr == "keys" and len(arg_nodes) == 0:
+                    return "__pytra_dict_keys(__pytra_as_dict(" + owner_expr + "))"
+                if dynamic_dict_owner and attr == "values" and len(arg_nodes) == 0:
+                    return "__pytra_dict_values(__pytra_as_dict(" + owner_expr + "))"
                 if owner_type in ("str", "string"):
                     if attr == "join" and len(arg_nodes) == 1:
                         return "__pytra_join(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
@@ -976,17 +1047,37 @@ class ScalaRenderer(CommonRenderer):
                         return "__pytra_isalnum(" + owner_expr + ")"
                     if attr == "isdigit" and len(arg_nodes) == 0:
                         return "__pytra_isdigit(" + owner_expr + ")"
-                if owner_type.startswith("dict[") and attr == "get" and len(arg_nodes) == 1:
-                    return owner_expr + ".getOrElse(" + self._emit_expr(arg_nodes[0]) + ", null)"
-                if owner_type.startswith("dict[") and attr == "get" and len(arg_nodes) == 2:
-                    return owner_expr + ".getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
-                if owner_type.startswith("dict["):
+                if (owner_type.startswith("dict[") or owner_type == "dict") and attr == "get" and len(arg_nodes) == 1:
+                    result_type = self._str(node, "resolved_type")
+                    expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", null)"
+                    if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
+                        return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
+                    return expr
+                if (owner_type.startswith("dict[") or owner_type == "dict") and attr == "get" and len(arg_nodes) == 2:
+                    result_type = self._str(node, "resolved_type")
+                    expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
+                    if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
+                        return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
+                    return expr
+                if owner_type.startswith("dict[") or owner_type == "dict":
                     if attr == "keys":
-                        return "__pytra_dict_keys(" + owner_expr + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
+                        result_type = self._str(node, "resolved_type")
+                        expr = "__pytra_dict_keys(__pytra_as_dict(" + owner_expr + "))"
+                        if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
+                            return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
+                        return expr
                     if attr == "values":
-                        return "__pytra_dict_values(" + owner_expr + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
+                        result_type = self._str(node, "resolved_type")
+                        expr = "__pytra_dict_values(__pytra_as_dict(" + owner_expr + "))"
+                        if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
+                            return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
+                        return expr
                     if attr == "items":
-                        return "__pytra_dict_items(" + owner_expr + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
+                        result_type = self._str(node, "resolved_type")
+                        expr = "__pytra_dict_items(__pytra_as_dict(" + owner_expr + "))"
+                        if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
+                            return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
+                        return expr
                     if attr == "pop" and len(arg_nodes) >= 1:
                         key_expr = self._emit_expr(arg_nodes[0])
                         value_type = "Any"
@@ -996,11 +1087,12 @@ class ScalaRenderer(CommonRenderer):
                             parts = [part.strip() for part in inner.split(",", 1)]
                             if len(parts) == 2:
                                 value_type = scala_type(parts[1])
-                        return "{ val __pytra_pop_key = " + key_expr + "; val __pytra_pop_val = " + owner_expr + "(__pytra_pop_key); " + owner_expr + ".remove(__pytra_pop_key); __pytra_pop_val.asInstanceOf[" + value_type + "] }"
+                        dict_expr = "__pytra_as_dict(" + owner_expr + ")"
+                        return "{ val __pytra_pop_key = " + key_expr + "; val __pytra_pop_val = " + dict_expr + "(__pytra_pop_key); " + dict_expr + ".remove(__pytra_pop_key); __pytra_pop_val.asInstanceOf[" + value_type + "] }"
                     if attr == "setdefault" and len(arg_nodes) >= 2:
                         key_expr = self._emit_expr(arg_nodes[0])
                         default_expr = self._emit_expr(arg_nodes[1])
-                        return owner_expr + ".getOrElseUpdate(" + key_expr + ", " + default_expr + ")"
+                        return "__pytra_as_dict(" + owner_expr + ").getOrElseUpdate(" + key_expr + ", " + default_expr + ")"
                 if owner_type.startswith("list[") or owner_type in ("list", "bytearray", "bytes"):
                     if attr == "index" and len(arg_nodes) >= 1:
                         return owner_expr + ".indexOf(" + self._emit_expr(arg_nodes[0]) + ").toLong"
@@ -1054,6 +1146,11 @@ class ScalaRenderer(CommonRenderer):
                     class_name = _safe_scala_ident(func_id)
                     tmp_name = "__pytra_obj"
                     return "{ val " + tmp_name + " = new " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
+            if func_name.startswith("pytra_built_in_error.") and (func_name.endswith("Error") or func_name.endswith("Exception")):
+                bare_name = _safe_scala_ident(func_name.split(".")[-1])
+                ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
+                tmp_name = "__pytra_obj"
+                return "{ val " + tmp_name + " = new " + bare_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
             args: list[str] = []
             for arg in self._list(node, "args"):
                 if isinstance(arg, dict) and self._str(arg, "kind") == "Name":
