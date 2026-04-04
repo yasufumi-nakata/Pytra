@@ -178,6 +178,16 @@ def _declared_field_names(node: dict[str, JsonVal]) -> list[str]:
     return [name for name in field_types.keys() if isinstance(name, str)]
 
 
+def _pass_only_class_body(body: list[JsonVal]) -> bool:
+    return len(body) == 1 and isinstance(body[0], dict) and _str(body[0], "kind") == "Pass"
+
+
+def _method_body_supported(node: JsonVal) -> bool:
+    return isinstance(node, dict) and _str(node, "kind") == "FunctionDef" and all(
+        _stmt_supported(inner) for inner in _list(node, "body")
+    )
+
+
 def _exception_ctor_stmt_supported(stmt: dict[str, JsonVal], instance_arg: str) -> bool:
     kind = _str(stmt, "kind")
     if kind == "Expr":
@@ -200,16 +210,9 @@ def _simple_class_supported(node: dict[str, JsonVal]) -> bool:
     body = _list(node, "body")
     if len(body) == 0:
         return True
-    if len(body) == 1 and isinstance(body[0], dict) and _str(body[0], "kind") == "Pass":
+    if _pass_only_class_body(body):
         return True
-    for stmt in body:
-        if not isinstance(stmt, dict):
-            return False
-        if _str(stmt, "kind") != "FunctionDef":
-            return False
-        if not all(_stmt_supported(inner) for inner in _list(stmt, "body")):
-            return False
-    return True
+    return all(_method_body_supported(stmt) for stmt in body)
 
 
 def _exception_class_supported(node: dict[str, JsonVal]) -> bool:
@@ -331,9 +334,7 @@ def _attribute_call_supported(node: dict[str, JsonVal], func: dict[str, JsonVal]
         return False
     if not _call_keywords_supported(keywords):
         return False
-    if runtime_call != "":
-        return True
-    return len(keywords) == 0
+    return runtime_call != "" or len(keywords) == 0
 
 
 def _expr_supported(node: JsonVal) -> bool:
