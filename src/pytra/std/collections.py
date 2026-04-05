@@ -34,11 +34,16 @@ class deque:
         if len(self._items) == 0:
             raise IndexError("pop from empty deque")
         item: int = self._items[0]
-        self._items = self._items[1:]
+        new_items: list[int] = []
+        idx: int = 1
+        while idx < len(self._items):
+            new_items.append(self._items[idx])
+            idx += 1
+        self._items = new_items
         return item
 
     def __len__(self) -> int:
         return len(self._items)
 
     def clear(self) -> None:
-        self._items = self._items[:0]
+        self._items = []
