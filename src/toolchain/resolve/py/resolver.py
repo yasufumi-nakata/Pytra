@@ -78,7 +78,7 @@ _BUILTIN_EXCEPTION_MODULE_ID = "pytra.built_in.error"
 def _repo_root_from_cwd() -> Path:
     cur = Path(".").resolve()
     while True:
-        if cur.joinpath("src").joinpath("pytra-cli2.py").exists():
+        if cur.joinpath("src").joinpath("pytra-cli.py").exists():
             return cur
         parent = cur.parent
         if str(parent) == str(cur):
@@ -3742,7 +3742,7 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     # Add class_storage_hint if not present
     if "class_storage_hint" not in stmt:
         is_extern_class: bool = "extern" in decorators
-        ft_check: object = stmt.get("field_types")
+        ft_check: JsonVal = stmt.get("field_types")
         has_fields: bool = bool(ft_check) if isinstance(ft_check, dict) else False
         if is_extern_class and not has_fields:
             # @extern class with no fields → opaque (raw pointer, no RC)

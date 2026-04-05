@@ -81,7 +81,7 @@ def _module_id_from_doc(
                 module_id = _normalize_package_module_id(module_id)
                 if module_id != "":
                     return module_id
-        if source_path_norm.endswith("src/pytra-cli2.py") or source_path_norm == "src/pytra-cli2.py":
+        if source_path_norm.endswith("src/pytra-cli.py") or source_path_norm == "src/pytra-cli.py":
             return "pytra_cli2"
 
     # Runtime .east ファイルの場合はパスから導出

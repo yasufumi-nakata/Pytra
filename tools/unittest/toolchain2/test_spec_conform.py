@@ -68,6 +68,15 @@ class Toolchain2SpecConformTests(unittest.TestCase):
         self.assertFalse(registry.classes["dict"].methods["get"].self_is_mutable)
         self.assertFalse(registry.classes["str"].methods["strip"].self_is_mutable)
 
+    def test_builtin_registry_overlays_missing_container_methods_from_source(self) -> None:
+        registry = _load_registry()
+        str_index = registry.classes["str"].methods["index"]
+        self.assertEqual(str_index.arg_names, ["self", "sub"])
+        self.assertEqual(str_index.arg_types["self"], "unknown")
+        self.assertEqual(str_index.arg_types["sub"], "str")
+        self.assertEqual(str_index.return_type, "int64")
+        self.assertFalse(str_index.self_is_mutable)
+
     def test_resolve_marks_mutating_container_calls_with_receiver_metadata(self) -> None:
         east1 = parse_python_source(
             """

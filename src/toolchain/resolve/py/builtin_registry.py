@@ -19,6 +19,28 @@ from pytra.std.pathlib import Path
 from toolchain.resolve.py.type_norm import normalize_type
 
 
+def _split_source_signature_fields(signature: str) -> list[str]:
+    parts: list[str] = []
+    current = ""
+    depth = 0
+    for ch in signature:
+        if ch == "," and depth == 0:
+            field = current.strip()
+            if field != "":
+                parts.append(field)
+            current = ""
+            continue
+        if ch in "([":
+            depth += 1
+        elif ch in ")]" and depth > 0:
+            depth -= 1
+        current += ch
+    tail = current.strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
 @dataclass
 class ExternV2:
     """Runtime binding metadata from meta.extern_v2."""
@@ -220,7 +242,7 @@ def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> 
 
 
 def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path: Path) -> None:
-    """Overlay self mutability from canonical containers.py source.
+    """Overlay canonical containers.py signatures onto registry.
 
     EAST1 declaration files currently normalize away `mut[...]` annotations, so
     the built-in registry supplements method signatures from the source of truth.
@@ -229,6 +251,7 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
         return
     current_class = ""
     class_indent = -1
+    pending_decorators: list[str] = []
     for raw_line in source_path.read_text(encoding="utf-8").splitlines():
         line = raw_line.rstrip()
         stripped = line.strip()
@@ -238,6 +261,8 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
         if current_class != "" and indent <= class_indent and not stripped.startswith("@"):
             current_class = ""
             class_indent = -1
+        if not stripped.startswith("@") and indent <= class_indent:
+            pending_decorators = []
         if stripped.startswith("class ") and stripped.endswith(":"):
             class_name = stripped[len("class "):]
             if "(" in class_name:
@@ -246,6 +271,10 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
                 class_name = class_name.split(":", 1)[0].strip()
             current_class = class_name.strip()
             class_indent = indent
+            pending_decorators = []
+            continue
+        if stripped.startswith("@"):
+            pending_decorators.append(stripped[1:])
             continue
         if current_class == "" or not stripped.startswith("def "):
             continue
@@ -255,17 +284,64 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
             continue
         method_name = stripped[len("def "):open_paren].strip()
         signature = stripped[open_paren + 1:close_paren]
-        if method_name == "" or "self" not in signature:
-            continue
-        if "self: mut[" not in signature:
+        return_type = "None"
+        arrow = stripped.find("->", close_paren)
+        if arrow >= 0:
+            tail = stripped[arrow + 2:]
+            colon = tail.find(":")
+            if colon >= 0:
+                return_type = tail[:colon].strip()
+            else:
+                return_type = tail.strip()
+        if method_name == "":
             continue
         cls = reg.classes.get(current_class)
         if cls is None:
             continue
+        arg_names: list[str] = []
+        arg_types: dict[str, str] = {}
+        self_is_mutable = False
+        for field in _split_source_signature_fields(signature):
+            field_text = field
+            default_pos = field_text.find("=")
+            if default_pos >= 0:
+                field_text = field_text[:default_pos].strip()
+            if field_text == "":
+                continue
+            if ":" in field_text:
+                name_part, type_part = field_text.split(":", 1)
+                arg_name = name_part.strip()
+                arg_type = normalize_type(type_part.strip())
+            else:
+                arg_name = field_text.strip()
+                arg_type = "unknown"
+            if arg_name == "":
+                continue
+            arg_names.append(arg_name)
+            arg_types[arg_name] = arg_type
+            if arg_name == "self" and "mut[" in field_text:
+                self_is_mutable = True
         method_sig = cls.methods.get(method_name)
         if method_sig is None:
-            continue
-        method_sig.self_is_mutable = True
+            method_sig = FuncSig(
+                name=method_name,
+                arg_names=arg_names,
+                arg_types=arg_types,
+                return_type=normalize_type(return_type),
+                decorators=list(pending_decorators),
+                is_method=True,
+                owner_class=current_class,
+                self_is_mutable=self_is_mutable,
+            )
+            cls.methods[method_name] = method_sig
+        else:
+            method_sig.arg_names = arg_names
+            method_sig.arg_types = arg_types
+            method_sig.return_type = normalize_type(return_type)
+            method_sig.self_is_mutable = self_is_mutable
+            if len(pending_decorators) > 0:
+                method_sig.decorators = list(pending_decorators)
+        pending_decorators = []
 
 
 def _default_containers_source_path() -> Path:

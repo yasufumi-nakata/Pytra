@@ -140,6 +140,16 @@ static inline void py_dict_clear_mut(Object<dict<K, V>>& d) {
     py_dict_clear_mut(*d);
 }
 
+template <class K, class V, class Other>
+static inline void py_dict_update_mut(dict<K, V>& d, const Other& other) {
+    d.update(other);
+}
+
+template <class K, class V, class Other>
+static inline void py_dict_update_mut(Object<dict<K, V>>& d, const Other& other) {
+    py_dict_update_mut(*d, other);
+}
+
 template <class K, class V, class Q>
 static inline V py_dict_pop_mut(dict<K, V>& d, const Q& key) {
     const K k = [&]() -> K {

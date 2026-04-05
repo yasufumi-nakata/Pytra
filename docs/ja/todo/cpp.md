@@ -80,8 +80,10 @@ emitter が `runtime_call == "list.append"` のような文字列で判定する
 - `math_extended`（stdlib 更新）— math.pi / math.e 追加
 - `os_glob_extended`（stdlib 更新）— os.path.abspath 追加
 
-1. [ ] [ID: P0-CPP-NEWFIX-S1] 上記 fixture/stdlib の C++ parity を確認する（対象 fixture のみ実行。golden は再生成済み）
-2. [ ] [ID: P0-CPP-NEWFIX-S2] FAIL があれば emitter/runtime を修正する
+1. [x] [ID: P0-CPP-NEWFIX-S1] 上記 fixture/stdlib の C++ parity を確認する（対象 fixture のみ実行。golden は再生成済み）
+   - 完了メモ: `runtime_parity_check_fast.py` で fixture 6件（`bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`）と stdlib 2件（`math_extended`, `os_glob_extended`）の C++ parity/emit-only を確認。
+2. [x] [ID: P0-CPP-NEWFIX-S2] FAIL があれば emitter/runtime を修正する
+   - 完了メモ: `str.index` を current C++ runtime path に復旧。`containers.py` source overlay で不足メソッド署名を補完し、`str.index -> py_str_index` mapping、runtime discovery allowlist、`pytra.built_in.string_ops` / `src/runtime/east/built_in/string_ops.east` を更新して `ValueError` semantics まで一致させた。
 
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す
 

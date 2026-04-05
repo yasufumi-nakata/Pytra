@@ -362,10 +362,4 @@ static inline bool py_isalnum(const str& ch) {
     return ch.isalnum();
 }
 
-static inline int64 py_str_index(const str& s, const str& sub) {
-    int64 pos = s.find(sub);
-    if (pos < 0) throw ::std::runtime_error("substring not found");
-    return pos;
-}
-
 #endif  // PYTRA_BUILT_IN_STR_H

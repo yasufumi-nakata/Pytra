@@ -43,6 +43,7 @@ _STRING_OP_RUNTIME_SYMBOLS: set[str] = {
     "str.endswith",
     "str.find",
     "str.rfind",
+    "str.index",
     "str.replace",
     "str.join",
     "str.split",

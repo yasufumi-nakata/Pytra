@@ -181,6 +181,36 @@ static inline void py_list_append_mut(Object<list<T>>& values, const U& item) {
 }
 
 template <class T, class I, class U>
+static inline void py_list_insert_mut(list<T>& values, I idx, const U& item) {
+    int64 pos = py_to<int64>(idx);
+    const int64 size = static_cast<int64>(values.size());
+    if (pos < 0) {
+        pos += size;
+        if (pos < 0) {
+            pos = 0;
+        }
+    }
+    if (pos > size) {
+        pos = size;
+    }
+    auto it = values.begin() + static_cast<::std::ptrdiff_t>(pos);
+    if constexpr (py_is_cstr_like<U>::value) {
+        values.insert(it, py_coerce_cstr_typed_value<T>(item));
+    } else if constexpr (::std::is_same_v<T, U>) {
+        values.insert(it, item);
+    } else if constexpr (::std::is_convertible_v<U, T>) {
+        values.insert(it, static_cast<T>(item));
+    } else {
+        values.insert(it, T(item));
+    }
+}
+
+template <class T, class I, class U>
+static inline void py_list_insert_mut(Object<list<T>>& values, I idx, const U& item) {
+    py_list_insert_mut(*values, idx, item);
+}
+
+template <class T, class I, class U>
 static inline void py_list_set_at_mut(list<T>& values, I idx, const U& item) {
     int64 pos = py_to<int64>(idx);
     pos = py_list_normalize_index_or_raise(values, pos, "list index out of range");

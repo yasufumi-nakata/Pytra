@@ -1,5 +1,7 @@
 """Pure-Python source-of-truth for string helper built-ins."""
 
+from pytra.built_in.error import ValueError
+
 
 def _is_space(ch: str) -> bool:
     return ch == " " or ch == "\t" or ch == "\n" or ch == "\r"
@@ -254,6 +256,13 @@ def py_rfind_window(s: str, needle: str, start: int, end: int) -> int:
             return i
         i -= 1
     return -1
+
+
+def py_str_index(s: str, needle: str) -> int:
+    pos = py_find(s, needle)
+    if pos < 0:
+        raise ValueError("substring not found")
+    return pos
 
 
 def py_replace(s: str, oldv: str, newv: str) -> str:
