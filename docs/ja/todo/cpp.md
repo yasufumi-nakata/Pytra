@@ -66,6 +66,23 @@ emitter が `runtime_call == "list.append"` のような文字列で判定する
 4. [x] [ID: P0-CPP-RTSYM-S4] `check_emitter_hardcode_lint.py --lang cpp --category runtime_symbol` が 0 件になることを確認する
    - 完了メモ: runtime_symbol lint 0 件を確認。最小回帰として registry/resolve/CLI の unit test も追加。
 
+### P0-CPP-NEW-FIXTURE-PARITY: 新規追加 fixture / stdlib の C++ parity 確認
+
+今セッションで追加・更新した fixture と stdlib の C++ parity を確認する。
+
+対象:
+- `bytes_copy_semantics` — bytes(bytearray) コピーセマンティクス
+- `negative_index_comprehensive` — list/str/bytes/bytearray の負数インデックス
+- `negative_index_out_of_range` — a[-100] の IndexError（opt-level 1 では FAIL が仕様通り）
+- `callable_optional_none` — callable|None の is None ガード + invoke
+- `str_find_index` — str.find / str.rfind / str.index + ValueError
+- `eo_extern_opaque_basic` — @extern class の emit-only
+- `math_extended`（stdlib 更新）— math.pi / math.e 追加
+- `os_glob_extended`（stdlib 更新）— os.path.abspath 追加
+
+1. [ ] [ID: P0-CPP-NEWFIX-S1] 上記 fixture/stdlib の C++ parity を確認する（対象 fixture のみ実行。golden は再生成済み）
+2. [ ] [ID: P0-CPP-NEWFIX-S2] FAIL があれば emitter/runtime を修正する
+
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す
 
 文脈: [docs/ja/plans/p4-cpp-selfhost.md](../plans/p4-cpp-selfhost.md)
