@@ -21,6 +21,39 @@
 
 ## 未完了タスク
 
+### P0-CPP-MAPPING-CLEANUP: C++ mapping.json の死んだエントリを掃除する
+
+`check_emitter_hardcode_lint.py --lang cpp` の `rt:call_cov` で 14 件の mapping.json エントリが EAST3 golden に出現しない。以下の 3 種類に分類して対処する。
+
+**A. 旧キー名（完全修飾化漏れ or 死んだエントリ）— 削除 or FQCN 化:**
+- `py_len` — EAST3 は `runtime_call: "len"` を使う。FQCN 化済みなら旧キーを削除
+- `py_dumps` / `py_dumps_jv` / `py_loads` / `py_loads_arr` / `py_loads_obj` — JSON 系。FQCN キーが別途あるなら旧キーを削除
+- `py_float_from_str` — `float()` コンストラクタ。FQCN キーがあるか確認して統合
+- `py_floordiv` — `//` 演算子。EAST3 で `runtime_call` として使われているか確認
+- `py_write_text` — pathlib 系。FQCN キーがあるか確認
+
+**B. EAST3 が別経路で解決するエントリ — 削除:**
+- `bytearray_ctor` / `bytes_ctor` — コンストラクタは EAST3 で `runtime_call` を経由しない
+- `open` — ファイルオープンは `@extern` 経由
+- `std::runtime_error` — C++ 固有のシンボル。EAST3 の `runtime_call` ではない
+
+**C. fixture カバレッジ不足 — fixture 追加済み or 追加予定:**
+- `str.index` — `str_find_index` fixture 追加済み（golden 再生成で解消見込み）
+
+1. [ ] [ID: P0-CPP-MAPCLN-S1] 上記 A の旧キーを削除 or FQCN キーに統合する
+2. [ ] [ID: P0-CPP-MAPCLN-S2] 上記 B の不要エントリを mapping.json から削除する
+3. [ ] [ID: P0-CPP-MAPCLN-S3] `check_emitter_hardcode_lint.py --lang cpp --category rt:call_coverage` が 0 件になることを確認する
+
+### P0-CPP-RUNTIME-SYMBOL: C++ emitter のメソッド名ハードコードを解消する
+
+`emitter.py` と `header_gen.py` に `"append"`, `"clear"`, `"discard"` 等の Python メソッド名をリストで持っている箇所がある（lint `runtime_symbol` 違反 5 件）。container の mutable/immutable 判定に使用。
+
+EAST3 の `semantic_tag` や `runtime_call`（例: `list.append`, `set.add`）で判定すべき。または EAST3 に `mutates_container` フラグを追加して emitter はそれを見るだけにする。
+
+1. [ ] [ID: P0-CPP-RTSYM-S1] `emitter.py` の mutable メソッド名リストを EAST3 の `semantic_tag` / `runtime_call` ベースの判定に置き換える
+2. [ ] [ID: P0-CPP-RTSYM-S2] `header_gen.py` の同様のリストを同じ方式に置き換える
+3. [ ] [ID: P0-CPP-RTSYM-S3] `check_emitter_hardcode_lint.py --lang cpp --category runtime_symbol` が 0 件になることを確認する
+
 ### P20-CPP-SELFHOST: C++ emitter で toolchain2 を C++ に変換し g++ build を通す
 
 文脈: [docs/ja/plans/p4-cpp-selfhost.md](../plans/p4-cpp-selfhost.md)
