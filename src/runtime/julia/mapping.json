@@ -3,11 +3,6 @@
   "calls": {
     "env.target": "\"julia\"",
     "deque": "__pytra_deque",
-    "Exception": "__pytra_exception",
-    "IndexError": "__pytra_index_error",
-    "ValueError": "__pytra_value_error",
-    "RuntimeError": "__pytra_runtime_error",
-    "TypeError": "__pytra_type_error",
     "py_print": "__pytra_print",
     "len": "length",
     "str": "string",
@@ -139,7 +134,8 @@
     "Path": "String",
     "PytraError": "PytraException",
     "BaseException": "PytraException",
-    "Exception": "Exception"
+    "Exception": "PytraBuiltinException",
+    "KeyError": "PytraKeyError"
   },
   "predicate_types": {
     "PYTRA_TID_BOOL": "Bool",
@@ -156,7 +152,8 @@
     "PytraError": "PytraException",
     "BaseException": "PytraException",
     "Exception": "PytraException",
-    "IndexError": "BoundsError",
+    "IndexError": "PytraIndexError",
+    "KeyError": "PytraKeyError",
     "ValueError": "PytraValueError",
     "RuntimeError": "PytraRuntimeError",
     "TypeError": "PytraTypeError",

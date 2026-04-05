@@ -991,6 +991,8 @@ class JuliaSubsetRenderer:
             return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
         if func in self.class_names:
             return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
+        if (func in self.mapping.predicate_types and func.endswith("Error")) or func in {"BaseException", "Exception"}:
+            return "__pytra_new_" + func + "(" + ", ".join(args) + ")"
         return ""
 
     def _render_attribute_call_maybe(self, node: dict[str, JsonVal], func_node: JsonVal) -> str:
@@ -1561,7 +1563,10 @@ class JuliaSubsetRenderer:
             mapped_type_name = self.mapping.predicate_types.get(type_name, "")
             if mapped_type_name != "":
                 type_name = mapped_type_name
-            cond = "true" if type_name == "" else err_name + " isa " + type_name
+            if type_name == "PytraIndexError":
+                cond = "(" + err_name + " isa PytraIndexError || " + err_name + " isa BoundsError)"
+            else:
+                cond = "true" if type_name == "" else err_name + " isa " + type_name
             if index == 0:
                 self._emit("if " + cond)
             else:

@@ -50,12 +50,29 @@ Base.show(io::IO, e::__PytraIndexError) = print(io, e.msg)
 Base.showerror(io::IO, e::__PytraIndexError) = print(io, e.msg)
 __pytra_index_error(msg="error") = __PytraIndexError(msg)
 
+abstract type PytraKeyError <: PytraBuiltinException end
+mutable struct __PytraKeyError <: PytraKeyError
+    msg
+end
+Base.show(io::IO, e::__PytraKeyError) = print(io, e.msg)
+Base.showerror(io::IO, e::__PytraKeyError) = print(io, e.msg)
+__pytra_key_error(msg="error") = __PytraKeyError(msg)
+
 __pytra_exception_message(v::__PytraException) = string(v.msg)
 __pytra_exception_message(v::__PytraValueError) = string(v.msg)
 __pytra_exception_message(v::__PytraRuntimeError) = string(v.msg)
 __pytra_exception_message(v::__PytraTypeError) = string(v.msg)
 __pytra_exception_message(v::__PytraAssertionError) = string(v.msg)
 __pytra_exception_message(v::__PytraIndexError) = string(v.msg)
+__pytra_exception_message(v::__PytraKeyError) = string(v.msg)
+
+__pytra_new_BaseException(msg="error") = __pytra_exception(msg)
+__pytra_new_Exception(msg="error") = __pytra_exception(msg)
+__pytra_new_ValueError(msg="error") = __pytra_value_error(msg)
+__pytra_new_RuntimeError(msg="error") = __pytra_runtime_error(msg)
+__pytra_new_TypeError(msg="error") = __pytra_type_error(msg)
+__pytra_new_IndexError(msg="error") = __pytra_index_error(msg)
+__pytra_new_KeyError(msg="error") = __pytra_key_error(msg)
 
 function __pytra_exception_message(v)
     return string(v)
