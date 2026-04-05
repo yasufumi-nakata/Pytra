@@ -2464,6 +2464,20 @@ def _resolve_builtin_call(
     ctx: ResolveContext,
 ) -> str:
     """Resolve a built-in function call (print, len, int, etc.)."""
+    if name == "bytearray":
+        _resolve_call_args(expr, ctx)
+        expr["resolved_type"] = "bytearray"
+        func["resolved_type"] = "type"
+        expr["lowered_kind"] = "BuiltinCall"
+        expr["semantic_tag"] = "core.bytearray_ctor"
+        return "bytearray"
+    if name == "bytes":
+        _resolve_call_args(expr, ctx)
+        expr["resolved_type"] = "bytes"
+        func["resolved_type"] = "type"
+        expr["lowered_kind"] = "BuiltinCall"
+        expr["semantic_tag"] = "core.bytes_ctor"
+        return "bytes"
     if name == "open":
         _resolve_call_args(expr, ctx)
         expr["resolved_type"] = "PyFile"

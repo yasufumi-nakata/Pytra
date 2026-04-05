@@ -704,6 +704,31 @@ class DartNativeEmitter:
             return "pytraBytes(" + rendered_args[0] + ")"
         return ""
 
+    def _expand_type_ctor_fallback(self, expr: dict[str, Any], func_any: Any, rendered_args: list[str]) -> str:
+        if not isinstance(func_any, dict):
+            return ""
+        if func_any.get("resolved_type") != "type":
+            return ""
+        resolved_type_any = expr.get("resolved_type")
+        resolved_type = resolved_type_any if isinstance(resolved_type_any, str) else ""
+        if resolved_type == "bytearray":
+            if len(rendered_args) == 0:
+                return "<int>[]"
+            return "pytraBytearray(" + rendered_args[0] + ")"
+        if resolved_type == "bytes":
+            if len(rendered_args) == 0:
+                return "<int>[]"
+            return "pytraBytes(" + rendered_args[0] + ")"
+        if resolved_type == "dict[unknown, unknown]" or resolved_type.startswith("dict["):
+            if len(rendered_args) == 0:
+                return "{}"
+            return "Map<dynamic, dynamic>.from(" + rendered_args[0] + ")"
+        if resolved_type == "float64":
+            if len(rendered_args) == 0:
+                return "0.0"
+            return "pytraFloat(" + rendered_args[0] + ")"
+        return ""
+
     def _expand_static_cast(self, semantic_tag: str, rendered_args: list[str], args: list[Any]) -> str:
         if semantic_tag == "cast.int":
             if len(rendered_args) == 0:
@@ -2814,6 +2839,9 @@ class DartNativeEmitter:
             ctor_expr = self._expand_core_ctor(semantic_tag, rendered_args)
             if ctor_expr != "":
                 return ctor_expr
+            ctor_fallback_expr = self._expand_type_ctor_fallback(expr, func_any, rendered_args)
+            if ctor_fallback_expr != "":
+                return ctor_fallback_expr
             cast_expr = self._expand_static_cast(semantic_tag, rendered_args, args)
             if runtime_call == "static_cast" and cast_expr != "":
                 return cast_expr
