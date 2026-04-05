@@ -129,6 +129,10 @@ Path Path::joinpath(const Path& part) const {
     return Path(join(_value, part._value));
 }
 
+Path Path::joinpath(const str& part0, const str& part1) const {
+    return Path(join(join(_value, part0), part1));
+}
+
 list<Path> Path::glob(const str& pattern) const {
     list<Path> out{};
     for (const auto& item : ::glob(join(_value, pattern))) {

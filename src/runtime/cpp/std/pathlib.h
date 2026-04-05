@@ -31,8 +31,13 @@ public:
     int64 write_text(const str& text, const str& encoding = str("utf-8")) const;
     Path joinpath(const str& part) const;
     Path joinpath(const Path& part) const;
+    Path joinpath(const str& part0, const str& part1) const;
     list<Path> glob(const str& pattern) const;
     static Path cwd();
 };
+
+inline int64 py_pathlib_write_text(const Path& path, const str& text) {
+    return path.write_text(text);
+}
 
 #endif  // PYTRA_RUNTIME_STD_PATHLIB_H
