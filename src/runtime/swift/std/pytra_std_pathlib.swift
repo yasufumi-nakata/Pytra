@@ -49,6 +49,14 @@ class Path: CustomStringConvertible {
         return Path((self._value as NSString).appendingPathComponent(__pytra_str(part)))
     }
 
+    func joinpath(_ part: Any, _ more: Any...) -> Path {
+        var current = (self._value as NSString).appendingPathComponent(__pytra_str(part))
+        for item in more {
+            current = (current as NSString).appendingPathComponent(__pytra_str(item))
+        }
+        return Path(current)
+    }
+
     func resolve() -> Path {
         return Path(URL(fileURLWithPath: _value).standardizedFileURL.path)
     }
