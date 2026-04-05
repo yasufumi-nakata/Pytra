@@ -603,6 +603,16 @@ func __pytra_pop_last(_ v: [Any]) -> [Any] {
     return Array(v.dropLast())
 }
 
+func __pytra_pop(_ v: inout [UInt8]) -> Int64 {
+    if v.isEmpty { return Int64(0) }
+    return Int64(v.removeLast())
+}
+
+func __pytra_pop(_ v: inout [Any]) -> Any {
+    if v.isEmpty { return __pytra_any_default() }
+    return v.removeLast()
+}
+
 func __pytra_print(_ args: Any...) {
     if args.isEmpty {
         Swift.print()
@@ -839,9 +849,18 @@ func __pytra_py_reversed_object(_ v: Any?) -> [Any] {
 
 func __pytra_sorted(_ v: Any?) -> [Any] {
     if let list = v as? [Any] {
-        return list.sorted { __pytra_float($0) < __pytra_float($1) }
+        return list.sorted {
+            if $0 is String || $1 is String {
+                return __pytra_str($0) < __pytra_str($1)
+            }
+            return __pytra_float($0) < __pytra_float($1)
+        }
     }
     return []
+}
+
+func __pytra_py_sorted(_ v: Any?) -> [Any] {
+    return __pytra_sorted(v)
 }
 
 func __pytra_join(_ sep: Any?, _ items: Any?) -> String {
@@ -862,6 +881,14 @@ func __pytra_replace(_ v: Any?, _ old: Any?, _ new: Any?) -> String {
 
 func __pytra_strip(_ v: Any?) -> String {
     return __pytra_str(v).trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
+func __pytra_isspace(_ v: Any?) -> Bool {
+    let s = __pytra_str(v)
+    if s.isEmpty {
+        return false
+    }
+    return s.unicodeScalars.allSatisfy { CharacterSet.whitespacesAndNewlines.contains($0) }
 }
 
 func __pytra_lstrip(_ v: Any?) -> String {
@@ -902,6 +929,30 @@ func __pytra_rfind(_ v: Any?, _ sub: Any?) -> Int64 {
         return Int64(s.distance(from: s.startIndex, to: range.lowerBound))
     }
     return -1
+}
+
+func __pytra_count(_ v: Any?, _ sub: Any?) -> Int64 {
+    let s = __pytra_str(v)
+    let needle = __pytra_str(sub)
+    if needle.isEmpty {
+        return Int64(s.count + 1)
+    }
+    if s.isEmpty {
+        return Int64(0)
+    }
+    var count: Int64 = 0
+    var cursor = s.startIndex
+    while cursor <= s.endIndex {
+        guard let found = s[cursor...].range(of: needle) else {
+            break
+        }
+        count += 1
+        cursor = found.upperBound
+        if cursor == s.endIndex {
+            break
+        }
+    }
+    return count
 }
 
 func __pytra_index_str(_ v: Any?, _ sub: Any?) -> Int64 {

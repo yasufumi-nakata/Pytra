@@ -1165,6 +1165,8 @@ def check_case(
         shutil.rmtree(work)
     work.mkdir(parents=True, exist_ok=True)
 
+    _case_failed = False
+    mismatches: list[str] = []
     try:
         # Run Python reference
         (work / "src").symlink_to(ROOT / "src", target_is_directory=True)
@@ -1191,6 +1193,7 @@ def check_case(
             if py.returncode != 0:
                 print(f"[ERROR] python:{case_stem} failed")
                 _record("python", "python_failed", py.stderr.strip())
+                _case_failed = True
                 return 1
 
         if is_emit_only:
@@ -1210,6 +1213,7 @@ def check_case(
                     _record(target_name, "emit_failed", err)
                     emit_fail_targets.append(target_name)
             if len(emit_fail_targets) > 0:
+                _case_failed = True
                 return 1
             print(f"[PASS] {case_stem} (emit-only)", flush=True)
             return 0
@@ -1226,11 +1230,11 @@ def check_case(
             expected_artifact_path = _resolve_output_path(work, expected_out_txt)
             if not expected_artifact_path.exists():
                 _record("python", "python_artifact_missing", str(expected_artifact_path))
+                _case_failed = True
                 return 1
             expected_artifact_size = _file_size_normalized(expected_artifact_path)
             expected_artifact_crc32 = _file_crc32(expected_artifact_path)
 
-        mismatches: list[str] = []
         for target_name in sorted(enabled_targets):
             if case_stem in _LANG_UNSUPPORTED_FIXTURES.get(target_name, set()):
                 print(f"[SKIP] {case_stem}:{target_name} (unsupported feature)")
@@ -1331,7 +1335,10 @@ def check_case(
 
     finally:
         if work.exists():
-            shutil.rmtree(work, ignore_errors=True)
+            if _case_failed or mismatches:
+                print(f"[INFO] work dir kept for inspection: {work}", flush=True)
+            else:
+                shutil.rmtree(work, ignore_errors=True)
 
     if mismatches:
         print(f"\n[FAIL] {case_stem} mismatches", flush=True)

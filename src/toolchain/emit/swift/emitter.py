@@ -2031,7 +2031,7 @@ def _render_call_via_runtime_call(
                     helper = "__pytra_list_index_throwing" if _IN_TRY_BODY_DEPTH[0] > 0 else "__pytra_list_index"
                     prefix = "try " if _IN_TRY_BODY_DEPTH[0] > 0 else ""
                     return prefix + helper + "(" + owner_expr + ", " + _render_expr(args[0]) + ")"
-                if _matches_runtime_method(expr, "__init__"):
+                if semantic_tag == "stdlib.method.__init__":
                     rendered_runtime_args: list[str] = []
                     i = 0
                     while i < len(args):
@@ -2048,6 +2048,8 @@ def _render_call_via_runtime_call(
                     return owner_expr + ".reverse()"
                 if _matches_runtime_method(expr, "list.sort") or _matches_runtime_method(expr, "bytes.sort", "bytearray.sort"):
                     return owner_expr + ".sort { __pytra_float($0) < __pytra_float($1) }"
+                if _matches_runtime_method(expr, "list.pop", "bytearray.pop") and len(args) == 0:
+                    return "__pytra_pop(&" + owner_expr + ")"
                 if _matches_runtime_method(expr, "list.append", "deque.append") and len(args) == 1:
                     return owner_expr + ".append(" + _render_expr(args[0]) + ")"
                 if _matches_runtime_method(expr, "set.add") and len(args) == 1:
@@ -2106,7 +2108,7 @@ def _render_call_via_runtime_call(
     )
     if runtime_symbol == "":
         return ""
-    if runtime_symbol in {"__pytra_extend", "__pytra_discard", "__pytra_remove", "__pytra_set_add"} and len(args) > 0:
+    if runtime_symbol in {"__pytra_extend", "__pytra_discard", "__pytra_remove", "__pytra_set_add", "__pytra_pop"} and len(args) > 0:
         rendered_runtime_args: list[str] = []
         first_arg = args[0]
         if isinstance(first_arg, dict) and first_arg.get("kind") == "Name":
@@ -2376,9 +2378,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 rendered_super_args.append(_render_expr(args[i]))
                 i += 1
             return "super.init(" + ", ".join(rendered_super_args) + ")"
-        if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
-            attr_name = _safe_ident(func_any.get("attr"), "")
-            owner_any = func_any.get("value")
+    if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
+        attr_name = _safe_ident(func_any.get("attr"), "")
+        owner_any = func_any.get("value")
         if attr_name == "__name__" and isinstance(owner_any, dict) and owner_any.get("kind") == "Call" and _call_name(owner_any) == "type":
             call_args_any = owner_any.get("args")
             call_args = call_args_any if isinstance(call_args_any, list) else []
@@ -2430,7 +2432,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 or owner_type.startswith("set[")
                 or owner_type in {"bytes", "bytearray", "str", "deque"}
             ):
-                if _matches_runtime_method(expr, "list.clear", "dict.clear", "set.clear", "bytearray.clear") and len(args) == 0:
+                if _matches_runtime_method(expr, "list.clear", "dict.clear", "set.clear", "bytearray.clear", "deque.clear") and len(args) == 0:
                     return owner_expr + ".removeAll()"
                 if (
                     (owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"})
