@@ -31,6 +31,15 @@ def run_case() -> bool:
     checks.append(py_assert_eq(parts[0], "a", "split_first"))
     checks.append(py_assert_eq(parts[2], "c", "split_last"))
 
+    # str.isspace
+    checks.append(py_assert_true("   ".isspace(), "isspace_true"))
+    checks.append(py_assert_eq("hello".isspace(), False, "isspace_false"))
+    checks.append(py_assert_eq("".isspace(), False, "isspace_empty"))
+
+    # str.count
+    checks.append(py_assert_eq("hello world hello".count("hello"), 2, "count_substr"))
+    checks.append(py_assert_eq("aaa".count("a"), 3, "count_char"))
+
     return py_assert_all(checks, "str_methods_extended")
 
 

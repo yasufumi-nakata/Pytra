@@ -17,6 +17,16 @@ def run_bytearray_basic() -> bool:
     checks.append(py_assert_eq(ba[1], 25, "bytearray mutate"))
     checks.append(py_assert_eq(ba[-1], 40, "bytearray last"))
     checks.append(py_assert_eq(total, 105, "bytearray sum"))
+
+    # pop (removes and returns last element)
+    popped: int = ba.pop()
+    checks.append(py_assert_eq(popped, 40, "bytearray pop value"))
+    checks.append(py_assert_eq(len(ba), 3, "bytearray len after pop"))
+
+    # clear
+    ba.clear()
+    checks.append(py_assert_eq(len(ba), 0, "bytearray len after clear"))
+
     return py_assert_all(checks, "bytearray_basic")
 
 
