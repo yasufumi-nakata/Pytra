@@ -223,6 +223,11 @@ def _collect_golden_runtime_calls() -> set[str]:
                 val = node.get(key)
                 if isinstance(val, str) and val:
                     result.add(val)
+            # Also collect runtime_module_id + runtime_symbol (fully qualified)
+            mod_id = node.get("runtime_module_id")
+            sym = node.get("runtime_symbol")
+            if isinstance(mod_id, str) and mod_id and isinstance(sym, str) and sym:
+                result.add(mod_id + "." + sym)
             for v in node.values():
                 _walk(v, result)
         elif isinstance(node, list):
