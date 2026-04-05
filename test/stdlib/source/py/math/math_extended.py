@@ -11,6 +11,8 @@ def run_math_extended() -> bool:
     checks.append(py_assert_eq(int(math.fabs(-3.5) * 10.0), 35, "fabs"))
     checks.append(py_assert_eq(int(math.ceil(2.1)), 3, "ceil"))
     checks.append(py_assert_eq(int(math.pow(2.0, 5.0)), 32, "pow"))
+    checks.append(py_assert_eq(math.fabs(math.pi - 3.141592653589793) < 1e-12, True, "pi"))
+    checks.append(py_assert_eq(math.fabs(math.e - 2.718281828459045) < 1e-12, True, "e"))
     return py_assert_all(checks, "math_extended")
 
 
