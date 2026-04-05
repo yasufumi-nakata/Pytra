@@ -3895,6 +3895,52 @@ def has_key(env: dict[str, int], name: str) -> bool:
         self.assertNotIn("item_sep.(string)", runtime_go)
         self.assertNotIn("key_sep.(string)", runtime_go)
 
+    def test_linker_preserves_builtin_ctor_metadata_for_pytra_utils_png(self) -> None:
+        registry = load_builtin_registry(
+            ROOT / "test" / "include" / "east1" / "py" / "built_in" / "builtins.py.east1",
+            ROOT / "test" / "include" / "east1" / "py" / "built_in" / "containers.py.east1",
+            ROOT / "test" / "include" / "east1" / "py" / "std",
+        )
+        source_path = ROOT / "src" / "pytra" / "utils" / "png.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            east1 = parse_python_file(str(source_path))
+            east1["source_path"] = "src/pytra/utils/png.py"
+            resolve_east1_to_east2(east1, registry=registry)
+            east3 = lower_east2_to_east3(east1)
+            east3["source_path"] = "src/pytra/utils/png.py"
+            east3, _ = optimize_east3_document(east3, opt_level=1)
+            input_path = Path(tmp) / "pytra.utils.png.east3.json"
+            input_path.write_text(json.dumps(east3, ensure_ascii=False), encoding="utf-8")
+
+            result = link_modules([str(input_path)], target="dart")
+            modules = {module.module_id: module for module in result.linked_modules}
+
+        self.assertIn("pytra.utils.png", modules)
+        linked_png = modules["pytra.utils.png"].east_doc
+        calls = [node for node in _walk_nodes(linked_png) if node.get("kind") == "Call"]
+
+        bytearray_calls = [
+            node for node in calls
+            if node.get("resolved_type") == "bytearray"
+            and isinstance(node.get("func"), dict)
+            and node["func"].get("kind") == "Name"
+            and node["func"].get("id") == "bytearray"
+        ]
+        bytes_calls = [
+            node for node in calls
+            if node.get("resolved_type") == "bytes"
+            and isinstance(node.get("func"), dict)
+            and node["func"].get("kind") == "Name"
+            and node["func"].get("id") == "bytes"
+        ]
+
+        self.assertGreater(len(bytearray_calls), 0)
+        self.assertGreater(len(bytes_calls), 0)
+        for node in bytearray_calls:
+            self.assertEqual(node.get("semantic_tag"), "core.bytearray_ctor")
+        for node in bytes_calls:
+            self.assertEqual(node.get("semantic_tag"), "core.bytes_ctor")
+
     def test_go_emitter_keeps_comprehensions_as_iife_instead_of_placeholder(self) -> None:
         doc = _fixture_doc("test/fixture/east3-opt/collections/comprehension_dict_set.east3")
 
