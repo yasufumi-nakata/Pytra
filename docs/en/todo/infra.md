@@ -26,27 +26,40 @@ Context: [docs/ja/plans/p0-mapping-fqcn-key.md](../plans/p0-mapping-fqcn-key.md)
 
 The shared infrastructure `code_emitter.py`'s `resolve_runtime_symbol_name` looks up mapping.json only by `runtime_symbol` (bare `"sin"` etc.), which risks collisions with user-defined functions. Since EAST3 holds fully-qualified `runtime_module_id` + `runtime_symbol`, mapping.json keys should also be fully qualified, like `"pytra.std.math.sin"`.
 
-1. [ ] [ID: P0-FQCN-KEY-S1] Add a `module_id` parameter to `resolve_runtime_symbol_name` and look up by fully-qualified name first
-2. [ ] [ID: P0-FQCN-KEY-S2] Unify all language mapping.json keys to fully-qualified names and remove duplicate entries
-3. [ ] [ID: P0-FQCN-KEY-S3] Remove the bare fallback
-4. [ ] [ID: P0-FQCN-KEY-S4] Update `check_runtime_call_coverage.py` comparisons to use fully-qualified names
-5. [ ] [ID: P0-FQCN-KEY-S5] Confirm with representative C++ parity (delegate per-language verification to each owner)
+1. [x] [ID: P0-FQCN-KEY-S1] Add a `module_id` parameter to `resolve_runtime_symbol_name` and look up by fully-qualified name first
+2. [x] [ID: P0-FQCN-KEY-S2] Unify all language mapping.json keys to fully-qualified names and remove duplicate entries
+3. [x] [ID: P0-FQCN-KEY-S3] Remove the bare fallback
+4. [x] [ID: P0-FQCN-KEY-S4] Update `check_runtime_call_coverage.py` comparisons to use fully-qualified names
+5. [x] [ID: P0-FQCN-KEY-S5] Confirm with representative C++ parity (delegate per-language verification to each owner)
 
 ### P10-LEGACY-TOOLCHAIN-REMOVAL: Remove the old toolchain + pytra-cli.py
 
 Context: [docs/ja/plans/p10-legacy-toolchain-removal.md](../plans/p10-legacy-toolchain-removal.md)
 
-**Do not start until the user gives the signal.** Execute at a time when all owners have stopped work.
+**Status: Partially complete. S1 blocked pending language-owner work.**
 
 Targets for removal:
 - `src/toolchain/` (old emitter, old compile, old frontends, old misc)
 - `src/pytra-cli.py` (old CLI; `src/pytra-cli2.py` is the canonical version)
 - References to the old pipeline in tests, specs, and docs
 
-1. [ ] [ID: P10-LEGACY-RM-S1] Delete `src/toolchain/`
-2. [ ] [ID: P10-LEGACY-RM-S2] Delete `src/pytra-cli.py` and rename `src/pytra-cli2.py` to `src/pytra-cli.py`
-3. [ ] [ID: P10-LEGACY-RM-S3] Update old pipeline references in spec / tutorial / README
-4. [ ] [ID: P10-LEGACY-RM-S4] Remove old pipeline references from tools such as `run_local_ci.py`
+**Pre-work completed (2026-04-05):**
+- Created `src/toolchain2/misc/target_profiles.py` (`get_target_profile`, `list_parity_targets`)
+- Migrated imports in `runtime_parity_check.py`, `runtime_parity_check_fast.py`, `run_selfhost_parity.py` to toolchain2
+- Removed old toolchain dependency from `gen_runtime_symbol_index.py`
+- Deleted 26 obsolete test/tool files (old smoke tests, old tooling tests)
+- Created git tag `v0.x-pre-toolchain-removal`
+
+**S1 blockers (delegated to language owners):**
+- `src/toolchain2/emit/julia/bootstrap.py` uses old `JuliaNativeEmitter` → awaiting Julia owner P1-JULIA-EMITTER-S1
+- `src/toolchain2/emit/dart/emitter.py` uses old `code_emitter` utilities → awaiting Dart owner migration
+- `src/toolchain2/emit/swift/emitter.py` uses old `code_emitter` + `runtime_symbol_index` → awaiting Swift owner migration
+- `src/toolchain2/emit/zig/emitter.py` uses old `CodeEmitter` class + `runtime_symbol_index` → awaiting Zig owner migration
+
+1. [ ] [ID: P10-LEGACY-RM-S1] Delete `src/toolchain/` (after all 4 languages above are migrated)
+2. [ ] [ID: P10-LEGACY-RM-S2] Delete `src/pytra-cli.py` and rename `src/pytra-cli2.py` to `src/pytra-cli.py` (also update callers to new CLI syntax)
+3. [x] [ID: P10-LEGACY-RM-S3] Update old pipeline references in spec / tutorial / README (`pytra-cli2` → `pytra-cli`)
+4. [ ] [ID: P10-LEGACY-RM-S4] Remove old pipeline references from tools such as `run_local_ci.py` (after S1/S2)
 
 ### P20-DATA-DRIVEN-TESTS: Convert pipeline tests to data-driven format
 
