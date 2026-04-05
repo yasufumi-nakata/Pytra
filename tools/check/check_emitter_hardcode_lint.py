@@ -1,7 +1,7 @@
 """
 emitter 責務違反チェッカー（P6-EMITTER-LINT）
 
-src/toolchain2/emit/*/ 配下の .py ファイルを対象に、禁止パターンを grep して
+src/toolchain/emit/*/ 配下の .py ファイルを対象に、禁止パターンを grep して
 言語 × カテゴリのマトリクスを stdout に出力する。
 
 exit code は常に 0（違反があっても fail しない。結果はレポートのみ）。
@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-EMIT_DIR = ROOT / "src" / "toolchain2" / "emit"
+EMIT_DIR = ROOT / "src" / "toolchain" / "emit"
 
 # README バッジ順の全18言語（表示名 → emit サブディレクトリ名）
 ALL_LANGS_ORDERED: list[tuple[str, str]] = [
@@ -511,7 +511,7 @@ def collect_hits(
 # ---------------------------------------------------------------------------
 
 def implemented_langs() -> set[str]:
-    """toolchain2/emit/ に実際にディレクトリが存在する言語キー + エイリアス先が実装済みの言語キーの集合。"""
+    """toolchain/emit/ に実際にディレクトリが存在する言語キー + エイリアス先が実装済みの言語キーの集合。"""
     dir_to_key = {d: k for k, d in ALL_LANGS_ORDERED}
     direct = {
         dir_to_key[p.name]
@@ -686,7 +686,7 @@ def _render_md(
         lines.append("|---|---|")
         lines.append("| 🟩 | 違反なし |")
         lines.append("| 🟥 | 違反あり（詳細は下の表を参照） |")
-        lines.append("| ⬜ | 未実装（toolchain2 に emitter なし） |")
+        lines.append("| ⬜ | 未実装（toolchain に emitter なし） |")
         lines.append("")
         lines.append("> **js** は独自 emitter を持たず **ts** emitter を共用するため、js 列は ts と同一の結果を表示する。")
         lines.append("")
@@ -706,7 +706,7 @@ def _render_md(
         lines.append("|---|---|")
         lines.append("| 🟩 | No violations |")
         lines.append("| 🟥 | Violations found (see details below) |")
-        lines.append("| ⬜ | Not implemented (no emitter in toolchain2) |")
+        lines.append("| ⬜ | Not implemented (no emitter in toolchain) |")
         lines.append("")
         lines.append("> **js** shares the **ts** emitter and has no separate implementation; the js column mirrors ts results.")
         lines.append("")
@@ -844,7 +844,7 @@ def main() -> int:
     hits.extend(runtime_hits)
     has_runtime = not args.skip_runtime
 
-    # 全18言語を README バッジ順で固定（toolchain2 未実装言語は 🟩0 で表示）
+    # 全18言語を README バッジ順で固定（toolchain 未実装言語は 🟩0 で表示）
     if args.lang:
         all_langs = [args.lang] if args.lang in ALL_LANG_KEYS else [args.lang]
     else:

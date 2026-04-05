@@ -28,7 +28,7 @@ class Toolchain2LoweringProfileLoaderTests(unittest.TestCase):
         self.assertEqual(profile.swap_style, "std_swap")
 
     def test_common_core_is_merged_before_language_profile(self) -> None:
-        profile_path = Path("/workspace/Pytra/src/toolchain2/emit/profiles/go.json")
+        profile_path = Path("/workspace/Pytra/src/toolchain/emit/profiles/go.json")
         merged = load_profile_with_includes(profile_path)
         self.assertEqual(merged["schema_version"], 1)
         lowering = merged["lowering"]

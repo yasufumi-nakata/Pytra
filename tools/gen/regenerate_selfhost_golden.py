@@ -63,8 +63,8 @@ def _ext(target: str) -> str:
     return {"go": ".go", "rs": ".rs", "ts": ".ts", "cpp": ".cpp"}[target]
 
 
-_TOOLCHAIN2_SUFFIX = "/src/toolchain2/"
-_TOOLCHAIN2_PREFIX = "src/toolchain2/"
+_TOOLCHAIN2_SUFFIX = "/src/toolchain/"
+_TOOLCHAIN2_PREFIX = "src/toolchain/"
 
 # Emitter-target submodules are excluded from the golden to avoid cross-emitter
 # name conflicts (each defines its own EmitContext, etc.).
@@ -75,13 +75,13 @@ _EXCLUDED_PREFIXES = [
 
 
 def _normalize_source_path(sp: str) -> str:
-    """Normalize source_path to a relative path under src/toolchain2/."""
+    """Normalize source_path to a relative path under src/toolchain/."""
     if sp.startswith(_TOOLCHAIN2_PREFIX):
         return sp
-    # Handle absolute paths: /some/root/src/toolchain2/...
+    # Handle absolute paths: /some/root/src/toolchain/...
     idx = sp.find(_TOOLCHAIN2_SUFFIX)
     if idx >= 0:
-        return "src/toolchain2/" + sp[idx + len(_TOOLCHAIN2_SUFFIX):]
+        return "src/toolchain/" + sp[idx + len(_TOOLCHAIN2_SUFFIX):]
     return ""
 
 
@@ -97,7 +97,7 @@ def collect_east3_opt_entries() -> list[tuple[Path, str]]:
         sp = _normalize_source_path(doc_snippet.get("source_path", ""))
         if not sp:
             continue
-        rel = sp.removeprefix("src/toolchain2/")
+        rel = sp.removeprefix("src/toolchain/")
         # Skip emitter-target submodules (they have conflicting class names)
         if any(rel.startswith(ex) for ex in _EXCLUDED_PREFIXES):
             continue

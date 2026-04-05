@@ -25,10 +25,10 @@
   - [20260328-spec-ruby-native-backend.md](./20260328-spec-ruby-native-backend.md) — Ruby 個別 backend 契約
   - [20260328-spec-options.md](./20260328-spec-options.md) — 旧オプション仕様
   - [20260328-spec-make.md](./20260328-spec-make.md) — Makefile 生成仕様
-- 2026-03-28（toolchain1 C++ 固有仕様 → toolchain2 では EAST3 Optimizer / CommonRenderer / spec-emitter-guide §10 に統合）:
+- 2026-03-28（toolchain1 C++ 固有仕様 → toolchain では EAST3 Optimizer / CommonRenderer / spec-emitter-guide §10 に統合）:
   - [20260328-spec-cpp-optimizer.md](./20260328-spec-cpp-optimizer.md)
   - [20260328-spec-cpp-list-reference-semantics.md](./20260328-spec-cpp-list-reference-semantics.md)
-- 2026-03-28（toolchain1 言語別 backend 契約 → toolchain2 では spec-emitter-guide.md + profiles に統合）:
+- 2026-03-28（toolchain1 言語別 backend 契約 → toolchain では spec-emitter-guide.md + profiles に統合）:
   - [20260328-spec-java-native-backend.md](./20260328-spec-java-native-backend.md)
   - [20260328-spec-lua-native-backend.md](./20260328-spec-lua-native-backend.md)
   - [20260328-spec-zig-native-backend.md](./20260328-spec-zig-native-backend.md)

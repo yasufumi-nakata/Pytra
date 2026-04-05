@@ -33,7 +33,7 @@ def _build_current_selfhost_east3_paths(tmpdir: Path) -> list[str]:
     for p in sorted((ROOT / "test" / "selfhost" / "east3-opt").rglob("*.east3")):
         data = json.loads(p.read_text(encoding="utf-8"))
         source_path = data.get("source_path", "")
-        if isinstance(source_path, str) and source_path.startswith("src/toolchain2/"):
+        if isinstance(source_path, str) and source_path.startswith("src/toolchain/"):
             inputs.append(ROOT / source_path)
     inputs = sorted(dict.fromkeys(inputs))
 

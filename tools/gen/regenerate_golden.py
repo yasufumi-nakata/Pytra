@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""toolchain2 パイプラインで golden file を全段再生成する。
+"""toolchain パイプラインで golden file を全段再生成する。
 
-parse → resolve → compile → optimize の全段を toolchain2 で実行し、
+parse → resolve → compile → optimize の全段を toolchain で実行し、
 各段の出力で golden を上書きする。
 
 使い方:
@@ -309,7 +309,7 @@ def main() -> int:
         if tok == "-h" or tok == "--help":
             print("usage: regenerate_golden.py [--case-root=fixture|sample|stdlib|pytra|all] [--progress-every=N]")
             print()
-            print("Regenerates golden files using toolchain2 pipeline (parse→resolve→compile→optimize).")
+            print("Regenerates golden files using toolchain pipeline (parse→resolve→compile→optimize).")
             print("Default progress: every 10 files (use 0 to disable).")
             print("Default: --case-root=all")
             return 0

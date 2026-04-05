@@ -239,7 +239,7 @@ class CodeEmitter:
 
 ## 9. 実装
 
-- `toolchain2/emit/common/code_emitter.py` の `load_runtime_mapping()` が読み込む
+- `toolchain/emit/common/code_emitter.py` の `load_runtime_mapping()` が読み込む
 - `RuntimeMapping` dataclass に格納される
 - `resolve_runtime_call()` が runtime_call 解決に使用する
 - `is_implicit_cast()` が cast 出力判定に使用する

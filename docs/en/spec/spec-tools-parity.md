@@ -17,7 +17,7 @@
   - Note: Before each case runs, same-named artifacts under `sample/out`, `test/out`, and `out` are deleted to prevent stale-output mixups.
   - Note: On timeout, the process group is killed as a unit so child processes like `*_swift.out` are not left orphaned.
 - `tools/check/runtime_parity_check_fast.py`
-  - Purpose: A fast version of `runtime_parity_check.py`. Replaces the transpile stage with in-memory API calls to the toolchain2 Python API, eliminating process startup and intermediate file I/O.
+  - Purpose: A fast version of `runtime_parity_check.py`. Replaces the transpile stage with in-memory API calls to the toolchain Python API, eliminating process startup and intermediate file I/O.
   - Main options: Same as `runtime_parity_check.py` (`--targets`, `--case-root`, `--category`, `--all-samples`, `--opt-level`, `--cmd-timeout-sec`, `--summary-json`)
   - Limitation: `--cpp-codegen-opt` is not supported. Supported targets are currently `cpp` and `go`.
   - Usage: `PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py [options]`
@@ -38,15 +38,15 @@
 
 ### Solution
 
-Each stage of toolchain2 exposes a dict-in / dict-out Python API:
+Each stage of toolchain exposes a dict-in / dict-out Python API:
 
 ```python
-from toolchain2.parse.py.parse_python import parse_python_file       # → dict (EAST1)
-from toolchain2.resolve.py.resolver import resolve_east1_to_east2     # → dict (EAST2)
-from toolchain2.optimize.optimizer import optimize_east3_document     # → dict (EAST3-opt)
-from toolchain2.link.linker import link_modules                       # → LinkResult
-from toolchain2.emit.go.emitter import emit_go_module                 # → str (Go source)
-from toolchain2.emit.cpp.emitter import emit_cpp_module               # → str (C++ source)
+from toolchain.parse.py.parse_python import parse_python_file       # → dict (EAST1)
+from toolchain.resolve.py.resolver import resolve_east1_to_east2     # → dict (EAST2)
+from toolchain.optimize.optimizer import optimize_east3_document     # → dict (EAST3-opt)
+from toolchain.link.linker import link_modules                       # → LinkResult
+from toolchain.emit.go.emitter import emit_go_module                 # → str (Go source)
+from toolchain.emit.cpp.emitter import emit_cpp_module               # → str (C++ source)
 ```
 
 By calling these APIs directly instead of CLI subprocesses in parity checks, disk writes of intermediate files can be eliminated. Running parse → resolve → compile → optimize → link → emit in-memory within a single process provides a significant speedup.
@@ -86,7 +86,7 @@ PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
 python3 tools/gen/gen_sample_benchmark.py
 ```
 
-Note: `PYTHONPATH=src:tools/check` is required to resolve toolchain2 and runtime_parity_check modules.
+Note: `PYTHONPATH=src:tools/check` is required to resolve toolchain and runtime_parity_check modules.
 
 `--benchmark` uses warmup=1, repeat=3, and takes the median. Normal parity checks still run once. Results are recorded in `elapsed_sec` for each case in `.parity-results/<target>_sample.json`, and `gen_sample_benchmark.py` is automatically run at the end of the parity check (only when 10+ minutes have passed since the last generation).
 

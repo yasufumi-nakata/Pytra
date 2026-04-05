@@ -74,14 +74,14 @@ def _collect_golden_params() -> list[tuple[str, str, Path, Path]]:
         except Exception:
             continue
         sp_raw = doc.get("source_path", "")
-        # Normalize absolute or relative source paths to "src/toolchain2/..." form
-        _tc_suffix = "/src/toolchain2/"
-        _tc_prefix = "src/toolchain2/"
+        # Normalize absolute or relative source paths to "src/toolchain/..." form
+        _tc_suffix = "/src/toolchain/"
+        _tc_prefix = "src/toolchain/"
         if sp_raw.startswith(_tc_prefix):
             sp = sp_raw
         else:
             idx = sp_raw.find(_tc_suffix)
-            sp = ("src/toolchain2/" + sp_raw[idx + len(_tc_suffix):]) if idx >= 0 else ""
+            sp = ("src/toolchain/" + sp_raw[idx + len(_tc_suffix):]) if idx >= 0 else ""
         if not sp:
             continue
         # Use full module_id (toolchain.* prefix) to match golden file naming

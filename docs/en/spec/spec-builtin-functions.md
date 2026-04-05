@@ -421,7 +421,7 @@ v2 では `module`, `symbol`, `tag` を **全て必須** とする。理由:
 
 - v1（`@extern` 引数なし）は現行 `src/pytra/std/` で引き続き使用
 - v2（`extern_fn` / `extern_var` / `extern_class`）は `src/include/py/pytra/` で使用
-- `toolchain2/` のコードでは v2 を必須とする
+- `toolchain/` のコードでは v2 を必須とする
 
 ### 10.8 メリット
 

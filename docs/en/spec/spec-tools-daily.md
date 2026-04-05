@@ -73,7 +73,7 @@
 ## 4. Golden File Generation
 
 - `tools/gen/generate_golden.py`
-  - Purpose: Use the current `toolchain/` to batch-generate golden files for each stage (east1 / east2 / east3 / east3-opt) under `test/`. These are the reference data for verifying whether `toolchain2/`'s own implementation matches.
+  - Purpose: Use the current `toolchain/` to batch-generate golden files for each stage (east1 / east2 / east3 / east3-opt) under `test/`. These are the reference data for verifying whether `toolchain/`'s own implementation matches.
   - Main options: `--stage={east1,east2,east3,east3-opt}`, `-o OUTPUT_DIR`, `--from=python`, `--sample-dir`
   - Design document: `docs/ja/plans/plan-pipeline-redesign.md` §6.1
   - Note: Golden file generation must be centralized in this tool. Individual agents must not generate golden files with their own scripts.

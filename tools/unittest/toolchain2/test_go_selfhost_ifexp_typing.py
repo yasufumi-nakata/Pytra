@@ -32,7 +32,7 @@ class GoSelfhostIfExpTypingTests(unittest.TestCase):
         self.assertIn("type JsonVal = any", go_code)
 
     def test_selfhost_emitter_coerces_isinstance_guarded_jsonval_ternaries(self) -> None:
-        east3 = _build_east3_for(ROOT / "src" / "toolchain2" / "emit" / "go" / "emitter.py")
+        east3 = _build_east3_for(ROOT / "src" / "toolchain" / "emit" / "go" / "emitter.py")
 
         go_code = emit_go_module(east3)
 

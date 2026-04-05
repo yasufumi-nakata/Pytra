@@ -121,7 +121,7 @@ def _build_current_selfhost_east3_paths(tmpdir: Path) -> list[str]:
     for p in sorted((ROOT / "test" / "selfhost" / "east3-opt").rglob("*.east3")):
         data = json.loads(p.read_text(encoding="utf-8"))
         source_path = data.get("source_path", "")
-        if isinstance(source_path, str) and source_path.startswith("src/toolchain2/"):
+        if isinstance(source_path, str) and source_path.startswith("src/toolchain/"):
             inputs.append(ROOT / source_path)
     inputs = sorted(dict.fromkeys(inputs))
 
@@ -399,7 +399,7 @@ def has_key(env: dict[str, int], name: str) -> bool:
             paths = _build_current_selfhost_east3_paths(Path(tmp))
             self.assertEqual(len(paths), 37)
 
-            with self.assertRaisesRegex(RuntimeError, "toolchain2\\.compile\\.jv"):
+            with self.assertRaisesRegex(RuntimeError, "toolchain\\.compile\\.jv"):
                 link_modules(paths, target="go", dispatch_mode="native")
 
             try:

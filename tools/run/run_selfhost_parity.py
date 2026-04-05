@@ -223,7 +223,7 @@ def _build_selfhost_binary(selfhost_lang: str) -> tuple[Path | None, str]:
     bin_dir.mkdir(parents=True, exist_ok=True)
     bin_path = bin_dir / selfhost_lang
 
-    # Step 1: emit the toolchain2 CLI to selfhost_lang via pytra-cli2
+    # Step 1: emit the toolchain CLI to selfhost_lang via pytra-cli2
     cli2 = ROOT / "src" / "pytra-cli2.py"
     entry = ROOT / "src" / "pytra-cli2.py"
     if not entry.exists():
@@ -643,7 +643,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--selfhost-lang", required=True,
-        help="Language toolchain2 is compiled to (python | cpp | go | rs | ts | js)"
+        help="Language toolchain is compiled to (python | cpp | go | rs | ts | js)"
     )
     parser.add_argument(
         "--emit-target", default="",

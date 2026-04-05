@@ -14,10 +14,10 @@
 
 ## 2. 配置
 
-全言語のプロファイルを `src/toolchain2/emit/profiles/` に集約する。言語ごとにディレクトリを分けない。
+全言語のプロファイルを `src/toolchain/emit/profiles/` に集約する。言語ごとにディレクトリを分けない。
 
 ```
-src/toolchain2/emit/profiles/
+src/toolchain/emit/profiles/
   core.json          # 全言語共通の既定値
   cpp.json           # C++
   go.json            # Go
@@ -39,16 +39,16 @@ src/toolchain2/emit/profiles/
   zig.json           # Zig
 ```
 
-ファイル名は `<target名>.json` で固定。`target名` は `pytra-cli2 --target` に渡す文字列と一致させる。
+ファイル名は `<target名>.json` で固定。`target名` は `pytra-cli --target` に渡す文字列と一致させる。
 
 各言語の JSON には `types`, `operators`, `runtime_calls`, `syntax`, `lowering` を全て含める。分割ファイル（`types.json`, `operators.json` 等）は廃止し、1言語1ファイルに統合する。`core.json` の既定値を言語 JSON が上書きする。
 
-旧配置（`src/toolchain/emit/<lang>/profiles/`）は互換として残すが、正本は `src/toolchain2/emit/profiles/` とする。
+旧配置（`src/toolchain/emit/<lang>/profiles/`）は互換として残すが、正本は `src/toolchain/emit/profiles/` とする。
 
 ## 3. ロード順序
 
-1. `src/toolchain2/emit/profiles/core.json`（全言語共通の既定値）
-2. `src/toolchain2/emit/profiles/<target>.json`（言語固有の上書き）
+1. `src/toolchain/emit/profiles/core.json`（全言語共通の既定値）
+2. `src/toolchain/emit/profiles/<target>.json`（言語固有の上書き）
 3. CLI 上書き（必要時）
 
 後勝ちマージを原則とする。`core.json` の既定値を言語 JSON が上書きし、CLI がさらに上書きする。`include` による分割ファイル参照は廃止。

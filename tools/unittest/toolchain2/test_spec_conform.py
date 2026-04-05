@@ -509,8 +509,8 @@ type Scalar = int | float
         self.assertEqual(east1.get("kind"), "Module")
         self.assertTrue(any(node.get("kind") == "ClassDef" and node.get("name") == "JsonValue" for node in _walk(east1)))
 
-    def test_parse_python_file_accepts_selfhost_toolchain2_source_with_typing_aliases(self) -> None:
-        east1 = parse_python_file(str(ROOT / "src" / "toolchain2" / "common" / "jv.py"))
+    def test_parse_python_file_accepts_selfhost_toolchain_source_with_typing_aliases(self) -> None:
+        east1 = parse_python_file(str(ROOT / "src" / "toolchain" / "common" / "jv.py"))
         self.assertEqual(east1.get("kind"), "Module")
         self.assertTrue(any(node.get("kind") == "TypeAlias" for node in _walk(east1)))
 

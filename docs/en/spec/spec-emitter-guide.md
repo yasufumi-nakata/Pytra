@@ -6,7 +6,7 @@ This document describes the conventions to follow when implementing a new target
 
 ## 0. Authoritative Pipeline
 
-**The authoritative source for emitters is `src/toolchain2/emit/<lang>/`.**
+**The authoritative source for emitters is `src/toolchain/emit/<lang>/`.**
 
 - Use `runtime_parity_check_fast.py` for parity checks.
 
@@ -83,7 +83,7 @@ EAST3 reaching an emitter must satisfy the following. If it does not, it is a bu
 
 ### 1.3 Code-Writing Rules for Emitter Implementations
 
-The emitter's own code (Python files under `src/toolchain2/emit/`) is a selfhost target. Observe the following:
+The emitter's own code (Python files under `src/toolchain/emit/`) is a selfhost target. Observe the following:
 
 - **Write return-type annotations on functions that return values.** `-> None` may be omitted (the body automatically returns `None` if it contains no `return <value>`). Having `return <value>` without an annotation causes resolve to stop with `inference_failure`.
 - **Do not import Python standard modules other than `pytra.std.*`.**
@@ -239,23 +239,23 @@ elif adapter == "builtin":
 
 ### 2.1 CLI Entry Point
 
-The `-emit` / `-build` commands of `pytra-cli2.py` invoke each language's emitter via **subprocess**. They do not import it directly.
+The `-emit` / `-build` commands of `pytra-cli.py` invoke each language's emitter via **subprocess**. They do not import it directly.
 
 ```
-pytra-cli2.py -build --target cpp input.py
+pytra-cli.py -build --target cpp input.py
   → parse → resolve → compile → optimize → link → manifest.json
-  → subprocess: python3 -m toolchain2.emit.cpp.cli manifest.json -o out/
+  → subprocess: python3 -m toolchain.emit.cpp.cli manifest.json -o out/
 ```
 
-This ensures that `pytra-cli2.py` does not load emitters for languages it does not use (preserving startup speed).
+This ensures that `pytra-cli.py` does not load emitters for languages it does not use (preserving startup speed).
 
 ### 2.2 Per-Language cli.py
 
-Each language provides `src/toolchain2/emit/<lang>/cli.py`. Its contents simply pass the emit function to the common runner:
+Each language provides `src/toolchain/emit/<lang>/cli.py`. Its contents simply pass the emit function to the common runner:
 
 ```python
-from toolchain2.emit.common.cli_runner import run_emit_cli
-from toolchain2.emit.<lang>.emitter import emit_<lang>_module
+from toolchain.emit.common.cli_runner import run_emit_cli
+from toolchain.emit.<lang>.emitter import emit_<lang>_module
 
 if __name__ == "__main__":
     import sys
@@ -282,7 +282,7 @@ Languages such as C++ that need to branch on `module_kind` read `module_kind` fr
 
 ### 2.5 Prohibited Actions
 
-- `pytra-cli2.py` importing each language's emitter directly (call cli.py via subprocess instead).
+- `pytra-cli.py` importing each language's emitter directly (call cli.py via subprocess instead).
 - cli.py independently implementing manifest reading or a module loop (use the common runner).
 - The common runner branching on `module_kind` (that is the internal responsibility of each language's emit function).
 
@@ -357,7 +357,7 @@ Whether `png` in `from pytra.utils import png` is a submodule or a symbol is det
 Aliases such as `from pytra.std import os_path as path` are resolved with `build_import_alias_map`:
 
 ```python
-from toolchain2.emit.common.code_emitter import build_import_alias_map
+from toolchain.emit.common.code_emitter import build_import_alias_map
 
 alias_map = build_import_alias_map(east_doc.get("meta", {}))
 # {"path": "pytra.std.os_path", "math": "pytra.std.math"}
@@ -554,7 +554,7 @@ emit/
 This ensures:
 - Matches `sample/java/01_mandelbrot.java` (no renaming needed)
 - Compilable with `javac *.java` and runnable with `java Main`
-- No Java-specific renaming logic needed in `regenerate_samples.py` or `pytra-cli2.py`
+- No Java-specific renaming logic needed in `regenerate_samples.py` or `pytra-cli.py`
 
 ## 5.1 Unified Naming for @extern Delegation
 
@@ -693,7 +693,7 @@ Place a `mapping.json` in each language's runtime to map EAST3 `runtime_call` va
 The `CodeEmitter` base class reads this file and resolves names via `resolve_runtime_call()`.
 
 - Location: `src/runtime/<lang>/mapping.json`
-- Loading: `load_runtime_mapping()` in `toolchain2/emit/common/code_emitter.py`
+- Loading: `load_runtime_mapping()` in `toolchain/emit/common/code_emitter.py`
 - Naming convention: `py_<type>_<method>` format (e.g., `py_str_strip`, `py_dict_get`)
 
 **Official specification: [spec-runtime-mapping.md](./spec-runtime-mapping.md)**
@@ -807,7 +807,7 @@ Functions usable even in emitters that do not inherit from `CodeEmitter`:
 | `mutable_param_name(name)` | Rename a parameter (`data` → `data_`) |
 
 ```python
-from toolchain2.emit.common.code_emitter import (
+from toolchain.emit.common.code_emitter import (
     build_import_alias_map,
     collect_reassigned_params,
     mutable_param_name,
@@ -1248,7 +1248,7 @@ Golden files and the runtime east cache are not managed by git. See **[Developme
 
 All can be replaced by `runtime_parity_check_fast.py --targets <lang>`. Creating custom scripts means results are not accumulated in `.parity-results/` and are not reflected in the progress matrix.
 
-The transpile stage is executed via in-memory calls to the toolchain2 Python API, eliminating process startup and disk I/O.
+The transpile stage is executed via in-memory calls to the toolchain Python API, eliminating process startup and disk I/O.
 
 ```bash
 # sample parity
@@ -1355,7 +1355,7 @@ Even if emit succeeds alone, placeholder code (e.g., `nil /* list comprehension 
 
 ### Selfhost Parity
 
-The ultimate selfhost goal is to "transpile toolchain2 itself to the target language, and use that binary to convert fixture/sample with parity PASS." The verification tool is `tools/run/run_selfhost_parity.py`.
+The ultimate selfhost goal is to "transpile toolchain itself to the target language, and use that binary to convert fixture/sample with parity PASS." The verification tool is `tools/run/run_selfhost_parity.py`.
 
 ```bash
 # fixture parity with C++ selfhost
@@ -1372,7 +1372,7 @@ python3 tools/run/run_selfhost_parity.py --selfhost-lang python
 
 Selfhost completion criteria require all of the following to pass:
 
-1. **emit**: All toolchain2 `.py` files can be emitted to the target language
+1. **emit**: All toolchain `.py` files can be emitted to the target language
 2. **build**: Generated code can be compiled and linked
 3. **golden**: Emit results match golden (regression test)
 4. **fixture parity**: Use the selfhost binary to convert fixtures; stdout + artifact match Python execution results
@@ -1384,7 +1384,7 @@ Golden alone (regression test for emit success) does not constitute selfhost com
 
 Checklist when implementing a new emitter:
 
-- [ ] `emit_<lang>_module()` is defined in `src/toolchain2/emit/<lang>/emitter.py`
+- [ ] `emit_<lang>_module()` is defined in `src/toolchain/emit/<lang>/emitter.py`
 - [ ] No hard-coded module names such as `pytra.std.*` in import paths
 - [ ] Aliases are resolved using `build_import_alias_map`
 - [ ] Relative paths for submodules are generated using `emit_context.root_rel_prefix`

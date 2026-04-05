@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
-TOOLCHAIN2_ROOT = ROOT / "src" / "toolchain2"
+TOOLCHAIN2_ROOT = ROOT / "src" / "toolchain"
 
 
 def _missing_return_annotations(root: Path) -> list[str]:
@@ -24,6 +24,6 @@ def _missing_return_annotations(root: Path) -> list[str]:
 
 
 class SelfhostReturnAnnotationsTest(unittest.TestCase):
-    def test_toolchain2_functions_have_explicit_return_annotations(self) -> None:
+    def test_toolchain_functions_have_explicit_return_annotations(self) -> None:
         missing = _missing_return_annotations(TOOLCHAIN2_ROOT)
         self.assertEqual(missing, [])

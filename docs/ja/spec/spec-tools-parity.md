@@ -17,7 +17,7 @@
   - 補足: ケース実行前に `sample/out`, `test/out`, `out` の同名 artifact を削除し、前回実行物の取り違えを防止する。
   - 補足: timeout 時は process-group 単位で kill し、`*_swift.out` などの子プロセス孤立を許容しない。
 - `tools/check/runtime_parity_check_fast.py`
-  - 目的: `runtime_parity_check.py` の高速版。transpile 段を toolchain2 Python API のインメモリ呼び出しに置き換え、プロセス起動と中間ファイル I/O を省略する。
+  - 目的: `runtime_parity_check.py` の高速版。transpile 段を toolchain Python API のインメモリ呼び出しに置き換え、プロセス起動と中間ファイル I/O を省略する。
   - 主要オプション: `runtime_parity_check.py` と同一（`--targets`, `--case-root`, `--category`, `--all-samples`, `--opt-level`, `--cmd-timeout-sec`, `--summary-json`）
   - 制限: `--cpp-codegen-opt` は未対応。対応ターゲットは現時点で `cpp` と `go`。
   - 実行方法: `PYTHONPATH=src:tools python3 tools/check/runtime_parity_check_fast.py [options]`
@@ -38,15 +38,15 @@
 
 ### 解決策
 
-toolchain2 の各段は dict in / dict out の Python API を持つ:
+toolchain の各段は dict in / dict out の Python API を持つ:
 
 ```python
-from toolchain2.parse.py.parse_python import parse_python_file       # → dict (EAST1)
-from toolchain2.resolve.py.resolver import resolve_east1_to_east2     # → dict (EAST2)
-from toolchain2.optimize.optimizer import optimize_east3_document     # → dict (EAST3-opt)
-from toolchain2.link.linker import link_modules                       # → LinkResult
-from toolchain2.emit.go.emitter import emit_go_module                 # → str (Go source)
-from toolchain2.emit.cpp.emitter import emit_cpp_module               # → str (C++ source)
+from toolchain.parse.py.parse_python import parse_python_file       # → dict (EAST1)
+from toolchain.resolve.py.resolver import resolve_east1_to_east2     # → dict (EAST2)
+from toolchain.optimize.optimizer import optimize_east3_document     # → dict (EAST3-opt)
+from toolchain.link.linker import link_modules                       # → LinkResult
+from toolchain.emit.go.emitter import emit_go_module                 # → str (Go source)
+from toolchain.emit.cpp.emitter import emit_cpp_module               # → str (C++ source)
 ```
 
 parity check で CLI サブプロセスの代わりにこれらの API を直接呼べば、中間ファイルのディスク書き出しを省略できる。1 プロセス内で parse → resolve → compile → optimize → link → emit をインメモリで回すことで大幅に高速化される。
@@ -86,7 +86,7 @@ PYTHONPATH=src:tools/check python3 tools/check/runtime_parity_check_fast.py \
 python3 tools/gen/gen_sample_benchmark.py
 ```
 
-注: `PYTHONPATH=src:tools/check` は toolchain2 と runtime_parity_check モジュールの解決に必要。
+注: `PYTHONPATH=src:tools/check` は toolchain と runtime_parity_check モジュールの解決に必要。
 
 `--benchmark` は warmup=1, repeat=3, 中央値で計測する。通常の parity check は 1 回実行のまま。計測結果は `.parity-results/<target>_sample.json` の各ケースの `elapsed_sec` に記録され、parity check 末尾で `gen_sample_benchmark.py` が自動実行される（前回生成から10分以上経過時のみ）。
 

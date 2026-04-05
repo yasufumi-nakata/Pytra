@@ -2,7 +2,7 @@
 """Fast runtime parity check using in-memory pipeline (no CLI subprocess for transpile).
 
 This is the high-speed variant of runtime_parity_check.py.  The transpile stage
-calls toolchain2 Python APIs directly instead of spawning ``python pytra-cli.py``
+calls toolchain Python APIs directly instead of spawning ``python pytra-cli.py``
 subprocesses, eliminating per-case process startup and intermediate file I/O.
 
 Compile + run still uses subprocesses (g++, go run, etc.).
@@ -34,7 +34,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-# --- toolchain2 imports (in-memory pipeline) ---
+# --- toolchain imports (in-memory pipeline) ---
 from toolchain.common.jv import deep_copy_json  # type: ignore
 from toolchain.compile.lower import lower_east2_to_east3  # type: ignore
 from toolchain.emit.cpp.emitter import emit_cpp_module  # type: ignore

@@ -77,7 +77,7 @@ Its three purposes are:
 ### 1.x Golden File Generation
 
 - `tools/gen/generate_golden.py`
-  - Purpose: use the current `toolchain/` to generate golden files for each stage (`east1` / `east2` / `east3` / `east3-opt`) under `test/` in one shot. These are the reference data used to verify whether `toolchain2/`'s own implementation matches the golden files.
+  - Purpose: use the current `toolchain/` to generate golden files for each stage (`east1` / `east2` / `east3` / `east3-opt`) under `test/` in one shot. These are the reference data used to verify whether `toolchain/`'s own implementation matches the golden files.
   - Main options: `--stage={east1,east2,east3,east3-opt}`, `-o OUTPUT_DIR`, `--from=python`, `--sample-dir`
   - Design document: `docs/ja/plans/plan-pipeline-redesign.md` §6.1
   - Note: golden file generation must be centralized in this tool. Agents must not create golden files with ad hoc scripts.
@@ -86,13 +86,13 @@ Its three purposes are:
 
 The old selfhost tool set (`build_selfhost.py`, `prepare_selfhost_source.py`, `check_selfhost_*.py`, etc.) has been deleted (2026-04-02).
 
-In the new pipeline (`toolchain2/`), selfhost is designed to complete within the normal build pipeline (`pytra-cli2 -build --target=cpp`), making dedicated tools unnecessary. See `docs/ja/plans/plan-pipeline-redesign.md` for details.
+In the new pipeline (`toolchain/`), selfhost is designed to complete within the normal build pipeline (`pytra-cli2 -build --target=cpp`), making dedicated tools unnecessary. See `docs/ja/plans/plan-pipeline-redesign.md` for details.
 
 ### 2.1 Selfhost Golden (P0-SELFHOST-GOLDEN-UNIFIED)
 
 | Tool | Purpose |
 |---|---|
-| `tools/gen/regenerate_selfhost_golden.py` | Emit all toolchain2 modules from east3-opt golden to each target language and write results to `test/selfhost/<lang>/`. Reports added/removed/changed files. |
+| `tools/gen/regenerate_selfhost_golden.py` | Emit all toolchain modules from east3-opt golden to each target language and write results to `test/selfhost/<lang>/`. Reports added/removed/changed files. |
 | `tools/unittest/selfhost/test_selfhost_golden.py` | Regression test: verify golden files match current emitter output. Skips modules that time out (large east3-opt files). |
 
 Usage:
