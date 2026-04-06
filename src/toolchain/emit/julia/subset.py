@@ -324,6 +324,10 @@ def _owner_type_runtime_prefix(owner_type: str) -> str:
     return owner_type
 
 
+def _is_io_owner_type(owner_type: str) -> bool:
+    return owner_type in {"IOBase", "PyFile", "TextIOWrapper", "BufferedWriter", "BufferedReader"}
+
+
 def _import_supported(names: list[JsonVal]) -> bool:
     return all(isinstance(item, dict) and _str(item, "name") != "" for item in names)
 
@@ -978,6 +982,20 @@ class JuliaSubsetRenderer:
             super_call = self._render_super_method_call(owner_type, attr, args)
             if super_call != "":
                 return super_call
+        if _is_io_owner_type(owner_type):
+            if attr == "__enter__" and len(args) == 0:
+                return "__py_io_enter(" + owner + ")"
+            if attr == "__exit__" and len(args) == 3:
+                return "__py_io_exit(" + ", ".join([owner] + args) + ")"
+            if attr == "read":
+                if len(args) == 0:
+                    return "read(" + owner + ", String)"
+                if len(args) == 1:
+                    return "read(" + owner + ", " + args[0] + ")"
+            if attr == "write" and len(args) >= 1:
+                return "write(" + ", ".join([owner] + args) + ")"
+            if attr == "close" and len(args) == 0:
+                return "close(" + owner + ")"
         mapped_method = self._render_mapped_method_call(node, owner, args)
         if mapped_method != "":
             return mapped_method
