@@ -996,40 +996,67 @@ export function pyFmt(value: unknown, spec: string): string {
   return result;
 }
 
-/** Python の open 相当（バイナリ書き込み専用）。 */
-export function open(filePath: string, _mode?: string): { write(data: number[]): void; close(): void } {
-  const dir = _getpath().dirname(filePath);
-  if (dir !== "" && dir !== ".") {
-    _getfs().mkdirSync(dir, { recursive: true });
+export class PyFile {
+  private readonly _path: string;
+  private readonly _mode: string;
+
+  constructor(filePath: string, mode: string = "r") {
+    this._path = filePath;
+    this._mode = mode;
+    const dir = _getpath().dirname(filePath);
+    if (dir !== "" && dir !== ".") {
+      _getfs().mkdirSync(dir, { recursive: true });
+    }
+    if (mode === "w" || mode === "wb") {
+      _getfs().writeFileSync(filePath, mode === "wb" ? new Uint8Array(0) : "");
+    } else if ((mode === "a" || mode === "ab") && !_getfs().existsSync(filePath)) {
+      _getfs().writeFileSync(filePath, mode === "ab" ? new Uint8Array(0) : "");
+    }
   }
-  const chunks: Uint8Array[] = [];
-  return {
-    write(data: number[]): void {
-      if (data instanceof Uint8Array) {
-        chunks.push(data);
+
+  __enter__(): PyFile { return this; }
+  __exit__(_excType: unknown, _excVal: unknown, _excTb: unknown): void { this.close(); }
+
+  write(data: string | number[] | Uint8Array): number {
+    if (typeof data === "string") {
+      _getfs().appendFileSync(this._path, data, "utf8");
+      return data.length;
+    }
+    let bytes: Uint8Array;
+    if (data instanceof Uint8Array) {
+      bytes = data;
+    } else {
+      const snap = (data as unknown as { _snap?: () => Uint8Array })._snap;
+      if (typeof snap === "function") {
+        bytes = snap.call(data);
       } else {
-        // Check for Proxy over _GrowBytes (has _snap method)
-        const snap = (data as unknown as { _snap?: () => Uint8Array })._snap;
-        if (typeof snap === 'function') {
-          chunks.push(snap.call(data));
-        } else if (Array.isArray(data)) {
-          chunks.push(new Uint8Array(data));
-        }
+        bytes = new Uint8Array(data);
       }
-    },
-    close(): void {
-      const totalLen = chunks.reduce((s, c) => s + c.length, 0);
-      const out = new Uint8Array(totalLen);
-      let offset = 0;
-      for (const chunk of chunks) { out.set(chunk, offset); offset += chunk.length; }
-      _getfs().writeFileSync(filePath, out);
-    },
-  };
+    }
+    _getfs().appendFileSync(this._path, bytes);
+    return bytes.length;
+  }
+
+  read(_count?: number): string | number[] {
+    if (this._mode.includes("b")) {
+      const out = _getfs().readFileSync(this._path);
+      return Array.from(out as Uint8Array, (item) => item & 255);
+    }
+    return _getfs().readFileSync(this._path, "utf8");
+  }
+
+  close(): void {
+    // Sync helpers do not keep an open file handle.
+  }
+}
+
+/** Python の open 相当。 */
+export function open(filePath: string, mode: string = "r"): PyFile {
+  return new PyFile(filePath, mode);
 }
 
 /** Alias for open(), used by compiled pytra.utils modules. */
 export const pyopen = open;
-export type PyFile = ReturnType<typeof open>;
 
 // ---------------------------------------------------------------------------
 // Python math module wrappers (py-prefixed for emitter mapping)
@@ -1253,7 +1280,10 @@ export class PyPath {
     const d = n.lastIndexOf(".");
     return d > 0 ? n.slice(d) : "";
   }
-  joinpath(other: string): PyPath { return new PyPath(this._p + "/" + other); }
+  joinpath(...parts: Array<string | PyPath>): PyPath {
+    const suffix = parts.map((part) => part instanceof PyPath ? part._p : String(part)).join("/");
+    return new PyPath(this._p + "/" + suffix);
+  }
   toString(): string { return this._p; }
   exists(): boolean { try { return _getfs().existsSync(this._p); } catch { return false; } }
   mkdir(parents: boolean = false, exist_ok: boolean = false): void {
@@ -1321,7 +1351,7 @@ export function pyisdir(p: string): boolean {
 // ---------------------------------------------------------------------------
 // time module
 // ---------------------------------------------------------------------------
-export function perf_counter(): number {
+export function pyPerfCounter(): number {
   if (typeof performance !== "undefined") return performance.now() / 1000;
   return Date.now() / 1000;
 }
@@ -1591,14 +1621,9 @@ export function field<T>(factory: (() => T) | T): T {
 /** Placeholder for Python Ellipsis (...) in type annotations like tuple[str, ...]. */
 export type ___ = any;
 
-// Python built-in type aliases for isinstance checks and type annotations
-// Each is both a callable value (for use as key= functions) and a type alias.
-export const bool = Boolean;
-export const str = String;
+// Python built-in type aliases for annotations.
 export type str = string;
-export const int = Number;
 export type int = number;
-export const float = Number;
 export type float = number;
 
 // Python list.insert(i, val)

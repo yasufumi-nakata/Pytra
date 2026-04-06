@@ -354,17 +354,47 @@ def build_runtime_import_map(
             else:
                 resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping, module_id=module_id)
                 if (
+                    resolved_symbol == symbol_name
+                    and isinstance(module_id, str)
+                    and module_id != ""
+                    and "." not in module_id
+                ):
+                    std_module_id = "pytra.std." + module_id
+                    std_resolved = resolve_runtime_symbol_name(symbol_name, mapping, module_id=std_module_id)
+                    if std_resolved not in ("", symbol_name, mapping.builtin_prefix + symbol_name):
+                        resolved_symbol = std_resolved
+                if (
                     resolved_symbol == mapping.builtin_prefix + symbol_name
                     and symbol_name not in mapping.calls
                     and (module_id + "." + symbol_name) not in mapping.calls
                     and not symbol_name.startswith(mapping.builtin_prefix)
                 ):
-                    resolved_symbol = symbol_name
+                    keep_prefixed = False
+                    if isinstance(module_id, str) and module_id != "" and "." not in module_id:
+                        std_key = "pytra.std." + module_id + "." + symbol_name
+                        keep_prefixed = std_key in mapping.calls
+                    if not keep_prefixed:
+                        resolved_symbol = symbol_name
                 if resolved_symbol == "":
                     # Same name in py_runtime/native file (e.g. deque, Path, etc.)
                     resolved_symbol = symbol_name
         else:
             resolved_symbol = symbol_name
+            if should_skip_module(module_id, mapping) or should_skip_module(full_module_id, mapping):
+                resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping, module_id=module_id)
+                if (
+                    resolved_symbol == mapping.builtin_prefix + symbol_name
+                    and isinstance(module_id, str)
+                    and module_id != ""
+                    and "." not in module_id
+                ):
+                    std_key = "pytra.std." + module_id + "." + symbol_name
+                    if std_key in mapping.calls:
+                        mapped_std = mapping.calls[std_key]
+                        if isinstance(mapped_std, str) and mapped_std != "":
+                            resolved_symbol = mapped_std
+                    else:
+                        resolved_symbol = symbol_name
         runtime_imports[local_name] = resolved_symbol
 
     return runtime_imports

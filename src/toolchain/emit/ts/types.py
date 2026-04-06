@@ -46,6 +46,8 @@ _TYPE_MAP: dict[str, str] = {
     "IndexError": "Error",
     "KeyError": "Error",
     "Path": "PyPath",
+    "PyFile": "any",
+    "TextIOWrapper": "any",
 }
 
 _TS_KEYWORDS: set[str] = {
@@ -93,7 +95,7 @@ TS_BUILTIN_RUNTIME_SYMBOLS: tuple[str, ...] = (
     "ArgumentParser",
     "pywrite_rgb_png",
     "pyopen", "PyFile",
-    "perf_counter",
+    "pyPerfCounter",
     "sys", "pyset_argv", "pyset_path",
     "sub", "match", "search", "findall", "split",
     "pyglob",
@@ -103,7 +105,6 @@ TS_BUILTIN_RUNTIME_SYMBOLS: tuple[str, ...] = (
     "pyTuple", "pyTupleToString",
     "dict", "list", "set_", "field", "___",
     "__file__",
-    "bool", "str", "int", "float",
 )
 
 TS_BUILTIN_EXCEPTION_NAMES: frozenset[str] = frozenset((

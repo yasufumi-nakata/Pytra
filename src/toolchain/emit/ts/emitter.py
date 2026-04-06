@@ -625,52 +625,77 @@ def _resolve_runtime_call_name(ctx: EmitContext, node: dict[str, JsonVal], func:
     return name
 
 
-def _translate_method_name(owner_rt: str, attr: str) -> str:
-    """Translate Python method names to TS equivalents for known container types."""
-    is_list_type = owner_rt.startswith("list[") or owner_rt == "list"
-    if not is_list_type:
-        is_list_type = owner_rt in ("bytes", "bytearray")
-    is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict"
-    is_set_type = owner_rt.startswith("set[") or owner_rt == "set"
-    is_str_type = owner_rt == "str" or owner_rt == "string"
+def _owner_runtime_mapping_key(owner_rt: str, attr: str) -> str:
+    rt = owner_rt
+    if rt.startswith("list["):
+        return "list." + attr
+    if rt in ("list", "bytes", "bytearray"):
+        return "list." + attr if rt == "list" else rt + "." + attr
+    if rt.startswith("dict[") or rt == "dict":
+        return "dict." + attr
+    if rt.startswith("set[") or rt == "set":
+        return "set." + attr
+    if rt in ("str", "string"):
+        return "str." + attr
+    return ""
 
-    if is_list_type:
-        _LIST_MAP: dict[str, str] = {}
-        _LIST_MAP["append"] = "push"
-        _LIST_MAP["pop"] = "pop"
-        _LIST_MAP["clear"] = "splice(0)"
-        _LIST_MAP["copy"] = "slice"
-        _LIST_MAP["index"] = "indexOf"
-        _LIST_MAP["count"] = "filter"
-        _LIST_MAP["reverse"] = "reverse"
-        _LIST_MAP["sort"] = "sort"
-        _LIST_MAP["insert"] = "splice"
-        _LIST_MAP["remove"] = "splice"
-        return _LIST_MAP.get(attr, attr)
-    if is_dict_type:
-        _DICT_MAP: dict[str, str] = {}
-        _DICT_MAP["get"] = "get"
-        _DICT_MAP["set"] = "set"
-        _DICT_MAP["has"] = "has"
-        _DICT_MAP["delete"] = "delete"
-        _DICT_MAP["clear"] = "clear"
-        _DICT_MAP["items"] = "entries"
-        _DICT_MAP["keys"] = "keys"
-        _DICT_MAP["values"] = "values"
-        _DICT_MAP["pop"] = "delete"
-        _DICT_MAP["update"] = "set"
-        return _DICT_MAP.get(attr, attr)
-    if is_set_type:
-        _SET_MAP: dict[str, str] = {}
-        _SET_MAP["add"] = "add"
-        _SET_MAP["discard"] = "delete"
-        _SET_MAP["remove"] = "delete"
-        _SET_MAP["pop"] = "values"
-        _SET_MAP["clear"] = "clear"
-        _SET_MAP["union"] = "union"
-        _SET_MAP["intersection"] = "intersection"
-        return _SET_MAP.get(attr, attr)
-    return attr
+
+def _expand_owner_mapped_call(ctx: EmitContext, mapped: str, owner_code: str, arg_strs: list[str]) -> str:
+    if mapped == "__LIST_APPEND__" and len(arg_strs) >= 1:
+        return owner_code + ".push(" + arg_strs[0] + ")"
+    if mapped == "__LIST_POP__":
+        if len(arg_strs) >= 1:
+            return owner_code + ".splice(" + arg_strs[0] + ", 1)[0]"
+        return owner_code + ".pop()"
+    if mapped == "__LIST_CLEAR__":
+        return owner_code + ".splice(0)"
+    if mapped == "__LIST_COPY__":
+        return owner_code + ".slice()"
+    if mapped == "__LIST_INDEX__" and len(arg_strs) >= 1:
+        return owner_code + ".indexOf(" + arg_strs[0] + ")"
+    if mapped == "__LIST_COUNT__" and len(arg_strs) >= 1:
+        return owner_code + ".filter((__item) => __item === " + arg_strs[0] + ").length"
+    if mapped == "__LIST_REVERSE__":
+        return owner_code + ".reverse()"
+    if mapped == "__LIST_SORT__":
+        return owner_code + ".sort()"
+    if mapped == "__LIST_INSERT__" and len(arg_strs) >= 2:
+        return owner_code + ".splice(" + arg_strs[0] + ", 0, " + arg_strs[1] + ")"
+    if mapped == "__LIST_REMOVE__" and len(arg_strs) >= 1:
+        return owner_code + ".splice(" + owner_code + ".indexOf(" + arg_strs[0] + "), 1)"
+    if mapped == "__LIST_EXTEND__" and len(arg_strs) >= 1:
+        return "pyextend(" + owner_code + ", " + arg_strs[0] + ")"
+    if mapped == "__DICT_GET__":
+        if len(arg_strs) >= 2:
+            return "(" + owner_code + ".get(" + arg_strs[0] + ") ?? " + arg_strs[1] + ")"
+        if len(arg_strs) >= 1:
+            return owner_code + ".get(" + arg_strs[0] + ")"
+    if mapped == "__DICT_ITEMS__":
+        return owner_code + ".entries()"
+    if mapped == "__DICT_KEYS__":
+        return "Array.from(" + owner_code + ".keys())"
+    if mapped == "__DICT_VALUES__":
+        return "Array.from(" + owner_code + ".values())"
+    if mapped == "__DICT_CLEAR__":
+        return owner_code + ".clear()"
+    if mapped == "__DICT_POP__" and len(arg_strs) >= 1:
+        return "pypop(" + owner_code + ", " + arg_strs[0] + ")"
+    if mapped == "__DICT_SETDEFAULT__" and len(arg_strs) >= 2:
+        return "pysetdefault(" + owner_code + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
+    if mapped == "__DICT_UPDATE__" and len(arg_strs) >= 1:
+        return "pyupdate(" + owner_code + ", " + arg_strs[0] + ")"
+    if mapped == "__SET_ADD__" and len(arg_strs) >= 1:
+        return owner_code + ".add(" + arg_strs[0] + ")"
+    if mapped == "__SET_DISCARD__" and len(arg_strs) >= 1:
+        return owner_code + ".delete(" + arg_strs[0] + ")"
+    if mapped == "__SET_REMOVE__" and len(arg_strs) >= 1:
+        return owner_code + ".delete(" + arg_strs[0] + ")"
+    if mapped == "__SET_CLEAR__":
+        return owner_code + ".clear()"
+    if mapped.startswith("pyStr"):
+        mapped_safe = mapped if "." in mapped else _safe_ts_ident(mapped)
+        return mapped_safe + "(" + ", ".join([owner_code] + arg_strs) + ")"
+    return ""
 
 
 def _is_float_type(rt: str) -> bool:
@@ -766,6 +791,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 item = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
                 return owner + ".indexOf(" + item + ")"
+            if fn_name == "__LIST_EXTEND__":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                values = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "[]"
+                return "pyextend(" + owner + ", " + values + ")"
             if fn_name == "__DICT_GET__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 key = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
@@ -807,6 +836,9 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return fn_name_safe + "(" + ", ".join(builtin_arg_strs) + ")"
         if fn_name == "__CAST__":
             if len(all_arg_strs) >= 1:
+                semantic_tag = _str(node, "semantic_tag")
+                if semantic_tag == "cast.float":
+                    return "Number(" + all_arg_strs[0] + ")"
                 fn_id_cast = _str(func, "id") if isinstance(func, dict) else ""
                 if fn_id_cast in ctx.mapping.calls:
                     mapped_cast = ctx.mapping.calls[fn_id_cast]
@@ -870,45 +902,22 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             # Regular method call: obj.method(...)
             owner_code = _emit_expr(ctx, owner_node)
             owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
-            # str methods → runtime free functions (e.g. ch.isdigit() → pyStrIsdigit(ch))
-            # For "unknown" owner type, only match purely str-specific methods
-            _STR_ONLY_ATTRS: set[str] = set()
-            for _str_only_attr in [
-                "isdigit", "isalpha", "isalnum", "isspace", "isupper", "islower",
-                "startswith", "endswith", "strip", "lstrip", "rstrip",
-                "split", "rsplit", "join", "replace", "find", "rfind",
-                "upper", "lower", "count", "index",
-            ]:
-                _STR_ONLY_ATTRS.add(_str_only_attr)
-            owner_is_str = owner_rt in ("str", "string")
-            owner_maybe_str = owner_rt in ("", "unknown") and attr in _STR_ONLY_ATTRS
-            if owner_is_str or owner_maybe_str:
-                str_key = "str." + attr
-                if str_key in ctx.mapping.calls:
-                    mapped = ctx.mapping.calls[str_key]
-                    if isinstance(mapped, str) and mapped != "":
-                        mapped_safe = mapped if "." in mapped else _safe_ts_ident(mapped)
-                        return mapped_safe + "(" + ", ".join([owner_code] + all_arg_strs) + ")"
-            is_list_like_owner = owner_rt.startswith("list[") or owner_rt in ("list", "bytes", "bytearray")
-            if attr == "extend" and is_list_like_owner and len(all_arg_strs) >= 1:
-                return "pyextend(" + owner_code + ", " + all_arg_strs[0] + ")"
-            # TS-specific: Python list methods → JS array methods
-            ts_attr = _translate_method_name(owner_rt, attr)
-            # obj.get(key, default) → (obj.get(key) ?? default)
-            # TypeScript Map.get() only takes 1 argument; Python dict.get(key, default) uses 2.
-            # Also covers type aliases of dict (e.g. Node = dict[str, any]) that may have unknown rt.
-            if ts_attr == "get" and len(all_arg_strs) >= 2:
-                key_s = all_arg_strs[0]
-                default_s = all_arg_strs[1]
-                return "(" + owner_code + ".get(" + key_s + ") ?? " + default_s + ")"
-            if ts_attr == "setdefault" and (owner_rt.startswith("dict[") or owner_rt == "dict") and len(all_arg_strs) >= 2:
-                key_s = all_arg_strs[0]
-                default_s = all_arg_strs[1]
-                return "pysetdefault(" + owner_code + ", " + key_s + ", " + default_s + ")"
-            return owner_code + "." + ts_attr + "(" + ", ".join(all_arg_strs) + ")"
+            owner_key = _owner_runtime_mapping_key(owner_rt, attr)
+            if owner_key == "" and owner_rt in ("", "unknown"):
+                owner_key = "str." + attr if ("str." + attr) in ctx.mapping.calls else ""
+            if owner_key != "":
+                mapped_owner = ctx.mapping.calls.get(owner_key, "")
+                if isinstance(mapped_owner, str) and mapped_owner != "":
+                    expanded = _expand_owner_mapped_call(ctx, mapped_owner, owner_code, all_arg_strs)
+                    if expanded != "":
+                        return expanded
+                    mapped_safe = mapped_owner if "." in mapped_owner else _safe_ts_ident(mapped_owner)
+                    return mapped_safe + "(" + ", ".join([owner_code] + all_arg_strs) + ")"
+            return owner_code + "." + attr + "(" + ", ".join(all_arg_strs) + ")"
 
         if func_kind == "Name":
             fn_id = _str(func, "id")
+            semantic_tag = _str(node, "semantic_tag")
 
             if fn_id in ("__init__", "py__init__") and len(args) >= 1:
                 first_arg = args[0]
@@ -932,6 +941,15 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             # super() call
             if fn_id == "super":
                 return "super(" + ", ".join(all_arg_strs) + ")"
+
+            if semantic_tag == "core.bytearray_ctor":
+                if len(all_arg_strs) == 0:
+                    return "pyBytearray()"
+                return "pyBytearray(" + all_arg_strs[0] + ")"
+            if semantic_tag == "core.bytes_ctor":
+                if len(all_arg_strs) == 0:
+                    return "pyBytes()"
+                return "pyBytes(" + all_arg_strs[0] + ")"
 
             # Constructor call for known classes
             if fn_id in ctx.class_names:
@@ -1570,6 +1588,8 @@ _PY_TO_TS_TYPE_NAME["str"] = "string"
 _PY_TO_TS_TYPE_NAME["string"] = "string"
 _PY_TO_TS_TYPE_NAME["bytes"] = "number[]"
 _PY_TO_TS_TYPE_NAME["bytearray"] = "number[]"
+_PY_TO_TS_TYPE_NAME["PyFile"] = "any"
+_PY_TO_TS_TYPE_NAME["TextIOWrapper"] = "any"
 _PY_TO_TS_TYPE_NAME["any"] = "any"
 _PY_TO_TS_TYPE_NAME["Any"] = "any"
 _PY_TO_TS_TYPE_NAME["object"] = "any"
@@ -1874,7 +1894,7 @@ def _collect_assigns_from_block(stmts: list[JsonVal], out: list[tuple[str, dict]
         if not isinstance(stmt, dict):
             continue
         kind = _str(stmt, "kind")
-        if kind == "Assign":
+        if kind in ("Assign", "AnnAssign"):
             targets = _list(stmt, "targets")
             target_single = stmt.get("target")
             if len(targets) == 0 and isinstance(target_single, dict):
@@ -2289,36 +2309,71 @@ def _emit_runtime_iter_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _emit_with(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
-    """With statement → try/finally."""
+    """With statement → context-manager protocol using __enter__/__exit__."""
     items = _list(node, "items")
+    if len(items) == 0:
+        items = [node]
     body = _list(node, "body")
-    ctx_vars: list[tuple[str, str]] = []
+
+    collected: list[tuple[str, dict]] = []
+    _collect_assigns_from_block(body, collected)
+    seen: set[str] = set()
+    for name_raw, stmt in collected:
+        name = _ts_symbol_name(ctx, name_raw)
+        if name in ctx.var_types or name in seen or name == "_":
+            continue
+        seen.add(name)
+        stmt_kind = _str(stmt, "kind")
+        decl_type = ""
+        if stmt_kind == "VarDecl":
+            decl_type = _str(stmt, "resolved_type")
+        elif stmt_kind in ("Name", "NameTarget"):
+            decl_type = _str(stmt, "resolved_type")
+        else:
+            decl_type = _str(stmt, "decl_type")
+            if decl_type in ("", "unknown"):
+                decl_type = _str(stmt, "resolved_type")
+        ctx.var_types[name] = decl_type
+        ann = _type_annotation(ctx, decl_type)
+        _emit(ctx, "let " + name + ann + ";")
+
+    ctx_vars: list[tuple[str, str, str]] = []
     for item in items:
         if not isinstance(item, dict):
             continue
         ctx_expr = item.get("context_expr")
-        opt_var = item.get("optional_vars")
-        ctx_code = _emit_expr(ctx, ctx_expr) if isinstance(ctx_expr, dict) else "null"
+        if not isinstance(ctx_expr, dict):
+            continue
+        ctx_code = _emit_expr(ctx, ctx_expr)
+        ctx_tmp = _next_temp(ctx, "comp")
+        _emit(ctx, "let " + ctx_tmp + " = " + ctx_code + ";")
+
         var_name = ""
+        opt_var = item.get("optional_vars")
         if isinstance(opt_var, dict):
             var_name = _ts_symbol_name(ctx, _str(opt_var, "id"))
-        ctx_vars.append((ctx_code, var_name))
-
-    for ctx_code, var_name in ctx_vars:
+        if var_name == "":
+            var_name = _ts_symbol_name(ctx, _str(item, "var_name"))
         if var_name != "":
-            ann = ""
-            _emit(ctx, "const " + var_name + ann + " = " + ctx_code + ";")
+            enter_type = _str(ctx_expr, "resolved_type")
+            if var_name not in ctx.var_types:
+                ctx.var_types[var_name] = enter_type
+                ann = _type_annotation(ctx, enter_type)
+                _emit(ctx, "let " + var_name + ann + " = " + ctx_tmp + ".__enter__();")
+            else:
+                _emit(ctx, var_name + " = " + ctx_tmp + ".__enter__();")
         else:
-            _emit(ctx, ctx_code + ";")
+            _emit(ctx, ctx_tmp + ".__enter__();")
+        ctx_vars.append((ctx_tmp, var_name, _str(ctx_expr, "resolved_type")))
+
     _emit(ctx, "try {")
     ctx.indent_level += 1
     _emit_body(ctx, body)
     ctx.indent_level -= 1
     _emit(ctx, "} finally {")
     ctx.indent_level += 1
-    for _, var_name in ctx_vars:
-        if var_name != "":
-            _emit(ctx, var_name + ".close();")
+    for ctx_tmp, _, _ in reversed(ctx_vars):
+        _emit(ctx, ctx_tmp + ".__exit__(null, null, null);")
     ctx.indent_level -= 1
     _emit(ctx, "}")
 

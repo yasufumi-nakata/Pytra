@@ -1,7 +1,7 @@
 // Python 互換ランタイム（JavaScript版）の共通関数群。
 // 将来的な Python -> JavaScript ネイティブ変換コードから利用する。
 
-import { writeFileSync, mkdirSync, readFileSync, statSync, readdirSync } from "node:fs";
+import { appendFileSync, existsSync, writeFileSync, mkdirSync, readFileSync, statSync, readdirSync } from "node:fs";
 import { dirname } from "node:path";
 
 const PY_TYPE_NONE = 0;
@@ -565,26 +565,44 @@ function pyIsAlpha(value) {
   return typeof value === "string" && value.length > 0 && /^[A-Za-z]+$/.test(value);
 }
 
-/** Python の open 相当（バイナリ書き込み専用）。 */
-function open(filePath, _mode) {
-  const dir = dirname(filePath);
-  if (dir !== "" && dir !== ".") {
-    mkdirSync(dir, { recursive: true });
+class PyFile {
+  constructor(filePath, mode = "r") {
+    this._path = filePath;
+    this._mode = mode;
+    const dir = dirname(filePath);
+    if (dir !== "" && dir !== ".") {
+      mkdirSync(dir, { recursive: true });
+    }
+    if (mode === "w" || mode === "wb") {
+      writeFileSync(filePath, mode === "wb" ? Buffer.alloc(0) : "");
+    } else if ((mode === "a" || mode === "ab") && !existsSync(filePath)) {
+      writeFileSync(filePath, mode === "ab" ? Buffer.alloc(0) : "");
+    }
   }
-  const buf = [];
-  return {
-    write(data) {
-      if (Array.isArray(data)) {
-        for (let i = 0; i < data.length; i++) {
-          buf.push(data[i] & 0xFF);
-        }
-      }
-    },
-    close() {
-      writeFileSync(filePath, Buffer.from(buf));
-    },
-  };
+  __enter__() { return this; }
+  __exit__(_excType, _excVal, _excTb) { this.close(); }
+  write(data) {
+    if (typeof data === "string") {
+      appendFileSync(this._path, data, "utf8");
+      return data.length;
+    }
+    let bytes;
+    if (data instanceof Uint8Array) bytes = data;
+    else if (Array.isArray(data)) bytes = Uint8Array.from(data.map((x) => x & 0xFF));
+    else if (data && typeof data._snap === "function") bytes = data._snap();
+    else bytes = new Uint8Array(0);
+    appendFileSync(this._path, Buffer.from(bytes));
+    return bytes.length;
+  }
+  read(_count) {
+    const data = readFileSync(this._path);
+    if (this._mode.includes("b")) return Array.from(data, (x) => x & 0xFF);
+    return data.toString("utf8");
+  }
+  close() {}
 }
+
+function open(filePath, mode = "r") { return new PyFile(filePath, mode); }
 
 const pyopen = open;
 
@@ -624,15 +642,10 @@ function pyFloatStr(n) {
   if (Number.isInteger(n)) return n.toString() + ".0";
   return String(n);
 }
-const bool = Boolean;
-const int = Number;
-const float = Number;
-const str = String;
-
 // ---------------------------------------------------------------------------
 // time module
 // ---------------------------------------------------------------------------
-function perf_counter() {
+function pyPerfCounter() {
   if (typeof performance !== "undefined") return performance.now() / 1000;
   return Date.now() / 1000;
 }
@@ -1294,13 +1307,10 @@ export {
   pyisfile,
   pyisdir,
   pyjoinpath,
-  int,
-  float,
-  str,
   sys,
   pyset_argv,
   pyset_path,
-  perf_counter,
+  pyPerfCounter,
   sub,
   match,
   search,
@@ -1349,6 +1359,5 @@ export {
   pyFmt,
   pyTuple,
   pyTupleToString,
-  bool,
   pyopen,
 };

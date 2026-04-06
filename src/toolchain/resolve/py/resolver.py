@@ -4655,6 +4655,18 @@ def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[s
 
     canonical: str = ctx.canonical_module_id(module_id)
     runtime_group: str = ctx.lookup_runtime_module_group(canonical)
+    if canonical == module_id and module_id != "" and "." not in module_id:
+        fallback_canonical = "pytra.std." + module_id
+        fallback_group = ctx.lookup_runtime_module_group(fallback_canonical)
+        if binding_kind == "module":
+            if fallback_group != "":
+                canonical = fallback_canonical
+                runtime_group = fallback_group
+        elif export_name != "":
+            fallback_sym_doc = ctx.lookup_runtime_symbol_doc(fallback_canonical, export_name)
+            if len(fallback_sym_doc) > 0:
+                canonical = fallback_canonical
+                runtime_group = fallback_group
 
     binding["source_module_id"] = module_id
     binding["source_export_name"] = export_name
