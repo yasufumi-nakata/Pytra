@@ -496,46 +496,24 @@ def _maybe_cast_dynamic_call(ctx: EmitContext, node: dict[str, JsonVal], expr: s
     return _emit_cast_expr(ctx, result_type, expr)
 
 
-def _emit_container_method_call(ctx: EmitContext, owner_node: JsonVal, attr: str, arg_strs: list[str], node: dict[str, JsonVal]) -> str:
+def _emit_container_method_call(ctx: EmitContext, owner_node: JsonVal, arg_strs: list[str], node: dict[str, JsonVal], fn_name: str) -> str:
     owner = _emit_expr(ctx, owner_node)
     owner_access = "(" + owner + ")"
     owner_type = _node_type(ctx, owner_node)
     call_type = _str(node, "resolved_type")
-    if _is_deque_type(owner_type):
-        if attr == "append" and len(arg_strs) >= 1:
-            return owner_access + ".append(" + arg_strs[0] + ")"
-        if attr == "appendleft" and len(arg_strs) >= 1:
-            return owner_access + ".appendleft(" + arg_strs[0] + ")"
-        if attr == "popleft":
-            return owner_access + ".popleft()"
-        if attr == "pop":
-            return owner_access + ".pop()"
-        if attr == "clear":
-            return owner_access + ".clear()"
-    if _is_list_type(owner_type):
-        if attr == "append" and len(arg_strs) >= 1:
-            return owner_access + ".add(" + arg_strs[0] + ")"
-        if attr == "extend" and len(arg_strs) >= 1:
-            return owner_access + ".addAll(" + arg_strs[0] + ")"
-        if attr == "index" and len(arg_strs) >= 1:
-            return "PyRuntime.pyListIndex(" + owner_access + ", " + arg_strs[0] + ")"
-        if attr == "pop":
-            idx_expr = arg_strs[0] if len(arg_strs) >= 1 else "null"
-            return "PyRuntime.pyPop(" + owner_access + ", " + idx_expr + ")"
-        if attr == "clear":
-            return owner_access + ".clear()"
-    if owner_type == "str":
-        if attr == "upper":
-            return owner_access + ".toUpperCase()"
-        if attr == "count" and len(arg_strs) >= 1:
-            return "PyRuntime.__pytra_count_substr(" + owner_access + ", " + arg_strs[0] + ")"
-        if attr == "find" and len(arg_strs) >= 1:
-            return "PyRuntime.__pytra_find(" + owner_access + ", " + arg_strs[0] + ")"
-        if attr == "rfind" and len(arg_strs) >= 1:
-            return "PyRuntime.__pytra_rfind(" + owner_access + ", " + arg_strs[0] + ")"
-        if attr == "index" and len(arg_strs) >= 1:
-            return "PyRuntime.__pytra_str_index(" + owner_access + ", " + arg_strs[0] + ")"
+    if fn_name != "":
+        special = _emit_builtin_placeholder(ctx, fn_name, [owner] + arg_strs, node)
+        if special != "":
+            return special
+        if _is_list_type(owner_type) or _is_deque_type(owner_type) or _is_set_type(owner_type) or owner_type == "str":
+            if fn_name == "PyRuntime.pyListIndex" and len(arg_strs) >= 1:
+                return "PyRuntime.pyListIndex(" + owner_access + ", " + arg_strs[0] + ")"
+            if fn_name == "PyRuntime.pyPop":
+                idx_expr = arg_strs[0] if len(arg_strs) >= 1 else "null"
+                return "PyRuntime.pyPop(" + owner_access + ", " + idx_expr + ")"
+            return fn_name + "(" + ", ".join([owner] + arg_strs) + ")"
     if _is_dict_type(owner_type) or _is_dynamic_type(owner_type):
+        attr = _str(_unwrap_node(node.get("func")), "attr")
         if attr == "get":
             if _is_dynamic_type(owner_type):
                 owner_access = "((HashMap<Object, Object>) (" + owner + "))"
@@ -562,13 +540,6 @@ def _emit_container_method_call(ctx: EmitContext, owner_node: JsonVal, attr: str
                 owner_access = "((HashMap<Object, Object>) (" + owner + "))"
             jt = _java_type_in_ctx(ctx, call_type)
             return "(" + jt + ") (ArrayList<?>) PyRuntime.pyDictItems(" + owner_access + ")"
-    if _is_set_type(owner_type):
-        if attr == "add" and len(arg_strs) >= 1:
-            return owner_access + ".add(" + arg_strs[0] + ")"
-        if attr in ("discard", "remove") and len(arg_strs) >= 1:
-            return owner_access + ".remove(" + arg_strs[0] + ")"
-        if attr == "clear":
-            return owner_access + ".clear()"
     return ""
 
 
@@ -1129,6 +1100,18 @@ def _emit_builtin_placeholder(ctx: EmitContext, fn_name: str, all_arg_strs: list
         return owner + ".add(" + all_arg_strs[1] + ")"
     if fn_name == "__LIST_EXTEND__" and len(all_arg_strs) >= 2:
         return owner + ".addAll(" + all_arg_strs[1] + ")"
+    if fn_name == "__DEQUE_APPENDLEFT__" and len(all_arg_strs) >= 2:
+        return owner + ".appendleft(" + all_arg_strs[1] + ")"
+    if fn_name == "__DEQUE_POPLEFT__" and len(all_arg_strs) >= 1:
+        return owner + ".popleft()"
+    if fn_name == "__POP_LAST__" and len(all_arg_strs) >= 1:
+        return owner + ".pop()"
+    if fn_name == "__CLEAR__" and len(all_arg_strs) >= 1:
+        return owner + ".clear()"
+    if fn_name == "__REVERSE__" and len(all_arg_strs) >= 1:
+        return owner + ".sort(java.util.Collections.reverseOrder())"
+    if fn_name == "__SORT__" and len(all_arg_strs) >= 1:
+        return owner + ".sort(null)"
     if fn_name == "__PATH_EXISTS__" and len(all_arg_strs) >= 1:
         return owner + ".exists()"
     if fn_name == "__DICT_GET__":
@@ -1225,7 +1208,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             call_arg_strs = list(arg_strs)
             if len(call_arg_strs) > 0 and call_arg_strs[0] == owner:
                 call_arg_strs = call_arg_strs[1:]
-            special = _emit_container_method_call(ctx, owner_node, attr, call_arg_strs, node)
+            fn_name = _runtime_call_name(ctx, node, func)
+            special = _emit_container_method_call(ctx, owner_node, call_arg_strs, node, fn_name)
             if special != "":
                 return special
             is_module_owner, owner_key, owner_module_id = _module_owner_info(ctx, owner_node)
@@ -1251,7 +1235,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             runtime_call = _str(node, "resolved_runtime_call")
             if runtime_call == "":
                 runtime_call = _str(node, "runtime_call")
-            fn_name = _runtime_call_name(ctx, node, func)
             if runtime_call != "" or fn_name in ctx.mapping.calls.values():
                 method_args = [owner] + call_arg_strs
                 if is_module_owner:

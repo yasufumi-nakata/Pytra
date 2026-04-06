@@ -1128,6 +1128,17 @@ final class PyRuntime {
         return __pytra_bytearray(data);
     }
 
+    static <T> ArrayList<T> __pytra_py_sorted(java.util.List<T> data) {
+        ArrayList<T> out = new ArrayList<T>(data);
+        out.sort((left, right) -> {
+            if (left instanceof String || right instanceof String) {
+                return pyToString(left).compareTo(pyToString(right));
+            }
+            return java.lang.Double.compare(pyToFloat(left), pyToFloat(right));
+        });
+        return out;
+    }
+
     static ArrayList<Long> __pytra_grayscale_palette() {
         ArrayList<Long> out = new ArrayList<>();
         long i = 0L;
@@ -1909,6 +1920,12 @@ final class pytra_std_os {
 
 final class pytra_std_glob {
     static final glob glob = new glob();
+}
+
+final class pytra_std_collections {
+    static PyRuntime.deque deque() {
+        return PyRuntime.deque();
+    }
 }
 
 final class math {
