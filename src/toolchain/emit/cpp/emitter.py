@@ -3309,8 +3309,16 @@ def _emit_ann_assign(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, lhs + " = " + rhs + ";")
         return
 
+    already_visible = _is_local_visible(ctx, name)
     _register_local_storage(ctx, name, rt)
-    _declare_local_visible(ctx, name)
+    if not already_visible:
+        _declare_local_visible(ctx, name)
+    if already_visible:
+        if value is not None:
+            val_expr = _emit_expr(ctx, value)
+            val_expr = _wrap_expr_for_target_type(ctx, rt, val_expr, value)
+            _emit(ctx, name + " = " + val_expr + ";")
+        return
     ct = "auto" if _cpp_type_is_unknownish(rt) else _decl_cpp_type(ctx, rt, name)
     if value is not None:
         val_expr = _emit_expr(ctx, value)
@@ -3814,8 +3822,25 @@ def _emit_with(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     var_name = _str(node, "var_name")
     if var_name == "":
         var_name = _next_temp(ctx, "__with")
+    body = _list(node, "body")
+    hoisted = _collect_with_hoisted_names(ctx, body)
+    for name, resolved_type in hoisted:
+        if _is_local_visible(ctx, name):
+            continue
+        storage_type = resolved_type if resolved_type != "" else ctx.var_types.get(name, "")
+        _register_local_storage(ctx, name, storage_type)
+        _declare_local_visible(ctx, name)
+        if _cpp_type_is_unknownish(storage_type):
+            _emit(ctx, "auto " + name + " = " + _decl_cpp_zero_value(ctx, storage_type, name) + ";")
+        else:
+            _emit(ctx, _decl_cpp_type(ctx, storage_type, name) + " " + name + " = " + _decl_cpp_zero_value(ctx, storage_type, name) + ";")
     finally_name = _next_temp(ctx, "__finally")
-    _emit(ctx, "auto " + var_name + " = " + context_expr + ";")
+    if _is_local_visible(ctx, var_name):
+        _emit(ctx, var_name + " = " + context_expr + ";")
+    else:
+        _register_local_storage(ctx, var_name, _effective_resolved_type(node.get("context_expr")))
+        _declare_local_visible(ctx, var_name)
+        _emit(ctx, "auto " + var_name + " = " + context_expr + ";")
     _emit(ctx, "{")
     ctx.indent_level += 1
     _emit(ctx, "auto " + finally_name + " = py_make_scope_exit([&]() {")
@@ -3823,9 +3848,48 @@ def _emit_with(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     _emit(ctx, var_name + ".close();")
     ctx.indent_level -= 1
     _emit(ctx, "});")
-    _emit_body(ctx, _list(node, "body"))
+    _emit_body(ctx, body)
     ctx.indent_level -= 1
     _emit(ctx, "}")
+
+
+def _collect_with_hoisted_names(ctx: CppEmitContext, body: list[JsonVal]) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+
+    def add_name(name: str, resolved_type: str) -> None:
+        if name == "" or name in seen:
+            return
+        seen.add(name)
+        out.append((name, resolved_type))
+
+    def walk(stmts: list[JsonVal]) -> None:
+        for raw_stmt in stmts:
+            if not isinstance(raw_stmt, dict):
+                continue
+            kind = _str(raw_stmt, "kind")
+            if kind == "AnnAssign":
+                target = raw_stmt.get("target")
+                if isinstance(target, dict) and _str(target, "kind") in ("Name", "NameTarget"):
+                    add_name(_str(target, "id"), _str(raw_stmt, "decl_type"))
+            elif kind == "Assign":
+                target = raw_stmt.get("target")
+                if not isinstance(target, dict):
+                    targets = _list(raw_stmt, "targets")
+                    if len(targets) > 0 and isinstance(targets[0], dict):
+                        target = targets[0]
+                if isinstance(target, dict) and _str(target, "kind") in ("Name", "NameTarget"):
+                    add_name(_str(target, "id"), _str(raw_stmt, "decl_type"))
+            elif kind in ("If", "While", "With", "Try", "ForCore"):
+                walk(_list(raw_stmt, "body"))
+                walk(_list(raw_stmt, "orelse"))
+                walk(_list(raw_stmt, "finalbody"))
+                for handler in _list(raw_stmt, "handlers"):
+                    if isinstance(handler, dict):
+                        walk(_list(handler, "body"))
+
+    walk(body)
+    return out
 
 
 def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner_name: str = "") -> None:
