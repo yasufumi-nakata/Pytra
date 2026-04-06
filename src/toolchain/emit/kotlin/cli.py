@@ -9,7 +9,7 @@ from toolchain.emit.kotlin.emitter import emit_kotlin_module
 
 def _copy_kotlin_runtime(output_dir: Path) -> None:
     """Copy Kotlin runtime files into the emit directory."""
-    runtime_root = Path(".").resolve().joinpath("src").joinpath("runtime").joinpath("kotlin")
+    runtime_root = Path(__file__).resolve().parents[3].joinpath("runtime").joinpath("kotlin")
     if not runtime_root.exists():
         return
     for bucket in ["built_in", "std"]:

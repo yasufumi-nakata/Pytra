@@ -25,6 +25,13 @@ open class RuntimeError : Exception()
 open class IndexError : Exception()
 open class KeyError : Exception()
 
+fun __pytra_Exception(msg: Any?): Exception = run { val __pytraObj = Exception(); __pytraObj.__init__(msg); __pytraObj }
+fun __pytra_ValueError(msg: Any?): ValueError = run { val __pytraObj = ValueError(); __pytraObj.__init__(msg); __pytraObj }
+fun __pytra_TypeError(msg: Any?): TypeError = run { val __pytraObj = TypeError(); __pytraObj.__init__(msg); __pytraObj }
+fun __pytra_RuntimeError(msg: Any?): RuntimeError = run { val __pytraObj = RuntimeError(); __pytraObj.__init__(msg); __pytraObj }
+fun __pytra_IndexError(msg: Any?): IndexError = run { val __pytraObj = IndexError(); __pytraObj.__init__(msg); __pytraObj }
+fun __pytra_KeyError(msg: Any?): KeyError = run { val __pytraObj = KeyError(); __pytraObj.__init__(msg); __pytraObj }
+
 fun __pytra_noop(vararg args: Any?) { }
 
 fun __pytra_any_default(): Any? {
@@ -129,6 +136,20 @@ fun pytra_std_sys_write_stdout(text: Any?) { sys_stdout.write(text) }
 fun __pytra_makedirs(path: Any?, exist_ok: Any? = false) { os.makedirs(path, __pytra_truthy(exist_ok)) }
 fun __pytra_floor(v: Any?): Double = floor(__pytra_float(v))
 fun __pytra_Path(raw: Any?): Path = Path(raw)
+
+fun <T> __pytra_sorted(values: MutableList<T>): MutableList<T> {
+    val out = values.toMutableList()
+    out.sortWith(Comparator { left: T, right: T ->
+        val leftValue = left as Any?
+        val rightValue = right as Any?
+        if (leftValue is String || rightValue is String) {
+            __pytra_str(leftValue).compareTo(__pytra_str(rightValue))
+        } else {
+            __pytra_float(leftValue).compareTo(__pytra_float(rightValue))
+        }
+    })
+    return out
+}
 fun __pytra_glob(pattern: Any?): MutableList<String> = glob.glob(pattern)
 
 fun __pytra_cast(target: Any?, value: Any?): Any? = value

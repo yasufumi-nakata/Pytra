@@ -31,6 +31,7 @@
     "py_min": "__pytra_min",
     "py_ord": "__pytra_ord",
     "py_range": "__pytra_range",
+    "py_sorted": "__pytra_sorted",
     "pytra.std.math.sqrt": "math_native_sqrt",
     "pytra.std.math.fabs": "math_native_fabs",
     "pytra.std.math.sin": "math_native_sin",
@@ -92,6 +93,28 @@
     "JsonArr": "JsonArr",
     "JsonObj": "JsonObj"
   },
+  "module_namespace_exprs": {
+    "env": "env",
+    "math": "math_native",
+    "os": "os",
+    "os.path": "os_path",
+    "pytra.built_in.error": "pytra_built_in_error",
+    "pytra.std.env": "env",
+    "pytra.std.math": "math_native",
+    "pytra.std.os": "os",
+    "pytra.std.os_path": "os_path",
+    "pytra.std.time": "time_native",
+    "time": "time_native"
+  },
+  "exception_types": [
+    "BaseException",
+    "Exception",
+    "IndexError",
+    "KeyError",
+    "RuntimeError",
+    "TypeError",
+    "ValueError"
+  ],
   "implicit_promotions": [],
   "skip_modules": [
     "pytra.built_in.",

@@ -50,10 +50,38 @@ class KotlinRenderer(CommonRenderer):
         self._local_var_scopes: list[set[str]] = []
         self._local_type_scopes: list[dict[str, str]] = []
 
+    def _mapping_call(self, key: str) -> str:
+        mapped = self.mapping.calls.get(key)
+        return mapped if isinstance(mapped, str) else ""
+
+    def _module_namespace_expr(self, module_id: str) -> str:
+        expr = self.mapping.module_namespace_exprs.get(module_id, "")
+        return expr if isinstance(expr, str) else ""
+
+    def _module_member_expr(self, module_id: str, name: str) -> str:
+        namespace_expr = self._module_namespace_expr(module_id)
+        if namespace_expr == "":
+            return ""
+        safe_name = _safe_kotlin_ident(name)
+        if namespace_expr == "math_native" and safe_name in ("pi", "e"):
+            return namespace_expr + "_" + safe_name + "()"
+        if namespace_expr in ("math_native", "time_native"):
+            return namespace_expr + "_" + safe_name
+        return namespace_expr + "." + safe_name
+
+    def _path_type_name(self) -> str:
+        for source_name, rendered_name in self.mapping.types.items():
+            if source_name.lower() == "path" and isinstance(rendered_name, str) and rendered_name != "":
+                return rendered_name
+        return "Any?"
+
+    def _is_exception_name(self, name: str) -> bool:
+        return name in self.mapping.exception_types or name in self.module_class_names
+
     def _exception_class_name(self, name: str) -> str:
         if name == "":
             return "Throwable"
-        if name in self.module_class_names or name.endswith("Error") or name.endswith("Exception"):
+        if self._is_exception_name(name):
             return _safe_kotlin_ident(name)
         return _safe_kotlin_ident(name)
 
@@ -117,8 +145,8 @@ class KotlinRenderer(CommonRenderer):
         return prefix + str(self._tmp_counter)
 
     def _render_type(self, resolved_type: str) -> str:
-        if resolved_type in ("Path", "__pytra_Path"):
-            return "Path"
+        if resolved_type == "__pytra_Path":
+            return self._path_type_name()
         if resolved_type == "Obj":
             if resolved_type in self.module_class_names:
                 return _safe_kotlin_ident(resolved_type)
@@ -138,7 +166,8 @@ class KotlinRenderer(CommonRenderer):
         rendered = self._render_type(resolved_type)
         if rendered.endswith("?"):
             return rendered
-        if rendered in ("Long", "Double", "Boolean", "String", "Path"):
+        path_type = self._path_type_name()
+        if rendered in ("Long", "Double", "Boolean", "String", path_type):
             return rendered + "?"
         if rendered.endswith(">"):
             return rendered + "?"
@@ -361,20 +390,15 @@ class KotlinRenderer(CommonRenderer):
                         if should_skip_module(mod, self.mapping) or should_skip_module(mod + "." + name, self.mapping):
                             resolved = self.mapping.calls.get(mod + "." + name, "")
                             if not isinstance(resolved, str) or resolved == "":
+                                resolved = self._mapping_call(name)
+                            if resolved == "":
                                 resolved = resolve_runtime_symbol_name(name, self.mapping, module_id=mod)
                             if isinstance(resolved, str) and resolved != "":
                                 self.runtime_imports[local_name] = resolved
                                 continue
-                        if mod in ("math", "pytra.std.math"):
-                            if name == "pi":
-                                self.import_symbols[local_name] = "math_native_pi()"
-                            elif name == "e":
-                                self.import_symbols[local_name] = "math_native_e()"
-                            else:
-                                self.import_symbols[local_name] = "math_native_" + _safe_kotlin_ident(name)
-                            continue
-                        if mod in ("time", "pytra.std.time") and name == "perf_counter":
-                            self.import_symbols[local_name] = "time_native_perf_counter"
+                        namespace_expr = self._module_namespace_expr(mod)
+                        if namespace_expr != "":
+                            self.import_symbols[local_name] = self._module_member_expr(mod, name)
                             continue
                         self.import_symbols[local_name] = _safe_kotlin_ident(mod.replace(".", "_")) + "." + _safe_kotlin_ident(name)
         self.module_function_names = {
@@ -632,10 +656,10 @@ class KotlinRenderer(CommonRenderer):
                 func = exc.get("func")
                 if isinstance(func, dict):
                     func_kind = self._str(func, "kind")
-                    if func_kind == "Name" and (self._str(func, "id").endswith("Error") or self._str(func, "id").endswith("Exception")):
+                    if func_kind == "Name" and self._is_exception_name(self._str(func, "id")):
                         self._emit("throw " + self._emit_expr(exc))
                         return
-                    if func_kind == "Attribute" and (self._str(func, "attr").endswith("Error") or self._str(func, "attr").endswith("Exception")):
+                    if func_kind == "Attribute" and self._is_exception_name(self._str(func, "attr")):
                         self._emit("throw " + self._emit_expr(exc))
                         return
             message = self._emit_expr(exc) if isinstance(exc, dict) else "\"raise\""
@@ -1060,16 +1084,9 @@ class KotlinRenderer(CommonRenderer):
                 return self.import_symbols[ident]
             if ident in self.import_alias_modules:
                 module_id = self.import_alias_modules[ident]
-                if module_id in ("math", "pytra.std.math"):
-                    return "math_native"
-                if module_id in ("time", "pytra.std.time"):
-                    return "time_native"
-                if module_id in ("env", "pytra.std.env"):
-                    return "env"
-                if module_id in ("os", "pytra.std.os"):
-                    return "os"
-                if module_id in ("os.path", "pytra.std.os_path"):
-                    return "os_path"
+                namespace_expr = self._module_namespace_expr(module_id)
+                if namespace_expr != "":
+                    return namespace_expr
                 return _safe_kotlin_ident(module_id.replace(".", "_"))
             if ident in self.local_function_aliases:
                 if callable_type != "":
@@ -1092,14 +1109,9 @@ class KotlinRenderer(CommonRenderer):
                 owner_id = self._str(owner_node, "id")
                 module_id = self.import_alias_modules.get(owner_id, "")
                 attr_name = _safe_kotlin_ident(self._str(node, "attr"))
-                if module_id in ("math", "pytra.std.math"):
-                    if attr_name == "pi":
-                        return "math_native_pi()"
-                    if attr_name == "e":
-                        return "math_native_e()"
-                    return "math_native_" + attr_name
-                if module_id in ("time", "pytra.std.time"):
-                    return "time_native_" + attr_name
+                namespace_expr = self._module_namespace_expr(module_id)
+                if namespace_expr != "":
+                    return self._module_member_expr(module_id, attr_name)
                 qualified = self._str(node, "repr")
                 if qualified != "" and qualified in self.mapping.calls:
                     return self.mapping.calls[qualified]
@@ -1306,6 +1318,13 @@ class KotlinRenderer(CommonRenderer):
                 owner_expr = self._emit_expr(owner_node)
                 owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
                 arg_nodes = self._list(node, "args")
+                resolved_method = resolve_runtime_symbol_name(
+                    attr,
+                    self.mapping,
+                    module_id=self._str(node, "runtime_module_id"),
+                    resolved_runtime_call=self._str(node, "resolved_runtime_call"),
+                    runtime_call=self._str(node, "runtime_call"),
+                )
                 if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Name":
                     owner_id = self._str(owner_node, "id")
                     module_id = self.import_alias_modules.get(owner_id, "")
@@ -1329,7 +1348,7 @@ class KotlinRenderer(CommonRenderer):
                             call_parts = self._emit_call_parts(arg_nodes) + self._emit_keyword_parts(keyword_nodes)
                             return resolved + "(" + ", ".join(call_parts) + ")"
                 dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal")
-                if owner_expr == "pytra_built_in_error" and attr.endswith("Error"):
+                if owner_expr == "pytra_built_in_error" and self._is_exception_name(attr):
                     first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
                     return "RuntimeException(" + first_arg + ".toString())"
                 if dynamic_dict_owner and attr == "get" and len(arg_nodes) == 1:
@@ -1348,27 +1367,27 @@ class KotlinRenderer(CommonRenderer):
                 if dynamic_dict_owner and attr == "values" and len(arg_nodes) == 0:
                     return "__pytra_as_dict(" + owner_expr + ").values.toMutableList()"
                 if owner_type in ("str", "string"):
-                    if attr == "join" and len(arg_nodes) == 1:
+                    if resolved_method == self._mapping_call("str.join") and len(arg_nodes) == 1:
                         return "__pytra_join(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "isalpha" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("str.isalpha") and len(arg_nodes) == 0:
                         return "__pytra_isalpha(" + owner_expr + ")"
-                    if attr == "isdigit" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("str.isdigit") and len(arg_nodes) == 0:
                         return "__pytra_isdigit(" + owner_expr + ")"
-                    if attr == "isalnum" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("str.isalnum") and len(arg_nodes) == 0:
                         return "__pytra_isalnum(" + owner_expr + ")"
                     if attr == "upper" and len(arg_nodes) == 0:
                         return "__pytra_upper(" + owner_expr + ")"
                     if attr == "lower" and len(arg_nodes) == 0:
                         return "__pytra_lower(" + owner_expr + ")"
-                    if attr == "startswith" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("str.startswith") and len(arg_nodes) >= 1:
                         return "__pytra_startswith(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "endswith" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("str.endswith") and len(arg_nodes) >= 1:
                         return "__pytra_endswith(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "strip" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("str.strip") and len(arg_nodes) == 0:
                         return "__pytra_strip(" + owner_expr + ")"
-                    if attr == "lstrip" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("str.lstrip") and len(arg_nodes) == 0:
                         return "__pytra_lstrip(" + owner_expr + ")"
-                    if attr == "rstrip" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("str.rstrip") and len(arg_nodes) == 0:
                         return "__pytra_rstrip(" + owner_expr + ")"
                     if attr == "replace" and len(arg_nodes) >= 2:
                         return "__pytra_replace(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ", " + self._emit_expr(arg_nodes[1]) + ")"
@@ -1378,9 +1397,9 @@ class KotlinRenderer(CommonRenderer):
                         return "__pytra_count_substr(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
                     if attr == "index" and len(arg_nodes) >= 1:
                         return "__pytra_str_index(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "rfind" and len(arg_nodes) >= 1:
+                    if resolved_method == self._mapping_call("str.rfind") and len(arg_nodes) >= 1:
                         return "__pytra_rfind(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "split":
+                    if resolved_method == self._mapping_call("str.split"):
                         sep = self._emit_expr(arg_nodes[0]) if len(arg_nodes) >= 1 else "null"
                         return "(__pytra_split(" + owner_expr + ", " + sep + ") as MutableList<String>)"
                 if owner_type.startswith("dict[") and attr == "get" and len(arg_nodes) == 1:
@@ -1393,16 +1412,16 @@ class KotlinRenderer(CommonRenderer):
                     expr = "__pytra_as_dict(" + owner_expr + ").getOrElse(" + self._emit_expr(arg_nodes[0]) + ") { " + default_expr + " }"
                     return "(" + expr + " as " + self._render_type(result_type if result_type != "" else "Any") + ")"
                 if owner_type.startswith("dict["):
-                    if attr == "clear" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("dict.clear") and len(arg_nodes) == 0:
                         return "__pytra_as_dict(" + owner_expr + ").clear()"
-                    if attr == "pop" and len(arg_nodes) == 1:
+                    if resolved_method == self._mapping_call("dict.pop") and len(arg_nodes) == 1:
                         result_type = self._str(node, "resolved_type")
                         zero = kotlin_zero_value(result_type)
                         expr = "(__pytra_as_dict(" + owner_expr + ").remove(" + self._emit_expr(arg_nodes[0]) + ") ?: " + zero + ")"
                         if result_type not in ("", "unknown", "Any", "object"):
                             return "(" + expr + " as " + self._render_type(result_type) + ")"
                         return expr
-                    if attr == "setdefault" and len(arg_nodes) == 2:
+                    if resolved_method == self._mapping_call("dict.setdefault") and len(arg_nodes) == 2:
                         expr = "__pytra_as_dict(" + owner_expr + ").getOrPut(" + self._emit_expr(arg_nodes[0]) + ") { " + self._emit_expr(arg_nodes[1]) + " }"
                         result_type = self._str(node, "resolved_type")
                         if result_type not in ("", "unknown", "Any", "object"):
@@ -1427,21 +1446,21 @@ class KotlinRenderer(CommonRenderer):
                 if owner_type.startswith("list[") or owner_type in ("list", "bytes", "bytearray"):
                     if attr == "index" and len(arg_nodes) == 1:
                         return owner_expr + ".indexOf(" + self._emit_expr(arg_nodes[0]) + ").toLong()"
-                    if attr == "append" and len(arg_nodes) == 1:
+                    if resolved_method == self._mapping_call("list.append") and len(arg_nodes) == 1:
                         return owner_expr + ".add(" + self._emit_expr(arg_nodes[0]) + ")"
-                    if attr == "extend" and len(arg_nodes) == 1:
+                    if resolved_method == self._mapping_call("list.extend") and len(arg_nodes) == 1:
                         if owner_type in ("bytes", "bytearray"):
                             return owner_expr + ".addAll(__pytra_bytes(" + self._emit_expr(arg_nodes[0]) + "))"
                         elem_type = "Any?"
                         if owner_type.startswith("list[") and owner_type.endswith("]"):
                             elem_type = self._render_type(owner_type[5:-1])
                         return owner_expr + ".addAll((__pytra_as_list(" + self._emit_expr(arg_nodes[0]) + ") as MutableList<" + elem_type + ">))"
-                    if attr == "clear" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("list.clear") and len(arg_nodes) == 0:
                         return owner_expr + ".clear()"
-                    if attr == "pop" and len(arg_nodes) == 0:
+                    if resolved_method == self._mapping_call("list.pop") and len(arg_nodes) == 0:
                         return owner_expr + ".removeAt(" + owner_expr + ".size - 1)"
                 if owner_type.startswith("set[") or owner_type == "set":
-                    if attr == "discard" and len(arg_nodes) == 1:
+                    if resolved_method == self._mapping_call("set.discard") and len(arg_nodes) == 1:
                         return owner_expr + ".remove(" + self._emit_expr(arg_nodes[0]) + ")"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
                 func_id = self._str(func, "id")
@@ -1498,23 +1517,26 @@ class KotlinRenderer(CommonRenderer):
                     import_path = self.import_symbols[func_id]
                     func_name = import_path
                     func_is_named_function = True
-                    if import_path.startswith("pytra_built_in_error.") and func_id.endswith("Error"):
+                    if import_path.startswith("pytra_built_in_error.") and self._is_exception_name(func_id):
                         first_arg = self._emit_expr(self._list(node, "args")[0]) if len(self._list(node, "args")) > 0 else "\"error\""
                         return "RuntimeException(" + first_arg + ".toString())"
                 elif resolved == "" and not (isinstance(mapped, str) and mapped != "") and (func_id in self.module_class_names or self._str(node, "resolved_type") == func_id):
                     ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
-                    class_name = func_name if "." in func_name else _safe_kotlin_ident(func_id)
+                    if func_name != "" and (func_name.startswith("__pytra_") or "." in func_name):
+                        return func_name + "(" + ", ".join(ctor_args) + ")"
+                    class_name = _safe_kotlin_ident(func_id)
                     tmp_name = "__pytraObj"
                     if self.class_has_init.get(func_id, True):
                         return "run { val " + tmp_name + " = " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
                     return class_name + "(" + ", ".join(ctor_args) + ")"
-                if func_id.endswith("Error") or func_id.endswith("Exception"):
+                if self._is_exception_name(func_id):
                     ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                     class_name = _safe_kotlin_ident(func_id)
                     tmp_name = "__pytraObj"
                     return "run { val " + tmp_name + " = " + class_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
-            if func_name.startswith("pytra_built_in_error.") and (func_name.endswith("Error") or func_name.endswith("Exception")):
-                bare_name = _safe_kotlin_ident(func_name.split(".")[-1])
+            func_leaf = func_name.rsplit(".", 1)[-1]
+            if self._is_exception_name(func_leaf):
+                bare_name = _safe_kotlin_ident(func_leaf)
                 ctor_args = [self._emit_expr(arg) for arg in self._list(node, "args")]
                 tmp_name = "__pytraObj"
                 return "run { val " + tmp_name + " = " + bare_name + "(); " + tmp_name + ".__init__(" + ", ".join(ctor_args) + "); " + tmp_name + " }"
