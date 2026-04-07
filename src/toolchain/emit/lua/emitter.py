@@ -2645,14 +2645,16 @@ def _emit_with(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     var_name = _str(node, "var_name")
     body = _list(node, "body")
     ctx_code = _emit_expr(ctx, context_expr)
-    safe_var = _lua_symbol_name(ctx, var_name) if var_name != "" else _next_temp(ctx, "ctx")
-    _emit(ctx, "local " + safe_var + " = " + ctx_code)
+    ctx_name = _next_temp(ctx, "ctx")
+    safe_var = _lua_symbol_name(ctx, var_name) if var_name != "" else _next_temp(ctx, "with_value")
+    _emit(ctx, "local " + ctx_name + " = " + ctx_code)
+    _emit(ctx, "local " + safe_var + " = " + ctx_name + ":__enter__()")
     _emit(ctx, "local __with_ok__, __with_err__ = pcall(function()")
     ctx.indent_level += 1
     _emit_body(ctx, body)
     ctx.indent_level -= 1
     _emit(ctx, "end)")
-    _emit(ctx, "if " + safe_var + " and " + safe_var + ".close then " + safe_var + ":close() end")
+    _emit(ctx, ctx_name + ":__exit__(nil, nil, nil)")
     _emit(ctx, "if not __with_ok__ then error(__with_err__) end")
 
 

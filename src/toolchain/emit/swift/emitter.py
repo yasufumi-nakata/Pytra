@@ -748,6 +748,11 @@ def _swift_type(type_name: Any, *, allow_void: bool) -> str:
     if not isinstance(type_name, str):
         return "Any"
     ts3: str = type_name
+    mapped = _SWIFT_RUNTIME_MAPPING.types.get(type_name)
+    if isinstance(mapped, str) and mapped != "":
+        if mapped != "Void" or allow_void:
+            return mapped
+        return "Any"
     if len(ts3) == 1 and ts3.isupper():
         return "Any"
     callable_parts = _callable_signature_parts(ts3)
@@ -766,8 +771,6 @@ def _swift_type(type_name: Any, *, allow_void: bool) -> str:
         return "Bool"
     if type_name == "str":
         return "String"
-    if type_name in {"IOBase", "TextIOWrapper", "BufferedWriter", "BufferedReader"}:
-        return "PyFile"
     if ts3 == "deque":
         return "[Any]"
     if ts3.startswith("list[") or ts3.startswith("tuple[") or ts3.startswith("set["):
@@ -978,6 +981,19 @@ def _default_return_expr(swift_type: str) -> str:
     if swift_type == "Any":
         return "__pytra_any_default()"
     return swift_type + "()"
+
+
+def _can_default_init_swift_type(swift_type: str) -> bool:
+    return swift_type in {
+        "Int64",
+        "Double",
+        "Bool",
+        "String",
+        "[Any]",
+        "[UInt8]",
+        "[AnyHashable: Any]",
+        "Any",
+    }
 
 
 def _collect_return_value_types(body: list[Any]) -> set[str]:
@@ -4153,8 +4169,6 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             i += 1
         context_node = sd2.get("context_expr")
         ctx_type = _swift_type(context_node.get("resolved_type") if isinstance(context_node, dict) else "", allow_void=False)
-        if ctx_type == "Any":
-            ctx_type = "PyFile"
         enter_type_any = sd2.get("with_enter_type")
         enter_type = _swift_type(enter_type_any if isinstance(enter_type_any, str) else "", allow_void=False)
         if enter_type == "Any":
@@ -4162,7 +4176,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if var_name not in declared:
             declared.add(var_name)
             type_map[var_name] = enter_type
-            if enter_type == "PyFile" or _is_swift_class_type(enter_type):
+            if not _can_default_init_swift_type(enter_type):
                 lines.append(indent + "var " + var_name + ": " + enter_type + "!")
             else:
                 lines.append(indent + "var " + var_name + ": " + enter_type + " = " + _default_return_expr(enter_type))

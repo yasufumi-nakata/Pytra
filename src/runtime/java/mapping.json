@@ -154,7 +154,11 @@
     "TypeError": "RuntimeException",
     "IndexError": "RuntimeException",
     "KeyError": "RuntimeException",
-    "Path": "pathlib.Path"
+    "Path": "pathlib.Path",
+    "IOBase": "PyRuntime.PyFile",
+    "TextIOWrapper": "PyRuntime.PyFile",
+    "BufferedReader": "PyRuntime.PyFile",
+    "BufferedWriter": "PyRuntime.PyFile"
   },
   "implicit_promotions": [
     [

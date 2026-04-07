@@ -1901,34 +1901,23 @@ def _emit_multi_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _emit_with(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
-    items = _list(node, "items")
     body = _list(node, "body")
-    ctx_vars: list[tuple[str, str]] = []
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        ctx_expr = item.get("context_expr")
-        opt_var = item.get("optional_vars")
-        ctx_code = _emit_expr(ctx, ctx_expr) if isinstance(ctx_expr, dict) else "nil"
-        var_name = ""
-        if isinstance(opt_var, dict):
-            var_name = _safe_ruby_ident(_str(opt_var, "id"))
-        ctx_vars.append((ctx_code, var_name))
-
-    for ctx_code, var_name in ctx_vars:
-        if var_name != "":
-            _emit(ctx, var_name + " = " + ctx_code)
-        else:
-            _emit(ctx, ctx_code)
+    ctx_expr = node.get("context_expr")
+    ctx_code = _emit_expr(ctx, ctx_expr) if isinstance(ctx_expr, dict) else "nil"
+    var_name = _safe_ruby_ident(_str(node, "var_name"))
+    comp_name = "__comp_" + str(len(ctx.lines) + 1)
+    _emit(ctx, comp_name + " = " + ctx_code)
+    if var_name != "":
+        _emit(ctx, var_name + " = " + comp_name + ".__enter__")
+    else:
+        _emit(ctx, comp_name + ".__enter__")
     _emit(ctx, "begin")
     ctx.indent_level += 1
     _emit_body(ctx, body)
     ctx.indent_level -= 1
     _emit(ctx, "ensure")
     ctx.indent_level += 1
-    for _, var_name in ctx_vars:
-        if var_name != "":
-            _emit(ctx, var_name + ".close")
+    _emit(ctx, comp_name + ".__exit__(nil, nil, nil)")
     ctx.indent_level -= 1
     _emit(ctx, "end")
 

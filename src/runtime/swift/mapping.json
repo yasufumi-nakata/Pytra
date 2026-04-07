@@ -83,8 +83,12 @@
     "None": "Void",
     "Any": "Any",
     "Obj": "Any",
-    "Path": "String",
-    "Exception": "Error"
+    "Path": "Path",
+    "Exception": "Error",
+    "IOBase": "IOBase",
+    "TextIOWrapper": "TextIOWrapper",
+    "BufferedReader": "BufferedReader",
+    "BufferedWriter": "BufferedWriter"
   },
   "implicit_promotions": [
     [

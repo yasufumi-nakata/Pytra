@@ -2189,26 +2189,31 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
         return
     if kind == "With":
         context_expr = node.get("context_expr")
-        context_type = _str(context_expr, "resolved_type") if isinstance(context_expr, dict) else "PyFile"
-        if context_type == "":
-            context_type = "PyFile"
-        if context_type in ("TextIOWrapper", "BufferedReader", "BufferedWriter", "IOBase", "PyFile"):
-            java_context_type = "PyRuntime.PyFile"
-        else:
-            java_context_type = _java_type_in_ctx(ctx, context_type)
+        context_type = _str(context_expr, "resolved_type") if isinstance(context_expr, dict) else ""
+        enter_type = _str(node, "with_enter_type")
+        if enter_type == "":
+            enter_type = context_type
+        java_context_type = _java_type_in_ctx(ctx, context_type)
+        java_enter_type = _java_type_in_ctx(ctx, enter_type)
         comp_name = "_pytra_with_ctx_" + str(len(ctx.lines))
         entered_name = "_pytra_with_value_" + str(len(ctx.lines))
-        _emit(ctx, java_context_type + " " + comp_name + " = " + _emit_expr(ctx, context_expr) + ";")
+        context_value_code = _emit_expr(ctx, context_expr)
+        if context_type != "":
+            context_value_code = _emit_cast_expr(ctx, context_type, context_value_code)
+        _emit(ctx, java_context_type + " " + comp_name + " = " + context_value_code + ";")
         var_name = _str(node, "var_name")
+        enter_value_code = comp_name + ".__enter__()"
+        if enter_type != "":
+            enter_value_code = _emit_cast_expr(ctx, enter_type, enter_value_code)
         if var_name != "":
             safe_var = _java_symbol_name(ctx, var_name)
             if safe_var in ctx.var_types:
-                _emit(ctx, safe_var + " = " + comp_name + ".__enter__();")
+                _emit(ctx, safe_var + " = " + enter_value_code + ";")
             else:
-                ctx.var_types[safe_var] = context_type
-                _emit(ctx, java_context_type + " " + safe_var + " = " + comp_name + ".__enter__();")
+                ctx.var_types[safe_var] = enter_type
+                _emit(ctx, java_enter_type + " " + safe_var + " = " + enter_value_code + ";")
         else:
-            _emit(ctx, java_context_type + " " + entered_name + " = " + comp_name + ".__enter__();")
+            _emit(ctx, java_enter_type + " " + entered_name + " = " + enter_value_code + ";")
         for hoisted_name, hoisted_type in _with_hoisted_names(node):
             if _java_symbol_name(ctx, hoisted_name) not in ctx.var_types:
                 _emit_name_assignment(ctx, hoisted_name, hoisted_type, java_zero_value(hoisted_type), annotated=True)
