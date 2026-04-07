@@ -458,6 +458,29 @@ def collect_runtime_hits(
     if not filter_cat or filter_cat == "rt:call_coverage":
         hits.extend(_collect_rt_call_coverage_hits(filter_lang))
 
+    # rt:type_id: check mapping.json types table for deprecated type names
+    _DEPRECATED_TYPE_KEYS = {"PyFile"}
+    if not filter_cat or filter_cat == "rt:type_id":
+        import json as _json2
+        runtime_root = ROOT / "src" / "runtime"
+        lang_dir_map2: dict[str, str] = {k: d for k, d in ALL_LANGS_ORDERED}
+        lang_dir_map2["js"] = "js"
+        for lang_key, runtime_dir_name in sorted(lang_dir_map2.items()):
+            if filter_lang and lang_key != filter_lang:
+                continue
+            mapping_path = runtime_root / runtime_dir_name / "mapping.json"
+            if not mapping_path.exists():
+                continue
+            try:
+                doc = _json2.loads(mapping_path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            types = doc.get("types", {})
+            for key in sorted(types):
+                if key in _DEPRECATED_TYPE_KEYS:
+                    line = f"types[\"{key}\"] is deprecated (§12.7)"
+                    hits.append((lang_key, "rt:type_id", mapping_path, 0, line))
+
     return hits
 
 
