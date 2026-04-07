@@ -121,6 +121,8 @@ CATEGORIES: dict[str, list[str]] = {
         r'"Path"',
         r'"ArgumentParser"',
         r'"Exception"',
+        # PyFile は廃止済み。IOBase / TextIOWrapper / BufferedWriter / BufferedReader を使う
+        r'"PyFile"',
     ],
     "python_syntax": [
         # EAST3 では既に正規化済みの Python 構文が emitter に残っている
