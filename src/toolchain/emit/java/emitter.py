@@ -930,8 +930,13 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 runtime_call=_str(node, "runtime_call"),
             )
             if resolved not in ("", attr, ctx.mapping.builtin_prefix + attr):
-                return resolved
-            return _module_class_name(mod_id) + "." + _safe_java_ident(attr)
+                rendered = resolved
+            else:
+                rendered = _module_class_name(mod_id) + "." + _safe_java_ident(attr)
+            result_type = _str(node, "resolved_type")
+            if result_type != "" and not _is_dynamic_type(result_type):
+                return _emit_cast_expr(ctx, result_type, rendered)
+            return rendered
     owner = _emit_expr(ctx, owner_node)
     owner_access = owner
     if owner not in ("this", "super") and (" " in owner or owner.startswith("(") or owner.endswith(")")):
@@ -1021,10 +1026,14 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             value_expr = _emit_expr(ctx, node.get("value"))
             return "(((Object) (" + value_expr + ")) instanceof " + _safe_java_ident(expected_name) + ")"
         value_expr = "PyRuntime.pyRuntimeValueTypeId(" + _emit_expr(ctx, node.get("value")) + ")"
+        if not isinstance(expected_node, dict) and expected_name != "":
+            expected_tid = _tid_symbol_name(ctx, expected_name)
+            if expected_tid != "":
+                return "PyRuntime.pytraIsinstance(" + value_expr + ", " + expected_tid + ")"
         if isinstance(expected_node, dict):
             expected_tid = _str(expected_node, "id")
             actual_type = _node_type(ctx, node.get("value"))
-            if actual_type in pod_exact_types and expected_tid in pod_exact_types:
+            if actual_type != "" and actual_type in pod_exact_types and expected_tid in pod_exact_types:
                 return "true" if actual_type == expected_tid else "false"
             if expected_tid == "":
                 expected_type = _str(expected_node, "type_object_of")

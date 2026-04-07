@@ -2020,6 +2020,24 @@ final class pytra_std_glob {
     }
 }
 
+final class pytra_std_sys {
+    static ArrayList<String> argv = PyRuntime.__pytra_argv;
+    static ArrayList<String> path = PyRuntime.__pytra_path;
+
+    private pytra_std_sys() {
+    }
+
+    static void set_argv(ArrayList<String> args) {
+        PyRuntime.__pytra_set_argv(args);
+        argv = PyRuntime.__pytra_argv;
+    }
+
+    static void set_path(ArrayList<String> paths) {
+        PyRuntime.__pytra_set_path(paths);
+        path = PyRuntime.__pytra_path;
+    }
+}
+
 final class pytra_utils_png {
     private pytra_utils_png() {
     }
