@@ -9,12 +9,10 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from dataclasses import dataclass
 from dataclasses import field
-
-from pytra.typing import cast
-from pytra.std.json import JsonVal
-from pytra.std.pathlib import Path
+from typing import Any, cast
 
 from toolchain.emit.go.types import go_type, go_zero_value, _safe_go_ident, _split_generic_args, _parse_callable_signature
 from toolchain.emit.common.code_emitter import (
@@ -29,6 +27,8 @@ from toolchain.link.expand_defaults import expand_cross_module_defaults
 # ---------------------------------------------------------------------------
 # Emit context (mutable state for one module emission)
 # ---------------------------------------------------------------------------
+
+JsonVal = Any
 
 @dataclass
 class EmitContext:
@@ -468,6 +468,10 @@ def _go_ref_container_ctor(ctx: EmitContext, resolved_type: str, literal_suffix:
 
 def _wrap_ref_container_value_code(ctx: EmitContext, value_code: str, resolved_type: str) -> str:
     stripped = value_code.strip()
+    if stripped.startswith("py_sorted("):
+        return value_code
+    if stripped.startswith("func() *PyList[") or stripped.startswith("func() *PyDict[") or stripped.startswith("func() *PySet["):
+        return value_code
     if stripped.endswith(".items"):
         base = stripped[:-6]
         if base in ctx.var_types:
@@ -1474,13 +1478,6 @@ def _effective_resolved_type(ctx: EmitContext, node: JsonVal) -> str:
             if inner_rt not in ("", "unknown"):
                 return inner_rt
     resolved_type = _str(node, "resolved_type")
-    if kind == "Call":
-        func = node.get("func")
-        if isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == "open":
-            return "PyFile"
-        runtime_symbol = _str(node, "runtime_symbol")
-        if runtime_symbol == "py_open" or _str(node, "resolved_runtime_call") == "py_open" or _str(node, "runtime_call") == "py_open":
-            return "PyFile"
     if kind == "Name":
         name = _safe_go_ident(_str(node, "id"))
         scope_type = ctx.var_types.get(name, "")
@@ -2010,27 +2007,6 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return "(" + " && ".join(parts) + ")"
 
 
-# str methods that map to runtime helper functions
-_STR_METHOD_HELPERS: dict[str, str] = {
-    "isdigit": "py_str_isdigit",
-    "isalpha": "py_str_isalpha",
-    "isalnum": "py_str_isalnum",
-    "isspace": "py_str_isspace",
-    "index": "py_str_index",
-    "strip": "py_str_strip",
-    "lstrip": "py_str_lstrip",
-    "rstrip": "py_str_rstrip",
-    "startswith": "py_str_startswith",
-    "endswith": "py_str_endswith",
-    "replace": "py_str_replace",
-    "find": "py_str_find",
-    "rfind": "py_str_rfind",
-    "split": "py_str_split",
-    "join": "py_str_join",
-    "upper": "py_str_upper",
-    "lower": "py_str_lower",
-}
-
 _COMPARE_MAP: dict[str, str] = {
     "Eq": "==", "NotEq": "!=", "Lt": "<", "LtE": "<=",
     "Gt": ">", "GtE": ">=",
@@ -2141,6 +2117,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 method_sig = ctx.known_method_signatures.get((owner_rt, attr))
             if isinstance(method_sig, dict):
                 call_arg_strs = _build_sig_call_args(ctx, args, arg_strs, keywords, method_sig, skip_self=True)
+            method_key = _str(node, "resolved_runtime_call")
+            if method_key == "":
+                method_key = _str(node, "runtime_call")
+            if method_key == "":
+                method_key = _str(node, "runtime_symbol")
+            dispatch = ctx.mapping.calls.get(method_key, "") if method_key != "" else ""
             if owner_rt == "module" or owner_id in ctx.import_alias_modules:
                 mod_id = _str(node, "runtime_module_id")
                 if mod_id == "":
@@ -2178,12 +2160,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return _safe_go_ident(resolved_name) + "(" + ", ".join(wrapped_args) + ")"
                 wrapped_args = _wrap_container_call_args(ctx, args, call_arg_strs)
                 return _safe_go_ident(runtime_symbol) + "(" + ", ".join(wrapped_args) + ")"
-            # .append() on non-BuiltinCall (plain method call)
-            if attr == "append" and len(arg_strs) >= 1:
+            if dispatch == "__LIST_APPEND__" and len(arg_strs) >= 1:
                 owner_storage = _wrapper_container_storage_expr(ctx, owner_node, owner)
                 arg_code = arg_strs[0]
                 arg_node = args[0] if len(args) >= 1 and isinstance(args[0], dict) else None
-                # If owner is bytes/bytearray or unknown bytes-like, use append_byte
                 if owner_rt in ("bytes", "bytearray", "list[uint8]", "unknown"):
                     return owner_storage + " = py_append_byte(" + owner_storage + ", " + arg_code + ")"
                 if owner_rt.startswith("list["):
@@ -2192,7 +2172,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         if not _is_wrapper_container_expr(ctx, arg_node, arg_code):
                             arg_code = _wrap_ref_container_value_code(ctx, arg_code, elem_type)
                     return owner_storage + " = append(" + owner_storage + ", " + arg_code + ")"
-            if attr == "extend" and len(arg_strs) >= 1:
+            if dispatch == "__LIST_EXTEND__" and len(arg_strs) >= 1:
                 owner_storage = _wrapper_container_storage_expr(ctx, owner_node, owner)
                 src_code = arg_strs[0]
                 src_node = args[0] if len(args) >= 1 and isinstance(args[0], dict) else None
@@ -2204,21 +2184,21 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     return owner_storage + " = append(" + owner_storage + ", " + src_code + "...)"
                 if owner_rt.startswith("list["):
                     return owner_storage + " = append(" + owner_storage + ", " + src_code + "...)"
-            if attr in ("keys", "values") and ((owner_rt.startswith("dict[") and owner_rt.endswith("]")) or owner_rt in ("Node", "dict[str,Any]")):
+            if dispatch in ("__DICT_KEYS__", "__DICT_VALUES__") and ((owner_rt.startswith("dict[") and owner_rt.endswith("]")) or owner_rt in ("Node", "dict[str,Any]")):
                 if owner_rt in ("Node", "dict[str,Any]"):
-                    if attr == "keys":
+                    if dispatch == "__DICT_KEYS__":
                         return "py_dict_keys(" + owner + ")"
                     return "py_dict_values(" + owner + ")"
                 parts = _split_generic_args(owner_rt[5:-1])
                 if len(parts) == 2:
-                    item_type = parts[0] if attr == "keys" else parts[1]
+                    item_type = parts[0] if dispatch == "__DICT_KEYS__" else parts[1]
                     item_go_type = go_type(item_type)
-                    out_name = _next_temp(ctx, "dict_" + attr)
+                    out_name = _next_temp(ctx, "dict_items")
                     key_name = _next_temp(ctx, "k")
                     val_name = _next_temp(ctx, "v")
                     range_line = "for " + key_name + " := range " + owner + " {"
                     append_value = key_name
-                    if attr == "values":
+                    if dispatch == "__DICT_VALUES__":
                         range_line = "for _, " + val_name + " := range " + owner + " {"
                         append_value = val_name
                     return (
@@ -2230,40 +2210,34 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                         + "\treturn " + out_name + "\n"
                         + "}()"
                     )
-            if attr == "items" and (owner_rt.startswith("dict[") or owner_rt.startswith("map[") or owner_rt in ("Node", "dict[str,Any]")):
+            if dispatch == "__DICT_ITEMS__" and (owner_rt.startswith("dict[") or owner_rt.startswith("map[") or owner_rt in ("Node", "dict[str,Any]")):
                 return "py_items(" + owner + ")"
-            owner_scope_type = ""
-            if isinstance(owner_node, dict) and _str(owner_node, "kind") == "Name":
-                owner_scope_type = ctx.var_types.get(_safe_go_ident(_str(owner_node, "id")), "")
-            if attr in ("read", "write", "close"):
-                owner_file = owner
-                if owner_rt in ("", "unknown", "Any", "object", "Obj") and owner_scope_type in ("", "unknown", "Any", "object", "Obj"):
-                    owner_file = owner + ".(*PyFile)"
-                if attr == "close":
-                    return owner_file + ".close()"
-                return owner_file + "." + attr + "(" + ", ".join(arg_strs) + ")"
-            if attr == "update" and owner_rt == "set[str]" and len(arg_strs) >= 1:
+            if dispatch == "__IO_READ__":
+                return owner + ".read(" + ", ".join(arg_strs) + ")"
+            if dispatch == "__IO_WRITE__":
+                return owner + ".write(" + ", ".join(arg_strs) + ")"
+            if dispatch == "__IO_CLOSE__":
+                return owner + ".close()"
+            if method_key == "set.update" and owner_rt == "set[str]" and len(arg_strs) >= 1:
                 return "py_set_update_str(" + owner + ", " + arg_strs[0] + ")"
             owner_effective_rt = _effective_resolved_type(ctx, owner_node) if isinstance(owner_node, dict) else owner_rt
             if owner_effective_rt == "":
                 owner_effective_rt = owner_rt
-            if attr == "add" and owner_effective_rt.startswith("set") and len(arg_strs) >= 1:
+            if dispatch == "__SET_ADD__" and owner_effective_rt.startswith("set") and len(arg_strs) >= 1:
                 owner_storage = _wrapper_container_storage_expr(ctx, owner_node, owner)
                 elem_code = arg_strs[0]
                 if owner_effective_rt.startswith("set[tuple["):
                     elem_code = "py_tuple_key(" + elem_code + ")"
                 return owner_storage + "[" + elem_code + "] = struct{}{}"
-            if attr == "index" and owner_rt.startswith("list[") and len(arg_strs) >= 1:
+            if method_key == "list.index" and owner_rt.startswith("list[") and len(arg_strs) >= 1:
                 owner_storage = _wrapper_container_storage_expr(ctx, owner_node, owner)
                 return "py_list_index(" + owner_storage + ", " + arg_strs[0] + ")"
-            # str methods → runtime helper functions
-            if attr in _STR_METHOD_HELPERS and owner_rt == "str":
+            if owner_rt == "str" and isinstance(dispatch, str) and dispatch != "":
                 helper_args = [owner] + call_arg_strs
-                if attr == "join" and len(args) >= 1 and isinstance(args[0], dict) and len(helper_args) >= 2:
+                if method_key == "str.join" and len(args) >= 1 and isinstance(args[0], dict) and len(helper_args) >= 2:
                     helper_args[1] = _wrapper_container_storage_expr(ctx, args[0], helper_args[1])
-                return _STR_METHOD_HELPERS[attr] + "(" + ", ".join(helper_args) + ")"
-            # dict.get → py_dict_get
-            if attr == "get" and len(arg_strs) >= 1:
+                return dispatch + "(" + ", ".join(helper_args) + ")"
+            if dispatch == "__DICT_GET__" and len(arg_strs) >= 1:
                 owner_rt = _str(func.get("value", {}), "resolved_type") if isinstance(func.get("value"), dict) else ""
                 result_type = _str(node, "resolved_type")
                 yields_dynamic = _call_yields_dynamic(node)
@@ -2282,11 +2256,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             fn_name = _str(func, "id")
             if fn_name == "":
                 fn_name = _str(func, "repr")
-            if fn_name in ("int", "float", "bool", "str", "ord", "chr"):
+            if fn_name in ("int", "float", "bool", "str", "ord", "chr", "list"):
                 builtin_like = dict(node)
                 builtin_like["lowered_kind"] = "BuiltinCall"
                 builtin_like["builtin_name"] = fn_name
-                builtin_like["runtime_call"] = fn_name
+                builtin_like["runtime_call"] = "list_ctor" if fn_name == "list" else fn_name
                 return _emit_builtin_call(ctx, builtin_like)
             local_sig = ctx.function_signatures.get(fn_name)
             # For callable-typed variables (e.g. lambdas), get param types from the func node.
@@ -2476,11 +2450,6 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 if len(arg_strs) == 1:
                     return arg_strs[0]
                 return "nil"
-            if fn_name in _STR_METHOD_HELPERS and len(call_arg_strs) >= 1:
-                helper_args2 = list(call_arg_strs)
-                if fn_name == "join" and len(args) >= 2 and isinstance(args[1], dict) and len(helper_args2) >= 2:
-                    helper_args2[1] = _wrapper_container_storage_expr(ctx, args[1], helper_args2[1])
-                return _STR_METHOD_HELPERS[fn_name] + "(" + ", ".join(helper_args2) + ")"
             if fn_name == "str" and len(call_arg_strs) >= 1:
                 return "py_str(" + call_arg_strs[0] + ")"
             if fn_name == "len" and len(call_arg_strs) >= 1:
@@ -2742,37 +2711,41 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                             key_attr = _safe_go_ident(_str(body, "attr"))
                 break
             out_name = _next_temp(ctx, "sorted")
+            if len(args) >= 1 and isinstance(args[0], dict):
+                src_code = _wrapper_container_storage_expr(ctx, args[0], src_code)
             if src_rt == "set[str]":
                 ctx.imports_needed.add("sort")
                 key_name = _next_temp(ctx, "k")
                 return (
-                    "func() []string {\n"
+                    "func() *PyList[string] {\n"
                     + "\t" + out_name + " := []string{}\n"
                     + "\tfor " + key_name + " := range " + src_code + " {\n"
                     + "\t\t" + out_name + " = append(" + out_name + ", " + key_name + ")\n"
                     + "\t}\n"
                     + "\tsort.Strings(" + out_name + ")\n"
-                    + "\treturn " + out_name + "\n"
+                    + "\treturn PyListFromSlice[string](" + out_name + ")\n"
                     + "}()"
                 )
             if src_rt == "list[str]" or result_gt == "[]string":
                 ctx.imports_needed.add("sort")
                 return (
-                    "func() []string {\n"
+                    "func() *PyList[string] {\n"
                     + "\t" + out_name + " := append([]string{}, " + src_code + "...)\n"
                     + "\tsort.Strings(" + out_name + ")\n"
-                    + "\treturn " + out_name + "\n"
+                    + "\treturn PyListFromSlice[string](" + out_name + ")\n"
                     + "}()"
                 )
             if src_rt.startswith("list[") and result_gt.startswith("[]") and key_attr != "":
+                result_rt = _str(node, "resolved_type")
+                result_wrapper_gt = _go_ref_container_type(ctx, result_rt) if _is_container_resolved_type(result_rt) else result_gt
                 ctx.imports_needed.add("sort")
                 return (
-                    "func() " + result_gt + " {\n"
+                    "func() " + result_wrapper_gt + " {\n"
                     + "\t" + out_name + " := append(" + result_gt + "{}, " + src_code + "...)\n"
                     + "\tsort.Slice(" + out_name + ", func(i int, j int) bool {\n"
                     + "\t\treturn " + out_name + "[i]." + key_attr + " < " + out_name + "[j]." + key_attr + "\n"
                     + "\t})\n"
-                    + "\treturn " + out_name + "\n"
+                    + "\treturn PyListFromSlice(" + out_name + ")\n"
                     + "}()"
                 )
         return "py_sorted(" + ", ".join(arg_strs) + ")"
@@ -2787,8 +2760,15 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             src_type = _str(args[0], "resolved_type")
             result_type = _str(node, "resolved_type")
             result_gt = go_type(result_type)
+            src_code = arg_strs[0]
+            if _is_container_resolved_type(result_type):
+                src_code = _wrapper_container_storage_expr(ctx, args[0], src_code)
+                if result_type == "list":
+                    return "py_list_any(" + src_code + ")"
+                if result_type.startswith("list[") and result_type.endswith("]"):
+                    elem_gt = _go_signature_type(ctx, result_type[5:-1])
+                    return "PyListFromSlice[" + elem_gt + "](" + src_code + ")"
             if src_type == result_type and result_gt.startswith("[]"):
-                src_code = _wrapper_container_storage_expr(ctx, args[0], arg_strs[0])
                 return "append(" + result_gt + "{}, " + src_code + "...)"
         if len(arg_strs) >= 1:
             return arg_strs[0]
@@ -3025,9 +3005,6 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if owner_rt == "str" and len(arg_strs) >= 1:
             owner_code = _emit_expr(ctx, owner_node)
             return "py_str_index(" + owner_code + ", " + arg_strs[0] + ")"
-
-    if bn in _STR_METHOD_HELPERS:
-        return _STR_METHOD_HELPERS[bn] + "(" + ", ".join(call_arg_strs) + ")"
 
     # Use runtime mapping for generic resolution
     if resolved != "":
@@ -5276,75 +5253,77 @@ def _emit_swap(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _emit_with(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
-    """Emit a with statement.
-
-    Pattern: with open(path, "wb") as f: f.write(data)
-    → os.WriteFile(path, data, 0644)
-    """
     context_expr = node.get("context_expr")
-    var_name = _str(node, "var_name")
+    if not isinstance(context_expr, dict):
+        return
+    var_name = _go_symbol_name(ctx, _str(node, "var_name"))
     body = _list(node, "body")
+    ctx_expr = _emit_expr(ctx, context_expr)
+    ctx_tmp = _next_temp(ctx, "__with_ctx")
 
-    # Detect: with open(path, mode) as f: f.write(data)
-    is_open = False
-    open_path = ""
-    if isinstance(context_expr, dict):
-        func = context_expr.get("func")
-        if isinstance(func, dict) and _str(func, "id") == "open":
-            args = _list(context_expr, "args")
-            if len(args) >= 1:
-                is_open = True
-                open_path = _emit_expr(ctx, args[0])
+    hoisted: list[tuple[str, str]] = []
+    seen: set[str] = set()
 
-    if is_open and len(body) == 1:
-        stmt = body[0]
-        if isinstance(stmt, dict) and _str(stmt, "kind") == "Return":
-            value = stmt.get("value")
-            if isinstance(value, dict) and _str(value, "kind") == "Unbox":
-                value = value.get("value")
-            if isinstance(value, dict) and _str(value, "kind") == "Call":
-                call_func = value.get("func")
-                if isinstance(call_func, dict) and _str(call_func, "kind") == "Attribute":
-                    recv = call_func.get("value")
-                    if isinstance(recv, dict) and _str(recv, "kind") == "Name" and _str(recv, "id") == var_name:
-                        attr = _str(call_func, "attr")
-                        call_args = _list(value, "args")
-                        if attr == "read":
-                            ctx.imports_needed.add(ctx.go_pkg_os)
-                            _emit(ctx, "data, err := os.ReadFile(" + open_path + ")")
-                            _emit(ctx, "if err != nil { panic(err) }")
-                            _emit(ctx, "return string(data)")
-                            return
-                        if attr == "write" and len(call_args) >= 1:
-                            ctx.imports_needed.add(ctx.go_pkg_os)
-                            data_expr = _emit_expr(ctx, call_args[0])
-                            if data_expr.startswith("[]byte(") and data_expr.endswith(")"):
-                                data_expr = data_expr[7:-1]
-                            _emit(ctx, "if err := os.WriteFile(" + open_path + ", []byte(" + data_expr + "), 0644); err != nil { panic(err) }")
-                            _emit(ctx, "return int64(len(" + data_expr + "))")
-                            return
-        # Single body statement: f.write(data) → os.WriteFile(path, data, 0644)
-        if isinstance(stmt, dict) and _str(stmt, "kind") == "Expr":
-            value = stmt.get("value")
-            if isinstance(value, dict) and _str(value, "kind") == "Call":
-                call_func = value.get("func")
-                if isinstance(call_func, dict) and _str(call_func, "attr") == "write":
-                    call_args = _list(value, "args")
-                    if len(call_args) >= 1:
-                        ctx.imports_needed.add(ctx.go_pkg_os)
-                        data_expr = _emit_expr(ctx, call_args[0])
-                        # bytes(x) → x (already []byte)
-                        if data_expr.startswith("[]byte(") and data_expr.endswith(")"):
-                            data_expr = data_expr[7:-1]
-                        _emit(ctx, "os.WriteFile(" + open_path + ", " + data_expr + ", 0644)")
-                        return
+    def _add_hoisted(name: str, resolved_type: str) -> None:
+        if name == "" or name in seen:
+            return
+        seen.add(name)
+        hoisted.append((name, resolved_type))
 
-    # Fallback: emit body inline with comment
-    _emit(ctx, "// with " + var_name + " {")
+    def _walk_hoisted(stmts: list[JsonVal]) -> None:
+        for raw_stmt in stmts:
+            if not isinstance(raw_stmt, dict):
+                continue
+            kind = _str(raw_stmt, "kind")
+            if kind == "AnnAssign":
+                target = raw_stmt.get("target")
+                if isinstance(target, dict) and _str(target, "kind") in ("Name", "NameTarget"):
+                    _add_hoisted(_go_symbol_name(ctx, _str(target, "id")), _str(raw_stmt, "decl_type") or _str(raw_stmt, "resolved_type"))
+            elif kind == "Assign":
+                target = raw_stmt.get("target")
+                if not isinstance(target, dict):
+                    targets = _list(raw_stmt, "targets")
+                    if len(targets) > 0 and isinstance(targets[0], dict):
+                        target = targets[0]
+                if isinstance(target, dict) and _str(target, "kind") in ("Name", "NameTarget"):
+                    _add_hoisted(_go_symbol_name(ctx, _str(target, "id")), _str(raw_stmt, "decl_type") or _str(raw_stmt, "resolved_type"))
+            elif kind in ("If", "While", "With", "Try", "ForCore"):
+                _walk_hoisted(_list(raw_stmt, "body"))
+                _walk_hoisted(_list(raw_stmt, "orelse"))
+                _walk_hoisted(_list(raw_stmt, "finalbody"))
+                for handler in _list(raw_stmt, "handlers"):
+                    if isinstance(handler, dict):
+                        _walk_hoisted(_list(handler, "body"))
+
+    _walk_hoisted(body)
+    for name, resolved_type in hoisted:
+        if name in ctx.var_types:
+            continue
+        ctx.var_types[name] = resolved_type
+        ctx.var_decl_depth[name] = ctx.indent_level
+        decl_type = _decl_go_type(ctx, resolved_type, name)
+        if decl_type != "":
+            _emit(ctx, "var " + name + " " + decl_type + " = " + _decl_go_zero_value(ctx, resolved_type, name))
+        else:
+            _emit(ctx, "var " + name + " = " + _decl_go_zero_value(ctx, resolved_type, name))
+
+    _emit(ctx, ctx_tmp + " := " + ctx_expr)
+    if var_name != "":
+        if var_name in ctx.var_types:
+            _emit(ctx, var_name + " = " + ctx_tmp + ".__enter__()")
+        else:
+            _emit(ctx, var_name + " := " + ctx_tmp + ".__enter__()")
+            ctx.var_types[var_name] = _str(node, "with_enter_type") or _effective_resolved_type(ctx, context_expr)
+            ctx.var_decl_depth[var_name] = ctx.indent_level
+    else:
+        _emit(ctx, ctx_tmp + ".__enter__()")
+
+    _emit(ctx, "func() {")
     ctx.indent_level += 1
+    _emit(ctx, "defer " + ctx_tmp + ".__exit__(nil, nil, nil)")
     _emit_body(ctx, body)
     ctx.indent_level -= 1
-    _emit(ctx, "// }")
+    _emit(ctx, "}()")
 
 
 def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
@@ -6314,8 +6293,12 @@ def _function_mutates_name(node: JsonVal, target_name: str) -> bool:
         if isinstance(func, dict) and _str(func, "kind") == "Attribute":
             owner = func.get("value")
             if isinstance(owner, dict) and _str(owner, "kind") == "Name" and _str(owner, "id") == target_name:
-                attr = _str(func, "attr")
-                if attr in ("append", "extend", "pop", "clear"):
+                method_key = _str(node, "resolved_runtime_call")
+                if method_key == "":
+                    method_key = _str(node, "runtime_call")
+                if method_key == "":
+                    method_key = _str(node, "runtime_symbol")
+                if method_key in ("list.append", "list.extend", "list.pop", "list.clear", "bytearray.append", "bytearray.extend", "bytearray.pop", "bytearray.clear"):
                     return True
     if kind == "Assign":
         target = node.get("target")

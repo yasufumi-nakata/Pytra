@@ -426,7 +426,7 @@ func py_str(v any) string {
 		return py_format_float64(t)
 	}
 	if rv.Kind() == goreflect.Slice || rv.Kind() == goreflect.Array {
-		return py_format_sequence(v)
+		return py_format_sequence_repr(v)
 	}
 	if rv.Kind() == goreflect.Map {
 		if rv.Type().Elem().Kind() == goreflect.Struct {
@@ -440,6 +440,14 @@ func py_to_string(v any) string { return py_str(v) }
 
 type PyFile struct {
 	file *os.File
+}
+
+func (f *PyFile) __enter__() *PyFile {
+	return f
+}
+
+func (f *PyFile) __exit__(excType any, excVal any, excTb any) {
+	f.close()
 }
 
 type SystemExit int64
@@ -578,6 +586,10 @@ func (f *PyFile) read() string {
 	return string(data)
 }
 
+func py_TextIOWrapper_read(f *PyFile) string {
+	return f.read()
+}
+
 func (f *PyFile) write(data any) int64 {
 	switch t := data.(type) {
 	case string:
@@ -599,6 +611,10 @@ func (f *PyFile) write(data any) int64 {
 		}
 		return int64(n)
 	}
+}
+
+func py_TextIOWrapper_write(f *PyFile, data any) int64 {
+	return f.write(data)
 }
 
 func (f *PyFile) close() {
@@ -773,16 +789,68 @@ func py_truthy(v any) bool {
 func py_bool(v any) bool { return py_truthy(v) }
 
 func py_eq(a any, b any) bool {
+	if view, ok := a.(pyListView); ok {
+		items := make([]any, view.pyListLen())
+		for i := 0; i < view.pyListLen(); i++ {
+			items[i] = view.pyListItemAny(i)
+		}
+		a = items
+	}
+	if view, ok := b.(pyListView); ok {
+		items := make([]any, view.pyListLen())
+		for i := 0; i < view.pyListLen(); i++ {
+			items[i] = view.pyListItemAny(i)
+		}
+		b = items
+	}
+	if view, ok := a.(pyDictAccessor); ok {
+		a = view.pyDictItemsAny()
+	}
+	if view, ok := b.(pyDictAccessor); ok {
+		b = view.pyDictItemsAny()
+	}
 	if goreflect.DeepEqual(a, b) {
 		return true
+	}
+	av := goreflect.ValueOf(a)
+	bv := goreflect.ValueOf(b)
+	if av.IsValid() && bv.IsValid() {
+		if (av.Kind() == goreflect.Slice || av.Kind() == goreflect.Array) && (bv.Kind() == goreflect.Slice || bv.Kind() == goreflect.Array) {
+			if av.Len() != bv.Len() {
+				return false
+			}
+			for i := 0; i < av.Len(); i++ {
+				if !py_eq(av.Index(i).Interface(), bv.Index(i).Interface()) {
+					return false
+				}
+			}
+			return true
+		}
+		if av.Kind() == goreflect.Map && bv.Kind() == goreflect.Map {
+			if av.Len() != bv.Len() {
+				return false
+			}
+			iter := av.MapRange()
+			for iter.Next() {
+				key := iter.Key()
+				var other goreflect.Value
+				if key.Type().AssignableTo(bv.Type().Key()) {
+					other = bv.MapIndex(key)
+				} else if key.Type().ConvertibleTo(bv.Type().Key()) {
+					other = bv.MapIndex(key.Convert(bv.Type().Key()))
+				}
+				if !other.IsValid() || !py_eq(iter.Value().Interface(), other.Interface()) {
+					return false
+				}
+			}
+			return true
+		}
 	}
 	_, a_is_string := a.(string)
 	_, b_is_string := b.(string)
 	if a_is_string != b_is_string {
 		return false
 	}
-	av := goreflect.ValueOf(a)
-	bv := goreflect.ValueOf(b)
 	if !av.IsValid() || !bv.IsValid() {
 		return !av.IsValid() && !bv.IsValid()
 	}
@@ -1234,11 +1302,12 @@ func py_str_endswith(s, suffix string) bool         { return strings.HasSuffix(s
 func py_str_upper(s string) string                  { return strings.ToUpper(s) }
 func py_str_lower(s string) string                  { return strings.ToLower(s) }
 func py_str_find(s, sub string) int64               { return int64(strings.Index(s, sub)) }
+func py_str_count(s, sub string) int64              { return int64(strings.Count(s, sub)) }
 func py_str_rfind(s, sub string) int64              { return int64(strings.LastIndex(s, sub)) }
 func py_str_index(s, sub string) int64 {
 	idx := strings.Index(s, sub)
 	if idx < 0 {
-		panic("substring not found")
+		panic(pytraNewValueError("substring not found"))
 	}
 	return int64(idx)
 }
@@ -1311,6 +1380,15 @@ func py_reversed[T any](seq *PyList[T]) *PyList[T] {
 	for i := range src {
 		out[len(src)-1-i] = src[i]
 	}
+	return &PyList[T]{items: out}
+}
+
+func py_sorted[T any](seq *PyList[T]) *PyList[T] {
+	out := make([]T, len(seq.items))
+	copy(out, seq.items)
+	sort.Slice(out, func(i int, j int) bool {
+		return py_less_any(out[i], out[j])
+	})
 	return &PyList[T]{items: out}
 }
 
