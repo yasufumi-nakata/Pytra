@@ -1035,6 +1035,14 @@ fun __pytra_min(a: Any?, b: Any?): Any? {
     return __pytra_int(b)
 }
 
+fun __pytra_min(a: Long, b: Long): Long {
+    return if (a < b) a else b
+}
+
+fun __pytra_min(a: Double, b: Double): Double {
+    return if (a < b) a else b
+}
+
 fun __pytra_max(a: Any?, b: Any?): Any? {
     val af = __pytra_float(a)
     val bf = __pytra_float(b)
@@ -1044,6 +1052,14 @@ fun __pytra_max(a: Any?, b: Any?): Any? {
     }
     if (__pytra_is_float(a) || __pytra_is_float(b)) return bf
     return __pytra_int(b)
+}
+
+fun __pytra_max(a: Long, b: Long): Long {
+    return if (a > b) a else b
+}
+
+fun __pytra_max(a: Double, b: Double): Double {
+    return if (a > b) a else b
 }
 
 fun pyMathSqrt(v: Any?): Double { return kotlin.math.sqrt(__pytra_float(v)) }

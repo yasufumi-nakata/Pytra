@@ -68,7 +68,7 @@
 4. [x] [ID: P1-KOTLIN-EMITTER-S4] Kotlin runtime を toolchain2 の emit 出力と整合させる — `with`、`bytearray` ctor、`str.count/rfind/index`、`Path.joinpath`、exception/sorted surface を runtime/emitter で整合済み
 5. [x] [ID: P1-KOTLIN-EMITTER-S5] fixture の Kotlin run parity を通す（`kotlinc` + `java -jar`） — `with_statement`、`with_context_manager`、`exception_types`、`str_count`、`str_find_index`、`float_constructor` などを PASS 確認済み
 6. [x] [ID: P1-KOTLIN-EMITTER-S6] stdlib の Kotlin parity を通す（`--case-root stdlib`） — `pytra_runtime_png`、`pathlib_extended` を PASS 確認済み
-7. [ ] [ID: P1-KOTLIN-EMITTER-S7] sample の Kotlin parity を通す（`--case-root sample`）
+7. [x] [ID: P1-KOTLIN-EMITTER-S7] sample の Kotlin parity を通す（`--case-root sample`） — `runtime_parity_check_fast.py --case-root sample --targets kotlin` で `18/18 PASS`
 
 ### P3-JAVA-SELFHOST: Java emitter で toolchain2 を Java に変換し build を通す
 

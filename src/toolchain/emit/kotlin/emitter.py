@@ -75,6 +75,19 @@ class KotlinRenderer(CommonRenderer):
                 return rendered_name
         return "Any?"
 
+    def _is_path_type(self, resolved_type: str) -> bool:
+        path_type = self._path_type_name()
+        if resolved_type == path_type and path_type != "":
+            return True
+        for source_name, rendered_name in self.mapping.types.items():
+            if not isinstance(source_name, str) or source_name.lower() != "path":
+                continue
+            if resolved_type == source_name:
+                return True
+            if isinstance(rendered_name, str) and rendered_name != "" and resolved_type == rendered_name:
+                return True
+        return False
+
     def _is_exception_name(self, name: str) -> bool:
         return name in self.mapping.exception_types or name in self.module_class_names
 
@@ -145,7 +158,7 @@ class KotlinRenderer(CommonRenderer):
         return prefix + str(self._tmp_counter)
 
     def _render_type(self, resolved_type: str) -> str:
-        if resolved_type == "__pytra_Path":
+        if self._is_path_type(resolved_type):
             return self._path_type_name()
         if resolved_type == "Obj":
             if resolved_type in self.module_class_names:

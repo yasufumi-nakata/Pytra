@@ -756,6 +756,15 @@ def _run_target(
         if build.returncode != 0:
             return build
         main_class = case_path.stem
+        entry_file = emit_dir / (case_path.stem + ".kt")
+        if entry_file.exists():
+            for raw_line in entry_file.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if line.startswith("object "):
+                    object_name = line[len("object "):].split("{", 1)[0].strip()
+                    if object_name != "":
+                        main_class = object_name
+                    break
         return run_shell(
             "java -cp " + shlex.quote(str(jar_path)) + " " + shlex.quote(main_class),
             cwd=work_dir,
