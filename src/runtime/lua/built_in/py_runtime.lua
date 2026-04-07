@@ -285,6 +285,9 @@ end
 
 function __pytra_int(v)
     if v == nil then return 0 end
+    if type(v) == "number" then
+        return v >= 0 and math.floor(v) or math.ceil(v)
+    end
     local n = tonumber(v) or 0
     if n >= 0 then
         return math.floor(n)
@@ -334,9 +337,7 @@ function __pytra_bytearray(v)
     end
     if type(v) == "table" then
         local out = {}
-        for i = 1, #v do
-            out[i] = v[i]
-        end
+        table.move(v, 1, #v, 1, out)
         return setmetatable(out, __pytra_bytearray_mt)
     end
     return setmetatable({}, __pytra_bytearray_mt)
@@ -371,25 +372,8 @@ function __pytra_bytearray_extend(self, other)
     if type(other) ~= "table" then
         return
     end
-    local base = #self
-    for i = 1, #other do
-        local v = other[i]
-        if type(v) == "number" then
-            if v >= 0 and v < 256 and math.floor(v) == v then
-                self[base + i] = v
-            elseif v >= 0 then
-                self[base + i] = math.floor(v)
-            else
-                self[base + i] = math.ceil(v)
-            end
-        else
-            local n = tonumber(v) or 0
-            if n >= 0 then
-                self[base + i] = math.floor(n)
-            else
-                self[base + i] = math.ceil(n)
-            end
-        end
+    if #other > 0 then
+        table.move(other, 1, #other, #self + 1, self)
     end
 end
 
@@ -411,29 +395,10 @@ function __pytra_bytearray_extend_slice(self, other, start_idx, stop_idx)
     if j < 0 then j = 0 end
     if i > n then i = n end
     if j > n then j = n end
-    local base = #self
-    local out_i = 1
     local from = math.floor(i) + 1
     local to = math.floor(j)
-    for k = from, to do
-        local v = other[k]
-        if type(v) == "number" then
-            if v >= 0 and v < 256 and math.floor(v) == v then
-                self[base + out_i] = v
-            elseif v >= 0 then
-                self[base + out_i] = math.floor(v)
-            else
-                self[base + out_i] = math.ceil(v)
-            end
-        else
-            local n_v = tonumber(v) or 0
-            if n_v >= 0 then
-                self[base + out_i] = math.floor(n_v)
-            else
-                self[base + out_i] = math.ceil(n_v)
-            end
-        end
-        out_i = out_i + 1
+    if from <= to then
+        table.move(other, from, to, #self + 1, self)
     end
 end
 
@@ -461,8 +426,8 @@ function __pytra_list_extend(items, other)
     if type(other) ~= "table" then
         return
     end
-    for i = 1, #other do
-        items[#items + 1] = other[i]
+    if #other > 0 then
+        table.move(other, 1, #other, #items + 1, items)
     end
 end
 
@@ -531,9 +496,7 @@ function __pytra_bytes(v)
     end
     if type(v) == "table" then
         local out = {}
-        for i = 1, #v do
-            out[i] = v[i]
-        end
+        table.move(v, 1, #v, 1, out)
         return out
     end
     if type(v) == "string" then
