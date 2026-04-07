@@ -8,16 +8,6 @@ if type(__pytra_runtime_source) == "string" and string.sub(__pytra_runtime_sourc
 end
 -- image_runtime is now provided via linker (png/gif modules)
 
-PYTRA_TID_NONE = 0
-PYTRA_TID_BOOL = 1
-PYTRA_TID_INT = 2
-PYTRA_TID_FLOAT = 3
-PYTRA_TID_STR = 4
-PYTRA_TID_LIST = 5
-PYTRA_TID_DICT = 6
-PYTRA_TID_SET = 7
-PYTRA_TID_OBJECT = 8
-
 function __pytra_print(...)
     local argc = select("#", ...)
     if argc == 0 then

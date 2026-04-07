@@ -244,6 +244,10 @@ def __pytra_clear(container)
   nil
 end
 
+def __pytra_str_rfind(value, sub)
+  __pytra_str(value).rfind(sub)
+end
+
 def __pytra_pop(container, key = nil)
   return nil if container.nil?
   if container.is_a?(Hash)

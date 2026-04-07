@@ -656,9 +656,9 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 runtime_symbol = _str(node, "runtime_symbol")
                 if runtime_symbol == "":
                     runtime_symbol = attr
-                if mod_id in ("sys", "pytra.std.sys"):
-                    owner_name = owner_id if owner_id != "" else owner
-                    return owner_name + "." + _safe_lua_ident(attr)
+                namespace_expr = ctx.mapping.module_namespace_exprs.get(mod_id, "")
+                if namespace_expr != "":
+                    return namespace_expr + "." + _safe_lua_ident(attr)
                 mod_short = mod_id.rsplit(".", 1)[-1]
                 qualified_key = mod_short + "." + runtime_symbol
                 if qualified_key in ctx.mapping.calls:
@@ -873,6 +873,16 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "__pytra_set_clear(" + arg_strs[0] + ")"
         return "nil"
 
+    if call_name == "__BYTEARRAY_APPEND__":
+        if len(arg_strs) >= 2:
+            return "__pytra_bytearray_append(" + arg_strs[0] + ", " + arg_strs[1] + ")"
+        return "nil"
+
+    if call_name == "__BYTEARRAY_EXTEND__":
+        if len(arg_strs) >= 2:
+            return "__pytra_bytearray_extend(" + arg_strs[0] + ", " + arg_strs[1] + ")"
+        return "nil"
+
     if call_name == "__DICT_GET__":
         if len(arg_strs) >= 3:
             return "__pytra_dict_get(" + arg_strs[0] + ", " + arg_strs[1] + ", " + arg_strs[2] + ")"
@@ -1014,39 +1024,62 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 # String methods
                 if owner_rt == "str" or owner_rt == "string":
                     return _emit_str_method(ctx, owner, attr, arg_strs)
+                owner_method_key = ""
                 if _type_contains(owner_rt, "dict"):
-                    if attr == "get":
-                        if len(arg_strs) >= 2:
-                            return "__pytra_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
-                        if len(arg_strs) >= 1:
-                            return "__pytra_dict_get(" + owner + ", " + arg_strs[0] + ", nil)"
-                    if attr == "clear":
-                        return "__pytra_dict_clear(" + owner + ")"
-                    if attr == "items":
+                    owner_method_key = "dict." + attr
+                elif _type_contains(owner_rt, "set"):
+                    owner_method_key = "set." + attr
+                elif owner_rt.startswith("list[") or owner_rt == "list":
+                    owner_method_key = "list." + attr
+                elif owner_rt == "bytearray":
+                    owner_method_key = "bytearray." + attr
+                if owner_method_key != "":
+                    mapped_owner_call = ctx.mapping.calls.get(owner_method_key, "")
+                    owner_args = [owner] + arg_strs
+                    if mapped_owner_call == "__DICT_GET__":
+                        if len(owner_args) >= 3:
+                            return "__pytra_dict_get(" + owner_args[0] + ", " + owner_args[1] + ", " + owner_args[2] + ")"
+                        if len(owner_args) >= 2:
+                            return "__pytra_dict_get(" + owner_args[0] + ", " + owner_args[1] + ", nil)"
+                        return "nil"
+                    if mapped_owner_call == "__pytra_clear__":
+                        return "__pytra_clear(" + owner + ")"
+                    if mapped_owner_call == "__DICT_ITEMS__":
                         return "__pytra_dict_items(" + owner + ")"
-                    if attr == "keys":
+                    if mapped_owner_call == "__DICT_KEYS__":
                         return "__pytra_dict_keys(" + owner + ")"
-                    if attr == "values":
+                    if mapped_owner_call == "__DICT_VALUES__":
                         return "__pytra_dict_values(" + owner + ")"
-                if _type_contains(owner_rt, "set"):
-                    if attr == "add" and len(arg_strs) >= 1:
-                        return "__pytra_set_add(" + owner + ", " + arg_strs[0] + ")"
-                    if attr == "discard" and len(arg_strs) >= 1:
-                        return "__pytra_set_discard(" + owner + ", " + arg_strs[0] + ")"
-                    if attr == "remove" and len(arg_strs) >= 1:
-                        return "__pytra_set_remove(" + owner + ", " + arg_strs[0] + ")"
-                if owner_rt.startswith("list[") or owner_rt == "list":
-                    if attr == "append" and len(arg_strs) >= 1:
-                        return "__pytra_list_append(" + owner + ", " + arg_strs[0] + ")"
-                    if attr == "clear":
+                    if mapped_owner_call == "__SET_ADD__":
+                        if len(owner_args) >= 2:
+                            return "__pytra_set_add(" + owner_args[0] + ", " + owner_args[1] + ")"
+                        return "nil"
+                    if mapped_owner_call == "__SET_DISCARD__":
+                        if len(owner_args) >= 2:
+                            return "__pytra_set_discard(" + owner_args[0] + ", " + owner_args[1] + ")"
+                        return "nil"
+                    if mapped_owner_call == "__SET_REMOVE__":
+                        if len(owner_args) >= 2:
+                            return "__pytra_set_remove(" + owner_args[0] + ", " + owner_args[1] + ")"
+                        return "nil"
+                    if mapped_owner_call == "__LIST_APPEND__":
+                        if len(owner_args) >= 2:
+                            return "__pytra_list_append(" + owner_args[0] + ", " + owner_args[1] + ")"
+                        return "nil"
+                    if mapped_owner_call == "__LIST_CLEAR__":
                         return "__pytra_list_clear(" + owner + ")"
-                    if attr == "extend" and len(arg_strs) >= 1:
-                        return "__pytra_list_extend(" + owner + ", " + arg_strs[0] + ")"
-                if owner_rt == "bytearray":
-                    if attr == "append" and len(arg_strs) >= 1:
-                        return "__pytra_bytearray_append(" + owner + ", " + arg_strs[0] + ")"
-                    if attr == "extend" and len(arg_strs) >= 1:
-                        return _emit_bytearray_extend_arg(ctx, owner, args[0])
+                    if mapped_owner_call == "__LIST_EXTEND__":
+                        if len(owner_args) >= 2:
+                            return "__pytra_list_extend(" + owner_args[0] + ", " + owner_args[1] + ")"
+                        return "nil"
+                    if mapped_owner_call == "__BYTEARRAY_APPEND__":
+                        if len(owner_args) >= 2:
+                            return "__pytra_bytearray_append(" + owner_args[0] + ", " + owner_args[1] + ")"
+                        return "nil"
+                    if mapped_owner_call == "__BYTEARRAY_EXTEND__":
+                        if len(arg_strs) >= 1:
+                            return _emit_bytearray_extend_arg(ctx, owner, args[0])
+                        return "nil"
                 # Path methods
                 if owner_rt in LUA_PATH_TYPE_NAMES:
                     return _emit_path_method(ctx, owner, attr, arg_strs)

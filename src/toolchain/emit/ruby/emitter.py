@@ -421,11 +421,9 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 qualified_key = mod_short + "." + runtime_symbol
                 if qualified_key in ctx.mapping.calls:
                     return ctx.mapping.calls[qualified_key]
-            if mod_id in ("sys", "pytra.std.sys"):
-                owner_name = _str(owner_node, "id")
-                if owner_name == "":
-                    owner_name = _emit_expr(ctx, owner_node)
-                return owner_name + "." + _ruby_method_name(attr)
+            namespace_expr = ctx.mapping.module_namespace_exprs.get(mod_id, "")
+            if namespace_expr != "":
+                return namespace_expr + "." + _ruby_method_name(attr)
             if _should_skip_module_ruby(mod_id, ctx.mapping):
                 resolved = resolve_runtime_symbol_name(runtime_symbol, ctx.mapping, module_id=mod_id)
                 return resolved
@@ -932,8 +930,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return _emit_method_call_on_first_arg_strs(builtin_args_strs, "concat")
     if mapped == "__LIST_POP__":
         return _emit_list_pop_strs(builtin_args_strs)
-    if mapped == "__LIST_CLEAR__":
-        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "clear")
+    if mapped == "__pytra_clear__":
+        return "__pytra_clear(" + ", ".join(builtin_args_strs) + ")"
     if mapped == "__LIST_INDEX__":
         return _emit_list_index_strs(builtin_args_strs)
     if mapped == "__DICT_GET__":
@@ -965,8 +963,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return _emit_str_replace_strs(builtin_args_strs)
     if mapped == "__STR_FIND__":
         return _emit_str_method_strs(builtin_args_strs, "find")
-    if mapped == "__STR_RFIND__":
-        return _emit_str_method_strs(builtin_args_strs, "rfind")
+    if mapped == "__pytra_str_rfind":
+        return "__pytra_str_rfind(" + ", ".join(builtin_args_strs) + ")"
     if mapped == "__STR_SPLIT__":
         return _emit_str_split_strs(builtin_args_strs)
     if mapped == "__STR_JOIN__":
@@ -1170,8 +1168,8 @@ def _emit_method_call(
         return _emit_method_call_on_first_arg_strs(builtin_args_strs, "concat")
     if mapped == "__LIST_POP__":
         return _emit_list_pop_strs(builtin_args_strs)
-    if mapped == "__LIST_CLEAR__":
-        return _emit_method_call_on_first_arg_strs(builtin_args_strs, "clear")
+    if mapped == "__pytra_clear__":
+        return "__pytra_clear(" + ", ".join(builtin_args_strs) + ")"
     if mapped == "__LIST_INDEX__":
         return _emit_list_index_strs(builtin_args_strs)
     if mapped == "__DICT_GET__":
@@ -1202,8 +1200,8 @@ def _emit_method_call(
         return _emit_str_replace_strs(builtin_args_strs)
     if mapped == "__STR_FIND__":
         return _emit_str_method_strs(builtin_args_strs, "find")
-    if mapped == "__STR_RFIND__":
-        return _emit_str_method_strs(builtin_args_strs, "rfind")
+    if mapped == "__pytra_str_rfind":
+        return "__pytra_str_rfind(" + ", ".join(builtin_args_strs) + ")"
     if mapped == "__STR_SPLIT__":
         return _emit_str_split_strs(builtin_args_strs)
     if mapped == "__STR_JOIN__":

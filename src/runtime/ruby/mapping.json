@@ -20,7 +20,7 @@
     "list.append": "__LIST_APPEND__",
     "list.extend": "__LIST_EXTEND__",
     "list.pop": "__LIST_POP__",
-    "list.clear": "__LIST_CLEAR__",
+    "list.clear": "__pytra_clear",
     "list.index": "__LIST_INDEX__",
     "dict.get": "__DICT_GET__",
     "dict.items": "__DICT_ITEMS__",
@@ -36,7 +36,7 @@
     "str.endswith": "__STR_ENDSWITH__",
     "str.replace": "__STR_REPLACE__",
     "str.find": "__STR_FIND__",
-    "str.rfind": "__STR_RFIND__",
+    "str.rfind": "__pytra_str_rfind",
     "str.split": "__STR_SPLIT__",
     "str.join": "__STR_JOIN__",
     "str.upper": "__STR_UPPER__",
@@ -98,6 +98,10 @@
     "None": "NilClass",
     "Exception": "StandardError",
     "Path": "String"
+  },
+  "module_namespace_exprs": {
+    "pytra.std.sys": "sys",
+    "sys": "sys"
   },
   "implicit_promotions": [],
   "skip_modules": [
