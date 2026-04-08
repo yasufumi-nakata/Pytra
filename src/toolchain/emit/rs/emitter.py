@@ -4979,14 +4979,14 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 ctx.indent_level -= 1
             # Remaining string handlers go in else block
             if len(string_handlers) > 0:
-                _emit(ctx, "} else {")
+                _emit(ctx, renderer.render_string_exception_handler_else_open())
                 ctx.indent_level += 1
                 renderer.emit_string_exception_binding("__catch_err", "__err_msg")
                 ctx.catch_err_msg_var = "__err_msg"
                 for handler in string_handlers:
                     renderer.emit_exception_handler(handler)
                 ctx.indent_level -= 1
-            _emit(ctx, "}")
+            _emit(ctx, renderer.render_string_exception_handler_else_close())
         else:
             # Only string handlers (original behavior)
             renderer.emit_string_exception_binding("__catch_err", "__err_msg")
