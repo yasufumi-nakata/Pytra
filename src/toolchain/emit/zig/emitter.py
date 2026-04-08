@@ -289,6 +289,11 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         super().emit_exception_handler(handler)
         self.owner.indent = self.state.indent_level
 
+    def emit_backend_line(self, text: str) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_line(text)
+        self.state.indent_level = self.owner.indent
+
     def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
         type_name = _safe_ident(self.exception_handler_type_name(handler), "")
         return type_name in self.owner._catch_all_exception_types
@@ -326,7 +331,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         return "}"
 
     def emit_exception_dispatch_state_init(self, handled_name: str) -> None:
-        self.owner._emit_line("var " + handled_name + " = false;")
+        self.emit_backend_line("var " + handled_name + " = false;")
 
     def render_exception_handler_guard_open(
         self,
@@ -342,7 +347,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         return "}"
 
     def emit_exception_handler_mark_handled(self, handled_name: str) -> None:
-        self.owner._emit_line(handled_name + " = true;")
+        self.emit_backend_line(handled_name + " = true;")
 
     def emit_exception_handler_prelude(self, handler: dict[str, Any]) -> None:
         current_indent = self.owner.indent
@@ -1981,20 +1986,9 @@ class ZigNativeEmitter:
         if len(handlers) > 0:
             handled = "__pytra_handled_" + str(self.tmp_seq)
             self.tmp_seq += 1
-            self._emit_line(renderer.render_exception_dispatch_open("__pytra_exc_type"))
-            self.indent += 1
-            renderer.emit_exception_dispatch_state_init(handled)
-            for h in handlers:
-                if not isinstance(h, dict):
-                    continue
-                self._emit_line(renderer.render_exception_handler_guard_open(h, handled, "__pytra_exc_type"))
-                self.indent += 1
-                renderer.emit_exception_handler_mark_handled(handled)
-                renderer.emit_exception_handler(h)
-                self.indent -= 1
-                self._emit_line(renderer.render_exception_handler_guard_close(h))
-            self.indent -= 1
-            self._emit_line(renderer.render_exception_dispatch_close())
+            renderer.state.indent_level = self.indent
+            renderer.emit_exception_dispatch_handlers("__pytra_exc_type", handled, handlers)
+            self.indent = renderer.state.indent_level
         if len(orelse) > 0:
             self._emit_line("if (__pytra_exc_type == null) {")
             self.indent += 1

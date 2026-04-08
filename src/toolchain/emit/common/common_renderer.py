@@ -273,6 +273,9 @@ class CommonRenderer:
             text = text + term
         self._emit(text)
 
+    def emit_backend_line(self, text: str) -> None:
+        self._emit(text)
+
     def _next_tmp(self, prefix: str) -> str:
         self.state.tmp_counter += 1
         return prefix + "_" + str(self.state.tmp_counter)
@@ -450,6 +453,29 @@ class CommonRenderer:
     def emit_exception_handler_mark_handled(self, handled_name: str) -> None:
         del handled_name
         return None
+
+    def emit_exception_dispatch_handlers(
+        self,
+        caught_type_expr: str,
+        handled_name: str,
+        handlers: list[JsonVal],
+    ) -> None:
+        self.emit_backend_line(self.render_exception_dispatch_open(caught_type_expr))
+        self.state.indent_level += 1
+        self.emit_exception_dispatch_state_init(handled_name)
+        for handler in handlers:
+            if not isinstance(handler, dict):
+                continue
+            self.emit_backend_line(
+                self.render_exception_handler_guard_open(handler, handled_name, caught_type_expr)
+            )
+            self.state.indent_level += 1
+            self.emit_exception_handler_mark_handled(handled_name)
+            self.emit_exception_handler(handler)
+            self.state.indent_level -= 1
+            self.emit_backend_line(self.render_exception_handler_guard_close(handler))
+        self.state.indent_level -= 1
+        self.emit_backend_line(self.render_exception_dispatch_close())
 
     def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         keyword = self._syntax_text("raise", "throw")
