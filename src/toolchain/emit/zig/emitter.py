@@ -319,6 +319,18 @@ class _ZigStmtCommonRenderer(CommonRenderer):
             for current in self.iter_exception_match_type_names(handler)
         )
 
+    def render_exception_dispatch_open(self, caught_type_expr: str) -> str:
+        return "if (" + caught_type_expr + " != null) {"
+
+    def render_exception_handler_guard_open(
+        self,
+        handler: dict[str, Any],
+        handled_name: str,
+        caught_type_expr: str,
+    ) -> str:
+        cond = self.render_exception_match_condition(handler, caught_type_expr)
+        return "if (!" + handled_name + " and (" + cond + ")) {"
+
     def emit_exception_handler_prelude(self, handler: dict[str, Any]) -> None:
         current_indent = self.owner.indent
         self.owner._emit_line("__pytra_caught_type = __pytra_exc_type;")
@@ -1956,14 +1968,13 @@ class ZigNativeEmitter:
         if len(handlers) > 0:
             handled = "__pytra_handled_" + str(self.tmp_seq)
             self.tmp_seq += 1
-            self._emit_line("if (__pytra_exc_type != null) {")
+            self._emit_line(renderer.render_exception_dispatch_open("__pytra_exc_type"))
             self.indent += 1
             self._emit_line("var " + handled + " = false;")
             for h in handlers:
                 if not isinstance(h, dict):
                     continue
-                cond = renderer.render_exception_match_condition(h, "__pytra_exc_type")
-                self._emit_line("if (!" + handled + " and (" + cond + ")) {")
+                self._emit_line(renderer.render_exception_handler_guard_open(h, handled, "__pytra_exc_type"))
                 self.indent += 1
                 self._emit_line(handled + " = true;")
                 renderer.emit_exception_handler(h)

@@ -392,6 +392,19 @@ class CommonRenderer:
         del err_binding, borrowed
         raise RuntimeError("common renderer requires try error arm hook for " + self.language)
 
+    def render_exception_dispatch_open(self, caught_type_expr: str) -> str:
+        del caught_type_expr
+        return ""
+
+    def render_exception_handler_guard_open(
+        self,
+        handler: dict[str, JsonVal],
+        handled_name: str,
+        caught_type_expr: str,
+    ) -> str:
+        del handler, handled_name, caught_type_expr
+        raise RuntimeError("common renderer requires exception handler guard hook for " + self.language)
+
     def partition_exception_handlers(
         self,
         handlers: list[JsonVal],
