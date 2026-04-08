@@ -1088,6 +1088,29 @@ class _RsStmtCommonRenderer(CommonRenderer):
     def emit_backend_line(self, text: str) -> None:
         _emit(self.ctx, text)
 
+    def emit_partitioned_exception_handlers(
+        self,
+        caught_expr: str,
+        user_handlers: list[dict[str, JsonVal]],
+        string_bind_name: str,
+        string_handlers: list[dict[str, JsonVal]],
+    ) -> None:
+        old_catch_var = self.ctx.catch_err_msg_var
+        self.ctx.catch_err_msg_var = ""
+        if len(user_handlers) > 0:
+            self.emit_user_exception_handler_chain(caught_expr, user_handlers)
+            if len(string_handlers) > 0:
+                self.emit_backend_line(self.render_string_exception_handler_else_open())
+                self.state.indent_level += 1
+                self.ctx.catch_err_msg_var = string_bind_name
+                self.emit_string_exception_handler_chain(caught_expr, string_bind_name, string_handlers)
+                self.state.indent_level -= 1
+            self.emit_backend_line(self.render_string_exception_handler_else_close())
+        else:
+            self.ctx.catch_err_msg_var = string_bind_name
+            self.emit_string_exception_handler_chain(caught_expr, string_bind_name, string_handlers)
+        self.ctx.catch_err_msg_var = old_catch_var
+
     def render_user_exception_handler_open(
         self,
         handler: dict[str, JsonVal],
@@ -4971,27 +4994,10 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         # Separate user-defined exception handlers from built-in string handlers
         user_handlers, string_handlers = renderer.partition_exception_handlers(handlers)
 
-        # Emit user-defined exception handlers first (if any)
-        if len(user_handlers) > 0:
-            renderer.state.indent_level = ctx.indent_level
-            renderer.emit_user_exception_handler_chain("__catch_err", user_handlers)
-            ctx.indent_level = renderer.state.indent_level
-            # Remaining string handlers go in else block
-            if len(string_handlers) > 0:
-                _emit(ctx, renderer.render_string_exception_handler_else_open())
-                ctx.indent_level += 1
-                renderer.state.indent_level = ctx.indent_level
-                ctx.catch_err_msg_var = "__err_msg"
-                renderer.emit_string_exception_handler_chain("__catch_err", "__err_msg", string_handlers)
-                ctx.indent_level = renderer.state.indent_level
-                ctx.indent_level -= 1
-            _emit(ctx, renderer.render_string_exception_handler_else_close())
-        else:
-            # Only string handlers (original behavior)
-            renderer.state.indent_level = ctx.indent_level
-            ctx.catch_err_msg_var = "__err_msg"
-            renderer.emit_string_exception_handler_chain("__catch_err", "__err_msg", string_handlers)
-            ctx.indent_level = renderer.state.indent_level
+        renderer.state.indent_level = ctx.indent_level
+        ctx.catch_err_msg_var = "__err_msg"
+        renderer.emit_partitioned_exception_handlers("__catch_err", user_handlers, "__err_msg", string_handlers)
+        ctx.indent_level = renderer.state.indent_level
 
         ctx.catch_err_msg_var = old_catch_var
         ctx.indent_level -= 1

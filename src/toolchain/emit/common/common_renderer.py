@@ -498,6 +498,24 @@ class CommonRenderer:
         for handler in handlers:
             self.emit_exception_handler(handler)
 
+    def emit_partitioned_exception_handlers(
+        self,
+        caught_expr: str,
+        user_handlers: list[dict[str, JsonVal]],
+        string_bind_name: str,
+        string_handlers: list[dict[str, JsonVal]],
+    ) -> None:
+        if len(user_handlers) > 0:
+            self.emit_user_exception_handler_chain(caught_expr, user_handlers)
+            if len(string_handlers) > 0:
+                self.emit_backend_line(self.render_string_exception_handler_else_open())
+                self.state.indent_level += 1
+                self.emit_string_exception_handler_chain(caught_expr, string_bind_name, string_handlers)
+                self.state.indent_level -= 1
+            self.emit_backend_line(self.render_string_exception_handler_else_close())
+            return
+        self.emit_string_exception_handler_chain(caught_expr, string_bind_name, string_handlers)
+
     def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         keyword = self._syntax_text("raise", "throw")
         self._emit_stmt_line(keyword)
