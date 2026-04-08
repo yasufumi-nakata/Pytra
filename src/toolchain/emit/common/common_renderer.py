@@ -411,6 +411,10 @@ class CommonRenderer:
     def render_try_match_close(self) -> str:
         raise RuntimeError("common renderer requires try match close hook for " + self.language)
 
+    def emit_try_capture(self, result_name: str, body: list[JsonVal]) -> None:
+        del result_name, body
+        raise RuntimeError("common renderer requires try capture hook for " + self.language)
+
     def render_exception_dispatch_open(self, caught_type_expr: str) -> str:
         del caught_type_expr
         return ""

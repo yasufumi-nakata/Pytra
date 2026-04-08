@@ -1150,6 +1150,14 @@ class _RsStmtCommonRenderer(CommonRenderer):
     def render_try_match_close(self) -> str:
         return "}"
 
+    def emit_try_capture(self, result_name: str, body: list[JsonVal]) -> None:
+        _emit(self.ctx, "let " + result_name + " = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
+        self.ctx.indent_level += 1
+        _emit_body(self.ctx, body)
+        self.ctx.indent_level -= 1
+        _emit(self.ctx, "}));")
+        self.state.indent_level = self.ctx.indent_level
+
     def is_user_exception_handler(self, handler: dict[str, JsonVal]) -> bool:
         type_node = handler.get("type")
         if not isinstance(type_node, dict):
@@ -4953,11 +4961,9 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
 
     if len(handlers) == 0:
         # Only finally: catch, run finally, re-raise if panic
-        _emit(ctx, "let __try_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
-        ctx.indent_level += 1
-        _emit_body(ctx, body)
-        ctx.indent_level -= 1
-        _emit(ctx, "}));")
+        renderer.state.indent_level = ctx.indent_level
+        renderer.emit_try_capture("__try_result", body)
+        ctx.indent_level = renderer.state.indent_level
         if finalbody:
             _emit_body(ctx, finalbody)
         body_has_ret = _body_has_return(body) and ctx.current_return_type not in ("", "None")
@@ -4977,11 +4983,9 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, "if let Err(__try_err) = __try_result { std::panic::resume_unwind(__try_err); };")
     else:
         # Catch and dispatch to handlers
-        _emit(ctx, "let __try_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
-        ctx.indent_level += 1
-        _emit_body(ctx, body)
-        ctx.indent_level -= 1
-        _emit(ctx, "}));")
+        renderer.state.indent_level = ctx.indent_level
+        renderer.emit_try_capture("__try_result", body)
+        ctx.indent_level = renderer.state.indent_level
         # If the try body can return a value, use match to propagate Ok result.
         body_has_ret = _body_has_return(body) and ctx.current_return_type not in ("", "None")
         _emit(ctx, renderer.render_try_match_open("__try_result"))
