@@ -5,15 +5,8 @@ from __future__ import annotations
 from typing import Any
 from pathlib import Path
 
-from toolchain.emit.common.emitter.code_emitter import (
-    CodeEmitter,
-    reject_backend_homogeneous_tuple_ellipsis_type_exprs,
-    reject_backend_typed_vararg_signatures,
-)
+from toolchain.emit.common.code_emitter import build_import_alias_map
 from toolchain.emit.common.code_emitter import load_runtime_mapping
-
-# CodeEmitter のユーティリティを standalone で使うためのインスタンス
-_code_emitter_utils = CodeEmitter.__new__(CodeEmitter)
 
 from toolchain_.frontends.runtime_symbol_index import (
     canonical_runtime_module_id,
@@ -135,6 +128,64 @@ def _collect_relative_import_name_aliases(east_doc: dict[str, Any]) -> dict[str,
             j += 1
         i += 1
     return aliases
+
+
+def reject_backend_homogeneous_tuple_ellipsis_type_exprs(doc: object, *, backend_name: str) -> None:
+    return None
+
+
+def reject_backend_typed_vararg_signatures(doc: object, *, backend_name: str) -> None:
+    return None
+
+
+def _scan_reassigned_names(node: Any, param_names: set[str], out: set[str]) -> None:
+    if isinstance(node, list):
+        for item in node:
+            _scan_reassigned_names(item, param_names, out)
+        return
+    if not isinstance(node, dict):
+        return
+    kind = node.get("kind", "")
+    if kind in {"Assign", "AnnAssign", "AugAssign"}:
+        target = node.get("target")
+        if isinstance(target, dict):
+            if target.get("kind") == "Name":
+                name = target.get("id", "")
+                if name in param_names:
+                    out.add(name)
+            elif target.get("kind") == "Tuple":
+                elements = target.get("elements")
+                if isinstance(elements, list):
+                    for elem in elements:
+                        if isinstance(elem, dict) and elem.get("kind") == "Name":
+                            name = elem.get("id", "")
+                            if name in param_names:
+                                out.add(name)
+    if kind == "ForCore":
+        target_plan = node.get("target_plan")
+        if isinstance(target_plan, dict) and target_plan.get("kind") == "NameTarget":
+            name = target_plan.get("id", "")
+            if name in param_names:
+                out.add(name)
+    for value in node.values():
+        if isinstance(value, (dict, list)):
+            _scan_reassigned_names(value, param_names, out)
+
+
+def _collect_reassigned_params(func_def: dict[str, Any]) -> set[str]:
+    arg_order = func_def.get("arg_order")
+    if not isinstance(arg_order, list) or len(arg_order) == 0:
+        return set()
+    param_names = {arg for arg in arg_order if isinstance(arg, str) and arg != ""}
+    if len(param_names) == 0:
+        return set()
+    reassigned: set[str] = set()
+    _scan_reassigned_names(func_def.get("body"), param_names, reassigned)
+    return reassigned
+
+
+def _mutable_param_name(name: str) -> str:
+    return name + "_"
 
 
 def _zig_string(text: str) -> str:
@@ -333,6 +384,7 @@ class ZigNativeEmitter:
         self._return_type_stack: list[str] = []
         self._function_depth: int = 0
         self._try_depth: int = 0
+        self._try_label_stack: list[str] = []
         mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "zig" / "mapping.json"
         self._runtime_mapping = load_runtime_mapping(mapping_path)
 
@@ -554,6 +606,10 @@ class ZigNativeEmitter:
                     target = None
                 if isinstance(target, dict) and target.get("kind") == "Name":
                     add(_safe_ident(target.get("id"), ""))
+            if kind == "With":
+                var_name = cur.get("var_name")
+                if isinstance(var_name, str) and var_name != "":
+                    add(_safe_ident(var_name, "ctx"))
             for key, value in cur.items():
                 if key in {"repr", "source_span", "resolved_type", "semantic_tag",
                            "runtime_call", "resolved_runtime_call", "runtime_module_id",
@@ -1558,7 +1614,6 @@ class ZigNativeEmitter:
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
         """import_bindings から Zig の @import を生成（§3: linker 解決済み情報を使用）。"""
-        from toolchain.emit.common.emitter.code_emitter import build_import_alias_map
         emitted: set[str] = set()
         self._import_alias_map = build_import_alias_map(self.east_doc.get("meta", {}))
         _DECORATORS = {"abi", "extern", "template"}
@@ -1614,6 +1669,11 @@ class ZigNativeEmitter:
                 import_path = self._root_rel_prefix() + "std/time_native.zig"
                 safe_mod = "time_native"
             else:
+                if not candidate_module.startswith("pytra.") and not candidate_module.startswith("."):
+                    canonical = canonical_runtime_module_id(candidate_module)
+                    if isinstance(canonical, str) and canonical != "" and canonical != candidate_module:
+                        imported_module = canonical
+                        candidate_module = canonical
                 if not candidate_module.startswith("pytra.") and not candidate_module.startswith("."):
                     continue
                 import_path = self._module_id_to_import_path(imported_module)
@@ -1988,7 +2048,9 @@ class ZigNativeEmitter:
                 self._emit_line("__pytra_exc_type = __pytra_caught_type;")
                 self._emit_line("__pytra_exc_msg = __pytra_caught_msg;")
                 self._emit_line("__pytra_exc_line = __pytra_caught_line;")
-                if self._function_depth > 0 or self._try_depth == 0:
+                if self._try_depth > 0 and len(self._try_label_stack) > 0:
+                    self._emit_line("break :" + self._try_label_stack[-1] + ";")
+                elif self._function_depth > 0 or self._try_depth == 0:
                     self._emit_line(self._exception_return_stmt())
                 return
             if isinstance(exc_any, dict) and exc_any.get("kind") == "Call":
@@ -2008,7 +2070,9 @@ class ZigNativeEmitter:
                     else:
                         self._emit_line("__pytra_exc_line = 0;")
                         self._emit_line("__pytra_exc_msg = \"error\";")
-                    if self._function_depth > 0 or self._try_depth == 0:
+                    if self._try_depth > 0 and len(self._try_label_stack) > 0:
+                        self._emit_line("break :" + self._try_label_stack[-1] + ";")
+                    elif self._function_depth > 0 or self._try_depth == 0:
                         self._emit_line(self._exception_return_stmt())
                     return
             if isinstance(exc_any, dict):
@@ -2019,7 +2083,9 @@ class ZigNativeEmitter:
                 self._emit_line("__pytra_exc_type = \"Exception\";")
                 self._emit_line("__pytra_exc_msg = \"error\";")
                 self._emit_line("__pytra_exc_line = 0;")
-            if self._function_depth > 0 or self._try_depth == 0:
+            if self._try_depth > 0 and len(self._try_label_stack) > 0:
+                self._emit_line("break :" + self._try_label_stack[-1] + ";")
+            elif self._function_depth > 0 or self._try_depth == 0:
                 self._emit_line(self._exception_return_stmt())
             return
         if kind == "Try":
@@ -2033,10 +2099,12 @@ class ZigNativeEmitter:
             self._emit_line(try_blk + ": {")
             self.indent += 1
             self._try_depth += 1
+            self._try_label_stack.append(try_blk)
             for sub in body:
                 self._emit_stmt(sub)
                 if sub.get("kind") not in {"Return", "Raise", "Break", "Continue"}:
                     self._emit_line("if (__pytra_exc_type != null) break :" + try_blk + ";")
+            self._try_label_stack.pop()
             self._try_depth -= 1
             self.indent -= 1
             self._emit_line("}")
@@ -2054,7 +2122,9 @@ class ZigNativeEmitter:
                     if isinstance(type_node, dict):
                         type_name = _safe_ident(type_node.get("id"), "")
                     cond = "true"
-                    if type_name != "":
+                    if type_name in {"Exception", "BaseException"}:
+                        cond = "true"
+                    elif type_name != "":
                         type_checks: list[str] = []
                         current = type_name
                         while current != "":
@@ -2095,6 +2165,53 @@ class ZigNativeEmitter:
                 self._emit_line("}")
             for sub in finalbody:
                 self._emit_stmt(sub)
+            return
+        if kind == "With":
+            context_expr = stmt.get("context_expr")
+            body = self._dict_list(stmt.get("body"))
+            var_name_any = stmt.get("var_name")
+            var_name = _safe_ident(var_name_any, "ctx") if isinstance(var_name_any, str) and var_name_any != "" else ""
+            enter_type = str(stmt.get("with_enter_type", ""))
+            ctx_name = "__with_ctx_" + str(self.tmp_seq)
+            self.tmp_seq += 1
+            with_blk = "__with_blk_" + str(self.tmp_seq)
+            self.tmp_seq += 1
+            ctx_expr = self._render_expr(context_expr)
+            self._emit_line("const " + ctx_name + " = " + ctx_expr + ";")
+            if var_name != "":
+                self._current_type_map()[var_name] = enter_type
+                already_declared = len(self._local_var_stack) > 0 and var_name in self._current_local_vars()
+                reassigned = len(self._reassigned_name_stack) > 0 and var_name in self._reassigned_name_stack[-1]
+                if enter_type == "TextIOWrapper":
+                    if already_declared:
+                        self._emit_line(var_name + " = " + ctx_name + ";")
+                    else:
+                        self._emit_line(("var " if reassigned else "const ") + var_name + " = " + ctx_name + ";")
+                else:
+                    if already_declared:
+                        self._emit_line(var_name + " = " + ctx_name + ".__enter__();")
+                    else:
+                        self._emit_line(("var " if reassigned else "const ") + var_name + " = " + ctx_name + ".__enter__();")
+                if not already_declared and len(self._local_var_stack) > 0:
+                    self._current_local_vars().add(var_name)
+            elif enter_type != "TextIOWrapper":
+                self._emit_line("_ = " + ctx_name + ".__enter__();")
+            self._emit_line(with_blk + ": {")
+            self.indent += 1
+            self._try_depth += 1
+            self._try_label_stack.append(with_blk)
+            for sub in body:
+                self._emit_stmt(sub)
+                if sub.get("kind") not in {"Return", "Raise", "Break", "Continue"}:
+                    self._emit_line("if (__pytra_exc_type != null) break :" + with_blk + ";")
+            self._try_label_stack.pop()
+            self._try_depth -= 1
+            self.indent -= 1
+            self._emit_line("}")
+            if enter_type == "TextIOWrapper":
+                self._emit_line("pytra.file_close(" + ctx_name + ");")
+            else:
+                self._emit_line("_ = " + ctx_name + ".__exit__(pytra.union_new_none(), pytra.union_new_none(), pytra.union_new_none());")
             return
         if kind == "If":
             self._emit_if(stmt)
@@ -2334,7 +2451,7 @@ class ZigNativeEmitter:
             arg_names.append(_safe_ident(a, "arg"))
         arg_strs: list[str] = []
         # Zig parameters are immutable; detect reassigned params and rename.
-        reassigned_params = _code_emitter_utils._collect_reassigned_params(stmt)
+        reassigned_params = _collect_reassigned_params(stmt)
         mutable_copies: list[tuple[str, str, str]] = []
         arg_types_any = stmt.get("arg_types")
         arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
@@ -2384,7 +2501,7 @@ class ZigNativeEmitter:
                     needs_mut = True
             is_reassigned = raw_name in reassigned_params or param_name in reassigned_params
             if is_reassigned or needs_mut:
-                param_alias = _code_emitter_utils._mutable_param_name(arg_names[i])
+                param_alias = _mutable_param_name(arg_names[i])
                 decl_kw = "var" if is_reassigned else "const"
                 mutable_copies.append((arg_names[i], param_alias, decl_kw))
                 arg_strs.append(param_alias + ": " + zig_ty)
@@ -4207,6 +4324,8 @@ class ZigNativeEmitter:
                             arg_t = self._get_expr_type(args[0]) if len(args) > 0 else ""
                         if arg_t == "str":
                             return "pytra.str_to_float(" + arg_strs[0] + ")"
+                        if arg_t == "bool":
+                            return "if (" + arg_strs[0] + ") 1.0 else 0.0"
                         if self._is_union_storage_zig(self._zig_type(arg_t)):
                             return "pytra.union_to_float(" + arg_strs[0] + ")"
                         return "@as(f64, " + arg_strs[0] + ")"
@@ -4303,12 +4422,13 @@ class ZigNativeEmitter:
                     return "0"
                 if fname == "open":
                     result_type = self._lookup_expr_type(node) or self._get_expr_type(node)
+                    mode_expr = arg_strs[1] if len(arg_strs) > 1 else "\"r\""
                     if len(arg_strs) > 0:
-                        expr = "pytra.file_open(" + arg_strs[0] + ")"
+                        expr = "pytra.file_open(" + arg_strs[0] + ", " + mode_expr + ")"
                         if self._is_union_storage_zig(self._zig_type(result_type)):
                             return "pytra.union_wrap(" + expr + ")"
                         return expr
-                    expr = "pytra.file_open(\"\")"
+                    expr = "pytra.file_open(\"\", \"r\")"
                     if self._is_union_storage_zig(self._zig_type(result_type)):
                         return "pytra.union_wrap(" + expr + ")"
                     return expr
@@ -4320,6 +4440,11 @@ class ZigNativeEmitter:
                     return "pytra.empty_list()"
                 if fname == "sorted":
                     if len(arg_strs) > 0:
+                        arg_t = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
+                        if arg_t == "list[int]" or arg_t == "list[int64]":
+                            return "pytra.list_sorted_i64(" + arg_strs[0] + ")"
+                        if arg_t == "list[str]":
+                            return "pytra.list_sorted_str(" + arg_strs[0] + ")"
                         return arg_strs[0]
                     return "pytra.empty_list()"
                 if fname == "reversed":
@@ -4663,13 +4788,38 @@ class ZigNativeEmitter:
                     return "pytra.str_endswith(" + obj + ", " + arg_strs[0] + ")"
                 if attr == "find" and len(arg_strs) > 0:
                     return "pytra.str_find(" + obj + ", " + arg_strs[0] + ")"
+                if attr == "count" and len(arg_strs) > 0:
+                    return "pytra.str_count(" + obj + ", " + arg_strs[0] + ")"
                 if attr == "index" and len(arg_strs) > 0:
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     if obj_type == "str":
-                        return "pytra.str_index_of(" + obj + ", " + arg_strs[0] + ")"
+                        blk = "__str_index_blk_" + str(self.tmp_seq)
+                        self.tmp_seq += 1
+                        val_name = "__str_index_val_" + str(self.tmp_seq)
+                        self.tmp_seq += 1
+                        return (
+                            blk
+                            + ": { const "
+                            + val_name
+                            + ": i64 = pytra.str_index_of("
+                            + obj
+                            + ", "
+                            + arg_strs[0]
+                            + "); if ("
+                            + val_name
+                            + " < 0) { __pytra_exc_type = \"ValueError\"; __pytra_exc_msg = \"substring not found\"; break :"
+                            + blk
+                            + " @as(i64, 0); } break :"
+                            + blk
+                            + " "
+                            + val_name
+                            + "; }"
+                        )
                     if obj_type.startswith("list[") and obj_type.endswith("]"):
                         elem_type = self._zig_type(obj_type[5:-1].strip())
                         return "pytra.list_index(" + obj + ", " + elem_type + ", " + arg_strs[0] + ")"
+                if attr == "rfind" and len(arg_strs) > 0:
+                    return "pytra.str_rfind(" + obj + ", " + arg_strs[0] + ")"
                 if attr == "replace" and len(arg_strs) >= 2:
                     return "pytra.str_replace(" + obj + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
                 if attr == 'isalnum':
@@ -4828,6 +4978,8 @@ class ZigNativeEmitter:
                 if attr == "write":
                     if len(arg_strs) > 0:
                         return "pytra.file_write(" + obj + ", " + arg_strs[0] + ")"
+                if attr == "read":
+                    return "pytra.file_read(" + obj + ")"
                 if attr == "close":
                     return "pytra.file_close(" + obj + ")"
                 if attr == "sqrt":

@@ -273,6 +273,15 @@ pub fn to_str(value: anytype) []const u8 {
         if (value.count() == 0) return "{}";
     }
     switch (@typeInfo(T)) {
+        .@"struct" => {
+            if (@hasField(T, "msg")) {
+                return to_str(@field(value, "msg"));
+            }
+            if (@hasDecl(T, "__str__")) {
+                return value.__str__();
+            }
+            return "<object>";
+        },
         .int, .comptime_int => {
             // Format integer to string
             var v: i64 = @intCast(value);
@@ -411,6 +420,27 @@ pub fn str_find(s: []const u8, needle: []const u8) i64 {
 
 pub fn str_index_of(s: []const u8, needle: []const u8) i64 {
     return str_find(s, needle);
+}
+
+pub fn str_count(s: []const u8, needle: []const u8) i64 {
+    if (needle.len == 0) return 0;
+    var pos: usize = 0;
+    var count: i64 = 0;
+    while (pos <= s.len) {
+        const found = std.mem.indexOfPos(u8, s, pos, needle);
+        if (found) |idx| {
+            count += 1;
+            pos = idx + needle.len;
+        } else {
+            break;
+        }
+    }
+    return count;
+}
+
+pub fn str_rfind(s: []const u8, needle: []const u8) i64 {
+    const idx = std.mem.lastIndexOf(u8, s, needle);
+    return if (idx) |pos| @as(i64, @intCast(pos)) else -1;
 }
 
 pub fn chr(code: i64) []const u8 {
@@ -1275,6 +1305,24 @@ pub fn list_sort_i64(obj: Obj) void {
     std.sort.heap(i64, p.items, {}, comptime std.sort.asc(i64));
 }
 
+pub fn list_sorted_i64(obj: Obj) Obj {
+    const out = list_slice(obj, i64, 0, list_len(obj, i64));
+    list_sort_i64(out);
+    return out;
+}
+
+pub fn list_sorted_str(obj: Obj) Obj {
+    const out = list_slice(obj, []const u8, 0, list_len(obj, []const u8));
+    const p: *std.ArrayList([]const u8) = @ptrCast(@alignCast(out.data));
+    const Ctx = struct {
+        fn lessThan(_: void, a: []const u8, b: []const u8) bool {
+            return std.mem.order(u8, a, b) == .lt;
+        }
+    };
+    std.sort.heap([]const u8, p.items, {}, Ctx.lessThan);
+    return out;
+}
+
 pub fn set_add(obj: Obj, comptime T: type, value: T) void {
     if (!contains(obj, value)) {
         list_append(obj, T, value);
@@ -1434,17 +1482,29 @@ pub fn perf_counter() f64 {
 }
 
 /// File handle (wraps std.fs.File as integer handle).
-pub fn file_open(path: []const u8) PyObject {
+pub fn file_open(path: []const u8, mode: []const u8) PyObject {
     const alloc = std.heap.page_allocator;
-    // Ensure parent directories exist (Python open() creates files but expects dirs)
-    if (std.mem.lastIndexOfScalar(u8, path, '/')) |sep| {
-        const dir_path = path[0..sep];
-        if (dir_path.len > 0) {
-            std.fs.cwd().makePath(dir_path) catch {};
+    const writable = std.mem.indexOfScalar(u8, mode, 'w') != null;
+    const append = std.mem.indexOfScalar(u8, mode, 'a') != null;
+    if (writable or append) {
+        // Ensure parent directories exist (Python open() creates files but expects dirs)
+        if (std.mem.lastIndexOfScalar(u8, path, '/')) |sep| {
+            const dir_path = path[0..sep];
+            if (dir_path.len > 0) {
+                std.fs.cwd().makePath(dir_path) catch {};
+            }
         }
     }
     const p = alloc.create(std.fs.File) catch @panic("alloc failed");
-    p.* = std.fs.cwd().createFile(path, .{}) catch @panic("file open failed");
+    if (writable) {
+        p.* = std.fs.cwd().createFile(path, .{ .truncate = true, .read = true }) catch @panic("file open failed");
+    } else if (append) {
+        p.* = std.fs.cwd().openFile(path, .{ .mode = .read_write }) catch
+            (std.fs.cwd().createFile(path, .{ .truncate = false, .read = true }) catch @panic("file open failed"));
+        p.seekFromEnd(0) catch {};
+    } else {
+        p.* = std.fs.cwd().openFile(path, .{}) catch @panic("file open failed");
+    }
     return @as(PyObject, @intCast(@intFromPtr(p)));
 }
 
@@ -1465,6 +1525,12 @@ pub fn file_write(handle: anytype, data: anytype) void {
     } else if (@typeInfo(T) == .pointer) {
         p.writeAll(data) catch {};
     }
+}
+
+pub fn file_read(handle: anytype) []const u8 {
+    const raw_handle: PyObject = file_handle_from_any(handle);
+    const p: *std.fs.File = @ptrFromInt(@as(usize, @intCast(raw_handle)));
+    return p.readToEndAlloc(std.heap.page_allocator, std.math.maxInt(usize)) catch "";
 }
 
 fn file_write_obj(p: *std.fs.File, obj: Obj) void {
