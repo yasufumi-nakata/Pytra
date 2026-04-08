@@ -314,6 +314,32 @@ class _ZigStmtCommonRenderer(CommonRenderer):
             for current in self.iter_exception_match_type_names(handler)
         )
 
+    def emit_exception_handler_prelude(self, handler: dict[str, Any]) -> None:
+        current_indent = self.owner.indent
+        self.owner._emit_line("__pytra_caught_type = __pytra_exc_type;")
+        self.owner._emit_line("__pytra_caught_msg = __pytra_exc_msg;")
+        self.owner._emit_line("__pytra_caught_line = __pytra_exc_line;")
+        self.owner._emit_line("__pytra_exc_type = null;")
+        self.owner._emit_line("__pytra_exc_msg = null;")
+        self.owner._emit_line("__pytra_exc_line = 0;")
+        hname = self.exception_handler_name(handler)
+        pushed_exc = False
+        if isinstance(hname, str) and hname != "":
+            safe_hname = _safe_ident(hname, "err")
+            handler_body = self.exception_handler_body(handler)
+            if self.owner._body_uses_name_runtime(handler_body, safe_hname):
+                self.owner._emit_line("const " + safe_hname + " = __PytraError{ .msg = (__pytra_caught_msg orelse \"\"), .line = __pytra_caught_line };")
+                self.owner._exception_var_stack.append({safe_hname})
+                pushed_exc = True
+        self.owner._pending_exception_var_push = pushed_exc
+        self.owner.indent = current_indent
+
+    def emit_exception_handler_teardown(self, handler: dict[str, Any]) -> None:
+        del handler
+        if getattr(self.owner, "_pending_exception_var_push", False):
+            self.owner._exception_var_stack.pop()
+            self.owner._pending_exception_var_push = False
+
     def build_with_enter_assign(
         self,
         node: dict[str, Any],
@@ -535,6 +561,7 @@ class ZigNativeEmitter:
         self._lambda_capture_stack: list[dict[str, str]] = []
         self._lambda_local_stack: list[set[str]] = []
         self._exception_var_stack: list[set[str]] = []
+        self._pending_exception_var_push: bool = False
         self._return_type_stack: list[str] = []
         self._function_depth: int = 0
         self._try_depth: int = 0
@@ -1933,26 +1960,11 @@ class ZigNativeEmitter:
                 cond = renderer.render_exception_match_condition(h, "__pytra_exc_type")
                 self._emit_line("if (!" + handled + " and (" + cond + ")) {")
                 self.indent += 1
-                self._emit_line("__pytra_caught_type = __pytra_exc_type;")
-                self._emit_line("__pytra_caught_msg = __pytra_exc_msg;")
-                self._emit_line("__pytra_caught_line = __pytra_exc_line;")
-                self._emit_line("__pytra_exc_type = null;")
-                self._emit_line("__pytra_exc_msg = null;")
-                self._emit_line("__pytra_exc_line = 0;")
-                hname = renderer.exception_handler_name(h)
-                pushed_exc = False
-                if isinstance(hname, str) and hname != "":
-                    safe_hname = _safe_ident(hname, "err")
-                    handler_body = renderer.exception_handler_body(h)
-                    if self._body_uses_name_runtime(handler_body, safe_hname):
-                        self._emit_line("const " + safe_hname + " = __PytraError{ .msg = (__pytra_caught_msg orelse \"\"), .line = __pytra_caught_line };")
-                        self._exception_var_stack.append({safe_hname})
-                        pushed_exc = True
+                renderer.emit_exception_handler_prelude(h)
                 self._emit_line(handled + " = true;")
                 for sub in renderer.exception_handler_body(h):
                     self._emit_stmt(sub)
-                if pushed_exc:
-                    self._exception_var_stack.pop()
+                renderer.emit_exception_handler_teardown(h)
                 self.indent -= 1
                 self._emit_line("}")
             self.indent -= 1
