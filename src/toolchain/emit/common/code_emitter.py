@@ -317,6 +317,19 @@ def build_runtime_import_map(
             if symbol_key in mapping.calls:
                 runtime_imports[local_name] = mapping.calls[symbol_key]
                 continue
+            if "." not in module_id:
+                std_symbol_key = "pytra.std." + module_id + "." + export_symbol
+                if std_symbol_key in mapping.calls:
+                    runtime_imports[local_name] = mapping.calls[std_symbol_key]
+                    continue
+        else:
+            full_symbol_key = module_id + "." + export_symbol
+            if full_symbol_key in mapping.calls:
+                runtime_imports[local_name] = mapping.calls[full_symbol_key]
+                continue
+            if export_symbol in mapping.calls:
+                runtime_imports[local_name] = mapping.calls[export_symbol]
+                continue
         if (
             not is_runtime_namespace
             and not should_skip_module(module_id, mapping)
