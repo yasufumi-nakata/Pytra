@@ -1048,12 +1048,17 @@ class _RsStmtCommonRenderer(CommonRenderer):
             _emit_body(self.ctx, finalbody)
         body_has_ret = _body_has_return(body) and self.ctx.current_return_type not in ("", "None")
         if body_has_ret:
-            _emit(self.ctx, "match __try_result {")
+            _emit(self.ctx, self.render_try_match_open("__try_result"))
             self.ctx.indent_level += 1
-            _emit(self.ctx, "Ok(__try_ok) => { return __try_ok; }")
-            _emit(self.ctx, "Err(__try_err) => { std::panic::resume_unwind(__try_err); }")
+            _emit(self.ctx, self.render_try_success_arm("__try_ok", True))
+            _emit(
+                self.ctx,
+                self.render_try_error_arm_open("__try_err")
+                + " std::panic::resume_unwind(__try_err); "
+                + self.render_try_error_arm_close(),
+            )
             self.ctx.indent_level -= 1
-            _emit(self.ctx, "}")
+            _emit(self.ctx, self.render_try_match_close())
         else:
             _emit(self.ctx, self.render_try_rethrow_fallback("__try_result", "__try_err"))
         self.state.indent_level = self.ctx.indent_level
