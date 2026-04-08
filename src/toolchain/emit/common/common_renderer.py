@@ -553,6 +553,15 @@ class CommonRenderer:
     def emit_bare_raise_restore(self) -> None:
         return None
 
+    def emit_raise_exception_state(
+        self,
+        exc_type_expr: str,
+        exc_msg_expr: str,
+        exc_line_expr: str,
+    ) -> None:
+        del exc_type_expr, exc_msg_expr, exc_line_expr
+        return None
+
     def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         keyword = self._syntax_text("raise", "throw")
         self._emit_stmt_line(keyword)

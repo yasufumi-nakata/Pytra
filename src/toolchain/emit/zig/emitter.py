@@ -365,6 +365,16 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.emit_backend_line("__pytra_exc_msg = __pytra_caught_msg;")
         self.emit_backend_line("__pytra_exc_line = __pytra_caught_line;")
 
+    def emit_raise_exception_state(
+        self,
+        exc_type_expr: str,
+        exc_msg_expr: str,
+        exc_line_expr: str,
+    ) -> None:
+        self.emit_backend_line("__pytra_exc_type = " + exc_type_expr + ";")
+        self.emit_backend_line("__pytra_exc_msg = " + exc_msg_expr + ";")
+        self.emit_backend_line("__pytra_exc_line = " + exc_line_expr + ";")
+
     def render_try_body_open(self, try_label: str) -> str:
         return try_label + ": {"
 
@@ -1956,30 +1966,25 @@ class ZigNativeEmitter:
                 fn_name = _safe_ident(fn_any.get("id"), "")
                 args_any = exc_any.get("args")
                 args = args_any if isinstance(args_any, list) else []
-                self._emit_line("__pytra_exc_type = " + _zig_string(fn_name) + ";")
+                exc_line_expr = "0"
+                exc_msg_expr = "\"error\""
                 if len(args) > 0:
                     if len(args) >= 2:
-                        self._emit_line("__pytra_exc_line = " + self._render_expr(args[0]) + ";")
-                        self._emit_line("__pytra_exc_msg = pytra.to_str(" + self._render_expr(args[1]) + ");")
+                        exc_line_expr = self._render_expr(args[0])
+                        exc_msg_expr = "pytra.to_str(" + self._render_expr(args[1]) + ")"
                     else:
-                        self._emit_line("__pytra_exc_line = 0;")
-                        self._emit_line("__pytra_exc_msg = pytra.to_str(" + self._render_expr(args[0]) + ");")
-                else:
-                    self._emit_line("__pytra_exc_line = 0;")
-                    self._emit_line("__pytra_exc_msg = \"error\";")
+                        exc_msg_expr = "pytra.to_str(" + self._render_expr(args[0]) + ")"
                 renderer.state.indent_level = self.indent
+                renderer.emit_raise_exception_state(_zig_string(fn_name), exc_msg_expr, exc_line_expr)
                 renderer.emit_raise_propagation(try_label, return_stmt)
                 self.indent = renderer.state.indent_level
                 return
         if isinstance(exc_any, dict):
-            self._emit_line("__pytra_exc_type = \"Exception\";")
-            self._emit_line("__pytra_exc_msg = pytra.to_str(" + self._render_expr(exc_any) + ");")
-            self._emit_line("__pytra_exc_line = 0;")
+            renderer.state.indent_level = self.indent
+            renderer.emit_raise_exception_state("\"Exception\"", "pytra.to_str(" + self._render_expr(exc_any) + ")", "0")
         else:
-            self._emit_line("__pytra_exc_type = \"Exception\";")
-            self._emit_line("__pytra_exc_msg = \"error\";")
-            self._emit_line("__pytra_exc_line = 0;")
-        renderer.state.indent_level = self.indent
+            renderer.state.indent_level = self.indent
+            renderer.emit_raise_exception_state("\"Exception\"", "\"error\"", "0")
         renderer.emit_raise_propagation(try_label, return_stmt)
         self.indent = renderer.state.indent_level
 
