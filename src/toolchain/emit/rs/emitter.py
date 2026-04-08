@@ -5540,7 +5540,10 @@ def _emit_stmt(ctx: RsEmitContext, node: JsonVal) -> None:
     elif kind == "Raise":
         _emit_raise(ctx, node)
     elif kind == "Try":
-        _emit_try(ctx, node)
+        renderer = _RsStmtCommonRenderer(ctx)
+        renderer.state.indent_level = ctx.indent_level
+        renderer.emit_stmt(node)
+        ctx.indent_level = renderer.state.indent_level
     elif kind == "Pass":
         _emit(ctx, "// pass")
     elif kind == "Break":
