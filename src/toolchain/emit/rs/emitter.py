@@ -5483,8 +5483,7 @@ def _emit_stmt(ctx: RsEmitContext, node: JsonVal) -> None:
             _emit(ctx, "assert!(" + test_str + ");")
     elif kind == "With":
         items = _list(node, "items")
-        enter_type = _str(node, "with_enter_type")
-        if len(items) > 1 or enter_type == "TextIOWrapper":
+        if len(items) > 1 or _str(node, "with_enter_runtime_call") != "" or _str(node, "with_exit_runtime_call") != "":
             _emit_with(ctx, node)
         else:
             renderer = _RsStmtCommonRenderer(ctx)
