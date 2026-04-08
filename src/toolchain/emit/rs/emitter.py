@@ -1057,6 +1057,14 @@ class _RsStmtCommonRenderer(CommonRenderer):
         _emit_try(self.ctx, node)
         self.state.indent_level = self.ctx.indent_level
 
+    def is_user_exception_handler(self, handler: dict[str, JsonVal]) -> bool:
+        type_node = handler.get("type")
+        if not isinstance(type_node, dict):
+            return False
+        handler_type_id = self._str(type_node, "id")
+        handler_runtime_mod = self._str(type_node, "runtime_module_id")
+        return handler_runtime_mod == "" and handler_type_id in self.ctx.class_names
+
     def build_with_enter_assign(
         self,
         node: dict[str, JsonVal],
@@ -4870,6 +4878,7 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, "if let Err(__try_err) = __try_result { std::panic::resume_unwind(__try_err); };")
     else:
         # Catch and dispatch to handlers
+        renderer = _RsStmtCommonRenderer(ctx)
         _emit(ctx, "let __try_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
         ctx.indent_level += 1
         _emit_body(ctx, body)
@@ -4888,20 +4897,7 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         old_catch_var = ctx.catch_err_msg_var
 
         # Separate user-defined exception handlers from built-in string handlers
-        user_handlers: list[dict[str, JsonVal]] = []
-        string_handlers: list[dict[str, JsonVal]] = []
-        for handler in handlers:
-            if not isinstance(handler, dict):
-                continue
-            type_node = handler.get("type")
-            if isinstance(type_node, dict):
-                handler_type_id = _str(type_node, "id")
-                handler_runtime_mod = _str(type_node, "runtime_module_id")
-                # User-defined exception: no runtime_module_id, class in this module
-                if handler_runtime_mod == "" and handler_type_id in ctx.class_names:
-                    user_handlers.append(handler)
-                    continue
-            string_handlers.append(handler)
+        user_handlers, string_handlers = renderer.partition_exception_handlers(handlers)
 
         # Emit user-defined exception handlers first (if any)
         if len(user_handlers) > 0:

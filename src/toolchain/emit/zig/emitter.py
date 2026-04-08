@@ -284,6 +284,27 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner._emit_try_stmt(node)
         self.state.indent_level = self.owner.indent
 
+    def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
+        type_node = handler.get("type")
+        if not isinstance(type_node, dict):
+            return False
+        type_name = _safe_ident(type_node.get("id"), "")
+        return type_name in self.owner._catch_all_exception_types
+
+    def iter_exception_match_type_names(self, handler: dict[str, Any]) -> list[str]:
+        type_node = handler.get("type")
+        if not isinstance(type_node, dict):
+            return []
+        type_name = _safe_ident(type_node.get("id"), "")
+        if type_name == "":
+            return []
+        out: list[str] = [type_name]
+        current = self.owner._class_base.get(type_name, "")
+        while current != "":
+            out.append(current)
+            current = self.owner._class_base.get(current, "")
+        return out
+
     def build_with_enter_assign(
         self,
         node: dict[str, Any],
@@ -1871,6 +1892,7 @@ class ZigNativeEmitter:
             self._emit_line(self._exception_return_stmt())
 
     def _emit_try_stmt(self, stmt: dict[str, Any]) -> None:
+        renderer = _ZigStmtCommonRenderer(self)
         body = self._dict_list(stmt.get("body"))
         handlers_any = stmt.get("handlers")
         handlers = handlers_any if isinstance(handlers_any, list) else []
@@ -1904,14 +1926,12 @@ class ZigNativeEmitter:
                 if isinstance(type_node, dict):
                     type_name = _safe_ident(type_node.get("id"), "")
                 cond = "true"
-                if type_name in self._catch_all_exception_types:
+                if renderer.is_catch_all_exception_handler(h):
                     cond = "true"
                 elif type_name != "":
                     type_checks: list[str] = []
-                    current = type_name
-                    while current != "":
+                    for current in renderer.iter_exception_match_type_names(h):
                         type_checks.append("std.mem.eql(u8, __pytra_exc_type.?, " + _zig_string(current) + ")")
-                        current = self._class_base.get(current, "")
                     cond = " or ".join(type_checks)
                 self._emit_line("if (!" + handled + " and (" + cond + ")) {")
                 self.indent += 1

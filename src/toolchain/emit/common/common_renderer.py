@@ -324,6 +324,35 @@ class CommonRenderer:
     def emit_try_handler_body(self, handler: dict[str, JsonVal]) -> None:
         self.emit_body(self._list(handler, "body"))
 
+    def is_user_exception_handler(self, handler: dict[str, JsonVal]) -> bool:
+        return False
+
+    def is_catch_all_exception_handler(self, handler: dict[str, JsonVal]) -> bool:
+        return False
+
+    def iter_exception_match_type_names(self, handler: dict[str, JsonVal]) -> list[str]:
+        type_node = handler.get("type")
+        if isinstance(type_node, dict):
+            type_name = self._str(type_node, "id")
+            if type_name != "":
+                return [type_name]
+        return []
+
+    def partition_exception_handlers(
+        self,
+        handlers: list[JsonVal],
+    ) -> tuple[list[dict[str, JsonVal]], list[dict[str, JsonVal]]]:
+        user_handlers: list[dict[str, JsonVal]] = []
+        other_handlers: list[dict[str, JsonVal]] = []
+        for handler in handlers:
+            if not isinstance(handler, dict):
+                continue
+            if self.is_user_exception_handler(handler):
+                user_handlers.append(handler)
+            else:
+                other_handlers.append(handler)
+        return user_handlers, other_handlers
+
     def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         keyword = self._syntax_text("raise", "throw")
         self._emit_stmt_line(keyword)
