@@ -463,6 +463,7 @@ class CommonRenderer:
         context_type = self._str(context_expr, "resolved_type") if isinstance(context_expr, dict) else ""
         context_kind = self._str(context_expr, "kind") if isinstance(context_expr, dict) else ""
         enter_type = self._str(node, "with_enter_type")
+        self.emit_with_enter_prelude(node, enter_name, enter_type)
         ctx_assign = {
             "kind": "Assign",
             "target": {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
@@ -494,7 +495,7 @@ class CommonRenderer:
         if context_type != "" and enter_type != "" and context_type == enter_type:
             self.emit_expr_stmt({"kind": "Expr", "value": enter_call})
         else:
-            self.emit_with_enter_binding(node, enter_name, enter_type, enter_call)
+            self.emit_assign_stmt(self.build_with_enter_assign(node, enter_name, enter_type, enter_call))
         exit_call = {
             "kind": "Call",
             "func": {
@@ -520,14 +521,13 @@ class CommonRenderer:
         try_body = body
         if context_type != "" and enter_type != "" and context_type == enter_type:
             try_body = [
-                {
-                    "kind": "Assign",
-                    "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
-                    "value": {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
-                    "declare": True,
-                    "decl_type": enter_type,
-                    "bind_ref": True,
-                }
+                self.build_with_enter_assign(
+                    node,
+                    enter_name,
+                    enter_type,
+                    {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
+                    bind_ref=True,
+                )
             ] + body
         try_node = {
             "kind": "Try",
@@ -538,21 +538,32 @@ class CommonRenderer:
         }
         self.emit_try_stmt(try_node)
 
-    def emit_with_enter_binding(
+    def emit_with_enter_prelude(
         self,
         node: dict[str, JsonVal],
         enter_name: str,
         enter_type: str,
-        enter_call: dict[str, JsonVal],
     ) -> None:
-        enter_assign = {
+        return None
+
+    def build_with_enter_assign(
+        self,
+        node: dict[str, JsonVal],
+        enter_name: str,
+        enter_type: str,
+        value: JsonVal,
+        bind_ref: bool = False,
+    ) -> dict[str, JsonVal]:
+        enter_assign: dict[str, JsonVal] = {
             "kind": "Assign",
             "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
-            "value": enter_call,
+            "value": value,
             "declare": True,
             "decl_type": enter_type,
         }
-        self.emit_assign_stmt(enter_assign)
+        if bind_ref:
+            enter_assign["bind_ref"] = True
+        return enter_assign
 
     def emit_pass_stmt(self, node: dict[str, JsonVal]) -> None:
         self._emit("// pass")

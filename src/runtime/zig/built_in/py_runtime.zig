@@ -1533,6 +1533,18 @@ pub fn file_read(handle: anytype) []const u8 {
     return p.readToEndAlloc(std.heap.page_allocator, std.math.maxInt(usize)) catch "";
 }
 
+pub fn file_enter(handle: anytype) *UnionVal {
+    if (@TypeOf(handle) == *UnionVal) return handle;
+    return union_wrap(handle);
+}
+
+pub fn file_exit(handle: anytype, _exc_type: anytype, _exc_val: anytype, _exc_tb: anytype) void {
+    _ = _exc_type;
+    _ = _exc_val;
+    _ = _exc_tb;
+    file_close(handle);
+}
+
 fn file_write_obj(p: *std.fs.File, obj: Obj) void {
     // Obj is always ArrayList(u8) from list_to_bytes / bytearray
     const al: *std.ArrayList(u8) = @ptrCast(@alignCast(obj.data));

@@ -284,22 +284,40 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner._emit_try_stmt(node)
         self.state.indent_level = self.owner.indent
 
-    def emit_with_enter_binding(
+    def build_with_enter_assign(
         self,
         node: dict[str, Any],
         enter_name: str,
         enter_type: str,
-        enter_call: dict[str, Any],
-    ) -> None:
-        self.owner.indent = self.state.indent_level
+        value: Any,
+        bind_ref: bool = False,
+    ) -> dict[str, Any]:
         assign_node: dict[str, Any] = {
             "kind": "Assign",
             "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
-            "value": enter_call,
+            "value": value,
             "declare": not (len(self.owner._local_var_stack) > 0 and enter_name in self.owner._current_local_vars()),
             "decl_type": enter_type,
         }
-        self.owner._emit_stmt(assign_node)
+        if bind_ref:
+            assign_node["bind_ref"] = True
+        return assign_node
+
+    def emit_with_enter_prelude(
+        self,
+        node: dict[str, Any],
+        enter_name: str,
+        enter_type: str,
+    ) -> None:
+        if enter_name == "" or len(self.owner._local_var_stack) == 0:
+            return
+        if enter_name in self.owner._current_local_vars():
+            return
+        self.owner.indent = self.state.indent_level
+        if enter_type != "":
+            self.owner._current_type_map()[enter_name] = enter_type
+        self.owner._current_local_vars().add(enter_name)
+        self.owner._emit_line("var " + enter_name + ": " + self.owner._zig_type(enter_type) + " = undefined;")
         self.state.indent_level = self.owner.indent
 
 
@@ -2295,10 +2313,10 @@ class ZigNativeEmitter:
             return
         if kind == "With":
             items = stmt.get("items")
-            enter_type = str(stmt.get("with_enter_type", ""))
-            if isinstance(items, list) and len(items) > 1 or enter_type == "TextIOWrapper":
+            if isinstance(items, list) and len(items) > 1:
                 context_expr = stmt.get("context_expr")
                 body = self._dict_list(stmt.get("body"))
+                enter_type = str(stmt.get("with_enter_type", ""))
                 var_name_any = stmt.get("var_name")
                 var_name = _safe_ident(var_name_any, "ctx") if isinstance(var_name_any, str) and var_name_any != "" else ""
                 ctx_name = "__with_ctx_" + str(self.tmp_seq)
@@ -4962,6 +4980,18 @@ class ZigNativeEmitter:
                     call_name = resolved_runtime_call
                 elif isinstance(runtime_call, str):
                     call_name = runtime_call
+                if call_name in {
+                    "TextIOWrapper.__enter__",
+                }:
+                    return "pytra.file_enter(" + obj + ")"
+                if call_name in {
+                    "IOBase.__exit__",
+                }:
+                    coerced_args = [
+                        "pytra.union_new_none()" if isinstance(arg, dict) and arg.get("kind") == "Constant" and arg.get("value") is None else arg_strs[i]
+                        for i, arg in enumerate(args)
+                    ]
+                    return "pytra.file_exit(" + obj + ", " + ", ".join(coerced_args) + ")"
                 if call_name == "str.rfind" and len(arg_strs) > 0:
                     return "pytra.str_rfind(" + obj + ", " + arg_strs[0] + ")"
                 if attr == "replace" and len(arg_strs) >= 2:

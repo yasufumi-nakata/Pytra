@@ -1057,23 +1057,24 @@ class _RsStmtCommonRenderer(CommonRenderer):
         _emit_try(self.ctx, node)
         self.state.indent_level = self.ctx.indent_level
 
-    def emit_with_enter_binding(
+    def build_with_enter_assign(
         self,
         node: dict[str, JsonVal],
         enter_name: str,
         enter_type: str,
-        enter_call: dict[str, JsonVal],
-    ) -> None:
-        self.ctx.indent_level = self.state.indent_level
+        value: JsonVal,
+        bind_ref: bool = False,
+    ) -> dict[str, JsonVal]:
         assign_node: dict[str, JsonVal] = {
             "kind": "Assign",
             "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
-            "value": enter_call,
+            "value": value,
             "declare": enter_name not in self.ctx.declared_vars,
             "decl_type": enter_type,
         }
-        _emit_assign(self.ctx, assign_node)
-        self.state.indent_level = self.ctx.indent_level
+        if bind_ref:
+            assign_node["bind_ref"] = True
+        return assign_node
 
     def emit_stmt(self, node: JsonVal) -> None:
         kind = self._str(node, "kind")
