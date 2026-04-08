@@ -33,9 +33,9 @@
 
 文脈: [docs/ja/plans/p0-zig-rs-common-renderer-exceptions.md](../plans/p0-zig-rs-common-renderer-exceptions.md)
 
-1. [ ] [ID: P0-ZIG-CREXC-S1] Rust の `with` lowering を CommonRenderer 正本へ戻し、`with_statement` / `with_context_manager` parity を維持する
-2. [ ] [ID: P0-ZIG-CREXC-S2] Zig の `with` lowering を CommonRenderer 正本へ戻し、`with_statement` / `with_context_manager` parity を維持する
-3. [ ] [ID: P0-ZIG-CREXC-S3] CommonRenderer に exception strategy hook を追加し、Rust / Zig の `try` / `raise` を hook 実装へ分離する
+1. [x] [ID: P0-ZIG-CREXC-S1] Rust の `with` lowering を CommonRenderer 正本へ戻し、`with_statement` / `with_context_manager` parity を維持する
+2. [x] [ID: P0-ZIG-CREXC-S2] Zig の `with` lowering を CommonRenderer 正本へ戻し、`with_statement` / `with_context_manager` parity を維持する
+3. [x] [ID: P0-ZIG-CREXC-S3] CommonRenderer に exception strategy hook を追加し、Rust / Zig の `try` / `raise` を hook 実装へ分離する
 4. [ ] [ID: P0-ZIG-CREXC-S4] Rust / Zig の `exception_types` / `try_raise` / `exception_bare_reraise` parity を維持したまま custom lowering を縮小する
 
 ### P0-ZIG-TOOLCHAIN-LEGACY: toolchain_ 依存を解消する

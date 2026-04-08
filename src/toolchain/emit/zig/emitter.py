@@ -242,9 +242,46 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner._emit_stmt(node)
         self.state.indent_level = self.owner.indent
 
-    def emit_try_stmt(self, node: dict[str, Any]) -> None:
+    def emit_bare_raise_stmt(self, node: dict[str, Any]) -> None:
         self.owner.indent = self.state.indent_level
-        self.owner._emit_stmt(node)
+        self.owner._emit_raise_stmt(node)
+        self.state.indent_level = self.owner.indent
+
+    def emit_raise_call_stmt(
+        self,
+        node: dict[str, Any],
+        call_node: dict[str, Any],
+        func_name: str,
+        args: list[Any],
+    ) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_raise_stmt(node)
+        self.state.indent_level = self.owner.indent
+
+    def emit_raise_value_stmt(self, node: dict[str, Any], value: Any) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_raise_stmt(node)
+        self.state.indent_level = self.owner.indent
+
+    def emit_try_no_handler_stmt(
+        self,
+        node: dict[str, Any],
+        body: list[Any],
+        finalbody: list[Any],
+    ) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_try_stmt(node)
+        self.state.indent_level = self.owner.indent
+
+    def emit_try_with_handlers_stmt(
+        self,
+        node: dict[str, Any],
+        body: list[Any],
+        handlers: list[Any],
+        finalbody: list[Any],
+    ) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_try_stmt(node)
         self.state.indent_level = self.owner.indent
 
 
@@ -1751,6 +1788,130 @@ class ZigNativeEmitter:
                     self._emit_line("const " + safe_local + " = " + safe_mod + "." + _safe_ident(export_name, "fn") + ";")
                     emitted.add(safe_local)
 
+    def _emit_raise_stmt(self, stmt: dict[str, Any]) -> None:
+        exc_any = stmt.get("exc")
+        if exc_any is None:
+            self._emit_line("__pytra_exc_type = __pytra_caught_type;")
+            self._emit_line("__pytra_exc_msg = __pytra_caught_msg;")
+            self._emit_line("__pytra_exc_line = __pytra_caught_line;")
+            if self._try_depth > 0 and len(self._try_label_stack) > 0:
+                self._emit_line("break :" + self._try_label_stack[-1] + ";")
+            elif self._function_depth > 0 or self._try_depth == 0:
+                self._emit_line(self._exception_return_stmt())
+            return
+        if isinstance(exc_any, dict) and exc_any.get("kind") == "Call":
+            fn_any = exc_any.get("func")
+            if isinstance(fn_any, dict) and fn_any.get("kind") == "Name":
+                fn_name = _safe_ident(fn_any.get("id"), "")
+                args_any = exc_any.get("args")
+                args = args_any if isinstance(args_any, list) else []
+                self._emit_line("__pytra_exc_type = " + _zig_string(fn_name) + ";")
+                if len(args) > 0:
+                    if len(args) >= 2:
+                        self._emit_line("__pytra_exc_line = " + self._render_expr(args[0]) + ";")
+                        self._emit_line("__pytra_exc_msg = pytra.to_str(" + self._render_expr(args[1]) + ");")
+                    else:
+                        self._emit_line("__pytra_exc_line = 0;")
+                        self._emit_line("__pytra_exc_msg = pytra.to_str(" + self._render_expr(args[0]) + ");")
+                else:
+                    self._emit_line("__pytra_exc_line = 0;")
+                    self._emit_line("__pytra_exc_msg = \"error\";")
+                if self._try_depth > 0 and len(self._try_label_stack) > 0:
+                    self._emit_line("break :" + self._try_label_stack[-1] + ";")
+                elif self._function_depth > 0 or self._try_depth == 0:
+                    self._emit_line(self._exception_return_stmt())
+                return
+        if isinstance(exc_any, dict):
+            self._emit_line("__pytra_exc_type = \"Exception\";")
+            self._emit_line("__pytra_exc_msg = pytra.to_str(" + self._render_expr(exc_any) + ");")
+            self._emit_line("__pytra_exc_line = 0;")
+        else:
+            self._emit_line("__pytra_exc_type = \"Exception\";")
+            self._emit_line("__pytra_exc_msg = \"error\";")
+            self._emit_line("__pytra_exc_line = 0;")
+        if self._try_depth > 0 and len(self._try_label_stack) > 0:
+            self._emit_line("break :" + self._try_label_stack[-1] + ";")
+        elif self._function_depth > 0 or self._try_depth == 0:
+            self._emit_line(self._exception_return_stmt())
+
+    def _emit_try_stmt(self, stmt: dict[str, Any]) -> None:
+        body = self._dict_list(stmt.get("body"))
+        handlers_any = stmt.get("handlers")
+        handlers = handlers_any if isinstance(handlers_any, list) else []
+        orelse = self._dict_list(stmt.get("orelse"))
+        finalbody = self._dict_list(stmt.get("finalbody"))
+        try_blk = "__try_blk_" + str(self.tmp_seq)
+        self.tmp_seq += 1
+        self._emit_line(try_blk + ": {")
+        self.indent += 1
+        self._try_depth += 1
+        self._try_label_stack.append(try_blk)
+        for sub in body:
+            self._emit_stmt(sub)
+            if sub.get("kind") not in {"Return", "Raise", "Break", "Continue"}:
+                self._emit_line("if (__pytra_exc_type != null) break :" + try_blk + ";")
+        self._try_label_stack.pop()
+        self._try_depth -= 1
+        self.indent -= 1
+        self._emit_line("}")
+        if len(handlers) > 0:
+            handled = "__pytra_handled_" + str(self.tmp_seq)
+            self.tmp_seq += 1
+            self._emit_line("if (__pytra_exc_type != null) {")
+            self.indent += 1
+            self._emit_line("var " + handled + " = false;")
+            for h in handlers:
+                if not isinstance(h, dict):
+                    continue
+                type_node = h.get("type")
+                type_name = ""
+                if isinstance(type_node, dict):
+                    type_name = _safe_ident(type_node.get("id"), "")
+                cond = "true"
+                if type_name in self._catch_all_exception_types:
+                    cond = "true"
+                elif type_name != "":
+                    type_checks: list[str] = []
+                    current = type_name
+                    while current != "":
+                        type_checks.append("std.mem.eql(u8, __pytra_exc_type.?, " + _zig_string(current) + ")")
+                        current = self._class_base.get(current, "")
+                    cond = " or ".join(type_checks)
+                self._emit_line("if (!" + handled + " and (" + cond + ")) {")
+                self.indent += 1
+                self._emit_line("__pytra_caught_type = __pytra_exc_type;")
+                self._emit_line("__pytra_caught_msg = __pytra_exc_msg;")
+                self._emit_line("__pytra_caught_line = __pytra_exc_line;")
+                self._emit_line("__pytra_exc_type = null;")
+                self._emit_line("__pytra_exc_msg = null;")
+                self._emit_line("__pytra_exc_line = 0;")
+                hname = h.get("name")
+                pushed_exc = False
+                if isinstance(hname, str) and hname != "":
+                    safe_hname = _safe_ident(hname, "err")
+                    if self._body_uses_name_runtime(self._dict_list(h.get("body")), safe_hname):
+                        self._emit_line("const " + safe_hname + " = __PytraError{ .msg = (__pytra_caught_msg orelse \"\"), .line = __pytra_caught_line };")
+                        self._exception_var_stack.append({safe_hname})
+                        pushed_exc = True
+                self._emit_line(handled + " = true;")
+                for sub in self._dict_list(h.get("body")):
+                    self._emit_stmt(sub)
+                if pushed_exc:
+                    self._exception_var_stack.pop()
+                self.indent -= 1
+                self._emit_line("}")
+            self.indent -= 1
+            self._emit_line("}")
+        if len(orelse) > 0:
+            self._emit_line("if (__pytra_exc_type == null) {")
+            self.indent += 1
+            for sub in orelse:
+                self._emit_stmt(sub)
+            self.indent -= 1
+            self._emit_line("}")
+        for sub in finalbody:
+            self._emit_stmt(sub)
+
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         self._emit_leading_trivia(stmt, prefix="// ")
         kind = stmt.get("kind")
@@ -2097,128 +2258,22 @@ class ZigNativeEmitter:
                 self._emit_line("_ = " + expr_text + ";")
             return
         if kind == "Raise":
-            exc_any = stmt.get("exc")
-            if exc_any is None:
-                self._emit_line("__pytra_exc_type = __pytra_caught_type;")
-                self._emit_line("__pytra_exc_msg = __pytra_caught_msg;")
-                self._emit_line("__pytra_exc_line = __pytra_caught_line;")
-                if self._try_depth > 0 and len(self._try_label_stack) > 0:
-                    self._emit_line("break :" + self._try_label_stack[-1] + ";")
-                elif self._function_depth > 0 or self._try_depth == 0:
-                    self._emit_line(self._exception_return_stmt())
-                return
-            if isinstance(exc_any, dict) and exc_any.get("kind") == "Call":
-                fn_any = exc_any.get("func")
-                if isinstance(fn_any, dict) and fn_any.get("kind") == "Name":
-                    fn_name = _safe_ident(fn_any.get("id"), "")
-                    args_any = exc_any.get("args")
-                    args = args_any if isinstance(args_any, list) else []
-                    self._emit_line("__pytra_exc_type = " + _zig_string(fn_name) + ";")
-                    if len(args) > 0:
-                        if len(args) >= 2:
-                            self._emit_line("__pytra_exc_line = " + self._render_expr(args[0]) + ";")
-                            self._emit_line("__pytra_exc_msg = pytra.to_str(" + self._render_expr(args[1]) + ");")
-                        else:
-                            self._emit_line("__pytra_exc_line = 0;")
-                            self._emit_line("__pytra_exc_msg = pytra.to_str(" + self._render_expr(args[0]) + ");")
-                    else:
-                        self._emit_line("__pytra_exc_line = 0;")
-                        self._emit_line("__pytra_exc_msg = \"error\";")
-                    if self._try_depth > 0 and len(self._try_label_stack) > 0:
-                        self._emit_line("break :" + self._try_label_stack[-1] + ";")
-                    elif self._function_depth > 0 or self._try_depth == 0:
-                        self._emit_line(self._exception_return_stmt())
-                    return
-            if isinstance(exc_any, dict):
-                self._emit_line("__pytra_exc_type = \"Exception\";")
-                self._emit_line("__pytra_exc_msg = pytra.to_str(" + self._render_expr(exc_any) + ");")
-                self._emit_line("__pytra_exc_line = 0;")
-            else:
-                self._emit_line("__pytra_exc_type = \"Exception\";")
-                self._emit_line("__pytra_exc_msg = \"error\";")
-                self._emit_line("__pytra_exc_line = 0;")
-            if self._try_depth > 0 and len(self._try_label_stack) > 0:
-                self._emit_line("break :" + self._try_label_stack[-1] + ";")
-            elif self._function_depth > 0 or self._try_depth == 0:
-                self._emit_line(self._exception_return_stmt())
+            renderer = _ZigStmtCommonRenderer(self)
+            renderer.state.lines = self.lines
+            renderer.state.indent_level = self.indent
+            renderer.state.tmp_counter = self.tmp_seq
+            renderer.emit_raise_stmt(stmt)
+            self.indent = renderer.state.indent_level
+            self.tmp_seq = renderer.state.tmp_counter
             return
         if kind == "Try":
-            body = self._dict_list(stmt.get("body"))
-            handlers_any = stmt.get("handlers")
-            handlers = handlers_any if isinstance(handlers_any, list) else []
-            orelse = self._dict_list(stmt.get("orelse"))
-            finalbody = self._dict_list(stmt.get("finalbody"))
-            try_blk = "__try_blk_" + str(self.tmp_seq)
-            self.tmp_seq += 1
-            self._emit_line(try_blk + ": {")
-            self.indent += 1
-            self._try_depth += 1
-            self._try_label_stack.append(try_blk)
-            for sub in body:
-                self._emit_stmt(sub)
-                if sub.get("kind") not in {"Return", "Raise", "Break", "Continue"}:
-                    self._emit_line("if (__pytra_exc_type != null) break :" + try_blk + ";")
-            self._try_label_stack.pop()
-            self._try_depth -= 1
-            self.indent -= 1
-            self._emit_line("}")
-            if len(handlers) > 0:
-                handled = "__pytra_handled_" + str(self.tmp_seq)
-                self.tmp_seq += 1
-                self._emit_line("if (__pytra_exc_type != null) {")
-                self.indent += 1
-                self._emit_line("var " + handled + " = false;")
-                for h in handlers:
-                    if not isinstance(h, dict):
-                        continue
-                    type_node = h.get("type")
-                    type_name = ""
-                    if isinstance(type_node, dict):
-                        type_name = _safe_ident(type_node.get("id"), "")
-                    cond = "true"
-                    if type_name in self._catch_all_exception_types:
-                        cond = "true"
-                    elif type_name != "":
-                        type_checks: list[str] = []
-                        current = type_name
-                        while current != "":
-                            type_checks.append("std.mem.eql(u8, __pytra_exc_type.?, " + _zig_string(current) + ")")
-                            current = self._class_base.get(current, "")
-                        cond = " or ".join(type_checks)
-                    self._emit_line("if (!" + handled + " and (" + cond + ")) {")
-                    self.indent += 1
-                    self._emit_line("__pytra_caught_type = __pytra_exc_type;")
-                    self._emit_line("__pytra_caught_msg = __pytra_exc_msg;")
-                    self._emit_line("__pytra_caught_line = __pytra_exc_line;")
-                    self._emit_line("__pytra_exc_type = null;")
-                    self._emit_line("__pytra_exc_msg = null;")
-                    self._emit_line("__pytra_exc_line = 0;")
-                    hname = h.get("name")
-                    pushed_exc = False
-                    if isinstance(hname, str) and hname != "":
-                        safe_hname = _safe_ident(hname, "err")
-                        if self._body_uses_name_runtime(self._dict_list(h.get("body")), safe_hname):
-                            self._emit_line("const " + safe_hname + " = __PytraError{ .msg = (__pytra_caught_msg orelse \"\"), .line = __pytra_caught_line };")
-                            self._exception_var_stack.append({safe_hname})
-                            pushed_exc = True
-                    self._emit_line(handled + " = true;")
-                    for sub in self._dict_list(h.get("body")):
-                        self._emit_stmt(sub)
-                    if pushed_exc:
-                        self._exception_var_stack.pop()
-                    self.indent -= 1
-                    self._emit_line("}")
-                self.indent -= 1
-                self._emit_line("}")
-            if len(orelse) > 0:
-                self._emit_line("if (__pytra_exc_type == null) {")
-                self.indent += 1
-                for sub in orelse:
-                    self._emit_stmt(sub)
-                self.indent -= 1
-                self._emit_line("}")
-            for sub in finalbody:
-                self._emit_stmt(sub)
+            renderer = _ZigStmtCommonRenderer(self)
+            renderer.state.lines = self.lines
+            renderer.state.indent_level = self.indent
+            renderer.state.tmp_counter = self.tmp_seq
+            renderer.emit_try_stmt(stmt)
+            self.indent = renderer.state.indent_level
+            self.tmp_seq = renderer.state.tmp_counter
             return
         if kind == "With":
             items = stmt.get("items")
