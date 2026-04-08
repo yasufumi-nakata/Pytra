@@ -1071,7 +1071,29 @@ class _RsStmtCommonRenderer(CommonRenderer):
         finalbody: list[JsonVal],
     ) -> None:
         self.ctx.indent_level = self.state.indent_level
-        _emit_try(self.ctx, node)
+        _emit_try_body_hoists(self.ctx, body)
+        self.state.indent_level = self.ctx.indent_level
+        self.emit_try_capture("__try_result", body)
+        self.ctx.indent_level = self.state.indent_level
+        body_has_ret = _body_has_return(body) and self.ctx.current_return_type not in ("", "None")
+        _emit(self.ctx, self.render_try_match_open("__try_result"))
+        self.ctx.indent_level += 1
+        _emit(self.ctx, self.render_try_success_arm("__try_ok", body_has_ret))
+        _emit(self.ctx, self.render_try_error_arm_open("__catch_err", borrowed=True))
+        self.ctx.indent_level += 1
+        old_catch_var = self.ctx.catch_err_msg_var
+        user_handlers, string_handlers = self.partition_exception_handlers(handlers)
+        self.state.indent_level = self.ctx.indent_level
+        self.ctx.catch_err_msg_var = "__err_msg"
+        self.emit_partitioned_exception_handlers("__catch_err", user_handlers, "__err_msg", string_handlers)
+        self.ctx.indent_level = self.state.indent_level
+        self.ctx.catch_err_msg_var = old_catch_var
+        self.ctx.indent_level -= 1
+        _emit(self.ctx, self.render_try_error_arm_close())
+        self.ctx.indent_level -= 1
+        _emit(self.ctx, self.render_try_match_close())
+        if finalbody:
+            _emit_body(self.ctx, finalbody)
         self.state.indent_level = self.ctx.indent_level
 
     def emit_exception_handler(self, handler: dict[str, JsonVal]) -> None:
@@ -4916,13 +4938,7 @@ def _body_has_return(stmts: list[JsonVal]) -> bool:
     return False
 
 
-def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
-    """Emit try/except/finally using std::panic::catch_unwind."""
-    body = _list(node, "body")
-    handlers = _list(node, "handlers")
-    finalbody = _list(node, "finalbody")
-    renderer = _RsStmtCommonRenderer(ctx)
-
+def _emit_try_body_hoists(ctx: RsEmitContext, body: list[JsonVal]) -> None:
     for stmt in body:
         if not isinstance(stmt, dict):
             continue
@@ -4962,6 +4978,16 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         else:
             _emit(ctx, "let mut " + rs_name + ";")
         ctx.declared_vars.add(target_name)
+
+
+def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
+    """Emit try/except/finally using std::panic::catch_unwind."""
+    body = _list(node, "body")
+    handlers = _list(node, "handlers")
+    finalbody = _list(node, "finalbody")
+    renderer = _RsStmtCommonRenderer(ctx)
+
+    _emit_try_body_hoists(ctx, body)
 
     if len(handlers) == 0:
         # Only finally: catch, run finally, re-raise if panic
