@@ -1027,7 +1027,7 @@ class _RsStmtCommonRenderer(CommonRenderer):
 
     def emit_stmt(self, node: JsonVal) -> None:
         kind = self._str(node, "kind")
-        if kind in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "Raise", "Try", "comment", "blank", "If", "While"):
+        if kind in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "Raise", "Try", "With", "comment", "blank", "If", "While"):
             super().emit_stmt(node)
             self.ctx.indent_level = self.state.indent_level
             return
@@ -5431,7 +5431,16 @@ def _emit_stmt(ctx: RsEmitContext, node: JsonVal) -> None:
         else:
             _emit(ctx, "assert!(" + test_str + ");")
     elif kind == "With":
-        _emit_with(ctx, node)
+        items = _list(node, "items")
+        enter_type = _str(node, "with_enter_type")
+        if len(items) > 1 or enter_type == "TextIOWrapper":
+            _emit_with(ctx, node)
+        else:
+            renderer = _RsStmtCommonRenderer(ctx)
+            renderer.state.lines = ctx.lines
+            renderer.state.indent_level = ctx.indent_level
+            renderer.emit_stmt(node)
+            ctx.indent_level = renderer.state.indent_level
     elif kind == "TypeAlias":
         _emit_type_alias(ctx, node)
     elif kind == "VarDecl":

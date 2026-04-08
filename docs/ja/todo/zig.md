@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-04
+最終更新: 2026-04-08
 
 ## 運用ルール
 
@@ -29,6 +29,15 @@
 
 ## 未完了タスク
 
+### P0-ZIG-COMMON-RENDERER-EXC: `with` / 例外 lowering を CommonRenderer へ押し戻す
+
+文脈: [docs/ja/plans/p0-zig-rs-common-renderer-exceptions.md](../plans/p0-zig-rs-common-renderer-exceptions.md)
+
+1. [ ] [ID: P0-ZIG-CREXC-S1] Rust の `with` lowering を CommonRenderer 正本へ戻し、`with_statement` / `with_context_manager` parity を維持する
+2. [ ] [ID: P0-ZIG-CREXC-S2] Zig の `with` lowering を CommonRenderer 正本へ戻し、`with_statement` / `with_context_manager` parity を維持する
+3. [ ] [ID: P0-ZIG-CREXC-S3] CommonRenderer に exception strategy hook を追加し、Rust / Zig の `try` / `raise` を hook 実装へ分離する
+4. [ ] [ID: P0-ZIG-CREXC-S4] Rust / Zig の `exception_types` / `try_raise` / `exception_bare_reraise` parity を維持したまま custom lowering を縮小する
+
 ### P0-ZIG-TOOLCHAIN-LEGACY: toolchain_ 依存を解消する
 
 `src/toolchain/emit/zig/emitter.py` が旧 toolchain（`toolchain_`）の `runtime_symbol_index` を参照している。`toolchain_` は deprecated で今後削除される。
@@ -45,4 +54,3 @@
 対象: `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`(stdlib), `os_glob_extended`(stdlib)
 
 1. [ ] [ID: P0-ZIG-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）
-
