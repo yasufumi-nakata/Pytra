@@ -392,6 +392,9 @@ class CommonRenderer:
         del err_binding, borrowed
         raise RuntimeError("common renderer requires try error arm hook for " + self.language)
 
+    def render_try_error_arm_close(self) -> str:
+        return "}"
+
     def render_try_match_open(self, result_name: str) -> str:
         del result_name
         raise RuntimeError("common renderer requires try match open hook for " + self.language)

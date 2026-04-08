@@ -4939,7 +4939,12 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, renderer.render_try_match_open("__try_result"))
             ctx.indent_level += 1
             _emit(ctx, renderer.render_try_success_arm("__try_ok", True))
-            _emit(ctx, renderer.render_try_error_arm_open("__try_err") + " std::panic::resume_unwind(__try_err); }")
+            _emit(
+                ctx,
+                renderer.render_try_error_arm_open("__try_err")
+                + " std::panic::resume_unwind(__try_err); "
+                + renderer.render_try_error_arm_close(),
+            )
             ctx.indent_level -= 1
             _emit(ctx, renderer.render_try_match_close())
         else:
@@ -4991,7 +4996,7 @@ def _emit_try(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
 
         ctx.catch_err_msg_var = old_catch_var
         ctx.indent_level -= 1
-        _emit(ctx, "}")  # close Err arm
+        _emit(ctx, renderer.render_try_error_arm_close())
         ctx.indent_level -= 1
         _emit(ctx, renderer.render_try_match_close())
         if finalbody:
