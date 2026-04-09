@@ -345,18 +345,6 @@ class _ZigStmtCommonRenderer(CommonRenderer):
     def emit_exception_dispatch_state_init(self, handled_name: str) -> None:
         self.emit_backend_line("var " + handled_name + " = false;")
 
-    def next_exception_dispatch_state_name(self) -> str:
-        name = "__pytra_handled_" + str(self.owner.tmp_seq)
-        self.owner.tmp_seq += 1
-        return name
-
-    def next_callable_invoke_names(self) -> tuple[str, str]:
-        blk = "__call_blk_" + str(self.owner.tmp_seq)
-        self.owner.tmp_seq += 1
-        fn = "__call_fn_" + str(self.owner.tmp_seq)
-        self.owner.tmp_seq += 1
-        return (blk, fn)
-
     def next_bounds_checked_index_names(self) -> tuple[str, str, str]:
         blk = "__idx_blk_" + str(self.owner.tmp_seq)
         self.owner.tmp_seq += 1
