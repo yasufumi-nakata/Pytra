@@ -1172,6 +1172,25 @@ class _RsStmtCommonRenderer(CommonRenderer):
                 entries.append(entry)
         return entries
 
+    def emit_with_hoisted_bindings(
+        self,
+        body: list[JsonVal],
+        declared_names: set[str],
+        type_map: dict[str, str],
+    ) -> None:
+        for name, resolved_type in self.collect_with_hoisted_specs(body):
+            if name in declared_names:
+                continue
+            declared_names.add(name)
+            if resolved_type != "":
+                type_map[name] = resolved_type
+            rs_name = _rs_var_name(self.ctx, name)
+            rs_type = _rs_type_for_context(self.ctx, resolved_type) if resolved_type != "" else ""
+            if rs_type != "" and rs_type != "()":
+                _emit(self.ctx, "let mut " + rs_name + ": " + rs_type + " = Default::default();")
+            else:
+                _emit(self.ctx, "let mut " + rs_name + " = Default::default();")
+
     def emit_with_capture_body(self, with_result: str, body: list[JsonVal]) -> None:
         _emit(self.ctx, self.render_try_capture_open(with_result))
         self.ctx.indent_level += 1
@@ -5713,19 +5732,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     renderer.state.tmp_counter = ctx.temp_counter
     with_result = renderer.next_with_result_name()
     with_err = renderer.next_with_error_name()
-    for name, resolved_type in renderer.collect_with_hoisted_specs(body):
-        if name in ctx.declared_vars:
-            continue
-        ctx.declared_vars.add(name)
-        if resolved_type != "":
-            ctx.var_types[name] = resolved_type
-        rs_name = _rs_var_name(ctx, name)
-        rs_type = _rs_type_for_context(ctx, resolved_type) if resolved_type != "" else ""
-        if rs_type != "" and rs_type != "()":
-            _emit(ctx, "let mut " + rs_name + ": " + rs_type + " = Default::default();")
-        else:
-            _emit(ctx, "let mut " + rs_name + " = Default::default();")
-
+    renderer.emit_with_hoisted_bindings(body, ctx.declared_vars, ctx.var_types)
     ctx_entries = renderer.emit_with_items(items, ctx.declared_vars, ctx.var_types)
 
     ctx.temp_counter = renderer.state.tmp_counter
