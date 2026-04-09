@@ -582,6 +582,33 @@ class _ZigStmtCommonRenderer(CommonRenderer):
             self.owner._exception_var_stack.pop()
             self.owner._pending_exception_var_push = False
 
+    def emit_with_fallback_enter(self, target_name: str, target_type: str) -> None:
+        del target_type
+        self.emit_backend_line("_ = " + target_name + ".__enter__();")
+
+    def emit_with_fallback_exit(self, target_name: str, target_type: str) -> None:
+        del target_type
+        self.emit_backend_line(
+            "_ = "
+            + target_name
+            + ".__exit__(pytra.union_new_none(), pytra.union_new_none(), pytra.union_new_none());"
+        )
+
+    def emit_with_close_fallback(self, target_name: str, target_type: str) -> None:
+        del target_type
+        self.emit_backend_line("pytra.file_close(" + target_name + ");")
+
+    def emit_with_context_bind(
+        self,
+        target_name: str,
+        source_name: str,
+        source_type: str,
+        declare: bool,
+    ) -> None:
+        del source_type
+        prefix = "var " if declare else ""
+        self.emit_backend_line(prefix + target_name + " = " + source_name + ";")
+
     def build_with_enter_assign(
         self,
         node: dict[str, Any],
@@ -2582,7 +2609,9 @@ class ZigNativeEmitter:
                     reassigned = len(self._reassigned_name_stack) > 0 and var_name in self._reassigned_name_stack[-1]
                     if enter_type == "TextIOWrapper":
                         if already_declared:
-                            self._emit_line(var_name + " = " + ctx_name + ";")
+                            renderer.state.indent_level = self.indent
+                            renderer.emit_with_context_bind(var_name, ctx_name, enter_type, False)
+                            self.indent = renderer.state.indent_level
                         else:
                             self._emit_line(("var " if reassigned else "const ") + var_name + " = " + ctx_name + ";")
                     else:
@@ -2593,7 +2622,9 @@ class ZigNativeEmitter:
                     if not already_declared and len(self._local_var_stack) > 0:
                         self._current_local_vars().add(var_name)
                 elif enter_type != "TextIOWrapper":
-                    self._emit_line("_ = " + ctx_name + ".__enter__();")
+                    renderer.state.indent_level = self.indent
+                    renderer.emit_with_fallback_enter(ctx_name, enter_type)
+                    self.indent = renderer.state.indent_level
                 self._emit_line(renderer.render_try_body_open(with_blk))
                 self.indent += 1
                 self._try_depth += 1
@@ -2607,10 +2638,12 @@ class ZigNativeEmitter:
                 self._try_depth -= 1
                 self.indent -= 1
                 self._emit_line(renderer.render_try_body_close(with_blk))
+                renderer.state.indent_level = self.indent
                 if enter_type == "TextIOWrapper":
-                    self._emit_line("pytra.file_close(" + ctx_name + ");")
+                    renderer.emit_with_close_fallback(ctx_name, enter_type)
                 else:
-                    self._emit_line("_ = " + ctx_name + ".__exit__(pytra.union_new_none(), pytra.union_new_none(), pytra.union_new_none());")
+                    renderer.emit_with_fallback_exit(ctx_name, enter_type)
+                self.indent = renderer.state.indent_level
             else:
                 renderer = _ZigStmtCommonRenderer(self)
                 renderer.state.lines = self.lines
