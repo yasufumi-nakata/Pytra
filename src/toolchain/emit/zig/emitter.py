@@ -266,26 +266,35 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner._emit_raise_stmt(node)
         self.state.indent_level = self.owner.indent
 
-    def emit_try_no_handler_stmt(
-        self,
-        node: dict[str, Any],
-        body: list[Any],
-        finalbody: list[Any],
-    ) -> None:
-        self.owner.indent = self.state.indent_level
-        self.owner._emit_try_stmt(node)
-        self.state.indent_level = self.owner.indent
-
-    def emit_try_with_handlers_stmt(
-        self,
-        node: dict[str, Any],
-        body: list[Any],
-        handlers: list[Any],
-        finalbody: list[Any],
-    ) -> None:
-        self.owner.indent = self.state.indent_level
-        self.owner._emit_try_stmt(node)
-        self.state.indent_level = self.owner.indent
+    def emit_try_stmt(self, node: dict[str, Any]) -> None:
+        body = self.owner._dict_list(node.get("body"))
+        handlers_any = node.get("handlers")
+        handlers = handlers_any if isinstance(handlers_any, list) else []
+        orelse = self.owner._dict_list(node.get("orelse"))
+        finalbody = self.owner._dict_list(node.get("finalbody"))
+        try_blk = self.next_try_block_name()
+        self.emit_backend_line(self.render_try_body_open(try_blk))
+        self.state.indent_level += 1
+        self.owner._try_depth += 1
+        self.owner._try_label_stack.append(try_blk)
+        for sub in body:
+            self.emit_stmt(sub)
+            self.emit_try_body_post_stmt(sub, try_blk)
+        self.owner._try_label_stack.pop()
+        self.owner._try_depth -= 1
+        self.state.indent_level -= 1
+        self.emit_backend_line(self.render_try_body_close(try_blk))
+        if len(handlers) > 0:
+            handled = self.next_exception_dispatch_state_name()
+            self.emit_exception_dispatch_handlers(self.active_exception_type_slot_name(), handled, handlers)
+        if len(orelse) > 0:
+            self.emit_backend_line(self.render_try_orelse_open())
+            self.state.indent_level += 1
+            self.emit_body(orelse)
+            self.state.indent_level -= 1
+            self.emit_backend_line(self.render_try_orelse_close())
+        if len(finalbody) > 0:
+            self.emit_body(finalbody)
 
     def emit_exception_handler(self, handler: dict[str, Any]) -> None:
         self.state.indent_level = self.owner.indent
@@ -697,44 +706,6 @@ class ZigNativeEmitter:
         self._try_depth -= 1
         self.indent -= 1
         self._emit_line(renderer.render_try_body_close(try_label))
-
-    def _emit_stmt_list_with_renderer(
-        self,
-        renderer: _ZigStmtCommonRenderer,
-        body: list[dict[str, Any]],
-    ) -> None:
-        renderer.state.indent_level = self.indent
-        renderer.emit_body(body)
-        self._sync_from_stmt_renderer(renderer)
-
-    def _emit_try_handlers_with_renderer(
-        self,
-        renderer: _ZigStmtCommonRenderer,
-        handlers: list[dict[str, Any]],
-    ) -> None:
-        if len(handlers) == 0:
-            return
-        handled = renderer.next_exception_dispatch_state_name()
-        self._call_stmt_renderer(
-            renderer,
-            "emit_exception_dispatch_handlers",
-            renderer.active_exception_type_slot_name(),
-            handled,
-            handlers,
-        )
-
-    def _emit_try_orelse_with_renderer(
-        self,
-        renderer: _ZigStmtCommonRenderer,
-        orelse: list[dict[str, Any]],
-    ) -> None:
-        if len(orelse) == 0:
-            return
-        self._emit_line(renderer.render_try_orelse_open())
-        self.indent += 1
-        self._emit_stmt_list_with_renderer(renderer, orelse)
-        self.indent -= 1
-        self._emit_line(renderer.render_try_orelse_close())
 
     def _begin_exception_binding(self, safe_name: str, value_expr: str) -> None:
         self._emit_line("const " + safe_name + " = " + value_expr + ";")
@@ -2096,19 +2067,6 @@ class ZigNativeEmitter:
         else:
             self._call_stmt_renderer(renderer, "emit_raise_exception_state", "\"Exception\"", "\"error\"", "0")
         self._call_stmt_renderer(renderer, "emit_raise_propagation", try_label, return_stmt)
-
-    def _emit_try_stmt(self, stmt: dict[str, Any]) -> None:
-        renderer = self._make_stmt_renderer()
-        body = self._dict_list(stmt.get("body"))
-        handlers_any = stmt.get("handlers")
-        handlers = handlers_any if isinstance(handlers_any, list) else []
-        orelse = self._dict_list(stmt.get("orelse"))
-        finalbody = self._dict_list(stmt.get("finalbody"))
-        try_blk = renderer.next_try_block_name()
-        self._emit_try_body_with_renderer(renderer, try_blk, body)
-        self._emit_try_handlers_with_renderer(renderer, handlers)
-        self._emit_try_orelse_with_renderer(renderer, orelse)
-        self._emit_stmt_list_with_renderer(renderer, finalbody)
 
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         self._emit_leading_trivia(stmt, prefix="// ")
