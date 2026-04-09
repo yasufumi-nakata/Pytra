@@ -5718,8 +5718,8 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         renderer.emit_with_enter_action(
             enter_target_name,
             enter_target_type,
-            _str(item, "with_enter_runtime_call"),
-            _str(item, "with_enter_runtime_symbol"),
+            renderer.with_item_enter_runtime_call(item),
+            renderer.with_item_enter_runtime_symbol(item),
             enter_target_type,
         )
         renderer.emit_with_enter_fallback_action(
