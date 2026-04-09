@@ -3805,8 +3805,7 @@ class ZigNativeEmitter:
                         + ", "
                         + item_name
                         + "); } "
-                        + _ZigStmtCommonRenderer(self).render_break_with_value(blk, out_name)
-                        + "; }"
+                        + _ZigStmtCommonRenderer(self).render_block_expr_close(blk, out_name)
                     )
             # list * int → list replication (ブロック式)
             if op == "Mult":
@@ -3847,8 +3846,7 @@ class ZigNativeEmitter:
                         + ", "
                         + item_name
                         + "); } } "
-                        + _ZigStmtCommonRenderer(self).render_break_with_value(blk, "__rl")
-                        + " }"
+                        + _ZigStmtCommonRenderer(self).render_block_expr_close(blk, "__rl")
                     )
             if op == "Pow":
                 return "std.math.pow(f64, " + left + ", " + right + ")"
@@ -4120,7 +4118,7 @@ class ZigNativeEmitter:
                     parts.append(" const __bl = pytra.make_list(" + zig_elem + ");")
                     for item in items:
                         parts.append(" pytra.list_append(__bl, " + zig_elem + ", " + item + ");")
-                    parts.append(" " + _ZigStmtCommonRenderer(self).render_break_with_value(blk_label, "__bl") + " }")
+                    parts.append(_ZigStmtCommonRenderer(self).render_block_expr_close(blk_label, "__bl"))
                     return "".join(parts)
                 return "pytra.list_from(" + zig_elem + ", &[_]" + zig_elem + "{ " + ", ".join(items) + " })"
             if len(items) == 0:
@@ -5583,7 +5581,7 @@ class ZigNativeEmitter:
         if loop_cond != "true":
             parts.append("  }")
         parts.append(" }")
-        parts.append(" " + _ZigStmtCommonRenderer(self).render_break_with_value(blk, out_name) + " }")
+        parts.append(_ZigStmtCommonRenderer(self).render_block_expr_close(blk, out_name))
         return "".join(parts)
 
     def _render_list_comp(self, node: dict[str, Any]) -> str:
@@ -5633,7 +5631,7 @@ class ZigNativeEmitter:
         if loop_cond != "true":
             parts.append("  }")
         parts.append(" }")
-        parts.append(" " + _ZigStmtCommonRenderer(self).render_break_with_value(blk, out_name) + " }")
+        parts.append(_ZigStmtCommonRenderer(self).render_block_expr_close(blk, out_name))
         return "".join(parts)
 
     def _comp_iter_parts(self, iter_node: dict[str, Any], capture_name: str, target: dict[str, Any]) -> tuple[str, str, list[str], dict[str, str]]:
@@ -5714,7 +5712,7 @@ class ZigNativeEmitter:
         if loop_cond != "true":
             parts.append("  }")
         parts.append(" }")
-        parts.append(" " + _ZigStmtCommonRenderer(self).render_break_with_value(blk, "__dc") + " }")
+        parts.append(_ZigStmtCommonRenderer(self).render_block_expr_close(blk, "__dc"))
         return "".join(parts)
 
     def _normalize_type(self, t: str) -> str:

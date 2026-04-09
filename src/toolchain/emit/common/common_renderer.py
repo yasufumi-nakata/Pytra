@@ -628,6 +628,9 @@ class CommonRenderer:
             + self.render_break_with_value(block_label, fallback_value)
         )
 
+    def render_block_expr_close(self, block_label: str, value_expr: str) -> str:
+        return " " + self.render_break_with_value(block_label, value_expr) + " }"
+
     def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         keyword = self._syntax_text("raise", "throw")
         self._emit_stmt_line(keyword)
