@@ -538,6 +538,15 @@ class CommonRenderer:
     def next_str_index_names(self) -> tuple[str, str]:
         return (self._next_tmp("__str_index_blk"), self._next_tmp("__str_index_val"))
 
+    def next_for_tuple_name(self) -> str:
+        return self._next_tmp("__for_tuple")
+
+    def next_dict_items_iter_names(self) -> tuple[str, str]:
+        return (self._next_tmp("__dict_iter"), self._next_tmp("__dict_entry"))
+
+    def next_tuple_list_literal_names(self) -> tuple[str, str]:
+        return (self._next_tmp("__list_blk"), self._next_tmp("__bl"))
+
     def render_exception_handler_guard_open(
         self,
         handler: dict[str, JsonVal],

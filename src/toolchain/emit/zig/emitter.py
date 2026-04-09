@@ -486,6 +486,25 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner.tmp_seq += 1
         return (blk, val)
 
+    def next_for_tuple_name(self) -> str:
+        name = "__for_tuple_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return name
+
+    def next_dict_items_iter_names(self) -> tuple[str, str]:
+        iter_name = "__dict_iter_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        entry_name = "__dict_entry_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return (iter_name, entry_name)
+
+    def next_tuple_list_literal_names(self) -> tuple[str, str]:
+        blk = "__list_blk_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        tmp = "__bl_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return (blk, tmp)
+
     def render_exception_handler_guard_open(
         self,
         handler: dict[str, Any],
@@ -3088,8 +3107,7 @@ class ZigNativeEmitter:
                 for elt in elements:
                     if isinstance(elt, dict) and elt.get("kind") == "NameTarget":
                         tuple_unpack_names.append(_safe_ident(elt.get("id"), "v"))
-            target_name = "__for_tuple_" + str(self.tmp_seq)
-            self.tmp_seq += 1
+            target_name = _ZigStmtCommonRenderer(self).next_for_tuple_name()
         elif isinstance(target_plan, dict) and target_plan.get("kind") == "NameTarget":
             target_name = _safe_ident(target_plan.get("id"), "i")
             direct_unpack_names = target_plan.get("direct_unpack_names")
@@ -3119,10 +3137,7 @@ class ZigNativeEmitter:
                         owner_source = owner_node.get("value") if isinstance(owner_node, dict) and owner_node.get("kind") == "Unbox" else owner_node
                         owner_source_type = self._lookup_expr_type(owner_source) if isinstance(owner_source, dict) else ""
                         owner_is_union = self._is_union_storage_zig(self._zig_type(owner_source_type))
-                        iter_name = "__dict_iter_" + str(self.tmp_seq)
-                        self.tmp_seq += 1
-                        entry_name = "__dict_entry_" + str(self.tmp_seq)
-                        self.tmp_seq += 1
+                        iter_name, entry_name = _ZigStmtCommonRenderer(self).next_dict_items_iter_names()
                         key_name = tuple_unpack_names[0]
                         value_name = tuple_unpack_names[1]
                         key_used = self._body_uses_name(self._strip_dead_branches(body_nodes), key_name)
@@ -4222,14 +4237,13 @@ class ZigNativeEmitter:
                 if inner.startswith("tuple["):
                     if len(items) == 0:
                         return "pytra.make_list(" + zig_elem + ")"
-                    blk_label = "__list_blk_" + str(self.tmp_seq)
-                    self.tmp_seq += 1
+                    blk_label, list_name = _ZigStmtCommonRenderer(self).next_tuple_list_literal_names()
                     parts: list[str] = []
                     parts.append(_ZigStmtCommonRenderer(self).render_block_expr_open(blk_label))
-                    parts.append(" const __bl = pytra.make_list(" + zig_elem + ");")
+                    parts.append(" const " + list_name + " = pytra.make_list(" + zig_elem + ");")
                     for item in items:
-                        parts.append(" pytra.list_append(__bl, " + zig_elem + ", " + item + ");")
-                    parts.append(_ZigStmtCommonRenderer(self).render_block_expr_close(blk_label, "__bl"))
+                        parts.append(" pytra.list_append(" + list_name + ", " + zig_elem + ", " + item + ");")
+                    parts.append(_ZigStmtCommonRenderer(self).render_block_expr_close(blk_label, list_name))
                     return "".join(parts)
                 return "pytra.list_from(" + zig_elem + ", &[_]" + zig_elem + "{ " + ", ".join(items) + " })"
             if len(items) == 0:
