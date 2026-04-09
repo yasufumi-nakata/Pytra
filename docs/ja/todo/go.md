@@ -35,9 +35,9 @@
 
 Go は `any` + type switch がネイティブにあるので `pytra_isinstance` / `py_runtime_object_type_id` は不要。emitter が type switch を直接生成するようにする。
 
-1. [ ] [ID: P0-GO-TYPEID-CLN-S1] `src/runtime/go/built_in/py_runtime.go` から `pytra_isinstance` と `py_runtime_object_type_id` を削除する
-2. [ ] [ID: P0-GO-TYPEID-CLN-S2] Go emitter の isinstance を `switch v := x.(type)` に置換する
-3. [ ] [ID: P0-GO-TYPEID-CLN-S3] fixture + sample + stdlib parity に回帰がないことを確認する
+1. [x] [ID: P0-GO-TYPEID-CLN-S1] `src/runtime/go/built_in/py_runtime.go` から `pytra_isinstance` と `py_runtime_object_type_id` を削除する。完了メモ: 旧 helper は既に残っておらず、残存していた `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` も削除した。
+2. [x] [ID: P0-GO-TYPEID-CLN-S2] Go emitter の isinstance を `switch v := x.(type)` に置換する。完了メモ: Go emitter の `isinstance` は既に builtin helper / marker interface / type assertion ベースへ移行済みで、今回 subtype 判定も runtime helper 呼び出しではなく emitter inline 展開に揃えた。
+3. [x] [ID: P0-GO-TYPEID-CLN-S3] fixture + sample + stdlib parity に回帰がないことを確認する。完了メモ: Go で fixture `153/153 PASS`、sample `18/18 PASS`、stdlib `16/16 PASS` を確認した。途中で `bytearray.pop` cast、`str.isspace` fallback、wrapper dict `.items()` fallback も修正した。
 
 ### P7-GO-SELFHOST-RUNTIME: Go selfhost バイナリを実際に動かして parity PASS する
 

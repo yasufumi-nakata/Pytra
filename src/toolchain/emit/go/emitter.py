@@ -1240,7 +1240,21 @@ def _emit_issubtype(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     expected = _emit_expr(ctx, node.get("expected_type_id"))
     if actual == "" or expected == "":
         return "false"
-    return "py_runtime_type_id_is_subtype(" + actual + ", " + expected + ")"
+    actual_name = _next_temp(ctx, "__pytra_actual_tid")
+    expected_name = _next_temp(ctx, "__pytra_expected_tid")
+    index_name = _next_temp(ctx, "__pytra_tid_idx")
+    return (
+        "func() bool {\n"
+        + "\t" + actual_name + " := " + actual + "\n"
+        + "\t" + expected_name + " := " + expected + "\n"
+        + "\tfor " + index_name + " := 0; " + index_name + "+1 < len(id_table.items); " + index_name + " += 2 {\n"
+        + "\t\tif id_table.items[" + index_name + "] == " + expected_name + " {\n"
+        + "\t\t\treturn " + actual_name + " >= " + expected_name + " && " + actual_name + " <= id_table.items[" + index_name + "+1]\n"
+        + "\t\t}\n"
+        + "\t}\n"
+        + "\treturn " + actual_name + " == " + expected_name + "\n"
+        + "}()"
+    )
 
 
 def _emit_issubclass(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -1248,7 +1262,21 @@ def _emit_issubclass(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     expected = _emit_expr(ctx, node.get("expected_type_id"))
     if actual == "" or expected == "":
         return "false"
-    return "py_runtime_type_id_issubclass(" + actual + ", " + expected + ")"
+    actual_name = _next_temp(ctx, "__pytra_actual_tid")
+    expected_name = _next_temp(ctx, "__pytra_expected_tid")
+    index_name = _next_temp(ctx, "__pytra_tid_idx")
+    return (
+        "func() bool {\n"
+        + "\t" + actual_name + " := " + actual + "\n"
+        + "\t" + expected_name + " := " + expected + "\n"
+        + "\tfor " + index_name + " := 0; " + index_name + "+1 < len(id_table.items); " + index_name + " += 2 {\n"
+        + "\t\tif id_table.items[" + index_name + "] == " + expected_name + " {\n"
+        + "\t\t\treturn " + actual_name + " >= " + expected_name + " && " + actual_name + " <= id_table.items[" + index_name + "+1]\n"
+        + "\t\t}\n"
+        + "\t}\n"
+        + "\treturn " + actual_name + " == " + expected_name + "\n"
+        + "}()"
+    )
 
 
 def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -2150,6 +2178,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 method_key = _str(node, "runtime_call")
             if method_key == "":
                 method_key = _str(node, "runtime_symbol")
+            if method_key == "" and owner_rt in ("str", "string") and attr != "":
+                method_key = "str." + attr
             dispatch = ctx.mapping.calls.get(method_key, "") if method_key != "" else ""
             if owner_rt == "module" or owner_id in ctx.import_alias_modules:
                 mod_id = _str(node, "runtime_module_id")
@@ -2260,7 +2290,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if method_key == "list.index" and owner_rt.startswith("list[") and len(arg_strs) >= 1:
                 owner_storage = _wrapper_container_storage_expr(ctx, owner_node, owner)
                 return "py_list_index(" + owner_storage + ", " + arg_strs[0] + ")"
-            if owner_rt == "str" and isinstance(dispatch, str) and dispatch != "":
+            if owner_rt in ("str", "string") and isinstance(dispatch, str) and dispatch != "":
                 helper_args = [owner] + call_arg_strs
                 if method_key == "str.join" and len(args) >= 1 and isinstance(args[0], dict) and len(helper_args) >= 2:
                     helper_args[1] = _wrapper_container_storage_expr(ctx, args[0], helper_args[1])
@@ -2278,6 +2308,18 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                             return dynamic_code
                         return "py_dict_get(" + owner + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
                     return owner + "[" + arg_strs[0] + "]"
+            if ".(*PyDict[" in owner:
+                owner_storage = _wrapper_container_storage_expr(ctx, owner_node, owner)
+                if attr == "items":
+                    return "py_items(" + owner_storage + ")"
+                if attr == "keys":
+                    return "py_dict_keys(" + owner_storage + ")"
+                if attr == "values":
+                    return "py_dict_values(" + owner_storage + ")"
+                if attr == "get" and len(arg_strs) >= 1:
+                    if len(arg_strs) >= 2:
+                        return "py_dict_get(" + owner_storage + ", " + arg_strs[0] + ", " + arg_strs[1] + ")"
+                    return "py_dict_get(" + owner_storage + ", " + arg_strs[0] + ", nil)"
             wrapped_method_args = _wrap_container_call_args(ctx, args, call_arg_strs)
             return owner + "." + _safe_go_ident(attr) + "(" + ", ".join(wrapped_method_args) + ")"
         if func_kind == "Name":
@@ -2921,6 +2963,12 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     + "\treturn __val\n"
                     + "}()"
                 )
+            if owner_rt in ("bytes", "bytearray", "list[uint8]") and result_gt in ("int64", "int"):
+                pop_call = "py_list_pop(&" + owner
+                if len(arg_strs) >= 1:
+                    pop_call += ", " + arg_strs[0]
+                pop_call += ")"
+                return "int64(" + pop_call + ".(byte))"
             if len(arg_strs) >= 1:
                 return "py_list_pop(&" + owner + ", " + arg_strs[0] + ")"
             return "py_list_pop(&" + owner + ")"

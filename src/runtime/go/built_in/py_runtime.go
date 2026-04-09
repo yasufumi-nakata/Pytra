@@ -551,19 +551,6 @@ func pytraErrorIsInstance(err *PytraErrorCarrier, tidMin int64, tidMax int64) bo
 	return err.TypeId >= tidMin && err.TypeId <= tidMax
 }
 
-func py_runtime_type_id_is_subtype(actualTypeId int64, expectedTypeId int64) bool {
-	for i := 0; i+1 < len(id_table.items); i += 2 {
-		if id_table.items[i] == expectedTypeId {
-			return actualTypeId >= expectedTypeId && actualTypeId <= id_table.items[i+1]
-		}
-	}
-	return actualTypeId == expectedTypeId
-}
-
-func py_runtime_type_id_issubclass(actualTypeId int64, expectedTypeId int64) bool {
-	return py_runtime_type_id_is_subtype(actualTypeId, expectedTypeId)
-}
-
 func pytraAttachCause(err *PytraErrorCarrier, cause any) *PytraErrorCarrier {
 	if err == nil {
 		return nil
