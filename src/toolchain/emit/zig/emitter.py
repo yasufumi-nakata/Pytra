@@ -339,27 +339,20 @@ class _ZigStmtCommonRenderer(CommonRenderer):
             for current in self.iter_exception_match_type_names(handler)
         )
 
-    def render_exception_dispatch_open(self, caught_type_expr: str) -> str:
-        return "if (" + caught_type_expr + " != null) {"
-
-    def render_exception_dispatch_close(self) -> str:
-        return "}"
+    def render_exception_dispatch_condition(self, caught_type_expr: str) -> str:
+        return caught_type_expr + " != null"
 
     def emit_exception_dispatch_state_init(self, handled_name: str) -> None:
         self.emit_backend_line("var " + handled_name + " = false;")
 
-    def render_exception_handler_guard_open(
+    def render_exception_handler_guard_condition(
         self,
         handler: dict[str, Any],
         handled_name: str,
         caught_type_expr: str,
     ) -> str:
         cond = self.render_exception_match_condition(handler, caught_type_expr)
-        return "if (!" + handled_name + " and (" + cond + ")) {"
-
-    def render_exception_handler_guard_close(self, handler: dict[str, Any]) -> str:
-        del handler
-        return "}"
+        return "!" + handled_name + " and (" + cond + ")"
 
     def emit_exception_handler_mark_handled(self, handled_name: str) -> None:
         self.emit_backend_line(handled_name + " = true;")

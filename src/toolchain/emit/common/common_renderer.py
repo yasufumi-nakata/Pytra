@@ -563,9 +563,12 @@ class CommonRenderer:
         del message
         raise RuntimeError("common renderer requires panic literal hook for " + self.language)
 
-    def render_exception_dispatch_open(self, caught_type_expr: str) -> str:
+    def render_exception_dispatch_condition(self, caught_type_expr: str) -> str:
         del caught_type_expr
         return ""
+
+    def render_exception_dispatch_open(self, caught_type_expr: str) -> str:
+        return "if (" + self.render_exception_dispatch_condition(caught_type_expr) + ") {"
 
     def render_exception_dispatch_close(self) -> str:
         return "}"
@@ -695,8 +698,17 @@ class CommonRenderer:
         handled_name: str,
         caught_type_expr: str,
     ) -> str:
+        cond = self.render_exception_handler_guard_condition(handler, handled_name, caught_type_expr)
+        return "if (" + cond + ") {"
+
+    def render_exception_handler_guard_condition(
+        self,
+        handler: dict[str, JsonVal],
+        handled_name: str,
+        caught_type_expr: str,
+    ) -> str:
         del handler, handled_name, caught_type_expr
-        raise RuntimeError("common renderer requires exception handler guard hook for " + self.language)
+        raise RuntimeError("common renderer requires exception handler guard condition hook for " + self.language)
 
     def render_exception_handler_guard_close(self, handler: dict[str, JsonVal]) -> str:
         del handler
