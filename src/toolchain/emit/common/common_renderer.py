@@ -495,6 +495,12 @@ class CommonRenderer:
     def next_with_block_name(self) -> str:
         return self._next_tmp("__with_blk")
 
+    def next_with_result_name(self) -> str:
+        return self._next_tmp("__with_result")
+
+    def next_with_error_name(self) -> str:
+        return self._next_tmp("__with_err")
+
     def next_with_context_name(self) -> str:
         return self._next_tmp("__with_ctx")
 

@@ -5619,6 +5619,10 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     body = _list(node, "body")
     if len(items) == 0:
         items = [node]
+    renderer = _RsStmtCommonRenderer(ctx)
+    renderer.state.tmp_counter = ctx.temp_counter
+    with_result = renderer.next_with_result_name()
+    with_err = renderer.next_with_error_name()
 
     hoisted: list[tuple[str, str]] = []
     seen: set[str] = set()
@@ -5705,7 +5709,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         ctx_expr = _emit_expr(ctx, context_expr)
         ctx_rt = _actual_type_in_context(ctx, context_expr)
         ctx_rs = _rs_type_for_context(ctx, ctx_rt) if ctx_rt != "" else ""
-        ctx_tmp = _next_temp(ctx, "__with_ctx")
+        ctx_tmp = renderer.next_with_context_name()
         if ctx_rs.startswith("Rc<RefCell<"):
             _emit(ctx, "let mut " + ctx_tmp + " = " + ctx_expr + ".clone();")
         else:
@@ -5754,7 +5758,8 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             _str(item, "with_exit_runtime_symbol"),
         ))
 
-    _emit(ctx, "let __with_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
+    ctx.temp_counter = renderer.state.tmp_counter
+    _emit(ctx, "let " + with_result + " = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
     ctx.indent_level += 1
     _emit_body(ctx, body)
     ctx.indent_level -= 1
@@ -5779,9 +5784,9 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, target + ".borrow_mut().__exit__(PyAny::None, PyAny::None, PyAny::None);")
         else:
             _emit(ctx, target + ".close();")
-    _emit(ctx, "if let Err(__with_err) = __with_result {")
+    _emit(ctx, "if let Err(" + with_err + ") = " + with_result + " {")
     ctx.indent_level += 1
-    _emit(ctx, "std::panic::resume_unwind(__with_err);")
+    _emit(ctx, "std::panic::resume_unwind(" + with_err + ");")
     ctx.indent_level -= 1
     _emit(ctx, "}")
 
