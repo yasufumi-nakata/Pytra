@@ -490,6 +490,32 @@ class CommonRenderer:
             self._next_tmp("__idx_real"),
         )
 
+    def next_list_concat_names(self) -> tuple[str, str, str]:
+        return (
+            self._next_tmp("__concat_blk"),
+            self._next_tmp("__concat_out"),
+            self._next_tmp("__concat_item"),
+        )
+
+    def next_list_repeat_names(self) -> tuple[str, str, str]:
+        return (
+            self._next_tmp("__rep_blk"),
+            self._next_tmp("__rep_src"),
+            self._next_tmp("__rep_item"),
+        )
+
+    def next_set_comp_names(self) -> tuple[str, str]:
+        return (self._next_tmp("__setcomp_blk"), self._next_tmp("__setcomp_out"))
+
+    def next_list_comp_names(self) -> tuple[str, str]:
+        return (self._next_tmp("__listcomp_blk"), self._next_tmp("__listcomp_out"))
+
+    def next_dict_comp_name(self) -> str:
+        return self._next_tmp("__dictcomp_blk")
+
+    def next_tuple_target_name(self, prefix: str) -> str:
+        return self._next_tmp(prefix)
+
     def render_exception_handler_guard_open(
         self,
         handler: dict[str, JsonVal],

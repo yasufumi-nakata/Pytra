@@ -408,6 +408,48 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner.tmp_seq += 1
         return (blk, len_name, real_name)
 
+    def next_list_concat_names(self) -> tuple[str, str, str]:
+        blk = "__concat_blk_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        out_name = "__concat_out_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        item_name = "__concat_item_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return (blk, out_name, item_name)
+
+    def next_list_repeat_names(self) -> tuple[str, str, str]:
+        blk = "__rep_blk_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        src_name = "__rep_src_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        item_name = "__rep_item_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return (blk, src_name, item_name)
+
+    def next_set_comp_names(self) -> tuple[str, str]:
+        blk = "__setcomp_blk_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        out_name = "__setcomp_out_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return (blk, out_name)
+
+    def next_list_comp_names(self) -> tuple[str, str]:
+        blk = "__listcomp_blk_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        out_name = "__listcomp_out_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return (blk, out_name)
+
+    def next_dict_comp_name(self) -> str:
+        name = "__dictcomp_blk_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return name
+
+    def next_tuple_target_name(self, prefix: str) -> str:
+        name = prefix + "_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return name
+
     def render_exception_handler_guard_open(
         self,
         handler: dict[str, Any],
@@ -3811,12 +3853,7 @@ class ZigNativeEmitter:
                     list_type = result_type
                 if list_type.startswith("list[") and list_type.endswith("]"):
                     elem_type = self._zig_type(list_type[5:-1].strip())
-                    blk = "__concat_blk_" + str(self.tmp_seq)
-                    self.tmp_seq += 1
-                    out_name = "__concat_out_" + str(self.tmp_seq)
-                    self.tmp_seq += 1
-                    item_name = "__concat_item_" + str(self.tmp_seq)
-                    self.tmp_seq += 1
+                    blk, out_name, item_name = _ZigStmtCommonRenderer(self).next_list_concat_names()
                     return (
                         _ZigStmtCommonRenderer(self).render_block_expr_open(blk)
                         + " const "
@@ -3862,12 +3899,7 @@ class ZigNativeEmitter:
                         elem_type = self._zig_type(left_type[5:-1].strip())
                     elif left_type in {"bytearray", "bytes"}:
                         elem_type = "u8"
-                    blk = "__rep_blk_" + str(self.tmp_seq)
-                    self.tmp_seq += 1
-                    src_name = "__rep_src_" + str(self.tmp_seq)
-                    self.tmp_seq += 1
-                    item_name = "__rep_item_" + str(self.tmp_seq)
-                    self.tmp_seq += 1
+                    blk, src_name, item_name = _ZigStmtCommonRenderer(self).next_list_repeat_names()
                     return (
                         _ZigStmtCommonRenderer(self).render_block_expr_open(blk)
                         + " const "
@@ -5596,7 +5628,7 @@ class ZigNativeEmitter:
         ifs = ifs_any if isinstance(ifs_any, list) else []
         if not isinstance(target, dict) or target.get("kind") not in {"Name", "Tuple"} or not isinstance(iter_node, dict):
             return "pytra.empty_list()"
-        target_name = _safe_ident(target.get("id"), "item") if target.get("kind") == "Name" else "__set_tuple_" + str(self.tmp_seq)
+        target_name = _safe_ident(target.get("id"), "item") if target.get("kind") == "Name" else _ZigStmtCommonRenderer(self).next_tuple_target_name("__set_tuple")
         iter_expr, elem_type, unpack_lines, name_types = self._comp_iter_parts(iter_node, target_name, target)
         result_type = self._get_expr_type(node)
         if result_type.startswith("set[") and result_type.endswith("]"):
@@ -5612,10 +5644,7 @@ class ZigNativeEmitter:
             loop_cond = " and ".join(self._render_cond_expr(cond) for cond in ifs if isinstance(cond, dict))
         elt_expr = self._render_expr(node.get("elt"))
         self._local_type_stack.pop()
-        blk = "__setcomp_blk_" + str(self.tmp_seq)
-        self.tmp_seq += 1
-        out_name = "__setcomp_out_" + str(self.tmp_seq)
-        self.tmp_seq += 1
+        blk, out_name = _ZigStmtCommonRenderer(self).next_set_comp_names()
         parts: list[str] = []
         parts.append(_ZigStmtCommonRenderer(self).render_block_expr_open(blk))
         parts.append(" const " + out_name + " = pytra.make_list(" + elem_type + ");")
@@ -5643,7 +5672,7 @@ class ZigNativeEmitter:
         ifs = ifs_any if isinstance(ifs_any, list) else []
         if not isinstance(target, dict) or target.get("kind") not in {"Name", "Tuple"} or not isinstance(iter_node, dict):
             return "pytra.empty_list()"
-        target_name = _safe_ident(target.get("id"), "item") if target.get("kind") == "Name" else "__list_tuple_" + str(self.tmp_seq)
+        target_name = _safe_ident(target.get("id"), "item") if target.get("kind") == "Name" else _ZigStmtCommonRenderer(self).next_tuple_target_name("__list_tuple")
         iter_expr, iter_elem_type, unpack_lines, name_types = self._comp_iter_parts(iter_node, target_name, target)
         result_type = self._get_expr_type(node)
         result_elem_type = "i64"
@@ -5662,10 +5691,7 @@ class ZigNativeEmitter:
             loop_cond = " and ".join(self._render_cond_expr(cond) for cond in ifs if isinstance(cond, dict))
         elt_expr = self._render_expr(node.get("elt"))
         self._local_type_stack.pop()
-        blk = "__listcomp_blk_" + str(self.tmp_seq)
-        self.tmp_seq += 1
-        out_name = "__listcomp_out_" + str(self.tmp_seq)
-        self.tmp_seq += 1
+        blk, out_name = _ZigStmtCommonRenderer(self).next_list_comp_names()
         parts: list[str] = []
         parts.append(_ZigStmtCommonRenderer(self).render_block_expr_open(blk))
         parts.append(" const " + out_name + " = pytra.make_list(" + result_elem_type + ");")
@@ -5747,8 +5773,7 @@ class ZigNativeEmitter:
         self._local_type_stack.pop()
         if not key_is_str:
             key_expr = "pytra.to_str(" + key_expr + ")"
-        blk = "__dictcomp_blk_" + str(self.tmp_seq)
-        self.tmp_seq += 1
+        blk = _ZigStmtCommonRenderer(self).next_dict_comp_name()
         parts: list[str] = []
         parts.append(_ZigStmtCommonRenderer(self).render_block_expr_open(blk))
         parts.append(" var __dc = pytra.make_str_dict(" + val_zig + ");")
