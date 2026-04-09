@@ -532,10 +532,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         exc_line_expr: str,
     ) -> None:
         self._require_exception_style("manual_exception_slot")
-        slot_type, slot_msg, slot_line = self.active_exception_slot_names()
-        self.emit_backend_line(slot_type + " = " + exc_type_expr + ";")
-        self.emit_backend_line(slot_msg + " = " + exc_msg_expr + ";")
-        self.emit_backend_line(slot_line + " = " + exc_line_expr + ";")
+        super().emit_raise_exception_state(exc_type_expr, exc_msg_expr, exc_line_expr)
 
     def render_inline_exception_state(
         self,
@@ -543,21 +540,8 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         exc_msg_expr: str,
         exc_line_expr: str,
     ) -> str:
-        slot_type, slot_msg, slot_line = self.active_exception_slot_names()
-        return (
-            slot_type
-            + " = "
-            + exc_type_expr
-            + "; "
-            + slot_msg
-            + " = "
-            + exc_msg_expr
-            + "; "
-            + slot_line
-            + " = "
-            + exc_line_expr
-            + ";"
-        )
+        self._require_exception_style("manual_exception_slot")
+        return super().render_inline_exception_state(exc_type_expr, exc_msg_expr, exc_line_expr)
 
     def render_break_with_value(self, block_label: str, value_expr: str) -> str:
         return "break :" + block_label + " " + value_expr + ";"

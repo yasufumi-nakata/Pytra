@@ -401,6 +401,39 @@ class CommonRenderer:
         self.emit_backend_line(slot_msg + " = null;")
         self.emit_backend_line(slot_line + " = 0;")
 
+    def emit_raise_exception_state(
+        self,
+        exc_type_expr: str,
+        exc_msg_expr: str,
+        exc_line_expr: str,
+    ) -> None:
+        slot_type, slot_msg, slot_line = self.active_exception_slot_names()
+        self.emit_backend_line(slot_type + " = " + exc_type_expr + ";")
+        self.emit_backend_line(slot_msg + " = " + exc_msg_expr + ";")
+        self.emit_backend_line(slot_line + " = " + exc_line_expr + ";")
+
+    def render_inline_exception_state(
+        self,
+        exc_type_expr: str,
+        exc_msg_expr: str,
+        exc_line_expr: str,
+    ) -> str:
+        slot_type, slot_msg, slot_line = self.active_exception_slot_names()
+        return (
+            slot_type
+            + " = "
+            + exc_type_expr
+            + "; "
+            + slot_msg
+            + " = "
+            + exc_msg_expr
+            + "; "
+            + slot_line
+            + " = "
+            + exc_line_expr
+            + ";"
+        )
+
     def emit_exception_handler_teardown(self, handler: dict[str, JsonVal]) -> None:
         del handler
         return None
@@ -766,8 +799,10 @@ class CommonRenderer:
         exc_msg_expr: str,
         exc_line_expr: str,
     ) -> None:
-        del exc_type_expr, exc_msg_expr, exc_line_expr
-        return None
+        slot_type, slot_msg, slot_line = self.active_exception_slot_names()
+        self.emit_backend_line(slot_type + " = " + exc_type_expr + ";")
+        self.emit_backend_line(slot_msg + " = " + exc_msg_expr + ";")
+        self.emit_backend_line(slot_line + " = " + exc_line_expr + ";")
 
     def render_inline_exception_state(
         self,
@@ -775,8 +810,21 @@ class CommonRenderer:
         exc_msg_expr: str,
         exc_line_expr: str,
     ) -> str:
-        del exc_type_expr, exc_msg_expr, exc_line_expr
-        raise RuntimeError("common renderer requires inline exception state hook for " + self.language)
+        slot_type, slot_msg, slot_line = self.active_exception_slot_names()
+        return (
+            slot_type
+            + " = "
+            + exc_type_expr
+            + "; "
+            + slot_msg
+            + " = "
+            + exc_msg_expr
+            + "; "
+            + slot_line
+            + " = "
+            + exc_line_expr
+            + ";"
+        )
 
     def render_break_with_value(self, block_label: str, value_expr: str) -> str:
         del block_label, value_expr
