@@ -1214,6 +1214,22 @@ class CommonRenderer:
             exit_runtime_symbol,
         )
 
+    def with_item_bound_name(self, item: dict[str, JsonVal]) -> str:
+        opt_vars = item.get("optional_vars")
+        if isinstance(opt_vars, dict):
+            name = self._str(opt_vars, "id")
+            if name != "":
+                return name
+        return self._str(item, "var_name")
+
+    def with_item_enter_target_name(self, item: dict[str, JsonVal], fallback_name: str) -> str:
+        bound_name = self.with_item_bound_name(item)
+        return bound_name if bound_name != "" else fallback_name
+
+    def with_item_enter_target_type(self, item: dict[str, JsonVal], fallback_type: str) -> str:
+        item_type = self._str(item, "with_enter_type")
+        return item_type if item_type != "" else fallback_type
+
     def select_with_exit_target(self, ctx_name: str, bound_name: str) -> str:
         return bound_name if bound_name != "" else ctx_name
 

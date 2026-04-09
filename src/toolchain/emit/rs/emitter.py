@@ -5690,15 +5690,10 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         ctx_rs = _rs_type_for_context(ctx, ctx_rt) if ctx_rt != "" else ""
         ctx_tmp = renderer.next_with_context_name()
         renderer.emit_with_context_bind(ctx_tmp, ctx_expr, ctx_rs, True)
-        var_name = ""
-        opt_vars = item.get("optional_vars")
-        if isinstance(opt_vars, dict):
-            var_name = _str(opt_vars, "id")
-        if var_name == "":
-            var_name = _str(item, "var_name")
+        var_name = renderer.with_item_bound_name(item)
         var_rs = _rs_var_name(ctx, var_name) if var_name != "" else ""
-        enter_target_name = var_name if var_name != "" else ctx_tmp
-        enter_target_type = _str(item, "with_enter_type") or ctx_rt
+        enter_target_name = renderer.with_item_enter_target_name(item, ctx_tmp)
+        enter_target_type = renderer.with_item_enter_target_type(item, ctx_rt)
         if var_name != "":
             if var_name not in ctx.declared_vars:
                 ctx.declared_vars.add(var_name)
