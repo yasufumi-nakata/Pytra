@@ -5650,43 +5650,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     renderer.state.tmp_counter = ctx.temp_counter
     with_result = renderer.next_with_result_name()
     with_err = renderer.next_with_error_name()
-
-    hoisted: list[tuple[str, str]] = []
-    seen: set[str] = set()
-
-    def _add_hoisted(name: str, resolved_type: str) -> None:
-        if name == "" or name in seen:
-            return
-        seen.add(name)
-        hoisted.append((name, resolved_type))
-
-    def _walk_hoisted(stmts: list[JsonVal]) -> None:
-        for raw_stmt in stmts:
-            if not isinstance(raw_stmt, dict):
-                continue
-            kind = _str(raw_stmt, "kind")
-            if kind == "AnnAssign":
-                target = raw_stmt.get("target")
-                if isinstance(target, dict) and _str(target, "kind") in ("Name", "NameTarget"):
-                    _add_hoisted(_str(target, "id"), _str(raw_stmt, "decl_type") or _str(raw_stmt, "resolved_type"))
-            elif kind == "Assign":
-                target = raw_stmt.get("target")
-                if not isinstance(target, dict):
-                    targets = _list(raw_stmt, "targets")
-                    if len(targets) > 0 and isinstance(targets[0], dict):
-                        target = targets[0]
-                if isinstance(target, dict) and _str(target, "kind") in ("Name", "NameTarget"):
-                    _add_hoisted(_str(target, "id"), _str(raw_stmt, "decl_type") or _str(raw_stmt, "resolved_type"))
-            elif kind in ("If", "While", "With", "Try", "ForCore"):
-                _walk_hoisted(_list(raw_stmt, "body"))
-                _walk_hoisted(_list(raw_stmt, "orelse"))
-                _walk_hoisted(_list(raw_stmt, "finalbody"))
-                for handler in _list(raw_stmt, "handlers"):
-                    if isinstance(handler, dict):
-                        _walk_hoisted(_list(handler, "body"))
-
-    _walk_hoisted(body)
-    for name, resolved_type in hoisted:
+    for name, resolved_type in renderer.collect_with_hoisted_specs(body):
         if name in ctx.declared_vars:
             continue
         ctx.declared_vars.add(name)

@@ -847,23 +847,15 @@ class CommonRenderer:
             self.emit_body(finalbody)
         self.emit_try_teardown(node)
 
-    def _collect_with_hoisted_names(self, body: list[JsonVal]) -> list[dict[str, JsonVal]]:
-        out: list[dict[str, JsonVal]] = []
+    def collect_with_hoisted_specs(self, body: list[JsonVal]) -> list[tuple[str, str]]:
+        out: list[tuple[str, str]] = []
         seen: set[str] = set()
 
         def add_name(name: str, resolved_type: str) -> None:
             if name == "" or name in seen:
                 return
             seen.add(name)
-            out.append(
-                {
-                    "kind": "AnnAssign",
-                    "target": {"kind": "Name", "id": name, "resolved_type": resolved_type},
-                    "decl_type": resolved_type,
-                    "value": None,
-                    "declare": True,
-                }
-            )
+            out.append((name, resolved_type))
 
         def walk(stmts: list[JsonVal]) -> None:
             for raw_stmt in stmts:
@@ -891,6 +883,20 @@ class CommonRenderer:
                             walk(self._list(handler, "body"))
 
         walk(body)
+        return out
+
+    def _collect_with_hoisted_names(self, body: list[JsonVal]) -> list[dict[str, JsonVal]]:
+        out: list[dict[str, JsonVal]] = []
+        for name, resolved_type in self.collect_with_hoisted_specs(body):
+            out.append(
+                {
+                    "kind": "AnnAssign",
+                    "target": {"kind": "Name", "id": name, "resolved_type": resolved_type},
+                    "decl_type": resolved_type,
+                    "value": None,
+                    "declare": True,
+                }
+            )
         return out
 
     def emit_with_stmt(self, node: dict[str, JsonVal]) -> None:
