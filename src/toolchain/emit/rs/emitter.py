@@ -1186,6 +1186,9 @@ class _RsStmtCommonRenderer(CommonRenderer):
     def render_resume_unwind(self, err_binding: str) -> str:
         return "std::panic::resume_unwind(" + err_binding + ");"
 
+    def render_panic_any(self, value_expr: str) -> str:
+        return "std::panic::panic_any(" + value_expr + ");"
+
     def render_try_match_open(self, result_name: str) -> str:
         return "match " + result_name + " {"
 
@@ -4896,6 +4899,7 @@ def _emit_aug_assign(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _emit_raise(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
+    renderer = _RsStmtCommonRenderer(ctx)
     exc = node.get("exc")
     if exc is None:
         # Bare raise: re-raise current exception
@@ -4919,7 +4923,7 @@ def _emit_raise(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 rendered_args = [_emit_expr(ctx, a) for a in exc_args]
                 rs_exc_name = safe_rs_ident(exc_resolved)
                 raw_call = rs_exc_name + "::new(" + ", ".join(rendered_args) + ")"
-                _emit(ctx, "std::panic::panic_any(" + raw_call + ");")
+                _emit(ctx, renderer.render_panic_any(raw_call))
                 return
             args = _list(exc, "args")
             if len(args) > 0:

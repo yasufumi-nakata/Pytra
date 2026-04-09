@@ -468,6 +468,10 @@ class CommonRenderer:
         del err_binding
         raise RuntimeError("common renderer requires rethrow hook for " + self.language)
 
+    def render_panic_any(self, value_expr: str) -> str:
+        del value_expr
+        raise RuntimeError("common renderer requires panic_any hook for " + self.language)
+
     def render_exception_dispatch_open(self, caught_type_expr: str) -> str:
         del caught_type_expr
         return ""
