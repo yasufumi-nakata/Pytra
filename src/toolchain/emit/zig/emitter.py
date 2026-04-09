@@ -609,17 +609,6 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         prefix = "var " if declare else ""
         self.emit_backend_line(prefix + target_name + " = " + source_name + ";")
 
-    def emit_with_declared_context_bind(
-        self,
-        target_name: str,
-        source_name: str,
-        source_type: str,
-        mutable: bool,
-    ) -> None:
-        del source_type
-        prefix = "var " if mutable else "const "
-        self.emit_backend_line(prefix + target_name + " = " + source_name + ";")
-
     def build_with_enter_assign(
         self,
         node: dict[str, Any],
@@ -2626,7 +2615,13 @@ class ZigNativeEmitter:
                             self.indent = renderer.state.indent_level
                         else:
                             renderer.state.indent_level = self.indent
-                            renderer.emit_with_declared_context_bind(var_name, ctx_name, enter_type, reassigned)
+                            renderer.emit_with_enter_binding(
+                                stmt,
+                                var_name,
+                                enter_type,
+                                {"kind": "Name", "id": ctx_name, "resolved_type": ctx_type},
+                                bind_ref=True,
+                            )
                             self.indent = renderer.state.indent_level
                     else:
                         renderer.state.indent_level = self.indent
