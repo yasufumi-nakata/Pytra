@@ -1135,6 +1135,16 @@ class CommonRenderer:
         del target_name, target_type
         return None
 
+    def emit_with_enter_binding(
+        self,
+        node: dict[str, JsonVal],
+        enter_name: str,
+        enter_type: str,
+        value: JsonVal,
+        bind_ref: bool = False,
+    ) -> None:
+        self.emit_assign_stmt(self.build_with_enter_assign(node, enter_name, enter_type, value, bind_ref=bind_ref))
+
     def emit_with_fallback_exit(self, target_name: str, target_type: str) -> None:
         del target_name, target_type
         return None

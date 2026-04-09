@@ -2612,6 +2612,7 @@ class ZigNativeEmitter:
                 var_name = _safe_ident(var_name_any, "ctx") if isinstance(var_name_any, str) and var_name_any != "" else ""
                 ctx_name = renderer.next_with_context_name()
                 with_blk = renderer.next_with_block_name()
+                ctx_type = self._lookup_expr_type(context_expr) if isinstance(context_expr, dict) else ""
                 ctx_expr = self._render_expr(context_expr)
                 self._emit_line("const " + ctx_name + " = " + ctx_expr + ";")
                 if var_name != "":
@@ -2628,10 +2629,25 @@ class ZigNativeEmitter:
                             renderer.emit_with_declared_context_bind(var_name, ctx_name, enter_type, reassigned)
                             self.indent = renderer.state.indent_level
                     else:
-                        if already_declared:
-                            self._emit_line(var_name + " = " + ctx_name + ".__enter__();")
-                        else:
-                            self._emit_line(("var " if reassigned else "const ") + var_name + " = " + ctx_name + ".__enter__();")
+                        renderer.state.indent_level = self.indent
+                        renderer.emit_with_enter_binding(
+                            stmt,
+                            var_name,
+                            enter_type,
+                            {
+                                "kind": "Call",
+                                "func": {
+                                    "kind": "Attribute",
+                                    "value": {"kind": "Name", "id": ctx_name, "resolved_type": ctx_type},
+                                    "attr": "__enter__",
+                                    "resolved_type": "callable",
+                                },
+                                "args": [],
+                                "keywords": [],
+                                "resolved_type": enter_type,
+                            },
+                        )
+                        self.indent = renderer.state.indent_level
                     if not already_declared and len(self._local_var_stack) > 0:
                         self._current_local_vars().add(var_name)
                 elif enter_type != "TextIOWrapper":
