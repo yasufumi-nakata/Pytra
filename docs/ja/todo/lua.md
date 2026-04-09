@@ -43,7 +43,7 @@
 
 対象: `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`(stdlib), `os_glob_extended`(stdlib)
 
-1. [ ] [ID: P0-LUA-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）
+1. [x] [ID: P0-LUA-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）（2026-04-10）— `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`, `os_glob_extended` を確認し、対象 8 件すべて PASS。途中で `bytearray.append` の receiver 補完漏れにより `bytes_copy_semantics` が落ちていたため、Lua emitter の mapped container call で `__BYTEARRAY_*` にも owner 注入を揃えて修正した。
 
 ### P0-LUA-TYPE-ID-CLEANUP: Lua runtime から __pytra_isinstance を削除する
 

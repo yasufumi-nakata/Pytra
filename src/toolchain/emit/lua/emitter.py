@@ -761,7 +761,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     )
 
     if (
-        (call_name.startswith("__LIST_") or call_name.startswith("__DICT_") or call_name.startswith("__SET_"))
+        (
+            call_name.startswith("__LIST_")
+            or call_name.startswith("__DICT_")
+            or call_name.startswith("__SET_")
+            or call_name.startswith("__BYTEARRAY_")
+        )
         and isinstance(func_node, dict)
         and _str(func_node, "kind") == "Attribute"
     ):
