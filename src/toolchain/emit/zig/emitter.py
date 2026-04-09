@@ -2159,6 +2159,8 @@ class ZigNativeEmitter:
                     val_zig = self._preferred_value_zig_type(decl_type, value_node)
                     if val_zig != "pytra.PyObject":
                         zig_ty = val_zig
+                if self._is_union_storage_zig(zig_ty) and isinstance(value_node, dict) and value_node.get("kind") == "Unbox" and isinstance(core_value_node, dict):
+                    value = self._render_expr(core_value_node)
                 # VarDecl で既に宣言済みなら再代入
                 already_declared = len(self._local_var_stack) > 0 and target_name in self._current_local_vars()
                 if already_declared:
@@ -2286,6 +2288,10 @@ class ZigNativeEmitter:
                             self._emit_line(decl_kw + " " + target + " = " + value + ";")
                             self._record_decl_line(target_name)
                             return
+                        if self._is_union_storage_zig(zig_ty) and isinstance(stmt.get("value"), dict) and stmt.get("value").get("kind") == "Unbox":
+                            core_value = self._unwrap_box_unbox(stmt.get("value"))
+                            if isinstance(core_value, dict):
+                                value = self._render_expr(core_value)
                         value = self._coerce_value_to_zig_type(zig_ty, stmt.get("value"), value)
                         self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
                         self._record_decl_line(target_name)
@@ -4077,7 +4083,7 @@ class ZigNativeEmitter:
                     parts.append(" const __bl = pytra.make_list(" + zig_elem + ");")
                     for item in items:
                         parts.append(" pytra.list_append(__bl, " + zig_elem + ", " + item + ");")
-                    parts.append(" break :" + blk_label + " __bl; }")
+                    parts.append(" " + _ZigStmtCommonRenderer(self).render_break_with_value(blk_label, "__bl") + " }")
                     return "".join(parts)
                 return "pytra.list_from(" + zig_elem + ", &[_]" + zig_elem + "{ " + ", ".join(items) + " })"
             if len(items) == 0:
@@ -5661,7 +5667,7 @@ class ZigNativeEmitter:
         if loop_cond != "true":
             parts.append("  }")
         parts.append(" }")
-        parts.append(" break :" + blk + " __dc; }")
+        parts.append(" " + _ZigStmtCommonRenderer(self).render_break_with_value(blk, "__dc") + " }")
         return "".join(parts)
 
     def _normalize_type(self, t: str) -> str:
