@@ -391,12 +391,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def emit_exception_handler_prelude(self, handler: dict[str, Any]) -> None:
         current_indent = self.owner.indent
-        self.owner._emit_line("__pytra_caught_type = __pytra_exc_type;")
-        self.owner._emit_line("__pytra_caught_msg = __pytra_exc_msg;")
-        self.owner._emit_line("__pytra_caught_line = __pytra_exc_line;")
-        self.owner._emit_line("__pytra_exc_type = null;")
-        self.owner._emit_line("__pytra_exc_msg = null;")
-        self.owner._emit_line("__pytra_exc_line = 0;")
+        self.emit_exception_handler_capture()
         hname = self.exception_handler_name(handler)
         pushed_exc = False
         if isinstance(hname, str) and hname != "":
@@ -408,6 +403,14 @@ class _ZigStmtCommonRenderer(CommonRenderer):
                 pushed_exc = True
         self.owner._pending_exception_var_push = pushed_exc
         self.owner.indent = current_indent
+
+    def emit_exception_handler_capture(self) -> None:
+        self.emit_backend_line("__pytra_caught_type = __pytra_exc_type;")
+        self.emit_backend_line("__pytra_caught_msg = __pytra_exc_msg;")
+        self.emit_backend_line("__pytra_caught_line = __pytra_exc_line;")
+        self.emit_backend_line("__pytra_exc_type = null;")
+        self.emit_backend_line("__pytra_exc_msg = null;")
+        self.emit_backend_line("__pytra_exc_line = 0;")
 
     def emit_exception_handler_teardown(self, handler: dict[str, Any]) -> None:
         del handler
