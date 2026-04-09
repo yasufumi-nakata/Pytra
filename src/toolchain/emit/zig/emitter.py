@@ -367,28 +367,6 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self._require_exception_style("manual_exception_slot")
         self.emit_backend_line(self.render_raise_propagation_stmt(try_label, return_stmt))
 
-    def emit_bare_raise_restore(self) -> None:
-        self._require_exception_style("manual_exception_slot")
-        super().emit_bare_raise_restore()
-
-    def emit_raise_exception_state(
-        self,
-        exc_type_expr: str,
-        exc_msg_expr: str,
-        exc_line_expr: str,
-    ) -> None:
-        self._require_exception_style("manual_exception_slot")
-        super().emit_raise_exception_state(exc_type_expr, exc_msg_expr, exc_line_expr)
-
-    def render_inline_exception_state(
-        self,
-        exc_type_expr: str,
-        exc_msg_expr: str,
-        exc_line_expr: str,
-    ) -> str:
-        self._require_exception_style("manual_exception_slot")
-        return super().render_inline_exception_state(exc_type_expr, exc_msg_expr, exc_line_expr)
-
     def render_labeled_block_open(self, block_label: str) -> str:
         return block_label + ": {"
 
