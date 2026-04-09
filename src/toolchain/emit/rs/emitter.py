@@ -1177,6 +1177,12 @@ class _RsStmtCommonRenderer(CommonRenderer):
     def render_try_rethrow_fallback(self, result_name: str, err_binding: str) -> str:
         return "if let Err(" + err_binding + ") = " + result_name + " { " + self.render_resume_unwind(err_binding) + " };"
 
+    def render_try_capture_open(self, result_name: str) -> str:
+        return "let " + result_name + " = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {"
+
+    def render_try_capture_close(self) -> str:
+        return "}));"
+
     def render_resume_unwind(self, err_binding: str) -> str:
         return "std::panic::resume_unwind(" + err_binding + ");"
 
@@ -1188,11 +1194,11 @@ class _RsStmtCommonRenderer(CommonRenderer):
 
     def emit_try_capture(self, result_name: str, body: list[JsonVal]) -> None:
         self._require_exception_style("panic_catch_unwind")
-        _emit(self.ctx, "let " + result_name + " = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
+        _emit(self.ctx, self.render_try_capture_open(result_name))
         self.ctx.indent_level += 1
         _emit_body(self.ctx, body)
         self.ctx.indent_level -= 1
-        _emit(self.ctx, "}));")
+        _emit(self.ctx, self.render_try_capture_close())
         self.state.indent_level = self.ctx.indent_level
 
     def is_user_exception_handler(self, handler: dict[str, JsonVal]) -> bool:
@@ -5762,11 +5768,11 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         ))
 
     ctx.temp_counter = renderer.state.tmp_counter
-    _emit(ctx, "let " + with_result + " = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {")
+    _emit(ctx, renderer.render_try_capture_open(with_result))
     ctx.indent_level += 1
     _emit_body(ctx, body)
     ctx.indent_level -= 1
-    _emit(ctx, "}));")
+    _emit(ctx, renderer.render_try_capture_close())
     for ctx_tmp, var_rs, ctx_rs, target_type, exit_runtime_call, exit_runtime_symbol in reversed(ctx_entries):
         target = var_rs if var_rs != "" else ctx_tmp
         if exit_runtime_call != "":

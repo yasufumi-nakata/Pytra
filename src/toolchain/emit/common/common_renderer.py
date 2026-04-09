@@ -453,6 +453,13 @@ class CommonRenderer:
         del result_name, body
         raise RuntimeError("common renderer requires try capture hook for " + self.language)
 
+    def render_try_capture_open(self, result_name: str) -> str:
+        del result_name
+        raise RuntimeError("common renderer requires try capture open hook for " + self.language)
+
+    def render_try_capture_close(self) -> str:
+        raise RuntimeError("common renderer requires try capture close hook for " + self.language)
+
     def render_try_rethrow_fallback(self, result_name: str, err_binding: str) -> str:
         del result_name, err_binding
         raise RuntimeError("common renderer requires try rethrow fallback hook for " + self.language)
