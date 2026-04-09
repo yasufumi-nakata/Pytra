@@ -5126,9 +5126,13 @@ class ZigNativeEmitter:
                             + "); if ("
                             + val_name
                             + " < 0) { "
-                            + renderer.render_inline_exception_state("\"ValueError\"", "\"substring not found\"", "0")
-                            + " "
-                            + renderer.render_break_with_value(blk, "@as(i64, 0)")
+                            + renderer.render_inline_exception_break(
+                                blk,
+                                "\"ValueError\"",
+                                "\"substring not found\"",
+                                "0",
+                                "@as(i64, 0)",
+                            )
                             + " } "
                             + renderer.render_break_with_value(blk, val_name)
                             + " }"
@@ -6009,9 +6013,13 @@ class ZigNativeEmitter:
             + " >= "
             + len_name
             + ") { "
-            + renderer.render_inline_exception_state("\"IndexError\"", "\"index out of range\"", "0")
-            + " "
-            + renderer.render_break_with_value(blk, zero)
+            + renderer.render_inline_exception_break(
+                blk,
+                "\"IndexError\"",
+                "\"index out of range\"",
+                "0",
+                zero,
+            )
             + " } "
             + renderer.render_break_with_value(blk, value_expr)
             + " }"

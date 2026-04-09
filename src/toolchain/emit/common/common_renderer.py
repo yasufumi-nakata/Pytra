@@ -614,6 +614,20 @@ class CommonRenderer:
         del block_label, value_expr
         raise RuntimeError("common renderer requires break-with-value hook for " + self.language)
 
+    def render_inline_exception_break(
+        self,
+        block_label: str,
+        exc_type_expr: str,
+        exc_msg_expr: str,
+        exc_line_expr: str,
+        fallback_value: str,
+    ) -> str:
+        return (
+            self.render_inline_exception_state(exc_type_expr, exc_msg_expr, exc_line_expr)
+            + " "
+            + self.render_break_with_value(block_label, fallback_value)
+        )
+
     def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         keyword = self._syntax_text("raise", "throw")
         self._emit_stmt_line(keyword)
