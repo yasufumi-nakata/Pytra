@@ -4388,7 +4388,13 @@ class ZigNativeEmitter:
                         continue
                     if self._is_callable_type(obj_type) and not self._is_optional_callable_type(obj_type):
                         bool_text = "false" if op_str in {"Is", "Eq"} else "true"
-                        parts.append("blk: { _ = " + (prev if right == "null" else right) + "; break :blk " + bool_text + "; }")
+                        parts.append(
+                            "blk: { _ = "
+                            + (prev if right == "null" else right)
+                            + "; "
+                            + _ZigStmtCommonRenderer(self).render_break_with_value("blk", bool_text)
+                            + " }"
+                        )
                         prev = right
                         prev_node = comparators[i]
                         i += 1
