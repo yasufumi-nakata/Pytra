@@ -988,6 +988,14 @@ class CommonRenderer:
     ) -> None:
         return None
 
+    def emit_with_fallback_enter(self, target_name: str, target_type: str) -> None:
+        del target_name, target_type
+        return None
+
+    def emit_with_fallback_exit(self, target_name: str, target_type: str) -> None:
+        del target_name, target_type
+        return None
+
     def build_with_enter_assign(
         self,
         node: dict[str, JsonVal],

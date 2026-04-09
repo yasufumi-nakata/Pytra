@@ -1115,6 +1115,14 @@ class _RsStmtCommonRenderer(CommonRenderer):
         _emit(self.ctx, "let " + safe_rs_ident(exc_name) + " = " + self.ctx.catch_err_msg_var + ".clone();")
         self.ctx.declared_vars.add(exc_name)
 
+    def emit_with_fallback_enter(self, target_name: str, target_type: str) -> None:
+        del target_type
+        _emit(self.ctx, target_name + ".borrow_mut().__enter__();")
+
+    def emit_with_fallback_exit(self, target_name: str, target_type: str) -> None:
+        del target_type
+        _emit(self.ctx, target_name + ".borrow_mut().__exit__(PyAny::None, PyAny::None, PyAny::None);")
+
     def emit_backend_line(self, text: str) -> None:
         _emit(self.ctx, text)
 
@@ -5767,7 +5775,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 enter_target_type,
             ) + ";")
         if ctx_rs.startswith("Rc<RefCell<"):
-            _emit(ctx, ctx_tmp + ".borrow_mut().__enter__();")
+            renderer.emit_with_fallback_enter(ctx_tmp, ctx_rt)
         ctx_entries.append((
             ctx_tmp,
             var_rs,
@@ -5800,7 +5808,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                 ],
             ) + ";")
         elif ctx_rs.startswith("Rc<RefCell<"):
-            _emit(ctx, target + ".borrow_mut().__exit__(PyAny::None, PyAny::None, PyAny::None);")
+            renderer.emit_with_fallback_exit(target, target_type)
         else:
             _emit(ctx, target + ".close();")
     _emit(ctx, "if let Err(" + with_err + ") = " + with_result + " {")
