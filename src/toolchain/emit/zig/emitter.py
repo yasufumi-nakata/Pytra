@@ -307,6 +307,9 @@ class _ZigStmtCommonRenderer(CommonRenderer):
             "var " + caught_line + ": i64 = 0;",
         ]
 
+    def exception_support_decl_lines(self) -> list[str]:
+        return ["const __PytraError = struct { msg: []const u8, line: i64 };"]
+
     def active_exception_slot_names(self) -> tuple[str, str, str]:
         self._require_exception_style("manual_exception_slot")
         return ("__pytra_exc_type", "__pytra_exc_msg", "__pytra_exc_line")
@@ -314,6 +317,10 @@ class _ZigStmtCommonRenderer(CommonRenderer):
     def caught_exception_slot_names(self) -> tuple[str, str, str]:
         self._require_exception_style("manual_exception_slot")
         return ("__pytra_caught_type", "__pytra_caught_msg", "__pytra_caught_line")
+
+    def render_bound_exception_value(self, msg_expr: str, line_expr: str) -> str:
+        self._require_exception_style("manual_exception_slot")
+        return "__PytraError{ .msg = (" + msg_expr + " orelse \"\"), .line = " + line_expr + " }"
 
     def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
         type_name = _safe_ident(self.exception_handler_type_name(handler), "")
@@ -452,11 +459,9 @@ class _ZigStmtCommonRenderer(CommonRenderer):
                 self.owner._emit_line(
                     "const "
                     + safe_hname
-                    + " = __PytraError{ .msg = ("
-                    + caught_msg
-                    + " orelse \"\"), .line = "
-                    + caught_line
-                    + " };"
+                    + " = "
+                    + self.render_bound_exception_value(caught_msg, caught_line)
+                    + ";"
                 )
                 self.owner._exception_var_stack.append({safe_hname})
                 pushed_exc = True
@@ -1359,7 +1364,7 @@ class ZigNativeEmitter:
         self.lines.append("const std = @import(\"std\");")
         rt_path = self._root_rel_prefix() + "built_in/py_runtime.zig"
         self.lines.append("const pytra = @import(\"" + rt_path + "\");")
-        self.lines.append("const __PytraError = struct { msg: []const u8, line: i64 };")
+        self.lines.extend(renderer.exception_support_decl_lines())
         self.lines.extend(renderer.exception_slot_decl_lines())
         body = self._dict_list(self.east_doc.get("body"))
         main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
