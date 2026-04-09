@@ -293,10 +293,19 @@ class CommonRenderer:
         self._emit(text)
 
     def exception_slot_decl_lines(self) -> list[str]:
-        return []
+        exc_type, exc_msg, exc_line = self.active_exception_slot_names()
+        caught_type, caught_msg, caught_line = self.caught_exception_slot_names()
+        return [
+            "var " + exc_type + ": ?[]const u8 = null;",
+            "var " + exc_msg + ": ?[]const u8 = null;",
+            "var " + exc_line + ": i64 = 0;",
+            "var " + caught_type + ": ?[]const u8 = null;",
+            "var " + caught_msg + ": ?[]const u8 = null;",
+            "var " + caught_line + ": i64 = 0;",
+        ]
 
     def exception_support_decl_lines(self) -> list[str]:
-        return []
+        return ["const " + self.bound_exception_record_type_name() + " = struct { msg: []const u8, line: i64 };"]
 
     def active_exception_slot_names(self) -> tuple[str, str, str]:
         raise RuntimeError("common renderer requires active exception slot names for " + self.language)

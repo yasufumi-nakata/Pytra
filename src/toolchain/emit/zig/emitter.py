@@ -296,19 +296,10 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def exception_slot_decl_lines(self) -> list[str]:
         self._require_exception_style("manual_exception_slot")
-        exc_type, exc_msg, exc_line = self.active_exception_slot_names()
-        caught_type, caught_msg, caught_line = self.caught_exception_slot_names()
-        return [
-            "var " + exc_type + ": ?[]const u8 = null;",
-            "var " + exc_msg + ": ?[]const u8 = null;",
-            "var " + exc_line + ": i64 = 0;",
-            "var " + caught_type + ": ?[]const u8 = null;",
-            "var " + caught_msg + ": ?[]const u8 = null;",
-            "var " + caught_line + ": i64 = 0;",
-        ]
+        return super().exception_slot_decl_lines()
 
     def exception_support_decl_lines(self) -> list[str]:
-        return ["const " + self.bound_exception_record_type_name() + " = struct { msg: []const u8, line: i64 };"]
+        return super().exception_support_decl_lines()
 
     def active_exception_slot_names(self) -> tuple[str, str, str]:
         self._require_exception_style("manual_exception_slot")
