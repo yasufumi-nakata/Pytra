@@ -480,6 +480,9 @@ class CommonRenderer:
     def next_with_block_name(self) -> str:
         return self._next_tmp("__with_blk")
 
+    def next_with_context_name(self) -> str:
+        return self._next_tmp("__with_ctx")
+
     def render_exception_handler_guard_open(
         self,
         handler: dict[str, JsonVal],

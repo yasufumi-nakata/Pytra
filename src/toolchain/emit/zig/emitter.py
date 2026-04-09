@@ -394,6 +394,11 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner.tmp_seq += 1
         return name
 
+    def next_with_context_name(self) -> str:
+        name = "__with_ctx_" + str(self.owner.tmp_seq)
+        self.owner.tmp_seq += 1
+        return name
+
     def render_exception_handler_guard_open(
         self,
         handler: dict[str, Any],
@@ -2507,8 +2512,7 @@ class ZigNativeEmitter:
                 enter_type = str(stmt.get("with_enter_type", ""))
                 var_name_any = stmt.get("var_name")
                 var_name = _safe_ident(var_name_any, "ctx") if isinstance(var_name_any, str) and var_name_any != "" else ""
-                ctx_name = "__with_ctx_" + str(self.tmp_seq)
-                self.tmp_seq += 1
+                ctx_name = renderer.next_with_context_name()
                 with_blk = renderer.next_with_block_name()
                 ctx_expr = self._render_expr(context_expr)
                 self._emit_line("const " + ctx_name + " = " + ctx_expr + ";")
