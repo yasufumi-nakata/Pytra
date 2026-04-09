@@ -5663,33 +5663,6 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
         else:
             _emit(ctx, "let mut " + rs_name + " = Default::default();")
 
-    def _with_protocol_call(
-        target_name: str,
-        target_type: str,
-        method: str,
-        runtime_call: str,
-        runtime_symbol: str,
-        resolved_type: str,
-        args: list[dict[str, JsonVal]] | None = None,
-    ) -> str:
-        call_node: dict[str, JsonVal] = {
-            "kind": "Call",
-            "func": {
-                "kind": "Attribute",
-                "value": {"kind": "Name", "id": target_name, "resolved_type": target_type},
-                "attr": method,
-                "resolved_type": "callable",
-            },
-            "args": args or [],
-            "keywords": [],
-            "resolved_type": resolved_type,
-        }
-        if runtime_call != "":
-            call_node["runtime_call"] = runtime_call
-            call_node["resolved_runtime_call"] = runtime_call
-            call_node["runtime_symbol"] = runtime_symbol
-        return _emit_expr(ctx, call_node)
-
     ctx_entries: list[tuple[str, str, str, str, str, str]] = []
     for item in items:
         if not isinstance(item, dict):
@@ -5730,14 +5703,14 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                     _emit(ctx, var_rs + " = " + ctx_tmp + ";")
         enter_runtime_call = _str(item, "with_enter_runtime_call")
         if enter_runtime_call != "":
-            _emit(ctx, _with_protocol_call(
+            _emit(ctx, _emit_expr(ctx, renderer.build_with_protocol_call(
                 enter_target_name,
                 enter_target_type,
                 "__enter__",
                 enter_runtime_call,
                 _str(item, "with_enter_runtime_symbol"),
                 enter_target_type,
-            ) + ";")
+            )) + ";")
         if ctx_rs.startswith("Rc<RefCell<"):
             renderer.emit_with_fallback_enter(ctx_tmp, ctx_rt)
         ctx_entries.append((
@@ -5758,7 +5731,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     for ctx_tmp, var_rs, ctx_rs, target_type, exit_runtime_call, exit_runtime_symbol in reversed(ctx_entries):
         target = var_rs if var_rs != "" else ctx_tmp
         if exit_runtime_call != "":
-            _emit(ctx, _with_protocol_call(
+            _emit(ctx, _emit_expr(ctx, renderer.build_with_protocol_call(
                 target,
                 target_type,
                 "__exit__",
@@ -5770,7 +5743,7 @@ def _emit_with(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
                     {"kind": "Constant", "value": None, "resolved_type": "None"},
                     {"kind": "Constant", "value": None, "resolved_type": "None"},
                 ],
-            ) + ";")
+            )) + ";")
         elif ctx_rs.startswith("Rc<RefCell<"):
             renderer.emit_with_fallback_exit(target, target_type)
         else:

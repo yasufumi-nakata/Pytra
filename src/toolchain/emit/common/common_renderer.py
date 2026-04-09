@@ -1002,6 +1002,34 @@ class CommonRenderer:
         del target_name, target_type
         return None
 
+    def build_with_protocol_call(
+        self,
+        target_name: str,
+        target_type: str,
+        method: str,
+        runtime_call: str,
+        runtime_symbol: str,
+        resolved_type: str,
+        args: list[dict[str, JsonVal]] | None = None,
+    ) -> dict[str, JsonVal]:
+        call_node: dict[str, JsonVal] = {
+            "kind": "Call",
+            "func": {
+                "kind": "Attribute",
+                "value": {"kind": "Name", "id": target_name, "resolved_type": target_type},
+                "attr": method,
+                "resolved_type": "callable",
+            },
+            "args": args or [],
+            "keywords": [],
+            "resolved_type": resolved_type,
+        }
+        if runtime_call != "":
+            call_node["runtime_call"] = runtime_call
+            call_node["resolved_runtime_call"] = runtime_call
+            call_node["runtime_symbol"] = runtime_symbol
+        return call_node
+
     def build_with_enter_assign(
         self,
         node: dict[str, JsonVal],
