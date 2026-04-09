@@ -347,6 +347,13 @@ proc py_str_index*(s: string, sub: string): int =
   let i = s.find(sub)
   if i < 0: raise newException(ValueError, "substring not found")
   return i
+proc py_index*[T](s: openArray[T], idx: int): T =
+  var realIdx = idx
+  if realIdx < 0:
+    realIdx = s.len + realIdx
+  if realIdx < 0 or realIdx >= s.len:
+    raise newException(IndexError, "index out of range")
+  return s[realIdx]
 proc py_str_isdigit*(s: string): bool = s.len > 0 and s.allCharsInSet(Digits)
 proc py_str_isalpha*(s: string): bool = s.len > 0 and s.allCharsInSet(Letters)
 proc py_str_isalnum*(s: string): bool = s.len > 0 and s.allCharsInSet(Letters + Digits)

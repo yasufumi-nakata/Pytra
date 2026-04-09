@@ -766,23 +766,31 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return "float64(py_float(" + access + "))"
         return access
 
-    # list/string -> handle negative indices
+    # list/string/bytes -> route through runtime helper so negative indices and
+    # out-of-range behavior raise Python-compatible IndexError instead of Nim defects.
     is_array_like = (
         owner_rt.startswith("list[") or owner_rt in ("list", "str", "string", "bytes", "bytearray")
     )
     if is_array_like and isinstance(slice_node, dict):
-        neg_val = _get_negative_int_literal(slice_node)
-        if neg_val is not None:
-            access = owner + "[" + owner + ".len + (" + str(neg_val) + ")]"
-            if owner_rt in ("str", "string") and result_rt == "str":
-                return "$(" + access + ")"
-            return access
+        slice_code = _emit_expr(ctx, slice_node)
+        access = "py_runtime.py_index(" + owner + ", " + slice_code + ")"
+        if owner_rt in ("str", "string") and result_rt == "str":
+            return "$(" + access + ")"
+        return access
 
     slice_code = _emit_expr(ctx, slice_node)
     access = owner + "[" + slice_code + "]"
     if owner_rt in ("str", "string") and result_rt == "str":
         return "$(" + access + ")"
     return access
+
+
+def _emit_subscript_target(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
+    owner_node = node.get("value")
+    owner = _emit_expr(ctx, owner_node)
+    slice_node = node.get("slice")
+    slice_code = _emit_expr(ctx, slice_node)
+    return owner + "[" + slice_code + "]"
 
 
 def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
@@ -2476,7 +2484,7 @@ def _emit_assign_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             value_rt = _str(value, "resolved_type")
             if value_rt in ("int", "int64") and not value_code.startswith("uint8("):
                 value_code = "uint8(" + value_code + ")"
-        target_code = _emit_expr(ctx, target)
+        target_code = _emit_subscript_target(ctx, target)
         _emit(ctx, target_code + " = " + value_code)
         return
 
