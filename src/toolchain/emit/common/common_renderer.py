@@ -472,6 +472,14 @@ class CommonRenderer:
         del value_expr
         raise RuntimeError("common renderer requires panic_any hook for " + self.language)
 
+    def render_panic_message(self, message_expr: str) -> str:
+        del message_expr
+        raise RuntimeError("common renderer requires panic message hook for " + self.language)
+
+    def render_panic_literal(self, message: str) -> str:
+        del message
+        raise RuntimeError("common renderer requires panic literal hook for " + self.language)
+
     def render_exception_dispatch_open(self, caught_type_expr: str) -> str:
         del caught_type_expr
         return ""

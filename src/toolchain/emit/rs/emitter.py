@@ -1189,6 +1189,12 @@ class _RsStmtCommonRenderer(CommonRenderer):
     def render_panic_any(self, value_expr: str) -> str:
         return "std::panic::panic_any(" + value_expr + ");"
 
+    def render_panic_message(self, message_expr: str) -> str:
+        return "panic!(\"{}\", " + message_expr + ");"
+
+    def render_panic_literal(self, message: str) -> str:
+        return 'panic!("' + message.replace("\\", "\\\\").replace('"', '\\"') + '");'
+
     def render_try_match_open(self, result_name: str) -> str:
         return "match " + result_name + " {"
 
@@ -4904,9 +4910,9 @@ def _emit_raise(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
     if exc is None:
         # Bare raise: re-raise current exception
         if ctx.catch_err_msg_var:
-            _emit(ctx, "panic!(\"{}\", " + ctx.catch_err_msg_var + ".clone());")
+            _emit(ctx, renderer.render_panic_message(ctx.catch_err_msg_var + ".clone()"))
         else:
-            _emit(ctx, 'panic!("re-raised");')
+            _emit(ctx, renderer.render_panic_literal("re-raised"))
         return
     if isinstance(exc, dict):
         exc_kind = _str(exc, "kind")
@@ -4928,12 +4934,12 @@ def _emit_raise(ctx: RsEmitContext, node: dict[str, JsonVal]) -> None:
             args = _list(exc, "args")
             if len(args) > 0:
                 msg = _emit_expr(ctx, args[0])
-                _emit(ctx, "panic!(\"{}\", " + msg + ");")
+                _emit(ctx, renderer.render_panic_message(msg))
                 return
         msg = _emit_expr(ctx, exc)
-        _emit(ctx, "panic!(\"{}\", " + msg + ");")
+        _emit(ctx, renderer.render_panic_message(msg))
         return
-    _emit(ctx, 'panic!("exception");')
+    _emit(ctx, renderer.render_panic_literal("exception"))
 
 
 def _body_has_return(stmts: list[JsonVal]) -> bool:
