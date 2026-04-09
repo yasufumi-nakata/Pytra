@@ -732,6 +732,44 @@ class ZigNativeEmitter:
         self.indent -= 1
         self._emit_line(renderer.render_try_body_close(try_label))
 
+    def _emit_stmt_list_with_renderer(
+        self,
+        renderer: _ZigStmtCommonRenderer,
+        body: list[dict[str, Any]],
+    ) -> None:
+        renderer.state.indent_level = self.indent
+        renderer.emit_body(body)
+        self._sync_from_stmt_renderer(renderer)
+
+    def _emit_try_handlers_with_renderer(
+        self,
+        renderer: _ZigStmtCommonRenderer,
+        handlers: list[dict[str, Any]],
+    ) -> None:
+        if len(handlers) == 0:
+            return
+        handled = renderer.next_exception_dispatch_state_name()
+        self._call_stmt_renderer(
+            renderer,
+            "emit_exception_dispatch_handlers",
+            renderer.active_exception_type_slot_name(),
+            handled,
+            handlers,
+        )
+
+    def _emit_try_orelse_with_renderer(
+        self,
+        renderer: _ZigStmtCommonRenderer,
+        orelse: list[dict[str, Any]],
+    ) -> None:
+        if len(orelse) == 0:
+            return
+        self._emit_line(renderer.render_try_orelse_open())
+        self.indent += 1
+        self._emit_stmt_list_with_renderer(renderer, orelse)
+        self.indent -= 1
+        self._emit_line(renderer.render_try_orelse_close())
+
     def _begin_exception_binding(self, safe_name: str, value_expr: str) -> None:
         self._emit_line("const " + safe_name + " = " + value_expr + ";")
         self._exception_var_stack.append({safe_name})
@@ -2102,24 +2140,9 @@ class ZigNativeEmitter:
         finalbody = self._dict_list(stmt.get("finalbody"))
         try_blk = renderer.next_try_block_name()
         self._emit_try_body_with_renderer(renderer, try_blk, body)
-        if len(handlers) > 0:
-            handled = renderer.next_exception_dispatch_state_name()
-            self._call_stmt_renderer(
-                renderer,
-                "emit_exception_dispatch_handlers",
-                renderer.active_exception_type_slot_name(),
-                handled,
-                handlers,
-            )
-        if len(orelse) > 0:
-            self._emit_line(renderer.render_try_orelse_open())
-            self.indent += 1
-            for sub in orelse:
-                self._emit_stmt(sub)
-            self.indent -= 1
-            self._emit_line(renderer.render_try_orelse_close())
-        for sub in finalbody:
-            self._emit_stmt(sub)
+        self._emit_try_handlers_with_renderer(renderer, handlers)
+        self._emit_try_orelse_with_renderer(renderer, orelse)
+        self._emit_stmt_list_with_renderer(renderer, finalbody)
 
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         self._emit_leading_trivia(stmt, prefix="// ")
