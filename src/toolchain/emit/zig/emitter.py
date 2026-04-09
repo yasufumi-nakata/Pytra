@@ -711,6 +711,36 @@ class ZigNativeEmitter:
         self._sync_from_stmt_renderer(renderer)
         return renderer
 
+    def _call_stmt_renderer(
+        self,
+        renderer: _ZigStmtCommonRenderer,
+        method_name: str,
+        *args: Any,
+    ) -> Any:
+        renderer.state.indent_level = self.indent
+        method = getattr(renderer, method_name)
+        out = method(*args)
+        self._sync_from_stmt_renderer(renderer)
+        return out
+
+    def _emit_try_body_with_renderer(
+        self,
+        renderer: _ZigStmtCommonRenderer,
+        try_label: str,
+        body: list[dict[str, Any]],
+    ) -> None:
+        self._emit_line(renderer.render_try_body_open(try_label))
+        self.indent += 1
+        self._try_depth += 1
+        self._try_label_stack.append(try_label)
+        for sub in body:
+            self._emit_stmt(sub)
+            self._call_stmt_renderer(renderer, "emit_try_body_post_stmt", sub, try_label)
+        self._try_label_stack.pop()
+        self._try_depth -= 1
+        self.indent -= 1
+        self._emit_line(renderer.render_try_body_close(try_label))
+
     def _union_storage_zig(self) -> str:
         return "*pytra.UnionVal"
 
@@ -2018,15 +2048,13 @@ class ZigNativeEmitter:
                     emitted.add(safe_local)
 
     def _emit_raise_stmt(self, stmt: dict[str, Any]) -> None:
-        renderer = _ZigStmtCommonRenderer(self)
+        renderer = self._make_stmt_renderer()
         try_label = self._try_label_stack[-1] if self._try_depth > 0 and len(self._try_label_stack) > 0 else ""
         return_stmt = self._exception_return_stmt()
         exc_any = stmt.get("exc")
         if exc_any is None:
-            renderer.state.indent_level = self.indent
-            renderer.emit_bare_raise_restore()
-            renderer.emit_raise_propagation(try_label, return_stmt)
-            self.indent = renderer.state.indent_level
+            self._call_stmt_renderer(renderer, "emit_bare_raise_restore")
+            self._call_stmt_renderer(renderer, "emit_raise_propagation", try_label, return_stmt)
             return
         if isinstance(exc_any, dict) and exc_any.get("kind") == "Call":
             fn_any = exc_any.get("func")
@@ -2042,46 +2070,45 @@ class ZigNativeEmitter:
                         exc_msg_expr = "pytra.to_str(" + self._render_expr(args[1]) + ")"
                     else:
                         exc_msg_expr = "pytra.to_str(" + self._render_expr(args[0]) + ")"
-                renderer.state.indent_level = self.indent
-                renderer.emit_raise_exception_state(_zig_string(fn_name), exc_msg_expr, exc_line_expr)
-                renderer.emit_raise_propagation(try_label, return_stmt)
-                self.indent = renderer.state.indent_level
+                self._call_stmt_renderer(
+                    renderer,
+                    "emit_raise_exception_state",
+                    _zig_string(fn_name),
+                    exc_msg_expr,
+                    exc_line_expr,
+                )
+                self._call_stmt_renderer(renderer, "emit_raise_propagation", try_label, return_stmt)
                 return
         if isinstance(exc_any, dict):
-            renderer.state.indent_level = self.indent
-            renderer.emit_raise_exception_state("\"Exception\"", "pytra.to_str(" + self._render_expr(exc_any) + ")", "0")
+            self._call_stmt_renderer(
+                renderer,
+                "emit_raise_exception_state",
+                "\"Exception\"",
+                "pytra.to_str(" + self._render_expr(exc_any) + ")",
+                "0",
+            )
         else:
-            renderer.state.indent_level = self.indent
-            renderer.emit_raise_exception_state("\"Exception\"", "\"error\"", "0")
-        renderer.emit_raise_propagation(try_label, return_stmt)
-        self.indent = renderer.state.indent_level
+            self._call_stmt_renderer(renderer, "emit_raise_exception_state", "\"Exception\"", "\"error\"", "0")
+        self._call_stmt_renderer(renderer, "emit_raise_propagation", try_label, return_stmt)
 
     def _emit_try_stmt(self, stmt: dict[str, Any]) -> None:
-        renderer = _ZigStmtCommonRenderer(self)
+        renderer = self._make_stmt_renderer()
         body = self._dict_list(stmt.get("body"))
         handlers_any = stmt.get("handlers")
         handlers = handlers_any if isinstance(handlers_any, list) else []
         orelse = self._dict_list(stmt.get("orelse"))
         finalbody = self._dict_list(stmt.get("finalbody"))
         try_blk = renderer.next_try_block_name()
-        self._emit_line(renderer.render_try_body_open(try_blk))
-        self.indent += 1
-        self._try_depth += 1
-        self._try_label_stack.append(try_blk)
-        for sub in body:
-            self._emit_stmt(sub)
-            renderer.state.indent_level = self.indent
-            renderer.emit_try_body_post_stmt(sub, try_blk)
-            self.indent = renderer.state.indent_level
-        self._try_label_stack.pop()
-        self._try_depth -= 1
-        self.indent -= 1
-        self._emit_line(renderer.render_try_body_close(try_blk))
+        self._emit_try_body_with_renderer(renderer, try_blk, body)
         if len(handlers) > 0:
             handled = renderer.next_exception_dispatch_state_name()
-            renderer.state.indent_level = self.indent
-            renderer.emit_exception_dispatch_handlers(renderer.active_exception_type_slot_name(), handled, handlers)
-            self.indent = renderer.state.indent_level
+            self._call_stmt_renderer(
+                renderer,
+                "emit_exception_dispatch_handlers",
+                renderer.active_exception_type_slot_name(),
+                handled,
+                handlers,
+            )
         if len(orelse) > 0:
             self._emit_line(renderer.render_try_orelse_open())
             self.indent += 1
