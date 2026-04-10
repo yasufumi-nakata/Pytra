@@ -401,13 +401,58 @@ def _call_arg_usage_is_readonly(
     arg_node: dict[str, JsonVal],
 ) -> bool:
     sig = call_node.get("function_signature_v1")
-    if not isinstance(sig, dict):
+    if isinstance(sig, dict):
+        arg_order = sig.get("arg_order")
+        arg_usage = sig.get("arg_usage")
+        if isinstance(arg_order, list) and isinstance(arg_usage, dict):
+            args = _node_list(call_node, "args")
+            i = 0
+            while i < len(args):
+                if args[i] is arg_node:
+                    if i >= len(arg_order):
+                        return False
+                    arg_name = arg_order[i]
+                    if not isinstance(arg_name, str) or arg_name == "":
+                        return False
+                    return arg_usage.get(arg_name) == "readonly"
+                i += 1
+
+            keywords = _node_list(call_node, "keywords")
+            for kw in keywords:
+                if not isinstance(kw, dict):
+                    continue
+                if kw.get("value") is not arg_node:
+                    continue
+                arg_name = kw.get("arg")
+                if not isinstance(arg_name, str) or arg_name == "":
+                    return False
+                return arg_usage.get(arg_name) == "readonly"
+    runtime_call = _node_str(call_node, "runtime_call")
+    semantic_tag = _node_str(call_node, "semantic_tag")
+    if runtime_call in ("TextIOWrapper.write", "BufferedWriter.write") or semantic_tag == "stdlib.method.write":
+        args = _node_list(call_node, "args")
+        return len(args) >= 1 and args[0] is arg_node
+    return False
+
+
+def _call_local_function_arg_is_readonly(
+    call_node: dict[str, JsonVal],
+    arg_node: dict[str, JsonVal],
+    funcs: dict[str, dict[str, JsonVal]],
+) -> bool:
+    func = call_node.get("func")
+    if not isinstance(func, dict) or _node_str(func, "kind") != "Name":
         return False
-    arg_order = sig.get("arg_order")
-    arg_usage = sig.get("arg_usage")
+    callee_name = _node_str(func, "id")
+    if callee_name == "":
+        return False
+    callee = funcs.get(callee_name)
+    if not isinstance(callee, dict):
+        return False
+    arg_order = callee.get("arg_order")
+    arg_usage = callee.get("arg_usage")
     if not isinstance(arg_order, list) or not isinstance(arg_usage, dict):
         return False
-
     args = _node_list(call_node, "args")
     i = 0
     while i < len(args):
@@ -419,17 +464,6 @@ def _call_arg_usage_is_readonly(
                 return False
             return arg_usage.get(arg_name) == "readonly"
         i += 1
-
-    keywords = _node_list(call_node, "keywords")
-    for kw in keywords:
-        if not isinstance(kw, dict):
-            continue
-        if kw.get("value") is not arg_node:
-            continue
-        arg_name = kw.get("arg")
-        if not isinstance(arg_name, str) or arg_name == "":
-            return False
-        return arg_usage.get(arg_name) == "readonly"
     return False
 
 
@@ -539,6 +573,39 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
     module_funcs: dict[str, dict[str, dict[str, JsonVal]]] = {}
     for module, doc in copied_docs:
         module_funcs[module.module_id] = _top_level_function_map(doc)
+
+    for module, _doc in copied_docs:
+        funcs = module_funcs.get(module.module_id, {})
+        for func_name in sorted(list(funcs.keys())):
+            func_node = funcs[func_name]
+            for node, parents in _walk_nodes_with_parents(func_node, []):
+                if _node_str(node, "kind") != "Call":
+                    continue
+                hit = _is_bytes_from_local_bytearray_call(node)
+                if hit is None:
+                    continue
+                safe_local = False
+                outer_call = _find_outer_call_for_arg(node, parents)
+                if outer_call is not None and _call_arg_usage_is_readonly(outer_call, node):
+                    safe_local = True
+                if not safe_local and outer_call is not None and _call_local_function_arg_is_readonly(outer_call, node, funcs):
+                    safe_local = True
+                local_name = _assigned_local_name(node, parents)
+                if not safe_local and local_name != "" and _all_name_uses_readonly_in_function(func_node, local_name):
+                    safe_local = True
+                if not safe_local:
+                    continue
+                meta = _ensure_node_meta(node)
+                if "copy_elision_safe_v1" in meta:
+                    continue
+                meta["copy_elision_safe_v1"] = {
+                    "schema_version": 1,
+                    "operation": "bytes_from_bytearray",
+                    "source_name": hit[0],
+                    "borrow_kind": "readonly_ref",
+                    "analysis_scope": "linked_program",
+                    "proof_summary": "linker verified local bytes(bytearray) result flows only through readonly uses",
+                }
 
     candidate_calls: dict[str, dict[str, JsonVal]] = {}
     for module, _doc in copied_docs:
