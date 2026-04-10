@@ -59,3 +59,4 @@ EAST3 / linker に関連する既存メタデータ:
 - 2026-04-02: Lua emitter/runtime に `copy_elision_safe_v1` 対応を実装。`03_julia_set` は無回帰 PASS。`07_game_of_life_loop` は改善したが `--cmd-timeout-sec 600` ではまだ timeout。
 - 2026-04-10: linker の final linked rows に対しても `_annotate_copy_elision_safe_v1()` を再適用し、Lua emitter の `core.bytes_ctor` fast path が `copy_elision_safe_v1` を素通りしていた不具合を修正。これで `07_game_of_life_loop.render()` の `return bytes(frame)` は `__pytra_bytes_alias(frame)` に変わることを確認。
 - 2026-04-10: readonly subscript owner も non-escape 判定に含め、`pytra.utils.gif._lzw_encode()` の `return bytes(out)` も `__pytra_bytes_alias(out)` へ切り替わることを確認。残る hot path は cross-module の `grayscale_palette()` と `f.write(bytes(out))`。
+- 2026-04-10: callsite 走査を cross-module に広げ、readonly parameter へ直接渡されるケースも拾えるようにした。これで `pytra.utils.gif.grayscale_palette()` の `return bytes(p)` も `__pytra_bytes_alias(p)` に変わることを確認。残る hot path は `f.write(bytes(out))`。

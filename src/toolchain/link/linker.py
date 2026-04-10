@@ -565,8 +565,6 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
         saw_callsite = False
         caller_lists: dict[str, dict[str, JsonVal]] = {}
         for module, _doc in copied_docs:
-            if module.module_id != module_id:
-                continue
             funcs = module_funcs.get(module.module_id, {})
             for caller_name in sorted(list(funcs.keys())):
                 caller_func = funcs[caller_name]
