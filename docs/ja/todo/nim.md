@@ -6,11 +6,10 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-02
+最終更新: 2026-04-10
 
 ## 運用ルール
 
-- **旧 toolchain1（`src/toolchain/emit/nim/`）は変更不可。** 新規開発・修正は全て `src/toolchain2/emit/nim/` で行う（[spec-emitter-guide.md](../spec/spec-emitter-guide.md) §1）。
 - 各タスクは `ID` と文脈ファイル（`docs/ja/plans/*.md`）を必須にする。
 - 優先度順（小さい P 番号から）に着手する。
 - 進捗メモとコミットメッセージは同一 `ID` を必ず含める。
@@ -21,33 +20,13 @@
 
 ## 参考資料
 
-- 旧 toolchain1 の Nim emitter: `src/toolchain/emit/nim/`
-- toolchain2 の TS emitter（参考実装）: `src/toolchain2/emit/ts/`
-- 既存の Nim runtime: `src/runtime/nim/`
+- Nim emitter: `src/toolchain/emit/nim/`
+- TS emitter（参考実装）: `src/toolchain/emit/ts/`
+- Nim runtime: `src/runtime/nim/`
 - emitter 実装ガイドライン: `docs/ja/spec/spec-emitter-guide.md`
 - mapping.json 仕様: `docs/ja/spec/spec-runtime-mapping.md`
 
 ## 未完了タスク
-
-### P0-NIM-NEW-FIXTURE-PARITY: 新規追加 fixture / stdlib の parity 確認
-
-今セッション（2026-04-01〜05）で追加・更新した fixture と stdlib の parity を確認する。
-
-対象: `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`(stdlib), `os_glob_extended`(stdlib)
-
-1. [x] [ID: P0-NIM-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）
-   完了メモ: Nim で `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`, `os_glob_extended` を確認し、対象 8 件すべて PASS を確認した。途中で `negative_index_out_of_range` が Nim の `IndexDefect` に落ちていたため、list/string/bytes 系 subscript read を runtime helper `py_index` 経由に揃えて `IndexError` へ修正した。
-
-### P1-NIM-EMITTER: Nim emitter を toolchain2 に新規実装する
-
-文脈: [docs/ja/plans/p1-nim-emitter.md](../plans/p1-nim-emitter.md)
-
-1. [x] [ID: P1-NIM-EMITTER-S1] `src/toolchain2/emit/nim/` に Nim emitter を新規実装する — CommonRenderer + override 構成。emitter.py, types.py, __init__.py, profiles/nim.json を作成。完了: 2026-03-31
-2. [x] [ID: P1-NIM-EMITTER-S2] `src/runtime/nim/mapping.json` を作成する — `calls`, `types`, `env.target`, `builtin_prefix`, `implicit_promotions`, `skip_modules` を定義。完了: 2026-03-31
-3. [x] [ID: P1-NIM-EMITTER-S3] fixture 全件の Nim emit 成功を確認する — 129/131 成功（残り2件は parser 側の trait 未対応）。完了: 2026-03-31
-4. [x] [ID: P1-NIM-EMITTER-S4] Nim runtime を toolchain2 の emit 出力と整合させる — py_print, str methods, container helpers, assert framework 等を追加。完了: 2026-03-31
-5. [x] [ID: P1-NIM-EMITTER-S5] fixture + sample の Nim compile + run parity を通す（`nim c -r`）。完了メモ: Nim emitter/runtime を修正し、fixture 全件 `153/153 PASS`、sample 全件 `18/18 PASS` を確認した。sample は重いケースがあるため `--cmd-timeout-sec 300` で最終確認した。
-6. [x] [ID: P1-NIM-EMITTER-S6] stdlib の Nim parity を通す（`--case-root stdlib`）。完了メモ: stdlib 全件 `16/16 PASS` を確認した。`pathlib_extended` の `joinpath` 多引数対応も含めて修正済み。
 
 ### P20-NIM-SELFHOST: Nim emitter で toolchain2 を Nim に変換し実行できるようにする
 

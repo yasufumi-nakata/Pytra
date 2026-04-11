@@ -6,11 +6,10 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-03-31 (P3-GO-LINT-FIX 完了)
+最終更新: 2026-04-10
 
 ## 運用ルール
 
-- **旧 toolchain1（`src/toolchain/emit/go/`）は変更不可。** 新規開発・修正は全て `src/toolchain2/emit/go/` で行う（[spec-emitter-guide.md](../spec/spec-emitter-guide.md) §1）。
 - 各タスクは `ID` と文脈ファイル（`docs/ja/plans/*.md`）を必須にする。
 - 優先度順（小さい P 番号から）に着手する。
 - 進捗メモとコミットメッセージは同一 `ID` を必ず含める。
@@ -20,24 +19,6 @@
 - **[emitter 実装ガイドライン](../spec/spec-emitter-guide.md)を必ず読むこと。** parity check ツール、禁止事項、mapping.json の使い方が書いてある。
 
 ## 未完了タスク
-
-### P0-GO-NEW-FIXTURE-PARITY: 新規追加 fixture / stdlib の parity 確認
-
-今セッション（2026-04-01〜05）で追加・更新した fixture と stdlib の parity を確認する。
-
-対象: `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`(stdlib), `os_glob_extended`(stdlib)
-
-1. [x] [ID: P0-GO-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）。完了メモ: Go で `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`, `os_glob_extended` を確認し、対象 8 件すべて PASS を確認した。途中で `os_glob_extended` の `splitext` が単値扱いと衝突していたため、Go runtime の `py_splitext` を multi-return に修正した。
-
-### P0-GO-TYPE-ID-CLEANUP: Go runtime から pytra_isinstance / py_runtime_object_type_id を削除する
-
-仕様: [docs/ja/spec/spec-adt.md](../spec/spec-adt.md) §6
-
-Go は `any` + type switch がネイティブにあるので `pytra_isinstance` / `py_runtime_object_type_id` は不要。emitter が type switch を直接生成するようにする。
-
-1. [x] [ID: P0-GO-TYPEID-CLN-S1] `src/runtime/go/built_in/py_runtime.go` から `pytra_isinstance` と `py_runtime_object_type_id` を削除する。完了メモ: 旧 helper は既に残っておらず、残存していた `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` も削除した。
-2. [x] [ID: P0-GO-TYPEID-CLN-S2] Go emitter の isinstance を `switch v := x.(type)` に置換する。完了メモ: Go emitter の `isinstance` は既に builtin helper / marker interface / type assertion ベースへ移行済みで、今回 subtype 判定も runtime helper 呼び出しではなく emitter inline 展開に揃えた。
-3. [x] [ID: P0-GO-TYPEID-CLN-S3] fixture + sample + stdlib parity に回帰がないことを確認する。完了メモ: Go で fixture `153/153 PASS`、sample `18/18 PASS`、stdlib `16/16 PASS` を確認した。途中で `bytearray.pop` cast、`str.isspace` fallback、wrapper dict `.items()` fallback も修正した。
 
 ### P7-GO-SELFHOST-RUNTIME: Go selfhost バイナリを実際に動かして parity PASS する
 
