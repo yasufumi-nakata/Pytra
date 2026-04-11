@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-03
+最終更新: 2026-04-11
 
 ## 運用ルール
 
@@ -19,6 +19,21 @@
 完了済みタスクは [アーカイブ](archive/20260403.md) を参照。
 
 ## 未完了タスク
+
+### P0-SELFHOST-MODULE-CLOSURE: selfhost build の transitive import 解決漏れを修正する
+
+selfhost build driver が `ImportFrom` の transitive closure を完全に拾えておらず、emit 対象 module セットから依存先が漏れるケースがある。
+
+**発端**: 2026-04-11、C++ selfhost build で `expand_defaults.h` が `#include "toolchain/resolve/py/type_norm.h"` を出すが、`type_norm` が emit 対象から抜けていて g++ で missing include に落ちる。
+
+**判断**: これは EAST / backend / emitter のいずれでもなく、selfhost build driver（どの `.py` を emit 対象にするか決める上位レイヤー）の問題。C++ backend で補完すると、他言語 selfhost で責務がずれて再発明される。全 selfhost で共通の build driver 側で直す。
+
+**影響**: C++ selfhost が S5 で停止中。他言語 selfhost（Rust / Go / Nim / Lua / TS / Swift / Zig 等）にも波及する可能性がある（Go では偶然カバーされていただけの可能性）。
+
+1. [ ] [ID: P0-SELFHOST-CLOSURE-S1] selfhost build driver の module collection ロジックを調査し、transitive import 解決漏れの原因を特定する
+2. [ ] [ID: P0-SELFHOST-CLOSURE-S2] entry point からの reachability closure が `ImportFrom` を確実に追うように修正する
+3. [ ] [ID: P0-SELFHOST-CLOSURE-S3] C++ selfhost で `expand_defaults.py → type_norm.py` が emit 対象に入ることを確認する
+4. [ ] [ID: P0-SELFHOST-CLOSURE-S4] Go selfhost の既存テストに回帰がないことを確認する（module set が広がるため）
 
 ### P20-DATA-DRIVEN-TESTS: パイプライン系テストのデータ駆動化
 
