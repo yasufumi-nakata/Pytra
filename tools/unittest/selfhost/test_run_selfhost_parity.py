@@ -24,6 +24,12 @@ def _load_module():
 
 
 class RunSelfhostParityBuildTest(unittest.TestCase):
+    def test_module_loads_cpp_runtime_dependency_helper(self) -> None:
+        mod = _load_module()
+        self.assertTrue(callable(mod.collect_runtime_cpp_sources))
+        sources = mod.collect_runtime_cpp_sources([], ROOT / "src")
+        self.assertIn("src/runtime/cpp/std/math.cpp", sources)
+
     def test_build_selfhost_binary_cpp_uses_runtime_sources_and_include_dirs(self) -> None:
         mod = _load_module()
         with tempfile.TemporaryDirectory() as td:

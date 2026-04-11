@@ -59,6 +59,6 @@ S0〜S4 完了済み（[archive/20260402.md](archive/20260402.md) 参照）。
 1. [ ] [ID: P20-CPP-SELFHOST-S5] selfhost C++ バイナリを g++ でビルドし、リンクが通ることを確認する
    - build 失敗の都度、backend で直るか EAST 修正が必要か判断する
    - EAST 修正が必要と思われる場合は **作業を停止し、問題報告フォーマットで報告する**
-   - **2026-04-11 停止中**: transitive import 解決漏れ（`expand_defaults.py → type_norm.py`）が発覚。backend ではなく selfhost build driver の問題と判断し、infra の [P0-SELFHOST-MODULE-CLOSURE](./infra.md) で対処中。完了後に再開する。
+   - 2026-04-11: `expand_defaults.py → type_norm.py` の transitive closure 疑いは infra 側で誤診と確定。closure 自体は保持されており、現在は g++ build の残 blocker に戻っている。
 2. [ ] [ID: P20-CPP-SELFHOST-S6] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root fixture` で fixture parity が PASS することを確認する
 3. [ ] [ID: P20-CPP-SELFHOST-S7] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root sample` で sample parity が PASS することを確認する

@@ -29,11 +29,11 @@ _SPEC.loader.exec_module(pytra_cli2_mod)
 
 class PytraCli2Test(unittest.TestCase):
     def test_optimizer_debug_flags_normalize_subscript_modes(self) -> None:
-        flags = pytra_cli2_mod._optimizer_debug_flags("always", "debug")
+        flags = pytra_cli2_mod._optimizer_debug_flags(1, "always", "debug")
         self.assertEqual(flags, {"negative_index_mode": "always", "bounds_check_mode": "debug"})
 
     def test_optimizer_debug_flags_apply_defaults(self) -> None:
-        flags = pytra_cli2_mod._optimizer_debug_flags("", "")
+        flags = pytra_cli2_mod._optimizer_debug_flags(1, "", "")
         self.assertEqual(flags, {"negative_index_mode": "const_only", "bounds_check_mode": "off"})
 
     def test_cmd_optimize_forwards_subscript_optimizer_modes(self) -> None:
@@ -51,7 +51,7 @@ class PytraCli2Test(unittest.TestCase):
         optimize_one.assert_called_once()
         call_args = optimize_one.call_args[0]
         self.assertEqual(str(call_args[0]), "mod.east3")
-        self.assertEqual(call_args[1:], ("", False, "always", "debug"))
+        self.assertEqual(call_args[1:], ("", False, 1, "always", "debug"))
 
     def test_optimize_linked_runtime_modules_skips_user_modules(self) -> None:
         user = LinkedModule("app.main", "", "", True, {"kind": "Module", "east_stage": 3}, "user")
@@ -133,6 +133,12 @@ class PytraCli2Test(unittest.TestCase):
         self.assertEqual(rc, 0)
         emit_subprocess.assert_called_once()
         self.assertEqual(emit_subprocess.call_args[0][0], "swift")
+
+    def test_collect_build_sources_keeps_expand_defaults_type_norm_closure(self) -> None:
+        sources = pytra_cli2_mod._collect_build_sources([str(ROOT / "src" / "pytra-cli.py")])
+        paths = {str(Path(path).resolve()) for path, _ in sources}
+        self.assertIn(str((ROOT / "src" / "toolchain" / "link" / "expand_defaults.py").resolve()), paths)
+        self.assertIn(str((ROOT / "src" / "toolchain" / "resolve" / "py" / "type_norm.py").resolve()), paths)
 
 
 if __name__ == "__main__":

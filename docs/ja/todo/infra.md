@@ -20,20 +20,24 @@
 
 ## 未完了タスク
 
-### P0-SELFHOST-MODULE-CLOSURE: selfhost build の transitive import 解決漏れを修正する
+### P0-SELFHOST-MODULE-CLOSURE: selfhost build の transitive import 解決漏れを調査・固定する
 
-selfhost build driver が `ImportFrom` の transitive closure を完全に拾えておらず、emit 対象 module セットから依存先が漏れるケースがある。
+2026-04-11 の再調査で、当初疑った build driver の `ImportFrom` closure 欠落は再現しなかった。`_collect_build_sources()`、link manifest、C++ emit のいずれにも `expand_defaults.py -> type_norm.py` は入っていた。最初の missing include は、C++ backend の別 abort 後に見ていた partial emit 生成物を blocker と誤診していたもの。
 
-**発端**: 2026-04-11、C++ selfhost build で `expand_defaults.h` が `#include "toolchain/resolve/py/type_norm.h"` を出すが、`type_norm` が emit 対象から抜けていて g++ で missing include に落ちる。
+このタスクで実際に直したのは、
+- `_collect_build_sources()` に対する closure regression test の追加
+- `run_selfhost_parity.py` が欠損していた `collect_runtime_cpp_sources` helper 依存を fallback で復旧
 
-**判断**: これは EAST / backend / emitter のいずれでもなく、selfhost build driver（どの `.py` を emit 対象にするか決める上位レイヤー）の問題。C++ backend で補完すると、他言語 selfhost で責務がずれて再発明される。全 selfhost で共通の build driver 側で直す。
+までであり、build driver 本体の closure ロジック変更は不要だった。
 
-**影響**: C++ selfhost が S5 で停止中。他言語 selfhost（Rust / Go / Nim / Lua / TS / Swift / Zig 等）にも波及する可能性がある（Go では偶然カバーされていただけの可能性）。
-
-1. [ ] [ID: P0-SELFHOST-CLOSURE-S1] selfhost build driver の module collection ロジックを調査し、transitive import 解決漏れの原因を特定する
-2. [ ] [ID: P0-SELFHOST-CLOSURE-S2] entry point からの reachability closure が `ImportFrom` を確実に追うように修正する
-3. [ ] [ID: P0-SELFHOST-CLOSURE-S3] C++ selfhost で `expand_defaults.py → type_norm.py` が emit 対象に入ることを確認する
-4. [ ] [ID: P0-SELFHOST-CLOSURE-S4] Go selfhost の既存テストに回帰がないことを確認する（module set が広がるため）
+1. [x] [ID: P0-SELFHOST-CLOSURE-S1] selfhost build driver の module collection ロジックを調査し、transitive import 解決漏れの原因を特定する
+   - 2026-04-11: `_collect_build_sources()` は `toolchain.link.expand_defaults` と `toolchain.resolve.py.type_norm` を正しく収集していた。誤診だったことを確認。
+2. [x] [ID: P0-SELFHOST-CLOSURE-S2] entry point からの reachability closure が `ImportFrom` を確実に追うように修正する
+   - 2026-04-11: build driver 本体の修正は不要。代わりに `tools/unittest/tooling/test_pytra_cli2.py` に selfhost closure 回帰テストを追加。
+3. [x] [ID: P0-SELFHOST-CLOSURE-S3] C++ selfhost で `expand_defaults.py → type_norm.py` が emit 対象に入ることを確認する
+   - 2026-04-11: linked manifest と C++ emit 単体で `toolchain/resolve/py/type_norm.h` / `toolchain_resolve_py_type_norm.cpp` が出ることを確認。
+4. [x] [ID: P0-SELFHOST-CLOSURE-S4] Go selfhost の既存テストに回帰がないことを確認する（module set が広がるため）
+   - 2026-04-11: `run_selfhost_parity.py` の fallback は C++ branch 限定で、共通 regression test も通過。Go selfhost 側の driver 挙動に変更なし。
 
 ### P20-DATA-DRIVEN-TESTS: パイプライン系テストのデータ駆動化
 

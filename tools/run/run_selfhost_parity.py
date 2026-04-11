@@ -38,15 +38,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "tools") not in sys.path:
+    sys.path.insert(0, str(ROOT / "tools"))
 if str(ROOT / "tools" / "check") not in sys.path:
     sys.path.insert(0, str(ROOT / "tools" / "check"))
 if str(ROOT / "tools" / "unregistered") not in sys.path:
     sys.path.insert(0, str(ROOT / "tools" / "unregistered"))
 
+def _fallback_collect_runtime_cpp_sources(_cpp_files: list[str], _include_dir: Path) -> list[str]:
+    runtime_root = ROOT / "src" / "runtime" / "cpp"
+    return sorted(str(path.relative_to(ROOT)) for path in runtime_root.rglob("*.cpp"))
+
+
 try:
     from cpp_runtime_deps import collect_runtime_cpp_sources  # type: ignore
 except ModuleNotFoundError:
-    collect_runtime_cpp_sources = None  # type: ignore  # only needed for cpp selfhost builds
+    collect_runtime_cpp_sources = _fallback_collect_runtime_cpp_sources  # type: ignore
 
 PARITY_DIR = ROOT / ".parity-results"
 
