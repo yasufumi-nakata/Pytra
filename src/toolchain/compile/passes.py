@@ -63,7 +63,8 @@ def _contains_yield(node: JsonVal) -> bool:
         node_dict: Node = jv_dict(node)
         if nd_kind(node_dict) == YIELD:
             return True
-        for _, value_jv in node_dict.items():
+        for key_s in node_dict.keys():
+            value_jv = node_dict[key_s]
             if _contains_yield(value_jv):
                 return True
     elif isinstance(node, list):
@@ -115,7 +116,8 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
             ac["source_span"] = span
         return ac
     out: Node = {}
-    for key_s, value_jv in nd.items():
+    for key_s in nd.keys():
+        value_jv = nd[key_s]
         if key_s == "body" or key_s == "orelse" or key_s == "finalbody":
             out[key_s] = _replace_yield_with_append(value_jv, acc, list_type)
         elif key_s == "handlers" and isinstance(value_jv, list):
@@ -125,7 +127,8 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
                 if isinstance(h, dict):
                     hd: Node = jv_dict(h)
                     nh: Node = {}
-                    for hk_s, hv_jv in hd.items():
+                    for hk_s in hd.keys():
+                        hv_jv = hd[hk_s]
                         nh[hk_s] = hv_jv
                     if "body" in nh:
                         nh["body"] = _replace_yield_with_append(nh["body"], acc, list_type)
@@ -167,10 +170,10 @@ def _lower_generator_function(func: Node) -> None:
     init["decl_type"] = lt
     init["declare"] = True
     init["value"] = list_value
+    new_body_list: list[JsonVal] = body
     new_body = _replace_yield_with_append(body, acc, lt)
-    if not isinstance(new_body, list):
-        new_body = body
-    new_body_list: list[JsonVal] = cast(list[JsonVal], new_body) if isinstance(new_body, list) else body
+    if isinstance(new_body, list):
+        new_body_list = cast(list[JsonVal], new_body)
     ret_name: Node = {}
     ret_name["kind"] = NAME
     ret_name["id"] = acc
@@ -194,8 +197,8 @@ def _yield_walk(node: JsonVal) -> None:
     if not isinstance(node, dict):
         return
     nd: Node = jv_dict(node)
-    kind = nd_kind(nd)
-    if _is_function_like_kind(kind):
+    kind_s: str = nd_kind(nd)
+    if _is_function_like_kind(kind_s):
         body_obj = nd.get("body")
         if isinstance(body_obj, list) and _contains_yield(body_obj):
             _lower_generator_function(nd)
@@ -205,14 +208,15 @@ def _yield_walk(node: JsonVal) -> None:
             for s in body2_list:
                 _yield_walk(s)
         return
-    if kind == CLASS_DEF or kind == MODULE:
+    if kind_s == CLASS_DEF or kind_s == MODULE:
         body_obj = nd.get("body")
         if isinstance(body_obj, list):
             body_list: list[JsonVal] = cast(list[JsonVal], body_obj)
             for s in body_list:
                 _yield_walk(s)
         return
-    for _, value_jv in nd.items():
+    for key_s in nd.keys():
+        value_jv = nd[key_s]
         if isinstance(value_jv, dict):
             _yield_walk(value_jv)
         elif isinstance(value_jv, list):
@@ -244,12 +248,14 @@ def _build_lc_target_plan(target: JsonVal) -> Node:
             elements = _empty_jv_list()
             elems_obj = target_node.get("elements")
             if isinstance(elems_obj, list):
-                for elem in cast(list[JsonVal], elems_obj):
+                elems_list: list[JsonVal] = cast(list[JsonVal], elems_obj)
+                for elem in elems_list:
                     elements.append(elem)
             else:
                 elts_obj = target_node.get("elts")
                 if isinstance(elts_obj, list):
-                    for elem in cast(list[JsonVal], elts_obj):
+                    elts_list: list[JsonVal] = cast(list[JsonVal], elts_obj)
+                    for elem in elts_list:
                         elements.append(elem)
             eps: list[JsonVal] = _empty_jv_list()
             for elem in elements:
@@ -460,14 +466,16 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                 stmt_idx += 1
                 continue
         # Recurse
-        for key in ("body", "orelse", "finalbody"):
+        nested_keys: list[str] = ["body", "orelse", "finalbody"]
+        for key in nested_keys:
             nested = stmt_node.get(key)
             if isinstance(nested, list):
                 stmt_node[key] = _lc_in_stmts(nested, ctx)
         if kind == TRY:
             hs = stmt_node.get("handlers")
             if isinstance(hs, list):
-                for h in hs:
+                hs_list: list[JsonVal] = cast(list[JsonVal], hs)
+                for h in hs_list:
                     if isinstance(h, dict):
                         hb = h.get("body")
                         if isinstance(hb, list):
