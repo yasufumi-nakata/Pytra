@@ -11,7 +11,7 @@ from typing import Union
 from pytra.typing import cast
 
 from toolchain.compile.jv import JsonVal, Node, CompileContext, deep_copy_json
-from toolchain.compile.jv import jv_str, jv_is_dict, jv_is_list, jv_dict, nd_kind
+from toolchain.compile.jv import jv_str, jv_is_dict, jv_is_list, jv_dict, jv_list, nd_kind
 from toolchain.compile.jv import normalize_type_name
 from toolchain.common.kinds import (
     MODULE, FUNCTION_DEF, CLOSURE_DEF, CLASS_DEF, VAR_DECL,
@@ -145,7 +145,7 @@ def _lower_generator_function(func: Node) -> None:
     body_obj = func.get("body")
     if not isinstance(body_obj, list):
         return
-    body: list[JsonVal] = cast(list[JsonVal], body_obj)
+    body: list[JsonVal] = jv_list(body_obj)
     ret_type: str = jv_str(func.get("return_type", ""))
     elem_type = "unknown"
     if ret_type.startswith("list[") and ret_type.endswith("]"):
@@ -197,21 +197,20 @@ def _yield_walk(node: JsonVal) -> None:
     if not isinstance(node, dict):
         return
     nd: Node = jv_dict(node)
-    kind_s: str = nd_kind(nd)
-    if _is_function_like_kind(kind_s):
+    if _is_function_like_kind(nd_kind(nd)):
         body_obj = nd.get("body")
         if isinstance(body_obj, list) and _contains_yield(body_obj):
             _lower_generator_function(nd)
         body2_obj = nd.get("body")
         if isinstance(body2_obj, list):
-            body2_list: list[JsonVal] = cast(list[JsonVal], body2_obj)
+            body2_list: list[JsonVal] = jv_list(body2_obj)
             for s in body2_list:
                 _yield_walk(s)
         return
-    if kind_s == CLASS_DEF or kind_s == MODULE:
+    if nd_kind(nd) == CLASS_DEF or nd_kind(nd) == MODULE:
         body_obj = nd.get("body")
         if isinstance(body_obj, list):
-            body_list: list[JsonVal] = cast(list[JsonVal], body_obj)
+            body_list: list[JsonVal] = jv_list(body_obj)
             for s in body_list:
                 _yield_walk(s)
         return
@@ -248,13 +247,13 @@ def _build_lc_target_plan(target: JsonVal) -> Node:
             elements = _empty_jv_list()
             elems_obj = target_node.get("elements")
             if isinstance(elems_obj, list):
-                elems_list: list[JsonVal] = cast(list[JsonVal], elems_obj)
+                elems_list: list[JsonVal] = jv_list(elems_obj)
                 for elem in elems_list:
                     elements.append(elem)
             else:
                 elts_obj = target_node.get("elts")
                 if isinstance(elts_obj, list):
-                    elts_list: list[JsonVal] = cast(list[JsonVal], elts_obj)
+                    elts_list: list[JsonVal] = jv_list(elts_obj)
                     for elem in elts_list:
                         elements.append(elem)
             eps: list[JsonVal] = _empty_jv_list()
@@ -316,7 +315,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
     generator_list: list[JsonVal] = _empty_jv_list()
     generators = lc.get("generators")
     if isinstance(generators, list):
-        generator_list = cast(list[JsonVal], generators)
+        generator_list = jv_list(generators)
     append_args: list[Node] = []
     if append_arg is not None:
         append_args.append(cast(dict[str, JsonVal], append_arg))
@@ -336,10 +335,10 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         gen = generator_list[gen_idx]
         if not isinstance(gen, dict):
             continue
-        gen_node: Node = cast(dict[str, JsonVal], gen)
+        gen_node: Node = jv_dict(gen)
         ifs = gen_node.get("ifs")
         if isinstance(ifs, list):
-            ifs_list: list[JsonVal] = cast(list[JsonVal], ifs)
+            ifs_list: list[JsonVal] = jv_list(ifs)
             if len(ifs_list) > 0:
                 for cond_idx in range(len(ifs_list) - 1, -1, -1):
                     cond = ifs_list[cond_idx]
@@ -587,23 +586,25 @@ def _collect_function_scope_types(func: Node) -> dict[str, str]:
         out[self_name] = _closure_callable_type(func)
     arg_types = func.get("arg_types")
     if isinstance(arg_types, dict):
-        for name, value in arg_types.items():
-            if isinstance(name, str) and name != "" and isinstance(value, str):
+        arg_types_node: Node = jv_dict(arg_types)
+        for name in arg_types_node.keys():
+            value = arg_types_node[name]
+            if name != "" and isinstance(value, str):
                 out[name] = value
     captures = func.get("captures")
     if isinstance(captures, list):
-        capture_list: list[JsonVal] = cast(list[JsonVal], captures)
+        capture_list: list[JsonVal] = jv_list(captures)
         for capture in capture_list:
             if not isinstance(capture, dict):
                 continue
-            capture_node: Node = cast(dict[str, JsonVal], capture)
+            capture_node: Node = jv_dict(capture)
             name2 = jv_str(capture_node.get("name", ""))
             type2 = jv_str(capture_node.get("type", ""))
             if name2 != "" and name2 not in out:
                 out[name2] = type2
     body = func.get("body")
     if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
+        body_list: list[JsonVal] = jv_list(body)
         _collect_function_locals(body_list, out)
     return out
 
@@ -612,13 +613,13 @@ def _collect_function_reassigned_names(func: Node) -> set[str]:
     counts: dict[str, int] = {}
     body = func.get("body")
     if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
+        body_list: list[JsonVal] = jv_list(body)
         _collect_reassigned_lexical(body_list, counts)
     out: set[str] = set()
     arg_order = func.get("arg_order")
     param_names: set[str] = set()
     if isinstance(arg_order, list):
-        arg_order_list: list[JsonVal] = cast(list[JsonVal], arg_order)
+        arg_order_list: list[JsonVal] = jv_list(arg_order)
         for arg in arg_order_list:
             if isinstance(arg, str) and arg != "":
                 param_names.add(arg)
@@ -641,16 +642,18 @@ def _collect_reassigned_lexical(stmts: list[JsonVal], out: dict[str, int]) -> No
         kind = _sk(stmt)
         if kind in (ASSIGN, ANN_ASSIGN):
             target = stmt.get("target")
-            if isinstance(target, dict) and target.get("kind") == NAME:
-                name = target.get("id")
+            if isinstance(target, dict) and nd_kind(jv_dict(target)) == NAME:
+                target_node = jv_dict(target)
+                name = target_node.get("id")
                 if isinstance(name, str) and name != "":
                     _bump_reassigned(out, name)
-            elif isinstance(target, dict) and target.get("kind") == TUPLE:
+            elif isinstance(target, dict) and nd_kind(jv_dict(target)) == TUPLE:
                 _collect_target_write_counts(target, out)
         elif kind == AUG_ASSIGN:
             target2 = stmt.get("target")
-            if isinstance(target2, dict) and target2.get("kind") == NAME:
-                name2 = target2.get("id")
+            if isinstance(target2, dict) and nd_kind(jv_dict(target2)) == NAME:
+                target2_node = jv_dict(target2)
+                name2 = target2_node.get("id")
                 if isinstance(name2, str) and name2 != "":
                     _bump_reassigned(out, name2)
         elif kind == FOR or kind == FOR_RANGE:
@@ -666,13 +669,13 @@ def _collect_reassigned_lexical(stmts: list[JsonVal], out: dict[str, int]) -> No
                 _collect_reassigned_lexical(nested_list, out)
         handlers = stmt.get("handlers")
         if isinstance(handlers, list):
-            handler_list: list[JsonVal] = cast(list[JsonVal], handlers)
+            handler_list: list[JsonVal] = jv_list(handlers)
             for handler in handler_list:
                 if isinstance(handler, dict):
-                    handler_node: Node = cast(dict[str, JsonVal], handler)
+                    handler_node: Node = jv_dict(handler)
                     hbody = handler_node.get("body")
                     if isinstance(hbody, list):
-                        hbody_list: list[JsonVal] = cast(list[JsonVal], hbody)
+                        hbody_list: list[JsonVal] = jv_list(hbody)
                         _collect_reassigned_lexical(hbody_list, out)
 
 
