@@ -121,7 +121,7 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
         if key_s == "body" or key_s == "orelse" or key_s == "finalbody":
             out[key_s] = _replace_yield_with_append(value_jv, acc, list_type)
         elif key_s == "handlers" and isinstance(value_jv, list):
-            handlers: list[JsonVal] = cast(list[JsonVal], value_jv)
+            handlers: list[JsonVal] = jv_list(value_jv)
             hs: list[JsonVal] = _empty_jv_list()
             for h in handlers:
                 if isinstance(h, dict):
@@ -173,7 +173,7 @@ def _lower_generator_function(func: Node) -> None:
     new_body_list: list[JsonVal] = body
     new_body = _replace_yield_with_append(body, acc, lt)
     if isinstance(new_body, list):
-        new_body_list = cast(list[JsonVal], new_body)
+        new_body_list = jv_list(new_body)
     ret_name: Node = {}
     ret_name["kind"] = NAME
     ret_name["id"] = acc
@@ -302,7 +302,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
     if rt.startswith("list[") and rt.endswith("]"):
         elem_type = rt[5:-1]
     if isinstance(append_arg, dict) and elem_type != "":
-        append_node: Node = cast(dict[str, JsonVal], append_arg)
+        append_node: Node = jv_dict(append_arg)
         append_node["call_arg_type"] = elem_type
         append_kind = nd_kind(append_node)
         append_rt: str = jv_str(append_node.get("resolved_type", ""))
@@ -318,7 +318,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         generator_list = jv_list(generators)
     append_args: list[Node] = []
     if append_arg is not None:
-        append_args.append(cast(dict[str, JsonVal], append_arg))
+        append_args.append(jv_dict(append_arg))
     append_call = _make_container_method_call(
         result_name,
         rt,
@@ -720,7 +720,7 @@ def _collect_target_plan_write_counts(target_plan: JsonVal, out: dict[str, int])
 
 def _collect_name_refs_lexical(node: JsonVal, out: set[str], *, descend_into_root: bool = True) -> None:
     if isinstance(node, list):
-        node_list: list[JsonVal] = cast(list[JsonVal], node)
+        node_list: list[JsonVal] = jv_list(node)
         for item in node_list:
             _collect_name_refs_lexical(item, out, descend_into_root=True)
         return
@@ -736,7 +736,7 @@ def _collect_name_refs_lexical(node: JsonVal, out: set[str], *, descend_into_roo
     for key, value in node.items():
         if key == "body" and (_is_function_like_kind(kind) or kind == CLASS_DEF):
             if descend_into_root and isinstance(value, list):
-                value_list: list[JsonVal] = cast(list[JsonVal], value)
+                value_list: list[JsonVal] = jv_list(value)
                 for item in value_list:
                     _collect_name_refs_lexical(item, out, descend_into_root=False)
             continue
@@ -751,8 +751,8 @@ def _closure_callable_type(node: Node) -> str:
     arg_types = node.get("arg_types")
     params: list[str] = []
     if isinstance(arg_order, list) and isinstance(arg_types, dict):
-        arg_order_list: list[JsonVal] = cast(list[JsonVal], arg_order)
-        arg_types_node: Node = cast(dict[str, JsonVal], arg_types)
+        arg_order_list: list[JsonVal] = jv_list(arg_order)
+        arg_types_node: Node = jv_dict(arg_types)
         for arg in arg_order_list:
             if not isinstance(arg, str) or arg == "":
                 continue
@@ -778,7 +778,7 @@ def _closure_capture_entries(
         _collect_name_refs_lexical(defaults, used_names, descend_into_root=True)
     body = func.get("body")
     if isinstance(body, list):
-        body_list: list[JsonVal] = cast(list[JsonVal], body)
+        body_list: list[JsonVal] = jv_list(body)
         for stmt in body_list:
             _collect_name_refs_lexical(stmt, used_names, descend_into_root=False)
     captures: list[Node] = []
@@ -828,7 +828,7 @@ def _lower_closure_stmt_list(
         if kind == CLASS_DEF:
             body = stmt.get("body")
             if isinstance(body, list):
-                body_list: list[JsonVal] = cast(list[JsonVal], body)
+                body_list: list[JsonVal] = jv_list(body)
                 class_visible: dict[str, str] = {}
                 for name, value in visible_types.items():
                     class_visible[name] = value
@@ -838,20 +838,25 @@ def _lower_closure_stmt_list(
                 stmt["body"] = _lower_closure_stmt_list(body_list, class_visible, visible_mutable)
             result.append(stmt)
             continue
-        for key in ("body", "orelse", "finalbody"):
-            nested = stmt.get(key)
-            if isinstance(nested, list):
-                stmt[key] = _lower_closure_stmt_list(nested, visible_types, visible_mutable)
+        nested_body = stmt.get("body")
+        if isinstance(nested_body, list):
+            stmt["body"] = _lower_closure_stmt_list(jv_list(nested_body), visible_types, visible_mutable)
+        nested_orelse = stmt.get("orelse")
+        if isinstance(nested_orelse, list):
+            stmt["orelse"] = _lower_closure_stmt_list(jv_list(nested_orelse), visible_types, visible_mutable)
+        nested_finalbody = stmt.get("finalbody")
+        if isinstance(nested_finalbody, list):
+            stmt["finalbody"] = _lower_closure_stmt_list(jv_list(nested_finalbody), visible_types, visible_mutable)
         handlers = stmt.get("handlers")
         if isinstance(handlers, list):
-            handler_list: list[JsonVal] = cast(list[JsonVal], handlers)
+            handler_list: list[JsonVal] = jv_list(handlers)
             for handler in handler_list:
                 if not isinstance(handler, dict):
                     continue
-                handler_node: Node = cast(dict[str, JsonVal], handler)
+                handler_node: Node = jv_dict(handler)
                 hbody = handler_node.get("body")
                 if isinstance(hbody, list):
-                    hbody_list: list[JsonVal] = cast(list[JsonVal], hbody)
+                    hbody_list: list[JsonVal] = jv_list(hbody)
                     handler_node["body"] = _lower_closure_stmt_list(hbody_list, visible_types, visible_mutable)
         result.append(stmt)
     return result
