@@ -372,6 +372,62 @@ def _resolve_owner_base_type(value: dict[str, JsonVal], receiver_type: str, ctx:
     return ""
 
 
+def _resolve_alias_direct_deps(type_text: str, alias_names: set[str]) -> list[str]:
+    deps: list[str] = []
+    token = ""
+    for ch in type_text:
+        if ch.isalnum() or ch == "_" or ch == ".":
+            token += ch
+            continue
+        if token != "":
+            if token in alias_names and token not in deps:
+                deps.append(token)
+            token = ""
+    if token != "" and token in alias_names and token not in deps:
+        deps.append(token)
+    return deps
+
+
+def _resolve_validate_type_alias_cycles(type_aliases: dict[str, str]) -> None:
+    alias_names: set[str] = set()
+    for alias_name in type_aliases.keys():
+        if isinstance(alias_name, str) and alias_name != "":
+            alias_names.add(alias_name)
+    deps_map: dict[str, list[str]] = {}
+    for alias_name in alias_names:
+        alias_value = type_aliases.get(alias_name, "")
+        deps_map[alias_name] = _resolve_alias_direct_deps(alias_value, alias_names) if isinstance(alias_value, str) else []
+
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def _walk(alias_name: str, stack: list[str]) -> None:
+        if alias_name in visiting:
+            cycle_start = 0
+            while cycle_start < len(stack) and stack[cycle_start] != alias_name:
+                cycle_start += 1
+            cycle = stack[cycle_start:] + [alias_name]
+            uniq: list[str] = []
+            for item in cycle:
+                if item not in uniq:
+                    uniq.append(item)
+            if len(uniq) >= 2:
+                raise ValueError("mutually recursive type aliases are not supported: " + " -> ".join(cycle))
+            return
+        if alias_name in visited:
+            return
+        visiting.add(alias_name)
+        next_stack = list(stack)
+        next_stack.append(alias_name)
+        for dep in deps_map.get(alias_name, []):
+            _walk(dep, next_stack)
+        visiting.remove(alias_name)
+        visited.add(alias_name)
+
+    for alias_name in alias_names:
+        _walk(alias_name, [])
+
+
 def _lookup_method_sig(owner_base: str, attr: str, ctx: ResolveContext) -> tuple[ClassSig | None, FuncSig | None]:
     for cls_sig in _iter_class_hierarchy(owner_base, ctx):
         msig: FuncSig | None = cls_sig.methods.get(attr)
@@ -1022,18 +1078,34 @@ def _resolve_type_matches_guard(type_name: str, guard_type: str) -> bool:
     return norm == guard
 
 
+def _resolve_matching_guard_members(source_type: str, expected_name: str) -> list[str]:
+    src = normalize_type(source_type)
+    expected = normalize_type(expected_name)
+    if src in ("", "unknown") or expected in ("", "unknown"):
+        return []
+    guard_type = _RESOLVE_TYPE_GUARD_DEFAULTS.get(expected, expected)
+    members = _resolve_split_union_members(src)
+    if len(members) == 0:
+        members = [src]
+    matches: list[str] = []
+    for member in members:
+        norm_member = normalize_type(member)
+        if _resolve_type_matches_guard(norm_member, guard_type):
+            matches.append(norm_member)
+    return matches
+
+
 def _resolve_select_guard_target_type(source_type: str, expected_name: str) -> str:
     src = normalize_type(source_type)
     expected = normalize_type(expected_name)
     if expected == "" or expected == "unknown":
         return ""
+    matches = _resolve_matching_guard_members(src, expected)
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        return " | ".join(matches)
     guard_type = _RESOLVE_TYPE_GUARD_DEFAULTS.get(expected, expected)
-    members = _resolve_split_union_members(src) if src not in ("", "unknown") else []
-    if len(members) == 0:
-        members = [src] if src not in ("", "unknown") else []
-    for member in members:
-        if _resolve_type_matches_guard(member, guard_type):
-            return normalize_type(member)
     if src in ("", "unknown") or _is_dynamic_supertype(src):
         return normalize_type(guard_type)
     if _resolve_type_matches_guard(src, guard_type):
@@ -1123,6 +1195,26 @@ def _resolve_invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
         return {}
     nd: dict[str, JsonVal] = expr
     kind = str(nd.get("kind", ""))
+    guarded, expected_name = _resolve_isinstance_guard_info(nd)
+    if isinstance(guarded, dict) and guarded.get("kind") == "Name":
+        name0 = _resolve_safe_str(guarded.get("id"))
+        src_type0 = _resolve_safe_str(guarded.get("resolved_type"))
+        if name0 != "" and src_type0 != "":
+            src_norm = normalize_type(src_type0)
+            members0 = _resolve_split_union_members(src_norm)
+            if len(members0) == 0:
+                members0 = [src_norm]
+            matches0 = _resolve_matching_guard_members(src_norm, expected_name)
+            remaining0: list[str] = []
+            for member0 in members0:
+                norm_member0 = normalize_type(member0)
+                if norm_member0 not in matches0:
+                    remaining0.append(norm_member0)
+            if len(remaining0) == 1:
+                return {name0: remaining0[0]}
+            if len(remaining0) > 1:
+                return {name0: " | ".join(remaining0)}
+            return {}
     if kind == "UnaryOp" and _resolve_safe_str(nd.get("op")) == "Not":
         return _resolve_guard_narrowing_from_expr(nd.get("operand"))
     if kind == "Compare":
@@ -4787,6 +4879,7 @@ def _prescan_module(doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
                 alias_value = item.get("type_expr")
             if isinstance(alias_name, str) and alias_name != "" and isinstance(alias_value, str) and alias_value != "":
                 ctx.type_aliases[alias_name] = alias_value
+        _resolve_validate_type_alias_cycles(ctx.type_aliases)
         alias_names: list[str] = []
         for alias_name in ctx.type_aliases.keys():
             if isinstance(alias_name, str):

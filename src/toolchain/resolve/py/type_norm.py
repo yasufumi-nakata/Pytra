@@ -127,6 +127,18 @@ def _split_generic_type_args(text: str) -> list[str]:
     return out
 
 
+def _type_text_mentions_name(type_text: str, name: str) -> bool:
+    token = ""
+    for ch in type_text:
+        if ch.isalnum() or ch == "_" or ch == ".":
+            token += ch
+            continue
+        if token == name:
+            return True
+        token = ""
+    return token == name
+
+
 def normalize_type(raw: str, aliases: dict[str, str] | None = None, _seen: set[str] | None = None) -> str:
     """Normalize a Python type annotation to EAST2 canonical form."""
     t: str = _strip_outer_quotes(raw.strip())
@@ -142,8 +154,10 @@ def normalize_type(raw: str, aliases: dict[str, str] | None = None, _seen: set[s
 
     alias_target: str = alias_map.get(t, "")
     if alias_target != "":
+        if _type_text_mentions_name(alias_target, t):
+            return t
         if t in seen:
-            return "Any"
+            return t
         next_seen: set[str] = set(seen)
         next_seen.add(t)
         return normalize_type(alias_target, alias_map, next_seen)

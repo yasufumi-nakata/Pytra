@@ -36,6 +36,7 @@ from toolchain.parse.py.parser import parse_python_source
 from toolchain.parse.py.parse_python import parse_python_file
 from toolchain.resolve.py.builtin_registry import BuiltinRegistry, load_builtin_registry
 from toolchain.resolve.py.resolver import resolve_east1_to_east2
+from toolchain.resolve.py.type_norm import normalize_type
 from toolchain.resolve.py.validate_east2 import validate_east2
 
 
@@ -60,6 +61,53 @@ def _load_registry() -> BuiltinRegistry:
 
 
 class Toolchain2SpecConformTests(unittest.TestCase):
+    def test_normalize_type_keeps_self_recursive_alias_name(self) -> None:
+        aliases = {
+            "JsonVal": "None | bool | int64 | str | list[JsonVal] | dict[str, JsonVal]",
+            "Node": "dict[str, JsonVal]",
+        }
+
+        self.assertEqual(normalize_type("JsonVal", aliases), "JsonVal")
+        self.assertEqual(normalize_type("Node", aliases), "dict[str,JsonVal]")
+
+    def test_resolve_rejects_mutually_recursive_type_aliases(self) -> None:
+        east1 = parse_python_source(
+            """
+type A = list[B]
+type B = dict[str, A]
+""",
+            "<mem>",
+        ).to_jv()
+
+        with self.assertRaisesRegex(ValueError, "mutually recursive type aliases"):
+            resolve_east1_to_east2(east1, registry=_load_registry())
+
+    def test_resolve_isinstance_union_narrowing_keeps_parameterized_member(self) -> None:
+        east1 = parse_python_source(
+            """
+from pytra.std.json import JsonVal
+
+Node = dict[str, JsonVal]
+
+def f(value: JsonVal) -> None:
+    if isinstance(value, dict):
+        items: list[Node] = []
+        items.append(value)
+""",
+            "<mem>",
+        ).to_jv()
+
+        resolve_east1_to_east2(east1, registry=_load_registry())
+
+        calls = [
+            node for node in _walk(east1)
+            if node.get("kind") == "Call" and node.get("runtime_call") == "list.append"
+        ]
+        self.assertEqual(len(calls), 1)
+        append_arg = calls[0].get("args", [None])[0]
+        self.assertIsInstance(append_arg, dict)
+        self.assertEqual(append_arg.get("resolved_type"), "dict[str,JsonVal]")
+
     def test_builtin_registry_overlays_container_self_mutability_from_source(self) -> None:
         registry = _load_registry()
         self.assertTrue(registry.classes["list"].methods["append"].self_is_mutable)

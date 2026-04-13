@@ -61,4 +61,25 @@ static inline void py_set_clear_mut(Object<set<T>>& values) {
     py_set_clear_mut(*values);
 }
 
+template <class T, class U>
+static inline void py_set_update_mut(set<T>& values, const U& items) {
+    for (const auto& item : items) {
+        using Item = ::std::decay_t<decltype(item)>;
+        if constexpr (::std::is_same_v<T, Item>) {
+            values.add(item);
+        } else if constexpr (::std::is_convertible_v<Item, T>) {
+            values.add(static_cast<T>(item));
+        } else if constexpr (::std::is_constructible_v<T, Item>) {
+            values.add(T(item));
+        } else {
+            // Unsupported lane: keep compilation valid. An empty iterable of object does no work here.
+        }
+    }
+}
+
+template <class T, class U>
+static inline void py_set_update_mut(Object<set<T>>& values, const U& items) {
+    py_set_update_mut(*values, items);
+}
+
 #endif  // PYTRA_NATIVE_BUILT_IN_SET_OPS_H

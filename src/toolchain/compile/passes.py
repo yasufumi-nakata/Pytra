@@ -3937,6 +3937,65 @@ def _tp_numeric_casts(node: JsonVal) -> None:
             _tp_numeric_casts(v_list2)
 
 
+def _tp_is_unknown_container_literal(node: Node) -> bool:
+    kind = _tp_safe(node.get("kind"))
+    resolved_type = _tp_safe(node.get("resolved_type"))
+    if kind == LIST:
+        elements = node.get("elements")
+        return isinstance(elements, list) and len(cast(list[JsonVal], elements)) == 0 and resolved_type in ("", "unknown", "list[unknown]")
+    if kind == DICT:
+        entries = node.get("entries")
+        return isinstance(entries, list) and len(cast(list[JsonVal], entries)) == 0 and resolved_type in ("", "unknown", "dict[unknown,unknown]")
+    if kind == SET:
+        elements2 = node.get("elements")
+        return isinstance(elements2, list) and len(cast(list[JsonVal], elements2)) == 0 and resolved_type in ("", "unknown", "set[unknown]")
+    return False
+
+
+def _tp_adopt_peer_container_type(candidate: JsonVal, peer: JsonVal) -> None:
+    if not isinstance(candidate, dict) or not isinstance(peer, dict):
+        return
+    candidate_node: Node = cast(dict[str, JsonVal], candidate)
+    if not _tp_is_unknown_container_literal(candidate_node):
+        return
+    peer_node: Node = cast(dict[str, JsonVal], peer)
+    peer_type = normalize_type_name(peer_node.get("resolved_type"))
+    kind = _tp_safe(candidate_node.get("kind"))
+    if kind == LIST and peer_type.startswith("list[") and peer_type.endswith("]"):
+        candidate_node["resolved_type"] = peer_type
+    elif kind == DICT and peer_type.startswith("dict[") and peer_type.endswith("]"):
+        candidate_node["resolved_type"] = peer_type
+    elif kind == SET and peer_type.startswith("set[") and peer_type.endswith("]"):
+        candidate_node["resolved_type"] = peer_type
+
+
+def _tp_assert_eq_peer_literals(node: JsonVal) -> None:
+    if isinstance(node, list):
+        node_list: list[JsonVal] = cast(list[JsonVal], node)
+        for item in node_list:
+            _tp_assert_eq_peer_literals(item)
+        return
+    if not isinstance(node, dict):
+        return
+    nd: Node = node
+    if nd.get("kind") == CALL:
+        func = nd.get("func")
+        if isinstance(func, dict):
+            func_node: Node = cast(dict[str, JsonVal], func)
+            if func_node.get("kind") == NAME and _tp_safe(func_node.get("id")) == "py_assert_eq":
+                args = nd.get("args")
+                if isinstance(args, list):
+                    arg_list: list[JsonVal] = cast(list[JsonVal], args)
+                    if len(arg_list) >= 2:
+                        _tp_adopt_peer_container_type(arg_list[0], arg_list[1])
+                        _tp_adopt_peer_container_type(arg_list[1], arg_list[0])
+    for v in nd.values():
+        if isinstance(v, dict):
+            _tp_assert_eq_peer_literals(v)
+        elif isinstance(v, list):
+            _tp_assert_eq_peer_literals(v)
+
+
 def apply_type_propagation(module: Node, ctx: CompileContext) -> Node:
     _tp_binop(module)
     _tp_truediv(module)
@@ -3945,6 +4004,7 @@ def apply_type_propagation(module: Node, ctx: CompileContext) -> Node:
     if ft:
         _tp_fn_refs(module, ft)
     _tp_numeric_casts(module)
+    _tp_assert_eq_peer_literals(module)
     return module
 
 

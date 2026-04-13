@@ -39,6 +39,7 @@
     "set.clear": "py_set_clear_mut",
     "set.discard": "py_set_discard_mut",
     "set.remove": "py_set_remove_mut",
+    "set.update": "py_set_update_mut",
     "str.strip": "py_strip",
     "str.lstrip": "py_lstrip",
     "str.rstrip": "py_rstrip",

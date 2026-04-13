@@ -302,6 +302,18 @@ static inline list<T> py_sorted(const Object<list<T>>& values) {
     return py_sorted(*values);
 }
 
+template <class T>
+static inline list<T> py_sorted(const set<T>& values) {
+    list<T> out(values.begin(), values.end());
+    out.sort();
+    return out;
+}
+
+template <class T>
+static inline list<T> py_sorted(const Object<set<T>>& values) {
+    return py_sorted(*values);
+}
+
 // py_list_at_ref for object (= Object<void>): downcast to list<object> and index.
 static inline object py_list_at_ref(const object& values, int64 idx) {
     auto typed = values.as<list<object>>();

@@ -1792,11 +1792,11 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return _emit_builtin_call(ctx, node)
     func = node.get("func")
     args = _list(node, "args")
+    func_name = _str(func, "id") if isinstance(func, dict) and _str(func, "kind") == "Name" else ""
     expected_arg_types: list[str] = []
-    if isinstance(func, dict) and _str(func, "kind") == "Name":
-        fn_name = _str(func, "id")
-        if fn_name in ctx.function_defs:
-            expected_arg_types = [arg_type for _, arg_type, _ in _function_param_meta(ctx.function_defs[fn_name], ctx)]
+    if func_name != "":
+        if func_name in ctx.function_defs:
+            expected_arg_types = [arg_type for _, arg_type, _ in _function_param_meta(ctx.function_defs[func_name], ctx)]
     method_sig = _dict(node, "method_signature_v1")
     if len(expected_arg_types) == 0 and len(method_sig) > 0:
         expected_arg_types = [arg_type for _, arg_type, _ in _function_param_meta(method_sig, ctx)]
@@ -2258,6 +2258,8 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     # Container constructor builtins: list(), dict(), set()
     if rc == "list_ctor":
         rt = _str(node, "resolved_type")
+        if len(args) >= 1 and rt.startswith("list[") and rt.endswith("]"):
+            return "rc_from_value(" + _emit_expr_as_type(ctx, args[0], rt) + ")"
         if rt.startswith("list[") and rt.endswith("]"):
             inner = cpp_signature_type(rt[5:-1])
             return "rc_list_new<" + inner + ">()"
