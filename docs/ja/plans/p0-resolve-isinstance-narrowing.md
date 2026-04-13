@@ -51,3 +51,12 @@ z: JsonVal = ...
 if isinstance(z, dict):
     # z → dict[str, JsonVal]（JsonVal の union 内で dict は dict[str, JsonVal] のみ）
 ```
+
+## fixture
+
+`test/fixture/source/py/typing/isinstance_union_narrowing.py` を追加する。
+
+テスト内容:
+- `x: int | dict[str, int]` に対して `isinstance(x, dict)` → `dict[str, int]` として扱える（キーアクセス等が型安全に通る）
+- `y: str | list[int] | None` に対して `isinstance(y, list)` → `list[int]` として扱える
+- narrowing 後の値を正しい型のリスト/dict に append できる（covariant copy が発生しないことの間接検証）
