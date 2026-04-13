@@ -1234,6 +1234,16 @@ final class PyRuntime {
         return out;
     }
 
+    static <T> ArrayList<T> __pytra_py_sorted(java.util.Set<T> data) {
+        return __pytra_py_sorted(new ArrayList<T>(data));
+    }
+
+    static <T> void __pytra_set_update(java.util.Set<T> target, Iterable<? extends T> values) {
+        for (T value : values) {
+            target.add(value);
+        }
+    }
+
     static ArrayList<Long> __pytra_grayscale_palette() {
         ArrayList<Long> out = new ArrayList<>();
         long i = 0L;

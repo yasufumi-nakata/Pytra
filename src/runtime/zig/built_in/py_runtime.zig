@@ -932,6 +932,24 @@ pub fn as_dict_any(value: anytype) UnionDict {
     unreachable;
 }
 
+pub fn as_dict_typed(comptime V: type, value: anytype) std.StringHashMap(V) {
+    var out = std.StringHashMap(V).init(std.heap.page_allocator);
+    const raw = as_dict_any(value);
+    var it = raw.iterator();
+    while (it.next()) |entry| {
+        if (V == i64) {
+            out.put(entry.key_ptr.*, union_to_int(entry.value_ptr.*)) catch {};
+        } else if (V == f64) {
+            out.put(entry.key_ptr.*, union_to_float(entry.value_ptr.*)) catch {};
+        } else if (V == bool) {
+            out.put(entry.key_ptr.*, union_to_bool(entry.value_ptr.*)) catch {};
+        } else if (V == []const u8) {
+            out.put(entry.key_ptr.*, union_as_str(entry.value_ptr.*)) catch {};
+        }
+    }
+    return out;
+}
+
 pub fn _jv_as_str_any(value: anytype) ?[]const u8 {
     const T = @TypeOf(value);
     if (T == []const u8) return value;
@@ -1342,6 +1360,13 @@ pub fn set_discard(obj: Obj, comptime T: type, value: T) void {
 
 pub fn set_remove(obj: Obj, comptime T: type, value: T) void {
     set_discard(obj, T, value);
+}
+
+pub fn set_update(obj: Obj, comptime T: type, values: Obj) void {
+    const items = list_items(values, T);
+    for (items) |value| {
+        set_add(obj, T, value);
+    }
 }
 
 /// Empty vtable placeholder for containers.

@@ -65,6 +65,7 @@
     "dict.values": "__DICT_VALUES__",
     "dict.update": "__DICT_UPDATE__",
     "set.add": "__SET_ADD__",
+    "set.update": "py_set_update",
     "str.strip": "py_str_strip",
     "str.lstrip": "py_str_lstrip",
     "str.rstrip": "py_str_rstrip",

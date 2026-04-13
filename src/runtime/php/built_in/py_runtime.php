@@ -875,16 +875,55 @@ function __pytra_enumerate($items, int $start = 0): array {
 }
 
 function __pytra_sorted($items) {
+    if ($items instanceof __PytraSet) {
+        $out = iterator_to_array($items->getIterator(), false);
+        sort($out);
+        return $out;
+    }
     if (!is_array($items)) {
+        if (is_iterable($items)) {
+            $out = iterator_to_array($items, false);
+            sort($out);
+            return $out;
+        }
         return [];
     }
-    $out = array_values($items);
+    $is_set = true;
+    foreach ($items as $value) {
+        if ($value !== true) {
+            $is_set = false;
+            break;
+        }
+    }
+    $out = $is_set ? array_keys($items) : array_values($items);
     sort($out);
     return $out;
 }
 
 function __pytra_py_sorted($items) {
     return __pytra_sorted($items);
+}
+
+function __pytra_set_update(&$target, $values) {
+    if ($target instanceof __PytraSet) {
+        if (!is_iterable($values)) {
+            return;
+        }
+        foreach ($values as $value) {
+            $target->add($value);
+        }
+        return;
+    }
+    if (!is_array($target) || !is_array($values)) {
+        return;
+    }
+    foreach ($values as $key => $value) {
+        if ($value === true) {
+            $target[$key] = true;
+        } else {
+            $target[$value] = true;
+        }
+    }
 }
 
 function __pytra_zip(...$iterables): array {

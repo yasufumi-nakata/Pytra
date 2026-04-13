@@ -2082,6 +2082,8 @@ def _render_call_via_runtime_call(
                     return owner_expr + ".append(" + _render_expr(args[0]) + ")"
                 if _matches_runtime_method(expr, "set.add") and len(args) == 1:
                     return "__pytra_set_add(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
+                if _matches_runtime_method(expr, "set.update") and len(args) == 1:
+                    return "__pytra_update(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
                 if _matches_runtime_method(expr, "set.discard") and len(args) == 1:
                     return "__pytra_discard(&" + owner_expr + ", " + _render_expr(args[0]) + ")"
                 if _matches_runtime_method(expr, "set.remove") and len(args) == 1:

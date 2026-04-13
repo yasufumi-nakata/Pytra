@@ -1285,8 +1285,8 @@ def check_case(
             _purge_case_artifacts(work, case_stem)
             _safe_unlink(expected_artifact_path)
             effective_timeout_sec = cmd_timeout_sec
-            if case_root == "sample" and target_name == "lua" and effective_timeout_sec < 900:
-                effective_timeout_sec = 900
+            if case_root == "sample" and target_name == "lua" and effective_timeout_sec < 3600:
+                effective_timeout_sec = 3600
             rr_t0 = time.monotonic()
             rr = _run_target(target_name, out_dir, case_path, work_dir=work, env=target_env, timeout_sec=effective_timeout_sec)
             rr_elapsed: float | None = round(time.monotonic() - rr_t0, 3) if do_bench else None

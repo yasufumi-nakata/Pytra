@@ -45,6 +45,7 @@
     "set.clear": "pytra.clear",
     "set.discard": "pytra.discard",
     "set.remove": "pytra.remove",
+    "set.update": "pytra.set_update",
     "set_ctor": "pytra.set",
     "str.endswith": "pytra.endswith",
     "str.find": "pytra.find",

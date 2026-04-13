@@ -29,6 +29,7 @@
     "set.add": "__SET_ADD__",
     "set.discard": "__SET_DISCARD__",
     "set.remove": "__SET_REMOVE__",
+    "set.update": "__SET_UPDATE__",
     "str.strip": "__STR_STRIP__",
     "str.lstrip": "__STR_LSTRIP__",
     "str.rstrip": "__STR_RSTRIP__",

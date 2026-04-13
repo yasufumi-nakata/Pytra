@@ -71,7 +71,8 @@
     "py_range": "py_range",
     "set.clear": "py_clear",
     "set.discard": "py_discard",
-    "set.remove": "py_remove"
+    "set.remove": "py_remove",
+    "set.update": "py_set_update"
   },
   "types": {
     "IOBase": "*PyFile",

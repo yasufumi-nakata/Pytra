@@ -663,10 +663,22 @@ pub fn py_sorted<T: Ord + Clone>(items: &PyList<T>) -> PyList<T> {
     PyList::<T>::from_vec(v)
 }
 
+pub fn py_sorted_set<T: Ord + Clone + Eq + Hash>(items: &HashSet<T>) -> PyList<T> {
+    let mut v: Vec<T> = items.iter().cloned().collect();
+    v.sort();
+    PyList::<T>::from_vec(v)
+}
+
 pub fn py_sorted_by_stringify<T: Clone + PyStringify>(items: &PyList<T>) -> PyList<T> {
     let mut v = items.py_borrow().clone();
     v.sort_by_key(|item| item.py_stringify());
     PyList::<T>::from_vec(v)
+}
+
+pub fn py_set_update<T: Eq + Hash + Clone>(dst: &mut HashSet<T>, values: PyList<T>) {
+    for value in values.iter_snapshot() {
+        dst.insert(value);
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -1043,6 +1055,44 @@ pub fn py_any_as_hashmap(v: PyAny) -> HashMap<String, PyAny> {
 pub fn py_any_as_list(v: PyAny) -> PyList<PyAny> {
     match v {
         PyAny::List(items) => PyList::from_vec(items),
+        _ => PyList::new(),
+    }
+}
+
+pub trait PyAnyCast: Sized {
+    fn py_any_cast(v: PyAny) -> Self;
+}
+
+impl PyAnyCast for PyAny {
+    fn py_any_cast(v: PyAny) -> Self { v }
+}
+
+impl PyAnyCast for i64 {
+    fn py_any_cast(v: PyAny) -> Self { py_int(&v) }
+}
+
+impl PyAnyCast for bool {
+    fn py_any_cast(v: PyAny) -> Self { py_bool(&v) }
+}
+
+impl PyAnyCast for String {
+    fn py_any_cast(v: PyAny) -> Self { py_str(&v) }
+}
+
+impl PyAnyCast for f64 {
+    fn py_any_cast(v: PyAny) -> Self { py_float(&v) }
+}
+
+pub fn py_any_as_hashmap_typed<V: PyAnyCast>(v: PyAny) -> HashMap<String, V> {
+    match v {
+        PyAny::Dict(d) => d.into_iter().map(|(k, v)| (k, V::py_any_cast(v))).collect(),
+        _ => HashMap::new(),
+    }
+}
+
+pub fn py_any_as_list_typed<T: PyAnyCast>(v: PyAny) -> PyList<T> {
+    match v {
+        PyAny::List(items) => PyList::from_vec(items.into_iter().map(T::py_any_cast).collect()),
         _ => PyList::new(),
     }
 }

@@ -26,6 +26,7 @@
     "set.add": "__SET_ADD__",
     "set.discard": "__SET_DISCARD__",
     "set.remove": "__SET_REMOVE__",
+    "set.update": "__SET_UPDATE__",
     "deque.append": "__LIST_APPEND__",
     "deque.appendleft": "__DEQUE_APPENDLEFT__",
     "deque.popleft": "__DEQUE_POPLEFT__",

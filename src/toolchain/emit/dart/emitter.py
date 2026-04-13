@@ -766,6 +766,8 @@ class DartNativeEmitter:
             return owner + ".remove(" + rendered_args[0] + ")"
         if mapped == "__SET_CLEAR__" and len(rendered_args) == 0:
             return owner + ".clear()"
+        if mapped == "pyUpdate" and len(rendered_args) == 1:
+            return "pyUpdate(" + owner + ", " + rendered_args[0] + ")"
         if mapped == "__DICT_GET__":
             key = rendered_args[0] if len(rendered_args) >= 1 else "null"
             default = rendered_args[1] if len(rendered_args) >= 2 else "null"

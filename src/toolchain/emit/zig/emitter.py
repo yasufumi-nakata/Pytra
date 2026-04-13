@@ -695,6 +695,7 @@ class ZigNativeEmitter:
         self._module_function_types: dict[str, str] = {}
         self._module_function_param_zig_types: dict[str, list[str]] = {}
         self._local_type_stack: list[dict[str, str]] = []
+        self._storage_type_stack: list[dict[str, str]] = []
         self._ref_var_stack: list[set[str]] = []
         self._local_var_stack: list[set[str]] = []
         self._decl_line_stack: list[dict[str, int]] = []
@@ -841,6 +842,11 @@ class ZigNativeEmitter:
         if len(self._local_type_stack) == 0:
             return {}
         return self._local_type_stack[-1]
+
+    def _current_storage_type_map(self) -> dict[str, str]:
+        if len(self._storage_type_stack) == 0:
+            return {}
+        return self._storage_type_stack[-1]
 
     def _current_ref_vars(self) -> set[str]:
         if len(self._ref_var_stack) == 0:
@@ -1181,6 +1187,7 @@ class ZigNativeEmitter:
     def _push_function_context(self, stmt: dict[str, Any], arg_names: list[str], arg_order: list[Any]) -> None:
         self._hoisted_var_names = set()
         type_map: dict[str, str] = {}
+        storage_type_map: dict[str, str] = {}
         ref_vars: set[str] = set()
         local_vars: set[str] = set(arg_names)
         arg_types_any = stmt.get("arg_types")
@@ -1195,8 +1202,10 @@ class ZigNativeEmitter:
             arg_type = arg_type_any.strip() if isinstance(arg_type_any, str) else ""
             if arg_type != "":
                 type_map[safe_name] = arg_type
+                storage_type_map[safe_name] = arg_type
             i += 1
         self._local_type_stack.append(type_map)
+        self._storage_type_stack.append(storage_type_map)
         self._ref_var_stack.append(ref_vars)
         self._local_var_stack.append(local_vars)
         self._decl_line_stack.append({})
@@ -1305,6 +1314,8 @@ class ZigNativeEmitter:
     def _pop_function_context(self) -> None:
         if len(self._local_type_stack) > 0:
             self._local_type_stack.pop()
+        if len(self._storage_type_stack) > 0:
+            self._storage_type_stack.pop()
         if len(self._ref_var_stack) > 0:
             self._ref_var_stack.pop()
         if len(self._local_var_stack) > 0:
@@ -3924,6 +3935,10 @@ class ZigNativeEmitter:
                 return value_expr + ".?"
             if self._is_union_storage_zig(self._zig_type(source_type)):
                 if target_type == "dict" or target_type.startswith("dict["):
+                    if target_type.startswith("dict["):
+                        parts = self._split_generic(target_type[5:-1])
+                        if len(parts) == 2:
+                            return "pytra.as_dict_typed(" + self._zig_type(parts[1].strip()) + ", " + value_expr + ")"
                     return "pytra.as_dict_any(" + value_expr + ")"
                 if target_type == "list" or target_type.startswith("list["):
                     return "pytra.as_list_any(" + value_expr + ")"
@@ -4404,11 +4419,30 @@ class ZigNativeEmitter:
                 parts.append("!pytra.contains(" + right + ", " + needle_expr + ")")
             else:
                 # 文字列比較は std.mem.eql を使う
-                left_type = self._lookup_expr_type(prev_node) if isinstance(prev_node, dict) else ""
-                right_type = self._lookup_expr_type(comparators[i]) if isinstance(comparators[i], dict) else ""
+                effective_prev_node = prev_node
+                if isinstance(effective_prev_node, dict) and effective_prev_node.get("kind") == "Unbox" and isinstance(effective_prev_node.get("value"), dict):
+                    effective_prev_node = effective_prev_node.get("value")
+                effective_cmp_node = comparators[i]
+                if isinstance(effective_cmp_node, dict) and effective_cmp_node.get("kind") == "Unbox" and isinstance(effective_cmp_node.get("value"), dict):
+                    effective_cmp_node = effective_cmp_node.get("value")
+                left_type = self._lookup_expr_type(effective_prev_node) if isinstance(effective_prev_node, dict) else ""
+                right_type = self._lookup_expr_type(effective_cmp_node) if isinstance(effective_cmp_node, dict) else ""
                 if (right == "null" or prev == "null") and op_str in ("Is", "IsNot", "Eq", "NotEq"):
                     obj_type = left_type if right == "null" else right_type
                     obj_expr = prev if right == "null" else right
+                    if isinstance(effective_prev_node, dict) and effective_prev_node.get("kind") == "Name":
+                        safe_prev_name = _safe_ident(effective_prev_node.get("id"), "")
+                        storage_prev_type = self._current_storage_type_map().get(safe_prev_name, "")
+                        if isinstance(storage_prev_type, str) and storage_prev_type != "":
+                            obj_type = storage_prev_type
+                        else:
+                            raw_prev_type = self._get_expr_type(effective_prev_node)
+                            if isinstance(raw_prev_type, str) and raw_prev_type != "":
+                                obj_type = raw_prev_type
+                            else:
+                                actual_prev_type = self._current_type_map().get(safe_prev_name, "")
+                                if isinstance(actual_prev_type, str) and actual_prev_type != "":
+                                    obj_type = actual_prev_type
                     if self._is_union_storage_zig(self._zig_type(obj_type)) or self._normalize_type(obj_type) in {"Any", "object", "unknown"}:
                         is_none_call = "pytra.is_none_any(" + obj_expr + ")"
                         parts.append(is_none_call if op_str in {"Is", "Eq"} else "!" + is_none_call)
@@ -5202,6 +5236,11 @@ class ZigNativeEmitter:
                         if elem_type in {"u8", "i8", "i16", "u16", "i32", "u32", "i64", "u64"}:
                             return "pytra.set_add(" + obj + ", " + elem_type + ", @intCast(" + arg_strs[0] + "))"
                         return "pytra.set_add(" + obj + ", " + elem_type + ", " + arg_strs[0] + ")"
+                if attr == "update":
+                    obj_type = self._lookup_expr_type(obj_node_for_attr)
+                    if obj_type.startswith("set[") and len(arg_strs) > 0:
+                        elem_type = self._zig_type(obj_type[4:-1].strip()) if obj_type.endswith("]") else "i64"
+                        return "pytra.set_update(" + obj + ", " + elem_type + ", " + arg_strs[0] + ")"
                 if attr == 'discard':
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     if obj_type.startswith("set[") and len(arg_strs) > 0:

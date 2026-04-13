@@ -26,6 +26,7 @@
     "set.add": "__SET_ADD__",
     "set.discard": "__SET_DISCARD__",
     "set.remove": "__SET_REMOVE__",
+    "set.update": "py_update",
     "str.strip": "py_str_strip",
     "str.lstrip": "py_str_lstrip",
     "str.rstrip": "py_str_rstrip",

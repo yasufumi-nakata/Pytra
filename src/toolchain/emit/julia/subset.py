@@ -830,6 +830,8 @@ class JuliaSubsetRenderer:
             return "get!(" + args[0] + ", " + args[1] + ", " + args[2] + ")"
         if mapped == "__SET_ADD__" and len(args) == 2:
             return "push!(" + args[0] + ", " + args[1] + ")"
+        if mapped == "__SET_UPDATE__" and len(args) == 2:
+            return "union!(" + args[0] + ", " + args[1] + ")"
         if mapped == "__SET_DISCARD__" and len(args) == 2:
             return "delete!(" + args[0] + ", " + args[1] + ")"
         if mapped == "__SET_REMOVE__" and len(args) == 2:

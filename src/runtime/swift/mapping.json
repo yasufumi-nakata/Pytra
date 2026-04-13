@@ -48,6 +48,7 @@
     "set.clear": "pytraclear",
     "set.discard": "pytradiscard",
     "set.remove": "pytraremove",
+    "set.update": "pytraupdate",
     "set_ctor": "__pytra_set_ctor",
     "str.endswith": "__pytra_endswith",
     "str.find": "__pytra_find",

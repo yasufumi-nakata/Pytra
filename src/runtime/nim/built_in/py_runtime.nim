@@ -354,6 +354,15 @@ proc py_index*[T](s: openArray[T], idx: int): T =
   if realIdx < 0 or realIdx >= s.len:
     raise newException(IndexError, "index out of range")
   return s[realIdx]
+
+proc py_index*[T](s: T, idx: int): auto =
+  var realIdx = idx
+  when compiles(s.len):
+    if realIdx < 0:
+      realIdx = s.len + realIdx
+    if realIdx < 0 or realIdx >= s.len:
+      raise newException(IndexError, "index out of range")
+  return s[realIdx]
 proc py_str_isdigit*(s: string): bool = s.len > 0 and s.allCharsInSet(Digits)
 proc py_str_isalpha*(s: string): bool = s.len > 0 and s.allCharsInSet(Letters)
 proc py_str_isalnum*(s: string): bool = s.len > 0 and s.allCharsInSet(Letters + Digits)
@@ -410,6 +419,24 @@ proc py_sorted*[T](items: seq[T]): seq[T] =
   var copy = items
   copy.sort()
   return copy
+
+proc py_sorted*[T](items: HashSet[T]): seq[T] =
+  var copy: seq[T] = @[]
+  for item in items:
+    copy.add(item)
+  copy.sort()
+  return copy
+
+proc py_update*[T](dst: var HashSet[T], items: seq[T]) =
+  for item in items:
+    dst.incl(item)
+
+proc py_update*[T](dst: var HashSet[T], items: HashSet[T]) =
+  for item in items:
+    dst.incl(item)
+
+proc py_update*[T](dst: var HashSet[T], items: seq[PyObj]) =
+  discard
 
 proc py_reversed*[T](items: seq[T]): seq[T] =
   var copy = items

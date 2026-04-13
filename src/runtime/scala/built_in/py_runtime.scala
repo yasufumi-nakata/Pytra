@@ -221,6 +221,14 @@ def __pytra_sorted[T](values: mutable.ArrayBuffer[T]): mutable.ArrayBuffer[T] = 
     out
 }
 
+def __pytra_sorted[T](values: mutable.Set[T]): mutable.ArrayBuffer[T] = {
+    __pytra_sorted(mutable.ArrayBuffer.from(values))
+}
+
+def __pytra_set_update[T](target: mutable.Set[T], values: Iterable[T]): Unit = {
+    target ++= values
+}
+
 def __pytra_cast(target: Any, value: Any): Any = value
 
 class Namespace(var values: mutable.LinkedHashMap[String, Any] = mutable.LinkedHashMap[String, Any]())

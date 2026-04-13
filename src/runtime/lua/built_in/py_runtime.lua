@@ -1598,10 +1598,64 @@ function __pytra_reversed(seq)
 end
 
 function __pytra_sorted(seq)
+    if seq ~= nil and seq.__set_values ~= nil then
+        local out = {}
+        for _, value in ipairs(seq.__set_values) do
+            out[#out + 1] = value
+        end
+        table.sort(out)
+        return out
+    end
+    if type(seq) == "table" then
+        local is_set = true
+        for key, value in pairs(seq) do
+            if value ~= true then
+                is_set = false
+                break
+            end
+        end
+        if is_set then
+            local out = {}
+            for key, _ in pairs(seq) do
+                out[#out + 1] = key
+            end
+            table.sort(out)
+            return out
+        end
+    end
     local out = {}
     for i = 1, #seq do out[i] = seq[i] end
     table.sort(out)
     return out
+end
+
+function __pytra_set_update(dst, values)
+    if dst == nil or values == nil then return nil end
+    if values.__set_values ~= nil then
+        for _, value in ipairs(values.__set_values) do
+            __pytra_set_add(dst, value)
+        end
+        return nil
+    end
+    if type(values) == "table" then
+        local is_set = true
+        for key, value in pairs(values) do
+            if value ~= true then
+                is_set = false
+                break
+            end
+        end
+        if is_set then
+            for key, _ in pairs(values) do
+                __pytra_set_add(dst, key)
+            end
+            return nil
+        end
+    end
+    for _, value in ipairs(values) do
+        __pytra_set_add(dst, value)
+    end
+    return nil
 end
 
 function __pytra_ord(ch)

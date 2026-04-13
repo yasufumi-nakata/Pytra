@@ -33,6 +33,10 @@ type pyDictAccessor interface {
 	pyDictItemsAny() any
 }
 
+type pySetAccessor interface {
+	pySetItemsAny() any
+}
+
 func NewPyList[T any]() *PyList[T] {
 	return &PyList[T]{items: []T{}}
 }
@@ -64,6 +68,56 @@ func py_list_any(items any) *PyList[any] {
 		out.items[i] = rv.Index(i).Interface()
 	}
 	return out
+}
+
+func py_to_list_typed[T any](items any) *PyList[T] {
+	if items == nil {
+		return nil
+	}
+	if direct, ok := items.(*PyList[T]); ok {
+		return direct
+	}
+	rv := goreflect.ValueOf(items)
+	for rv.IsValid() && rv.Kind() == goreflect.Interface {
+		rv = rv.Elem()
+	}
+	if !rv.IsValid() {
+		return nil
+	}
+	if rv.Kind() == goreflect.Pointer && !rv.IsNil() {
+		elem := rv.Elem()
+		if elem.IsValid() && elem.Kind() == goreflect.Struct {
+			itemsField := elem.FieldByName("items")
+			if itemsField.IsValid() && (itemsField.Kind() == goreflect.Slice || itemsField.Kind() == goreflect.Array) {
+				rv = itemsField
+			}
+		}
+	}
+	if rv.Kind() != goreflect.Slice && rv.Kind() != goreflect.Array {
+		return NewPyList[T]()
+	}
+	out := make([]T, rv.Len())
+	var zero T
+	targetType := goreflect.TypeOf(zero)
+	if targetType == nil {
+		for i := 0; i < rv.Len(); i++ {
+			out[i] = rv.Index(i).Interface().(T)
+		}
+		return &PyList[T]{items: out}
+	}
+	for i := 0; i < rv.Len(); i++ {
+		item := rv.Index(i)
+		if item.IsValid() && item.Type().AssignableTo(targetType) {
+			out[i] = item.Interface().(T)
+			continue
+		}
+		if item.IsValid() && item.Type().ConvertibleTo(targetType) {
+			out[i] = item.Convert(targetType).Interface().(T)
+			continue
+		}
+		out[i] = item.Interface().(T)
+	}
+	return &PyList[T]{items: out}
 }
 
 func py_dict_string_any(items any) *PyDict[string, any] {
@@ -184,6 +238,12 @@ type PySet[T comparable] struct {
 }
 
 func (*PySet[T]) __pytra_is_set() {}
+func (s *PySet[T]) pySetItemsAny() any {
+	if s == nil {
+		return map[T]struct{}{}
+	}
+	return s.items
+}
 func (s *PySet[T]) __str__() string {
 	if s == nil {
 		return "set()"
@@ -1617,6 +1677,76 @@ func py_set_update_str(dst map[string]struct{}, values any) map[string]struct{} 
 			}
 		}
 	}
+	return dst
+}
+
+func py_set_update(dst any, values any) any {
+	if accessor, ok := dst.(pySetAccessor); ok {
+		dst = accessor.pySetItemsAny()
+	}
+	target := goreflect.ValueOf(dst)
+	if !target.IsValid() {
+		return dst
+	}
+	if target.Kind() == goreflect.Ptr && !target.IsNil() {
+		elem := target.Elem()
+		if elem.Kind() == goreflect.Struct {
+			items := elem.FieldByName("items")
+			if items.IsValid() {
+				target = items
+			}
+		}
+	}
+	if target.Kind() != goreflect.Map {
+		return dst
+	}
+	if target.IsNil() {
+		target.Set(goreflect.MakeMap(target.Type()))
+	}
+	keyType := target.Type().Key()
+	appendValue := func(raw goreflect.Value) {
+		if !raw.IsValid() {
+			return
+		}
+		if raw.Type().AssignableTo(keyType) {
+			target.SetMapIndex(raw, goreflect.Zero(target.Type().Elem()))
+			return
+		}
+		if raw.Type().ConvertibleTo(keyType) {
+			target.SetMapIndex(raw.Convert(keyType), goreflect.Zero(target.Type().Elem()))
+		}
+	}
+	var visit func(v goreflect.Value)
+	visit = func(v goreflect.Value) {
+		if !v.IsValid() {
+			return
+		}
+		if v.CanInterface() {
+			if accessor, ok := v.Interface().(pySetAccessor); ok {
+				visit(goreflect.ValueOf(accessor.pySetItemsAny()))
+				return
+			}
+		}
+		if v.Kind() == goreflect.Interface || v.Kind() == goreflect.Ptr {
+			if v.IsNil() {
+				return
+			}
+			visit(v.Elem())
+			return
+		}
+		switch v.Kind() {
+		case goreflect.Slice, goreflect.Array:
+			for i := 0; i < v.Len(); i++ {
+				appendValue(v.Index(i))
+			}
+		case goreflect.Map:
+			iter := v.MapRange()
+			for iter.Next() {
+				appendValue(iter.Key())
+			}
+		}
+	}
+	visit(goreflect.ValueOf(values))
 	return dst
 }
 

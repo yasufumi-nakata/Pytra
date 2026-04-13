@@ -809,6 +809,15 @@ def __pytra_py_sorted(v)
   __pytra_sorted(v)
 end
 
+def __pytra_set_update(target, other)
+  return if target.nil? || other.nil?
+  if other.is_a?(Set)
+    target.merge(other)
+  else
+    other.each { |item| target.add(item) }
+  end
+end
+
 def __pytra_sort(v)
   v.sort!
 end

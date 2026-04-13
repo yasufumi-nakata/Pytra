@@ -962,6 +962,10 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 item = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
                 return "__pytra_set_add(" + owner + ", " + item + ")"
+            if fn_name == "__SET_UPDATE__":
+                owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
+                other = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "[]"
+                return "__pytra_set_update(" + owner + ", " + other + ")"
             if fn_name == "__SET_DISCARD__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 item = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"

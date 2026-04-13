@@ -21,6 +21,7 @@
     "set.add": "py_runtime.py_set_add",
     "set.discard": "py_runtime.py_set_discard",
     "set.remove": "py_runtime.py_set_remove",
+    "set.update": "py_runtime.py_set_update",
     "pytra.std.time.perf_counter": "time_native.perf_counter",
     "pytra.std.math.sqrt": "math_native.sqrt",
     "pytra.std.math.sin": "math_native.sin",

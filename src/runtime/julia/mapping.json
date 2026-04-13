@@ -43,6 +43,7 @@
     "set.add": "__SET_ADD__",
     "set.discard": "__SET_DISCARD__",
     "set.remove": "__SET_REMOVE__",
+    "set.update": "__SET_UPDATE__",
     "str.strip": "strip",
     "str.lstrip": "lstrip",
     "str.rstrip": "rstrip",

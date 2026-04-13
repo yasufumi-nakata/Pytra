@@ -37,6 +37,7 @@
     "set.discard": "__SET_DISCARD__",
     "set.remove": "__SET_REMOVE__",
     "set.clear": "__SET_CLEAR__",
+    "set.update": "pyUpdate",
     "deque.append": "__DEQUE_APPEND__",
     "deque.appendleft": "__DEQUE_APPENDLEFT__",
     "deque.popleft": "__DEQUE_POPLEFT__",

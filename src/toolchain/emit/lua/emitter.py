@@ -883,6 +883,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "__pytra_set_clear(" + arg_strs[0] + ")"
         return "nil"
 
+    if call_name == "__SET_UPDATE__":
+        if len(arg_strs) >= 2:
+            return "__pytra_set_update(" + arg_strs[0] + ", " + arg_strs[1] + ")"
+        return "nil"
+
     if call_name == "__BYTEARRAY_APPEND__":
         if len(arg_strs) >= 2:
             return "__pytra_bytearray_append(" + arg_strs[0] + ", " + arg_strs[1] + ")"

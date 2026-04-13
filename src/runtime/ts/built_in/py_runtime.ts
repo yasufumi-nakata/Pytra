@@ -799,8 +799,9 @@ export function pyEnumerate<T>(items: T[], start = 0): [number, T][] {
 export function pyReversed<T>(items: T[]): T[] {
   return items.slice().reverse();
 }
-export function pySorted<T>(items: T[], key?: (x: T) => unknown, reverse = false): T[] {
-  const sorted = items.slice().sort((a, b) => {
+export function pySorted<T>(items: Iterable<T> | T[], key?: (x: T) => unknown, reverse = false): T[] {
+  const values = Array.isArray(items) ? items.slice() : Array.from(items);
+  const sorted = values.sort((a, b) => {
     const ka: any = key ? key(a) : a;
     const kb: any = key ? key(b) : b;
     if (ka < kb) return reverse ? 1 : -1;
@@ -808,6 +809,17 @@ export function pySorted<T>(items: T[], key?: (x: T) => unknown, reverse = false
     return 0;
   });
   return sorted;
+}
+
+export function pyUpdate(target: unknown, values: unknown): void {
+  if (target instanceof Set) {
+    const iterable = values as Iterable<unknown>;
+    for (const item of iterable) target.add(item);
+    return;
+  }
+  if (target instanceof Map && values instanceof Map) {
+    for (const [key, value] of values.entries()) target.set(key, value);
+  }
 }
 
 /** Python の py_assert_true 相当（テスト用）。 */

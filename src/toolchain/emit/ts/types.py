@@ -79,7 +79,7 @@ TS_BUILTIN_RUNTIME_SYMBOLS: tuple[str, ...] = (
     "pyStrFind", "pyStrRfind", "pyStrSplit",
     "pyStrUpper", "pyStrLower", "pyStrCount", "pyStrIndex",
     "pyStrIsdigit", "pyStrIsalpha", "pyStrIsalnum", "pyStrIsspace",
-    "pyEnumerate", "pyReversed", "pySorted",
+    "pyEnumerate", "pyReversed", "pySorted", "pyUpdate",
     "pyAssertStdout", "pyAssertTrue", "pyAssertEq", "pyAssertAll",
     "pyFloatStr", "pyFmt",
     "pysum", "pyzip", "type_",

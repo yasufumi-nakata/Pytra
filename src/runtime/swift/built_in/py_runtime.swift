@@ -531,6 +531,12 @@ func __pytra_set_add(_ items: inout [Any], _ value: Any?) {
     }
 }
 
+func __pytra_update(_ items: inout [Any], _ values: Any?) {
+    for value in __pytra_as_list(values) {
+        __pytra_set_add(&items, value)
+    }
+}
+
 func __pytra_dict_pop(_ dict: inout [AnyHashable: Any], _ key: Any?) -> Any {
     let hashed = AnyHashable(__pytra_str(key))
     let value = dict[hashed] ?? __pytra_any_default()

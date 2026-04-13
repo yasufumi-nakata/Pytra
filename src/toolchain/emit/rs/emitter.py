@@ -48,6 +48,7 @@ class RsEmitContext:
     lines: list[str] = field(default_factory=list)
     # Variable types in current scope
     var_types: dict[str, str] = field(default_factory=dict)
+    storage_var_types: dict[str, str] = field(default_factory=dict)
     # Best-effort concrete Rust storage types inferred from emitted RHS.
     var_rust_types: dict[str, str] = field(default_factory=dict)
     # Ref/value storage hints for local variables inferred from linked EAST3.
@@ -1362,6 +1363,25 @@ def _emit_name(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     mapped = ctx.runtime_imports.get(name)
     if mapped is not None and mapped != "":
         return mapped
+    actual_type = ctx.var_types.get(name, "")
+    node_type = _str(node, "resolved_type")
+    if "|" in actual_type and node_type != "" and node_type != actual_type:
+        base_name = _rs_var_name(ctx, name)
+        if node_type.startswith("dict["):
+            parts = _split_generic_args(node_type[5:-1]) if node_type.endswith("]") else []
+            value_rs = _rs_type_for_context(ctx, parts[1].strip()) if len(parts) == 2 else "PyAny"
+            return "py_any_as_hashmap_typed::<" + value_rs + ">(" + base_name + ".clone())"
+        if node_type.startswith("list["):
+            elem_rs = _rs_type_for_context(ctx, node_type[5:-1].strip()) if node_type.endswith("]") else "PyAny"
+            return "py_any_as_list_typed::<" + elem_rs + ">(" + base_name + ".clone())"
+        if node_type in ("str", "string"):
+            return "py_str(&(" + base_name + ".clone()))"
+        if node_type in ("int", "int64", "int32", "int16", "int8", "uint64", "uint32", "uint16", "uint8"):
+            return _apply_cast("py_int(&(" + base_name + ".clone()))", node_type)
+        if node_type in ("float", "float64", "float32"):
+            return _apply_cast("py_float(&(" + base_name + ".clone()))", node_type)
+        if node_type == "bool":
+            return "py_bool(&(" + base_name + ".clone()))"
     nested_captures = ctx.nested_capture_args.get(_rs_symbol_name(ctx, name), [])
     if nested_captures:
         sig = ctx.function_signatures.get(name)
@@ -1481,9 +1501,13 @@ def _emit_cast_call(ctx: RsEmitContext, node: dict[str, JsonVal], args: list[Jso
         if target_rs == "String":
             return "py_str(&(" + expr + "))"
         if target_rs.startswith("PyList<"):
-            return "py_any_as_list(" + expr + ")"
+            inner_rs = target_rs[len("PyList<"):-1]
+            return "py_any_as_list_typed::<" + inner_rs + ">(" + expr + ")"
         if target_rs.startswith("HashMap<"):
-            return "py_any_as_hashmap(" + expr + ")"
+            inner = target_rs[len("HashMap<"):-1]
+            parts = _split_generic_args(inner)
+            value_rs = parts[1] if len(parts) == 2 else "PyAny"
+            return "py_any_as_hashmap_typed::<" + value_rs + ">(" + expr + ")"
         if target_rs in ("i64", "i32", "i16", "i8", "u64", "u32", "u16", "u8"):
             return _apply_cast("py_int(&(" + expr + "))", target_type)
         if target_rs in ("f64", "f32"):
@@ -1769,6 +1793,14 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         op_obj = ops[idx] if idx < len(ops) else None
         op_name = op_obj if isinstance(op_obj, str) else _str(op_obj, "kind")
         right = _emit_expr(ctx, comparator)
+        effective_left_node = current_left_node
+        if isinstance(effective_left_node, dict) and _str(effective_left_node, "kind") == "Unbox" and isinstance(effective_left_node.get("value"), dict):
+            effective_left_node = effective_left_node.get("value")
+        effective_right_node = comparator
+        if isinstance(effective_right_node, dict) and _str(effective_right_node, "kind") == "Unbox" and isinstance(effective_right_node.get("value"), dict):
+            effective_right_node = effective_right_node.get("value")
+        right_is_none_const = isinstance(effective_right_node, dict) and _str(effective_right_node, "kind") == "Constant" and effective_right_node.get("value") is None
+        left_is_none_const = isinstance(effective_left_node, dict) and _str(effective_left_node, "kind") == "Constant" and effective_left_node.get("value") is None
         if op_name == "In":
             comp_kind = _str(comparator, "kind") if isinstance(comparator, dict) else ""
             comp_type = _actual_type_in_context(ctx, comparator)
@@ -1798,14 +1830,20 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
         else:
             rs_op = op_map.get(op_name, op_name)
             # Comparing to None: if LHS is not Optional, the result is known statically
-            left_type = _expr_type(current_left_node)
-            right_type = _expr_type(comparator)
-            left_rt = _infer_node_rust_type(ctx, current_left_node)
-            right_rt = _infer_node_rust_type(ctx, comparator)
-            is_none_cmp = (right == "None" or current_left == "None")
+            left_type = _expr_type(effective_left_node)
+            right_type = _expr_type(effective_right_node)
+            if isinstance(effective_left_node, dict) and _str(effective_left_node, "kind") == "Name":
+                raw_left_type = ctx.storage_var_types.get(_str(effective_left_node, "id"), "")
+                if raw_left_type == "":
+                    raw_left_type = ctx.var_types.get(_str(effective_left_node, "id"), "")
+                if raw_left_type != "":
+                    left_type = raw_left_type
+            left_rt = _infer_node_rust_type(ctx, effective_left_node)
+            right_rt = _infer_node_rust_type(ctx, effective_right_node)
+            is_none_cmp = right_is_none_const or left_is_none_const or right == "None" or current_left == "None" or right == "PyAny::None" or current_left == "PyAny::None"
             if is_none_cmp:
-                left_is_pyany = _rs_type_for_context(ctx, left_type) == "PyAny"
-                right_is_pyany = _rs_type_for_context(ctx, right_type) == "PyAny"
+                left_is_pyany = _rs_type_for_context(ctx, left_type) == "PyAny" or left_rt == "PyAny"
+                right_is_pyany = _rs_type_for_context(ctx, right_type) == "PyAny" or right_rt == "PyAny"
                 left_is_optional = "|None" in left_type or "Optional[" in left_type
                 if not left_is_optional:
                     left_is_optional = "| None" in left_type
@@ -1817,14 +1855,22 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
                 if right_is_pyany:
                     right_is_optional = False
                 # Which side is the Option<T>?
-                option_side = current_left if right == "None" else right
+                right_is_none_side = right_is_none_const or right == "None" or right == "PyAny::None"
+                option_side = current_left if right_is_none_side else right
+                if right_is_none_side and isinstance(effective_left_node, dict) and _str(effective_left_node, "kind") == "Name":
+                    raw_name = _str(effective_left_node, "id")
+                    raw_type = ctx.storage_var_types.get(raw_name, "")
+                    if raw_type == "":
+                        raw_type = ctx.var_types.get(raw_name, "")
+                    if "|" in raw_type:
+                        option_side = _rs_var_name(ctx, raw_name)
                 if left_is_optional or right_is_optional:
                     # Use is_none()/is_some() for Option<T> comparisons to avoid type annotation issues
                     if rs_op == "==":
                         parts.append(option_side + ".is_none()")
                     else:
                         parts.append(option_side + ".is_some()")
-                elif not left_is_optional and not right_is_optional and right == "None":
+                elif not left_is_optional and not right_is_optional and right_is_none_side:
                     # Check if the type is PyAny enum (object/Any/Obj → PyAny enum)
                     left_is_pyany = left_is_pyany or left_type in ("object", "Any", "Obj") or left_type == ""
                     if left_is_pyany:
@@ -1866,8 +1912,13 @@ def _emit_compare(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_isinstance(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     """Emit an EAST3 IsInstance node as a Rust type check."""
     val_node = node.get("value")
+    if isinstance(val_node, dict) and _str(val_node, "kind") == "Unbox" and isinstance(val_node.get("value"), dict):
+        val_node = val_node.get("value")
     expected_node = node.get("expected_type_id")
-    val_str = _emit_expr(ctx, val_node)
+    if isinstance(val_node, dict) and _str(val_node, "kind") == "Name":
+        val_str = _rs_var_name(ctx, _str(val_node, "id"))
+    else:
+        val_str = _emit_expr(ctx, val_node)
     val_rt = _actual_type_in_context(ctx, val_node) if isinstance(val_node, dict) else ""
     expected_id = _str(expected_node, "id") if isinstance(expected_node, dict) else ""
     if expected_id == "":
@@ -2212,7 +2263,13 @@ def _expr_to_pyany(expr: str, inner_type: str) -> str:
             + ").collect())"
         )
     if inner_type.startswith("dict[") or inner_type == "dict":
-        return "PyAny::Dict(" + expr + ".into_iter().collect::<BTreeMap<_, _>>())"
+        value_type = "Any"
+        if inner_type.startswith("dict[") and inner_type.endswith("]"):
+            parts = _split_generic_args(inner_type[5:-1])
+            if len(parts) == 2:
+                value_type = parts[1].strip()
+        boxed_value = _expr_to_pyany("__v", value_type)
+        return "PyAny::Dict(" + expr + ".into_iter().map(|(__k, __v)| (__k, " + boxed_value + ")).collect::<BTreeMap<_, _>>())"
     if inner_type == "None" or expr == "None":
         return "PyAny::None"
     # Fallback: for unknown types or already-wrapped exprs
@@ -2373,6 +2430,19 @@ def _emit_subscript(ctx: RsEmitContext, node: dict[str, JsonVal]) -> str:
     obj = _emit_expr(ctx, obj_node)
     slice_node = node.get("slice")
     obj_type = _resolved_type_in_context(ctx, obj_node)
+    if isinstance(obj_node, dict) and _str(obj_node, "kind") == "Name":
+        actual_obj_type = ctx.var_types.get(_str(obj_node, "id"), "")
+        if "|" in actual_obj_type:
+            if isinstance(slice_node, dict) and _str(slice_node, "resolved_type") in ("str", "string"):
+                for option in _split_generic_args(actual_obj_type.replace("|", ",")):
+                    if option.strip().startswith("dict["):
+                        obj_type = option.strip()
+                        break
+            else:
+                for option in _split_generic_args(actual_obj_type.replace("|", ",")):
+                    if option.strip().startswith("list["):
+                        obj_type = option.strip()
+                        break
     if obj_type in ("", "unknown") and isinstance(obj_node, dict) and _str(obj_node, "kind") == "Attribute":
         attr_owner = obj_node.get("value")
         type_object_of = _str(attr_owner, "type_object_of") if isinstance(attr_owner, dict) else ""
@@ -3095,6 +3165,10 @@ def _emit_runtime_call(
 
     if mapped == "py_sorted" and len(args) >= 1:
         first = rendered_args[0]
+        if len(args) >= 1 and isinstance(args[0], dict) and _str(args[0], "resolved_type").startswith("set["):
+            if not first.startswith("&"):
+                first = "&(" + first + ")"
+            return "py_sorted_set(" + first + ")"
         if not first.startswith("&"):
             first = "&(" + first + ")"
         if len(args) >= 2 and isinstance(args[1], dict) and _str(args[1], "kind") == "Name" and _str(args[1], "id") == "str":
@@ -3565,6 +3639,14 @@ def _emit_method_call(
     if obj_type.startswith("set[") or obj_type == "set":
         if set_marker == "__SET_ADD__":
             return obj_str + ".insert(" + ", ".join(rendered_args) + ")"
+        if set_marker == "py_set_update" and len(rendered_args) == 1:
+            if len(args) == 1 and isinstance(args[0], dict) and _str(args[0], "kind") == "List":
+                elements = args[0].get("elements")
+                if isinstance(elements, list) and len(elements) == 0:
+                    return "()"
+            if len(args) == 1 and isinstance(args[0], dict) and _str(args[0], "resolved_type").startswith("set["):
+                return obj_str + ".extend(" + rendered_args[0] + ".iter().cloned())"
+            return "py_set_update(&mut " + obj_str + ", " + rendered_args[0] + ")"
         if set_marker in ("py_remove", "py_discard"):
             return obj_str + ".remove(&" + rendered_args[0] + ")"
         if set_marker == "py_clear":
@@ -3642,6 +3724,17 @@ def _coerce_call_arg_to_expected(
     if actual_rs == "":
         actual_rs = _infer_node_rust_type(ctx, effective_node)
     if "None" in expected_type and ((_str(effective_node, "kind") == "Constant" and effective_node.get("value") is None) or arg_code == "PyAny::None" or arg_code == "None"):
+        union_parts0 = [part.strip() for part in expected_type.split("|")] if "|" in expected_type else []
+        non_none_parts0 = [part for part in union_parts0 if part != "None"]
+        lowers_to_pyany = (
+            "|" in expected_type
+            and "None" in union_parts0
+            and len(non_none_parts0) >= 1
+            and not (len(non_none_parts0) == 1)
+            and all(part in ("bool", "int64", "float64", "str") or part.startswith("list[") or part.startswith("dict[") for part in non_none_parts0)
+        )
+        if expected_rs == "PyAny" or lowers_to_pyany:
+            return "PyAny::None"
         return "None"
     if "|" in expected_type:
         union_parts = [part.strip() for part in expected_type.split("|")]
@@ -3662,7 +3755,10 @@ def _coerce_call_arg_to_expected(
         if actual_rs == "PyAny":
             return arg_code
         if actual_rs.startswith("HashMap<"):
-            return "PyAny::Dict(" + arg_code + ".into_iter().collect::<BTreeMap<_, _>>())"
+            parts = _split_generic_args(actual_type[5:-1]) if actual_type.startswith("dict[") and actual_type.endswith("]") else []
+            value_type = parts[1].strip() if len(parts) == 2 else "Any"
+            boxed_value = _expr_to_pyany("__v", value_type)
+            return "PyAny::Dict(" + arg_code + ".into_iter().map(|(__k, __v)| (__k, " + boxed_value + ")).collect::<BTreeMap<_, _>>())"
         if actual_rs.startswith("PyList<"):
             inner_type = actual_type[5:-1].strip() if actual_type.startswith("list[") and actual_type.endswith("]") else ""
             if inner_type in ("", "Any", "object", "Obj", "JsonVal"):
@@ -4077,9 +4173,12 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
                 return inner_expr + ".clone().unwrap_or_default()"
             if storage_rs == "PyAny" and outer_rt != "":
                 if outer_rt.startswith("list[") or outer_rt == "list":
-                    return "py_any_as_list(" + inner_expr + ".clone())"
+                    elem_rs = _rs_type_for_context(ctx, outer_rt[5:-1].strip()) if outer_rt.startswith("list[") and outer_rt.endswith("]") else "PyAny"
+                    return "py_any_as_list_typed::<" + elem_rs + ">(" + inner_expr + ".clone())"
                 if outer_rt.startswith("dict["):
-                    return "py_any_as_hashmap(" + inner_expr + ".clone())"
+                    parts = _split_generic_args(outer_rt[5:-1]) if outer_rt.endswith("]") else []
+                    value_rs = _rs_type_for_context(ctx, parts[1].strip()) if len(parts) == 2 else "PyAny"
+                    return "py_any_as_hashmap_typed::<" + value_rs + ">(" + inner_expr + ".clone())"
                 if outer_rt == "str":
                     return "py_str(&(" + inner_expr + ".clone()))"
                 if outer_rt in ("int64", "int", "int32", "int16", "int8",
@@ -4128,13 +4227,16 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
                     # Already PyList — no conversion needed
                     return src
                 clone_src = src if needs_unwrap else src + ".clone()"
-                return "py_any_as_list(" + clone_src + ")"
+                elem_rs = _rs_type_for_context(ctx, outer_rt[5:-1].strip()) if outer_rt.startswith("list[") and outer_rt.endswith("]") else "PyAny"
+                return "py_any_as_list_typed::<" + elem_rs + ">(" + clone_src + ")"
             if outer_rt.startswith("dict["):
                 if needs_unwrap and not inner_base_is_dynamic:
                     # Already HashMap — no conversion needed
                     return src
                 clone_src = src if needs_unwrap else src + ".clone()"
-                return "py_any_as_hashmap(" + clone_src + ")"
+                parts = _split_generic_args(outer_rt[5:-1]) if outer_rt.endswith("]") else []
+                value_rs = _rs_type_for_context(ctx, parts[1].strip()) if len(parts) == 2 else "PyAny"
+                return "py_any_as_hashmap_typed::<" + value_rs + ">(" + clone_src + ")"
             if outer_rt == "str":
                 return "py_str(&" + src + ")"
             if outer_rt in ("int64", "int", "int32", "int16", "int8",
@@ -4151,9 +4253,12 @@ def _emit_expr(ctx: RsEmitContext, node: JsonVal) -> str:
             actual_inner_rs = _infer_node_rust_type(ctx, inner_node) if isinstance(inner_node, dict) else ""
             if actual_inner_rs == "PyAny":
                 if outer_rt.startswith("list[") or outer_rt == "list":
-                    return "py_any_as_list(" + inner_expr + ".clone())"
+                    elem_rs = _rs_type_for_context(ctx, outer_rt[5:-1].strip()) if outer_rt.startswith("list[") and outer_rt.endswith("]") else "PyAny"
+                    return "py_any_as_list_typed::<" + elem_rs + ">(" + inner_expr + ".clone())"
                 if outer_rt.startswith("dict["):
-                    return "py_any_as_hashmap(" + inner_expr + ".clone())"
+                    parts = _split_generic_args(outer_rt[5:-1]) if outer_rt.endswith("]") else []
+                    value_rs = _rs_type_for_context(ctx, parts[1].strip()) if len(parts) == 2 else "PyAny"
+                    return "py_any_as_hashmap_typed::<" + value_rs + ">(" + inner_expr + ".clone())"
                 if outer_rt == "str":
                     return "py_str(&(" + inner_expr + ".clone()))"
                 if outer_rt in ("int64", "int", "int32", "int16", "int8",
@@ -5863,6 +5968,7 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
     prev_return_type = ctx.current_return_type
     prev_declared = set(ctx.declared_vars)
     prev_var_types = dict(ctx.var_types)
+    prev_storage_var_types = dict(ctx.storage_var_types)
     prev_nested_fn = ctx.current_nested_fn
     prev_nested_capture_args = dict(ctx.nested_capture_args)
     prev_function_signatures = dict(ctx.function_signatures)
@@ -5885,6 +5991,7 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
             arg_type = _str(arg_types, arg)
             if arg_type != "":
                 ctx.var_types[arg] = arg_type
+                ctx.storage_var_types[arg] = arg_type
     if vararg_name != "":
         ctx.declared_vars.add(vararg_name)
         if vararg_type != "":
@@ -5968,6 +6075,7 @@ def _emit_function_def(ctx: RsEmitContext, node: dict[str, JsonVal], owner: str 
     ctx.current_return_type = prev_return_type
     ctx.declared_vars = prev_declared
     ctx.var_types = prev_var_types
+    ctx.storage_var_types = prev_storage_var_types
     ctx.nested_capture_args = prev_nested_capture_args
     ctx.function_signatures = prev_function_signatures
     ctx.current_nested_fn = prev_nested_fn

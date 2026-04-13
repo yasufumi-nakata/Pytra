@@ -1233,6 +1233,8 @@ def _emit_builtin_placeholder(ctx: EmitContext, fn_name: str, all_arg_strs: list
         return owner + ".add(" + all_arg_strs[1] + ")"
     if fn_name in ("__SET_DISCARD__", "__SET_REMOVE__") and len(all_arg_strs) >= 2:
         return owner + ".remove(" + all_arg_strs[1] + ")"
+    if fn_name == "__SET_UPDATE__" and len(all_arg_strs) >= 2:
+        return "PyRuntime.__pytra_set_update(" + owner + ", " + all_arg_strs[1] + ")"
     if fn_name == "PyRuntime.pyRange":
         if len(all_arg_strs) == 1:
             return "PyRuntime.pyRange(0, (int) PyRuntime.pyToLong(" + all_arg_strs[0] + "), 1)"

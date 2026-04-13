@@ -894,6 +894,8 @@ def _container_method_call(
     if owner_type.startswith("set["):
         if set_marker == "py_runtime.py_set_add" and len(args) >= 1:
             return owner_expr + ".Add(" + args[0] + ")"
+        if set_marker == "py_runtime.py_set_update" and len(args) >= 1:
+            return "py_runtime.py_set_update(" + owner_expr + ", " + args[0] + ")"
         if set_marker in ("py_runtime.py_set_discard", "py_runtime.py_set_remove") and len(args) >= 1:
             return owner_expr + ".Remove(" + args[0] + ")"
     if owner_type == "str":

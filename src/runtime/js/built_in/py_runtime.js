@@ -776,7 +776,8 @@ function pyStrIsspace(s) { return s.length > 0 && /^\s+$/.test(s); }
 function pyEnumerate(items, start = 0) { return items.map((item, i) => [i + start, item]); }
 function pyReversed(items) { return items.slice().reverse(); }
 function pySorted(items, key, reverse = false) {
-  const sorted = items.slice().sort((a, b) => {
+  const values = Array.isArray(items) ? items.slice() : Array.from(items);
+  const sorted = values.sort((a, b) => {
     const ka = key ? key(a) : a;
     const kb = key ? key(b) : b;
     if (ka < kb) return reverse ? 1 : -1;
@@ -784,6 +785,15 @@ function pySorted(items, key, reverse = false) {
     return 0;
   });
   return sorted;
+}
+function pyUpdate(target, values) {
+  if (target instanceof Set) {
+    for (const item of values) target.add(item);
+    return;
+  }
+  if (target instanceof Map && values instanceof Map) {
+    for (const [key, value] of values.entries()) target.set(key, value);
+  }
 }
 
 function pyAssertTrue(cond, label = "") {
@@ -1356,6 +1366,7 @@ export {
   pyEnumerate,
   pyReversed,
   pySorted,
+  pyUpdate,
   pyFmt,
   pyTuple,
   pyTupleToString,

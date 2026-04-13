@@ -944,6 +944,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return _emit_method_call_on_first_arg_strs(builtin_args_strs, "values")
     if mapped == "__SET_ADD__":
         return _emit_method_call_on_first_arg_strs(builtin_args_strs, "add")
+    if mapped == "__SET_UPDATE__":
+        return "__pytra_set_update(" + ", ".join(builtin_args_strs) + ")"
     if mapped == "__SET_DISCARD__":
         return _emit_set_discard_strs(builtin_args_strs)
     if mapped == "__SET_REMOVE__":

@@ -1368,6 +1368,8 @@ class ScalaRenderer(CommonRenderer):
                         idx_expr = self._emit_expr(arg_nodes[0])
                         return "{ val __pytra_idx = __pytra_index(__pytra_int(" + idx_expr + "), " + owner_expr + ".size.toLong).toInt; val __pytra_val = " + owner_expr + "(__pytra_idx); " + owner_expr + ".remove(__pytra_idx); __pytra_val }"
                 if owner_type.startswith("set[") or owner_type == "set":
+                    if resolved_method == self._mapping_call("set.update") and len(arg_nodes) >= 1:
+                        return "{ __pytra_set_update(" + owner_expr + ", " + self._emit_expr(arg_nodes[0]) + "); () }"
                     if resolved_method in (self._mapping_call("set.discard"), self._mapping_call("set.remove")) and len(arg_nodes) >= 1:
                         return "{ " + owner_expr + ".subtractOne(" + self._emit_expr(arg_nodes[0]) + "); () }"
             if isinstance(func, dict) and self._str(func, "kind") == "Name":
@@ -1486,6 +1488,21 @@ class ScalaRenderer(CommonRenderer):
             if len(comparators) == 1 and len(ops) == 1:
                 right = self._emit_expr(comparators[0])
                 op = ops[0] if isinstance(ops[0], str) else self._str(ops[0], "kind")
+                left_node = node.get("left")
+                right_node = comparators[0] if len(comparators) > 0 and isinstance(comparators[0], dict) else None
+                if isinstance(left_node, dict) and self._str(left_node, "kind") == "Unbox" and isinstance(left_node.get("value"), dict):
+                    left_node = left_node.get("value")
+                if isinstance(right_node, dict) and self._str(right_node, "kind") == "Unbox" and isinstance(right_node.get("value"), dict):
+                    right_node = right_node.get("value")
+                left_is_none = isinstance(left_node, dict) and self._str(left_node, "kind") == "Constant" and left_node.get("value") is None
+                right_is_none = isinstance(right_node, dict) and self._str(right_node, "kind") == "Constant" and right_node.get("value") is None
+                if op in {"Eq", "NotEq", "Is", "IsNot"} and (left_is_none or right_is_none):
+                    obj_node = right_node if left_is_none else left_node
+                    obj_expr = self._emit_expr(obj_node) if isinstance(obj_node, dict) else (right if left_is_none else left)
+                    if isinstance(obj_node, dict) and self._str(obj_node, "kind") == "Name":
+                        obj_expr = self._safe_ident(self._str(obj_node, "id"))
+                    op_text = "==" if op in {"Eq", "Is"} else "!="
+                    return obj_expr + " " + op_text + " null"
                 if op == "Eq":
                     return "__pytra_eq(" + left + ", " + right + ")"
                 if op == "NotEq":

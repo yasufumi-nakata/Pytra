@@ -881,6 +881,39 @@ namespace Pytra.CsModule
             return outv;
         }
 
+        public static List<T> py_sorted<T>(HashSet<T> source)
+        {
+            var outv = new List<T>(source ?? new HashSet<T>());
+            outv.Sort();
+            return outv;
+        }
+
+        public static void py_set_update<T>(HashSet<T> target, object values)
+        {
+            if (target == null || values == null)
+            {
+                return;
+            }
+            if (values is IEnumerable<T> typed)
+            {
+                foreach (T item in typed)
+                {
+                    target.Add(item);
+                }
+                return;
+            }
+            if (values is IEnumerable raw)
+            {
+                foreach (object item in raw)
+                {
+                    if (item is T typedItem)
+                    {
+                        target.Add(typedItem);
+                    }
+                }
+            }
+        }
+
         public static List<byte> py_int_to_bytes(object valueLike, object lengthLike, object byteorderLike)
         {
             long value = Convert.ToInt64(valueLike, CultureInfo.InvariantCulture);

@@ -382,6 +382,15 @@ List<List<dynamic>> pytraZip(dynamic a, dynamic b) {
   return out;
 }
 
+void pyUpdate(dynamic target, dynamic values) {
+  if (target is! Set) return;
+  if (values is Iterable) {
+    for (final value in values) {
+      target.add(value);
+    }
+  }
+}
+
 // --- noop ---
 void pytraNoop() {}
 

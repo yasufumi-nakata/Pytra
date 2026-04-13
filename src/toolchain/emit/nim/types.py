@@ -179,8 +179,11 @@ def is_general_union_type(resolved_type: str) -> bool:
     options = union_options(resolved_type)
     if len(options) <= 1:
         return False
-    for option in options:
-        if option == "None" or option in _DYNAMIC_UNION_OPTIONS:
+    non_none_options = [option for option in options if option != "None"]
+    if len(non_none_options) <= 1:
+        return False
+    for option in non_none_options:
+        if option in _DYNAMIC_UNION_OPTIONS:
             return False
     return True
 
@@ -211,6 +214,8 @@ def nim_type(resolved_type: str, *, for_return: bool = False) -> str:
         resolved_type = resolved_type[1:-1].strip()
     if resolved_type == "" or resolved_type == "unknown":
         return "PyObj"
+    if is_general_union_type(resolved_type):
+        return nim_union_type_name(resolved_type)
 
     # callable[...]
     if resolved_type.startswith("callable[") and resolved_type.endswith("]"):

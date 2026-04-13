@@ -150,6 +150,15 @@ fun <T> __pytra_sorted(values: MutableList<T>): MutableList<T> {
     })
     return out
 }
+
+fun <T> __pytra_sorted(values: MutableSet<T>): MutableList<T> = __pytra_sorted(values.toMutableList())
+
+fun <T> __pytra_set_update(target: MutableSet<T>, values: Iterable<*>) {
+    for (value in values) {
+        @Suppress("UNCHECKED_CAST")
+        target.add(value as T)
+    }
+}
 fun __pytra_glob(pattern: Any?): MutableList<String> = glob.glob(pattern)
 
 fun __pytra_cast(target: Any?, value: Any?): Any? = value

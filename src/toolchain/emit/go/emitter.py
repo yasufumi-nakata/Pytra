@@ -584,6 +584,8 @@ def _wrapper_container_storage_expr(ctx: EmitContext, node: JsonVal, rendered: s
         return rendered
     if rendered.startswith("NewPyList[") or rendered.startswith("PyListFromSlice["):
         return rendered + ".items"
+    if rendered.startswith("py_to_list_typed["):
+        return rendered + ".items"
     if rendered.startswith("NewPyDict[") or rendered.startswith("PyDictFromMap["):
         return rendered + ".items"
     # Type assertions to wrapper types need .items to get the underlying native slice/map.
@@ -654,6 +656,8 @@ def _wrapper_container_storage_expr(ctx: EmitContext, node: JsonVal, rendered: s
 def _is_wrapper_container_expr(ctx: EmitContext, node: JsonVal, rendered: str) -> bool:
     if rendered.startswith("NewPyList[") or rendered.startswith("PyListFromSlice["):
         return True
+    if rendered.startswith("py_to_list_typed["):
+        return True
     if rendered.startswith("NewPyDict[") or rendered.startswith("PyDictFromMap["):
         return True
     if rendered.startswith("NewPySet[") or rendered.startswith("PySetFromMap["):
@@ -681,6 +685,7 @@ def _is_wrapper_container_expr(ctx: EmitContext, node: JsonVal, rendered: str) -
         return (
             rendered.startswith("NewPyList[")
             or rendered.startswith("PyListFromSlice[")
+            or rendered.startswith("py_to_list_typed[")
             or rendered.startswith("py_list_any(")
             or rendered.startswith("NewPyDict[")
             or rendered.startswith("PyDictFromMap[")
@@ -1522,6 +1527,11 @@ def _coerce_from_any(val_code: str, target_type: str) -> str:
     # Container types: actual runtime values are *PyList/PyDict/PySet, not native slices/maps.
     # Generate type assertions to wrapper types so the cast succeeds at runtime.
     if _is_container_resolved_type(target_type):
+        if target_type == "list" or (target_type.startswith("list[") and target_type.endswith("]")):
+            elem_type = "any"
+            if target_type.startswith("list[") and target_type.endswith("]"):
+                elem_type = go_type(target_type[5:-1])
+            return "py_to_list_typed[" + elem_type + "](" + val_code + ")"
         wrapper_gt = _container_wrapper_go_type(target_type)
         if val_code.endswith(".(" + wrapper_gt + ")"):
             return val_code
@@ -2022,9 +2032,17 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                     prev = "py_tuple_key(" + prev + ")"
             parts.append("!py_contains(" + right + ", " + prev + ")")
         elif op_str == "Is":
-            parts.append("(" + prev + " == " + right + ")")
+            if isinstance(comp_node, dict) and _str(comp_node, "kind") == "Constant" and comp_node.get("value") is None:
+                raw_prev = _safe_go_ident(_str(left_node, "id")) if isinstance(left_node, dict) and _str(left_node, "kind") == "Name" else prev
+                parts.append("(" + raw_prev + " == nil)")
+            else:
+                parts.append("(" + prev + " == " + right + ")")
         elif op_str == "IsNot":
-            parts.append("(" + prev + " != " + right + ")")
+            if isinstance(comp_node, dict) and _str(comp_node, "kind") == "Constant" and comp_node.get("value") is None:
+                raw_prev = _safe_go_ident(_str(left_node, "id")) if isinstance(left_node, dict) and _str(left_node, "kind") == "Name" else prev
+                parts.append("(" + raw_prev + " != nil)")
+            else:
+                parts.append("(" + prev + " != " + right + ")")
         elif op_str == "Eq" and ((left_rt == "str" and comp_rt != "" and comp_rt != "str") or (comp_rt == "str" and left_rt != "" and left_rt != "str")):
             parts.append("py_eq(" + prev + ", " + right + ")")
         elif op_str == "NotEq" and ((left_rt == "str" and comp_rt != "" and comp_rt != "str") or (comp_rt == "str" and left_rt != "" and left_rt != "str")):
@@ -2276,8 +2294,12 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return owner + ".write(" + ", ".join(arg_strs) + ")"
             if dispatch == "__IO_CLOSE__":
                 return owner + ".close()"
-            if method_key == "set.update" and owner_rt == "set[str]" and len(arg_strs) >= 1:
-                return "py_set_update_str(" + owner + ", " + arg_strs[0] + ")"
+            if method_key == "set.update" and len(arg_strs) >= 1:
+                owner_storage = _wrapper_container_storage_expr(ctx, owner_node, owner)
+                owner_effective_rt = _effective_resolved_type(ctx, owner_node) if isinstance(owner_node, dict) else owner_rt
+                if owner_storage == owner and owner_effective_rt.startswith("set["):
+                    owner_storage = owner + ".items"
+                return "py_set_update(" + owner_storage + ", " + arg_strs[0] + ")"
             owner_effective_rt = _effective_resolved_type(ctx, owner_node) if isinstance(owner_node, dict) else owner_rt
             if owner_effective_rt == "":
                 owner_effective_rt = owner_rt
@@ -2801,17 +2823,33 @@ def _emit_builtin_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             out_name = _next_temp(ctx, "sorted")
             if len(args) >= 1 and isinstance(args[0], dict):
                 src_code = _wrapper_container_storage_expr(ctx, args[0], src_code)
-            if src_rt == "set[str]":
-                ctx.imports_needed.add(ctx.go_pkg_sort)
+            if src_rt.startswith("set["):
+                elem_type = src_rt[4:-1]
+                elem_go_type = go_type(elem_type)
                 key_name = _next_temp(ctx, "k")
+                if elem_type == "str":
+                    ctx.imports_needed.add(ctx.go_pkg_sort)
+                    return (
+                        "func() *PyList[string] {\n"
+                        + "\t" + out_name + " := []string{}\n"
+                        + "\tfor " + key_name + " := range " + src_code + " {\n"
+                        + "\t\t" + out_name + " = append(" + out_name + ", " + key_name + ")\n"
+                        + "\t}\n"
+                        + "\tsort.Strings(" + out_name + ")\n"
+                        + "\treturn PyListFromSlice[string](" + out_name + ")\n"
+                        + "}()"
+                    )
+                ctx.imports_needed.add(ctx.go_pkg_sort)
                 return (
-                    "func() *PyList[string] {\n"
-                    + "\t" + out_name + " := []string{}\n"
+                    "func() *PyList[" + elem_go_type + "] {\n"
+                    + "\t" + out_name + " := []" + elem_go_type + "{}\n"
                     + "\tfor " + key_name + " := range " + src_code + " {\n"
                     + "\t\t" + out_name + " = append(" + out_name + ", " + key_name + ")\n"
                     + "\t}\n"
-                    + "\tsort.Strings(" + out_name + ")\n"
-                    + "\treturn PyListFromSlice[string](" + out_name + ")\n"
+                    + "\tsort.Slice(" + out_name + ", func(i int, j int) bool {\n"
+                    + "\t\treturn " + out_name + "[i] < " + out_name + "[j]\n"
+                    + "\t})\n"
+                    + "\treturn PyListFromSlice[" + elem_go_type + "](" + out_name + ")\n"
                     + "}()"
                 )
             if src_rt == "list[str]" or result_gt == "[]string":
@@ -3548,14 +3586,12 @@ def _emit_set_literal(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         elem_rt = rt[4:-1]
     parts = []
     for e in elements:
-        key_code = _emit_expr(ctx, e)
+        value_code = _emit_expr(ctx, e)
         if elem_rt.startswith("tuple[") and elem_rt.endswith("]"):
-            key_code = "py_tuple_key(" + key_code + ")"
-        parts.append(key_code + ": {}")
-    native = go_type(rt)
-    if elem_rt.startswith("tuple[") and elem_rt.endswith("]"):
-        native = "map[string]struct{}"
-    native_literal = native + "{" + ", ".join(parts) + "}"
+            value_code = "py_tuple_key(" + value_code + ")"
+        parts.append(value_code)
+    elem_go = go_type(elem_rt) if elem_rt != "" else "any"
+    native_literal = "py_set[" + elem_go + "]([]" + elem_go + "{" + ", ".join(parts) + "})"
     return _wrap_ref_container_value_code(ctx, native_literal, rt)
 
 
@@ -3689,7 +3725,13 @@ def _emit_lambda(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
-    value = _emit_expr(ctx, node.get("value"))
+    value_node = node.get("value")
+    if isinstance(value_node, dict) and _str(value_node, "kind") == "Unbox" and isinstance(value_node.get("value"), dict):
+        value_node = value_node.get("value")
+    if isinstance(value_node, dict) and _str(value_node, "kind") == "Name":
+        value = _go_symbol_name(ctx, _str(value_node, "id"))
+    else:
+        value = _emit_expr(ctx, value_node)
     expected_trait_fqcn = _str(node, "expected_trait_fqcn")
     if expected_trait_fqcn != "":
         raise RuntimeError("go emitter unexpected trait isinstance after link: " + expected_trait_fqcn)
