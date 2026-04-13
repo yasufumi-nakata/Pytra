@@ -54,4 +54,58 @@ if isinstance(z, dict):
 
 ## fixture
 
-検証用 fixture `test/fixture/source/py/typing/isinstance_union_narrowing.py` は追加済み。
+- `test/fixture/source/py/typing/isinstance_union_narrowing.py` — 単一 isinstance での union narrowing（追加済み）
+- `test/fixture/source/py/typing/isinstance_chain_narrowing.py` — if/elif/else チェーンでの段階的 union narrowing（追加済み）。C++/Go/Rust/Zig で FAIL。else ブランチで残り型への narrowing が効いていない。
+
+## 段階的 narrowing（elif/else チェーン）
+
+### 問題
+
+```python
+y: str | int = ...
+if isinstance(y, str):
+    # y → str（これは動く）
+else:
+    # y → int であるべき（str が排除された残り）
+    remainder: int = y % 3  # ← C++/Go/Rust/Zig で FAIL
+```
+
+4 メンバの union でも同様:
+
+```python
+x: int | str | list[int] | None = ...
+if isinstance(x, int):
+    # x → int
+elif isinstance(x, str):
+    # x → str（int が排除された残り union から str を選択）
+elif isinstance(x, list):
+    # x → list[int]（int, str が排除された残り union から list を選択）
+else:
+    # x → None（int, str, list[int] が排除された残り）
+```
+
+### 原因
+
+P0-RESOLVE-NARROW-S1 の修正は `if isinstance(x, T):` の正ブランチ（T にマッチする構成要素をパラメータ付きで取り出す）だけを対象にしている。`else` / `elif` で「マッチしなかった残りの構成要素」に narrowing する処理が欠けている。
+
+### 修正方針
+
+resolve が `isinstance(x, T)` を処理するとき:
+
+1. **正ブランチ（if/elif の中）**: union の構成要素から T にマッチするものを取り出す（既に実装済み）
+2. **偽ブランチ（else / elif の続き）**: union の構成要素から T にマッチするものを**除外**し、残りの union を `resolved_type` にする
+   - 残りが 1 つなら、その型に narrowing（例: `str | int` の `str` 排除 → `int`）
+   - 残りが 2 つ以上なら、残りの union を構成（例: `int | str | list[int] | None` の `int` 排除 → `str | list[int] | None`）
+   - 残りが 0 なら、到達不能（dead code）
+
+3. `elif isinstance(x, T2):` は、前の分岐で除外された残り union に対して同じ処理を繰り返す
+
+### not isinstance パターン
+
+```python
+if not isinstance(x, dict):
+    return  # x は dict 以外の union 構成要素
+# ここでは x → dict[str, JsonVal]（既に動く）
+```
+
+これは既に compile 側の guard propagation で処理されている。追加修正は不要。

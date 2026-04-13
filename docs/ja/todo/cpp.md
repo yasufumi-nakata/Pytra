@@ -64,6 +64,8 @@
 2. [x] [ID: P0-RESOLVE-NARROW-S2] `isinstance(value, dict)` で `dict[str, JsonVal]` に narrowing されることを確認するテストを追加する
 3. [ ] [ID: P0-RESOLVE-NARROW-S3] 全言語の fixture parity に回帰がないことを確認する
    - 確認メモ: 2026-04-13 に C++ fixture `typing/isinstance_union_narrowing`, `collections/reversed_basic`, `collections/sorted_basic`, `collections/sorted_set`, `collections/set_update`, `strings/reversed_enumerate` は PASS。全言語 sweep は未実施。
+4. [ ] [ID: P0-RESOLVE-NARROW-S4] elif/else チェーンでの段階的 union narrowing を実装する。isinstance の偽ブランチで、マッチした型を union から除外し、残りの構成要素を resolved_type にする。残りが 1 つなら単一型に narrowing する
+5. [ ] [ID: P0-RESOLVE-NARROW-S5] `isinstance_chain_narrowing` fixture で C++/Go/Rust/Zig が PASS することを確認する
 
 ### P0-RESOLVE-TYPE-ALIAS: 型エイリアスの同値性判定を正しく実装する
 
