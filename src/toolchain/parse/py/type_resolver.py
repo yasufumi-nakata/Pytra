@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Optional, Union
 
 from toolchain.common.types import split_generic_types
-from toolchain.parse.py.nodes import NamedType, GenericType, JsonVal
+from toolchain.parse.py.nodes import NamedType, GenericType, JsonVal, TypeExpr
 
 
 # デフォルト型エイリアス
@@ -47,8 +47,8 @@ def resolve_type_annotation(
         base_resolved = _resolve_base_type(base, type_aliases)
 
         # inner の分割と再帰解決
-        args = split_generic_types(inner)
-        resolved_args = [resolve_type_annotation(a, type_aliases) for a in args]
+        args: list[str] = split_generic_types(inner)
+        resolved_args: list[str] = [resolve_type_annotation(a, type_aliases) for a in args]
 
         # カンマ後の空白なし (golden file 準拠)
         return base_resolved + "[" + ",".join(resolved_args) + "]"
@@ -100,22 +100,23 @@ def _resolve_base_type(base: str, type_aliases: dict[str, str]) -> str:
 def annotation_to_type_expr(
     ann: str,
     type_aliases: dict[str, str],
-) -> JsonVal:
-    """型注釈文字列を JsonVal ノードに変換する。"""
-    resolved = resolve_type_annotation(ann, type_aliases)
-    return _parse_type_expr(resolved)
+) -> dict[str, JsonVal]:
+    """型注釈文字列を TypeExpr JsonVal ノードに変換する。"""
+    resolved: str = resolve_type_annotation(ann, type_aliases)
+    return _parse_type_expr(resolved).to_jv()
 
 
-def _parse_type_expr(text: str) -> JsonVal:
-    """正規化済み型文字列を JsonVal に変換する。"""
+def _parse_type_expr(text: str) -> TypeExpr:
+    """正規化済み型文字列を TypeExpr に変換する。"""
     text = text.strip()
-    bracket_pos = text.find("[")
+    bracket_pos: int = text.find("[")
     if bracket_pos > 0 and text.endswith("]"):
-        base = text[:bracket_pos].strip()
-        inner = text[bracket_pos + 1 : -1].strip()
-        args = split_generic_types(inner)
+        base: str = text[:bracket_pos].strip()
+        inner: str = text[bracket_pos + 1 : -1].strip()
+        arg_strs: list[str] = split_generic_types(inner)
+        arg_exprs: list[TypeExpr] = [_parse_type_expr(a) for a in arg_strs]
         return GenericType(
             base=base,
-            args=[_parse_type_expr(a) for a in args],
+            args=arg_exprs,
         )
     return NamedType(name=text)
