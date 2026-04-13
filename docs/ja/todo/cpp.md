@@ -60,9 +60,10 @@
 
 **方針**: resolve の isinstance narrowing が、union 型の構成要素からマッチする型をパラメータ付きで取り出すようにする。
 
-1. [ ] [ID: P0-RESOLVE-NARROW-S1] resolve の isinstance narrowing で、union 型の構成要素から `isinstance` の判定対象にマッチする型をパラメータ付きで取り出すよう修正する
-2. [ ] [ID: P0-RESOLVE-NARROW-S2] `isinstance(value, dict)` で `dict[str, JsonVal]` に narrowing されることを確認するテストを追加する
+1. [x] [ID: P0-RESOLVE-NARROW-S1] resolve の isinstance narrowing で、union 型の構成要素から `isinstance` の判定対象にマッチする型をパラメータ付きで取り出すよう修正する
+2. [x] [ID: P0-RESOLVE-NARROW-S2] `isinstance(value, dict)` で `dict[str, JsonVal]` に narrowing されることを確認するテストを追加する
 3. [ ] [ID: P0-RESOLVE-NARROW-S3] 全言語の fixture parity に回帰がないことを確認する
+   - 確認メモ: 2026-04-13 に C++ fixture `typing/isinstance_union_narrowing`, `collections/reversed_basic`, `collections/sorted_basic`, `collections/sorted_set`, `collections/set_update`, `strings/reversed_enumerate` は PASS。全言語 sweep は未実施。
 
 ### P0-RESOLVE-TYPE-ALIAS: 型エイリアスの同値性判定を正しく実装する
 
@@ -78,11 +79,12 @@
 - 相互再帰型エイリアスは禁止する（parse 時にエラー）
 - これにより、展開後の型表現が一意に定まり、`Node` と `dict[str, JsonVal]` の同値性が保証される
 
-1. [ ] [ID: P0-RESOLVE-ALIAS-S1] `normalize_type` の再帰型ガードを `Any` 退化から名前保持に変更する
-2. [ ] [ID: P0-RESOLVE-ALIAS-S2] 相互再帰型エイリアスを parse 時にエラーにする
-3. [ ] [ID: P0-RESOLVE-ALIAS-S3] `Node` → `dict[str, JsonVal]` 展開、`JsonVal` → 名前保持のテストを追加する
+1. [x] [ID: P0-RESOLVE-ALIAS-S1] `normalize_type` の再帰型ガードを `Any` 退化から名前保持に変更する
+2. [x] [ID: P0-RESOLVE-ALIAS-S2] 相互再帰型エイリアスを parse 時にエラーにする
+3. [x] [ID: P0-RESOLVE-ALIAS-S3] `Node` → `dict[str, JsonVal]` 展開、`JsonVal` → 名前保持のテストを追加する
 4. [ ] [ID: P0-RESOLVE-ALIAS-S4] 全言語の fixture parity に回帰がないことを確認する
-5. [ ] [ID: P0-RESOLVE-ALIAS-S5] spec に「型エイリアスの相互再帰は禁止。自己再帰は名前保持」を明記する
+   - 確認メモ: 2026-04-13 に C++ fixture `typing/type_alias_pep695` は PASS。全言語 sweep は未実施。
+5. [x] [ID: P0-RESOLVE-ALIAS-S5] spec に「型エイリアスの相互再帰は禁止。自己再帰は名前保持」を明記する
 
 ### P20-CPP-SELFHOST: C++ emitter で toolchain を C++ に変換し g++ build を通す
 

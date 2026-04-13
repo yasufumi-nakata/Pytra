@@ -1489,6 +1489,9 @@ def _emit_name(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         and storage_type not in ("", "unknown")
         and resolved_type != storage_type
     ):
+        expanded_resolved = _expanded_union_type(resolved_type)
+        if _is_top_level_union_type(expanded_resolved):
+            return name
         if optional_storage_inner != "" and optional_storage_inner == resolved_type:
             return "(*" + name + ")"
         if _needs_object_cast(storage_type):

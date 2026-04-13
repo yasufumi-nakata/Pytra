@@ -2793,6 +2793,70 @@ def _split_union_members(type_name: str) -> list[str]:
     return parts
 
 
+def _split_top_level_generic_args(type_name: str) -> list[str]:
+    args: list[str] = []
+    start = type_name.find("[")
+    end = type_name.rfind("]")
+    if start < 0 or end <= start:
+        return args
+    cur = ""
+    depth = 0
+    inner = type_name[start + 1 : end]
+    for ch in inner:
+        if ch == "[":
+            depth += 1
+            cur += ch
+        elif ch == "]":
+            if depth > 0:
+                depth -= 1
+            cur += ch
+        elif ch == "," and depth == 0:
+            part = cur.strip()
+            if part != "":
+                args.append(part)
+            cur = ""
+        else:
+            cur += ch
+    tail = cur.strip()
+    if tail != "":
+        args.append(tail)
+    return args
+
+
+def _expr_effective_type(node: JsonVal) -> str:
+    if not isinstance(node, dict):
+        return ""
+    nd: Node = cast(dict[str, JsonVal], node)
+    kind = _tp_safe(nd.get("kind"))
+    if kind == UNBOX:
+        target = _tp_safe(nd.get("target"))
+        if target != "":
+            return normalize_type_name(target)
+    return normalize_type_name(nd.get("resolved_type"))
+
+
+def _guard_refine_subscript_type(nd: Node) -> None:
+    owner = nd.get("value")
+    if not isinstance(owner, dict):
+        return
+    owner_type = _expr_effective_type(owner)
+    if owner_type == "":
+        return
+    args = _split_top_level_generic_args(owner_type)
+    target_type = ""
+    if owner_type == "str":
+        target_type = "str"
+    elif owner_type.startswith("list[") and len(args) == 1:
+        target_type = normalize_type_name(args[0])
+    elif owner_type.startswith("dict[") and len(args) == 2:
+        target_type = normalize_type_name(args[1])
+    elif owner_type.startswith("set[") and len(args) == 1:
+        target_type = normalize_type_name(args[0])
+    if target_type == "":
+        return
+    nd["resolved_type"] = target_type
+
+
 def _type_matches_guard(type_name: str, guard_type: str) -> bool:
     norm: str = normalize_type_name(type_name)
     guard: str = normalize_type_name(guard_type)
@@ -3056,7 +3120,16 @@ def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
     if kind == "IsInstance":
         # expected_type_name is a plain string — no sub-expression to recurse into
         return nd
-    if kind in (FUNCTION_DEF, CLOSURE_DEF, CLASS_DEF, UNBOX):
+    if kind in (FUNCTION_DEF, CLOSURE_DEF, CLASS_DEF):
+        return nd
+    if kind == UNBOX:
+        value = nd.get("value")
+        if isinstance(value, dict):
+            value_node_unbox: Node = cast(dict[str, JsonVal], value)
+            nd["value"] = _guard_expr(value_node_unbox, env)
+        elif isinstance(value, list):
+            value_list_unbox: list[JsonVal] = cast(list[JsonVal], value)
+            nd["value"] = _guard_expr(value_list_unbox, env)
         return nd
     if kind == IF_EXP:
         test = nd.get("test")
@@ -3070,6 +3143,10 @@ def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
         for key_ifexp, val_ifexp in env.items():
             body_env_ifexp[key_ifexp] = val_ifexp
         _guard_env_merge(body_env_ifexp, _guard_narrowing_from_expr(nd.get("test")))
+        orelse_env_ifexp: dict[str, str] = {}
+        for key_ifexp, val_ifexp in env.items():
+            orelse_env_ifexp[key_ifexp] = val_ifexp
+        _guard_env_merge(orelse_env_ifexp, _invert_guard_narrowing_from_expr(nd.get("test")))
         body_ifexp = nd.get("body")
         if isinstance(body_ifexp, dict):
             body_node_ifexp: Node = cast(dict[str, JsonVal], body_ifexp)
@@ -3080,10 +3157,10 @@ def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
         orelse_ifexp = nd.get("orelse")
         if isinstance(orelse_ifexp, dict):
             orelse_node_ifexp: Node = cast(dict[str, JsonVal], orelse_ifexp)
-            nd["orelse"] = _guard_expr(orelse_node_ifexp, env)
+            nd["orelse"] = _guard_expr(orelse_node_ifexp, orelse_env_ifexp)
         elif isinstance(orelse_ifexp, list):
             orelse_list_ifexp: list[JsonVal] = cast(list[JsonVal], orelse_ifexp)
-            nd["orelse"] = _guard_expr(orelse_list_ifexp, env)
+            nd["orelse"] = _guard_expr(orelse_list_ifexp, orelse_env_ifexp)
         return nd
     if kind == BOOL_OP and _tp_safe(nd.get("op")) == "And":
         values = nd.get("values")
@@ -3137,6 +3214,7 @@ def _guard_lvalue(node: JsonVal, env: dict[str, str]) -> JsonVal:
         elif isinstance(slice_obj, list):
             slice_list: list[JsonVal] = cast(list[JsonVal], slice_obj)
             nd["slice"] = _guard_expr(slice_list, env)
+        _guard_refine_subscript_type(nd)
         return nd
     if kind in (TUPLE, LIST):
         elements = nd.get("elements")
@@ -3298,8 +3376,12 @@ def _guard_stmt(stmt: JsonVal, env: dict[str, str]) -> None:
         for key, value in env.items():
             body_env[key] = value
         _guard_env_merge(body_env, _guard_narrowing_from_expr(nd.get("test")))
+        orelse_env: dict[str, str] = {}
+        for key, value in env.items():
+            orelse_env[key] = value
+        _guard_env_merge(orelse_env, _invert_guard_narrowing_from_expr(nd.get("test")))
         _guard_stmt_list(nd.get("body"), body_env)
-        _guard_stmt_list(nd.get("orelse"), env)
+        _guard_stmt_list(nd.get("orelse"), orelse_env)
         return
     if kind == WHILE:
         test = nd.get("test")
