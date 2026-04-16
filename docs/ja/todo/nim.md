@@ -45,6 +45,13 @@
 
 1. [ ] [ID: P20-NIM-SELFHOST-S0] selfhost 対象コードの型注釈補完（他言語と共通）
 2. [ ] [ID: P20-NIM-SELFHOST-S1] toolchain2 全 .py を Nim に emit し、compile + 実行できることを確認する
+   - 2026-04-16: `pytra-cli -build src/toolchain/emit/nim/cli.py --target nim` 経路を修復。進捗:
+     - `_emit_nim` を subprocess 委譲 + runtime copy（`_copy_nim_runtime_files`）に変更（`_emit_go` 等と同形）
+     - 出力 flat directory に合わせ、emitter の import を slash → underscore に変更（`pytra.` prefix 除去も廃止）
+     - function パラメータが body で再代入されるケースに shadow `var x = x` 挿入を追加
+     - py_runtime.nim に runtime 補強を追加: `py_str_strip(s, chars)`, `py_str_lstrip/rstrip(s, chars)`, `py_str_split(s, sep, maxsplit)`, `py_str_startswith/endswith(s, tuple)`, `contains(tuple, string)` 
+     - union 型の `iterator items*` 重複衝突を解消（dict オプション側の items は list オプションが共存するとき skip）
+   - 残 blocker (compile がまだ通らない): 同じ options 集合を持つ union type が複数名で生成され、dict converter → `[](union, key)` の呼び出しが曖昧になる（`PyUnion_void_bool_..._dict_string_PyObj` と `PyUnion_bool_..._void` 等）。union 名の正規化（options の順序安定化か、options 集合 hash 化）が必要。これは nim/emitter.py の PyUnion 名生成側または、より上流の resolve/linker 層の union 正規化に関わる。追加の設計判断が要るため pause。
 3. [ ] [ID: P20-NIM-SELFHOST-S2] selfhost 用 Nim golden を配置する
 4. [ ] [ID: P20-NIM-SELFHOST-S3] `run_selfhost_parity.py --selfhost-lang nim --emit-target nim --case-root fixture` で fixture parity PASS
 5. [ ] [ID: P20-NIM-SELFHOST-S4] `run_selfhost_parity.py --selfhost-lang nim --emit-target nim --case-root sample` で sample parity PASS

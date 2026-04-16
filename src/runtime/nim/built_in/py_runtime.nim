@@ -322,10 +322,30 @@ proc py_chr*(i: int): string =
 # String methods
 # ---------------------------------------------------------------------------
 proc py_str_strip*(s: string): string = s.strip()
+proc py_str_strip*(s: string, chars: string): string =
+  var charset: set[char] = {}
+  for c in chars: charset.incl(c)
+  s.strip(chars = charset)
 proc py_str_lstrip*(s: string): string = s.strip(trailing = false)
+proc py_str_lstrip*(s: string, chars: string): string =
+  var charset: set[char] = {}
+  for c in chars: charset.incl(c)
+  s.strip(trailing = false, chars = charset)
 proc py_str_rstrip*(s: string): string = s.strip(leading = false)
+proc py_str_rstrip*(s: string, chars: string): string =
+  var charset: set[char] = {}
+  for c in chars: charset.incl(c)
+  s.strip(leading = false, chars = charset)
 proc py_str_startswith*(s: string, prefix: string): bool = s.startsWith(prefix)
+proc py_str_startswith*(s: string, prefixes: tuple): bool =
+  for p in prefixes.fields:
+    if s.startsWith(p): return true
+  return false
 proc py_str_endswith*(s: string, suffix: string): bool = s.endsWith(suffix)
+proc py_str_endswith*(s: string, suffixes: tuple): bool =
+  for p in suffixes.fields:
+    if s.endsWith(p): return true
+  return false
 proc py_str_replace*(s: string, old: string, new_str: string): string = s.replace(old, new_str)
 proc py_str_find*(s: string, sub: string): int = s.find(sub)
 proc py_str_rfind*(s: string, sub: string): int =
@@ -337,8 +357,22 @@ proc py_str_rfind*(s: string, sub: string): int =
     last = found
     pos = found + 1
   return last
+# `x in (a, b, c)` membership — Python allows tuple membership test.
+# Nim has no direct `contains(tuple, elem)` so provide it via fields iterator.
+proc contains*(t: tuple, item: string): bool =
+  for f in t.fields:
+    when f is string:
+      if f == item: return true
+  return false
+
 proc py_str_split*(s: string): seq[string] = s.splitWhitespace()
 proc py_str_split*(s: string, sep: string): seq[string] = s.split(sep)
+proc py_str_split*(s: string, sep: string, maxsplit: int): seq[string] =
+  if maxsplit < 0:
+    return s.split(sep)
+  s.split(sep, maxsplit)
+proc py_str_split*(s: string, sep: string, maxsplit: int64): seq[string] =
+  py_str_split(s, sep, int(maxsplit))
 proc py_str_join*(sep: string, items: seq[string]): string = items.join(sep)
 proc py_str_upper*(s: string): string = s.toUpperAscii()
 proc py_str_lower*(s: string): string = s.toLowerAscii()

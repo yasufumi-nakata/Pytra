@@ -450,13 +450,17 @@ def _emit_general_union_defs(ctx: EmitContext) -> None:
                     ctx.indent_level -= 1
                 ctx.indent_level -= 1
                 _emit_blank(ctx)
-                _emit(ctx, "iterator items*(v: " + union_name + "): (" + key_type + ", " + value_type + ") =")
-                ctx.indent_level += 1
-                _emit(ctx, "for item in v.pairs:")
-                ctx.indent_level += 1
-                _emit(ctx, "yield item")
-                ctx.indent_level -= 2
-                _emit_blank(ctx)
+                # Only emit `items` for dict when the union has no list option.
+                # Otherwise the list-based `items` iterator (below) would
+                # conflict and Nim raises "overloaded 'items' leads to ambiguous calls".
+                if list_option == "":
+                    _emit(ctx, "iterator items*(v: " + union_name + "): (" + key_type + ", " + value_type + ") =")
+                    ctx.indent_level += 1
+                    _emit(ctx, "for item in v.pairs:")
+                    ctx.indent_level += 1
+                    _emit(ctx, "yield item")
+                    ctx.indent_level -= 2
+                    _emit_blank(ctx)
                 _emit(ctx, "iterator keys*(v: " + union_name + "): " + key_type + " =")
                 ctx.indent_level += 1
                 _emit(ctx, "for item in v.pairs:")
@@ -3245,6 +3249,33 @@ def _get_arg_default(node: dict[str, JsonVal], arg_name: str) -> JsonVal:
     return None
 
 
+def _node_reassigns_name(node: JsonVal, arg_name: str) -> bool:
+    """Return True if the AST node reassigns the given simple name via `name = ...`.
+
+    Nim parameters are immutable unless declared `var`. When the Python source
+    rebinds a parameter (e.g. `x = x.strip()`), the Nim emitter must introduce a
+    local `var x = x` shadow so the body compiles.
+    """
+    if isinstance(node, dict):
+        kind = _str(node, "kind")
+        if kind == "Assign":
+            target = node.get("target")
+            if isinstance(target, dict) and _str(target, "kind") == "Name" and _str(target, "id") == arg_name:
+                return True
+        if kind == "AugAssign":
+            target = node.get("target")
+            if isinstance(target, dict) and _str(target, "kind") == "Name" and _str(target, "id") == arg_name:
+                return True
+        for value in node.values():
+            if _node_reassigns_name(value, arg_name):
+                return True
+    elif isinstance(node, list):
+        for item in node:
+            if _node_reassigns_name(item, arg_name):
+                return True
+    return False
+
+
 def _node_uses_mutating_method_on_name(node: JsonVal, arg_name: str) -> bool:
     if isinstance(node, dict):
         kind = _str(node, "kind")
@@ -3383,6 +3414,18 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                 ctx.storage_var_types[safe_arg_name] = arg_type
 
     ctx.indent_level += 1
+    # Emit shadow `var <param> = <param>` for parameters that are reassigned in the body.
+    # Nim parameters are immutable by default; Python source routinely rebinds them
+    # (e.g. `x = x.strip()`), so introduce a mutable local shadow to preserve semantics.
+    for arg_name in arg_names:
+        if arg_name == "self":
+            continue
+        arg_type = _get_arg_type(node, arg_name)
+        if _arg_should_be_var(node, arg_name, arg_type):
+            continue  # already declared as `var T`; no shadow needed
+        if _node_reassigns_name(body, arg_name):
+            safe_arg = _safe_nim_ident(arg_name)
+            _emit(ctx, "var " + safe_arg + " = " + safe_arg)
     if len(body) == 0:
         _emit_discard(ctx)
     else:
@@ -3957,7 +4000,7 @@ def _emit_module_imports(ctx: EmitContext, body: list[JsonVal]) -> None:
                         if imported_name != "":
                             imported_names.append(imported_name)
                     if len(imported_names) > 0:
-                        _emit(ctx, "from " + rel_module.replace(".", "/") + " import " + ", ".join(imported_names))
+                        _emit(ctx, "from " + module_id.replace(".", "_") + " import " + ", ".join(imported_names))
                         continue
                 emitted_submodule_import = False
                 for name_entry in _list(stmt, "names"):
@@ -3966,21 +4009,19 @@ def _emit_module_imports(ctx: EmitContext, body: list[JsonVal]) -> None:
                     imported_name = _str(name_entry, "name")
                     if imported_name == "":
                         continue
-                    candidate_module = rel_module.replace(".", "/") + "/" + imported_name
-                    candidate_path = src_pytra_root / (candidate_module + ".py")
+                    candidate_module_rel = rel_module.replace(".", "/") + "/" + imported_name
+                    candidate_path = src_pytra_root / (candidate_module_rel + ".py")
                     if not candidate_path.exists():
                         continue
                     asname = _str(name_entry, "asname")
                     alias_name = asname if asname != "" else imported_name
+                    candidate_module = module_id.replace(".", "_") + "_" + imported_name
                     _emit(ctx, "import " + candidate_module + " as " + _nim_name(ctx, alias_name))
                     emitted_submodule_import = True
                 if emitted_submodule_import:
                     continue
             # Relative module import
-            rel_module = module_id
-            if rel_module.startswith("pytra."):
-                rel_module = rel_module[len("pytra."):]
-            nim_module = rel_module.replace(".", "/")
+            nim_module = module_id.replace(".", "_")
             _emit(ctx, "import " + nim_module)
         elif kind == "Import":
             names = _list(stmt, "names")
@@ -4001,9 +4042,7 @@ def _emit_module_imports(ctx: EmitContext, body: list[JsonVal]) -> None:
                             py_path_import = "os_path_native" if ctx.root_rel_prefix == "" else ctx.root_rel_prefix + "os_path_native"
                             _emit(ctx, "import " + py_path_import + " as py_path")
                     continue
-                if mod_name.startswith("pytra."):
-                    mod_name = mod_name[len("pytra."):]
-                nim_module = mod_name.replace(".", "/")
+                nim_module = mod_name.replace(".", "_")
                 _emit(ctx, "import " + nim_module)
 
 
@@ -4029,7 +4068,7 @@ def emit_nim_module(east3_doc: dict[str, JsonVal]) -> str:
         module_id = _str(lp, "module_id")
 
     if module_id != "":
-        expand_cross_module_defaults([(module_id, east3_doc)])
+        expand_cross_module_defaults([east3_doc])
 
     # Load runtime mapping
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "nim" / "mapping.json"
