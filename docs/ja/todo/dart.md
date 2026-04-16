@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-07
+最終更新: 2026-04-16
 
 ## 運用ルール
 
@@ -28,4 +28,12 @@
 
 ## 未完了タスク
 
-- なし。次の Dart タスクは新規起票待ち。
+### P1-EMITTER-SELFHOST-DART: emit/dart/cli.py を単独で selfhost C++ build に通す
+
+文脈: [docs/ja/plans/p1-emitter-selfhost-per-backend.md](../plans/p1-emitter-selfhost-per-backend.md)
+
+各 backend emitter は subprocess で独立起動する自己完結プログラム。pytra-cli.py 全体の selfhost とは切り離し、`toolchain.emit.dart.cli` をエントリに単独で C++ build を通す。
+
+1. [ ] [ID: P1-EMITTER-SELFHOST-DART-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/dart/cli.py --target cpp -o work/selfhost/emit/dart/` を実行し、変換が通るようにする
+2. [ ] [ID: P1-EMITTER-SELFHOST-DART-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
+3. [ ] [ID: P1-EMITTER-SELFHOST-DART-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する

@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-10
+最終更新: 2026-04-16
 
 ## 運用ルール
 
@@ -19,6 +19,17 @@
 - **[emitter 実装ガイドライン](../spec/spec-emitter-guide.md)を必ず読むこと。** parity check ツール、禁止事項、mapping.json の使い方が書いてある。
 
 ## 未完了タスク
+
+### P1-EMITTER-SELFHOST-GO: emit/go/cli.py を単独で selfhost C++ build に通す
+
+文脈: [docs/ja/plans/p1-emitter-selfhost-per-backend.md](../plans/p1-emitter-selfhost-per-backend.md)
+
+各 backend emitter は subprocess で独立起動する自己完結プログラム。pytra-cli.py 全体の selfhost とは切り離し、`toolchain.emit.go.cli` をエントリに単独で C++ build を通す。
+
+1. [ ] [ID: P1-EMITTER-SELFHOST-GO-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/go/cli.py --target cpp -o work/selfhost/emit/go/` を実行し、変換が通るようにする
+2. [ ] [ID: P1-EMITTER-SELFHOST-GO-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
+3. [ ] [ID: P1-EMITTER-SELFHOST-GO-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する
+
 
 ### P7-GO-SELFHOST-RUNTIME: Go selfhost バイナリを実際に動かして parity PASS する
 
