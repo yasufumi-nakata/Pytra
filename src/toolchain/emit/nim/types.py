@@ -67,10 +67,11 @@ _NIM_KEYWORDS: set[str] = {
     "using", "var", "when", "while", "yield",
 }
 
+# "result" is Nim's implicit return variable — rename to v_result to avoid ResultShadowed warning.
 _NIM_NORMALIZED_RESERVED: set[str] = {
     "parseint",
     "parsefloat",
-    "result",  # Nim implicit return variable — rename to v_result to avoid ResultShadowed warning
+    "result",
 }
 
 _DYNAMIC_UNION_OPTIONS: set[str] = {
