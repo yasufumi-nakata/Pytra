@@ -2925,6 +2925,14 @@ def _emit_unbox(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             lane_expr = _emit_union_get_expr(value_expr, source_type, target)
             if lane_expr != value_expr:
                 return lane_expr
+    if _type_uses_callable(target):
+        optional_callable_inner = _optional_inner_type(union_storage_type)
+        if optional_callable_inner != "" and _type_uses_callable(optional_callable_inner):
+            return "(*(" + value_expr + "))"
+        if _type_uses_callable(union_storage_type):
+            return value_expr
+        if _type_uses_callable(union_value_type):
+            return value_expr
     if _optional_inner_type(union_storage_type) == target:
         return "(*(" + value_expr + "))"
     if _has_variant_storage(storage_type) or _is_top_level_union_type(union_storage_type):

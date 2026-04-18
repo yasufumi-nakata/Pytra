@@ -3231,6 +3231,37 @@ def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
                 extra = _guard_narrowing_from_expr(values_list[i])
                 _guard_env_merge(and_env, extra)
         return nd
+    if kind == COMPARE:
+        left = nd.get("left")
+        comparators = nd.get("comparators")
+        ops = nd.get("ops")
+        is_name_none_compare = False
+        if (
+            isinstance(left, dict)
+            and _tp_safe(left.get("kind")) == NAME
+            and isinstance(comparators, list)
+            and len(comparators) == 1
+            and isinstance(comparators[0], dict)
+            and _tp_safe(comparators[0].get("kind")) == CONSTANT
+            and comparators[0].get("value") is None
+            and isinstance(ops, list)
+            and len(ops) == 1
+            and _tp_safe(ops[0]) in ("Is", "IsNot")
+        ):
+            # `x is None` / `x is not None` must observe the original optional/union
+            # value. Unboxing `x` here would destroy the None lane before comparison.
+            is_name_none_compare = True
+        if isinstance(left, dict) and not is_name_none_compare:
+            left_node_cmp: Node = cast(dict[str, JsonVal], left)
+            nd["left"] = _guard_expr(left_node_cmp, env)
+        elif isinstance(left, list):
+            left_list_cmp: list[JsonVal] = cast(list[JsonVal], left)
+            nd["left"] = _guard_expr(left_list_cmp, env)
+        if isinstance(comparators, list):
+            comparator_list_cmp: list[JsonVal] = cast(list[JsonVal], comparators)
+            for i in range(len(comparator_list_cmp)):
+                comparator_list_cmp[i] = _guard_expr(comparator_list_cmp[i], env)
+        return nd
     for key in list(nd.keys()):
         value = nd[key]
         if isinstance(value, dict):

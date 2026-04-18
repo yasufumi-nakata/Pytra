@@ -148,6 +148,26 @@ def make_token() -> Token:
         self.assertIn("item_sep", cpp)
         self.assertIn("key_sep", cpp)
 
+    def test_optional_callable_call_after_guard_dereferences_storage(self) -> None:
+        src = """def inc(x: int) -> int:
+    return x + 1
+
+def f() -> int:
+    cb: callable[[int], int] | None = inc
+    if cb is not None:
+        return cb(4)
+    return 0
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "optional_callable_guard.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("if (!py_is_none(cb))", cpp)
+        self.assertIn("return (*(cb))(4);", cpp)
+        self.assertNotIn("return cb(4);", cpp)
+
     def test_py2cpp_kind_lookup_is_centralized(self) -> None:
         src_text = (ROOT / "src" / "toolchain" / "emit" / "cpp" / "cli.py").read_text(encoding="utf-8")
         bad_lines: list[str] = []

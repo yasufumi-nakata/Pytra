@@ -2074,6 +2074,29 @@ def f(x16: int16, x64: int64, f32: float32) -> None:
         guarded_return = module["body"][0]["body"][0]["value"]
         self.assertEqual(guarded_return.get("resolved_type"), "int16")
 
+    def test_guard_narrowing_preserves_name_for_none_compare_after_elif(self) -> None:
+        source = """
+def f(y: str | list[int] | None) -> bool:
+    if isinstance(y, list):
+        return False
+    elif isinstance(y, str):
+        return False
+    return y is None
+"""
+        east2 = parse_python_source(source, "<mem>").to_jv()
+        resolve_east1_to_east2(east2, registry=_load_registry())
+        east3 = lower_east2_to_east3(deep_copy_json(east2))
+
+        compare_nodes = [
+            node for node in _walk(east3)
+            if node.get("kind") == "Compare" and node.get("repr") == "y is None"
+        ]
+        self.assertEqual(len(compare_nodes), 1)
+        left = compare_nodes[0].get("left")
+        self.assertIsInstance(left, dict)
+        self.assertEqual(left.get("kind"), "Name")
+        self.assertEqual(left.get("id"), "y")
+
     def test_compile_boxes_imported_stdlib_alias_arguments(self) -> None:
         source = """
 from pytra.std.json import dumps
