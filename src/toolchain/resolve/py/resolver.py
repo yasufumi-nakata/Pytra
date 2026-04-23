@@ -3597,51 +3597,53 @@ def _resolve_ifexp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_listcomp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    generators = expr.get("generators")
+    generators = _dict_get_arr(expr, "generators")
     comp_scope: Scope = ctx.scope.child()
     old_scope: Scope = ctx.scope
 
-    if isinstance(generators, list):
-        for gen in generators:
-            if isinstance(gen, dict):
-                iter_expr = gen.get("iter")
-                if isinstance(iter_expr, dict):
-                    # Convert range() to RangeExpr in comprehension context
-                    if _is_range_call(iter_expr):
-                        _convert_call_to_range_expr(iter_expr, ctx)
-                        it = iter_expr.get("resolved_type")
-                        it = str(it) if isinstance(it, str) else "list[int64]"
-                    else:
-                        it = _resolve_expr(iter_expr, ctx)
-                    # Extract element type from iterable
-                    elem: str = "unknown"
-                    if it.startswith("list[") and it.endswith("]"):
-                        elem = it[5:-1]
-                    elif it.startswith("set[") and it.endswith("]"):
-                        elem = it[4:-1]
-                    elif it == "str":
-                        elem = "str"
-                    elif it in ("bytes", "bytearray", "list[uint8]"):
-                        elem = "int64"
-                    elif it == "list[int64]" or it.startswith("RangeExpr"):
-                        elem = "int64"
-                    target = gen.get("target")
-                    if isinstance(target, dict):
-                        _bind_comp_target(comp_scope, target, elem)
-                # Resolve filter conditions
-                ifs = gen.get("ifs")
-                if isinstance(ifs, list):
-                    ctx.scope = comp_scope
-                    for cond in ifs:
-                        if isinstance(cond, dict):
-                            _resolve_expr(cond, ctx)
-                    ctx.scope = old_scope
+    for gen_val in generators:
+        gen = _jv_obj(gen_val)
+        if len(gen) == 0:
+            continue
+        iter_expr = _dict_get_obj(gen, "iter")
+        if len(iter_expr) > 0:
+            # Convert range() to RangeExpr in comprehension context
+            if _is_range_call(iter_expr):
+                _convert_call_to_range_expr(iter_expr, ctx)
+                it = _dict_get_str(iter_expr, "resolved_type")
+                if it == "":
+                    it = "list[int64]"
+            else:
+                it = _resolve_expr(iter_expr, ctx)
+            # Extract element type from iterable
+            elem: str = "unknown"
+            if it.startswith("list[") and it.endswith("]"):
+                elem = it[5:-1]
+            elif it.startswith("set[") and it.endswith("]"):
+                elem = it[4:-1]
+            elif it == "str":
+                elem = "str"
+            elif it in ("bytes", "bytearray", "list[uint8]"):
+                elem = "int64"
+            elif it == "list[int64]" or it.startswith("RangeExpr"):
+                elem = "int64"
+            target = _dict_get_obj(gen, "target")
+            if len(target) > 0:
+                _bind_comp_target(comp_scope, target, elem)
+        # Resolve filter conditions
+        ifs = _dict_get_arr(gen, "ifs")
+        ctx.scope = comp_scope
+        for cond_val in ifs:
+            cond = _jv_obj(cond_val)
+            if len(cond) > 0:
+                _resolve_expr(cond, ctx)
+        ctx.scope = old_scope
 
     # Resolve elt in comprehension scope
     ctx.scope = comp_scope
-    elt = expr.get("elt")
+    elt = _dict_get_obj(expr, "elt")
     elt_type: str = "unknown"
-    if isinstance(elt, dict):
+    if len(elt) > 0:
         elt_type = _resolve_expr(elt, ctx)
     ctx.scope = old_scope
 
@@ -3652,40 +3654,41 @@ def _resolve_listcomp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 def _resolve_setcomp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     """Resolve a set comprehension {elt for ...}."""
-    generators = expr.get("generators")
+    generators = _dict_get_arr(expr, "generators")
     comp_scope: Scope = ctx.scope.child()
     old_scope: Scope = ctx.scope
-    if isinstance(generators, list):
-        for gen in generators:
-            if isinstance(gen, dict):
-                iter_expr = gen.get("iter")
-                if isinstance(iter_expr, dict):
-                    if _is_range_call(iter_expr):
-                        _convert_call_to_range_expr(iter_expr, ctx)
-                        it = "list[int64]"
-                    else:
-                        it = _resolve_expr(iter_expr, ctx)
-                    elem: str = "unknown"
-                    if it.startswith("list[") and it.endswith("]"):
-                        elem = it[5:-1]
-                    elif it == "str":
-                        elem = "str"
-                    elif it in ("bytes", "bytearray", "list[uint8]"):
-                        elem = "int64"
-                    target = gen.get("target")
-                    if isinstance(target, dict):
-                        _bind_comp_target(comp_scope, target, elem)
-                ifs = gen.get("ifs")
-                if isinstance(ifs, list):
-                    ctx.scope = comp_scope
-                    for cond in ifs:
-                        if isinstance(cond, dict):
-                            _resolve_expr(cond, ctx)
-                    ctx.scope = old_scope
+    for gen_val in generators:
+        gen = _jv_obj(gen_val)
+        if len(gen) == 0:
+            continue
+        iter_expr = _dict_get_obj(gen, "iter")
+        if len(iter_expr) > 0:
+            if _is_range_call(iter_expr):
+                _convert_call_to_range_expr(iter_expr, ctx)
+                it = "list[int64]"
+            else:
+                it = _resolve_expr(iter_expr, ctx)
+            elem: str = "unknown"
+            if it.startswith("list[") and it.endswith("]"):
+                elem = it[5:-1]
+            elif it == "str":
+                elem = "str"
+            elif it in ("bytes", "bytearray", "list[uint8]"):
+                elem = "int64"
+            target = _dict_get_obj(gen, "target")
+            if len(target) > 0:
+                _bind_comp_target(comp_scope, target, elem)
+        ifs = _dict_get_arr(gen, "ifs")
+        ctx.scope = comp_scope
+        for cond_val in ifs:
+            cond = _jv_obj(cond_val)
+            if len(cond) > 0:
+                _resolve_expr(cond, ctx)
+        ctx.scope = old_scope
     ctx.scope = comp_scope
-    elt = expr.get("elt")
+    elt = _dict_get_obj(expr, "elt")
     elt_type: str = "unknown"
-    if isinstance(elt, dict):
+    if len(elt) > 0:
         elt_type = _resolve_expr(elt, ctx)
     ctx.scope = old_scope
     result: str = "set[" + elt_type + "]"
@@ -3695,44 +3698,45 @@ def _resolve_setcomp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 def _resolve_dictcomp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     """Resolve a dict comprehension {k: v for ...}."""
-    generators = expr.get("generators")
+    generators = _dict_get_arr(expr, "generators")
     comp_scope: Scope = ctx.scope.child()
     old_scope: Scope = ctx.scope
-    if isinstance(generators, list):
-        for gen in generators:
-            if isinstance(gen, dict):
-                iter_expr = gen.get("iter")
-                if isinstance(iter_expr, dict):
-                    if _is_range_call(iter_expr):
-                        _convert_call_to_range_expr(iter_expr, ctx)
-                        it = "list[int64]"
-                    else:
-                        it = _resolve_expr(iter_expr, ctx)
-                    elem: str = "unknown"
-                    if it.startswith("list[") and it.endswith("]"):
-                        elem = it[5:-1]
-                    elif it == "str":
-                        elem = "str"
-                    elif it in ("bytes", "bytearray", "list[uint8]"):
-                        elem = "int64"
-                    target = gen.get("target")
-                    if isinstance(target, dict):
-                        _bind_comp_target(comp_scope, target, elem)
-                ifs = gen.get("ifs")
-                if isinstance(ifs, list):
-                    ctx.scope = comp_scope
-                    for cond in ifs:
-                        if isinstance(cond, dict):
-                            _resolve_expr(cond, ctx)
-                    ctx.scope = old_scope
+    for gen_val in generators:
+        gen = _jv_obj(gen_val)
+        if len(gen) == 0:
+            continue
+        iter_expr = _dict_get_obj(gen, "iter")
+        if len(iter_expr) > 0:
+            if _is_range_call(iter_expr):
+                _convert_call_to_range_expr(iter_expr, ctx)
+                it = "list[int64]"
+            else:
+                it = _resolve_expr(iter_expr, ctx)
+            elem: str = "unknown"
+            if it.startswith("list[") and it.endswith("]"):
+                elem = it[5:-1]
+            elif it == "str":
+                elem = "str"
+            elif it in ("bytes", "bytearray", "list[uint8]"):
+                elem = "int64"
+            target = _dict_get_obj(gen, "target")
+            if len(target) > 0:
+                _bind_comp_target(comp_scope, target, elem)
+        ifs = _dict_get_arr(gen, "ifs")
+        ctx.scope = comp_scope
+        for cond_val in ifs:
+            cond = _jv_obj(cond_val)
+            if len(cond) > 0:
+                _resolve_expr(cond, ctx)
+        ctx.scope = old_scope
     ctx.scope = comp_scope
-    key_node = expr.get("key")
-    val_node = expr.get("value")
+    key_node = _dict_get_obj(expr, "key")
+    val_node = _dict_get_obj(expr, "value")
     kt: str = "unknown"
     vt: str = "unknown"
-    if isinstance(key_node, dict):
+    if len(key_node) > 0:
         kt = _resolve_expr(key_node, ctx)
-    if isinstance(val_node, dict):
+    if len(val_node) > 0:
         vt = _resolve_expr(val_node, ctx)
     ctx.scope = old_scope
     result: str = "dict[" + kt + "," + vt + "]"
@@ -3748,16 +3752,16 @@ def _resolve_lambda(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 def _resolve_slice(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     """Resolve a Slice node (lower:upper:step)."""
     for key in ("lower", "upper", "step"):
-        child = expr.get(key)
-        if isinstance(child, dict) and "kind" in child:
+        child = _dict_get_obj(expr, key)
+        if len(child) > 0 and _dict_get_str(child, "kind") != "":
             _resolve_expr(child, ctx)
     # Slice itself doesn't have a resolved_type in the same sense
     return "slice"
 
 
 def _resolve_starred(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    value = expr.get("value")
-    if isinstance(value, dict):
+    value = _dict_get_obj(expr, "value")
+    if len(value) > 0:
         vt: str = _resolve_expr(value, ctx)
         expr["resolved_type"] = vt
         return vt
@@ -3771,8 +3775,7 @@ def _resolve_starred(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 def _resolve_stmt(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Resolve types within a statement."""
-    kind_val = stmt.get("kind")
-    kind: str = str(kind_val) if isinstance(kind_val, str) else ""
+    kind: str = _dict_get_str(stmt, "kind")
 
     if kind == "FunctionDef":
         _resolve_function_def(stmt, ctx)
