@@ -2838,7 +2838,7 @@ def _resolve_builtin_call(
         expr["lowered_kind"] = "TypePredicateCall"
         expr["predicate_kind"] = "isinstance"
         if sig is not None:
-            pred_extern = sig.extern_v2
+            pred_extern: ExternV2 | None = sig.extern_v2
             if pred_extern is not None:
                 expr["semantic_tag"] = pred_extern.tag
         return ret
@@ -2846,7 +2846,7 @@ def _resolve_builtin_call(
         expr["lowered_kind"] = "TypePredicateCall"
         expr["predicate_kind"] = "issubclass"
         if sig is not None:
-            pred_extern2 = sig.extern_v2
+            pred_extern2: ExternV2 | None = sig.extern_v2
             if pred_extern2 is not None:
                 expr["semantic_tag"] = pred_extern2.tag
         return ret
@@ -2867,7 +2867,7 @@ def _resolve_builtin_call(
 
     used_extern_info = False
     if sig is not None:
-        call_extern = sig.extern_v2
+        call_extern: ExternV2 | None = sig.extern_v2
         if call_extern is not None:
             used_extern_info = True
             # runtime_call: prefer specialization, else extern_v2.symbol
@@ -3071,7 +3071,7 @@ def _resolve_module_attr_call(
     # Runtime metadata from extern_v2
     has_module_extern = False
     if stdlib_func is not None:
-        func_extern = stdlib_func.extern_v2
+        func_extern: ExternV2 | None = stdlib_func.extern_v2
         if func_extern is not None:
             has_module_extern = True
             expr["resolved_runtime_call"] = receiver_name + "." + attr
@@ -3086,7 +3086,7 @@ def _resolve_module_attr_call(
             if func_extern.tag != "":
                 expr["semantic_tag"] = func_extern.tag
     elif stdlib_class is not None:
-        class_extern = stdlib_class.extern_v2
+        class_extern: ExternV2 | None = stdlib_class.extern_v2
         if class_extern is not None:
             has_module_extern = True
             expr["resolved_runtime_call"] = receiver_name + "." + attr
