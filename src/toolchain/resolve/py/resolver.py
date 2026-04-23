@@ -341,7 +341,9 @@ def _parse_callable_signature(type_str: str, ctx: ResolveContext) -> tuple[list[
         if close_idx >= 0 and close_idx + 1 < len(inner) and inner[close_idx + 1] == ",":
             params_text: str = inner[1:close_idx].strip()
             return_text: str = inner[close_idx + 2:].strip()
-            params: list[str] = extract_type_args("tuple[" + params_text + "]") if params_text != "" else []
+            params: list[str] = []
+            if params_text != "":
+                params = extract_type_args("tuple[" + params_text + "]")
             normalized_params: list[str] = []
             for param in params:
                 normalized_params.append("" + normalize_type(param, ctx.type_aliases))
@@ -368,15 +370,20 @@ def _lookup_any_class(name: str, ctx: ResolveContext) -> ClassSig | None:
     builtin_cls: ClassSig | None = ctx.registry.classes.get(name)
     if builtin_cls is not None:
         return builtin_cls
-    return ctx.registry.find_stdlib_class(name)
+    for mod in ctx.registry.stdlib_modules.values():
+        std_cls: ClassSig | None = mod.classes.get(name)
+        if std_cls is not None:
+            return std_cls
+    return None
 
 
 def _iter_class_hierarchy(name: str, ctx: ResolveContext) -> list[ClassSig]:
     out: list[ClassSig] = []
-    pending: list[str] = [extract_base_type(name)]
+    pending: list[str] = []
+    pending.append("" + extract_base_type(name))
     seen: set[str] = set()
     while len(pending) > 0:
-        cur: str = extract_base_type(pending.pop(0))
+        cur: str = "" + extract_base_type(pending.pop(0))
         if cur == "" or cur in seen:
             continue
         seen.add(cur)
@@ -391,12 +398,12 @@ def _iter_class_hierarchy(name: str, ctx: ResolveContext) -> list[ClassSig]:
 
 
 def _resolve_owner_base_type(value: dict[str, JsonVal], receiver_type: str, ctx: ResolveContext) -> str:
-    owner_base: str = extract_base_type(receiver_type)
+    owner_base: str = "" + extract_base_type(receiver_type)
     if owner_base != "type":
         return owner_base
     type_object_of: str = _dict_get_str(value, "type_object_of")
     if type_object_of != "":
-        return extract_base_type(type_object_of)
+        return "" + extract_base_type(type_object_of)
     if _dict_get_str(value, "kind") == "Name":
         name: str = _dict_get_str(value, "id")
         if name != "":
@@ -444,7 +451,12 @@ def _resolve_validate_type_alias_cycles(type_aliases: dict[str, str]) -> None:
             cycle_start = 0
             while cycle_start < len(stack) and stack[cycle_start] != alias_name:
                 cycle_start += 1
-            cycle = stack[cycle_start:] + [alias_name]
+            cycle: list[str] = []
+            cycle_index = cycle_start
+            while cycle_index < len(stack):
+                cycle.append(stack[cycle_index])
+                cycle_index += 1
+            cycle.append(alias_name)
             uniq: list[str] = []
             for item in cycle:
                 if item not in uniq:
@@ -463,7 +475,8 @@ def _resolve_validate_type_alias_cycles(type_aliases: dict[str, str]) -> None:
         visited.add(alias_name)
 
     for alias_name in alias_names:
-        _walk(alias_name, [])
+        empty_stack: list[str] = []
+        _walk(alias_name, empty_stack)
 
 
 def _lookup_method_sig(owner_base: str, attr: str, ctx: ResolveContext) -> tuple[ClassSig | None, FuncSig | None]:
@@ -482,7 +495,14 @@ def _attach_stdlib_method_runtime_metadata(
     attr: str,
     ctx: ResolveContext,
 ) -> None:
-    module_id: str = ctx.registry.find_stdlib_class_module(cls_sig)
+    module_id: str = ""
+    for registry_module_id, registry_module in ctx.registry.stdlib_modules.items():
+        for candidate_cls in registry_module.classes.values():
+            if candidate_cls.name == cls_sig.name:
+                module_id = registry_module_id
+                break
+        if module_id != "":
+            break
     if module_id == "":
         return
     method_extern: ExternV2 | None = method_sig.extern_v2
@@ -500,7 +520,8 @@ def _attach_stdlib_method_runtime_metadata(
     expr["runtime_call"] = runtime_call_name
     expr["runtime_module_id"] = runtime_module_id
     expr["runtime_symbol"] = runtime_symbol_name
-    adapter: str = ctx.lookup_adapter_kind(runtime_module_id, runtime_symbol_name)
+    adapter_doc: dict[str, JsonVal] = ctx.lookup_runtime_symbol_doc(runtime_module_id, runtime_symbol_name)
+    adapter: str = _dict_get_str(adapter_doc, "call_adapter_kind")
     if adapter != "":
         expr["runtime_call_adapter_kind"] = adapter
     if method_extern is not None and method_extern.tag != "":
@@ -516,7 +537,7 @@ def _has_inherited_field(class_name: str, field_name: str, ctx: ResolveContext) 
     pending: list[str] = list(cls_sig.bases)
     seen: set[str] = {class_name}
     while len(pending) > 0:
-        cur: str = extract_base_type(pending.pop(0))
+        cur: str = "" + extract_base_type(pending.pop(0))
         if cur == "" or cur in seen:
             continue
         seen.add(cur)
