@@ -3175,7 +3175,10 @@ def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
             return t
 
     owner_base: str = _resolve_owner_base_type(value, receiver_type, ctx) if isinstance(value, dict) else ""
-    for cls_sig in _iter_class_hierarchy(owner_base, ctx):
+    for class_name in _iter_class_hierarchy(owner_base, ctx):
+        cls_sig: ClassSig | None = _lookup_any_class(class_name, ctx)
+        if cls_sig is None:
+            continue
         if attr in cls_sig.fields:
             field_type: str = _ctx_normalize_type(_substitute_type_params(cls_sig.fields[attr], receiver_type, cls_sig), ctx)
             expr["resolved_type"] = field_type
