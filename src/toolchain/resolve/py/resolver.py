@@ -1791,11 +1791,8 @@ def _infer_callable_param_signature(
     param_name: str,
     ctx: ResolveContext,
 ) -> str:
-    arg_types = func_node.get("arg_types")
-    declared = ""
-    if isinstance(arg_types, dict):
-        declared_obj = arg_types.get(param_name)
-        declared = declared_obj if isinstance(declared_obj, str) else ""
+    arg_types = _dict_get_obj(func_node, "arg_types")
+    declared = _dict_get_str(arg_types, param_name)
     if not _callable_type_needs_refinement(declared, ctx):
         return ""
 
@@ -1861,7 +1858,7 @@ def _infer_callable_param_signature(
             _visit(child, parent, grandparent)
 
     if "body" in func_node:
-        _visit(func_node["body"])
+        _visit(func_node["body"], None, None)
     if invalid or len(inferred_args) == 0 or inferred_ret == "":
         return ""
     return _make_callable_type(inferred_args, inferred_ret)
@@ -1890,37 +1887,36 @@ def _refresh_callable_param_calls(node: JsonVal, refined: dict[str, str], ctx: R
 
 def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
     functions: dict[str, dict[str, JsonVal]] = {}
-    body_val = module_doc.get("body")
-    body_list: list[JsonVal] = body_val if isinstance(body_val, list) else []
-    for stmt in body_list:
-        if isinstance(stmt, dict) and stmt.get("kind") == "FunctionDef":
-            name = stmt.get("name")
-            if isinstance(name, str) and name != "":
+    body_list: list[JsonVal] = _dict_get_arr(module_doc, "body")
+    for stmt_val in body_list:
+        stmt = _jv_obj(stmt_val)
+        if len(stmt) > 0 and _dict_get_str(stmt, "kind") == "FunctionDef":
+            name = _dict_get_str(stmt, "name")
+            if name != "":
                 functions[name] = stmt
 
     def _local_function_callable_type(name: str) -> str:
-        fn_def: dict[str, JsonVal] | None = functions.get(name)
+        fn_def = functions.get(name)
         if fn_def is None:
             renamed = ctx.renamed_symbols.get(name, "")
             if renamed != "":
                 fn_def = functions.get(renamed)
         if fn_def is None:
             return ""
-        arg_order_obj: JsonVal = fn_def.get("arg_order")
-        arg_types_obj: JsonVal = fn_def.get("arg_types")
-        ret_obj: JsonVal = fn_def.get("return_type")
-        if not isinstance(arg_order_obj, list) or not isinstance(arg_types_obj, dict) or not isinstance(ret_obj, str):
-            return ""
         arg_order_list: list[str] = []
-        for arg_name_obj in arg_order_obj:
-            if isinstance(arg_name_obj, str):
-                arg_order_list.append(arg_name_obj)
+        for arg_name_obj in _dict_get_arr(fn_def, "arg_order"):
+            arg_name_text = _jv_str(arg_name_obj)
+            if arg_name_text != "":
+                arg_order_list.append(arg_name_text)
+        arg_types_obj = _dict_get_obj(fn_def, "arg_types")
+        ret_obj = _dict_get_str(fn_def, "return_type")
+        if len(arg_order_list) == 0 or len(arg_types_obj) == 0 or ret_obj == "":
+            return ""
         params: list[str] = []
         for arg_name in arg_order_list:
             if arg_name == "self":
                 continue
-            arg_type_obj = arg_types_obj.get(arg_name)
-            arg_type = arg_type_obj if isinstance(arg_type_obj, str) else ""
+            arg_type = _dict_get_str(arg_types_obj, arg_name)
             if arg_type == "":
                 return ""
             params.append(arg_type)
@@ -1940,34 +1936,35 @@ def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: Reso
             return
         invalid.add(key)
         if param_name in cur:
-            del cur[param_name]
+            cur.pop(param_name)
 
     def _visit(node: JsonVal) -> None:
-        if isinstance(node, list):
-            for item in node:
+        node_list = _jv_arr(node)
+        if len(node_list) > 0:
+            for item in node_list:
                 _visit(item)
             return
-        if not isinstance(node, dict):
+        nd = _jv_obj(node)
+        if len(nd) == 0:
             return
-        if node.get("kind") == "Call":
-            func = node.get("func")
-            fn_name = func.get("id") if isinstance(func, dict) else None
-            fn_def: dict[str, JsonVal] | None = functions.get(fn_name) if isinstance(fn_name, str) else None
+        if _dict_get_str(nd, "kind") == "Call":
+            func = _dict_get_obj(nd, "func")
+            fn_name = _dict_get_str(func, "id") if len(func) > 0 else ""
+            fn_def = functions.get(fn_name) if fn_name != "" else None
             if fn_def is not None:
-                arg_order_obj = fn_def.get("arg_order")
-                arg_types_obj = fn_def.get("arg_types")
-                args_obj = node.get("args")
-                if isinstance(arg_order_obj, list) and isinstance(arg_types_obj, dict) and isinstance(args_obj, list):
-                    arg_order_list: list[str] = []
-                    for param_obj in arg_order_obj:
-                        if isinstance(param_obj, str):
-                            arg_order_list.append(param_obj)
+                arg_order_list: list[str] = []
+                for param_obj in _dict_get_arr(fn_def, "arg_order"):
+                    param_text = _jv_str(param_obj)
+                    if param_text != "":
+                        arg_order_list.append(param_text)
+                arg_types_obj = _dict_get_obj(fn_def, "arg_types")
+                args_obj = _dict_get_arr(nd, "args")
+                if len(arg_order_list) > 0 and len(arg_types_obj) > 0:
                     positional_index = 0
                     for param in arg_order_list:
                         if param == "self":
                             continue
-                        declared_obj = arg_types_obj.get(param)
-                        declared = declared_obj if isinstance(declared_obj, str) else ""
+                        declared = _dict_get_str(arg_types_obj, param)
                         if not _callable_type_needs_refinement(declared, ctx):
                             positional_index += 1
                             continue
@@ -1976,54 +1973,50 @@ def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: Reso
                             continue
                         actual_arg = args_obj[positional_index]
                         actual = _effective_resolved_type_for_callable(actual_arg)
-                        if actual in ("callable", "Callable") and isinstance(actual_arg, dict) and actual_arg.get("kind") == "Name":
-                            actual_name = actual_arg.get("id")
-                            if isinstance(actual_name, str):
+                        actual_obj = _jv_obj(actual_arg)
+                        if actual in ("callable", "Callable") and len(actual_obj) > 0 and _dict_get_str(actual_obj, "kind") == "Name":
+                            actual_name = _dict_get_str(actual_obj, "id")
+                            if actual_name != "":
                                 precise_actual = _local_function_callable_type(actual_name)
                                 if precise_actual != "":
-                                    actual = precise_actual
+                                    actual = "" + precise_actual
                         if _callable_type_uses_signature(actual) and not _callable_type_needs_refinement(actual, ctx):
                             _record(fn_name, param, actual)
                         positional_index += 1
-        for value in node.values():
-            if isinstance(value, (dict, list)):
-                _visit(value)
+        for value in nd.values():
+            _visit(value)
 
-    _visit(module_doc.get("body", []))
-    _visit(module_doc.get("main_guard_body", []))
+    if "body" in module_doc:
+        _visit(module_doc["body"])
+    if "main_guard_body" in module_doc:
+        _visit(module_doc["main_guard_body"])
 
     for fn_name, param_map in observed.items():
-        fn_def: dict[str, JsonVal] | None = functions.get(fn_name)
+        fn_def = functions.get(fn_name)
         if fn_def is None:
             continue
-        arg_types_obj = fn_def.get("arg_types")
-        if not isinstance(arg_types_obj, dict):
+        arg_types_obj = _dict_get_obj(fn_def, "arg_types")
+        if len(arg_types_obj) == 0:
             continue
         refined: dict[str, str] = {}
         for param_name, callable_type in param_map.items():
             if (fn_name, param_name) in invalid:
                 continue
-            declared_prev_obj = arg_types_obj.get(param_name)
-            declared_prev = declared_prev_obj if isinstance(declared_prev_obj, str) else ""
+            declared_prev = _dict_get_str(arg_types_obj, param_name)
             final_type = callable_type
-            # Preserve `| None` from the original declaration so a refined
-            # callable type does not silently strip the parameter's
-            # optionality (otherwise a defaulted `None` argument becomes
-            # ill-typed at every call site).
             if declared_prev != "" and _type_text_contains_none(declared_prev):
                 if not _type_text_contains_none(final_type):
                     final_type = final_type + " | None"
             arg_types_obj[param_name] = final_type
             refined[param_name] = final_type
-            arg_types_raw = fn_def.get("arg_types_raw")
-            if isinstance(arg_types_raw, dict):
+            arg_types_raw = _dict_get_obj(fn_def, "arg_types_raw")
+            if len(arg_types_raw) > 0:
                 arg_types_raw[param_name] = final_type
-            arg_type_exprs = fn_def.get("arg_type_exprs")
-            if isinstance(arg_type_exprs, dict):
+            arg_type_exprs = _dict_get_obj(fn_def, "arg_type_exprs")
+            if len(arg_type_exprs) > 0:
                 arg_type_exprs[param_name] = make_type_expr(final_type)
-        if refined:
-            _refresh_callable_param_calls(fn_def.get("body"), refined, ctx)
-
+        if len(refined) > 0 and "body" in fn_def:
+            _refresh_callable_param_calls(fn_def["body"], refined, ctx)
 
 def _type_text_contains_none(type_str: str) -> bool:
     t: str = type_str.strip()
@@ -2045,8 +2038,7 @@ def _type_text_contains_none(type_str: str) -> bool:
 def _resolve_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     """Resolve the type of an expression node, mutating it in place.
     Returns the resolved_type string."""
-    kind_val = expr.get("kind")
-    kind: str = str(kind_val) if isinstance(kind_val, str) else ""
+    kind: str = _dict_get_str(expr, "kind")
 
     if kind == "Constant":
         return _resolve_constant(expr, ctx)
@@ -2090,44 +2082,45 @@ def _resolve_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         return _resolve_slice(expr, ctx)
     if kind == "JoinedStr":
         expr["resolved_type"] = "str"
-        # Resolve child values — each part gets resolved_type: "str"
-        values = expr.get("values")
-        if isinstance(values, list):
-            for v in values:
-                if isinstance(v, dict):
-                    vk: str = str(v.get("kind", ""))
-                    if vk == "FormattedValue":
-                        # FormattedValue wraps an expression
-                        inner = v.get("value")
-                        if isinstance(inner, dict):
-                            _resolve_expr(inner, ctx)
-                        v["resolved_type"] = "str"
-                    elif vk == "Constant":
-                        _resolve_expr(v, ctx)
-                    else:
-                        _resolve_expr(v, ctx)
+        values = _dict_get_arr(expr, "values")
+        for v_val in values:
+            v = _jv_obj(v_val)
+            if len(v) == 0:
+                continue
+            vk: str = _dict_get_str(v, "kind")
+            if vk == "FormattedValue":
+                inner = _dict_get_obj(v, "value")
+                if len(inner) > 0:
+                    _resolve_expr(inner, ctx)
+                v["resolved_type"] = "str"
+            elif vk == "Constant":
+                _resolve_expr(v, ctx)
+            else:
+                _resolve_expr(v, ctx)
         return "str"
     if kind == "FormattedValue":
-        inner2 = expr.get("value")
-        if isinstance(inner2, dict):
+        inner2 = _dict_get_obj(expr, "value")
+        if len(inner2) > 0:
             _resolve_expr(inner2, ctx)
         expr["resolved_type"] = "str"
         return "str"
 
     # Fallback: resolve children recursively
-    rt = expr.get("resolved_type")
-    if not isinstance(rt, str) or rt == "":
+    rt = _dict_get_str(expr, "resolved_type")
+    if rt == "":
         expr["resolved_type"] = "unknown"
-    for key in expr:
-        val = expr[key]
-        if isinstance(val, dict) and "kind" in val:
-            _resolve_expr(val, ctx)
-        elif isinstance(val, list):
-            for item in val:
-                if isinstance(item, dict) and "kind" in item:
+    for val in expr.values():
+        child = _jv_obj(val)
+        if len(child) > 0 and "kind" in child:
+            _resolve_expr(child, ctx)
+        else:
+            child_items = _jv_arr(val)
+            for item_val in child_items:
+                item = _jv_obj(item_val)
+                if len(item) > 0 and "kind" in item:
                     _resolve_expr(item, ctx)
-    rt2 = expr.get("resolved_type")
-    return str(rt2) if isinstance(rt2, str) else "unknown"
+    rt2 = _dict_get_str(expr, "resolved_type")
+    return rt2 if rt2 != "" else "unknown"
 
 
 def _resolve_constant(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
