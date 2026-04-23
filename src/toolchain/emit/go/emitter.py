@@ -6145,7 +6145,7 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
             module_id = rel.replace("/", ".").removesuffix(".py")
 
     if module_id != "":
-        expand_cross_module_defaults([(module_id, east3_doc)])
+        expand_cross_module_defaults([east3_doc])
 
     # Load runtime mapping
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "go" / "mapping.json"

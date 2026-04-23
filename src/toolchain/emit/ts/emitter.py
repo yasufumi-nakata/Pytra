@@ -3028,7 +3028,7 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
         module_id = _str(lp, "module_id")
 
     if module_id != "":
-        expand_cross_module_defaults([(module_id, east3_doc)])
+        expand_cross_module_defaults([east3_doc])
 
     # Load runtime mapping
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "ts" / "mapping.json"

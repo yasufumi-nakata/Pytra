@@ -40,9 +40,7 @@ def _collect_symbols(
             class_name = nd_get_str(stmt_node, "name").strip()
             if class_name == "":
                 continue
-            class_body = nd_get_list(stmt, "body")
-            if len(class_body) == 0:
-                continue
+            class_body = nd_get_list(stmt_node, "body")
             for method in class_body:
                 if not jv_is_dict(method):
                     continue
@@ -55,6 +53,7 @@ def _collect_symbols(
 
     return symbols
 
+
 def _collect_calls_in_node(
     node: JsonVal,
     known_symbols: set[str],
@@ -65,44 +64,46 @@ def _collect_calls_in_node(
 ) -> None:
     """Recursively collect call edges from a node."""
     if jv_is_dict(node):
-        node_map = jv_dict(node)
+        node_map: dict[str, JsonVal] = cast(dict[str, JsonVal], node)
         if nd_get_str(node_map, "kind") == "Call":
-            func_node = nd_get_dict(node, "func")
+            func_node = nd_get_dict(node_map, "func")
             callee = ""
             func_kind = nd_get_str(func_node, "kind")
-            if func_kind != "":
-                if func_kind == "Name":
-                    name_id = nd_get_str(func_node, "id").strip()
-                    if name_id != "":
-                        qualified = module_id + "::" + name_id
-                        if qualified in known_symbols:
-                            callee = qualified
-                        else:
-                            for sym in known_symbols:
-                                if sym.endswith("::" + name_id):
-                                    callee = sym
-                                    break
-                elif func_kind == "Attribute":
-                    attr = nd_get_str(func_node, "attr")
-                    if attr != "":
-                        meta_val = nd_get_dict(node, "meta")
-                        nec = nd_get_dict(meta_val, "non_escape_callsite")
-                        callee_val = nd_get_str(nec, "callee")
-                        if callee_val in known_symbols:
-                            callee = "" + callee_val
+            if func_kind == "Name":
+                name_id = nd_get_str(func_node, "id").strip()
+                if name_id != "":
+                    qualified = module_id + "::" + name_id
+                    if qualified in known_symbols:
+                        callee = qualified
+                    else:
+                        for sym in known_symbols:
+                            if sym.endswith("::" + name_id):
+                                callee = sym
+                                break
+            elif func_kind == "Attribute":
+                attr = nd_get_str(func_node, "attr")
+                if attr != "":
+                    meta_val = nd_get_dict(node_map, "meta")
+                    nec = nd_get_dict(meta_val, "non_escape_callsite")
+                    callee_val = nd_get_str(nec, "callee")
+                    if callee_val in known_symbols:
+                        callee = "" + callee_val
+
             if callee != "":
                 if current_fn not in graph:
                     graph[current_fn] = set()
                 graph[current_fn].add(callee)
-            else:
-                if current_fn != "":
-                    unresolved[current_fn] = unresolved.get(current_fn, 0) + 1
+            elif current_fn != "":
+                unresolved[current_fn] = unresolved.get(current_fn, 0) + 1
 
-        for _k, v in node_map.items():
-            _collect_calls_in_node(v, known_symbols, module_id, current_fn, graph, unresolved)
-    elif jv_is_list(node):
+        for _key, value in node_map.items():
+            _collect_calls_in_node(value, known_symbols, module_id, current_fn, graph, unresolved)
+        return
+
+    if jv_is_list(node):
         for item in jv_list(node):
             _collect_calls_in_node(item, known_symbols, module_id, current_fn, graph, unresolved)
+
 
 def _build_module_call_graph(
     east_doc: dict[str, JsonVal],
@@ -129,16 +130,18 @@ def _build_module_call_graph(
                 if fn_qualified not in graph:
                     graph[fn_qualified] = set()
                 _collect_calls_in_node(
-                    nd_get_list(stmt, "body"),
-                    known_symbols, module_id, fn_qualified, graph, unresolved,
+                    nd_get_list(stmt_node, "body"),
+                    known_symbols,
+                    module_id,
+                    fn_qualified,
+                    graph,
+                    unresolved,
                 )
         elif kind == "ClassDef":
             class_name = nd_get_str(stmt_node, "name").strip()
             if class_name == "":
                 continue
-            class_body = nd_get_list(stmt, "body")
-            if len(class_body) == 0:
-                continue
+            class_body = nd_get_list(stmt_node, "body")
             for method in class_body:
                 if not jv_is_dict(method):
                     continue
@@ -151,8 +154,12 @@ def _build_module_call_graph(
                     if fn_qualified not in graph:
                         graph[fn_qualified] = set()
                     _collect_calls_in_node(
-                        nd_get_list(method, "body"),
-                        known_symbols, module_id, fn_qualified, graph, unresolved,
+                        nd_get_list(method_node, "body"),
+                        known_symbols,
+                        module_id,
+                        fn_qualified,
+                        graph,
+                        unresolved,
                     )
 
     main_guard: JsonVal = east_doc.get("main_guard_body")
@@ -163,6 +170,7 @@ def _build_module_call_graph(
         _collect_calls_in_node(main_guard, known_symbols, module_id, main_fn, graph, unresolved)
 
     return graph, unresolved
+
 
 def _strongly_connected_components(
     graph: dict[str, set[str]],
@@ -208,6 +216,22 @@ def _strongly_connected_components(
     return result
 
 
+def _sort_modules_by_id(modules: list[LinkedModule]) -> list[LinkedModule]:
+    out: list[LinkedModule] = []
+    for module in modules:
+        inserted = False
+        i = 0
+        while i < len(out):
+            if module.module_id < out[i].module_id:
+                out.insert(i, module)
+                inserted = True
+                break
+            i += 1
+        if not inserted:
+            out.append(module)
+    return out
+
+
 def build_call_graph(
     modules: list[LinkedModule],
 ) -> tuple[dict[str, list[str]], list[list[str]]]:
@@ -219,24 +243,21 @@ def build_call_graph(
         - sccs: list of strongly connected components
     """
     known_symbols: set[str] = set()
-    modules_sorted = sorted(modules, key=lambda m: m.module_id)
+    modules_sorted = _sort_modules_by_id(modules)
     for module in modules_sorted:
-        doc_node: dict[str, JsonVal] = module.east_doc
-        syms = _collect_symbols(doc_node, module.module_id)
+        syms = _collect_symbols(module.east_doc, module.module_id)
         for sym in syms.keys():
             known_symbols.add(sym)
 
     raw_graph: dict[str, set[str]] = {}
-    all_unresolved: dict[str, int] = {}
-
     for module in modules_sorted:
-        doc_node: dict[str, JsonVal] = module.east_doc
-        module_graph, module_unresolved = _build_module_call_graph(
-            doc_node, module.module_id, known_symbols,
+        module_graph, _module_unresolved = _build_module_call_graph(
+            module.east_doc,
+            module.module_id,
+            known_symbols,
         )
         for caller in sorted(module_graph.keys()):
             raw_graph[caller] = set(sorted(module_graph[caller]))
-            all_unresolved[caller] = int(module_unresolved.get(caller, 0))
 
     sccs = _strongly_connected_components(raw_graph)
 
@@ -248,4 +269,3 @@ def build_call_graph(
         graph[caller] = callee_list
 
     return graph, sccs
-

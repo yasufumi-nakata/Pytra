@@ -7,8 +7,10 @@
 from __future__ import annotations
 
 from pytra.std.json import JsonVal
+from pytra.typing import cast
 
 from toolchain.link.shared_types import LinkedModule
+from toolchain.compile.jv import jv_is_dict, jv_is_list, jv_dict, jv_list, nd_get_str, nd_get_bool, nd_get_list
 
 
 _TYPE_ONLY_MODULE_IDS: set[str] = {
@@ -62,88 +64,84 @@ def is_type_only_dependency_module_id(module_id: str) -> bool:
 
 
 def _is_type_only_symbol_binding(binding: JsonVal) -> bool:
-    if not isinstance(binding, dict):
+    if not jv_is_dict(binding):
         return False
-    module_id = binding.get("module_id")
-    export_name = binding.get("export_name")
-    return isinstance(module_id, str) and isinstance(export_name, str) and (module_id, export_name) in _TYPE_ONLY_SYMBOL_BINDINGS
+    binding_node: dict[str, JsonVal] = cast(dict[str, JsonVal], binding)
+    module_id = nd_get_str(binding_node, "module_id")
+    export_name = nd_get_str(binding_node, "export_name")
+    return module_id != "" and export_name != "" and (module_id, export_name) in _TYPE_ONLY_SYMBOL_BINDINGS
 
 
 def _scan_runtime_refs(node: JsonVal, out: set[str], *, include_type_id_runtime: bool = True) -> None:
-    if isinstance(node, list):
-        for item in node:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _scan_runtime_refs(item, out, include_type_id_runtime=include_type_id_runtime)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
 
-    runtime_module_id = _normalized_runtime_module_id(node)
+    node_map: dict[str, JsonVal] = cast(dict[str, JsonVal], node)
+    runtime_module_id = _normalized_runtime_module_id(node_map)
     if runtime_module_id != "":
         out.add(runtime_module_id)
-    kind = node.get("kind")
-    if include_type_id_runtime and isinstance(kind, str) and kind in _TYPE_ID_RUNTIME_NODE_KINDS:
+    kind = nd_get_str(node_map, "kind")
+    if include_type_id_runtime and kind in _TYPE_ID_RUNTIME_NODE_KINDS:
         out.add("pytra.built_in.type_id")
 
-    for value in node.values():
-        if isinstance(value, dict):
-            _scan_runtime_refs(value, out, include_type_id_runtime=include_type_id_runtime)
-        elif isinstance(value, list):
+    for _key, value in node_map.items():
+        if jv_is_dict(value) or jv_is_list(value):
             _scan_runtime_refs(value, out, include_type_id_runtime=include_type_id_runtime)
 
 
 def _normalized_runtime_module_id(node: JsonVal) -> str:
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return ""
-    runtime_module_id = node.get("runtime_module_id")
-    if not isinstance(runtime_module_id, str) or runtime_module_id == "":
+    node_map: dict[str, JsonVal] = cast(dict[str, JsonVal], node)
+    runtime_module_id = nd_get_str(node_map, "runtime_module_id")
+    if runtime_module_id == "":
         return ""
     if runtime_module_id == "pytra.core.str":
-        runtime_symbol = node.get("runtime_symbol")
-        runtime_call = node.get("runtime_call")
-        if (
-            isinstance(runtime_symbol, str)
-            and runtime_symbol in _STRING_OP_RUNTIME_SYMBOLS
-        ) or (
-            isinstance(runtime_call, str)
-            and runtime_call in _STRING_OP_RUNTIME_SYMBOLS
-        ):
+        runtime_symbol = nd_get_str(node_map, "runtime_symbol")
+        runtime_call = nd_get_str(node_map, "runtime_call")
+        if runtime_symbol in _STRING_OP_RUNTIME_SYMBOLS or runtime_call in _STRING_OP_RUNTIME_SYMBOLS:
             return "pytra.built_in.string_ops"
-    return runtime_module_id
+    return "" + runtime_module_id
 
 
 def _binding_dependency_module_id(binding: JsonVal) -> str:
-    if not isinstance(binding, dict):
+    if not jv_is_dict(binding):
         return ""
     if _is_type_only_symbol_binding(binding):
         return ""
 
-    runtime_module_id = binding.get("runtime_module_id")
-    runtime_group = binding.get("runtime_group")
-    module_id = binding.get("module_id")
-    host_only = binding.get("host_only") is True
-    binding_kind = binding.get("binding_kind")
-    resolved_binding_kind = binding.get("resolved_binding_kind")
+    binding_node: dict[str, JsonVal] = cast(dict[str, JsonVal], binding)
+    runtime_module_id = nd_get_str(binding_node, "runtime_module_id")
+    runtime_group = nd_get_str(binding_node, "runtime_group")
+    module_id = nd_get_str(binding_node, "module_id")
+    host_only = nd_get_bool(binding_node, "host_only")
+    binding_kind = nd_get_str(binding_node, "binding_kind")
+    resolved_binding_kind = nd_get_str(binding_node, "resolved_binding_kind")
 
-    if isinstance(runtime_module_id, str) and runtime_module_id != "":
+    if runtime_module_id != "":
         if is_type_only_dependency_module_id(runtime_module_id):
             return ""
         if runtime_module_id.startswith("pytra."):
             if host_only and binding_kind != "module" and resolved_binding_kind != "module":
                 return ""
-            return runtime_module_id
-        if isinstance(runtime_group, str) and runtime_group != "" and not host_only:
-            return runtime_module_id
+            return "" + runtime_module_id
+        if runtime_group != "" and not host_only:
+            return "" + runtime_module_id
         if host_only and (binding_kind == "module" or resolved_binding_kind == "module"):
             return ""
         if not host_only:
-            return runtime_module_id
+            return "" + runtime_module_id
         return ""
 
-    if isinstance(module_id, str) and module_id != "":
+    if module_id != "":
         if is_type_only_dependency_module_id(module_id):
             return ""
         if module_id.startswith("pytra.") or not host_only:
-            return module_id
+            return "" + module_id
     return ""
 
 
@@ -152,24 +150,21 @@ def _build_resolved_dependencies(
     *,
     target: str = "",
 ) -> list[str]:
-    """Build resolved dependency list for a single module from its EAST3 meta."""
     deps: list[str] = []
     seen: set[str] = set()
 
     meta_val = east_doc.get("meta")
-    if not isinstance(meta_val, dict):
+    if not jv_is_dict(meta_val):
         return deps
+    meta_node = jv_dict(meta_val)
 
-    # Prefer resolved runtime binding metadata when present.
-    bindings = meta_val.get("import_bindings")
-    saw_import_bindings = False
-    if isinstance(bindings, list):
-        saw_import_bindings = True
-        for binding in bindings:
-            mod_id = _binding_dependency_module_id(binding)
-            if mod_id != "" and mod_id not in seen:
-                seen.add(mod_id)
-                deps.append(mod_id)
+    bindings = nd_get_list(meta_node, "import_bindings")
+    saw_import_bindings = len(bindings) != 0
+    for binding in bindings:
+        mod_id = _binding_dependency_module_id(binding)
+        if mod_id != "" and mod_id not in seen:
+            seen.add(mod_id)
+            deps.append(mod_id)
 
     embedded_runtime_refs: set[str] = set()
     _scan_runtime_refs(
@@ -182,28 +177,28 @@ def _build_resolved_dependencies(
             seen.add(runtime_module_id)
             deps.append(runtime_module_id)
 
-    # Fallback for older docs that still lack import metadata.
     if not saw_import_bindings:
         body_val = east_doc.get("body")
-        if isinstance(body_val, list):
-            for stmt in body_val:
-                if not isinstance(stmt, dict):
+        if jv_is_list(body_val):
+            for stmt in jv_list(body_val):
+                if not jv_is_dict(stmt):
                     continue
-                kind = stmt.get("kind")
+                stmt_node = jv_dict(stmt)
+                kind = nd_get_str(stmt_node, "kind")
                 if kind == "ImportFrom":
-                    mod = stmt.get("module")
-                    if isinstance(mod, str) and mod.strip() != "" and mod not in seen:
+                    mod = nd_get_str(stmt_node, "module")
+                    if mod.strip() != "" and mod not in seen:
                         seen.add(mod)
                         deps.append(mod)
                 elif kind == "Import":
-                    names = stmt.get("names")
-                    if isinstance(names, list):
-                        for ent in names:
-                            if isinstance(ent, dict):
-                                name = ent.get("name")
-                                if isinstance(name, str) and name.strip() != "" and name not in seen:
-                                    seen.add(name)
-                                    deps.append(name)
+                    names = nd_get_list(stmt_node, "names")
+                    for ent in names:
+                        if not jv_is_dict(ent):
+                            continue
+                        name = nd_get_str(jv_dict(ent), "name")
+                        if name.strip() != "" and name not in seen:
+                            seen.add(name)
+                            deps.append(name)
 
     return sorted(deps)
 
@@ -213,12 +208,6 @@ def build_all_resolved_dependencies(
     *,
     target: str = "",
 ) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
-    """Build resolved_dependencies_v1 and user_module_dependencies_v1 for all modules.
-
-    Returns:
-        (resolved_deps_by_module, user_deps_by_module)
-    """
-    # Collect all user module IDs
     user_module_ids: set[str] = set()
     for module in modules:
         if module.module_kind == "user":
@@ -228,15 +217,12 @@ def build_all_resolved_dependencies(
     user_deps: dict[str, list[str]] = {}
 
     for module in modules:
-        if not isinstance(module.east_doc, dict):
-            resolved[module.module_id] = []
-            user_deps[module.module_id] = []
-            continue
-
         deps = _build_resolved_dependencies(module.east_doc, target=target)
         resolved[module.module_id] = deps
-        # Filter to only user module dependencies (exclude self)
-        u_deps = [d for d in deps if d in user_module_ids and d != module.module_id]
+        u_deps: list[str] = []
+        for dep in deps:
+            if dep in user_module_ids and dep != module.module_id:
+                u_deps.append(dep)
         user_deps[module.module_id] = u_deps
 
     return resolved, user_deps

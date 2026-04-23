@@ -9,49 +9,36 @@ Call ノードの引数が不足している場合にデフォルト値を補完
 from __future__ import annotations
 
 from pytra.std.json import JsonVal
+from pytra.typing import cast
 
 from toolchain.common.jv import deep_copy_json
-from toolchain.link.import_maps import collect_import_maps
+from toolchain.link.import_maps import collect_import_modules, collect_import_symbols
 from toolchain.resolve.py.type_norm import make_type_expr, normalize_type
+from toolchain.compile.jv import jv_str, jv_is_dict, jv_is_list, jv_dict, jv_list, nd_get_str, nd_get_dict, nd_get_list
 
 
 def _module_id_from_doc(doc: dict[str, JsonVal]) -> str:
     """Extract module_id from linked metadata or raw EAST meta."""
-    meta = doc.get("meta")
-    if not isinstance(meta, dict):
+    meta = nd_get_dict(doc, "meta")
+    if len(meta) == 0:
         return ""
-    lp = meta.get("linked_program_v1")
-    if isinstance(lp, dict):
-        mid = lp.get("module_id")
-        if isinstance(mid, str) and mid != "":
-            return mid
-    mid2 = meta.get("module_id")
-    if isinstance(mid2, str):
-        return mid2
-    return ""
+    lp = nd_get_dict(meta, "linked_program_v1")
+    module_id = nd_get_str(lp, "module_id")
+    if module_id != "":
+        return "" + module_id
+    return "" + nd_get_str(meta, "module_id")
 
 
 def _collect_all_fn_sigs(modules: list[dict[str, JsonVal]]) -> dict[str, dict[str, JsonVal]]:
-    """Collect function signatures from all modules.
-
-    Returns: {"<module_id>::<fn_name>": {"arg_order": [...], "arg_defaults": {...}}}
-    """
+    """Collect function signatures from all modules."""
     sigs: dict[str, dict[str, JsonVal]] = {}
     for doc in modules:
-        if not isinstance(doc, dict):
-            continue
         module_id = _module_id_from_doc(doc)
         if module_id == "":
             continue
-
-        body = doc.get("body")
-        if not isinstance(body, list):
-            continue
-        for stmt in body:
-            if not isinstance(stmt, dict):
-                continue
-            _collect_sig(stmt, sigs, module_id, "")
-
+        for stmt in nd_get_list(doc, "body"):
+            if jv_is_dict(stmt):
+                _collect_sig(jv_dict(stmt), sigs, module_id, "")
     return sigs
 
 
@@ -61,41 +48,36 @@ def _collect_sig(
     module_id: str,
     class_name: str,
 ) -> None:
-    kind = node.get("kind")
+    kind = nd_get_str(node, "kind")
     if kind == "FunctionDef":
-        name = node.get("name")
-        if not isinstance(name, str) or name == "":
+        name = nd_get_str(node, "name")
+        if name == "" or module_id == "":
             return
-        if module_id == "":
+        ao = nd_get_list(node, "arg_order")
+        if len(ao) == 0:
             return
-        ao = node.get("arg_order")
-        ad = node.get("arg_defaults")
-        if not isinstance(ao, list):
-            return
+        ad = nd_get_dict(node, "arg_defaults")
+        at = nd_get_dict(node, "arg_types")
         sig: dict[str, JsonVal] = {
             "arg_order": ao,
-            "arg_defaults": ad if isinstance(ad, dict) else {},
-            "arg_types": node.get("arg_types") if isinstance(node.get("arg_types"), dict) else {},
+            "arg_defaults": ad,
+            "arg_types": at,
         }
         full = class_name + "." + name if class_name != "" else name
         sigs[module_id + "::" + full] = sig
 
-        # Recurse into nested functions
-        body = node.get("body")
-        if isinstance(body, list):
-            for s in body:
-                if isinstance(s, dict):
-                    _collect_sig(s, sigs, module_id, "")
+        for stmt in nd_get_list(node, "body"):
+            if jv_is_dict(stmt):
+                _collect_sig(jv_dict(stmt), sigs, module_id, "")
+        return
 
-    elif kind == "ClassDef":
-        cn = node.get("name")
-        if not isinstance(cn, str):
+    if kind == "ClassDef":
+        class_name2 = nd_get_str(node, "name")
+        if class_name2 == "":
             return
-        body = node.get("body")
-        if isinstance(body, list):
-            for s in body:
-                if isinstance(s, dict):
-                    _collect_sig(s, sigs, module_id, cn)
+        for stmt in nd_get_list(node, "body"):
+            if jv_is_dict(stmt):
+                _collect_sig(jv_dict(stmt), sigs, module_id, class_name2)
 
 
 def _default_collection_hint(type_name: str) -> str:
@@ -110,22 +92,22 @@ def _default_collection_hint(type_name: str) -> str:
 
 
 def _apply_collection_default_hint(default_node: JsonVal, param_type: str) -> None:
-    if not isinstance(default_node, dict):
+    if not jv_is_dict(default_node):
         return
+    default_map: dict[str, JsonVal] = cast(dict[str, JsonVal], default_node)
     hinted = _default_collection_hint(normalize_type(param_type))
     if hinted == "":
         return
-    kind = default_node.get("kind")
-    current = default_node.get("resolved_type")
-    current_type = current if isinstance(current, str) else ""
+    kind = nd_get_str(default_map, "kind")
+    current_type = nd_get_str(default_map, "resolved_type")
     if kind == "List" and hinted.startswith("list[") and current_type in ("", "unknown", "list[unknown]"):
-        default_node["resolved_type"] = hinted
+        default_map["resolved_type"] = hinted
         return
     if kind == "Dict" and hinted.startswith("dict[") and current_type in ("", "unknown", "dict[unknown,unknown]"):
-        default_node["resolved_type"] = hinted
+        default_map["resolved_type"] = hinted
         return
     if kind == "Set" and hinted.startswith("set[") and current_type in ("", "unknown", "set[unknown]"):
-        default_node["resolved_type"] = hinted
+        default_map["resolved_type"] = hinted
         return
 
 
@@ -136,69 +118,62 @@ def _resolve_call_sig_key(
     import_modules: dict[str, str],
     import_symbols: dict[str, str],
 ) -> str:
-    """Resolve a Call node to a qualified signature key.
-
-    Cross-module default expansion is intentionally conservative:
-    only direct same-module calls, imported-symbol calls, and explicit
-    module-alias calls are resolved. Method calls on arbitrary receivers
-    are left untouched to avoid ambiguous expansion.
-    """
-    func = node.get("func")
-    if not isinstance(func, dict):
+    """Resolve a Call node to a qualified signature key."""
+    func = nd_get_dict(node, "func")
+    if len(func) == 0:
         return ""
 
-    fk = func.get("kind")
+    fk = nd_get_str(func, "kind")
     if fk == "Name":
-        fn_id = func.get("id")
-        if isinstance(fn_id, str) and fn_id != "":
-            imported = import_symbols.get(fn_id)
-            if isinstance(imported, str) and imported != "":
+        fn_id = nd_get_str(func, "id")
+        if fn_id != "":
+            imported = import_symbols.get(fn_id, "")
+            if imported != "":
                 return imported
             if current_module_id != "":
                 return current_module_id + "::" + fn_id
         return ""
 
     if fk == "Attribute":
-        attr = func.get("attr")
-        owner = func.get("value")
-        if not isinstance(attr, str) or attr == "" or not isinstance(owner, dict):
+        attr = nd_get_str(func, "attr")
+        owner = nd_get_dict(func, "value")
+        if attr == "" or len(owner) == 0:
             return ""
-        if owner.get("kind") != "Name":
+        if nd_get_str(owner, "kind") != "Name":
             return ""
-        owner_id = owner.get("id")
-        if not isinstance(owner_id, str) or owner_id == "":
+        owner_id = nd_get_str(owner, "id")
+        if owner_id == "":
             return ""
         module_id = import_modules.get(owner_id, "")
-        if module_id == "":
-            imported = import_symbols.get(owner_id, "")
-            if isinstance(imported, str) and imported != "":
-                owner_rt = owner.get("resolved_type")
-                if owner_rt == "module":
-                    runtime_module_id = owner.get("runtime_module_id")
-                    if isinstance(runtime_module_id, str) and runtime_module_id != "":
-                        return runtime_module_id + "::" + attr
-                    if "::" in imported:
-                        mod, export = imported.split("::", 1)
-                        if mod != "" and export != "":
-                            return mod + "." + export + "::" + attr
-            owner_rt = owner.get("resolved_type")
-            if isinstance(owner_rt, str) and owner_rt != "":
-                # First try any imported class symbol that matches the receiver type.
-                for imported in import_symbols.values():
-                    if not isinstance(imported, str) or "::" not in imported:
-                        continue
-                    mod, export = imported.split("::", 1)
-                    if export == owner_rt:
-                        if mod.startswith("pytra."):
-                            return mod + "::" + export + "." + attr
-                        if mod != "":
-                            return "pytra.std." + mod + "::" + export + "." + attr
-                        return mod + "::" + export + "." + attr
-                # Then try a local-class method in the current module.
-                if current_module_id != "":
-                    return current_module_id + "::" + owner_rt + "." + attr
-            return ""
-        return module_id + "::" + attr
+        if module_id != "":
+            return module_id + "::" + attr
+
+        imported = import_symbols.get(owner_id, "")
+        if imported != "":
+            owner_rt = nd_get_str(owner, "resolved_type")
+            if owner_rt == "module":
+                runtime_module_id = nd_get_str(owner, "runtime_module_id")
+                if runtime_module_id != "":
+                    return runtime_module_id + "::" + attr
+                if "::" in imported:
+                    mod, export_name = imported.split("::", 1)
+                    if mod != "" and export_name != "":
+                        return mod + "." + export_name + "::" + attr
+
+        owner_rt2 = nd_get_str(owner, "resolved_type")
+        if owner_rt2 != "":
+            for imported2 in import_symbols.values():
+                if "::" not in imported2:
+                    continue
+                mod2, export_name2 = imported2.split("::", 1)
+                if export_name2 == owner_rt2:
+                    if mod2.startswith("pytra."):
+                        return mod2 + "::" + export_name2 + "." + attr
+                    if mod2 != "":
+                        return "pytra.std." + mod2 + "::" + export_name2 + "." + attr
+                    return mod2 + "::" + export_name2 + "." + attr
+            if current_module_id != "":
+                return current_module_id + "::" + owner_rt2 + "." + attr
 
     return ""
 
@@ -212,8 +187,8 @@ def _expand_walk(
     import_symbols: dict[str, str],
 ) -> None:
     """Recursively walk the AST and expand default arguments in Call nodes."""
-    if isinstance(node, list):
-        for item in node:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _expand_walk(
                 item,
                 sigs,
@@ -222,69 +197,82 @@ def _expand_walk(
                 import_symbols=import_symbols,
             )
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
 
-    if node.get("kind") == "Call":
+    node_map: dict[str, JsonVal] = cast(dict[str, JsonVal], node)
+    if nd_get_str(node_map, "kind") == "Call":
         sig_key = _resolve_call_sig_key(
-            node,
+            node_map,
             current_module_id=current_module_id,
             import_modules=import_modules,
             import_symbols=import_symbols,
         )
         if sig_key != "" and sig_key in sigs:
             sig = sigs[sig_key]
-            ao = sig.get("arg_order")
-            ad = sig.get("arg_defaults")
-            at = sig.get("arg_types")
-            args = node.get("args")
-            if isinstance(args, list) and isinstance(ao, list) and isinstance(ad, dict):
-                arg_types = at if isinstance(at, dict) else {}
-                # Exclude 'self' from expected params
+            ao = nd_get_list(sig, "arg_order")
+            empty_node: dict[str, JsonVal] = {}
+            ad: dict[str, JsonVal] = empty_node
+            if "arg_defaults" in sig and jv_is_dict(sig["arg_defaults"]):
+                ad = cast(dict[str, JsonVal], sig["arg_defaults"])
+            empty_types: dict[str, JsonVal] = {}
+            at: dict[str, JsonVal] = empty_types
+            if "arg_types" in sig and jv_is_dict(sig["arg_types"]):
+                at = cast(dict[str, JsonVal], sig["arg_types"])
+            empty_args: list[JsonVal] = []
+            args: list[JsonVal] = empty_args
+            if "args" in node_map and jv_is_list(node_map["args"]):
+                args = cast(list[JsonVal], node_map["args"])
+            if len(ao) != 0:
                 expected: list[str] = []
                 for p in ao:
-                    if isinstance(p, str) and p != "self":
-                        expected.append(p)
+                    name = jv_str(p).strip()
+                    if name != "" and name != "self":
+                        expected.append(name)
                 n_expected = len(expected)
 
-                # Collect keyword args
                 kw_map: dict[str, JsonVal] = {}
-                kws = node.get("keywords")
-                if isinstance(kws, list):
-                    for kw in kws:
-                        if isinstance(kw, dict):
-                            ka = kw.get("arg")
-                            kv = kw.get("value")
-                            if isinstance(ka, str) and ka != "":
-                                kw_map[ka] = kv
+                empty_kws: list[JsonVal] = []
+                kws: list[JsonVal] = empty_kws
+                if "keywords" in node_map and jv_is_list(node_map["keywords"]):
+                    kws = cast(list[JsonVal], node_map["keywords"])
+                for kw in kws:
+                    if not jv_is_dict(kw):
+                        continue
+                    kw_node: dict[str, JsonVal] = cast(dict[str, JsonVal], kw)
+                    ka = nd_get_str(kw_node, "arg")
+                    if ka != "":
+                        if "value" in kw_node:
+                            kw_map[ka] = kw_node["value"]
 
-                # Fill missing args from defaults
                 if len(args) < n_expected:
-                    for i in range(len(args), n_expected):
+                    i = len(args)
+                    while i < n_expected:
                         param_name = expected[i]
                         if param_name in kw_map:
                             kv2 = kw_map[param_name]
-                            args.append(deep_copy_json(kv2) if isinstance(kv2, (dict, list)) else kv2)
+                            args.append(deep_copy_json(kv2) if jv_is_dict(kv2) or jv_is_list(kv2) else kv2)
                         elif param_name in ad:
                             default_val = ad[param_name]
-                            if isinstance(default_val, (dict, list)):
+                            if jv_is_dict(default_val) or jv_is_list(default_val):
                                 copied = deep_copy_json(default_val)
-                                if isinstance(copied, dict):
-                                    param_type = arg_types.get(param_name, "")
-                                    if isinstance(param_type, str) and param_type != "":
+                                if jv_is_dict(copied):
+                                    param_type = nd_get_str(at, param_name)
+                                    if param_type != "":
                                         _apply_collection_default_hint(copied, param_type)
-                                        if "resolved_type" in copied and "type_expr" in copied and isinstance(copied.get("resolved_type"), str):
-                                            copied["type_expr"] = make_type_expr(copied["resolved_type"])
                                 args.append(copied)
                             else:
                                 args.append(default_val)
+                        i += 1
+                node_map["args"] = args
                 if len(kw_map) > 0:
-                    node["keywords"] = []
+                    empty_keywords: list[JsonVal] = []
+                    node_map["keywords"] = empty_keywords
 
-    for v in node.values():
-        if isinstance(v, (dict, list)):
+    for _key, value in node_map.items():
+        if jv_is_dict(value) or jv_is_list(value):
             _expand_walk(
-                v,
+                value,
                 sigs,
                 current_module_id=current_module_id,
                 import_modules=import_modules,
@@ -293,45 +281,33 @@ def _expand_walk(
 
 
 def expand_cross_module_defaults(
-    modules_with_ids: list[tuple[str, dict[str, JsonVal]] | dict[str, JsonVal]],
+    modules_with_ids: list[JsonVal],
 ) -> None:
-    """Expand default arguments in Call nodes across all linked modules.
-
-    Args:
-        modules_with_ids: list of (module_id, east_doc) tuples or plain docs.
-
-    Mutates the east_doc of each module in-place.
-    """
-    # Collect signatures from all modules (using explicit module_id)
+    """Expand default arguments in Call nodes across all linked modules."""
     sigs: dict[str, dict[str, JsonVal]] = {}
     normalized: list[tuple[str, dict[str, JsonVal]]] = []
     for entry in modules_with_ids:
-        if isinstance(entry, tuple) and len(entry) == 2:
-            module_id, doc = entry
-        else:
-            doc = entry if isinstance(entry, dict) else {}
-            module_id = _module_id_from_doc(doc)
+        if not jv_is_dict(entry):
+            continue
+        doc: dict[str, JsonVal] = cast(dict[str, JsonVal], entry)
+        module_id = _module_id_from_doc(doc)
         normalized.append((module_id, doc))
-        if not isinstance(doc, dict) or module_id == "":
+        if module_id == "":
             continue
-        body = doc.get("body")
-        if not isinstance(body, list):
-            continue
-        for stmt in body:
-            if isinstance(stmt, dict):
-                _collect_sig(stmt, sigs, module_id, "")
+        for stmt in nd_get_list(doc, "body"):
+            if jv_is_dict(stmt):
+                _collect_sig(jv_dict(stmt), sigs, module_id, "")
 
     if len(sigs) == 0:
         return
 
-    # Expand defaults in all modules
     for module_id, doc in normalized:
-        if isinstance(doc, dict):
-            import_modules, import_symbols = collect_import_maps(doc)
-            _expand_walk(
-                doc,
-                sigs,
-                current_module_id=module_id,
-                import_modules=import_modules,
-                import_symbols=import_symbols,
-            )
+        import_modules = collect_import_modules(doc)
+        import_symbols = collect_import_symbols(doc)
+        _expand_walk(
+            doc,
+            sigs,
+            current_module_id=module_id,
+            import_modules=import_modules,
+            import_symbols=import_symbols,
+        )

@@ -14,16 +14,17 @@ from pytra.std import json
 from pytra.typing import cast
 
 from toolchain.link.shared_types import LinkedModule
+from toolchain.common.jv import deep_copy_json
 from toolchain.link.runtime_discovery import discover_runtime_modules
 from toolchain.link.runtime_discovery import resolve_runtime_east_path
 from toolchain.link.type_id import build_type_id_table
 from toolchain.link.trait_id import build_trait_implementation_map
 from toolchain.link.call_graph import build_call_graph
 from toolchain.link.dependencies import build_all_resolved_dependencies
-from toolchain.link.import_maps import collect_import_maps
+from toolchain.link.import_maps import collect_import_maps, collect_import_modules, collect_import_symbols
 from toolchain.link.expand_defaults import expand_cross_module_defaults
 from toolchain.resolve.py.type_norm import normalize_type
-from toolchain.compile.jv import jv_dict
+from toolchain.compile.jv import jv_str, jv_is_dict, jv_is_list, jv_dict, jv_list, nd_get_dict, nd_get_list, nd_get_str
 
 
 # ---------------------------------------------------------------------------
@@ -63,29 +64,26 @@ def _module_id_from_doc(
             return module_id[: -len(".__init__")]
         return module_id
 
-    meta_val = east_doc.get("meta")
-    if isinstance(meta_val, dict):
-        mid_val = meta_val.get("module_id")
-        if isinstance(mid_val, str) and mid_val.strip() != "":
-            return _normalize_package_module_id(mid_val.strip())
+    meta = nd_get_dict(east_doc, "meta")
+    mid_val = nd_get_str(meta, "module_id").strip()
+    if mid_val != "":
+        return _normalize_package_module_id(mid_val)
 
-    source_path_val = east_doc.get("source_path")
-    if isinstance(source_path_val, str) and source_path_val.strip() != "":
-        source_path_norm = source_path_val.strip().replace("\\", "/")
-        # Handle both relative (src/toolchain2/...) and absolute (/path/to/src/toolchain2/...) paths
+    source_path_val = nd_get_str(east_doc, "source_path").strip()
+    if source_path_val != "":
+        source_path_norm = source_path_val.replace("\\", "/")
         _tc2_markers: list[str] = ["src/toolchain2/"]
         for marker in _tc2_markers:
             idx = source_path_norm.find(marker)
             if idx >= 0 and source_path_norm.endswith(".py"):
-                rel = source_path_norm[idx + len("src/"):].replace(".py", "")
-                module_id = rel.replace("/", ".")
+                rel = "" + source_path_norm[idx + len("src/"):].replace(".py", "")
+                module_id = "" + rel.replace("/", ".")
                 module_id = _normalize_package_module_id(module_id)
                 if module_id != "":
                     return module_id
         if source_path_norm.endswith("src/pytra-cli.py") or source_path_norm == "src/pytra-cli.py":
             return "pytra_cli2"
 
-    # Runtime .east ファイルの場合はパスから導出
     resolved_path = Path(file_path).resolve()
     east_root_path = runtime_east_root.resolve()
     try:
@@ -93,7 +91,7 @@ def _module_id_from_doc(
         resolved_prefix = str(resolved_path).replace("\\", "/")
         if not resolved_prefix.startswith(root_prefix + "/"):
             raise ValueError("outside runtime east root")
-        rel_str = resolved_prefix[len(root_prefix) + 1 :]
+        rel_str = "" + resolved_prefix[len(root_prefix) + 1 :]
         if rel_str.endswith(".east"):
             rel_str = rel_str.replace(".east", "")
         module_id = "pytra." + rel_str.replace("/", ".")
@@ -103,8 +101,8 @@ def _module_id_from_doc(
     except ValueError:
         pass
 
-    # ファイル名から推測
-    name = Path(file_path).name
+    path_text = str(Path(file_path)).replace("\\", "/")
+    name = "" + path_text.split("/")[-1]
     if name.endswith(".east3.json"):
         name = name.replace(".east3.json", "")
     elif name.endswith(".east3"):
@@ -123,20 +121,14 @@ def _module_id_from_doc(
 
 
 def _source_path_from_doc(east_doc: dict[str, JsonVal]) -> str:
-    """EAST3 doc から source_path を取得する。"""
-    sp = east_doc.get("source_path")
-    if isinstance(sp, str):
-        return sp
-    return ""
+    return "" + nd_get_str(east_doc, "source_path")
 
 
 def _dispatch_mode_from_doc(east_doc: dict[str, JsonVal]) -> str:
-    """EAST3 doc から dispatch_mode を取得する。"""
-    meta_val = east_doc.get("meta")
-    if isinstance(meta_val, dict):
-        dm = meta_val.get("dispatch_mode")
-        if isinstance(dm, str):
-            return dm
+    meta = nd_get_dict(east_doc, "meta")
+    dm = nd_get_str(meta, "dispatch_mode")
+    if dm != "":
+        return "" + dm
     return "native"
 
 
@@ -146,15 +138,7 @@ def _linked_output_path(module_id: str) -> str:
 
 
 def _copy_json(val: JsonVal) -> JsonVal:
-    if isinstance(val, list):
-        return [_copy_json(item) for item in val]
-    if isinstance(val, dict):
-        out: dict[str, JsonVal] = {}
-        for key, value in val.items():
-            out[key] = _copy_json(value)
-        return out
-    return val
-
+    return deep_copy_json(val)
 
 def _program_id(
     target: str,
@@ -167,12 +151,12 @@ def _program_id(
 
 def _ensure_meta(doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
     """doc の meta を dict として返す (なければ作成)。"""
-    meta_val = doc.get("meta")
-    if isinstance(meta_val, dict):
-        return meta_val
-    meta: dict[str, JsonVal] = {}
-    doc["meta"] = meta
-    return meta
+    meta = nd_get_dict(doc, "meta")
+    if len(meta) != 0:
+        return meta
+    new_meta: dict[str, JsonVal] = {}
+    doc["meta"] = new_meta
+    return new_meta
 
 
 def _is_link_external_module(module_id: str) -> bool:
@@ -236,28 +220,18 @@ def _sorted_str_list(values: list[str]) -> list[str]:
 
 
 def _import_maps(doc: dict[str, JsonVal]) -> tuple[dict[str, str], dict[str, str]]:
-    raw = collect_import_maps(doc)
-    import_modules: dict[str, str] = {}
-    import_symbols: dict[str, str] = {}
-    if isinstance(raw, tuple) and len(raw) == 2:
-        left = raw[0]
-        right = raw[1]
-        if isinstance(left, dict):
-            for key, value in left.items():
-                if isinstance(key, str) and key != "" and isinstance(value, str):
-                    import_modules[key] = value
-        if isinstance(right, dict):
-            for key, value in right.items():
-                if isinstance(key, str) and key != "" and isinstance(value, str):
-                    import_symbols[key] = value
-    return import_modules, import_symbols
+    return collect_import_modules(doc), collect_import_symbols(doc)
 
 
-def _set_to_sorted_str_list(values: set[str]) -> list[str]:
-    out: list[str] = []
+def _set_to_sorted_str_list(values: set[str]) -> list[JsonVal]:
+    text_values: list[str] = []
     for value in values:
-        out.append(value)
-    return _sorted_str_list(out)
+        text_values.append(value)
+    sorted_values = _sorted_str_list(text_values)
+    out: list[JsonVal] = []
+    for item in sorted_values:
+        out.append(item)
+    return out
 
 
 def _sorted_modules_by_id(modules: list[LinkedModule]) -> list[LinkedModule]:
@@ -295,34 +269,29 @@ def _docs_as_json(copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]]) ->
 
 def _walk_nodes(node: JsonVal) -> list[dict[str, JsonVal]]:
     out: list[dict[str, JsonVal]] = []
-    if isinstance(node, dict):
-        out.append(node)
-        for value in node.values():
+    if jv_is_dict(node):
+        node_dict = jv_dict(node)
+        out.append(node_dict)
+        for value in node_dict.values():
             for child in _walk_nodes(value):
                 out.append(child)
-    elif isinstance(node, list):
-        for item in node:
+    elif jv_is_list(node):
+        for item in jv_list(node):
             for child2 in _walk_nodes(item):
                 out.append(child2)
     return out
 
 
 def _node_str(node: dict[str, JsonVal], key: str) -> str:
-    value = node.get(key)
-    if isinstance(value, str):
-        return value
-    return ""
+    return "" + jv_str(node.get(key))
 
 
 def _node_list(node: dict[str, JsonVal], key: str) -> list[JsonVal]:
-    value = node.get(key)
-    if isinstance(value, list):
-        return value
-    return []
+    return nd_get_list(node, key)
 
 
 def _json_dict_equal(left: JsonVal, right: dict[str, JsonVal]) -> bool:
-    return isinstance(left, dict) and jv_dict(left) == right
+    return jv_is_dict(left) and jv_dict(left) == right
 
 
 def _json_dict_not_equal(left: JsonVal, right: dict[str, JsonVal]) -> bool:
@@ -330,7 +299,10 @@ def _json_dict_not_equal(left: JsonVal, right: dict[str, JsonVal]) -> bool:
 
 
 def _json_list_item_equal(items: list[JsonVal], index: int, node: dict[str, JsonVal]) -> bool:
-    return 0 <= index < len(items) and isinstance(items[index], dict) and jv_dict(items[index]) == node
+    if not (0 <= index < len(items)):
+        return False
+    item = items[index]
+    return jv_is_dict(item) and jv_dict(item) == node
 
 
 def _walk_nodes_with_parents(
@@ -338,15 +310,16 @@ def _walk_nodes_with_parents(
     parents: list[dict[str, JsonVal]],
 ) -> list[tuple[dict[str, JsonVal], list[dict[str, JsonVal]]]]:
     out: list[tuple[dict[str, JsonVal], list[dict[str, JsonVal]]]] = []
-    if isinstance(node, dict):
-        out.append((node, parents))
+    if jv_is_dict(node):
+        node_dict = jv_dict(node)
+        out.append((node_dict, parents))
         next_parents = list(parents)
-        next_parents.append(node)
-        for value in node.values():
+        next_parents.append(node_dict)
+        for value in node_dict.values():
             for child in _walk_nodes_with_parents(value, next_parents):
                 out.append(child)
-    elif isinstance(node, list):
-        for item in node:
+    elif jv_is_list(node):
+        for item in jv_list(node):
             for child2 in _walk_nodes_with_parents(item, parents):
                 out.append(child2)
     return out
@@ -354,60 +327,68 @@ def _walk_nodes_with_parents(
 
 def _ensure_node_meta(node: dict[str, JsonVal]) -> dict[str, JsonVal]:
     meta_val = node.get("meta")
-    if isinstance(meta_val, dict):
-        return meta_val
+    if jv_is_dict(meta_val):
+        return jv_dict(meta_val)
     meta: dict[str, JsonVal] = {}
     node["meta"] = meta
     return meta
 
 
 def _is_name_with_id(node: JsonVal, name: str) -> bool:
-    return isinstance(node, dict) and node.get("kind") == "Name" and node.get("id") == name
+    if not jv_is_dict(node):
+        return False
+    node_dict = jv_dict(node)
+    return _node_str(node_dict, "kind") == "Name" and _node_str(node_dict, "id") == name
 
 
 def _is_bytes_from_local_bytearray_call(node: dict[str, JsonVal]) -> tuple[str, dict[str, JsonVal]] | None:
     if _node_str(node, "kind") != "Call":
         return None
-    func = node.get("func")
+    func = nd_get_dict(node, "func")
     args = _node_list(node, "args")
-    if not isinstance(func, dict) or _node_str(func, "kind") != "Name" or _node_str(func, "id") != "bytes":
+    if _node_str(func, "kind") != "Name" or _node_str(func, "id") != "bytes":
         return None
-    if len(args) != 1 or not isinstance(args[0], dict):
+    if len(args) != 1 or not jv_is_dict(args[0]):
         return None
-    arg = args[0]
+    arg = jv_dict(args[0])
     if _node_str(arg, "kind") != "Name" or _node_str(arg, "resolved_type") != "bytearray":
         return None
     source_name = _node_str(arg, "id")
     if source_name == "":
         return None
-    return (source_name, jv_dict(arg))
+    return (source_name, arg)
 
 
 def _top_level_function_map(doc: dict[str, JsonVal]) -> dict[str, dict[str, JsonVal]]:
     out: dict[str, dict[str, JsonVal]] = {}
     for stmt in _node_list(doc, "body"):
-        if not isinstance(stmt, dict):
+        if not jv_is_dict(stmt):
             continue
-        kind = _node_str(stmt, "kind")
+        stmt_dict = jv_dict(stmt)
+        kind = _node_str(stmt_dict, "kind")
         if kind != "FunctionDef" and kind != "ClosureDef":
             continue
-        name = _node_str(stmt, "name")
+        name = _node_str(stmt_dict, "name")
         if name == "":
             continue
-        out[name] = jv_dict(stmt)
+        out[name] = stmt_dict
     return out
 
 
 def _copy_elision_return_candidate(func_node: dict[str, JsonVal]) -> dict[str, JsonVal] | None:
     for stmt in _node_list(func_node, "body"):
-        if not isinstance(stmt, dict) or _node_str(stmt, "kind") != "Return":
+        if not jv_is_dict(stmt):
             continue
-        value = stmt.get("value")
-        if not isinstance(value, dict):
+        stmt_dict = jv_dict(stmt)
+        if _node_str(stmt_dict, "kind") != "Return":
             continue
-        hit = _is_bytes_from_local_bytearray_call(value)
+        value = stmt_dict.get("value")
+        if not jv_is_dict(value):
+            continue
+        hit = _is_bytes_from_local_bytearray_call(jv_dict(value))
         if hit is not None:
-            return value
+            value_dict: dict[str, JsonVal] = jv_dict(value)
+            return value_dict
     return None
 
 
@@ -436,11 +417,14 @@ def _find_direct_parent(
 
 
 def _is_list_append_call_on_name(call_node: dict[str, JsonVal]) -> tuple[str, dict[str, JsonVal]] | None:
-    func = call_node.get("func")
-    if not isinstance(func, dict) or _node_str(func, "kind") != "Attribute" or _node_str(func, "attr") != "append":
+    func = nd_get_dict(call_node, "func")
+    if _node_str(func, "kind") != "Attribute" or _node_str(func, "attr") != "append":
         return None
-    owner = func.get("value")
-    if not isinstance(owner, dict) or _node_str(owner, "kind") != "Name":
+    owner_val = func.get("value")
+    if not jv_is_dict(owner_val):
+        return None
+    owner = jv_dict(owner_val)
+    if _node_str(owner, "kind") != "Name":
         return None
     owner_type = _node_str(owner, "resolved_type")
     if owner_type != "list[bytes]":
@@ -456,32 +440,36 @@ def _call_arg_usage_is_readonly(
     arg_node: dict[str, JsonVal],
 ) -> bool:
     sig = call_node.get("function_signature_v1")
-    if isinstance(sig, dict):
-        arg_order = sig.get("arg_order")
-        arg_usage = sig.get("arg_usage")
-        if isinstance(arg_order, list) and isinstance(arg_usage, dict):
+    if jv_is_dict(sig):
+        sig_dict = jv_dict(sig)
+        arg_order_val = sig_dict.get("arg_order")
+        arg_usage_val = sig_dict.get("arg_usage")
+        if jv_is_list(arg_order_val) and jv_is_dict(arg_usage_val):
+            arg_order = jv_list(arg_order_val)
+            arg_usage = jv_dict(arg_usage_val)
             args = _node_list(call_node, "args")
             i = 0
             while i < len(args):
                 if _json_list_item_equal(args, i, arg_node):
                     if i >= len(arg_order):
                         return False
-                    arg_name = arg_order[i]
-                    if not isinstance(arg_name, str) or arg_name == "":
+                    arg_name = "" + jv_str(arg_order[i])
+                    if arg_name == "":
                         return False
-                    return arg_usage.get(arg_name) == "readonly"
+                    return jv_str(arg_usage.get(arg_name)) == "readonly"
                 i += 1
 
             keywords = _node_list(call_node, "keywords")
             for kw in keywords:
-                if not isinstance(kw, dict):
+                if not jv_is_dict(kw):
                     continue
-                if _json_dict_not_equal(kw.get("value"), arg_node):
+                kw_dict = jv_dict(kw)
+                if _json_dict_not_equal(kw_dict.get("value"), arg_node):
                     continue
-                arg_name = kw.get("arg")
-                if not isinstance(arg_name, str) or arg_name == "":
+                kw_arg_name = "" + _node_str(kw_dict, "arg")
+                if kw_arg_name == "":
                     return False
-                return arg_usage.get(arg_name) == "readonly"
+                return jv_str(arg_usage.get(kw_arg_name)) == "readonly"
     runtime_call = _node_str(call_node, "runtime_call")
     semantic_tag = _node_str(call_node, "semantic_tag")
     if runtime_call in ("TextIOWrapper.write", "BufferedWriter.write") or semantic_tag == "stdlib.method.write":
@@ -495,29 +483,29 @@ def _call_local_function_arg_is_readonly(
     arg_node: dict[str, JsonVal],
     funcs: dict[str, dict[str, JsonVal]],
 ) -> bool:
-    func = call_node.get("func")
-    if not isinstance(func, dict) or _node_str(func, "kind") != "Name":
+    func = nd_get_dict(call_node, "func")
+    if _node_str(func, "kind") != "Name":
         return False
     callee_name = _node_str(func, "id")
-    if callee_name == "":
+    if callee_name == "" or callee_name not in funcs:
         return False
-    callee = funcs.get(callee_name)
-    if not isinstance(callee, dict):
+    callee = funcs[callee_name]
+    arg_order_val = callee.get("arg_order")
+    arg_usage_val = callee.get("arg_usage")
+    if not jv_is_list(arg_order_val) or not jv_is_dict(arg_usage_val):
         return False
-    arg_order = callee.get("arg_order")
-    arg_usage = callee.get("arg_usage")
-    if not isinstance(arg_order, list) or not isinstance(arg_usage, dict):
-        return False
+    arg_order = jv_list(arg_order_val)
+    arg_usage = jv_dict(arg_usage_val)
     args = _node_list(call_node, "args")
     i = 0
     while i < len(args):
         if _json_list_item_equal(args, i, arg_node):
             if i >= len(arg_order):
                 return False
-            arg_name = arg_order[i]
-            if not isinstance(arg_name, str) or arg_name == "":
+            arg_name = "" + jv_str(arg_order[i])
+            if arg_name == "":
                 return False
-            return arg_usage.get(arg_name) == "readonly"
+            return jv_str(arg_usage.get(arg_name)) == "readonly"
         i += 1
     return False
 
@@ -540,23 +528,33 @@ def _name_is_append_owner(
     if direct_parent is None:
         return False
     if _node_str(direct_parent, "kind") == "Call":
-        func = direct_parent.get("func")
-        if (
-            isinstance(func, dict)
-            and _node_str(func, "kind") == "Attribute"
-            and _is_name_with_id(func.get("value"), _node_str(name_node, "id"))
-        ):
-            hit = _is_list_append_call_on_name(direct_parent)
-            return hit is not None
-        return False
+        func_val = direct_parent.get("func")
+        if not jv_is_dict(func_val):
+            return False
+        func = jv_dict(func_val)
+        if _node_str(func, "kind") != "Attribute":
+            return False
+        if not _is_name_with_id(func.get("value"), _node_str(name_node, "id")):
+            return False
+        hit = _is_list_append_call_on_name(direct_parent)
+        return hit is not None
     if _node_str(direct_parent, "kind") != "Attribute":
         return False
     if _json_dict_not_equal(direct_parent.get("value"), name_node):
         return False
-    outer = _find_direct_parent(parents[: len(parents) - 1])
-    if outer is None or _node_str(outer, "kind") != "Call":
+    outer_parents: list[dict[str, JsonVal]] = []
+    limit = len(parents) - 1
+    i = 0
+    while i < limit:
+        outer_parents.append(parents[i])
+        i += 1
+    outer = _find_direct_parent(outer_parents)
+    if outer is None:
         return False
-    hit = _is_list_append_call_on_name(outer)
+    outer_node: dict[str, JsonVal] = outer
+    if _node_str(outer_node, "kind") != "Call":
+        return False
+    hit = _is_list_append_call_on_name(outer_node)
     return hit is not None
 
 
@@ -565,9 +563,12 @@ def _name_is_readonly_subscript_owner(
     parents: list[dict[str, JsonVal]],
 ) -> bool:
     direct_parent = _find_direct_parent(parents)
-    if direct_parent is None or _node_str(direct_parent, "kind") != "Subscript":
+    if direct_parent is None:
         return False
-    return _json_dict_equal(direct_parent.get("value"), name_node)
+    parent_node: dict[str, JsonVal] = direct_parent
+    if _node_str(parent_node, "kind") != "Subscript":
+        return False
+    return _json_dict_equal(parent_node.get("value"), name_node)
 
 
 def _name_is_decl_target(
@@ -595,8 +596,11 @@ def _assigned_local_name(
         return ""
     if _json_dict_not_equal(direct_parent.get("value"), node):
         return ""
-    target = direct_parent.get("target")
-    if not isinstance(target, dict) or _node_str(target, "kind") != "Name":
+    target_val = direct_parent.get("target")
+    if not jv_is_dict(target_val):
+        return ""
+    target = jv_dict(target_val)
+    if _node_str(target, "kind") != "Name":
         return ""
     return _node_str(target, "id")
 
@@ -609,7 +613,9 @@ def _all_name_uses_readonly_in_function(
         if not _is_name_with_id(node, local_name):
             continue
         direct_parent = _find_direct_parent(parents)
-        direct_kind = _node_str(direct_parent, "kind") if isinstance(direct_parent, dict) else ""
+        direct_kind = ""
+        if direct_parent is not None:
+            direct_kind = _node_str(direct_parent, "kind")
         if direct_kind in ("RuntimeIterForPlan", "StaticRangeForPlan", "ForCore", "TargetPlan"):
             continue
         if _name_is_decl_target(node, parents):
@@ -667,9 +673,9 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
         funcs = module_funcs.get(module.module_id, {})
         for func_name in _sorted_str_list(list(funcs.keys())):
             func_node = funcs[func_name]
-            call_node = _copy_elision_return_candidate(func_node)
-            if call_node is not None:
-                candidate_calls[module.module_id + "::" + func_name] = call_node
+            return_candidate = _copy_elision_return_candidate(func_node)
+            if return_candidate is not None:
+                candidate_calls[module.module_id + "::" + func_name] = return_candidate
 
     for candidate_key in _sorted_str_list(list(candidate_calls.keys())):
         sep = candidate_key.find("::")
@@ -677,8 +683,8 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
             continue
         module_id = candidate_key[:sep]
         func_name = candidate_key[sep + 2 :]
-        call_node = candidate_calls[candidate_key]
-        hit = _is_bytes_from_local_bytearray_call(call_node)
+        candidate_node: dict[str, JsonVal] = candidate_calls[candidate_key]
+        hit = _is_bytes_from_local_bytearray_call(candidate_node)
         if hit is None:
             continue
         source_name = hit[0]
@@ -693,10 +699,10 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
                 for node, parents in _walk_nodes_with_parents(caller_func, []):
                     if _node_str(node, "kind") != "Call":
                         continue
-                    func = node.get("func")
-                    if not isinstance(func, dict) or _node_str(func, "kind") != "Name" or _node_str(func, "id") != func_name:
+                    func = nd_get_dict(node, "func")
+                    if _node_str(func, "kind") != "Name" or _node_str(func, "id") != func_name:
                         continue
-                    if _json_dict_equal(node, call_node):
+                    if _json_dict_equal(node, candidate_node):
                         continue
                     saw_callsite = True
                     outer_call = _find_outer_call_for_arg(node, parents)
@@ -709,7 +715,8 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
                     if outer_call is None:
                         safe = False
                         break
-                    list_hit = _is_list_append_call_on_name(outer_call)
+                    outer_call_node: dict[str, JsonVal] = outer_call
+                    list_hit = _is_list_append_call_on_name(outer_call_node)
                     if list_hit is None:
                         safe = False
                         break
@@ -735,7 +742,7 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
         if not safe:
             continue
 
-        meta = _ensure_node_meta(call_node)
+        meta = _ensure_node_meta(candidate_node)
         copy_meta2: dict[str, JsonVal] = {}
         copy_meta2["schema_version"] = 1
         copy_meta2["operation"] = "bytes_from_bytearray"
@@ -748,27 +755,31 @@ def _annotate_copy_elision_safe_v1(copied_docs: list[tuple[LinkedModule, dict[st
 
 def _raise_types_in_node(node: JsonVal) -> set[str]:
     out: set[str] = set()
-    if isinstance(node, dict):
-        if node.get("kind") == "Raise":
-            exc = node.get("exc")
-            if isinstance(exc, dict):
-                if exc.get("kind") == "Call":
-                    func = exc.get("func")
-                    if isinstance(func, dict):
-                        func_id = func.get("id")
-                        if isinstance(func_id, str) and func_id != "":
+    if jv_is_dict(node):
+        node_dict = jv_dict(node)
+        kind = _node_str(node_dict, "kind")
+        if kind == "Raise":
+            exc_val = node_dict.get("exc")
+            if jv_is_dict(exc_val):
+                exc = jv_dict(exc_val)
+                if _node_str(exc, "kind") == "Call":
+                    func_val = exc.get("func")
+                    if jv_is_dict(func_val):
+                        func = jv_dict(func_val)
+                        func_id = _node_str(func, "id")
+                        if func_id != "":
                             out.add(func_id)
-                rt = exc.get("resolved_type")
-                if isinstance(rt, str) and rt != "":
+                rt = _node_str(exc, "resolved_type")
+                if rt != "":
                     out.add(rt)
-        if node.get("kind") in ("FunctionDef", "ClosureDef", "ClassDef"):
+        if kind == "FunctionDef" or kind == "ClosureDef" or kind == "ClassDef":
             return out
-        for value in node.values():
+        for value in node_dict.values():
             child = _raise_types_in_node(value)
             for item in child:
                 out.add(item)
-    elif isinstance(node, list):
-        for item2 in node:
+    elif jv_is_list(node):
+        for item2 in jv_list(node):
             child2 = _raise_types_in_node(item2)
             for item3 in child2:
                 out.add(item3)
@@ -778,33 +789,36 @@ def _raise_types_in_node(node: JsonVal) -> set[str]:
 def _collect_direct_raise_markers(modules: list[LinkedModule]) -> dict[str, set[str]]:
     out: dict[str, set[str]] = {}
     for module in modules:
-        body = module.east_doc.get("body")
-        if isinstance(body, list):
-            for stmt in body:
-                if not isinstance(stmt, dict):
+        body = _node_list(module.east_doc, "body")
+        for stmt in body:
+            if not jv_is_dict(stmt):
+                continue
+            stmt_dict = jv_dict(stmt)
+            kind = _node_str(stmt_dict, "kind")
+            if kind == "FunctionDef":
+                name = _node_str(stmt_dict, "name")
+                if name != "":
+                    raised = _raise_types_in_node(stmt_dict.get("body"))
+                    if len(raised) > 0:
+                        out[module.module_id + "::" + name] = raised
+            elif kind == "ClassDef":
+                class_name = _node_str(stmt_dict, "name")
+                class_body = _node_list(stmt_dict, "body")
+                if class_name == "" or len(class_body) == 0:
                     continue
-                kind = stmt.get("kind")
-                if kind == "FunctionDef":
-                    name = stmt.get("name")
-                    if isinstance(name, str) and name != "":
-                        raised = _raise_types_in_node(stmt.get("body", []))
-                        if len(raised) > 0:
-                            out[module.module_id + "::" + name] = raised
-                elif kind == "ClassDef":
-                    class_name = stmt.get("name")
-                    class_body = stmt.get("body")
-                    if not isinstance(class_name, str) or not isinstance(class_body, list):
+                for method in class_body:
+                    if not jv_is_dict(method):
                         continue
-                    for method in class_body:
-                        if not isinstance(method, dict) or method.get("kind") != "FunctionDef":
-                            continue
-                        method_name = method.get("name")
-                        if isinstance(method_name, str) and method_name != "":
-                            raised2 = _raise_types_in_node(method.get("body", []))
-                            if len(raised2) > 0:
-                                out[module.module_id + "::" + class_name + "." + method_name] = raised2
+                    method_dict = jv_dict(method)
+                    if _node_str(method_dict, "kind") != "FunctionDef":
+                        continue
+                    method_name = _node_str(method_dict, "name")
+                    if method_name != "":
+                        raised2 = _raise_types_in_node(method_dict.get("body"))
+                        if len(raised2) > 0:
+                            out[module.module_id + "::" + class_name + "." + method_name] = raised2
         main_guard = module.east_doc.get("main_guard_body")
-        if isinstance(main_guard, list):
+        if jv_is_list(main_guard):
             raised3 = _raise_types_in_node(main_guard)
             if len(raised3) > 0:
                 out[module.module_id + "::__main__"] = raised3
@@ -837,41 +851,44 @@ def _attach_can_raise_markers(
     can_raise: dict[str, set[str]],
 ) -> None:
     for module, doc in copied_docs:
-        body = doc.get("body")
-        if isinstance(body, list):
-            for stmt in body:
-                if not isinstance(stmt, dict):
+        body = _node_list(doc, "body")
+        for stmt in body:
+            if not jv_is_dict(stmt):
+                continue
+            stmt_dict = jv_dict(stmt)
+            kind = _node_str(stmt_dict, "kind")
+            if kind == "FunctionDef":
+                name = _node_str(stmt_dict, "name")
+                if name != "":
+                    qualified = module.module_id + "::" + name
+                    excs = can_raise.get(qualified, set())
+                    if len(excs) > 0:
+                        meta = _ensure_meta(stmt_dict)
+                        can_raise_meta: dict[str, JsonVal] = {}
+                        can_raise_meta["schema_version"] = 1
+                        can_raise_meta["exception_types"] = _set_to_sorted_str_list(excs)
+                        meta["can_raise_v1"] = can_raise_meta
+            elif kind == "ClassDef":
+                class_name = _node_str(stmt_dict, "name")
+                class_body = _node_list(stmt_dict, "body")
+                if class_name == "" or len(class_body) == 0:
                     continue
-                kind = stmt.get("kind")
-                if kind == "FunctionDef":
-                    name = stmt.get("name")
-                    if isinstance(name, str):
-                        qualified = module.module_id + "::" + name
-                        excs = can_raise.get(qualified, set())
-                        if len(excs) > 0:
-                            meta = _ensure_meta(stmt)
-                            can_raise_meta: dict[str, JsonVal] = {}
-                            can_raise_meta["schema_version"] = 1
-                            can_raise_meta["exception_types"] = _set_to_sorted_str_list(excs)
-                            meta["can_raise_v1"] = can_raise_meta
-                elif kind == "ClassDef":
-                    class_name = stmt.get("name")
-                    class_body = stmt.get("body")
-                    if not isinstance(class_name, str) or not isinstance(class_body, list):
+                for method in class_body:
+                    if not jv_is_dict(method):
                         continue
-                    for method in class_body:
-                        if not isinstance(method, dict) or method.get("kind") != "FunctionDef":
-                            continue
-                        method_name = method.get("name")
-                        if isinstance(method_name, str):
-                            qualified2 = module.module_id + "::" + class_name + "." + method_name
-                            excs2 = can_raise.get(qualified2, set())
-                            if len(excs2) > 0:
-                                meta2 = _ensure_meta(method)
-                                can_raise_meta2: dict[str, JsonVal] = {}
-                                can_raise_meta2["schema_version"] = 1
-                                can_raise_meta2["exception_types"] = _set_to_sorted_str_list(excs2)
-                                meta2["can_raise_v1"] = can_raise_meta2
+                    method_dict = jv_dict(method)
+                    if _node_str(method_dict, "kind") != "FunctionDef":
+                        continue
+                    method_name = _node_str(method_dict, "name")
+                    if method_name != "":
+                        qualified2 = module.module_id + "::" + class_name + "." + method_name
+                        excs2 = can_raise.get(qualified2, set())
+                        if len(excs2) > 0:
+                            meta2 = _ensure_meta(method_dict)
+                            can_raise_meta2: dict[str, JsonVal] = {}
+                            can_raise_meta2["schema_version"] = 1
+                            can_raise_meta2["exception_types"] = _set_to_sorted_str_list(excs2)
+                            meta2["can_raise_v1"] = can_raise_meta2
         main_excs = can_raise.get(module.module_id + "::__main__", set())
         if len(main_excs) > 0:
             meta3 = _ensure_meta(doc)
@@ -933,23 +950,26 @@ def _fold_trait_predicates(
 ) -> None:
     import_modules, import_symbols = _import_maps(doc)
     local_traits: dict[str, str] = {}
-    body = doc.get("body")
-    if isinstance(body, list):
-        for item in body:
-            if not isinstance(item, dict) or item.get("kind") != "ClassDef":
-                continue
-            meta = item.get("meta")
-            if not isinstance(meta, dict) or not isinstance(meta.get("trait_v1"), dict):
-                continue
-            class_name = item.get("name")
-            if isinstance(class_name, str) and class_name != "":
-                local_traits[class_name] = module_id + "." + class_name
+    body = _node_list(doc, "body")
+    for item in body:
+        if not jv_is_dict(item):
+            continue
+        item_dict = jv_dict(item)
+        if _node_str(item_dict, "kind") != "ClassDef":
+            continue
+        meta = nd_get_dict(item_dict, "meta")
+        trait_meta = nd_get_dict(meta, "trait_v1")
+        if len(trait_meta) == 0:
+            continue
+        class_name = _node_str(item_dict, "name")
+        if class_name != "":
+            local_traits[class_name] = module_id + "." + class_name
 
     for node in _walk_nodes(doc):
-        if node.get("kind") != "IsInstance":
+        if _node_str(node, "kind") != "IsInstance":
             continue
-        expected_name = node.get("expected_type_name")
-        if not isinstance(expected_name, str) or expected_name == "":
+        expected_name = _node_str(node, "expected_type_name")
+        if expected_name == "":
             continue
         trait_fqcn = _link_resolve_trait_ref(
             expected_name,
@@ -963,10 +983,8 @@ def _fold_trait_predicates(
             continue
         value_node = node.get("value")
         value_type = ""
-        if isinstance(value_node, dict):
-            resolved_type = value_node.get("resolved_type")
-            if isinstance(resolved_type, str):
-                value_type = resolved_type.strip()
+        if jv_is_dict(value_node):
+            value_type = _node_str(jv_dict(value_node), "resolved_type").strip()
         value_fqcn = _link_resolve_trait_ref(
             value_type,
             module_id=module_id,
@@ -1012,7 +1030,7 @@ def _type_id_const_name(fqcn: str) -> str:
         prev_is_lower = is_lower
     result = "".join(chars) + "_TID"
     # C++ identifiers must not start with a digit (e.g. module "18_foo" → "18_FOO_TID").
-    if result and "0" <= result[0] and result[0] <= "9":
+    if len(result) > 0 and "0" <= result[0] and result[0] <= "9":
         result = "_" + result
     return result
 
@@ -1029,19 +1047,27 @@ def _make_constant(value: JsonVal, resolved_type: str) -> dict[str, JsonVal]:
 
 
 def _make_list(elements: list[dict[str, JsonVal]], resolved_type: str) -> dict[str, JsonVal]:
-    return {"kind": "List", "elements": elements, "resolved_type": resolved_type}
+    element_values: list[JsonVal] = []
+    for element in elements:
+        element_values.append(element)
+    node: dict[str, JsonVal] = {}
+    node["kind"] = "List"
+    node["elements"] = element_values
+    node["resolved_type"] = resolved_type
+    return node
 
 
 def _collect_local_class_names(doc: dict[str, JsonVal], module_id: str) -> dict[str, str]:
     out: dict[str, str] = {}
-    body = doc.get("body")
-    if not isinstance(body, list):
-        return out
+    body = _node_list(doc, "body")
     for item in body:
-        if not isinstance(item, dict) or item.get("kind") != "ClassDef":
+        if not jv_is_dict(item):
             continue
-        name = item.get("name")
-        if isinstance(name, str) and name != "":
+        item_dict = jv_dict(item)
+        if _node_str(item_dict, "kind") != "ClassDef":
+            continue
+        name = _node_str(item_dict, "name")
+        if name != "":
             out[name] = module_id + "." + name
     return out
 
@@ -1051,17 +1077,18 @@ def _collect_class_storage_hints(
 ) -> dict[str, str]:
     out: dict[str, str] = {}
     for module, doc in copied_docs:
-        body = doc.get("body")
-        if not isinstance(body, list):
-            continue
+        body = _node_list(doc, "body")
         for item in body:
-            if not isinstance(item, dict) or item.get("kind") != "ClassDef":
+            if not jv_is_dict(item):
                 continue
-            name = item.get("name")
-            hint = item.get("class_storage_hint")
-            if not isinstance(name, str) or name == "":
+            item_dict = jv_dict(item)
+            if _node_str(item_dict, "kind") != "ClassDef":
                 continue
-            if not isinstance(hint, str) or hint == "":
+            name = _node_str(item_dict, "name")
+            if name == "":
+                continue
+            hint = _node_str(item_dict, "class_storage_hint")
+            if hint == "":
                 hint = "value"
             out[module.module_id + "." + name] = hint
     return out
@@ -1072,19 +1099,21 @@ def _collect_class_field_types(
 ) -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {}
     for module, doc in copied_docs:
-        body = doc.get("body")
-        if not isinstance(body, list):
-            continue
+        body = _node_list(doc, "body")
         for item in body:
-            if not isinstance(item, dict) or item.get("kind") != "ClassDef":
+            if not jv_is_dict(item):
                 continue
-            name = item.get("name")
-            field_types = item.get("field_types")
-            if not isinstance(name, str) or name == "" or not isinstance(field_types, dict):
+            item_dict = jv_dict(item)
+            if _node_str(item_dict, "kind") != "ClassDef":
+                continue
+            name = _node_str(item_dict, "name")
+            field_types = nd_get_dict(item_dict, "field_types")
+            if name == "" or len(field_types) == 0:
                 continue
             typed_fields: dict[str, str] = {}
-            for field_name, field_type in field_types.items():
-                if isinstance(field_name, str) and field_name != "" and isinstance(field_type, str) and field_type != "":
+            for field_name in field_types.keys():
+                field_type = jv_str(field_types[field_name])
+                if field_name != "" and field_type != "":
                     typed_fields[field_name] = field_type
             if len(typed_fields) > 0:
                 out[module.module_id + "." + name] = typed_fields

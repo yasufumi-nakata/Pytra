@@ -9,6 +9,7 @@
 #include <iostream>
 #include <optional>
 #include <type_traits>
+#include <utility>
 #include "core/py_scalar_types.h"
 
 // Forward declarations for POD boxing constructors.
@@ -103,6 +104,31 @@ struct Object {
     T* operator->() const { return ptr; }
     operator T&() const { return *ptr; }  // implicit conversion to T&
     explicit operator bool() const { return cb != nullptr && ptr != nullptr; }
+
+    template<typename U>
+    Object<U> as() const {
+        if (!cb) return Object<U>();
+        return Object<U>(cb, static_cast<U*>(cb->base_ptr));
+    }
+
+    template<typename K, typename P = T>
+    auto get(const K& key) const -> decltype(std::declval<const P&>().get(key)) { return ptr->get(key); }
+
+    template<typename K, typename D, typename P = T>
+    auto get(const K& key, const D& fallback) const -> decltype(std::declval<const P&>().get(key, fallback)) { return ptr->get(key, fallback); }
+
+    template<typename K, typename P = T>
+    auto operator[](const K& key) -> decltype(std::declval<P&>()[key]) { return (*ptr)[key]; }
+
+    template<typename K, typename P = T>
+    auto operator[](const K& key) const -> decltype(std::declval<const P&>().at(key)) { return (*ptr).at(key); }
+
+    template<typename P = T>
+    auto keys() const -> decltype(std::declval<const P&>().keys()) { return ptr->keys(); }
+    template<typename P = T>
+    auto values() const -> decltype(std::declval<const P&>().values()) { return ptr->values(); }
+    template<typename P = T>
+    auto items() const -> decltype(std::declval<const P&>().items()) { return ptr->items(); }
 
     // Type queries
     uint32_t type_id() const { return cb ? cb->type_id : 0; }

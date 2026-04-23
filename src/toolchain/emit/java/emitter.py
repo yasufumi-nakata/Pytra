@@ -2438,7 +2438,7 @@ def emit_java_module(east3_doc: dict[str, JsonVal]) -> str:
         module_id = _str(lp, "module_id")
 
     if module_id != "":
-        expand_cross_module_defaults([(module_id, east3_doc)])
+        expand_cross_module_defaults([east3_doc])
 
     mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "java" / "mapping.json"
     mapping = load_runtime_mapping(mapping_path)

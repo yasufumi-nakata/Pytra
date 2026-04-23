@@ -71,7 +71,7 @@ def prepare_module_for_emit(east3_doc: dict[str, JsonVal]) -> tuple[str, dict[st
     module_id = module_id_from_doc(east3_doc)
     prepared = copy.deepcopy(east3_doc)
     if module_id != "":
-        expand_cross_module_defaults([(module_id, prepared)])
+        expand_cross_module_defaults([prepared])
     return module_id, prepared
 
 
