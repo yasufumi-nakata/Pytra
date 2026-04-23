@@ -119,6 +119,27 @@ def _dict_get_arr(obj: dict[str, JsonVal], key: str) -> list[JsonVal]:
     return _jv_arr(obj[key])
 
 
+def _json_str_list(values: list[str]) -> list[JsonVal]:
+    out: list[JsonVal] = []
+    for value in values:
+        out.append(value)
+    return out
+
+
+def _json_obj_list(values: list[dict[str, JsonVal]]) -> list[JsonVal]:
+    out: list[JsonVal] = []
+    for value in values:
+        out.append(value)
+    return out
+
+
+def _json_str_dict(values: dict[str, str]) -> dict[str, JsonVal]:
+    out: dict[str, JsonVal] = {}
+    for key, value in values.items():
+        out[key] = value
+    return out
+
+
 def _path_parent(base: Path) -> Path:
     parent_text: str = path.dirname(str(base))
     if parent_text == "":
@@ -672,8 +693,8 @@ def _resolve_trait_contracts(stmt: dict[str, JsonVal], class_name: str, ctx: Res
                     params, ret = _trait_method_signature_tuple(method_sig)
                     method_meta: dict[str, JsonVal] = {}
                     method_meta["name"] = method_name
-                    method_meta["args"] = list(method_sig.arg_names)
-                    method_meta["param_types"] = params
+                    method_meta["args"] = _json_str_list(list(method_sig.arg_names))
+                    method_meta["param_types"] = _json_str_list(params)
                     method_meta["return_type"] = ret
                     methods_meta.append(method_meta)
                 elif item_kind in ("Expr", "Pass"):
@@ -683,7 +704,7 @@ def _resolve_trait_contracts(stmt: dict[str, JsonVal], class_name: str, ctx: Res
         trait_meta: dict[str, JsonVal] = {}
         trait_meta["schema_version"] = 1
         trait_meta["methods"] = methods_meta
-        trait_meta["extends_traits"] = extends_traits
+        trait_meta["extends_traits"] = _json_str_list(extends_traits)
         meta["trait_v1"] = trait_meta
         return
 
@@ -693,7 +714,7 @@ def _resolve_trait_contracts(stmt: dict[str, JsonVal], class_name: str, ctx: Res
     method_impl_map: dict[str, list[dict[str, JsonVal]]] = {}
     idx_trait = 0
     while idx_trait < len(implements_traits):
-        trait_name = extract_base_type(implements_traits[idx_trait])
+        trait_name = "" + extract_base_type(implements_traits[idx_trait])
         idx_trait += 1
         if trait_name == "":
             continue
@@ -734,11 +755,11 @@ def _resolve_trait_contracts(stmt: dict[str, JsonVal], class_name: str, ctx: Res
             if len(impl_rows) == 1:
                 item_meta["trait_impl_v1"] = impl_rows[0]
             else:
-                item_meta["trait_impl_v1"] = impl_rows
+                item_meta["trait_impl_v1"] = _json_obj_list(impl_rows)
 
     implements_meta: dict[str, JsonVal] = {}
     implements_meta["schema_version"] = 1
-    implements_meta["traits"] = implements_traits
+    implements_meta["traits"] = _json_str_list(implements_traits)
     meta["implements_v1"] = implements_meta
 
 
@@ -767,44 +788,47 @@ def _tuple_assign_element_types(
         elif norm_value_type.endswith("|None"):
             candidate_types.append(norm_value_type[:-6].strip())
 
-    target_type = tuple_target.get("resolved_type")
-    if isinstance(target_type, str) and target_type != "":
+    target_type = _dict_get_str(tuple_target, "resolved_type")
+    if target_type != "":
         candidate_types.append(_ctx_normalize_type(target_type, ctx))
 
     for candidate in candidate_types:
         if candidate.startswith("tuple[") and candidate.endswith("]"):
             return extract_type_args(candidate)
 
-    elems = tuple_target.get("elements")
-    if not isinstance(elems, list):
-        return []
+    elems = _dict_get_arr(tuple_target, "elements")
+    if len(elems) == 0:
+        empty: list[str] = []
+        return empty
     elem_types: list[str] = []
     any_known = False
-    for elem in elems:
+    for elem_val in elems:
+        elem = _jv_obj(elem_val)
         elem_type = "unknown"
-        if isinstance(elem, dict):
-            if elem.get("kind") == "Name":
-                elem_name = elem.get("id")
-                if isinstance(elem_name, str) and elem_name != "":
-                    existing = ctx.scope.lookup(elem_name)
-                    if existing != "unknown":
-                        elem_type = existing
-            if elem_type == "unknown":
-                elem_resolved = elem.get("resolved_type")
-                if isinstance(elem_resolved, str) and elem_resolved != "":
-                    elem_type = elem_resolved
+        if _dict_get_str(elem, "kind") == "Name":
+            elem_name = _dict_get_str(elem, "id")
+            if elem_name != "":
+                existing = ctx.scope.lookup(elem_name)
+                if existing != "unknown":
+                    elem_type = existing
+        if elem_type == "unknown":
+            elem_resolved = _dict_get_str(elem, "resolved_type")
+            if elem_resolved != "":
+                elem_type = elem_resolved
         if elem_type != "unknown":
             any_known = True
         elem_types.append(elem_type)
-    return elem_types if any_known else []
-
+    if any_known:
+        return elem_types
+    empty2: list[str] = []
+    return empty2
 
 def _apply_default_annotation_type(default_node: dict[str, JsonVal], param_type: str, ctx: ResolveContext) -> None:
     hinted_type: str = _default_collection_hint(_ctx_normalize_type(param_type, ctx))
     if hinted_type == "":
         return
-    kind: str = str(default_node.get("kind", ""))
-    current: str = str(default_node.get("resolved_type", ""))
+    kind: str = _dict_get_str(default_node, "kind")
+    current: str = _dict_get_str(default_node, "resolved_type")
     if kind == "List" and hinted_type.startswith("list[") and current in ("", "unknown", "list[unknown]"):
         default_node["resolved_type"] = hinted_type
         return
@@ -819,10 +843,10 @@ def _apply_collection_type_hint(node: dict[str, JsonVal], target_type: str, ctx:
     hinted_type: str = _default_collection_hint(_ctx_normalize_type(target_type, ctx))
     if hinted_type == "":
         return
-    kind: str = str(node.get("kind", ""))
-    current: str = str(node.get("resolved_type", ""))
+    kind: str = _dict_get_str(node, "kind")
+    current: str = _dict_get_str(node, "resolved_type")
     if kind == "Call":
-        call_rc = str(node.get("runtime_call", ""))
+        call_rc = _dict_get_str(node, "runtime_call")
         if call_rc == "list_ctor" and hinted_type.startswith("list[") and current in ("", "unknown", "list[unknown]"):
             node["resolved_type"] = hinted_type
             return
@@ -846,100 +870,100 @@ def _apply_call_arg_hints(
     ctx: ResolveContext,
 ) -> None:
     generic_param_names: set[str] = {"T", "K", "V", "KT", "VT", "R", "P"}
-    args = expr.get("args")
-    if isinstance(args, list):
-        for idx, arg in enumerate(args):
-            if not isinstance(arg, dict):
-                continue
-            if idx >= len(arg_names):
-                continue
-            param_name: str = arg_names[idx]
-            hinted_type: str = arg_types.get(param_name, "")
-            if hinted_type != "":
-                _apply_collection_type_hint(arg, hinted_type, ctx)
-                hinted_type_norm = _ctx_normalize_type(hinted_type, ctx)
-                if hinted_type_norm not in ("", "unknown") and hinted_type_norm not in generic_param_names:
-                    arg["call_arg_type"] = hinted_type_norm
-    keywords = expr.get("keywords")
-    if isinstance(keywords, list):
-        for kw in keywords:
-            if not isinstance(kw, dict):
-                continue
-            kw_name = kw.get("arg")
-            kw_value = kw.get("value")
-            if not isinstance(kw_name, str) or not isinstance(kw_value, dict):
-                continue
-            hinted_type2: str = arg_types.get(kw_name, "")
-            if hinted_type2 != "":
-                _apply_collection_type_hint(kw_value, hinted_type2, ctx)
-                hinted_type2_norm = _ctx_normalize_type(hinted_type2, ctx)
-                if hinted_type2_norm not in ("", "unknown") and hinted_type2_norm not in generic_param_names:
-                    kw_value["call_arg_type"] = hinted_type2_norm
-
+    args = _dict_get_arr(expr, "args")
+    idx = 0
+    while idx < len(args):
+        arg = _jv_obj(args[idx])
+        if len(arg) == 0:
+            idx += 1
+            continue
+        if idx >= len(arg_names):
+            idx += 1
+            continue
+        param_name: str = arg_names[idx]
+        hinted_type: str = arg_types.get(param_name, "")
+        if hinted_type != "":
+            _apply_collection_type_hint(arg, hinted_type, ctx)
+            hinted_type_norm = _ctx_normalize_type(hinted_type, ctx)
+            if hinted_type_norm not in ("", "unknown") and hinted_type_norm not in generic_param_names:
+                arg["call_arg_type"] = hinted_type_norm
+        idx += 1
+    keywords = _dict_get_arr(expr, "keywords")
+    for kw_val in keywords:
+        kw = _jv_obj(kw_val)
+        if len(kw) == 0:
+            continue
+        kw_name = _dict_get_str(kw, "arg")
+        kw_value = _dict_get_obj(kw, "value")
+        if kw_name == "" or len(kw_value) == 0:
+            continue
+        hinted_type2: str = arg_types.get(kw_name, "")
+        if hinted_type2 != "":
+            _apply_collection_type_hint(kw_value, hinted_type2, ctx)
+            hinted_type2_norm = _ctx_normalize_type(hinted_type2, ctx)
+            if hinted_type2_norm not in ("", "unknown") and hinted_type2_norm not in generic_param_names:
+                kw_value["call_arg_type"] = hinted_type2_norm
 
 def _lambda_arg_names(expr: dict[str, JsonVal]) -> list[str]:
-    arg_order_raw = expr.get("arg_order")
     arg_order: list[str] = []
-    if isinstance(arg_order_raw, list):
-        for item in arg_order_raw:
-            if isinstance(item, str) and item != "":
-                arg_order.append(item)
+    arg_order_raw = _dict_get_arr(expr, "arg_order")
+    for item in arg_order_raw:
+        item_text = _jv_str(item)
+        if item_text != "":
+            arg_order.append(item_text)
     if len(arg_order) > 0:
         return arg_order
-    args_list = expr.get("args")
-    if isinstance(args_list, list):
-        for arg in args_list:
-            if isinstance(arg, dict):
-                name = arg.get("arg")
-                if isinstance(name, str) and name != "":
-                    arg_order.append(name)
+    args_list = _dict_get_arr(expr, "args")
+    for arg_val in args_list:
+        arg = _jv_obj(arg_val)
+        name = _dict_get_str(arg, "arg")
+        if name != "":
+            arg_order.append(name)
     return arg_order
-
 
 def _lambda_arg_types(expr: dict[str, JsonVal], ctx: ResolveContext, arg_order: list[str]) -> dict[str, str]:
     result: dict[str, str] = {}
-    arg_types_raw = expr.get("arg_types")
-    if isinstance(arg_types_raw, dict):
-        for name, value in arg_types_raw.items():
-            if isinstance(name, str) and isinstance(value, str):
-                result[name] = _ctx_normalize_type(value, ctx)
-    args_list = expr.get("args")
-    if isinstance(args_list, list):
-        for arg in args_list:
-            if not isinstance(arg, dict):
-                continue
-            name2 = arg.get("arg")
-            if not isinstance(name2, str) or name2 == "":
-                continue
-            resolved_type = arg.get("resolved_type")
-            if isinstance(resolved_type, str) and not _is_unknown_like_type(resolved_type):
-                result[name2] = _ctx_normalize_type(resolved_type, ctx)
+    arg_types_raw = _dict_get_obj(expr, "arg_types")
+    for name, value in arg_types_raw.items():
+        value_text = _jv_str(value)
+        if value_text != "":
+            result[name] = _ctx_normalize_type(value_text, ctx)
+    args_list = _dict_get_arr(expr, "args")
+    for arg_val in args_list:
+        arg = _jv_obj(arg_val)
+        if len(arg) == 0:
+            continue
+        name2 = _dict_get_str(arg, "arg")
+        if name2 == "":
+            continue
+        resolved_type = _dict_get_str(arg, "resolved_type")
+        if resolved_type != "" and not _is_unknown_like_type(resolved_type):
+            result[name2] = _ctx_normalize_type(resolved_type, ctx)
     for name3 in arg_order:
         if name3 not in result:
             result[name3] = "unknown"
     return result
-
 
 def _resolve_lambda_defaults(
     expr: dict[str, JsonVal],
     ctx: ResolveContext,
     arg_types: dict[str, str],
 ) -> None:
-    args_list = expr.get("args")
-    if not isinstance(args_list, list):
+    args_list = _dict_get_arr(expr, "args")
+    if len(args_list) == 0:
         return
-    for arg in args_list:
-        if not isinstance(arg, dict):
+    for arg_val in args_list:
+        arg = _jv_obj(arg_val)
+        if len(arg) == 0:
             continue
-        arg_name = arg.get("arg")
-        default_node = arg.get("default")
-        if not isinstance(arg_name, str) or not isinstance(default_node, dict):
+        arg_name = _dict_get_str(arg, "arg")
+        default_node = _dict_get_obj(arg, "default")
+        if arg_name == "" or len(default_node) == 0:
             continue
         default_type = _resolve_expr(default_node, ctx)
         current = arg_types.get(arg_name, "")
         if _is_unknown_like_type(current) and not _is_unknown_like_type(default_type):
             arg_types[arg_name] = default_type
-
 
 def _merge_refined_type(current: str, hinted: str) -> str:
     if _is_unknown_like_type(hinted):
@@ -1066,7 +1090,7 @@ def _is_dynamic_supertype(type_str: str) -> bool:
 
 
 def _resolve_safe_str(value: JsonVal) -> str:
-    return value.strip() if isinstance(value, str) else ""
+    return _jv_str(value).strip()
 
 
 _RESOLVE_TYPE_GUARD_DEFAULTS: dict[str, str] = {
@@ -1143,25 +1167,26 @@ def _resolve_type_matches_guard(type_name: str, guard_type: str) -> bool:
 
 
 def _resolve_matching_guard_members(source_type: str, expected_name: str) -> list[str]:
-    src = normalize_type(source_type)
-    expected = normalize_type(expected_name)
+    src = "" + normalize_type(source_type)
+    expected = "" + normalize_type(expected_name)
     if src in ("", "unknown") or expected in ("", "unknown"):
-        return []
+        empty: list[str] = []
+        return empty
     guard_type = _RESOLVE_TYPE_GUARD_DEFAULTS.get(expected, expected)
     members = _resolve_split_union_members(src)
     if len(members) == 0:
-        members = [src]
+        members.append(src)
     matches: list[str] = []
     for member in members:
-        norm_member = normalize_type(member)
+        norm_member = "" + normalize_type(member)
         if _resolve_type_matches_guard(norm_member, guard_type):
             matches.append(norm_member)
     return matches
 
 
 def _resolve_select_guard_target_type(source_type: str, expected_name: str) -> str:
-    src = normalize_type(source_type)
-    expected = normalize_type(expected_name)
+    src = "" + normalize_type(source_type)
+    expected = "" + normalize_type(expected_name)
     if expected == "" or expected == "unknown":
         return ""
     matches = _resolve_matching_guard_members(src, expected)
@@ -1171,77 +1196,97 @@ def _resolve_select_guard_target_type(source_type: str, expected_name: str) -> s
         return " | ".join(matches)
     guard_type = _RESOLVE_TYPE_GUARD_DEFAULTS.get(expected, expected)
     if src in ("", "unknown") or _is_dynamic_supertype(src):
-        return normalize_type(guard_type)
+        return "" + normalize_type(guard_type)
     if _resolve_type_matches_guard(src, guard_type):
-        return src
+        return "" + src
     return ""
 
 
 def _resolve_isinstance_guard_info(expr: JsonVal) -> tuple[JsonVal, str]:
-    if not isinstance(expr, dict):
+    nd = _jv_obj(expr)
+    if len(nd) == 0:
         return None, ""
-    kind = str(expr.get("kind", ""))
+    kind = _dict_get_str(nd, "kind")
     if kind == "IsInstance":
-        value = expr.get("value")
-        return value, _resolve_safe_str(expr.get("expected_type_name"))
-    if kind == "Call" and str(expr.get("predicate_kind", "")) == "isinstance":
-        args = expr.get("args")
-        if isinstance(args, list) and len(args) >= 2:
-            expected = args[1]
+        value: JsonVal = None
+        if "value" in nd:
+            value = nd["value"]
+        return value, _dict_get_str(nd, "expected_type_name").strip()
+    if kind == "Call" and _dict_get_str(nd, "predicate_kind") == "isinstance":
+        args = _dict_get_arr(nd, "args")
+        if len(args) >= 2:
+            expected = _jv_obj(args[1])
             expected_name = ""
-            if isinstance(expected, dict):
-                expected_name = _resolve_safe_str(expected.get("id")) or _resolve_safe_str(expected.get("repr"))
+            if len(expected) > 0:
+                expected_name = _dict_get_str(expected, "id")
+                if expected_name == "":
+                    expected_name = _dict_get_str(expected, "repr")
             return args[0], expected_name
     return None, ""
 
 
 def _resolve_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
-    if not isinstance(expr, dict):
-        return {}
-    nd: dict[str, JsonVal] = expr
-    kind = str(nd.get("kind", ""))
-    guarded, expected_name = _resolve_isinstance_guard_info(nd)
-    if isinstance(guarded, dict) and guarded.get("kind") == "Name":
-        name = _resolve_safe_str(guarded.get("id"))
+    nd = _jv_obj(expr)
+    if len(nd) == 0:
+        empty: dict[str, str] = {}
+        return empty
+    kind = _dict_get_str(nd, "kind")
+    guarded, expected_name = _resolve_isinstance_guard_info(expr)
+    guarded_obj = _jv_obj(guarded)
+    if len(guarded_obj) > 0 and _dict_get_str(guarded_obj, "kind") == "Name":
+        name = _dict_get_str(guarded_obj, "id")
         if name != "":
-            target = _resolve_select_guard_target_type(_resolve_safe_str(guarded.get("resolved_type")), expected_name)
+            target = _resolve_select_guard_target_type(_dict_get_str(guarded_obj, "resolved_type"), expected_name)
             if target != "" and target != "unknown":
-                return {name: target}
+                one: dict[str, str] = {}
+                one[name] = target
+                return one
     if kind == "Compare":
-        left = nd.get("left")
-        comparators = nd.get("comparators")
-        ops = nd.get("ops")
-        if (
-            isinstance(left, dict)
-            and left.get("kind") == "Name"
-            and isinstance(comparators, list)
-            and len(comparators) == 1
-            and isinstance(comparators[0], dict)
-            and comparators[0].get("kind") == "Constant"
-            and comparators[0].get("value") is None
-            and isinstance(ops, list)
-            and len(ops) == 1
-        ):
-            name2 = _resolve_safe_str(left.get("id"))
-            src_type = _resolve_safe_str(left.get("resolved_type"))
-            if name2 == "" or src_type == "":
-                return {}
-            members = [member for member in _resolve_split_union_members(src_type) if normalize_type(member) != "None"]
-            op = _resolve_safe_str(ops[0])
-            if op == "IsNot":
-                if len(members) == 0:
-                    return {}
-                if len(members) == 1:
-                    return {name2: normalize_type(members[0])}
-                return {name2: " | ".join([normalize_type(member) for member in members])}
-        return {}
-    if kind == "UnaryOp" and _resolve_safe_str(nd.get("op")) == "Not":
-        return _resolve_invert_guard_narrowing_from_expr(nd.get("operand"))
-    if kind == "BoolOp" and _resolve_safe_str(nd.get("op")) == "And":
+        left = _dict_get_obj(nd, "left")
+        comparators = _dict_get_arr(nd, "comparators")
+        ops = _dict_get_arr(nd, "ops")
+        if len(left) > 0 and _dict_get_str(left, "kind") == "Name" and len(comparators) == 1 and len(ops) == 1:
+            comp0 = _jv_obj(comparators[0])
+            comp_is_none = False
+            if len(comp0) > 0 and _dict_get_str(comp0, "kind") == "Constant" and "value" in comp0 and comp0["value"] is None:
+                comp_is_none = True
+            if comp_is_none:
+                name2 = _dict_get_str(left, "id")
+                src_type = _dict_get_str(left, "resolved_type")
+                if name2 == "" or src_type == "":
+                    empty2: dict[str, str] = {}
+                    return empty2
+                members: list[str] = []
+                for member in _resolve_split_union_members(src_type):
+                    norm = "" + normalize_type(member)
+                    if norm != "None":
+                        members.append(member)
+                op = _jv_str(ops[0])
+                if op == "IsNot":
+                    if len(members) == 0:
+                        empty3: dict[str, str] = {}
+                        return empty3
+                    narrowed = ""
+                    if len(members) == 1:
+                        narrowed = "" + normalize_type(members[0])
+                    else:
+                        normalized_members: list[str] = []
+                        for member2 in members:
+                            normalized_members.append("" + normalize_type(member2))
+                        narrowed = " | ".join(normalized_members)
+                    one2: dict[str, str] = {}
+                    one2[name2] = narrowed
+                    return one2
+        empty4: dict[str, str] = {}
+        return empty4
+    if kind == "UnaryOp" and _dict_get_str(nd, "op") == "Not":
+        if "operand" in nd:
+            return _resolve_invert_guard_narrowing_from_expr(nd["operand"])
+        empty5: dict[str, str] = {}
+        return empty5
+    if kind == "BoolOp" and _dict_get_str(nd, "op") == "And":
         merged: dict[str, str] = {}
-        values = nd.get("values")
-        if not isinstance(values, list):
-            return {}
+        values = _dict_get_arr(nd, "values")
         for value in values:
             child = _resolve_guard_narrowing_from_expr(value)
             for name3, target_type in child.items():
@@ -1252,67 +1297,80 @@ def _resolve_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
                     if name3 in merged:
                         merged.pop(name3)
         return merged
-    return {}
+    empty6: dict[str, str] = {}
+    return empty6
 
 
 def _resolve_invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
-    if not isinstance(expr, dict):
-        return {}
-    nd: dict[str, JsonVal] = expr
-    kind = str(nd.get("kind", ""))
-    guarded, expected_name = _resolve_isinstance_guard_info(nd)
-    if isinstance(guarded, dict) and guarded.get("kind") == "Name":
-        name0 = _resolve_safe_str(guarded.get("id"))
-        src_type0 = _resolve_safe_str(guarded.get("resolved_type"))
+    nd = _jv_obj(expr)
+    if len(nd) == 0:
+        empty: dict[str, str] = {}
+        return empty
+    kind = _dict_get_str(nd, "kind")
+    guarded, expected_name = _resolve_isinstance_guard_info(expr)
+    guarded_obj = _jv_obj(guarded)
+    if len(guarded_obj) > 0 and _dict_get_str(guarded_obj, "kind") == "Name":
+        name0 = _dict_get_str(guarded_obj, "id")
+        src_type0 = _dict_get_str(guarded_obj, "resolved_type")
         if name0 != "" and src_type0 != "":
-            src_norm = normalize_type(src_type0)
+            src_norm = "" + normalize_type(src_type0)
             members0 = _resolve_split_union_members(src_norm)
             if len(members0) == 0:
-                members0 = [src_norm]
+                members0.append(src_norm)
             matches0 = _resolve_matching_guard_members(src_norm, expected_name)
             remaining0: list[str] = []
             for member0 in members0:
-                norm_member0 = normalize_type(member0)
+                norm_member0 = "" + normalize_type(member0)
                 if norm_member0 not in matches0:
                     remaining0.append(norm_member0)
             if len(remaining0) == 1:
-                return {name0: remaining0[0]}
+                one0: dict[str, str] = {}
+                one0[name0] = remaining0[0]
+                return one0
             if len(remaining0) > 1:
-                return {name0: " | ".join(remaining0)}
-            return {}
-    if kind == "UnaryOp" and _resolve_safe_str(nd.get("op")) == "Not":
-        return _resolve_guard_narrowing_from_expr(nd.get("operand"))
+                many0: dict[str, str] = {}
+                many0[name0] = " | ".join(remaining0)
+                return many0
+            empty0: dict[str, str] = {}
+            return empty0
+    if kind == "UnaryOp" and _dict_get_str(nd, "op") == "Not":
+        if "operand" in nd:
+            return _resolve_guard_narrowing_from_expr(nd["operand"])
+        empty1: dict[str, str] = {}
+        return empty1
     if kind == "Compare":
-        left = nd.get("left")
-        comparators = nd.get("comparators")
-        ops = nd.get("ops")
-        if (
-            isinstance(left, dict)
-            and left.get("kind") == "Name"
-            and isinstance(comparators, list)
-            and len(comparators) == 1
-            and isinstance(comparators[0], dict)
-            and comparators[0].get("kind") == "Constant"
-            and comparators[0].get("value") is None
-            and isinstance(ops, list)
-            and len(ops) == 1
-        ):
-            name = _resolve_safe_str(left.get("id"))
-            src_type = _resolve_safe_str(left.get("resolved_type"))
-            if name == "" or src_type == "":
-                return {}
-            members = [member for member in _resolve_split_union_members(src_type) if normalize_type(member) != "None"]
-            if len(members) == 0:
-                return {}
-            narrowed = members[0] if len(members) == 1 else " | ".join(members)
-            if _resolve_safe_str(ops[0]) == "Is":
-                return {name: normalize_type(narrowed)}
-        return {}
-    if kind == "BoolOp" and _resolve_safe_str(nd.get("op")) == "Or":
+        left = _dict_get_obj(nd, "left")
+        comparators = _dict_get_arr(nd, "comparators")
+        ops = _dict_get_arr(nd, "ops")
+        if len(left) > 0 and _dict_get_str(left, "kind") == "Name" and len(comparators) == 1 and len(ops) == 1:
+            comp0 = _jv_obj(comparators[0])
+            comp_is_none = False
+            if len(comp0) > 0 and _dict_get_str(comp0, "kind") == "Constant" and "value" in comp0 and comp0["value"] is None:
+                comp_is_none = True
+            if comp_is_none:
+                name = _dict_get_str(left, "id")
+                src_type = _dict_get_str(left, "resolved_type")
+                if name == "" or src_type == "":
+                    empty2: dict[str, str] = {}
+                    return empty2
+                members: list[str] = []
+                for member in _resolve_split_union_members(src_type):
+                    norm = "" + normalize_type(member)
+                    if norm != "None":
+                        members.append(member)
+                if len(members) == 0:
+                    empty3: dict[str, str] = {}
+                    return empty3
+                narrowed = members[0] if len(members) == 1 else " | ".join(members)
+                if _jv_str(ops[0]) == "Is":
+                    one: dict[str, str] = {}
+                    one[name] = "" + normalize_type(narrowed)
+                    return one
+        empty4: dict[str, str] = {}
+        return empty4
+    if kind == "BoolOp" and _dict_get_str(nd, "op") == "Or":
         merged2: dict[str, str] = {}
-        values2 = nd.get("values")
-        if not isinstance(values2, list):
-            return {}
+        values2 = _dict_get_arr(nd, "values")
         for value2 in values2:
             child2 = _resolve_invert_guard_narrowing_from_expr(value2)
             for name2, target_type2 in child2.items():
@@ -1323,34 +1381,42 @@ def _resolve_invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
                     if name2 in merged2:
                         merged2.pop(name2)
         return merged2
-    return {}
-
+    empty5: dict[str, str] = {}
+    return empty5
 
 def _resolver_stmt_guarantees_exit(stmt: JsonVal) -> bool:
-    if not isinstance(stmt, dict):
+    nd = _jv_obj(stmt)
+    if len(nd) == 0:
         return False
-    kind = _resolve_safe_str(stmt.get("kind"))
+    kind = _dict_get_str(nd, "kind")
     if kind in ("Return", "Raise"):
         return True
     if kind == "Expr":
-        value = stmt.get("value")
-        if isinstance(value, dict) and value.get("kind") == "Name":
-            name = _resolve_safe_str(value.get("id"))
+        value = _dict_get_obj(nd, "value")
+        if len(value) > 0 and _dict_get_str(value, "kind") == "Name":
+            name = _dict_get_str(value, "id")
             if name in ("continue", "break"):
                 return True
     if kind == "If":
-        return _resolver_block_guarantees_exit(stmt.get("body")) and _resolver_block_guarantees_exit(stmt.get("orelse"))
+        body_ok = False
+        orelse_ok = False
+        if "body" in nd:
+            body_ok = _resolver_block_guarantees_exit(nd["body"])
+        if "orelse" in nd:
+            orelse_ok = _resolver_block_guarantees_exit(nd["orelse"])
+        return body_ok and orelse_ok
     return False
 
 
 def _resolver_block_guarantees_exit(stmts: JsonVal) -> bool:
-    if not isinstance(stmts, list) or len(stmts) == 0:
+    stmt_list = _jv_arr(stmts)
+    if len(stmt_list) == 0:
         return False
-    return _resolver_stmt_guarantees_exit(stmts[-1])
-
+    return _resolver_stmt_guarantees_exit(stmt_list[-1])
 
 def _resolve_stmt_list_with_narrowing(stmts: JsonVal, ctx: ResolveContext, narrowed: dict[str, str]) -> None:
-    if not isinstance(stmts, list):
+    stmt_list = _jv_arr(stmts)
+    if len(stmt_list) == 0:
         return
     saved: dict[str, tuple[bool, str]] = {}
     for name, typ in narrowed.items():
@@ -1359,11 +1425,14 @@ def _resolve_stmt_list_with_narrowing(stmts: JsonVal, ctx: ResolveContext, narro
         saved[name] = (name in ctx.scope.vars, ctx.scope.vars.get(name, ""))
         ctx.scope.vars[name] = typ
     try:
-        for stmt in stmts:
-            if isinstance(stmt, dict):
+        for stmt_val in stmt_list:
+            stmt = _jv_obj(stmt_val)
+            if len(stmt) > 0:
                 _resolve_stmt(stmt, ctx)
                 invalidated: set[str] = set()
-                _collect_reassigned([stmt], invalidated)
+                one_stmt: list[JsonVal] = []
+                one_stmt.append(stmt)
+                _collect_reassigned(one_stmt, invalidated)
                 for name in invalidated:
                     if name not in saved:
                         continue
@@ -1372,32 +1441,33 @@ def _resolve_stmt_list_with_narrowing(stmts: JsonVal, ctx: ResolveContext, narro
                         ctx.scope.vars[name] = value
                     else:
                         if name in ctx.scope.vars:
-                            ctx.scope.vars.pop(name)
-                    if name in saved:
-                        saved.pop(name)
+                            ctx.scope.vars[name] = "unknown"
+                    saved.pop(name)
     finally:
-        for name, (had_local, value) in saved.items():
+        for name, entry in saved.items():
+            had_local, value = entry
             if had_local:
                 ctx.scope.vars[name] = value
             else:
                 if name in ctx.scope.vars:
-                    ctx.scope.vars.pop(name)
-
+                    ctx.scope.vars[name] = "unknown"
 
 def _same_expr_shape(left: JsonVal, right: JsonVal) -> bool:
-    if not isinstance(left, dict) or not isinstance(right, dict):
+    left_obj = _jv_obj(left)
+    right_obj = _jv_obj(right)
+    if len(left_obj) == 0 or len(right_obj) == 0:
         return False
-    left_kind = str(left.get("kind", ""))
-    right_kind = str(right.get("kind", ""))
+    left_kind = _dict_get_str(left_obj, "kind")
+    right_kind = _dict_get_str(right_obj, "kind")
     if left_kind != right_kind:
         return False
     if left_kind == "Name":
-        left_id = left.get("id")
-        right_id = right.get("id")
-        return isinstance(left_id, str) and left_id != "" and left_id == right_id
-    left_repr = left.get("repr")
-    right_repr = right.get("repr")
-    return isinstance(left_repr, str) and left_repr != "" and left_repr == right_repr
+        left_id = _dict_get_str(left_obj, "id")
+        right_id = _dict_get_str(right_obj, "id")
+        return left_id != "" and left_id == right_id
+    left_repr = _dict_get_str(left_obj, "repr")
+    right_repr = _dict_get_str(right_obj, "repr")
+    return left_repr != "" and left_repr == right_repr
 
 
 def _narrow_ifexp_branch_type(
@@ -1407,10 +1477,12 @@ def _narrow_ifexp_branch_type(
     body_type: str,
     orelse_type: str,
 ) -> tuple[str, str, str]:
-    if not isinstance(test, dict):
+    test_obj = _jv_obj(test)
+    if len(test_obj) == 0:
         return body_type, body_type, orelse_type
     guarded, expected_name = _resolve_isinstance_guard_info(test)
-    if not isinstance(guarded, dict):
+    guarded_obj = _jv_obj(guarded)
+    if len(guarded_obj) == 0:
         return body_type, body_type, orelse_type
     narrowed_target = _resolve_select_guard_target_type(body_type, expected_name)
     if narrowed_target == "":
@@ -1429,10 +1501,10 @@ def _narrow_ifexp_branch_type(
 
 
 def _bind_comp_target(scope: Scope, target: dict[str, JsonVal], elem_type: str) -> None:
-    target_kind = str(target.get("kind", ""))
+    target_kind = _dict_get_str(target, "kind")
     if target_kind == "Name":
-        var_name = target.get("id")
-        if isinstance(var_name, str) and var_name != "":
+        var_name = _dict_get_str(target, "id")
+        if var_name != "":
             scope.define(var_name, elem_type)
             target["resolved_type"] = elem_type
         return
@@ -1442,31 +1514,28 @@ def _bind_comp_target(scope: Scope, target: dict[str, JsonVal], elem_type: str) 
     if not elem_type.startswith("tuple[") or not elem_type.endswith("]"):
         return
     item_types = extract_type_args(elem_type)
-    elements = target.get("elements")
-    if not isinstance(elements, list):
-        return
-    for index, elem in enumerate(elements):
-        if not isinstance(elem, dict) or elem.get("kind") != "Name":
-            continue
-        item_name = elem.get("id")
-        if not isinstance(item_name, str) or item_name == "":
-            continue
-        item_type = item_types[index] if index < len(item_types) else "unknown"
-        scope.define(item_name, item_type)
-        elem["resolved_type"] = item_type
+    elements = _dict_get_arr(target, "elements")
+    idx = 0
+    while idx < len(elements):
+        elem = _jv_obj(elements[idx])
+        if len(elem) > 0 and _dict_get_str(elem, "kind") == "Name":
+            item_name = _dict_get_str(elem, "id")
+            if item_name != "":
+                item_type = item_types[idx] if idx < len(item_types) else "unknown"
+                scope.define(item_name, item_type)
+                elem["resolved_type"] = item_type
+        idx += 1
 
 
 def _write_lambda_arg_nodes(expr: dict[str, JsonVal], arg_types: dict[str, str]) -> None:
-    args_list = expr.get("args")
-    if not isinstance(args_list, list):
-        return
-    for arg in args_list:
-        if not isinstance(arg, dict):
+    args_list = _dict_get_arr(expr, "args")
+    for arg_val in args_list:
+        arg = _jv_obj(arg_val)
+        if len(arg) == 0:
             continue
-        arg_name = arg.get("arg")
-        if isinstance(arg_name, str):
+        arg_name = _dict_get_str(arg, "arg")
+        if arg_name != "":
             arg["resolved_type"] = arg_types.get(arg_name, "unknown")
-
 
 def _resolve_lambda_body(
     expr: dict[str, JsonVal],
@@ -1478,17 +1547,20 @@ def _resolve_lambda_body(
         lam_scope.define(name, typ)
     old_scope: Scope = ctx.scope
     ctx.scope = lam_scope
-    body = expr.get("body")
     body_type: str = "unknown"
-    if isinstance(body, dict):
-        body_type = _resolve_expr(body, ctx)
-    elif isinstance(body, list):
-        for stmt in body:
-            if isinstance(stmt, dict):
-                _resolve_stmt(stmt, ctx)
+    if "body" in expr:
+        body_val = expr["body"]
+        body_obj = _jv_obj(body_val)
+        if len(body_obj) > 0:
+            body_type = _resolve_expr(body_obj, ctx)
+        else:
+            body_list = _jv_arr(body_val)
+            for stmt_val in body_list:
+                stmt = _jv_obj(stmt_val)
+                if len(stmt) > 0:
+                    _resolve_stmt(stmt, ctx)
     ctx.scope = old_scope
     return body_type
-
 
 def _refine_lambda_from_call(
     expr: dict[str, JsonVal],
@@ -1498,14 +1570,17 @@ def _refine_lambda_from_call(
     arg_order: list[str] = _lambda_arg_names(expr)
     arg_types: dict[str, str] = _lambda_arg_types(expr, ctx, arg_order)
     _resolve_lambda_defaults(expr, ctx, arg_types)
-    for index, actual_type in enumerate(call_arg_types):
+    index = 0
+    while index < len(call_arg_types):
         if index >= len(arg_order):
             break
+        actual_type = call_arg_types[index]
         arg_name = arg_order[index]
         arg_types[arg_name] = _merge_refined_type(arg_types.get(arg_name, "unknown"), actual_type)
+        index += 1
 
-    ret_raw = expr.get("return_type")
-    ret: str = _ctx_normalize_type(str(ret_raw), ctx) if isinstance(ret_raw, str) else "unknown"
+    ret_raw = _dict_get_str(expr, "return_type")
+    ret: str = _ctx_normalize_type(ret_raw, ctx) if ret_raw != "" else "unknown"
     _write_lambda_arg_nodes(expr, arg_types)
     body_type: str = _resolve_lambda_body(expr, ctx, arg_types)
 
@@ -1524,8 +1599,8 @@ def _refine_lambda_from_call(
     if _is_unknown_like_type(ret) and not _is_unknown_like_type(body_type):
         ret = body_type
 
-    expr["arg_order"] = arg_order
-    expr["arg_types"] = arg_types
+    expr["arg_order"] = _json_str_list(arg_order)
+    expr["arg_types"] = _json_str_dict(arg_types)
     expr["return_type"] = ret
     arg_type_strs: list[str] = [arg_types.get(name, "unknown") for name in arg_order]
     callable_type: str = _make_callable_type(arg_type_strs, ret)
@@ -1534,50 +1609,58 @@ def _refine_lambda_from_call(
 
 
 def _lambda_assign_expected_type(node: JsonVal, expected: str, arg_names: set[str], inferred: dict[str, str]) -> None:
-    if not isinstance(node, dict) or _is_unknown_like_type(expected):
+    nd = _jv_obj(node)
+    if len(nd) == 0 or _is_unknown_like_type(expected):
         return
-    kind: str = str(node.get("kind", ""))
+    kind: str = _dict_get_str(nd, "kind")
     if kind == "Name":
-        name = node.get("id")
-        current = node.get("resolved_type")
-        if (
-            isinstance(name, str)
-            and name in arg_names
-            and (not isinstance(current, str) or _is_unknown_like_type(current))
-            and name not in inferred
-        ):
+        name = _dict_get_str(nd, "id")
+        current = _dict_get_str(nd, "resolved_type")
+        if name in arg_names and (current == "" or _is_unknown_like_type(current)) and name not in inferred:
             inferred[name] = expected
         return
     if kind == "BinOp":
-        _lambda_assign_expected_type(node.get("left"), expected, arg_names, inferred)
-        _lambda_assign_expected_type(node.get("right"), expected, arg_names, inferred)
+        if "left" in nd:
+            _lambda_assign_expected_type(nd["left"], expected, arg_names, inferred)
+        if "right" in nd:
+            _lambda_assign_expected_type(nd["right"], expected, arg_names, inferred)
         return
     if kind == "UnaryOp":
-        _lambda_assign_expected_type(node.get("operand"), expected, arg_names, inferred)
+        if "operand" in nd:
+            _lambda_assign_expected_type(nd["operand"], expected, arg_names, inferred)
         return
     if kind == "IfExp":
-        _lambda_assign_expected_type(node.get("body"), expected, arg_names, inferred)
-        _lambda_assign_expected_type(node.get("orelse"), expected, arg_names, inferred)
-
+        if "body" in nd:
+            _lambda_assign_expected_type(nd["body"], expected, arg_names, inferred)
+        if "orelse" in nd:
+            _lambda_assign_expected_type(nd["orelse"], expected, arg_names, inferred)
 
 def _infer_lambda_arg_types(expr: dict[str, JsonVal], arg_order: list[str]) -> dict[str, str]:
     inferred: dict[str, str] = {}
     arg_names: set[str] = set(arg_order)
 
     def visit(node: JsonVal) -> None:
-        if isinstance(node, list):
-            for item in node:
+        node_list = _jv_arr(node)
+        if len(node_list) > 0:
+            for item in node_list:
                 visit(item)
             return
-        if not isinstance(node, dict):
+        nd = _jv_obj(node)
+        if len(nd) == 0:
             return
-        kind: str = str(node.get("kind", ""))
+        kind: str = _dict_get_str(nd, "kind")
         if kind == "BinOp":
-            left = node.get("left")
-            right = node.get("right")
-            lt = str(left.get("resolved_type", "")) if isinstance(left, dict) else "unknown"
-            rt = str(right.get("resolved_type", "")) if isinstance(right, dict) else "unknown"
-            result = str(node.get("resolved_type", ""))
+            left: JsonVal = None
+            right: JsonVal = None
+            if "left" in nd:
+                left = nd["left"]
+            if "right" in nd:
+                right = nd["right"]
+            left_obj = _jv_obj(left)
+            right_obj = _jv_obj(right)
+            lt = _dict_get_str(left_obj, "resolved_type") if len(left_obj) > 0 else "unknown"
+            rt = _dict_get_str(right_obj, "resolved_type") if len(right_obj) > 0 else "unknown"
+            result = _dict_get_str(nd, "resolved_type")
             if not _is_unknown_like_type(rt):
                 _lambda_assign_expected_type(left, rt, arg_names, inferred)
             if not _is_unknown_like_type(lt):
@@ -1586,62 +1669,64 @@ def _infer_lambda_arg_types(expr: dict[str, JsonVal], arg_order: list[str]) -> d
                 _lambda_assign_expected_type(left, result, arg_names, inferred)
                 _lambda_assign_expected_type(right, result, arg_names, inferred)
         elif kind == "Compare":
-            left_node = node.get("left")
-            comparators = node.get("comparators")
-            prev = left_node if isinstance(left_node, dict) else None
-            if isinstance(comparators, list):
-                for comp in comparators:
-                    prev_t = str(prev.get("resolved_type", "")) if isinstance(prev, dict) else "unknown"
-                    comp_t = str(comp.get("resolved_type", "")) if isinstance(comp, dict) else "unknown"
-                    if not _is_unknown_like_type(comp_t):
-                        _lambda_assign_expected_type(prev, comp_t, arg_names, inferred)
-                    if not _is_unknown_like_type(prev_t):
-                        _lambda_assign_expected_type(comp, prev_t, arg_names, inferred)
-                    prev = comp if isinstance(comp, dict) else None
-        for value in node.values():
-            if isinstance(value, (dict, list)):
-                visit(value)
+            left_node: JsonVal = None
+            if "left" in nd:
+                left_node = nd["left"]
+            comparators = _dict_get_arr(nd, "comparators")
+            prev: JsonVal = left_node
+            for comp in comparators:
+                prev_obj = _jv_obj(prev)
+                comp_obj = _jv_obj(comp)
+                prev_t = _dict_get_str(prev_obj, "resolved_type") if len(prev_obj) > 0 else "unknown"
+                comp_t = _dict_get_str(comp_obj, "resolved_type") if len(comp_obj) > 0 else "unknown"
+                if not _is_unknown_like_type(comp_t):
+                    _lambda_assign_expected_type(prev, comp_t, arg_names, inferred)
+                if not _is_unknown_like_type(prev_t):
+                    _lambda_assign_expected_type(comp, prev_t, arg_names, inferred)
+                prev = comp
+        for value in nd.values():
+            visit(value)
 
-    visit(expr.get("body"))
+    if "body" in expr:
+        visit(expr["body"])
     return inferred
 
-
 def _collect_callable_param_uses(node: JsonVal, params: set[str], out: dict[str, list[str]], invalid: set[str]) -> None:
-    if isinstance(node, list):
-        for item in node:
+    node_list = _jv_arr(node)
+    if len(node_list) > 0:
+        for item in node_list:
             _collect_callable_param_uses(item, params, out, invalid)
         return
-    if not isinstance(node, dict):
+    nd = _jv_obj(node)
+    if len(nd) == 0:
         return
-    if node.get("kind") == "Call":
-        func = node.get("func")
-        if isinstance(func, dict) and func.get("kind") == "Name":
-            fn_name = func.get("id")
-            if isinstance(fn_name, str) and fn_name in params and fn_name not in invalid:
-                actual = _collect_call_arg_types(node)
+    if _dict_get_str(nd, "kind") == "Call":
+        func = _dict_get_obj(nd, "func")
+        if len(func) > 0 and _dict_get_str(func, "kind") == "Name":
+            fn_name = _dict_get_str(func, "id")
+            if fn_name != "" and fn_name in params and fn_name not in invalid:
+                actual = _collect_call_arg_types(nd)
                 if fn_name in out and out[fn_name] != actual:
                     invalid.add(fn_name)
-                    if fn_name in out:
-                        del out[fn_name]
+                    out.pop(fn_name)
                 else:
                     out[fn_name] = actual
-    for value in node.values():
-        if isinstance(value, (dict, list)):
-            _collect_callable_param_uses(value, params, out, invalid)
-
+    for value in nd.values():
+        _collect_callable_param_uses(value, params, out, invalid)
 
 def _callable_type_uses_signature(type_str: str) -> bool:
     return type_str in ("callable", "Callable") or type_str.startswith("callable[") or type_str.startswith("Callable[")
 
 
 def _effective_resolved_type_for_callable(node: JsonVal) -> str:
-    if not isinstance(node, dict):
+    nd = _jv_obj(node)
+    if len(nd) == 0:
         return ""
-    resolved = node.get("resolved_type")
-    if isinstance(resolved, str) and resolved != "":
+    resolved = _dict_get_str(nd, "resolved_type")
+    if resolved != "":
         return resolved
-    if node.get("kind") == "Unbox":
-        return _effective_resolved_type_for_callable(node.get("value"))
+    if _dict_get_str(nd, "kind") == "Unbox" and "value" in nd:
+        return _effective_resolved_type_for_callable(nd["value"])
     return ""
 
 
@@ -1651,45 +1736,41 @@ def _infer_callable_return_from_parent(
     grandparent: JsonVal,
     func_node: dict[str, JsonVal],
 ) -> str:
-    if isinstance(parent, dict):
-        parent_kind_obj = parent.get("kind")
-        parent_kind = parent_kind_obj if isinstance(parent_kind_obj, str) else ""
-        if parent_kind == "Return":
-            ret_obj = func_node.get("return_type")
-            return ret_obj if isinstance(ret_obj, str) else ""
-        if parent_kind == "Unbox":
-            resolved = _effective_resolved_type_for_callable(parent)
-            if resolved != "":
-                return resolved
-        if parent_kind == "Call":
-            runtime_call_obj = parent.get("runtime_call")
-            runtime_call = runtime_call_obj if isinstance(runtime_call_obj, str) else ""
-            if runtime_call == "list.append":
-                owner = parent.get("runtime_owner")
-                owner_type = _effective_resolved_type_for_callable(owner)
-                if owner_type.startswith("list[") and owner_type.endswith("]"):
-                    return owner_type[5:-1]
-            func = parent.get("func")
-            call_func = call_node.get("func")
-            func_kind = func.get("kind") if isinstance(func, dict) else ""
-            func_id = func.get("id") if isinstance(func, dict) else ""
-            call_func_id = call_func.get("id") if isinstance(call_func, dict) else ""
-            if isinstance(func_kind, str) and isinstance(func_id, str) and isinstance(call_func_id, str) and func_kind == "Name" and func_id == call_func_id:
-                grandparent_kind = grandparent.get("kind") if isinstance(grandparent, dict) else ""
-                if grandparent_kind == "Return":
-                    ret_obj = func_node.get("return_type")
-                    return ret_obj if isinstance(ret_obj, str) else ""
-                if grandparent_kind == "Unbox":
-                    resolved = _effective_resolved_type_for_callable(grandparent)
-                    if resolved != "":
-                        return resolved
-        if parent_kind in ("Assign", "AnnAssign"):
-            declared_obj = parent.get("decl_type")
-            declared = declared_obj if isinstance(declared_obj, str) else ""
-            if declared != "":
-                return declared
+    parent_obj = _jv_obj(parent)
+    if len(parent_obj) == 0:
+        return ""
+    parent_kind = _dict_get_str(parent_obj, "kind")
+    if parent_kind == "Return":
+        return _dict_get_str(func_node, "return_type")
+    if parent_kind == "Unbox":
+        resolved = _effective_resolved_type_for_callable(parent)
+        if resolved != "":
+            return resolved
+    if parent_kind == "Call":
+        runtime_call = _dict_get_str(parent_obj, "runtime_call")
+        if runtime_call == "list.append" and "runtime_owner" in parent_obj:
+            owner_type = _effective_resolved_type_for_callable(parent_obj["runtime_owner"])
+            if owner_type.startswith("list[") and owner_type.endswith("]"):
+                return owner_type[5:-1]
+        func = _dict_get_obj(parent_obj, "func")
+        call_func = _dict_get_obj(call_node, "func")
+        func_kind = _dict_get_str(func, "kind")
+        func_id = _dict_get_str(func, "id")
+        call_func_id = _dict_get_str(call_func, "id")
+        if func_kind == "Name" and func_id != "" and func_id == call_func_id:
+            grandparent_obj = _jv_obj(grandparent)
+            grandparent_kind = _dict_get_str(grandparent_obj, "kind")
+            if grandparent_kind == "Return":
+                return _dict_get_str(func_node, "return_type")
+            if grandparent_kind == "Unbox":
+                resolved2 = _effective_resolved_type_for_callable(grandparent)
+                if resolved2 != "":
+                    return resolved2
+    if parent_kind in ("Assign", "AnnAssign"):
+        declared = _dict_get_str(parent_obj, "decl_type")
+        if declared != "":
+            return declared
     return ""
-
 
 def _callable_type_needs_refinement(type_str: str, ctx: ResolveContext) -> bool:
     if not _callable_type_uses_signature(type_str):
@@ -1722,7 +1803,11 @@ def _infer_callable_param_signature(
     inferred_ret = ""
     if declared not in ("callable", "Callable", ""):
         declared_params, declared_ret = _parse_callable_signature(declared, ctx)
-        if len(declared_params) > 0 and all(not _is_unknown_like_type(p) for p in declared_params):
+        declared_params_known = len(declared_params) > 0
+        for p in declared_params:
+            if _is_unknown_like_type(p):
+                declared_params_known = False
+        if declared_params_known:
             inferred_args = declared_params
         if declared_ret != "" and not _is_unknown_like_type(declared_ret):
             inferred_ret = declared_ret
@@ -1733,10 +1818,13 @@ def _infer_callable_param_signature(
         nonlocal inferred_args, invalid
         if len(arg_types2) == 0:
             return
-        if any(_is_unknown_like_type(t) or _callable_type_uses_signature(t) for t in arg_types2):
-            return
+        for t in arg_types2:
+            if _is_unknown_like_type(t) or _callable_type_uses_signature(t):
+                return
         if len(inferred_args) == 0:
-            inferred_args = list(arg_types2)
+            inferred_args = []
+            for arg_type in arg_types2:
+                inferred_args.append(arg_type)
             return
         if inferred_args != arg_types2:
             invalid = True
@@ -1755,48 +1843,50 @@ def _infer_callable_param_signature(
         nonlocal invalid
         if invalid:
             return
-        if isinstance(cur, dict):
-            cur_kind = cur.get("kind")
+        cur_obj = _jv_obj(cur)
+        if len(cur_obj) > 0:
+            cur_kind = _dict_get_str(cur_obj, "kind")
             if cur_kind == "Call":
-                func = cur.get("func")
-                func_kind = func.get("kind") if isinstance(func, dict) else ""
-                func_id = func.get("id") if isinstance(func, dict) else ""
+                func = _dict_get_obj(cur_obj, "func")
+                func_kind = _dict_get_str(func, "kind")
+                func_id = _dict_get_str(func, "id")
                 if func_kind == "Name" and func_id == param_name:
-                    _set_args(_collect_call_arg_types(cur))
-                    _set_ret(_infer_callable_return_from_parent(cur, parent, grandparent, func_node))
-            for child in cur.values():
+                    _set_args(_collect_call_arg_types(cur_obj))
+                    _set_ret(_infer_callable_return_from_parent(cur_obj, parent, grandparent, func_node))
+            for child in cur_obj.values():
                 _visit(child, cur, parent)
-        elif isinstance(cur, list):
-            for child in cur:
-                _visit(child, parent, grandparent)
+            return
+        cur_list = _jv_arr(cur)
+        for child in cur_list:
+            _visit(child, parent, grandparent)
 
-    body = func_node.get("body")
-    _visit(body if isinstance(body, list) else [])
+    if "body" in func_node:
+        _visit(func_node["body"])
     if invalid or len(inferred_args) == 0 or inferred_ret == "":
         return ""
     return _make_callable_type(inferred_args, inferred_ret)
 
 
 def _refresh_callable_param_calls(node: JsonVal, refined: dict[str, str], ctx: ResolveContext) -> None:
-    if isinstance(node, list):
-        for item in node:
+    node_list = _jv_arr(node)
+    if len(node_list) > 0:
+        for item in node_list:
             _refresh_callable_param_calls(item, refined, ctx)
         return
-    if not isinstance(node, dict):
+    nd = _jv_obj(node)
+    if len(nd) == 0:
         return
-    if node.get("kind") == "Call":
-        func = node.get("func")
-        if isinstance(func, dict) and func.get("kind") == "Name":
-            fn_name = func.get("id")
-            if isinstance(fn_name, str) and fn_name in refined:
+    if _dict_get_str(nd, "kind") == "Call":
+        func = _dict_get_obj(nd, "func")
+        if len(func) > 0 and _dict_get_str(func, "kind") == "Name":
+            fn_name = _dict_get_str(func, "id")
+            if fn_name != "" and fn_name in refined:
                 callable_type = refined[fn_name]
                 _, ret = _parse_callable_signature(callable_type, ctx)
                 func["resolved_type"] = callable_type
-                node["resolved_type"] = ret if not _is_unknown_like_type(ret) else "unknown"
-    for value in node.values():
-        if isinstance(value, (dict, list)):
-            _refresh_callable_param_calls(value, refined, ctx)
-
+                nd["resolved_type"] = ret if not _is_unknown_like_type(ret) else "unknown"
+    for value in nd.values():
+        _refresh_callable_param_calls(value, refined, ctx)
 
 def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
     functions: dict[str, dict[str, JsonVal]] = {}
