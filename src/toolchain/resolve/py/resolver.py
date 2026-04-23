@@ -2386,7 +2386,7 @@ def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
                     ctx.scope.vars[name] = saved_value
                 else:
                     if name in ctx.scope.vars:
-                        ctx.scope.vars.pop(name)
+                        ctx.scope.vars[name] = "unknown"
     expr["resolved_type"] = result_type
     return result_type
 
@@ -2457,8 +2457,8 @@ def _collect_call_arg_types(expr: dict[str, JsonVal]) -> list[str]:
 
 def _bind_type_pattern(pattern: str, actual: str, bindings: dict[str, str]) -> None:
     """Bind simple generic placeholders (T/U/K/V) from signature pattern to actual type."""
-    pat: str = normalize_type(pattern)
-    act: str = normalize_type(actual)
+    pat: str = "" + normalize_type(pattern)
+    act: str = "" + normalize_type(actual)
     if pat == "" or pat == "unknown" or act == "" or act == "unknown":
         return
     if pat in _SIG_TYPE_PARAMS:
@@ -2482,8 +2482,8 @@ def _bind_type_pattern(pattern: str, actual: str, bindings: dict[str, str]) -> N
         act_base: str = act[:act_bracket]
         if pat_base != act_base:
             return
-        pat_args: list[str] = extract_type_args(pat)
-        act_args: list[str] = extract_type_args(act)
+        pat_args: list[str] = list(extract_type_args(pat))
+        act_args: list[str] = list(extract_type_args(act))
         if len(pat_args) != len(act_args):
             return
         for i in range(len(pat_args)):
@@ -2492,7 +2492,7 @@ def _bind_type_pattern(pattern: str, actual: str, bindings: dict[str, str]) -> N
 
 def _substitute_type_bindings(type_str: str, bindings: dict[str, str]) -> str:
     """Apply generic placeholder bindings to a normalized signature type."""
-    t: str = normalize_type(type_str)
+    t: str = "" + normalize_type(type_str)
     if t in _SIG_TYPE_PARAMS:
         bound: str = bindings.get(t, "")
         if bound != "":
@@ -2504,8 +2504,10 @@ def _substitute_type_bindings(type_str: str, bindings: dict[str, str]) -> str:
     bracket: int = t.find("[")
     if bracket > 0 and t.endswith("]"):
         base: str = t[:bracket]
-        args: list[str] = extract_type_args(t)
-        rendered_args: list[str] = [_substitute_type_bindings(arg, bindings) for arg in args]
+        args: list[str] = list(extract_type_args(t))
+        rendered_args: list[str] = []
+        for arg in args:
+            rendered_args.append(_substitute_type_bindings(arg, bindings))
         if len(rendered_args) == 1:
             return base + "[" + rendered_args[0] + "]"
         return base + "[" + ",".join(rendered_args) + "]"
@@ -2523,36 +2525,30 @@ def _infer_signature_return_type(sig: FuncSig, arg_types: list[str]) -> str:
     if sig.vararg_type != "":
         for actual in arg_types[len(sig.arg_names):]:
             _bind_type_pattern(sig.vararg_type, actual, bindings)
-    return normalize_type(_substitute_type_bindings(sig.return_type, bindings))
+    return "" + normalize_type(_substitute_type_bindings(sig.return_type, bindings))
 
 
 def _infer_cast_target_type(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    args = expr.get("args")
-    if not isinstance(args, list) or len(args) == 0:
+    args = _dict_get_arr(expr, "args")
+    if len(args) == 0:
         return "unknown"
-    target = args[0]
-    if not isinstance(target, dict):
+    target = _jv_obj(args[0])
+    if len(target) == 0:
         return "unknown"
-    target_kind_val = target.get("kind")
-    target_kind = str(target_kind_val) if isinstance(target_kind_val, str) else ""
+    target_kind = _dict_get_str(target, "kind")
     if target_kind == "Name":
-        type_name_val = target.get("id")
-        type_name = str(type_name_val) if isinstance(type_name_val, str) else ""
+        type_name = _dict_get_str(target, "id")
         if type_name != "":
             return _ctx_normalize_type(type_name, ctx)
     if target_kind == "Attribute":
-        owner = target.get("value")
-        owner_id = ""
-        if isinstance(owner, dict):
-            owner_id_val = owner.get("id")
-            owner_id = str(owner_id_val) if isinstance(owner_id_val, str) else ""
-        attr_val = target.get("attr")
-        attr = str(attr_val) if isinstance(attr_val, str) else ""
+        owner = _dict_get_obj(target, "value")
+        owner_id = _dict_get_str(owner, "id")
+        attr = _dict_get_str(target, "attr")
         if owner_id != "" and attr != "":
             return _ctx_normalize_type(owner_id + "." + attr, ctx)
-    target_repr_val = target.get("repr")
-    if isinstance(target_repr_val, str) and target_repr_val != "":
-        return _ctx_normalize_type(target_repr_val, ctx)
+    target_repr = _dict_get_str(target, "repr")
+    if target_repr != "":
+        return _ctx_normalize_type(target_repr, ctx)
     return "unknown"
 
 
