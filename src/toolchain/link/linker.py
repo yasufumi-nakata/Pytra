@@ -250,10 +250,18 @@ def _sorted_modules_by_id(modules: list[LinkedModule]) -> list[LinkedModule]:
     return out
 
 
-def _dep_rows(dep_map: dict[str, list[str]], module_id: str) -> list[str]:
+def _str_list_json(items: list[str]) -> list[JsonVal]:
+    out: list[JsonVal] = []
+    for item in items:
+        out.append(item)
+    return out
+
+
+def _dep_rows(dep_map: dict[str, list[str]], module_id: str) -> list[JsonVal]:
     if module_id in dep_map:
-        return dep_map[module_id]
-    return []
+        return _str_list_json(dep_map[module_id])
+    out: list[JsonVal] = []
+    return out
 
 
 def _doc_map_get(module_map: dict[str, dict[str, JsonVal]], path_str: str) -> dict[str, JsonVal]:
@@ -826,7 +834,7 @@ def _collect_direct_raise_markers(modules: list[LinkedModule]) -> dict[str, set[
 
 
 def _propagate_can_raise(
-    graph: dict[str, set[str]],
+    graph: dict[str, list[str]],
     direct: dict[str, set[str]],
 ) -> dict[str, set[str]]:
     out: dict[str, set[str]] = {}
@@ -1570,7 +1578,16 @@ def _build_type_id_table_helper_doc(
             row_info["entry"] = entry
             row_info["exit"] = exit_val
             rows.append(row_info)
-    rows.sort(key=lambda item: jv_int(item.get("id")))
+    i = 0
+    while i < len(rows):
+        j = i + 1
+        while j < len(rows):
+            if jv_int(rows[j].get("id")) < jv_int(rows[i].get("id")):
+                tmp = rows[i]
+                rows[i] = rows[j]
+                rows[j] = tmp
+            j += 1
+        i += 1
 
     body: list[JsonVal] = []
     id_table_elements: list[JsonVal] = []
@@ -1765,7 +1782,7 @@ def _collect_module_type_aliases(doc: dict[str, JsonVal]) -> dict[str, str]:
         if raw == "":
             raw = "" + _node_str(stmt_dict, "type_expr")
         if name != "" and raw != "":
-            aliases[name] = normalize_type(raw, aliases, {name})
+            aliases[name] = "" + normalize_type(raw, aliases, {name})
     return aliases
 
 
@@ -1786,82 +1803,88 @@ def _empty_alias_seen() -> set[str]:
 
 
 def _normalize_type_alias(raw: str, aliases: dict[str, str]) -> str:
-    return normalize_type(raw, aliases, _empty_alias_seen())
+    return "" + normalize_type(raw, aliases, _empty_alias_seen())
 
 
 def _apply_collection_hint(node: JsonVal, target_type: str, aliases: dict[str, str]) -> None:
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
+    node_dict = jv_dict(node)
     hinted = _default_collection_hint(_normalize_type_alias(target_type, aliases))
     if hinted == "":
         return
-    kind = node.get("kind")
-    current = node.get("resolved_type")
-    current_type = current if isinstance(current, str) else ""
+    kind = "" + _node_str(node_dict, "kind")
+    current_type = "" + _node_str(node_dict, "resolved_type")
     if kind == "List" and hinted.startswith("list[") and current_type in ("", "unknown", "list[unknown]"):
-        node["resolved_type"] = hinted
+        node_dict["resolved_type"] = hinted
         return
     if kind == "Dict" and hinted.startswith("dict[") and current_type in ("", "unknown", "dict[unknown,unknown]"):
-        node["resolved_type"] = hinted
+        node_dict["resolved_type"] = hinted
         return
     if kind == "Set" and hinted.startswith("set[") and current_type in ("", "unknown", "set[unknown]"):
-        node["resolved_type"] = hinted
+        node_dict["resolved_type"] = hinted
         return
 
 
 def _normalize_runtime_type_aliases(node: JsonVal, aliases: dict[str, str]) -> None:
-    if isinstance(node, list):
-        for item in node:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _normalize_runtime_type_aliases(item, aliases)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
 
-    for key, value in list(node.items()):
-        if key in _TYPE_STRING_KEYS and isinstance(value, str) and value != "":
-            node[key] = _normalize_type_alias(value, aliases)
-            continue
-        if key in _TYPE_MAP_KEYS and isinstance(value, dict):
+    node_dict = jv_dict(node)
+    for key in list(node_dict.keys()):
+        value: JsonVal = node_dict.get(key)
+        if key in _TYPE_STRING_KEYS:
+            text_value = "" + jv_str(value)
+            if text_value != "":
+                node_dict[key] = _normalize_type_alias(text_value, aliases)
+                continue
+        if key in _TYPE_MAP_KEYS and jv_is_dict(value):
+            value_dict = jv_dict(value)
             normalized_map: dict[str, JsonVal] = {}
-            for k, v in value.items():
-                if isinstance(v, str):
-                    normalized_map[k] = _normalize_type_alias(v, aliases)
+            for map_key in value_dict.keys():
+                map_value: JsonVal = value_dict.get(map_key)
+                map_text = "" + jv_str(map_value)
+                if map_text != "":
+                    normalized_map[map_key] = _normalize_type_alias(map_text, aliases)
                 else:
-                    normalized_map[k] = v
-            node[key] = normalized_map
+                    normalized_map[map_key] = map_value
+            node_dict[key] = normalized_map
             continue
-        if isinstance(value, dict):
+        if jv_is_dict(value):
             _normalize_runtime_type_aliases(value, aliases)
             continue
-        if isinstance(value, list):
+        if jv_is_list(value):
             _normalize_runtime_type_aliases(value, aliases)
 
-    kind = node.get("kind")
+    kind = "" + _node_str(node_dict, "kind")
     if kind == "TypeAlias":
-        raw_alias = node.get("value")
-        if isinstance(raw_alias, str) and raw_alias != "":
-            node["value"] = _normalize_type_alias(raw_alias, aliases)
+        raw_alias = "" + _node_str(node_dict, "value")
+        if raw_alias != "":
+            node_dict["value"] = _normalize_type_alias(raw_alias, aliases)
         return
     if kind == "FunctionDef":
-        arg_types = node.get("arg_types")
-        arg_defaults = node.get("arg_defaults")
-        if isinstance(arg_types, dict) and isinstance(arg_defaults, dict):
-            for name, default_node in arg_defaults.items():
-                param_type = arg_types.get(name)
-                if isinstance(param_type, str):
+        arg_types = node_dict.get("arg_types")
+        arg_defaults = node_dict.get("arg_defaults")
+        if jv_is_dict(arg_types) and jv_is_dict(arg_defaults):
+            arg_types_dict = jv_dict(arg_types)
+            arg_defaults_dict = jv_dict(arg_defaults)
+            for name in arg_defaults_dict.keys():
+                default_node: JsonVal = arg_defaults_dict.get(name)
+                param_type = "" + jv_str(arg_types_dict.get(name))
+                if param_type != "":
                     _apply_collection_hint(default_node, param_type, aliases)
-    elif kind in ("Assign", "AnnAssign"):
-        target = node.get("target")
-        value = node.get("value")
+    elif kind == "Assign" or kind == "AnnAssign":
+        target: JsonVal = node_dict.get("target")
+        value: JsonVal = node_dict.get("value")
         target_type = ""
-        if isinstance(target, dict):
-            rt = target.get("resolved_type")
-            if isinstance(rt, str):
-                target_type = rt
+        if jv_is_dict(target):
+            target_type = "" + _node_str(jv_dict(target), "resolved_type")
         if target_type == "":
-            decl = node.get("decl_type")
-            if isinstance(decl, str):
-                target_type = decl
+            target_type = "" + _node_str(node_dict, "decl_type")
         if target_type != "":
             _apply_collection_hint(value, target_type, aliases)
 
@@ -1906,7 +1929,12 @@ def link_modules(
     module_map = discover_runtime_modules(module_map, target=target)
 
     # 3. module_id を割り当て、dispatch_mode を検証
-    runtime_east_root = Path(__file__).resolve().parents[2] / "runtime" / "east"
+    linker_file = str(Path(__file__).resolve()).replace("\\", "/")
+    linker_suffix = "/toolchain/link/linker.py"
+    if linker_file.endswith(linker_suffix):
+        runtime_east_root = Path(linker_file[0 : len(linker_file) - len(linker_suffix)] + "/runtime/east")
+    else:
+        runtime_east_root = Path("src/runtime/east")
 
     modules: list[LinkedModule] = []
     entry_resolved: set[str] = set()
@@ -1915,9 +1943,10 @@ def link_modules(
 
     seen_ids: set[str] = set()
     for path_str in _sorted_doc_map_keys(module_map):
-        doc_entry = _doc_map_get(module_map, path_str)
-        if not isinstance(doc_entry, dict):
+        doc_entry_val: JsonVal = _doc_map_get(module_map, path_str)
+        if not jv_is_dict(doc_entry_val):
             continue
+        doc_entry = jv_dict(doc_entry_val)
 
         module_id = _module_id_from_doc(doc_entry, path_str, runtime_east_root)
         if module_id in seen_ids:
@@ -1959,20 +1988,26 @@ def link_modules(
     # 3.5. import 解決の入力完全性検証
     _validate_link_input_completeness(modules)
 
-    entry_module_ids = sorted([m.module_id for m in modules if m.is_entry])
+    entry_module_ids: list[str] = []
+    all_module_ids: list[str] = []
+    for m in modules:
+        all_module_ids.append(m.module_id)
+        if m.is_entry:
+            entry_module_ids.append(m.module_id)
+    entry_module_ids.sort()
     if len(entry_module_ids) == 0:
         raise RuntimeError("no entry module found")
-    all_module_ids = [m.module_id for m in modules]
 
     # 4. type_id テーブル構築
     type_id_parts: tuple[JsonVal, JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal, JsonVal], build_type_id_table(modules))
     type_id_table, type_id_base_map, type_info_table = type_id_parts
-    trait_parts: tuple[set[str], dict[str, set[str]]] = build_trait_implementation_map(modules)
+    trait_parts: tuple[set[str], dict[str, set[str]]] = cast(tuple[set[str], dict[str, set[str]]], build_trait_implementation_map(modules))
     all_traits, trait_impls = trait_parts
 
     # 5. call graph 構築
-    call_graph_parts: tuple[JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal], build_call_graph(modules))
-    call_graph, sccs = call_graph_parts
+    call_graph_parts = build_call_graph(modules)
+    call_graph = call_graph_parts[0]
+    sccs = call_graph_parts[1]
 
     # 6. program_id 生成
     pid = _program_id(target, dispatch_mode, all_module_ids)
@@ -1980,10 +2015,10 @@ def link_modules(
     # 8. Deep copy all modules
     copied_docs: list[tuple[LinkedModule, dict[str, JsonVal]]] = []
     for module in modules:
-        doc_val = _copy_json(module.east_doc)
-        if not isinstance(doc_val, dict):
+        doc_val: JsonVal = _copy_json(module.east_doc)
+        if not jv_is_dict(doc_val):
             continue
-        doc: dict[str, JsonVal] = doc_val
+        doc: dict[str, JsonVal] = jv_dict(doc_val)
         aliases = _collect_module_type_aliases(doc)
         if len(aliases) > 0:
             _normalize_runtime_type_aliases(doc, aliases)
@@ -2040,13 +2075,13 @@ def link_modules(
             module_kind=module.module_kind,
         ))
 
-    dependency_parts: tuple[JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal], build_all_resolved_dependencies(linked_input_modules, target=target))
-    resolved_deps = cast(dict[str, list[str]], dependency_parts[0])
-    user_deps = cast(dict[str, list[str]], dependency_parts[1])
+    dependency_parts = build_all_resolved_dependencies(linked_input_modules, target=target)
+    resolved_deps = dependency_parts[0]
+    user_deps = dependency_parts[1]
 
     # 10. 各 module に linked_program_v1 を注入
     linked_modules: list[LinkedModule] = []
-    module_entries: list[dict[str, JsonVal]] = []
+    module_entries: list[JsonVal] = []
 
     copied_rows = _copy_doc_rows(copied_docs)
     # Re-apply copy-elision annotations on the final linked rows as well.
@@ -2058,22 +2093,24 @@ def link_modules(
         doc = row[1]
         _fold_trait_predicates(module.module_id, doc, all_traits, trait_impls)
         meta = _ensure_meta(doc)
-        meta["emit_context"] = {
-            "module_id": module.module_id,
-            "is_entry": module.is_entry,
-        }
-        linked_meta: dict[str, JsonVal] = {
-            "program_id": pid,
-            "module_id": module.module_id,
-            "entry_modules": entry_module_ids,
-            "type_id_resolved_v1": type_id_table,
-            "type_id_base_map_v1": type_id_base_map,
-            "type_info_table_v1": type_info_table,
-            "resolved_dependencies_v1": _dep_rows(resolved_deps, module.module_id),
-            "user_module_dependencies_v1": _dep_rows(user_deps, module.module_id),
-            "non_escape_summary": {},
-            "container_ownership_hints_v1": {},
-        }
+        emit_context: dict[str, JsonVal] = {}
+        emit_context["module_id"] = module.module_id
+        emit_context["is_entry"] = module.is_entry
+        meta["emit_context"] = emit_context
+
+        non_escape_summary: dict[str, JsonVal] = {}
+        container_ownership_hints: dict[str, JsonVal] = {}
+        linked_meta: dict[str, JsonVal] = {}
+        linked_meta["program_id"] = pid
+        linked_meta["module_id"] = module.module_id
+        linked_meta["entry_modules"] = _str_list_json(entry_module_ids)
+        linked_meta["type_id_resolved_v1"] = type_id_table
+        linked_meta["type_id_base_map_v1"] = type_id_base_map
+        linked_meta["type_info_table_v1"] = type_info_table
+        linked_meta["resolved_dependencies_v1"] = _dep_rows(resolved_deps, module.module_id)
+        linked_meta["user_module_dependencies_v1"] = _dep_rows(user_deps, module.module_id)
+        linked_meta["non_escape_summary"] = non_escape_summary
+        linked_meta["container_ownership_hints_v1"] = container_ownership_hints
         meta["linked_program_v1"] = linked_meta
         doc["meta"] = meta
 
@@ -2095,48 +2132,58 @@ def link_modules(
             "module_kind": module.module_kind,
         }
         helper_meta = meta.get("synthetic_helper_v1")
-        if module.module_kind == "helper" and isinstance(helper_meta, dict):
-            helper_id = helper_meta.get("helper_id")
-            owner_module_id = helper_meta.get("owner_module_id")
-            generated_by = helper_meta.get("generated_by")
-            if isinstance(helper_id, str) and helper_id != "":
+        if module.module_kind == "helper" and jv_is_dict(helper_meta):
+            helper_meta_dict = jv_dict(helper_meta)
+            helper_id = "" + _node_str(helper_meta_dict, "helper_id")
+            owner_module_id = "" + _node_str(helper_meta_dict, "owner_module_id")
+            generated_by = "" + _node_str(helper_meta_dict, "generated_by")
+            if helper_id != "":
                 me["helper_id"] = helper_id
-            if isinstance(owner_module_id, str):
-                me["owner_module_id"] = owner_module_id
-            if isinstance(generated_by, str) and generated_by != "":
+            me["owner_module_id"] = owner_module_id
+            if generated_by != "":
                 me["generated_by"] = generated_by
         module_entries.append(me)
 
     # 9. call_graph dict 変換
-    call_graph_map: dict[str, JsonVal] = call_graph
     cg_dict: dict[str, JsonVal] = {}
-    for caller in _sorted_str_map_keys(call_graph_map):
-        callees = call_graph_map[caller]
-        cg_dict[caller] = list(callees)
+    for caller in sorted(call_graph.keys()):
+        callee_list: list[JsonVal] = []
+        for callee in call_graph[caller]:
+            callee_list.append(callee)
+        cg_dict[caller] = callee_list
 
     sccs_list: list[JsonVal] = []
     for component in sccs:
-        sccs_list.append(list(component))
+        component_items: list[JsonVal] = []
+        for item in component:
+            component_items.append(item)
+        sccs_list.append(component_items)
 
     # 10. manifest (link-output.v1) 構築
-    global_section: dict[str, JsonVal] = {
-        "type_id_table": type_id_table,
-        "type_id_base_map": type_id_base_map,
-        "call_graph": cg_dict,
-        "sccs": sccs_list,
-        "non_escape_summary": {},
-        "container_ownership_hints_v1": {},
-    }
+    global_non_escape_summary: dict[str, JsonVal] = {}
+    global_container_ownership_hints: dict[str, JsonVal] = {}
+    global_section: dict[str, JsonVal] = {}
+    global_section["type_id_table"] = type_id_table
+    global_section["type_id_base_map"] = type_id_base_map
+    global_section["call_graph"] = cg_dict
+    global_section["sccs"] = sccs_list
+    global_section["non_escape_summary"] = global_non_escape_summary
+    global_section["container_ownership_hints_v1"] = global_container_ownership_hints
 
-    manifest: dict[str, JsonVal] = {
-        "schema": LINK_OUTPUT_SCHEMA,
-        "target": target,
-        "dispatch_mode": dispatch_mode,
-        "entry_modules": entry_module_ids,
-        "modules": module_entries,
-        "global": global_section,
-        "diagnostics": {"warnings": [], "errors": []},
-    }
+    warnings: list[JsonVal] = []
+    errors: list[JsonVal] = []
+    diagnostics: dict[str, JsonVal] = {}
+    diagnostics["warnings"] = warnings
+    diagnostics["errors"] = errors
+
+    manifest: dict[str, JsonVal] = {}
+    manifest["schema"] = LINK_OUTPUT_SCHEMA
+    manifest["target"] = target
+    manifest["dispatch_mode"] = dispatch_mode
+    manifest["entry_modules"] = _str_list_json(entry_module_ids)
+    manifest["modules"] = module_entries
+    manifest["global"] = global_section
+    manifest["diagnostics"] = diagnostics
 
     return LinkResult(
         manifest=manifest,
