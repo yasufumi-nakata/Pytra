@@ -9,6 +9,36 @@ This module reorders fields to match.
 from __future__ import annotations
 
 from pytra.std.json import JsonVal
+from pytra.std import json
+
+
+def _jv_obj(value: JsonVal) -> dict[str, JsonVal]:
+    obj = json.JsonValue(value).as_obj()
+    if obj is None:
+        empty: dict[str, JsonVal] = {}
+        return empty
+    return obj.raw
+
+
+def _jv_arr(value: JsonVal) -> list[JsonVal]:
+    arr = json.JsonValue(value).as_arr()
+    if arr is None:
+        empty: list[JsonVal] = []
+        return empty
+    return arr.raw
+
+
+def _jv_str(value: JsonVal) -> str:
+    raw = json.JsonValue(value).as_str()
+    if raw is None:
+        return ""
+    return "" + raw
+
+
+def _dict_get_str(obj: dict[str, JsonVal], key: str) -> str:
+    if key not in obj:
+        return ""
+    return _jv_str(obj[key])
 
 
 def _fields_csv(csv_text: str) -> list[str]:
@@ -98,53 +128,62 @@ _META_FIELDS: list[str] = _fields_csv("parser_backend, import_resolution, import
 _MODULE_FIELDS: list[str] = _fields_csv("kind, source_path, source_span, body, main_guard_body, renamed_symbols, meta, east_stage, schema_version")
 
 
-_KIND_FIELDS: dict[str, list[str]] = {}
-_KIND_FIELDS["Name"] = _NAME_FIELDS
-_KIND_FIELDS["Constant"] = _CONSTANT_FIELDS
-_KIND_FIELDS["BinOp"] = _BINOP_FIELDS
-_KIND_FIELDS["UnaryOp"] = _UNARYOP_FIELDS
-_KIND_FIELDS["Compare"] = _COMPARE_FIELDS
-_KIND_FIELDS["Call"] = _CALL_FIELDS
-_KIND_FIELDS["Attribute"] = _ATTRIBUTE_FIELDS
-_KIND_FIELDS["Subscript"] = _SUBSCRIPT_FIELDS
-_KIND_FIELDS["List"] = _LIST_FIELDS
-_KIND_FIELDS["Dict"] = _DICT_FIELDS
-_KIND_FIELDS["Set"] = _SET_FIELDS
-_KIND_FIELDS["Tuple"] = _TUPLE_FIELDS
-_KIND_FIELDS["IfExp"] = _IFEXP_FIELDS
-_KIND_FIELDS["BoolOp"] = _BOOLOP_FIELDS
-_KIND_FIELDS["ListComp"] = _LISTCOMP_FIELDS
-_KIND_FIELDS["FunctionDef"] = _FUNCDEF_FIELDS
-_KIND_FIELDS["ClosureDef"] = _CLOSUREDEF_FIELDS
-_KIND_FIELDS["ClassDef"] = _CLASSDEF_FIELDS
-_KIND_FIELDS["For"] = _fields_csv("kind, source_span, target, target_type, iter_mode, iter_source_type, iter_element_type, iter, body, orelse")
-_KIND_FIELDS["RangeExpr"] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, start, stop, step, range_mode")
-_KIND_FIELDS["ForRange"] = _FORRANGE_FIELDS
-_KIND_FIELDS["Assign"] = _ASSIGN_FIELDS
-_KIND_FIELDS["AnnAssign"] = _ANNASSIGN_FIELDS
-_KIND_FIELDS["AugAssign"] = _AUGASSIGN_FIELDS
-_KIND_FIELDS["Module"] = _MODULE_FIELDS
+def _build_kind_fields() -> dict[str, list[str]]:
+    fields: dict[str, list[str]] = {}
+    fields["Name"] = _NAME_FIELDS
+    fields["Constant"] = _CONSTANT_FIELDS
+    fields["BinOp"] = _BINOP_FIELDS
+    fields["UnaryOp"] = _UNARYOP_FIELDS
+    fields["Compare"] = _COMPARE_FIELDS
+    fields["Call"] = _CALL_FIELDS
+    fields["Attribute"] = _ATTRIBUTE_FIELDS
+    fields["Subscript"] = _SUBSCRIPT_FIELDS
+    fields["List"] = _LIST_FIELDS
+    fields["Dict"] = _DICT_FIELDS
+    fields["Set"] = _SET_FIELDS
+    fields["Tuple"] = _TUPLE_FIELDS
+    fields["IfExp"] = _IFEXP_FIELDS
+    fields["BoolOp"] = _BOOLOP_FIELDS
+    fields["ListComp"] = _LISTCOMP_FIELDS
+    fields["FunctionDef"] = _FUNCDEF_FIELDS
+    fields["ClosureDef"] = _CLOSUREDEF_FIELDS
+    fields["ClassDef"] = _CLASSDEF_FIELDS
+    fields["For"] = _fields_csv("kind, source_span, target, target_type, iter_mode, iter_source_type, iter_element_type, iter, body, orelse")
+    fields["RangeExpr"] = _fields_csv("kind, source_span, resolved_type, casts, borrow_kind, repr, start, stop, step, range_mode")
+    fields["ForRange"] = _FORRANGE_FIELDS
+    fields["Assign"] = _ASSIGN_FIELDS
+    fields["AnnAssign"] = _ANNASSIGN_FIELDS
+    fields["AugAssign"] = _AUGASSIGN_FIELDS
+    fields["Module"] = _MODULE_FIELDS
+    return fields
 
+
+_KIND_FIELDS: dict[str, list[str]] = _build_kind_fields()
 
 def normalize_field_order(doc: JsonVal, parent_key: str = "") -> JsonVal:
     """Recursively normalize field ordering in a JSON document."""
-    if isinstance(doc, dict):
-        kind = doc.get("kind")
-        if isinstance(kind, str) and kind in _KIND_FIELDS:
-            ordered = _reorder_dict(doc, _KIND_FIELDS[kind])
+    obj = _jv_obj(doc)
+    if len(obj) > 0:
+        kind: str = _dict_get_str(obj, "kind")
+        ordered: dict[str, JsonVal]
+        if kind != "" and kind in _KIND_FIELDS:
+            ordered = _reorder_dict(obj, _KIND_FIELDS[kind])
         elif parent_key == "meta":
-            ordered = _reorder_dict(doc, _META_FIELDS)
+            ordered = _reorder_dict(obj, _META_FIELDS)
         elif parent_key == "import_resolution":
-            ordered = _reorder_dict(doc, _IMPORT_RESOLUTION_FIELDS)
+            ordered = _reorder_dict(obj, _IMPORT_RESOLUTION_FIELDS)
         else:
-            ordered = doc
-        # Recursively process all values
+            ordered = obj
         result: dict[str, JsonVal] = {}
         for k, v in ordered.items():
             result[k] = normalize_field_order(v, parent_key=k)
         return result
-    if isinstance(doc, list):
-        return [normalize_field_order(item, parent_key=parent_key) for item in doc]
+    arr = _jv_arr(doc)
+    if len(arr) > 0:
+        out: list[JsonVal] = []
+        for item in arr:
+            out.append(normalize_field_order(item, parent_key=parent_key))
+        return out
     return doc
 
 

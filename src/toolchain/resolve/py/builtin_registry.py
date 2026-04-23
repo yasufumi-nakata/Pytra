@@ -14,9 +14,113 @@ from dataclasses import dataclass, field
 
 from pytra.std.json import JsonVal
 from pytra.std import json
+from pytra.std import os_path as path
 from pytra.std.pathlib import Path
 
 from toolchain.resolve.py.type_norm import normalize_type
+
+
+def _norm_type(raw: str) -> str:
+    return "" + normalize_type(raw)
+
+
+def _strip_quote(text: str, quote: str) -> str:
+    if len(text) >= 2 and text[0] == quote and text[-1] == quote:
+        return text[1:-1]
+    return text
+
+
+def _path_join(base: Path, part: str) -> Path:
+    return Path(path.join(str(base), part))
+
+
+def _path_parent(base: Path) -> Path:
+    parent_text: str = path.dirname(str(base))
+    if parent_text == "":
+        parent_text = "."
+    return Path(parent_text)
+
+
+def _path_parents(base: Path) -> list[Path]:
+    out: list[Path] = []
+    current: str = path.dirname(str(base))
+    while True:
+        if current == "":
+            current = "."
+        out.append(Path(current))
+        next_current: str = path.dirname(current)
+        if next_current == "":
+            next_current = "."
+        if next_current == current:
+            break
+        current = next_current
+    return out
+
+
+def _path_name(base: Path) -> str:
+    return path.basename(str(base))
+
+
+def _path_stem(base: Path) -> str:
+    root: str
+    _ext: str
+    root, _ext = path.splitext(path.basename(str(base)))
+    return root
+
+
+def _path_relative_str(child: Path, base: Path) -> str:
+    child_abs: str = path.abspath(str(child))
+    base_abs: str = path.abspath(str(base))
+    if not base_abs.endswith("/"):
+        base_abs = base_abs + "/"
+    if child_abs == base_abs or child_abs == base_abs[:-1]:
+        return "."
+    if child_abs.startswith(base_abs):
+        return child_abs[len(base_abs):]
+    return str(child)
+
+
+def _jv_obj(value: JsonVal) -> dict[str, JsonVal]:
+    obj = json.JsonValue(value).as_obj()
+    if obj is None:
+        empty: dict[str, JsonVal] = {}
+        return empty
+    return obj.raw
+
+
+def _jv_arr(value: JsonVal) -> list[JsonVal]:
+    arr = json.JsonValue(value).as_arr()
+    if arr is None:
+        empty: list[JsonVal] = []
+        return empty
+    return arr.raw
+
+
+def _jv_str(value: JsonVal) -> str:
+    raw = json.JsonValue(value).as_str()
+    if raw is None:
+        return ""
+    return "" + raw
+
+
+def _dict_get_obj(obj: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
+    if key not in obj:
+        empty: dict[str, JsonVal] = {}
+        return empty
+    return _jv_obj(obj[key])
+
+
+def _dict_get_arr(obj: dict[str, JsonVal], key: str) -> list[JsonVal]:
+    if key not in obj:
+        empty: list[JsonVal] = []
+        return empty
+    return _jv_arr(obj[key])
+
+
+def _dict_get_str(obj: dict[str, JsonVal], key: str) -> str:
+    if key not in obj:
+        return ""
+    return _jv_str(obj[key])
 
 
 def _split_once(text: str, sep: str) -> tuple[str, str]:
@@ -222,9 +326,9 @@ class BuiltinRegistry:
 
     def find_stdlib_class(self, name: str) -> ClassSig | None:
         """Find a stdlib class by simple class name across loaded modules."""
-        seen: set[int] = set()
+        seen: set[str] = set()
         for mod in self.stdlib_modules.values():
-            mod_id = id(mod)
+            mod_id = mod.module_id
             if mod_id in seen:
                 continue
             seen.add(mod_id)
@@ -235,14 +339,14 @@ class BuiltinRegistry:
 
     def find_stdlib_class_module(self, cls_sig: ClassSig) -> str:
         """Return the stdlib module id that owns ``cls_sig``, or "" if not found."""
-        seen: set[int] = set()
+        seen: set[str] = set()
         for module_id, mod in self.stdlib_modules.items():
-            mod_key = id(mod)
+            mod_key = mod.module_id
             if mod_key in seen:
                 continue
             seen.add(mod_key)
             for candidate in mod.classes.values():
-                if candidate is cls_sig:
+                if candidate.name == cls_sig.name:
                     return module_id
         return ""
 
@@ -254,20 +358,16 @@ class BuiltinRegistry:
 
 def _extract_extern_v2(node: dict[str, JsonVal]) -> ExternV2 | None:
     """Extract ExternV2 from a node's meta.extern_v2."""
-    meta = node.get("meta")
-    if not isinstance(meta, dict):
+    meta = _dict_get_obj(node, "meta")
+    if len(meta) == 0:
         return None
-    ev2 = meta.get("extern_v2")
-    if not isinstance(ev2, dict):
+    ev2 = _dict_get_obj(meta, "extern_v2")
+    if len(ev2) == 0:
         return None
-    module_val = ev2.get("module")
-    symbol_val = ev2.get("symbol")
-    tag_val = ev2.get("tag")
-    module: str = str(module_val) if isinstance(module_val, str) else ""
-    symbol: str = str(symbol_val) if isinstance(symbol_val, str) else ""
-    tag: str = str(tag_val) if isinstance(tag_val, str) else ""
-    kind_val = ev2.get("kind")
-    kind: str = str(kind_val) if isinstance(kind_val, str) else ""
+    module = _dict_get_str(ev2, "module")
+    symbol = _dict_get_str(ev2, "symbol")
+    tag = _dict_get_str(ev2, "tag")
+    kind = _dict_get_str(ev2, "kind")
     if module == "" and symbol == "" and tag == "":
         return None
     return ExternV2(module=module, symbol=symbol, tag=tag, kind=kind)
@@ -275,32 +375,31 @@ def _extract_extern_v2(node: dict[str, JsonVal]) -> ExternV2 | None:
 
 def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> FuncSig:
     """Extract FuncSig from a FunctionDef EAST1 node."""
-    name_val = node.get("name")
-    name: str = str(name_val) if name_val is not None else ""
-    arg_types_raw = node.get("arg_types")
+    name: str = _dict_get_str(node, "name")
+    arg_types_raw = _dict_get_obj(node, "arg_types")
     arg_types: dict[str, str] = {}
-    if isinstance(arg_types_raw, dict):
-        for k, v in arg_types_raw.items():
-            if isinstance(v, str):
-                arg_types[k] = normalize_type(v)
-    arg_order_raw = node.get("arg_order")
+    for k, v in arg_types_raw.items():
+        v_str = _jv_str(v)
+        if v_str != "":
+            norm_v: str = _norm_type(v_str)
+            arg_types[k] = norm_v
+    arg_order_raw = _dict_get_arr(node, "arg_order")
     arg_names: list[str] = []
-    if isinstance(arg_order_raw, list):
-        for a in arg_order_raw:
-            if isinstance(a, str):
-                arg_names.append(a)
-    ret_raw = node.get("return_type")
-    ret: str = normalize_type(str(ret_raw)) if isinstance(ret_raw, str) else "unknown"
-    vararg_name_val = node.get("vararg_name")
-    vararg_name: str = str(vararg_name_val) if isinstance(vararg_name_val, str) else ""
-    vararg_type_raw = node.get("vararg_type")
-    vararg_type: str = normalize_type(str(vararg_type_raw)) if isinstance(vararg_type_raw, str) else ""
-    decs_raw = node.get("decorators")
+    for a in arg_order_raw:
+        a_str = _jv_str(a)
+        if a_str != "":
+            arg_names.append(a_str)
+    ret_raw = _dict_get_str(node, "return_type")
+    ret: str = _norm_type(ret_raw) if ret_raw != "" else "unknown"
+    vararg_name: str = _dict_get_str(node, "vararg_name")
+    vararg_type_raw = _dict_get_str(node, "vararg_type")
+    vararg_type: str = _norm_type(vararg_type_raw) if vararg_type_raw != "" else ""
+    decs_raw = _dict_get_arr(node, "decorators")
     decs: list[str] = []
-    if isinstance(decs_raw, list):
-        for d in decs_raw:
-            if isinstance(d, str):
-                decs.append(d)
+    for d in decs_raw:
+        d_str = _jv_str(d)
+        if d_str != "":
+            decs.append(d_str)
     extern_v2: ExternV2 | None = _extract_extern_v2(node)
     return FuncSig(name=name, arg_names=arg_names, arg_types=arg_types, return_type=ret, decorators=decs, vararg_name=vararg_name, vararg_type=vararg_type, is_method=is_method, owner_class=owner, extern_v2=extern_v2)
 
@@ -354,9 +453,11 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
             tail = stripped[arrow + 2:]
             colon = tail.find(":")
             if colon >= 0:
-                return_type = tail[:colon].strip()
+                return_type_part2 = tail[:colon]
+                return_type = "" + return_type_part2.strip()
             else:
-                return_type = tail.strip()
+                return_type_tail2 = tail
+                return_type = "" + return_type_tail2.strip()
         if method_name == "":
             continue
         cls = reg.classes.get(current_class)
@@ -377,7 +478,8 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
                 name_part = field_split[0]
                 type_part = field_split[1]
                 arg_name = name_part.strip()
-                arg_type = normalize_type(type_part.strip())
+                raw_arg_type2: str = type_part.strip()
+                arg_type = _norm_type(raw_arg_type2)
             else:
                 arg_name = field_text.strip()
                 arg_type = "unknown"
@@ -393,7 +495,7 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
                 name=method_name,
                 arg_names=arg_names,
                 arg_types=arg_types,
-                return_type=normalize_type(return_type),
+                return_type=_norm_type(return_type),
                 decorators=list(pending_decorators),
                 is_method=True,
                 owner_class=current_class,
@@ -403,7 +505,8 @@ def _overlay_container_mutability_from_source(reg: BuiltinRegistry, source_path:
         else:
             method_sig.arg_names = arg_names
             method_sig.arg_types = arg_types
-            method_sig.return_type = normalize_type(return_type)
+            normalized_return_type: str = _norm_type(return_type)
+            method_sig.return_type = normalized_return_type
             method_sig.self_is_mutable = self_is_mutable
             if len(pending_decorators) > 0:
                 method_sig.decorators = list(pending_decorators)
@@ -440,17 +543,20 @@ def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> 
                 for part in inner.split(","):
                     base_name = part.strip()
                     if base_name != "":
-                        bases.append(normalize_type(base_name))
+                        normalized_base: str = _norm_type(base_name)
+                        bases.append(normalized_base)
             current_class = class_name.strip()
             current_bases = bases
             class_indent = indent
             cls = reg.classes.get(current_class)
             if cls is None:
+                empty_methods: dict[str, FuncSig] = {}
+                empty_fields: dict[str, str] = {}
                 reg.classes[current_class] = ClassSig(
                     name=current_class,
                     bases=list(current_bases),
-                    methods={},
-                    fields={},
+                    methods=empty_methods,
+                    fields=empty_fields,
                     decorators=list(pending_decorators),
                 )
             else:
@@ -477,9 +583,11 @@ def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> 
             tail = stripped[arrow + 2:]
             colon = tail.find(":")
             if colon >= 0:
-                return_type = tail[:colon].strip()
+                return_type_part2 = tail[:colon]
+                return_type = "" + return_type_part2.strip()
             else:
-                return_type = tail.strip()
+                return_type_tail2 = tail
+                return_type = "" + return_type_tail2.strip()
         if method_name == "":
             continue
         cls = reg.classes.get(current_class)
@@ -500,7 +608,8 @@ def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> 
                 name_part = field_split[0]
                 type_part = field_split[1]
                 arg_name = name_part.strip()
-                arg_type = normalize_type(type_part.strip())
+                raw_arg_type2: str = type_part.strip()
+                arg_type = _norm_type(raw_arg_type2)
             else:
                 arg_name = field_text.strip()
                 arg_type = "unknown"
@@ -516,7 +625,7 @@ def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> 
                 name=method_name,
                 arg_names=arg_names,
                 arg_types=arg_types,
-                return_type=normalize_type(return_type),
+                return_type=_norm_type(return_type),
                 decorators=list(pending_decorators),
                 is_method=True,
                 owner_class=current_class,
@@ -526,7 +635,8 @@ def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> 
         else:
             method_sig.arg_names = arg_names
             method_sig.arg_types = arg_types
-            method_sig.return_type = normalize_type(return_type)
+            normalized_return_type2: str = _norm_type(return_type)
+            method_sig.return_type = normalized_return_type2
             method_sig.self_is_mutable = self_is_mutable
             if len(pending_decorators) > 0:
                 method_sig.decorators = list(pending_decorators)
@@ -538,65 +648,65 @@ def _overlay_class_sigs_from_source(reg: BuiltinRegistry, source_path: Path) -> 
 
 def _default_containers_source_path() -> Path:
     repo_root = Path.cwd()
-    return repo_root / "src" / "pytra" / "built_in" / "containers.py"
+    return _path_join(_path_join(_path_join(_path_join(repo_root, "src"), "pytra"), "built_in"), "containers.py")
 
 
 def _default_io_source_path() -> Path:
     repo_root = Path.cwd()
-    return repo_root / "src" / "pytra" / "built_in" / "io.py"
+    return _path_join(_path_join(_path_join(_path_join(repo_root, "src"), "pytra"), "built_in"), "io.py")
 
 
 def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
     """Extract ClassSig from a ClassDef EAST1 node."""
-    name_val = node.get("name")
-    name: str = str(name_val) if name_val is not None else ""
-    bases_raw = node.get("bases")
-    base_raw = node.get("base")
+    name: str = _dict_get_str(node, "name")
     bases: list[str] = []
-    if isinstance(bases_raw, list):
-        for b in bases_raw:
-            if isinstance(b, str):
-                bases.append(b)
-    elif isinstance(base_raw, str):
-        bases.append(base_raw)
+    bases_raw = _dict_get_arr(node, "bases")
+    for b in bases_raw:
+        b_str = _jv_str(b)
+        if b_str != "":
+            bases.append(b_str)
+    if len(bases) == 0:
+        base_raw = _dict_get_str(node, "base")
+        if base_raw != "":
+            bases.append(base_raw)
     methods: dict[str, FuncSig] = {}
     fields: dict[str, str] = {}
-    body_raw = node.get("body")
-    if isinstance(body_raw, list):
-        for item in body_raw:
-            if not isinstance(item, dict):
-                continue
-            kind = item.get("kind")
-            if kind == "FunctionDef":
-                sig: FuncSig = _extract_func_sig(item, is_method=True, owner=name)
-                methods[sig.name] = sig
-            elif kind == "AnnAssign":
-                target = item.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    field_name_val = target.get("id")
-                    if isinstance(field_name_val, str):
-                        ann_val = item.get("annotation")
-                        if isinstance(ann_val, str):
-                            fields[field_name_val] = normalize_type(ann_val)
+    body_raw = _dict_get_arr(node, "body")
+    for item in body_raw:
+        item_obj = _jv_obj(item)
+        if len(item_obj) == 0:
+            continue
+        kind = _dict_get_str(item_obj, "kind")
+        if kind == "FunctionDef":
+            sig: FuncSig = _extract_func_sig(item_obj, is_method=True, owner=name)
+            methods[sig.name] = sig
+        elif kind == "AnnAssign":
+            target = _dict_get_obj(item_obj, "target")
+            if _dict_get_str(target, "kind") == "Name":
+                field_name_val = _dict_get_str(target, "id")
+                ann_val = _dict_get_str(item_obj, "annotation")
+                if field_name_val != "" and ann_val != "":
+                    normalized_field_type: str = _norm_type(ann_val)
+                    fields[field_name_val] = normalized_field_type
     # Template params from decorators
-    decs_raw = node.get("decorators")
+    decs_raw = _dict_get_arr(node, "decorators")
     decorators: list[str] = []
     tparams: list[str] = []
-    if isinstance(decs_raw, list):
-        for d in decs_raw:
-            if not isinstance(d, str):
-                continue
-            decorators.append(d)
-            if d.startswith("template("):
-                inner = ""
-                if d.endswith(")"):
-                    inner = d[9:-1]
-                for p in inner.split(","):
-                    p2 = p.strip()
-                    p2 = p2.strip("'")
-                    p2 = p2.strip('"')
-                    if p2 != "":
-                        tparams.append(p2)
+    for d_raw in decs_raw:
+        d = _jv_str(d_raw)
+        if d == "":
+            continue
+        decorators.append(d)
+        if d.startswith("template("):
+            inner = ""
+            if d.endswith(")"):
+                inner = d[9:-1]
+            for p in inner.split(","):
+                p2 = p.strip()
+                p2 = _strip_quote(p2, "'")
+                p2 = _strip_quote(p2, '"')
+                if p2 != "":
+                    tparams.append(p2)
     is_trait = "trait" in decorators
     implements_traits: list[str] = []
     for decorator in decorators:
@@ -624,29 +734,31 @@ def _load_module_sig(east1_path: Path, module_id: str) -> ModuleSig:
     msig: ModuleSig = ModuleSig(module_id=module_id)
     text: str = east1_path.read_text(encoding="utf-8")
     raw: JsonVal = json.loads(text).raw
-    if not isinstance(raw, dict):
+    raw_obj = _jv_obj(raw)
+    if len(raw_obj) == 0:
         return msig
-    body = raw.get("body")
-    if not isinstance(body, list):
+    body = _dict_get_arr(raw_obj, "body")
+    if len(body) == 0:
         return msig
     for item in body:
-        if not isinstance(item, dict):
+        item_obj = _jv_obj(item)
+        if len(item_obj) == 0:
             continue
-        kind = item.get("kind")
+        kind = _dict_get_str(item_obj, "kind")
         if kind == "FunctionDef":
-            sig: FuncSig = _extract_func_sig(item, is_method=False, owner="")
+            sig: FuncSig = _extract_func_sig(item_obj, is_method=False, owner="")
             msig.functions[sig.name] = sig
         elif kind == "ClassDef":
-            csig: ClassSig = _extract_class_sig(item)
+            csig: ClassSig = _extract_class_sig(item_obj)
             msig.classes[csig.name] = csig
         elif kind == "AnnAssign":
-            target = item.get("target")
-            if isinstance(target, dict) and target.get("kind") == "Name":
-                var_name_val = target.get("id")
-                if isinstance(var_name_val, str):
-                    ann_val = item.get("annotation")
-                    var_type: str = normalize_type(str(ann_val)) if isinstance(ann_val, str) else "unknown"
-                    extern_v: ExternV2 | None = _extract_extern_v2(item)
+            target = _dict_get_obj(item_obj, "target")
+            if _dict_get_str(target, "kind") == "Name":
+                var_name_val = _dict_get_str(target, "id")
+                ann_val = _dict_get_str(item_obj, "annotation")
+                var_type: str = _norm_type(ann_val) if ann_val != "" else "unknown"
+                extern_v: ExternV2 | None = _extract_extern_v2(item_obj)
+                if var_name_val != "":
                     msig.variables[var_name_val] = VarSig(
                         name=var_name_val, var_type=var_type, extern_v2=extern_v,
                     )
@@ -655,16 +767,16 @@ def _load_module_sig(east1_path: Path, module_id: str) -> ModuleSig:
 
 def _merge_module_sig(dst: ModuleSig, src: ModuleSig) -> None:
     """Merge src into dst, keeping runtime-source entries authoritative."""
-    for name, sig in src.functions.items():
-        if name not in dst.functions:
-            dst.functions[name] = sig
-    for name, sig in src.variables.items():
-        if name not in dst.variables:
-            dst.variables[name] = sig
-    for name, cls in src.classes.items():
-        existing: ClassSig | None = dst.classes.get(name)
+    for func_name, func_sig in src.functions.items():
+        if func_name not in dst.functions:
+            dst.functions[func_name] = func_sig
+    for var_name, var_sig in src.variables.items():
+        if var_name not in dst.variables:
+            dst.variables[var_name] = var_sig
+    for class_name, cls in src.classes.items():
+        existing: ClassSig | None = dst.classes.get(class_name)
         if existing is None:
-            dst.classes[name] = cls
+            dst.classes[class_name] = cls
             continue
         for method_name, method_sig in cls.methods.items():
             if method_name not in existing.methods:
@@ -698,12 +810,12 @@ def _register_stdlib_module(reg: BuiltinRegistry, module_id: str, msig: ModuleSi
     for alias in _module_aliases(canonical):
         reg.stdlib_modules[alias] = msig
     if canonical.startswith("pytra.built_in."):
-        for name, sig in msig.functions.items():
-            if name not in reg.functions:
-                reg.functions[name] = sig
-        for name, cls in msig.classes.items():
-            if name not in reg.classes:
-                reg.classes[name] = cls
+        for func_name, func_sig in msig.functions.items():
+            if func_name not in reg.functions:
+                reg.functions[func_name] = func_sig
+        for class_name, class_sig in msig.classes.items():
+            if class_name not in reg.classes:
+                reg.classes[class_name] = class_sig
 
 
 def _retarget_string_method_runtime_modules(reg: BuiltinRegistry) -> None:
@@ -733,22 +845,23 @@ def _candidate_module_dirs(base_dir: Path, group: str) -> list[Path]:
     """Return runtime module directories in merge order for std/utils/built_in overlays."""
     dirs: list[Path] = []
     if base_dir.exists():
-        if len(base_dir.parents) >= 4 and base_dir.parents[3].name == "test":
-            test_root: Path = base_dir.parents[3]
-            repo_root: Path = test_root.parent
-            runtime_dir = repo_root / "src" / "runtime" / "east" / group
-            pytra_dir = test_root / "pytra" / "east1" / "py" / group
-            include_dir = test_root / "include" / "east1" / "py" / group
-            candidates = (runtime_dir, pytra_dir, include_dir)
+        base_parents: list[Path] = _path_parents(base_dir)
+        if len(base_parents) >= 4 and _path_name(base_parents[3]) == "test":
+            test_root: Path = base_parents[3]
+            repo_root: Path = _path_parent(test_root)
+            runtime_dir = _path_join(_path_join(_path_join(_path_join(repo_root, "src"), "runtime"), "east"), group)
+            pytra_dir = _path_join(_path_join(_path_join(_path_join(test_root, "pytra"), "east1"), "py"), group)
+            include_dir = _path_join(_path_join(_path_join(_path_join(test_root, "include"), "east1"), "py"), group)
+            candidates: list[Path] = [runtime_dir, pytra_dir, include_dir]
             for candidate in candidates:
                 if candidate.exists():
                     dirs.append(candidate)
         else:
-            repo_root2 = base_dir.parents[3] if len(base_dir.parents) >= 4 else None
+            repo_root2: Path | None = base_parents[3] if len(base_parents) >= 4 else None
             if group == "std":
                 dirs.append(base_dir)
             elif repo_root2 is not None:
-                sibling = repo_root2 / "src" / "runtime" / "east" / group
+                sibling = _path_join(_path_join(_path_join(_path_join(repo_root2, "src"), "runtime"), "east"), group)
                 if sibling.exists():
                     dirs.append(sibling)
     unique: list[Path] = []
@@ -763,15 +876,17 @@ def _candidate_module_dirs(base_dir: Path, group: str) -> list[Path]:
 
 
 def _module_name_from_module_path(module_file: Path, stdlib_dir: Path) -> str:
-    rel: Path = module_file.relative_to(stdlib_dir)
-    name: str = str(rel)
+    name: str = _path_relative_str(module_file, stdlib_dir)
     if name.endswith(".py.east1"):
         return name[: -len(".py.east1")].replace("/", ".")
     if name.endswith(".east1"):
         return name[: -len(".east1")].replace("/", ".")
     if name.endswith(".east"):
         return name[: -len(".east")].replace("/", ".")
-    return rel.stem.replace("/", ".")
+    root: str
+    _ext: str
+    root, _ext = path.splitext(path.basename(name))
+    return root.replace("/", ".")
 
 
 def load_builtin_registry(
@@ -791,31 +906,31 @@ def load_builtin_registry(
     if builtins_east1_path is not None and builtins_east1_path.exists():
         text: str = builtins_east1_path.read_text(encoding="utf-8")
         raw: JsonVal = json.loads(text).raw
-        if isinstance(raw, dict):
-            body = raw.get("body")
-            if isinstance(body, list):
-                for item in body:
-                    if not isinstance(item, dict):
-                        continue
-                    kind = item.get("kind")
-                    if kind == "FunctionDef":
-                        sig: FuncSig = _extract_func_sig(item, is_method=False, owner="")
-                        reg.functions[sig.name] = sig
+        raw_obj = _jv_obj(raw)
+        body = _dict_get_arr(raw_obj, "body")
+        for item in body:
+            item_obj = _jv_obj(item)
+            if len(item_obj) == 0:
+                continue
+            kind = _dict_get_str(item_obj, "kind")
+            if kind == "FunctionDef":
+                sig: FuncSig = _extract_func_sig(item_obj, is_method=False, owner="")
+                reg.functions[sig.name] = sig
 
     # Load container classes
     if containers_east1_path is not None and containers_east1_path.exists():
         text2: str = containers_east1_path.read_text(encoding="utf-8")
         raw2: JsonVal = json.loads(text2).raw
-        if isinstance(raw2, dict):
-            body2 = raw2.get("body")
-            if isinstance(body2, list):
-                for item2 in body2:
-                    if not isinstance(item2, dict):
-                        continue
-                    kind2 = item2.get("kind")
-                    if kind2 == "ClassDef":
-                        csig: ClassSig = _extract_class_sig(item2)
-                        reg.classes[csig.name] = csig
+        raw2_obj = _jv_obj(raw2)
+        body2 = _dict_get_arr(raw2_obj, "body")
+        for item2 in body2:
+            item2_obj = _jv_obj(item2)
+            if len(item2_obj) == 0:
+                continue
+            kind2 = _dict_get_str(item2_obj, "kind")
+            if kind2 == "ClassDef":
+                csig: ClassSig = _extract_class_sig(item2_obj)
+                reg.classes[csig.name] = csig
 
     # Load stdlib modules
     if stdlib_dir is not None and stdlib_dir.exists():
@@ -826,22 +941,26 @@ def load_builtin_registry(
             group = std_groups[group_index]
             prefix = std_prefixes[group_index]
             for module_dir in _candidate_module_dirs(stdlib_dir, group):
-                module_files = sorted(module_dir.glob("*.east"), key=str) + sorted(module_dir.glob("*.east1"), key=str)
-                for module_file in module_files:
+                for module_file in module_dir.glob("*.east"):
                     mod_name: str = _module_name_from_module_path(module_file, module_dir)
                     canonical: str = prefix + mod_name
                     msig: ModuleSig = _load_module_sig(module_file, canonical)
                     _register_stdlib_module(reg, canonical, msig)
+                for module_file2 in module_dir.glob("*.east1"):
+                    mod_name2: str = _module_name_from_module_path(module_file2, module_dir)
+                    canonical2: str = prefix + mod_name2
+                    msig2: ModuleSig = _load_module_sig(module_file2, canonical2)
+                    _register_stdlib_module(reg, canonical2, msig2)
             group_index += 1
 
     _retarget_string_method_runtime_modules(reg)
-    if containers_source_path is None:
-        containers_source_path = _default_containers_source_path()
+    actual_containers_source_path: Path = _default_containers_source_path()
     if containers_source_path is not None:
-        _overlay_container_mutability_from_source(reg, containers_source_path)
-    if io_source_path is None:
-        io_source_path = _default_io_source_path()
+        actual_containers_source_path = containers_source_path
+    _overlay_container_mutability_from_source(reg, actual_containers_source_path)
+    actual_io_source_path: Path = _default_io_source_path()
     if io_source_path is not None:
-        _overlay_class_sigs_from_source(reg, io_source_path)
+        actual_io_source_path = io_source_path
+    _overlay_class_sigs_from_source(reg, actual_io_source_path)
 
     return reg
