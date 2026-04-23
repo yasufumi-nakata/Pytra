@@ -3319,6 +3319,7 @@ def _resolve_attribute(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 def _infer_module_attr_type(canonical: str, attr: str, ctx: ResolveContext) -> str:
     """Infer type of a module-level attribute (e.g., math.pi)."""
+    ctx.current_function = ctx.current_function
     # Look up in stdlib registry
     var_sig: VarSig | None = ctx.registry.lookup_stdlib_variable(canonical, attr)
     if var_sig is not None:
@@ -3328,6 +3329,7 @@ def _infer_module_attr_type(canonical: str, attr: str, ctx: ResolveContext) -> s
 
 def _resolve_module_member_module(module_id: str, attr: str, ctx: ResolveContext) -> str:
     """Resolve nested module references like os.path -> pytra.std.os_path."""
+    ctx.current_function = ctx.current_function
     if module_id == "" or attr == "":
         return ""
     candidates: list[str] = [module_id + "." + attr, module_id + "_" + attr]
@@ -3344,15 +3346,16 @@ def _resolve_module_member_module(module_id: str, attr: str, ctx: ResolveContext
 
 def _resolve_module_expr_id(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     """Resolve an expression that denotes a module object to its module_id."""
-    runtime_module_id = expr.get("runtime_module_id")
-    resolved_type = expr.get("resolved_type")
-    if isinstance(runtime_module_id, str) and runtime_module_id != "" and resolved_type == "module":
+    ctx.current_function = ctx.current_function
+    runtime_module_id = _dict_get_str(expr, "runtime_module_id")
+    resolved_type = _dict_get_str(expr, "resolved_type")
+    if runtime_module_id != "" and resolved_type == "module":
         return ctx.canonical_module_id(runtime_module_id)
 
-    kind = expr.get("kind")
+    kind = _dict_get_str(expr, "kind")
     if kind == "Name":
-        name = expr.get("id")
-        if isinstance(name, str):
+        name = _dict_get_str(expr, "id")
+        if name != "":
             mod_id: str = ctx.import_modules.get(name, "")
             if mod_id != "":
                 canonical = ctx.canonical_module_id(mod_id)
@@ -3362,9 +3365,9 @@ def _resolve_module_expr_id(expr: dict[str, JsonVal], ctx: ResolveContext) -> st
         return ""
 
     if kind == "Attribute":
-        value = expr.get("value")
-        attr = expr.get("attr")
-        if isinstance(value, dict) and isinstance(attr, str):
+        value = _dict_get_obj(expr, "value")
+        attr = _dict_get_str(expr, "attr")
+        if len(value) > 0 and attr != "":
             parent_mod = _resolve_module_expr_id(value, ctx)
             if parent_mod != "":
                 promoted = _resolve_module_member_module(parent_mod, attr, ctx)
@@ -3379,25 +3382,26 @@ def _resolve_module_expr_id(expr: dict[str, JsonVal], ctx: ResolveContext) -> st
 
 def _module_expr_display_name(expr: dict[str, JsonVal], module_id: str) -> str:
     """Best-effort label for diagnostics/runtime-call strings of module expressions."""
-    kind = expr.get("kind")
+    kind = _dict_get_str(expr, "kind")
     if kind == "Name":
-        name = expr.get("id")
-        if isinstance(name, str) and name != "":
+        name = _dict_get_str(expr, "id")
+        if name != "":
             return name
     if kind == "Attribute":
-        attr = expr.get("attr")
-        if isinstance(attr, str) and attr != "":
+        attr = _dict_get_str(expr, "attr")
+        if attr != "":
             return attr
-    tail = module_id.rsplit(".", 1)[-1]
+    parts = module_id.split(".")
+    tail = parts[-1] if len(parts) > 0 else ""
     return tail if tail != "" else module_id
 
 
 def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    value = expr.get("value")
-    slice_node = expr.get("slice")
+    value = _dict_get_obj(expr, "value")
+    slice_node = _dict_get_obj(expr, "slice")
 
     vt: str = "unknown"
-    if isinstance(value, dict):
+    if len(value) > 0:
         vt = _resolve_expr(value, ctx)
     if vt.endswith(" | None"):
         vt_inner: str = vt[:-7].strip()
@@ -3408,21 +3412,20 @@ def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         if vt_inner2.startswith(("list[", "dict[", "tuple[")) or vt_inner2 in ("str", "bytes", "bytearray"):
             vt = vt_inner2
     is_slice: bool = False
-    if isinstance(slice_node, dict):
+    if len(slice_node) > 0:
         _resolve_expr(slice_node, ctx)
-        if slice_node.get("kind") == "Slice":
+        if _dict_get_str(slice_node, "kind") == "Slice":
             is_slice = True
 
     # Slice subscript: list[T][a:b] → list[T], str[a:b] → str
-    if is_slice and isinstance(slice_node, dict):
+    if is_slice and len(slice_node) > 0:
         expr["resolved_type"] = vt
         expr["lowered_kind"] = "SliceExpr"
         # Promote Slice fields to Subscript (golden convention)
         # Only include non-null values
         for sk in ("lower", "upper", "step"):
-            sv = slice_node.get(sk)
-            if sv is not None:
-                expr[sk] = sv
+            if sk in slice_node:
+                expr[sk] = slice_node[sk]
         return vt
 
     # list[T][i] → T
@@ -3434,7 +3437,7 @@ def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
     # dict[K,V][k] → V
     if vt.startswith("dict[") and vt.endswith("]"):
         inner: str = vt[5:-1]
-        args: list[str] = extract_type_args(vt)
+        args: list[str] = list(extract_type_args(vt))
         if len(args) >= 2:
             expr["resolved_type"] = args[1]
             return args[1]
@@ -3451,11 +3454,12 @@ def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
     # tuple[...][i] → depends on index
     if vt.startswith("tuple[") and vt.endswith("]"):
-        args2: list[str] = extract_type_args(vt)
+        args2: list[str] = list(extract_type_args(vt))
         # If constant index, return that element type
-        if isinstance(slice_node, dict) and slice_node.get("kind") == "Constant":
-            idx = slice_node.get("value")
-            if isinstance(idx, int) and 0 <= idx < len(args2):
+        if len(slice_node) > 0 and _dict_get_str(slice_node, "kind") == "Constant" and "value" in slice_node:
+            idx_val = json.JsonValue(slice_node["value"]).as_int()
+            if idx_val is not None and 0 <= idx_val < len(args2):
+                idx: int = idx_val
                 expr["resolved_type"] = args2[idx]
                 return args2[idx]
         if len(args2) > 0:
