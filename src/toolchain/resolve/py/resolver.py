@@ -2306,12 +2306,11 @@ def _binop_result_type(lt: str, rt: str, op: str) -> str:
 
 
 def _resolve_unaryop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    operand = expr.get("operand")
+    operand = _dict_get_obj(expr, "operand")
     ot: str = "unknown"
-    if isinstance(operand, dict):
+    if len(operand) > 0:
         ot = _resolve_expr(operand, ctx)
-    op_val = expr.get("op")
-    op: str = str(op_val) if isinstance(op_val, str) else ""
+    op: str = _dict_get_str(expr, "op")
     if op == "Not":
         expr["resolved_type"] = "bool"
         return "bool"
@@ -2326,21 +2325,21 @@ def _resolve_unaryop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_compare(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    left = expr.get("left")
-    if isinstance(left, dict):
+    left = _dict_get_obj(expr, "left")
+    if len(left) > 0:
         _resolve_expr(left, ctx)
-    comps = expr.get("comparators")
     saw_membership = False
-    ops = expr.get("ops")
-    if isinstance(ops, list):
-        for op in ops:
-            if op in ("In", "NotIn"):
-                saw_membership = True
-                break
-    if isinstance(comps, list):
-        for c in comps:
-            if isinstance(c, dict):
-                _resolve_expr(c, ctx)
+    ops = _dict_get_arr(expr, "ops")
+    for op_val in ops:
+        op = _jv_str(op_val)
+        if op == "In" or op == "NotIn":
+            saw_membership = True
+            break
+    comps = _dict_get_arr(expr, "comparators")
+    for comp_val in comps:
+        comp = _jv_obj(comp_val)
+        if len(comp) > 0:
+            _resolve_expr(comp, ctx)
     if saw_membership:
         ctx.used_builtin_modules.add("pytra.built_in.contains")
     expr["resolved_type"] = "bool"
@@ -2348,14 +2347,15 @@ def _resolve_compare(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    values = expr.get("values")
-    op = _resolve_safe_str(expr.get("op"))
+    values = _dict_get_arr(expr, "values")
+    op = _dict_get_str(expr, "op")
     result_type: str = "unknown"
     saved: dict[str, tuple[bool, str]] = {}
-    if isinstance(values, list):
+    if len(values) > 0:
         try:
-            for v in values:
-                if not isinstance(v, dict):
+            for value in values:
+                v = _jv_obj(value)
+                if len(v) == 0:
                     continue
                 vt = _resolve_expr(v, ctx)
                 if result_type == "unknown":
@@ -2370,9 +2370,9 @@ def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
                         result_type = "Any"
                 narrowed: dict[str, str] = {}
                 if op == "And":
-                    narrowed = _resolve_guard_narrowing_from_expr(v)
+                    narrowed = _resolve_guard_narrowing_from_expr(value)
                 elif op == "Or":
-                    narrowed = _resolve_invert_guard_narrowing_from_expr(v)
+                    narrowed = _resolve_invert_guard_narrowing_from_expr(value)
                 for name, typ in narrowed.items():
                     if name == "" or typ == "" or typ == "unknown":
                         continue
@@ -2380,9 +2380,10 @@ def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
                         saved[name] = (name in ctx.scope.vars, ctx.scope.vars.get(name, ""))
                     ctx.scope.vars[name] = typ
         finally:
-            for name, (had_local, value) in saved.items():
+            for name, entry in saved.items():
+                had_local, saved_value = entry
                 if had_local:
-                    ctx.scope.vars[name] = value
+                    ctx.scope.vars[name] = saved_value
                 else:
                     if name in ctx.scope.vars:
                         ctx.scope.vars.pop(name)
@@ -2391,12 +2392,12 @@ def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_call(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
-    func = expr.get("func")
-    if not isinstance(func, dict):
+    func = _dict_get_obj(expr, "func")
+    if len(func) == 0:
         expr["resolved_type"] = "unknown"
         return "unknown"
 
-    func_kind: str = str(func.get("kind", ""))
+    func_kind: str = _dict_get_str(func, "kind")
 
     # Method call: obj.method(...)
     if func_kind == "Attribute":
@@ -2407,8 +2408,9 @@ def _resolve_call(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         _resolve_call_args(expr, ctx)
         callable_type = _refine_lambda_from_call(func, ctx, _collect_call_arg_types(expr))
         _, callable_ret = _parse_callable_signature(callable_type, ctx)
-        expr["resolved_type"] = callable_ret if not _is_unknown_like_type(callable_ret) else "unknown"
-        return str(expr.get("resolved_type", "unknown"))
+        resolved = callable_ret if not _is_unknown_like_type(callable_ret) else "unknown"
+        expr["resolved_type"] = resolved
+        return resolved
 
     # Simple function call: f(...)
     if func_kind == "Name":
@@ -2423,18 +2425,19 @@ def _resolve_call(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 def _resolve_call_args(expr: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Resolve types of call arguments."""
-    args = expr.get("args")
-    if isinstance(args, list):
-        for a in args:
-            if isinstance(a, dict):
-                _resolve_expr(a, ctx)
-    keywords = expr.get("keywords")
-    if isinstance(keywords, list):
-        for kw in keywords:
-            if isinstance(kw, dict):
-                val = kw.get("value")
-                if isinstance(val, dict):
-                    _resolve_expr(val, ctx)
+    args = _dict_get_arr(expr, "args")
+    for arg_val in args:
+        arg = _jv_obj(arg_val)
+        if len(arg) > 0:
+            _resolve_expr(arg, ctx)
+    keywords = _dict_get_arr(expr, "keywords")
+    for kw_val in keywords:
+        kw = _jv_obj(kw_val)
+        if len(kw) == 0:
+            continue
+        val = _dict_get_obj(kw, "value")
+        if len(val) > 0:
+            _resolve_expr(val, ctx)
 
 
 _SIG_TYPE_PARAMS: set[str] = {"T", "U", "K", "V"}
@@ -2443,12 +2446,12 @@ _SIG_TYPE_PARAMS: set[str] = {"T", "U", "K", "V"}
 def _collect_call_arg_types(expr: dict[str, JsonVal]) -> list[str]:
     """Collect already-resolved positional argument types from a Call node."""
     result: list[str] = []
-    args = expr.get("args")
-    if isinstance(args, list):
-        for arg in args:
-            if isinstance(arg, dict):
-                rt = arg.get("resolved_type")
-                result.append(str(rt) if isinstance(rt, str) else "unknown")
+    args = _dict_get_arr(expr, "args")
+    for arg_val in args:
+        arg = _jv_obj(arg_val)
+        if len(arg) > 0:
+            rt = _dict_get_str(arg, "resolved_type")
+            result.append(rt if rt != "" else "unknown")
     return result
 
 
