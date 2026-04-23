@@ -3397,6 +3397,7 @@ def _module_expr_display_name(expr: dict[str, JsonVal], module_id: str) -> str:
 
 
 def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    ctx.current_function = ctx.current_function
     value = _dict_get_obj(expr, "value")
     slice_node = _dict_get_obj(expr, "slice")
 
@@ -3405,11 +3406,11 @@ def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         vt = _resolve_expr(value, ctx)
     if vt.endswith(" | None"):
         vt_inner: str = vt[:-7].strip()
-        if vt_inner.startswith(("list[", "dict[", "tuple[")) or vt_inner in ("str", "bytes", "bytearray"):
+        if vt_inner.startswith("list[") or vt_inner.startswith("dict[") or vt_inner.startswith("tuple[") or vt_inner == "str" or vt_inner == "bytes" or vt_inner == "bytearray":
             vt = vt_inner
     elif vt.endswith("|None"):
         vt_inner2: str = vt[:-6].strip()
-        if vt_inner2.startswith(("list[", "dict[", "tuple[")) or vt_inner2 in ("str", "bytes", "bytearray"):
+        if vt_inner2.startswith("list[") or vt_inner2.startswith("dict[") or vt_inner2.startswith("tuple[") or vt_inner2 == "str" or vt_inner2 == "bytes" or vt_inner2 == "bytearray":
             vt = vt_inner2
     is_slice: bool = False
     if len(slice_node) > 0:
@@ -3423,9 +3424,12 @@ def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
         expr["lowered_kind"] = "SliceExpr"
         # Promote Slice fields to Subscript (golden convention)
         # Only include non-null values
-        for sk in ("lower", "upper", "step"):
-            if sk in slice_node:
-                expr[sk] = slice_node[sk]
+        if "lower" in slice_node:
+            expr["lower"] = slice_node["lower"]
+        if "upper" in slice_node:
+            expr["upper"] = slice_node["upper"]
+        if "step" in slice_node:
+            expr["step"] = slice_node["step"]
         return vt
 
     # list[T][i] → T
