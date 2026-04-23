@@ -179,9 +179,9 @@ def _load_east_file(path_str: str) -> dict[str, JsonVal]:
         obj = json.loads(text).raw
     except Exception as exc:
         raise RuntimeError("failed to parse runtime EAST: " + path_str + ": " + str(exc)) from exc
-    if not isinstance(obj, dict):
+    if not jv_is_dict(obj):
         raise RuntimeError("invalid runtime EAST document: " + path_str)
-    return obj
+    return jv_dict(obj)
 
 
 def _append_runtime_dep(
@@ -204,14 +204,17 @@ def _is_type_only_symbol_binding(module_id: str, export_name: str, *, target: st
 
 
 def _import_from_is_type_only(module_id: str, names_val: JsonVal, *, target: str = "") -> bool:
-    if not isinstance(names_val, list) or len(names_val) == 0:
+    if not jv_is_list(names_val):
+        return False
+    names = jv_list(names_val)
+    if len(names) == 0:
         return False
     saw_symbol = False
-    for ent in names_val:
-        if not isinstance(ent, dict):
+    for ent in names:
+        if not jv_is_dict(ent):
             return False
-        sym = ent.get("name")
-        if not isinstance(sym, str) or sym == "":
+        sym = "" + jv_str(jv_dict(ent).get("name"))
+        if sym == "":
             return False
         saw_symbol = True
         if not _is_type_only_symbol_binding(module_id, sym, target=target):
@@ -221,41 +224,35 @@ def _import_from_is_type_only(module_id: str, names_val: JsonVal, *, target: str
 
 def _scan_runtime_refs(node: JsonVal, out: set[str], *, include_type_id_runtime: bool) -> None:
     """Collect embedded runtime_module_id references from lowered nodes."""
-    if isinstance(node, list):
-        for item in node:
+    if jv_is_list(node):
+        for item in jv_list(node):
             _scan_runtime_refs(item, out, include_type_id_runtime=include_type_id_runtime)
         return
-    if not isinstance(node, dict):
+    if not jv_is_dict(node):
         return
 
-    kind = node.get("kind")
-    runtime_module_id = _normalized_runtime_module_id(node)
-    if isinstance(kind, str) and kind != "" and runtime_module_id != "":
+    node_dict = jv_dict(node)
+    kind = "" + jv_str(node_dict.get("kind"))
+    runtime_module_id = _normalized_runtime_module_id(node_dict)
+    if kind != "" and runtime_module_id != "":
         out.add(runtime_module_id)
-    if include_type_id_runtime and isinstance(kind, str) and kind in _TYPE_ID_RUNTIME_NODE_KINDS:
+    if include_type_id_runtime and kind in _TYPE_ID_RUNTIME_NODE_KINDS:
         out.add("pytra.built_in.type_id")
 
-    for value in node.values():
-        if isinstance(value, (dict, list)):
+    for key in node_dict.keys():
+        value = node_dict.get(key)
+        if jv_is_dict(value) or jv_is_list(value):
             _scan_runtime_refs(value, out, include_type_id_runtime=include_type_id_runtime)
 
 
-def _normalized_runtime_module_id(node: JsonVal) -> str:
-    if not isinstance(node, dict):
-        return ""
-    runtime_module_id = node.get("runtime_module_id")
-    if not isinstance(runtime_module_id, str) or runtime_module_id == "":
+def _normalized_runtime_module_id(node: dict[str, JsonVal]) -> str:
+    runtime_module_id = "" + jv_str(node.get("runtime_module_id"))
+    if runtime_module_id == "":
         return ""
     if runtime_module_id == "pytra.core.str":
-        runtime_symbol = node.get("runtime_symbol")
-        runtime_call = node.get("runtime_call")
-        if (
-            isinstance(runtime_symbol, str)
-            and runtime_symbol in _STRING_OP_RUNTIME_SYMBOLS
-        ) or (
-            isinstance(runtime_call, str)
-            and runtime_call in _STRING_OP_RUNTIME_SYMBOLS
-        ):
+        runtime_symbol = "" + jv_str(node.get("runtime_symbol"))
+        runtime_call = "" + jv_str(node.get("runtime_call"))
+        if runtime_symbol in _STRING_OP_RUNTIME_SYMBOLS or runtime_call in _STRING_OP_RUNTIME_SYMBOLS:
             return "pytra.built_in.string_ops"
     return runtime_module_id
 

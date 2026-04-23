@@ -156,7 +156,9 @@ def _resolve_call_sig_key(
                 if runtime_module_id != "":
                     return runtime_module_id + "::" + attr
                 if "::" in imported:
-                    mod, export_name = imported.split("::", 1)
+                    sep = imported.find("::")
+                    mod = imported[0:sep]
+                    export_name = imported[sep + 2:]
                     if mod != "" and export_name != "":
                         return mod + "." + export_name + "::" + attr
 
@@ -165,7 +167,9 @@ def _resolve_call_sig_key(
             for imported2 in import_symbols.values():
                 if "::" not in imported2:
                     continue
-                mod2, export_name2 = imported2.split("::", 1)
+                sep2 = imported2.find("::")
+                mod2 = imported2[0:sep2]
+                export_name2 = imported2[sep2 + 2:]
                 if export_name2 == owner_rt2:
                     if mod2.startswith("pytra."):
                         return mod2 + "::" + export_name2 + "." + attr

@@ -2508,10 +2508,13 @@ def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             value_type = spec_type
     if isinstance(sl, dict) and _str(sl, "kind") == "Slice":
         return _emit_slice_expr(ctx, node, value, sl)
-    if value_type.startswith("tuple[") and isinstance(sl, dict) and _str(sl, "kind") == "Constant":
+    if isinstance(sl, dict) and _str(sl, "kind") == "Constant":
         iv = sl.get("value")
         if isinstance(iv, int) and iv >= 0:
-            return "::std::get<" + str(iv) + ">(" + value + ")"
+            if value_type.startswith("tuple["):
+                return "::std::get<" + str(iv) + ">(" + value + ")"
+            if isinstance(value_node, dict) and _str(value_node, "kind") == "Name" and _str(value_node, "id").startswith("__tuple_unpack_"):
+                return "::std::get<" + str(iv) + ">(" + value + ")"
     if value_type == "str":
         raw_idx = _emit_expr(ctx, sl)
         return value + "[" + raw_idx + "]"
