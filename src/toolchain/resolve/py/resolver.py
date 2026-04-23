@@ -863,6 +863,16 @@ def _apply_collection_type_hint(node: dict[str, JsonVal], target_type: str, ctx:
         node["resolved_type"] = hinted_type
 
 
+
+
+def _drop_first_str(values: list[str]) -> list[str]:
+    out: list[str] = []
+    idx = 1
+    while idx < len(values):
+        out.append(values[idx])
+        idx += 1
+    return out
+
 def _apply_call_arg_hints(
     expr: dict[str, JsonVal],
     arg_names: list[str],
@@ -2519,7 +2529,9 @@ def _infer_signature_return_type(sig: FuncSig, arg_types: list[str]) -> str:
     bindings: dict[str, str] = {}
     for i in range(min(len(sig.arg_names), len(arg_types))):
         arg_name: str = sig.arg_names[i]
-        pattern: str = sig.arg_types.get(arg_name, "")
+        pattern: str = ""
+        if arg_name in sig.arg_types:
+            pattern = sig.arg_types[arg_name]
         if pattern != "":
             _bind_type_pattern(pattern, arg_types[i], bindings)
     if sig.vararg_type != "":
@@ -2554,8 +2566,7 @@ def _infer_cast_target_type(expr: dict[str, JsonVal], ctx: ResolveContext) -> st
 
 def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx: ResolveContext) -> str:
     """Resolve a simple Name-based function call."""
-    name_val = func.get("id")
-    name: str = str(name_val) if isinstance(name_val, str) else ""
+    name: str = _dict_get_str(func, "id")
 
     # Resolve arguments first
     _resolve_call_args(expr, ctx)
@@ -2565,7 +2576,7 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
         if current_cls_name != "":
             current_cls: ClassSig | None = ctx.lookup_local_class(current_cls_name)
             if current_cls is not None and len(current_cls.bases) > 0:
-                base_name = _ctx_normalize_type(str(current_cls.bases[0]), ctx)
+                base_name = _ctx_normalize_type("" + current_cls.bases[0], ctx)
                 if base_name != "":
                     expr["resolved_type"] = base_name
                     func["resolved_type"] = "callable"
@@ -2595,7 +2606,7 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
     if local_class is not None:
         init_sig: FuncSig | None = local_class.methods.get("__init__")
         if init_sig is not None:
-            _apply_call_arg_hints(expr, init_sig.arg_names[1:], init_sig.arg_types, ctx)
+            _apply_call_arg_hints(expr, _drop_first_str(init_sig.arg_names), init_sig.arg_types, ctx)
         expr["resolved_type"] = name
         func["resolved_type"] = "type"
         return name
@@ -2606,7 +2617,7 @@ def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx
     if builtin_exc_class is not None and name in _BUILTIN_EXCEPTION_TYPE_NAMES:
         init_sig2: FuncSig | None = builtin_exc_class.methods.get("__init__")
         if init_sig2 is not None:
-            _apply_call_arg_hints(expr, init_sig2.arg_names[1:], init_sig2.arg_types, ctx)
+            _apply_call_arg_hints(expr, _drop_first_str(init_sig2.arg_names), init_sig2.arg_types, ctx)
         expr["resolved_type"] = name
         func["resolved_type"] = "type"
         func["runtime_module_id"] = _BUILTIN_EXCEPTION_MODULE_ID
@@ -2924,7 +2935,7 @@ def _resolve_imported_call(
     elif stdlib_class is not None:
         init_sig: FuncSig | None = stdlib_class.methods.get("__init__")
         if init_sig is not None:
-            _apply_call_arg_hints(expr, init_sig.arg_names[1:], init_sig.arg_types, ctx)
+            _apply_call_arg_hints(expr, _drop_first_str(init_sig.arg_names), init_sig.arg_types, ctx)
         ret = stdlib_class.name
         func["resolved_type"] = "type"
     else:
@@ -2998,13 +3009,13 @@ def _resolve_method_call(
         container_cls: ClassSig | None = ctx.registry.classes.get(owner_base)
         if container_cls is not None:
             hinted_arg_types = _substitute_arg_types(method_sig.arg_types, receiver_type, container_cls)
-        _apply_call_arg_hints(expr, method_sig.arg_names[1:], hinted_arg_types, ctx)
+        _apply_call_arg_hints(expr, _drop_first_str(method_sig.arg_names), hinted_arg_types, ctx)
         return _resolve_container_method_call(expr, func, receiver_type, owner_base, attr, method_sig, ctx)
 
     cls, msig = _lookup_method_sig(owner_base, attr, ctx)
     if cls is not None and msig is not None and "property" not in msig.decorators:
         hinted_arg_types = _substitute_arg_types(msig.arg_types, receiver_type, cls)
-        _apply_call_arg_hints(expr, msig.arg_names[1:], hinted_arg_types, ctx)
+        _apply_call_arg_hints(expr, _drop_first_str(msig.arg_names), hinted_arg_types, ctx)
         ret: str = _ctx_normalize_type(_substitute_type_params(msig.return_type, receiver_type, cls), ctx)
         expr["resolved_type"] = ret
         func["resolved_type"] = "callable"
@@ -3046,7 +3057,7 @@ def _resolve_module_attr_call(
     elif stdlib_class is not None:
         init_sig: FuncSig | None = stdlib_class.methods.get("__init__")
         if init_sig is not None:
-            _apply_call_arg_hints(expr, init_sig.arg_names[1:], init_sig.arg_types, ctx)
+            _apply_call_arg_hints(expr, _drop_first_str(init_sig.arg_names), init_sig.arg_types, ctx)
         ret = stdlib_class.name
         func["resolved_type"] = "type"
     else:
