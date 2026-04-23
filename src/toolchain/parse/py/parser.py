@@ -12,9 +12,9 @@ toolchain/ に依存しない自前実装。
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, Union, cast
+from typing import Optional, Union
 
-from pytra.std import re
+from pytra.std import re, json
 
 from toolchain.parse.py.source_span import SourceSpan, NULL_SPAN, make_span
 from toolchain.parse.py.nodes import (
@@ -918,13 +918,13 @@ class ExprParser:
             self.advance()
             value_str = tok.value.replace("_", "")
             if value_str.startswith("0x") or value_str.startswith("0X"):
-                val = int(value_str, 16)
+                val = _parse_int_base(value_str[2:], 16)
             elif value_str.startswith("0b") or value_str.startswith("0B"):
-                val = int(value_str, 2)
+                val = _parse_int_base(value_str[2:], 2)
             elif value_str.startswith("0o") or value_str.startswith("0O"):
-                val = int(value_str, 8)
+                val = _parse_int_base(value_str[2:], 8)
             else:
-                val = int(value_str)
+                val = _parse_int_base(value_str, 10)
             base = self._base(tok.start, tok.end)
             return Constant(base=base, value=val)
 
@@ -1004,7 +1004,8 @@ class ExprParser:
                 self.advance()
                 # Empty tuple
                 base = self._base(tok.start, self.tokens[self.pos - 1].end)
-                return TupleExpr(base=base, elements=[])
+                empty_elements: list[JsonVal] = []
+                return TupleExpr(base=base, elements=empty_elements)
             first = self.parse_expr()
             if self.peek().value == "for":
                 # Generator expression: (expr for x in iterable)
@@ -1037,13 +1038,7 @@ class ExprParser:
                 # Tuple 型推論: tuple[elem_type1,elem_type2,...]
                 base = self._base(tok.start, end_tok.end)
                 return TupleExpr(base=base, elements=elements)
-            close_tok = self.expect("OP", ")")
-            # 括弧付き式: span を括弧を含めた範囲に拡張
-            paren_start = tok.start
-            paren_end = close_tok.end
-            if hasattr(first, 'base') and isinstance(first.base, ExprBase):
-                first.base.source_span = self._span(paren_start, paren_end)
-                first.base.repr_text = self.source_text[paren_start:paren_end]
+            self.expect("OP", ")")
             return first
 
         # List literal or comprehension
@@ -1069,7 +1064,8 @@ class ExprParser:
         if self.peek().value == "]":
             close_tok = self.advance()
             base = self._base(open_tok.start, close_tok.end)
-            return ListExpr(base=base, elements=[])
+            empty_elements: list[JsonVal] = []
+            return ListExpr(base=base, elements=empty_elements)
         first = self.parse_expr()
         # Check for list comprehension
         if self.peek().value == "for":
@@ -1190,7 +1186,9 @@ class ExprParser:
         if self.peek().value == "}":
             close_tok = self.advance()
             base = self._base(open_tok.start, close_tok.end)
-            return DictExpr(base=base, keys=[], dict_values=[])
+            empty_keys: list[JsonVal] = []
+            empty_values: list[JsonVal] = []
+            return DictExpr(base=base, keys=empty_keys, dict_values=empty_values)
         first = self.parse_expr()
         # Dict comprehension: {k: v for ...}
         if self.peek().value == ":":
@@ -1252,23 +1250,31 @@ class ExprParser:
 def _expr_col(e: JsonVal) -> int:
     """式ノードの source_span.col (絶対位置)。"""
     node = expr_to_jv(e)
-    base = cast(dict[str, JsonVal], node.get("base", {}))
-    sp = cast(dict[str, JsonVal], base.get("source_span", {}))
-    col = sp.get("col", None)
-    if col is not None:
-        return int(col)
-    return 0
+    base_obj = json.JsonValue(node.get("base")).as_obj()
+    if base_obj is None:
+        return 0
+    span_obj = json.JsonValue(base_obj.raw.get("source_span")).as_obj()
+    if span_obj is None:
+        return 0
+    col = json.JsonValue(span_obj.raw.get("col")).as_int()
+    if col is None:
+        return 0
+    return col
 
 
 def _expr_end_col(e: JsonVal) -> int:
     """式ノードの source_span.end_col (絶対位置)。"""
     node = expr_to_jv(e)
-    base = cast(dict[str, JsonVal], node.get("base", {}))
-    sp = cast(dict[str, JsonVal], base.get("source_span", {}))
-    end_col = sp.get("end_col", None)
-    if end_col is not None:
-        return int(end_col)
-    return 0
+    base_obj = json.JsonValue(node.get("base")).as_obj()
+    if base_obj is None:
+        return 0
+    span_obj = json.JsonValue(base_obj.raw.get("source_span")).as_obj()
+    if span_obj is None:
+        return 0
+    end_col = json.JsonValue(span_obj.raw.get("end_col")).as_int()
+    if end_col is None:
+        return 0
+    return end_col
 
 
 def _get_func_name(func: JsonVal) -> str:
@@ -1284,6 +1290,32 @@ def _get_func_name(func: JsonVal) -> str:
 _KNOWN_NUMERIC_TYPES = {"int64", "float64", "bool"}
 _TYPE_ONLY_IMPORT_MODULES = {"__future__", "typing", "dataclasses", "pytra.typing", "pytra.dataclasses", "pytra.enum"}
 _TYPE_MODULE_VALUE_EXPORTS = {"cast"}
+
+
+def _digit_value(ch: str) -> int:
+    if ch >= "0" and ch <= "9":
+        return ord(ch) - ord("0")
+    if ch >= "a" and ch <= "f":
+        return 10 + ord(ch) - ord("a")
+    if ch >= "A" and ch <= "F":
+        return 10 + ord(ch) - ord("A")
+    return -1
+
+
+def _parse_int_base(text: str, base: int) -> int:
+    value = 0
+    sign = 1
+    i = 0
+    if text.startswith("-"):
+        sign = -1
+        i = 1
+    while i < len(text):
+        digit = _digit_value(text[i])
+        if digit < 0 or digit >= base:
+            raise ValueError("invalid integer literal")
+        value = value * base + digit
+        i += 1
+    return value * sign
 
 
 def _unescape_string(s: str) -> str:
@@ -1330,16 +1362,25 @@ def parse_python_source(source: str, filename: str) -> Module:
     # Strip BOM
     if source.startswith("\ufeff"):
         source = source[1:]
-    lines = source.splitlines()
+    raw_lines = source.splitlines()
+    lines: list[str] = []
+    for raw_line in raw_lines:
+        lines.append(raw_line)
+    fn_returns: dict[str, str] = {}
+    class_names: dict[str, bool] = {}
+    import_symbols: dict[str, dict[str, str]] = {}
+    import_modules: dict[str, str] = {}
+    import_bindings: list[dict[str, JsonVal]] = []
+    qualified_refs: list[dict[str, JsonVal]] = []
     ctx = ParseContext(
         filename=filename,
         lines=lines,
-        fn_returns={},
-        class_names={},
-        import_symbols={},
-        import_modules={},
-        import_bindings=[],
-        qualified_refs=[],
+        fn_returns=fn_returns,
+        class_names=class_names,
+        import_symbols=import_symbols,
+        import_modules=import_modules,
+        import_bindings=import_bindings,
+        qualified_refs=qualified_refs,
     )
 
     # Phase 1: Pre-scan
@@ -1370,7 +1411,9 @@ def parse_python_source(source: str, filename: str) -> Module:
 
 def _prescan(ctx: ParseContext, lines: list[str]) -> None:
     """Phase 1: 関数の戻り値型やクラス情報を収集する。"""
-    for ln_no, ln in enumerate(lines, start=1):
+    for line_index in range(len(lines)):
+        ln_no = line_index + 1
+        ln = lines[line_index]
         s = _strip_inline_comment(ln.strip())
         if s == "":
             continue
@@ -1442,7 +1485,7 @@ def _parse_module_body(
     pending_decorators: list[str] = []
     leading_file_trivia_done = False
     pending_dataclass = False
-    pending_extern_v2: Optional[dict[str, str]] = None
+    pending_extern_v2: dict[str, str] = {}
     pending_runtime_ns = ""
     pending_runtime_symbol = ""
     pending_runtime_tag = ""
@@ -1660,9 +1703,9 @@ def _parse_module_body(
             if len(pending_decorators) > 0:
                 fn_stmt.decorators = list(pending_decorators)
                 pending_decorators = []
-            if pending_extern_v2 is not None:
+            if len(pending_extern_v2) > 0:
                 fn_stmt.node_meta = {"extern_v2": pending_extern_v2}
-                pending_extern_v2 = None
+                pending_extern_v2 = {}
             elif pending_runtime_ns != "":
                 fn_stmt.node_meta = {"extern_v2": _runtime_fn_extern_v2(
                     pending_runtime_ns, fn_name, pending_runtime_symbol, pending_runtime_tag)}
@@ -1693,9 +1736,9 @@ def _parse_module_body(
             )
             pending_decorators = []
             cls_meta: dict[str, JsonVal] = {}
-            if pending_extern_v2 is not None:
+            if len(pending_extern_v2) > 0:
                 cls_meta["extern_v2"] = pending_extern_v2
-                pending_extern_v2 = None
+                pending_extern_v2 = {}
             if pending_runtime_ns != "":
                 cls_meta["runtime_v1"] = {
                     "schema_version": 1,
