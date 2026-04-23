@@ -1480,7 +1480,7 @@ def _make_tuple_unpack_source(value: JsonVal, source_type: str, target_type: str
             out["target"] = normalized_target
             out["on_fail"] = "raise"
             if jv_is_dict(value):
-                value_node: Node = cast(dict[str, JsonVal], value)
+                value_node: Node = jv_dict(value)
                 span = value_node.get("source_span")
                 if jv_is_dict(span):
                     out["source_span"] = span

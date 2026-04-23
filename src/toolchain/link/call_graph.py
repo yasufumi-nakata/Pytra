@@ -64,7 +64,7 @@ def _collect_calls_in_node(
 ) -> None:
     """Recursively collect call edges from a node."""
     if jv_is_dict(node):
-        node_map: dict[str, JsonVal] = cast(dict[str, JsonVal], node)
+        node_map: dict[str, JsonVal] = jv_dict(node)
         if nd_get_str(node_map, "kind") == "Call":
             func_node = nd_get_dict(node_map, "func")
             callee = ""

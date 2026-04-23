@@ -2001,9 +2001,9 @@ def link_modules(
         raise RuntimeError("no entry module found")
 
     # 4. type_id テーブル構築
-    type_id_parts: tuple[JsonVal, JsonVal, JsonVal] = cast(tuple[JsonVal, JsonVal, JsonVal], build_type_id_table(modules))
+    type_id_parts: tuple[dict[str, JsonVal], dict[str, JsonVal], dict[str, JsonVal]] = build_type_id_table(modules)
     type_id_table, type_id_base_map, type_info_table = type_id_parts
-    trait_parts: tuple[set[str], dict[str, set[str]]] = cast(tuple[set[str], dict[str, set[str]]], build_trait_implementation_map(modules))
+    trait_parts: tuple[set[str], dict[str, set[str]]] = build_trait_implementation_map(modules)
     all_traits, trait_impls = trait_parts
 
     # 5. call graph 構築

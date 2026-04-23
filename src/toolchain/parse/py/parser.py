@@ -12,7 +12,7 @@ toolchain/ に依存しない自前実装。
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Optional, Union, cast
 
 from pytra.std import re
 
@@ -105,8 +105,8 @@ def _parse_extern_kwargs(text: str) -> Optional[dict[str, str]]:
     → {"module": "pytra.core", "symbol": "len", "tag": "core.len"}
     """
     result: dict[str, str] = {}
-    for part in text.split(","):
-        part = part.strip()
+    for raw_part in text.split(","):
+        part = raw_part.strip()
         if "=" not in part:
             continue
         eq = part.index("=")
@@ -125,7 +125,7 @@ def _parse_extern_kwargs(text: str) -> Optional[dict[str, str]]:
 
 def _parse_extern_v2_decorator(s: str) -> Optional[dict[str, str]]:
     """@extern(...)/@extern_fn(...)/@extern_class(...) からキーワード引数を抽出。"""
-    for prefix in ("@extern(", "@extern_fn(", "@extern_class("):
+    for prefix in ["@extern(", "@extern_fn(", "@extern_class("]:
         if s.startswith(prefix) and s.endswith(")"):
             inner = s[len(prefix):-1]
             return _parse_extern_kwargs(inner)
@@ -143,9 +143,15 @@ def _parse_runtime_decorator(s: str) -> tuple[str, str, str]:
     if not inner:
         return "", "", ""
     quote = inner[0]
-    if quote not in ('"', "'"):
+    if quote != '"' and quote != "'":
         return "", "", ""
-    end_quote = inner.find(quote, 1)
+    end_quote = -1
+    qi = 1
+    while qi < len(inner):
+        if inner[qi] == quote:
+            end_quote = qi
+            break
+        qi += 1
     if end_quote < 0:
         return "", "", ""
     runtime_ns = inner[1:end_quote]
@@ -155,8 +161,8 @@ def _parse_runtime_decorator(s: str) -> tuple[str, str, str]:
     symbol_override = ""
     tag_override = ""
     if rest.startswith(","):
-        for part in rest[1:].split(","):
-            part = part.strip()
+        for raw_part in rest[1:].split(","):
+            part = raw_part.strip()
             if "=" not in part:
                 continue
             eq = part.index("=")
@@ -314,7 +320,8 @@ def _split_header_inline_suite(s: str) -> tuple[str, str]:
     in_single = False
     in_double = False
     escaped = False
-    for idx, ch in enumerate(s):
+    for idx in range(len(s)):
+        ch = s[idx]
         if escaped:
             escaped = False
             continue
@@ -352,7 +359,9 @@ def _parse_inline_suite(
     if inline_text == "":
         return []
     synthetic_line = (" " * indent) + inline_text
-    return _parse_block_lines(ctx, [synthetic_line], dict(name_types), scope_label, start_hint=abs_ln - 1)
+    synthetic_lines: list[str] = [synthetic_line]
+    copied_name_types: dict[str, str] = dict(name_types)
+    return _parse_block_lines(ctx, synthetic_lines, copied_name_types, scope_label, start_hint=abs_ln - 1)
 
 
 # ---------------------------------------------------------------------------
@@ -582,7 +591,7 @@ class ExprParser:
         while self.peek().value != ":" and self.peek().kind != "EOF":
             if self.peek().kind == "NAME":
                 pname = self.advance().value
-                default_expr: Optional[JsonVal] = None
+                default_expr: JsonVal = None
                 if self.peek().value == "=":
                     self.advance()
                     # Parse default value (stop at , or :)
@@ -822,10 +831,11 @@ class ExprParser:
                 base = self._base(self._child_local_start(expr), end_tok.end)
                 sub = Subscript(base=base, value=expr, slice_expr=index)
                 # Slice の場合、lower/upper を Subscript に直接設定 (lowered_kind は resolve の責務)
-                if isinstance(index, SliceExpr):
+                index_node = expr_to_jv(index)
+                if str(index_node.get("kind", "")) == "Slice":
                     sub.is_slice = True
-                    sub.lower = index.lower
-                    sub.upper = index.upper
+                    sub.lower = index_node.get("lower", None)
+                    sub.upper = index_node.get("upper", None)
                 expr = sub
             elif tok.value == "(":
                 expr = self._parse_call(expr)
@@ -854,8 +864,11 @@ class ExprParser:
                     # *args — starred argument
                     star_tok = self.advance()
                     inner_expr = self.parse_expr()
-                    star_repr = "*" + (inner_expr.base.repr_text if hasattr(inner_expr, 'base') else "")
-                    star_base = ExprBase(source_span=inner_expr.base.source_span if hasattr(inner_expr, 'base') else NULL_SPAN, repr_text=star_repr)
+                    inner_start = self._child_local_start(inner_expr)
+                    inner_end = self._child_local_end(inner_expr)
+                    star_repr = "*" + self.source_text[inner_start:inner_end]
+                    star_base = self._base(star_tok.start, inner_end)
+                    star_base.repr_text = star_repr
                     args.append(Starred(base=star_base, value=inner_expr))
                 else:
                     arg_expr = self.parse_expr()
@@ -1158,11 +1171,11 @@ class ExprParser:
             return self._parse_slice(first)
         return first
 
-    def _parse_slice(self, lower: Optional[JsonVal]) -> SliceExpr:
+    def _parse_slice(self, lower: JsonVal) -> SliceExpr:
         """slice 式をパース。`:` を消費した状態で呼ばれる。"""
         self.advance()  # consume ':'
-        upper: Optional[JsonVal] = None
-        step: Optional[JsonVal] = None
+        upper: JsonVal = None
+        step: JsonVal = None
         if self.peek().value != "]" and self.peek().value != ":":
             upper = self.parse_expr()
         if self.peek().value == ":":
@@ -1238,27 +1251,33 @@ class ExprParser:
 
 def _expr_col(e: JsonVal) -> int:
     """式ノードの source_span.col (絶対位置)。"""
-    if hasattr(e, 'base') and isinstance(e.base, ExprBase):
-        sp = e.base.source_span
-        if sp.col is not None:
-            return sp.col
+    node = expr_to_jv(e)
+    base = cast(dict[str, JsonVal], node.get("base", {}))
+    sp = cast(dict[str, JsonVal], base.get("source_span", {}))
+    col = sp.get("col", None)
+    if col is not None:
+        return int(col)
     return 0
 
 
 def _expr_end_col(e: JsonVal) -> int:
     """式ノードの source_span.end_col (絶対位置)。"""
-    if hasattr(e, 'base') and isinstance(e.base, ExprBase):
-        sp = e.base.source_span
-        if sp.end_col is not None:
-            return sp.end_col
+    node = expr_to_jv(e)
+    base = cast(dict[str, JsonVal], node.get("base", {}))
+    sp = cast(dict[str, JsonVal], base.get("source_span", {}))
+    end_col = sp.get("end_col", None)
+    if end_col is not None:
+        return int(end_col)
     return 0
 
 
 def _get_func_name(func: JsonVal) -> str:
-    if isinstance(func, Name):
-        return func.id
-    if isinstance(func, Attribute):
-        return func.attr
+    node = expr_to_jv(func)
+    kind = str(node.get("kind", ""))
+    if kind == "Name":
+        return str(node.get("id", ""))
+    if kind == "Attribute":
+        return str(node.get("attr", ""))
     return ""
 
 
@@ -1439,14 +1458,14 @@ def _parse_module_body(
         if s == "":
             # ファイル冒頭コメントが既に蓄積 + import 直後でない場合のみ蓄積
             if (len(pending_comments) > 0 or leading_file_trivia_done) and not skip_next_blanks:
-                pending_trivia.append(TriviaBlank(count=1))
+                pending_trivia.append(TriviaBlank(count=1).to_jv())
             ln_no += 1
             continue
 
         # Comment line
         if s.startswith("#"):
             text = s[1:].lstrip() if len(s) > 1 else ""
-            pending_trivia.append(TriviaComment(text=text))
+            pending_trivia.append(TriviaComment(text=text).to_jv())
             pending_comments.append(text)
             ln_no += 1
             continue
@@ -2090,7 +2109,7 @@ def _parse_try_stmt(
                 exc_type_str = re.strip_group(m_exc, 1)
             elif s == "except:" or s.startswith("except:"):
                 pass  # bare except
-            exc_type_expr: Optional[JsonVal] = None
+            exc_type_expr: JsonVal = None
             if exc_type_str is not None:
                 exc_type_expr = _make_name_expr(exc_type_str, handler_abs_ln, indent + 7, ctx)
             handler_lines, next_i = _collect_sub_block(block_lines, next_i + 1, indent)
@@ -2272,13 +2291,13 @@ def _parse_block_lines(
         indent = len(ln) - len(ln.lstrip(" ")) if s != "" else 0
 
         if s == "":
-            pending_trivia.append(TriviaBlank(count=1))
+            pending_trivia.append(TriviaBlank(count=1).to_jv())
             i += 1
             continue
 
         if s.startswith("#"):
             text = s[1:].lstrip() if len(s) > 1 else ""
-            pending_trivia.append(TriviaComment(text=text))
+            pending_trivia.append(TriviaComment(text=text).to_jv())
             pending_comments.append(text)
             i += 1
             continue
@@ -2787,12 +2806,12 @@ def _find_abs_line(all_lines: list[str], target_line: str, hint: int) -> int:
     return hint + 1
 
 
-def _parse_fstring_parts(inner: str, line: int, col_base: int, ctx: ParseContext, fstr_span: SourceSpan) -> list[Union[FStringText, FormattedValue]]:
+def _parse_fstring_parts(inner: str, line: int, col_base: int, ctx: ParseContext, fstr_span: SourceSpan) -> list[JsonVal]:
     """f-string の内部を FStringText と FormattedValue に分解する。
 
     {{/}} はリテラル {/} に変換。{expr} は FormattedValue に。
     """
-    parts: list[Union[FStringText, FormattedValue]] = []
+    parts: list[JsonVal] = []
     i = 0
     n = len(inner)
     text_buf: list[str] = []
@@ -2800,7 +2819,7 @@ def _parse_fstring_parts(inner: str, line: int, col_base: int, ctx: ParseContext
     def flush_text() -> None:
         if len(text_buf) > 0:
             t = "".join(text_buf)
-            parts.append(FStringText(source_span=fstr_span, repr_text=t, value=t))
+            parts.append(FStringText(source_span=fstr_span, repr_text=t, value=t).to_jv())
             text_buf.clear()
 
     while i < n:
@@ -2809,7 +2828,7 @@ def _parse_fstring_parts(inner: str, line: int, col_base: int, ctx: ParseContext
             if i + 1 < n and inner[i + 1] == "{":
                 # Escaped brace: {{ → literal {. Create separate text part.
                 flush_text()
-                parts.append(FStringText(source_span=fstr_span, repr_text="{", value="{"))
+                parts.append(FStringText(source_span=fstr_span, repr_text="{", value="{").to_jv())
                 i += 2
                 continue
             # Expression: {expr} or {expr:fmt}
@@ -2844,7 +2863,7 @@ def _parse_fstring_parts(inner: str, line: int, col_base: int, ctx: ParseContext
             if format_spec is None:
                 expr_text = inner[i + 1:j - 1] if depth == 0 else inner[i + 1:]
             expr_node = _parse_expr_text(ctx, expr_text.strip(), line, col_base + i + 1, {})
-            parts.append(FormattedValue(value=expr_node, format_spec=format_spec))
+            parts.append(FormattedValue(value=expr_node, format_spec=format_spec).to_jv())
             if format_spec is not None:
                 i = j + 1
             else:

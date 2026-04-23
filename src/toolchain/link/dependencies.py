@@ -66,7 +66,7 @@ def is_type_only_dependency_module_id(module_id: str) -> bool:
 def _is_type_only_symbol_binding(binding: JsonVal) -> bool:
     if not jv_is_dict(binding):
         return False
-    binding_node: dict[str, JsonVal] = cast(dict[str, JsonVal], binding)
+    binding_node: dict[str, JsonVal] = jv_dict(binding)
     module_id = nd_get_str(binding_node, "module_id")
     export_name = nd_get_str(binding_node, "export_name")
     return module_id != "" and export_name != "" and (module_id, export_name) in _TYPE_ONLY_SYMBOL_BINDINGS
@@ -80,7 +80,7 @@ def _scan_runtime_refs(node: JsonVal, out: set[str], *, include_type_id_runtime:
     if not jv_is_dict(node):
         return
 
-    node_map: dict[str, JsonVal] = cast(dict[str, JsonVal], node)
+    node_map: dict[str, JsonVal] = jv_dict(node)
     runtime_module_id = _normalized_runtime_module_id(node_map)
     if runtime_module_id != "":
         out.add(runtime_module_id)
@@ -96,7 +96,7 @@ def _scan_runtime_refs(node: JsonVal, out: set[str], *, include_type_id_runtime:
 def _normalized_runtime_module_id(node: JsonVal) -> str:
     if not jv_is_dict(node):
         return ""
-    node_map: dict[str, JsonVal] = cast(dict[str, JsonVal], node)
+    node_map: dict[str, JsonVal] = jv_dict(node)
     runtime_module_id = nd_get_str(node_map, "runtime_module_id")
     if runtime_module_id == "":
         return ""
@@ -114,7 +114,7 @@ def _binding_dependency_module_id(binding: JsonVal) -> str:
     if _is_type_only_symbol_binding(binding):
         return ""
 
-    binding_node: dict[str, JsonVal] = cast(dict[str, JsonVal], binding)
+    binding_node: dict[str, JsonVal] = jv_dict(binding)
     runtime_module_id = nd_get_str(binding_node, "runtime_module_id")
     runtime_group = nd_get_str(binding_node, "runtime_group")
     module_id = nd_get_str(binding_node, "module_id")

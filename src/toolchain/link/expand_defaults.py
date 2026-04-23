@@ -94,7 +94,7 @@ def _default_collection_hint(type_name: str) -> str:
 def _apply_collection_default_hint(default_node: JsonVal, param_type: str) -> None:
     if not jv_is_dict(default_node):
         return
-    default_map: dict[str, JsonVal] = cast(dict[str, JsonVal], default_node)
+    default_map: dict[str, JsonVal] = jv_dict(default_node)
     hinted = _default_collection_hint(normalize_type(param_type))
     if hinted == "":
         return
@@ -204,7 +204,7 @@ def _expand_walk(
     if not jv_is_dict(node):
         return
 
-    node_map: dict[str, JsonVal] = cast(dict[str, JsonVal], node)
+    node_map: dict[str, JsonVal] = jv_dict(node)
     if nd_get_str(node_map, "kind") == "Call":
         sig_key = _resolve_call_sig_key(
             node_map,
@@ -218,15 +218,15 @@ def _expand_walk(
             empty_node: dict[str, JsonVal] = {}
             ad: dict[str, JsonVal] = empty_node
             if "arg_defaults" in sig and jv_is_dict(sig["arg_defaults"]):
-                ad = cast(dict[str, JsonVal], sig["arg_defaults"])
+                ad = jv_dict(sig["arg_defaults"])
             empty_types: dict[str, JsonVal] = {}
             at: dict[str, JsonVal] = empty_types
             if "arg_types" in sig and jv_is_dict(sig["arg_types"]):
-                at = cast(dict[str, JsonVal], sig["arg_types"])
+                at = jv_dict(sig["arg_types"])
             empty_args: list[JsonVal] = []
             args: list[JsonVal] = empty_args
             if "args" in node_map and jv_is_list(node_map["args"]):
-                args = cast(list[JsonVal], node_map["args"])
+                args = jv_list(node_map["args"])
             if len(ao) != 0:
                 expected: list[str] = []
                 for p in ao:
@@ -239,11 +239,11 @@ def _expand_walk(
                 empty_kws: list[JsonVal] = []
                 kws: list[JsonVal] = empty_kws
                 if "keywords" in node_map and jv_is_list(node_map["keywords"]):
-                    kws = cast(list[JsonVal], node_map["keywords"])
+                    kws = jv_list(node_map["keywords"])
                 for kw in kws:
                     if not jv_is_dict(kw):
                         continue
-                    kw_node: dict[str, JsonVal] = cast(dict[str, JsonVal], kw)
+                    kw_node: dict[str, JsonVal] = jv_dict(kw)
                     ka = nd_get_str(kw_node, "arg")
                     if ka != "":
                         if "value" in kw_node:
@@ -293,7 +293,7 @@ def expand_cross_module_defaults(
     for entry in modules_with_ids:
         if not jv_is_dict(entry):
             continue
-        doc: dict[str, JsonVal] = cast(dict[str, JsonVal], entry)
+        doc: dict[str, JsonVal] = jv_dict(entry)
         module_id = _module_id_from_doc(doc)
         normalized.append((module_id, doc))
         if module_id == "":

@@ -74,26 +74,40 @@ def _emit_recursive_union_alias_decl(lines: list[str], node: dict[str, JsonVal])
         lines.append("    " + name + "() : base_type() {}")
     for lane in recursive_lanes:
         if lane == "list[" + name + "]":
+            list_obj = "Object<list<" + name + ">>"
             lines.append(
                 "    " + name + "(const list<" + name + ">& v) : base_type(" + variant_type + "(rc_from_value(v))) {}"
             )
             lines.append(
                 "    " + name + "(list<" + name + ">&& v) : base_type(" + variant_type + "(rc_from_value(::std::move(v)))) {}"
             )
+            lines.append(
+                "    " + name + "(const " + list_obj + "& v) : base_type(" + variant_type + "(v)) {}"
+            )
         elif lane == "dict[str," + name + "]":
+            dict_obj = "Object<dict<str, " + name + ">>"
             lines.append(
                 "    " + name + "(const dict<str, " + name + ">& v) : base_type(" + variant_type + "(rc_from_value(v))) {}"
             )
             lines.append(
                 "    " + name + "(dict<str, " + name + ">&& v) : base_type(" + variant_type + "(rc_from_value(::std::move(v)))) {}"
             )
+            lines.append(
+                "    " + name + "(const " + dict_obj + "& v) : base_type(" + variant_type + "(v)) {}"
+            )
         elif lane == "set[" + name + "]":
+            set_obj = "Object<set<" + name + ">>"
             lines.append(
                 "    " + name + "(const set<" + name + ">& v) : base_type(" + variant_type + "(rc_from_value(v))) {}"
             )
             lines.append(
                 "    " + name + "(set<" + name + ">&& v) : base_type(" + variant_type + "(rc_from_value(::std::move(v)))) {}"
             )
+            lines.append(
+                "    " + name + "(const " + set_obj + "& v) : base_type(" + variant_type + "(v)) {}"
+            )
+    lines.append("    template <class T, class = decltype(::std::declval<T>().to_jv())>")
+    lines.append("    " + name + "(const T& v) : base_type(" + variant_type + "(v.to_jv())) {}")
     lines.append("};")
     lines.append(
         "static inline ::std::string py_to_string(const " + name + "& v) { return py_to_string(static_cast<const " + name + "::base_type&>(v)); }"
@@ -123,6 +137,7 @@ def build_cpp_header_from_east3(
         "#define " + guard,
         "",
         '#include "core/py_runtime.h"',
+        '#include <utility>',
     ]
     if _module_needs_functional(stmts):
         lines.append("#include <functional>")
@@ -358,6 +373,8 @@ def _node_mutates_self_fields(node: JsonVal) -> bool:
             func = node.get("func")
             if isinstance(func, dict) and _str(func, "kind") == "Attribute":
                 owner = func.get("value")
+                if isinstance(owner, dict) and _str(owner, "kind") == "Name" and _str(owner, "id") == "self":
+                    return True
                 if isinstance(owner, dict) and _str(owner, "kind") == "Attribute":
                     base = owner.get("value")
                     if isinstance(base, dict) and _str(base, "kind") == "Name" and _str(base, "id") == "self":

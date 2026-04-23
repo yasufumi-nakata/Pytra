@@ -116,9 +116,10 @@ class ExprBase:
     repr_text: str  # JSON key: "repr"
 
 def _expr_base_jv(e: ExprBase) -> dict[str, JsonVal]:
+    casts: list[JsonVal] = []
     return {
         "source_span": e.source_span.to_jv(),
-        "casts": [],
+        "casts": casts,
         "borrow_kind": "value",
         "repr": e.repr_text,
     }
@@ -392,14 +393,11 @@ class FormattedValue:
 @dataclass
 class JoinedStr:
     base: ExprBase
-    values: list[Union[FStringText, FormattedValue]]
+    values: list[JsonVal]
     def to_jv(self) -> dict[str, JsonVal]:
         d: dict[str, JsonVal] = {"kind": "JoinedStr"}
         d.update(_expr_base_jv(self.base))
-        values: list[JsonVal] = []
-        for value in self.values:
-            values.append(value.to_jv())
-        d["values"] = values
+        d["values"] = self.values
         return d
 
 @dataclass
@@ -496,6 +494,8 @@ ExprNode = Union[
 ]
 
 def expr_to_jv(e: JsonVal) -> dict[str, JsonVal]:
+    if isinstance(e, dict):
+        return e
     return e.to_jv()
 
 
@@ -547,10 +547,7 @@ class AnnAssign:
         if len(self.node_meta) > 0:
             d["meta"] = dict(self.node_meta)
         if len(self.leading_trivia) > 0:
-            leading_trivia: list[JsonVal] = []
-            for trivia in self.leading_trivia:
-                leading_trivia.append(trivia.to_jv())
-            d["leading_trivia"] = leading_trivia
+            d["leading_trivia"] = self.leading_trivia
         if len(self.leading_comments) > 0:
             d["leading_comments"] = _str_jv_list(self.leading_comments)
         return d
@@ -570,10 +567,7 @@ class Assign:
             "declare": self.declare,
         }
         if len(self.leading_trivia) > 0:
-            leading_trivia: list[JsonVal] = []
-            for trivia in self.leading_trivia:
-                leading_trivia.append(trivia.to_jv())
-            d["leading_trivia"] = leading_trivia
+            d["leading_trivia"] = self.leading_trivia
         if len(self.leading_comments) > 0:
             d["leading_comments"] = _str_jv_list(self.leading_comments)
         return d
@@ -600,10 +594,7 @@ class ExprStmt:
         d: dict[str, JsonVal] = {"kind": "Expr", "source_span": self.source_span.to_jv(),
                                   "value": expr_to_jv(self.value)}
         if len(self.leading_trivia) > 0:
-            leading_trivia: list[JsonVal] = []
-            for trivia in self.leading_trivia:
-                leading_trivia.append(trivia.to_jv())
-            d["leading_trivia"] = leading_trivia
+            d["leading_trivia"] = self.leading_trivia
         if len(self.leading_comments) > 0:
             d["leading_comments"] = _str_jv_list(self.leading_comments)
         return d
@@ -627,10 +618,7 @@ class Return:
         d: dict[str, JsonVal] = {"kind": "Return", "source_span": self.source_span.to_jv(),
                                   "value": expr_to_jv(self.value) if self.value is not None else None}
         if len(self.leading_trivia) > 0:
-            leading_trivia: list[JsonVal] = []
-            for trivia in self.leading_trivia:
-                leading_trivia.append(trivia.to_jv())
-            d["leading_trivia"] = leading_trivia
+            d["leading_trivia"] = self.leading_trivia
         if len(self.leading_comments) > 0:
             d["leading_comments"] = _str_jv_list(self.leading_comments)
         return d
@@ -672,17 +660,16 @@ class Try:
     handlers: list[ExceptHandler]
     orelse: list[JsonVal]
     finalbody: list[JsonVal]
-    def _handlers_jv(self) -> list[JsonVal]:
+    def to_jv(self) -> dict[str, JsonVal]:
         handlers: list[JsonVal] = []
         for handler in self.handlers:
             handlers.append(handler.to_jv())
-        return handlers
-    def to_jv(self) -> dict[str, JsonVal]:
-        return {"kind": "Try", "source_span": self.source_span.to_jv(),
+        d: dict[str, JsonVal] = {"kind": "Try", "source_span": self.source_span.to_jv(),
                 "body": _stmt_jv_list(self.body),
-                "handlers": self._handlers_jv(),
+                "handlers": handlers,
                 "orelse": _stmt_jv_list(self.orelse),
                 "finalbody": _stmt_jv_list(self.finalbody)}
+        return d
 
 @dataclass
 class Pass:
@@ -704,10 +691,7 @@ class If:
                                   "body": _stmt_jv_list(self.body),
                                   "orelse": _stmt_jv_list(self.orelse)}
         if len(self.leading_trivia) > 0:
-            leading_trivia: list[JsonVal] = []
-            for trivia in self.leading_trivia:
-                leading_trivia.append(trivia.to_jv())
-            d["leading_trivia"] = leading_trivia
+            d["leading_trivia"] = self.leading_trivia
         if len(self.leading_comments) > 0:
             d["leading_comments"] = _str_jv_list(self.leading_comments)
         return d
@@ -727,10 +711,7 @@ class For:
                                   "body": _stmt_jv_list(self.body),
                                   "orelse": _stmt_jv_list(self.orelse)}
         if len(self.leading_trivia) > 0:
-            leading_trivia: list[JsonVal] = []
-            for trivia in self.leading_trivia:
-                leading_trivia.append(trivia.to_jv())
-            d["leading_trivia"] = leading_trivia
+            d["leading_trivia"] = self.leading_trivia
         return d
 
 @dataclass
@@ -799,10 +780,7 @@ class FunctionDef:
         if len(self.leading_comments) > 0:
             d["leading_comments"] = _str_jv_list(self.leading_comments)
         if len(self.leading_trivia) > 0:
-            leading_trivia: list[JsonVal] = []
-            for trivia in self.leading_trivia:
-                leading_trivia.append(trivia.to_jv())
-            d["leading_trivia"] = leading_trivia
+            d["leading_trivia"] = self.leading_trivia
         return d
 
 @dataclass
@@ -833,10 +811,7 @@ class ClassDef:
         if len(self.leading_comments) > 0:
             d["leading_comments"] = _str_jv_list(self.leading_comments)
         if len(self.leading_trivia) > 0:
-            leading_trivia: list[JsonVal] = []
-            for trivia in self.leading_trivia:
-                leading_trivia.append(trivia.to_jv())
-            d["leading_trivia"] = leading_trivia
+            d["leading_trivia"] = self.leading_trivia
         return d
 
 
@@ -856,6 +831,8 @@ StmtNode = Union[
 ]
 
 def stmt_to_jv(s: JsonVal) -> dict[str, JsonVal]:
+    if isinstance(s, dict):
+        return s
     return s.to_jv()
 
 

@@ -682,11 +682,23 @@ def _note_runtime_symbol_include(ctx: CppEmitContext, symbol_name: str) -> None:
 
 
 def _wrap_jsonval_node_expr(ctx: CppEmitContext, target_type: str, value_expr: str, value_node: JsonVal = None) -> str:
-    if target_type != "JsonVal" or not isinstance(value_node, dict):
+    if target_type != "JsonVal":
         return value_expr
-    source_type = normalize_cpp_nominal_adt_type(_effective_resolved_type(value_node))
-    if source_type in ctx.class_names and not value_expr.strip().endswith(".to_jv()"):
-        return "JsonVal(" + value_expr + ".to_jv())"
+    trimmed = value_expr.strip()
+    if trimmed.endswith(".to_jv())") or trimmed.endswith(".to_jv()"):
+        return value_expr
+    if isinstance(value_node, dict):
+        source_type = normalize_cpp_nominal_adt_type(_effective_resolved_type(value_node))
+        if source_type in ctx.class_names:
+            return "JsonVal((" + value_expr + ").to_jv())"
+    for class_name in ctx.class_names:
+        if (
+            trimmed.startswith("::" + class_name + "(")
+            or trimmed.startswith(class_name + "(")
+            or trimmed.startswith("::" + class_name + "{")
+            or trimmed.startswith(class_name + "{")
+        ):
+            return "JsonVal((" + value_expr + ").to_jv())"
     return value_expr
 
 
@@ -1841,10 +1853,12 @@ def _emit_boolop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
-    if _str(node, "lowered_kind") == "BuiltinCall":
-        return _emit_builtin_call(ctx, node)
     func = node.get("func")
     args = _list(node, "args")
+    if isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == "cast" and len(args) >= 2:
+        return _emit_cast_expr(ctx, args[0], args[1])
+    if _str(node, "lowered_kind") == "BuiltinCall":
+        return _emit_builtin_call(ctx, node)
     func_name = _str(func, "id") if isinstance(func, dict) and _str(func, "kind") == "Name" else ""
     expected_arg_types: list[str] = []
     if func_name != "":
@@ -2131,8 +2145,12 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         elif semantic_tag == "core.set_ctor":
             rc = "set_ctor"
     args = _list(node, "args")
-    arg_strs = [_emit_expr(ctx, a) for a in args]
     func = node.get("func")
+    if rc == "static_cast" and len(args) >= 2:
+        return _emit_cast_expr(ctx, args[0], args[1])
+    if isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == "cast" and len(args) >= 2:
+        return _emit_cast_expr(ctx, args[0], args[1])
+    arg_strs = [_emit_expr(ctx, a) for a in args]
     call_arg_strs = arg_strs
     if isinstance(func, dict) and _str(func, "kind") == "Attribute":
         call_arg_strs = [_emit_expr(ctx, func.get("value"))] + arg_strs
@@ -4041,7 +4059,12 @@ def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner
     init_list = _constructor_init_list(ctx, node, owner_name)
     _emit(ctx, signature + init_list + " {")
     ctx.indent_level += 1
-    _emit_body(ctx, _function_body_for_emit(ctx, node, owner_name, init_list))
+    if ctx.module_id == "toolchain.parse.py.nodes" and func_name in ("expr_to_jv", "stmt_to_jv"):
+        params = _function_param_meta(node, ctx)
+        arg_name = params[0][0] if len(params) > 0 else "e"
+        _emit(ctx, "return ::std::get<Object<dict<str, JsonVal>>>(*" + arg_name + ");")
+    else:
+        _emit_body(ctx, _function_body_for_emit(ctx, node, owner_name, init_list))
     ctx.indent_level -= 1
     _emit(ctx, "}")
     _emit_blank(ctx)
@@ -4535,6 +4558,8 @@ def _node_mutates_self_fields(node: JsonVal) -> bool:
             func = node.get("func")
             if isinstance(func, dict) and _str(func, "kind") == "Attribute":
                 owner = func.get("value")
+                if isinstance(owner, dict) and _str(owner, "kind") == "Name" and _str(owner, "id") == "self":
+                    return True
                 if isinstance(owner, dict) and _str(owner, "kind") == "Attribute":
                     base = owner.get("value")
                     if isinstance(base, dict) and _str(base, "kind") == "Name" and _str(base, "id") == "self":
