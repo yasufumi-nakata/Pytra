@@ -1977,6 +1977,7 @@ def _parse_function_def(
     class_name: str = "",
     parent_indent: int = 0,
 ) -> tuple[FunctionDef, int]:
+    ctx = ctx
     """関数定義をパースする。"""
     header_line = lines[start_ln]
     header = _strip_inline_comment(header_line.strip())
@@ -2182,6 +2183,7 @@ def _parse_class_def(
     is_dataclass: bool = False,
     force_leading: bool = True,
 ) -> tuple[ClassDef, int]:
+    ctx = ctx
     """クラス定義をパースする。"""
     # Check for base class: class Name(Base):
     header = _strip_inline_comment(lines[start_ln].strip())
@@ -3428,6 +3430,8 @@ def _parse_for_stmt(
     comments: list[str],
     abs_ln: int,
 ) -> tuple[JsonVal, int]:
+    ctx = ctx
+    name_types = name_types
     """for 文をパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
@@ -3494,6 +3498,8 @@ def _parse_while_stmt(
     comments: list[str],
     abs_ln: int,
 ) -> tuple[JsonVal, int]:
+    ctx = ctx
+    name_types = name_types
     """while 文をパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
@@ -3536,6 +3542,8 @@ def _parse_with_stmt(
     comments: list[str],
     abs_ln: int,
 ) -> tuple[JsonVal, int]:
+    ctx = ctx
+    name_types = name_types
     """with 文をパースする。with EXPR as VAR:"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
@@ -3584,6 +3592,8 @@ def _parse_if_stmt(
     comments: list[str],
     abs_ln: int,
 ) -> tuple[JsonVal, int]:
+    ctx = ctx
+    name_types = name_types
     """if/elif/else 文をパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())
@@ -3666,6 +3676,8 @@ def _parse_elif_stmt(
     name_types: dict[str, str],
     line_hint: int,
 ) -> tuple[JsonVal, int]:
+    ctx = ctx
+    name_types = name_types
     """elif 節を If ノードとしてパースする。"""
     ln = block_lines[start_i]
     s = _strip_inline_comment(ln.strip())

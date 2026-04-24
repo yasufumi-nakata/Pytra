@@ -62,7 +62,7 @@ _JSON_RECEIVER_PREFIXES: list[tuple[str, str]] = [
 ]
 
 
-def _copy_node(node: Node) -> Node:
+def _type_summary_copy_node(node: Node) -> Node:
     copied = deep_copy_json(node)
     if jv_is_dict(copied):
         return jv_dict(copied)
@@ -405,10 +405,10 @@ def unknown_type_summary() -> Node:
 def type_expr_summary_from_payload(ctx: CompileContext, type_expr: JsonVal, mirror: JsonVal) -> Node:
     summary = summarize_type_expr(type_expr)
     if jv_str(summary.get("category", "unknown")) != "unknown":
-        summary_copy = _copy_node(summary)
+        summary_copy = _type_summary_copy_node(summary)
         return hydrate_nominal_adt_summary(ctx, summary_copy, mirror)
     text_summary = summarize_type_text(mirror)
-    text_copy = _copy_node(text_summary)
+    text_copy = _type_summary_copy_node(text_summary)
     return hydrate_nominal_adt_summary(ctx, text_copy, mirror)
 
 
@@ -425,7 +425,7 @@ def structured_type_expr_summary_from_node(node: JsonVal) -> Node:
         return unknown_type_summary()
     nd: Node = jv_dict(node)
     summary = summarize_type_expr(nd.get("type_expr"))
-    return _copy_node(summary)
+    return _type_summary_copy_node(summary)
 
 
 def expr_type_summary(ctx: CompileContext, expr: JsonVal) -> Node:
@@ -456,7 +456,7 @@ def lookup_nominal_adt_decl(ctx: CompileContext, name: JsonVal) -> Node:
         empty2: dict[str, JsonVal] = {}
         return empty2
     entry = ctx.nominal_adt_table[type_name]
-    return _copy_node(entry)
+    return _type_summary_copy_node(entry)
 
 
 def collect_nominal_adt_table(east_module: Node) -> dict[str, Node]:
@@ -555,7 +555,7 @@ def hydrate_nominal_adt_summary(ctx: CompileContext, summary: Node, mirror: Json
         decl = lookup_nominal_adt_decl(ctx, inner_name)
         if "family_name" not in decl:
             return summary
-        out = _copy_node(summary)
+        out = _type_summary_copy_node(summary)
         out["nominal_adt_name"] = inner_name
         out["nominal_adt_family"] = jv_str(decl.get("family_name", inner_name))
         out["nominal_variant_domain"] = "closed"
@@ -585,8 +585,8 @@ def set_type_expr_summary(node: Node, summary: Node) -> None:
 
 
 def bridge_lane_payload(target_summary: Node, value_summary: Node) -> Node:
-    target_copy = _copy_node(target_summary)
-    value_copy = _copy_node(value_summary)
+    target_copy = _type_summary_copy_node(target_summary)
+    value_copy = _type_summary_copy_node(value_summary)
     out: dict[str, JsonVal] = {}
     out["schema_version"] = 1
     out["target"] = target_copy

@@ -80,7 +80,7 @@ def _collect_sig(
                 _collect_sig(jv_dict(stmt), sigs, module_id, class_name2)
 
 
-def _default_collection_hint(type_name: str) -> str:
+def _expand_defaults_collection_hint(type_name: str) -> str:
     t = type_name.strip()
     if t.endswith(" | None"):
         t = t[:-7].strip()
@@ -95,7 +95,7 @@ def _apply_collection_default_hint(default_node: JsonVal, param_type: str) -> No
     if not jv_is_dict(default_node):
         return
     default_map: dict[str, JsonVal] = jv_dict(default_node)
-    hinted = _default_collection_hint(normalize_type(param_type))
+    hinted = _expand_defaults_collection_hint(normalize_type(param_type))
     if hinted == "":
         return
     kind = nd_get_str(default_map, "kind")

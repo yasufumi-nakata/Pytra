@@ -156,8 +156,8 @@ def _canonical_type_name(ctx: CompileContext, value: JsonVal) -> str:
     return norm
 
 
-def _copy_node(node: Node) -> Node:
-    out: Node = _empty_node()
+def _lower_copy_node(node: Node) -> Node:
+    out: Node = _lower_empty_node()
     for key, value in node.items():
         out[key] = deep_copy_json(value)
     return out
@@ -167,10 +167,10 @@ def _empty_casts() -> list[JsonVal]:
     return []
 
 
-def _empty_jv_list() -> list[JsonVal]:
+def _lower_empty_jv_list() -> list[JsonVal]:
     return []
 
-def _empty_node() -> Node:
+def _lower_empty_node() -> Node:
     out: dict[str, JsonVal] = {}
     return out
 
@@ -208,7 +208,7 @@ def _is_any_like_type(type_name: JsonVal, ctx: CompileContext) -> bool:
 
 
 def _const_int_node(value: int) -> Node:
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     out["kind"] = CONSTANT
     out["resolved_type"] = "int64"
     out["borrow_kind"] = "value"
@@ -219,7 +219,7 @@ def _const_int_node(value: int) -> Node:
 
 
 def _const_bool_node(value: bool) -> Node:
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     out["kind"] = CONSTANT
     out["resolved_type"] = "bool"
     out["borrow_kind"] = "value"
@@ -230,7 +230,7 @@ def _const_bool_node(value: bool) -> Node:
 
 
 def _make_name_node(name: str, resolved_type: str = "unknown") -> Node:
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     out["kind"] = NAME
     out["id"] = name
     out["resolved_type"] = resolved_type
@@ -268,7 +268,7 @@ def _make_boundary_expr(
     source_expr: JsonVal,
     ctx: CompileContext,
 ) -> Node:
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     out["kind"] = kind
     out["resolved_type"] = resolved_type
     out["borrow_kind"] = "value"
@@ -319,7 +319,7 @@ def _is_string_index_expr(node: JsonVal) -> bool:
 
 
 def _make_named_type_expr(name: str) -> Node:
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     out["kind"] = NAMED_TYPE
     out["name"] = name
     return out
@@ -354,11 +354,11 @@ def _make_static_scalar_cast_expr(value_expr: JsonVal, target_type: str, *, ctx:
     func_name = "int"
     if target_type == "float32" or target_type == "float64":
         func_name = "float"
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     out["kind"] = CALL
     out["func"] = _make_name_node(func_name, "callable")
     out["args"] = [value_expr]
-    out["keywords"] = _empty_jv_list()
+    out["keywords"] = _lower_empty_jv_list()
     out["resolved_type"] = target_type
     out["borrow_kind"] = "value"
     out["casts"] = _empty_casts()
@@ -407,7 +407,7 @@ def _wrap_list_literal_for_target_type(value_expr: JsonVal, target_type: str, *,
     inner_type = _list_inner_type(target_type)
     if inner_type == "":
         return value_expr
-    out: Node = _copy_node(node)
+    out: Node = _lower_copy_node(node)
     elems_obj = nd_get_list(node, "elements")
     if len(elems_obj) > 0 or "elements" in node:
         elems_out: list[JsonVal] = []
@@ -432,7 +432,7 @@ def _wrap_dict_literal_for_target_type(value_expr: JsonVal, target_type: str, *,
     key_type, val_type = _split_dict_types(target_type)
     if key_type == "" or val_type == "":
         return value_expr
-    out: Node = _copy_node(node)
+    out: Node = _lower_copy_node(node)
     entries_obj = nd_get_list(node, "entries")
     if len(entries_obj) > 0 or "entries" in node:
         wrapped_entries: list[JsonVal] = []
@@ -441,7 +441,7 @@ def _wrap_dict_literal_for_target_type(value_expr: JsonVal, target_type: str, *,
                 wrapped_entries.append(entry)
                 continue
             entry_node: Node = jv_dict(entry)
-            entry_out: Node = _copy_node(entry_node)
+            entry_out: Node = _lower_copy_node(entry_node)
             key_node = entry_node.get("key")
             value_node = entry_node.get("value")
             if jv_is_dict(key_node):
@@ -774,7 +774,7 @@ def _build_target_plan(
 
 
 def _lower_assignment_like_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     for key_s, value in stmt.items():
         if key_s == "value":
             continue
@@ -836,7 +836,7 @@ def _lower_assignment_like_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileC
 
 
 def _lower_return_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     for key_s, value in stmt.items():
         if key_s == "value":
             continue
@@ -873,7 +873,7 @@ def _lower_function_def_stmt(
         vararg_type = jv_str(stmt.get("vararg_type", ""))
         if vararg_name != "" and vararg_type != "":
             ctx.set_storage_type(vararg_name, vararg_type)
-        out: Node = _empty_node()
+        out: Node = _lower_empty_node()
         for key_s, value in stmt.items():
             out[key_s] = _lower_node(value, dispatch_mode=dispatch_mode, ctx=ctx)
         return out
@@ -893,7 +893,7 @@ def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> N
     target_type = _normalize_type_name(stmt.get("target_type"))
     if target_type == "unknown":
         target_type = _normalize_type_name(stmt.get("iter_element_type"))
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     out["kind"] = FOR_CORE
     out["iter_mode"] = "runtime_protocol"
     out["iter_plan"] = iter_plan
@@ -902,12 +902,12 @@ def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> N
     if jv_is_list(body_obj):
         out["body"] = _lower_node(body_obj, dispatch_mode=dispatch_mode, ctx=ctx)
     else:
-        out["body"] = _lower_node(_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
+        out["body"] = _lower_node(_lower_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
     orelse_obj = stmt.get("orelse")
     if jv_is_list(orelse_obj):
         out["orelse"] = _lower_node(orelse_obj, dispatch_mode=dispatch_mode, ctx=ctx)
     else:
-        out["orelse"] = _lower_node(_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
+        out["orelse"] = _lower_node(_lower_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
     consumed = {"kind", "target", "target_type", "iter_mode", "iter_source_type", "iter_element_type", "iter", "body", "orelse"}
     _copy_extra_fields(stmt, out, consumed, dispatch_mode=dispatch_mode, ctx=ctx)
     return out
@@ -924,7 +924,7 @@ def _lower_forrange_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext)
     iter_plan["start"] = start_node
     iter_plan["stop"] = stop_node
     iter_plan["step"] = step_node
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     out["kind"] = FOR_CORE
     out["iter_mode"] = "static_fastpath"
     out["iter_plan"] = iter_plan
@@ -933,19 +933,19 @@ def _lower_forrange_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext)
     if jv_is_list(body_obj):
         out["body"] = _lower_node(body_obj, dispatch_mode=dispatch_mode, ctx=ctx)
     else:
-        out["body"] = _lower_node(_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
+        out["body"] = _lower_node(_lower_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
     orelse_obj = stmt.get("orelse")
     if jv_is_list(orelse_obj):
         out["orelse"] = _lower_node(orelse_obj, dispatch_mode=dispatch_mode, ctx=ctx)
     else:
-        out["orelse"] = _lower_node(_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
+        out["orelse"] = _lower_node(_lower_empty_jv_list(), dispatch_mode=dispatch_mode, ctx=ctx)
     consumed = {"kind", "target", "target_type", "start", "stop", "step", "range_mode", "body", "orelse"}
     _copy_extra_fields(stmt, out, consumed, dispatch_mode=dispatch_mode, ctx=ctx)
     return out
 
 
 def _lower_forcore_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     for key_s, value in stmt.items():
         out[key_s] = _lower_node(value, dispatch_mode=dispatch_mode, ctx=ctx)
     ip = out.get("iter_plan")
@@ -1018,7 +1018,7 @@ def _decorate_nominal_adt_projection_attr(attr_expr: Node, ctx: CompileContext) 
     if decl_role != "variant":
         return attr_expr
     ft_obj = decl.get("field_types")
-    field_types: Node = _empty_node()
+    field_types: Node = _lower_empty_node()
     if jv_is_dict(ft_obj):
         field_types = jv_dict(ft_obj)
     field_type = _normalize_type_name(field_types.get(attr_name))
@@ -1188,7 +1188,7 @@ def _make_type_predicate_expr(
     expected_type_id_expr: JsonVal = None,
     expected_type_name: str = "",
 ) -> Node:
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     out["kind"] = kind
     out["resolved_type"] = "bool"
     out["borrow_kind"] = "value"
@@ -1263,10 +1263,10 @@ def _attach_nominal_adt_type_test_meta(check: Node, ttm: Node | None) -> Node:
 def _build_or_of_checks(checks: list[Node], source_expr: JsonVal) -> Node:
     if len(checks) == 1:
         return checks[0]
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     out["kind"] = BOOL_OP
     out["op"] = "Or"
-    check_values: list[JsonVal] = _empty_jv_list()
+    check_values: list[JsonVal] = _lower_empty_jv_list()
     for check in checks:
         check_values.append(check)
     out["values"] = check_values
@@ -1327,7 +1327,7 @@ def _collect_expected_type_id_specs(
         spec_dict: Node = jv_dict(spec_node)
         if nd_kind(spec_dict) == TUPLE:
             elems = spec_dict.get("elements")
-            el: list[JsonVal] = _empty_jv_list()
+            el: list[JsonVal] = _lower_empty_jv_list()
             if jv_is_list(elems):
                 for e in jv_list(elems):
                     el.append(e)
@@ -1477,7 +1477,7 @@ def _apply_vararg_walk(node: JsonVal, vt: dict[str, Node]) -> JsonVal:
 
 
 def _lower_call_expr(call: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     for key_s, value_jv in call.items():
         out[key_s] = _lower_node(value_jv, dispatch_mode=dispatch_mode, ctx=ctx)
     if not jv_is_dict(out):
@@ -1493,6 +1493,7 @@ def _lower_call_expr(call: Node, *, dispatch_mode: str, ctx: CompileContext) -> 
 # ---------------------------------------------------------------------------
 
 def _lower_node_dispatch(node: Node, *, dispatch_mode: str, ctx: CompileContext) -> JsonVal:
+    ctx = ctx
     kind = nd_kind(node)
     if kind == FUNCTION_DEF or kind == CLOSURE_DEF:
         return _lower_function_def_stmt(node, dispatch_mode=dispatch_mode, ctx=ctx)
@@ -1507,23 +1508,24 @@ def _lower_node_dispatch(node: Node, *, dispatch_mode: str, ctx: CompileContext)
     if kind == CALL:
         return _lower_call_expr(node, dispatch_mode=dispatch_mode, ctx=ctx)
     if kind == ATTRIBUTE:
-        out = _copy_node(node)
+        out = _lower_copy_node(node)
         return _decorate_nominal_adt_projection_attr(out, ctx)
     if kind == VARIANT_PATTERN:
-        out = _copy_node(node)
+        out = _lower_copy_node(node)
         return _decorate_nominal_adt_variant_pattern(out, ctx)
     if kind == MATCH:
-        out = _copy_node(node)
+        out = _lower_copy_node(node)
         return _decorate_nominal_adt_match_stmt(out, ctx)
     if kind == FOR_CORE:
         return _lower_forcore_stmt(node, dispatch_mode=dispatch_mode, ctx=ctx)
-    out: Node = _empty_node()
+    out: Node = _lower_empty_node()
     for key_s, value_s in node.items():
         out[key_s] = _lower_node(value_s, dispatch_mode=dispatch_mode, ctx=ctx)
     return out
 
 
 def _lower_node(node: JsonVal, *, dispatch_mode: str, ctx: CompileContext) -> JsonVal:
+    ctx = ctx
     if jv_is_list(node):
         out_list: list[JsonVal] = []
         for item in jv_list(node):
@@ -1593,7 +1595,7 @@ def lower_east2_to_east3(
             return module_input
         lowered_node = jv_dict(lowered)
 
-    module_out: Node = _empty_node()
+    module_out: Node = _lower_empty_node()
     for key_s, value_s in lowered_node.items():
         module_out[key_s] = value_s
 

@@ -1788,7 +1788,7 @@ def _collect_module_type_aliases(doc: dict[str, JsonVal]) -> dict[str, str]:
     return aliases
 
 
-def _default_collection_hint(type_name: str) -> str:
+def _linker_default_collection_hint(type_name: str) -> str:
     t = type_name.strip()
     if t.endswith(" | None"):
         t = t[0 : len(t) - 7].strip()
@@ -1812,7 +1812,7 @@ def _apply_collection_hint(node: JsonVal, target_type: str, aliases: dict[str, s
     if not jv_is_dict(node):
         return
     node_dict = jv_dict(node)
-    hinted = _default_collection_hint(_normalize_type_alias(target_type, aliases))
+    hinted = _linker_default_collection_hint(_normalize_type_alias(target_type, aliases))
     if hinted == "":
         return
     kind = "" + _node_str(node_dict, "kind")

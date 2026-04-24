@@ -110,7 +110,7 @@ def _builtin_class_names_in_id_order() -> list[str]:
     return out
 
 
-def _sorted_strings(values: list[str]) -> list[str]:
+def _type_id_sorted_strings(values: list[str]) -> list[str]:
     out: list[str] = []
     used: set[str] = set()
     while len(out) < len(values):
@@ -217,7 +217,7 @@ def _iter_class_defs(east_doc: JsonVal) -> list[dict[str, JsonVal]]:
     return out
 
 
-def _decorators(class_def: dict[str, JsonVal]) -> list[str]:
+def _type_id_decorators(class_def: dict[str, JsonVal]) -> list[str]:
     raw = class_def.get("decorators")
     out: list[str] = []
     if jv_is_list(raw):
@@ -234,13 +234,13 @@ def _is_trait_class(class_def: dict[str, JsonVal]) -> bool:
         meta_dict: dict[str, JsonVal] = jv_dict(meta)
         if jv_is_dict(meta_dict.get("trait_v1")):
             return True
-    for decorator in _decorators(class_def):
+    for decorator in _type_id_decorators(class_def):
         if decorator == "trait":
             return True
     return False
 
 
-def _input_invalid(message: str) -> RuntimeError:
+def _type_id_input_invalid(message: str) -> RuntimeError:
     return RuntimeError("input_invalid: " + message)
 
 
@@ -313,7 +313,7 @@ def _resolve_declared_class_base_fqcn(
     fqcn_candidate = module_id + "." + name
     if fqcn_candidate in all_classes:
         return fqcn_candidate
-    raise _input_invalid("undefined base class: " + fqcn + " -> " + name)
+    raise _type_id_input_invalid("undefined base class: " + fqcn + " -> " + name)
 
 
 def build_type_id_table(
@@ -348,7 +348,7 @@ def build_type_id_table(
                 continue
             fqcn = current_module_id + "." + class_name
             if fqcn in all_classes:
-                raise _input_invalid("duplicate class definition: " + fqcn)
+                raise _type_id_input_invalid("duplicate class definition: " + fqcn)
             local_classes[class_name] = fqcn
             all_classes.add(fqcn)
         module_local_classes[current_module_id] = local_classes
@@ -369,7 +369,7 @@ def build_type_id_table(
             fqcn = current_module_id + "." + class_name
             base_names = _iter_class_base_names(class_def)
             if len(base_names) > 1:
-                raise _input_invalid(
+                raise _type_id_input_invalid(
                     "multiple inheritance is not supported: "
                     + fqcn
                     + " -> "
@@ -410,7 +410,7 @@ def build_type_id_table(
                 cycle.append(stack[cycle_idx])
                 cycle_idx += 1
             cycle.append(fqcn)
-            raise _input_invalid("inheritance cycle: " + " -> ".join(cycle))
+            raise _type_id_input_invalid("inheritance cycle: " + " -> ".join(cycle))
 
         visit_state[fqcn] = 1
         base_fqcn = class_bases.get(fqcn, "")
@@ -421,12 +421,12 @@ def build_type_id_table(
     class_base_names: list[str] = []
     for fqcn in class_bases:
         class_base_names.append(fqcn)
-    for fqcn in _sorted_strings(class_base_names):
+    for fqcn in _type_id_sorted_strings(class_base_names):
         empty_stack: list[str] = []
         _visit(fqcn, empty_stack)
 
     # Build children map
-    sorted_class_names = _sorted_strings(class_base_names)
+    sorted_class_names = _type_id_sorted_strings(class_base_names)
     for fqcn in sorted_class_names:
         base_fqcn = class_bases[fqcn]
         if base_fqcn not in children:
@@ -437,8 +437,8 @@ def build_type_id_table(
     child_parents: list[str] = []
     for parent in children:
         child_parents.append(parent)
-    for parent in _sorted_strings(child_parents):
-        children[parent] = _sorted_strings(children[parent])
+    for parent in _type_id_sorted_strings(child_parents):
+        children[parent] = _type_id_sorted_strings(children[parent])
 
     # DFS assignment
     next_id_holder: list[int] = [_USER_TYPE_ID_BASE]
@@ -461,7 +461,7 @@ def build_type_id_table(
     synthetic_roots: list[str] = []
     for synthetic_root in _ROOT_BASE_NAMES:
         synthetic_roots.append(synthetic_root)
-    for synthetic_root in _sorted_strings(synthetic_roots):
+    for synthetic_root in _type_id_sorted_strings(synthetic_roots):
         if synthetic_root in _BUILTIN_CLASS_IDS:
             continue
         for child_fqcn in children.get(synthetic_root, []):
@@ -477,7 +477,7 @@ def build_type_id_table(
         type_info_table["object"]["exit"] = next_id_holder[0]
 
     if len(type_id_table) != len(class_bases) + len(_BUILTIN_CLASS_IDS):
-        raise _input_invalid(
+        raise _type_id_input_invalid(
             "failed to assign type_id to all classes: "
             + str(len(type_id_table))
             + "/"
@@ -512,21 +512,21 @@ def build_type_id_table(
     type_id_names: list[str] = []
     for fqcn in type_id_table:
         type_id_names.append(fqcn)
-    for fqcn in _sorted_strings(type_id_names):
+    for fqcn in _type_id_sorted_strings(type_id_names):
         tid_table[fqcn] = type_id_table[fqcn]
 
     tid_base: dict[str, JsonVal] = {}
     type_id_base_names: list[str] = []
     for fqcn in type_id_base_map:
         type_id_base_names.append(fqcn)
-    for fqcn in _sorted_strings(type_id_base_names):
+    for fqcn in _type_id_sorted_strings(type_id_base_names):
         tid_base[fqcn] = type_id_base_map[fqcn]
 
     tid_info: dict[str, JsonVal] = {}
     type_info_names: list[str] = []
     for fqcn in type_info_table:
         type_info_names.append(fqcn)
-    for fqcn in _sorted_strings(type_info_names):
+    for fqcn in _type_id_sorted_strings(type_info_names):
         info_row = type_info_table[fqcn]
         info: dict[str, JsonVal] = {
             "id": info_row["id"],

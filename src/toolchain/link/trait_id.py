@@ -33,7 +33,7 @@ def _iter_class_defs(east_doc: dict[str, JsonVal]) -> list[dict[str, JsonVal]]:
     return out
 
 
-def _decorators(class_def: dict[str, JsonVal]) -> list[str]:
+def _trait_id_decorators(class_def: dict[str, JsonVal]) -> list[str]:
     out: list[str] = []
     raw = class_def.get("decorators")
     if jv_is_list(raw):
@@ -50,7 +50,7 @@ def _is_trait(class_def: dict[str, JsonVal]) -> bool:
         meta_dict: dict[str, JsonVal] = jv_dict(meta)
         if jv_is_dict(meta_dict.get("trait_v1")):
             return True
-    for decorator in _decorators(class_def):
+    for decorator in _trait_id_decorators(class_def):
         if decorator == "trait":
             return True
     return False
@@ -114,12 +114,12 @@ def _implemented_trait_names(class_def: dict[str, JsonVal]) -> list[str]:
             if len(out) > 0:
                 return out
     out2: list[str] = []
-    for decorator in _decorators(class_def):
+    for decorator in _trait_id_decorators(class_def):
         out2.extend(_parse_implements(decorator))
     return out2
 
 
-def _input_invalid(message: str) -> RuntimeError:
+def _trait_id_input_invalid(message: str) -> RuntimeError:
     return RuntimeError("input_invalid: " + message)
 
 
@@ -166,7 +166,7 @@ def _resolve_trait_name(
     candidate3 = module_id + "." + name
     if candidate3 in all_traits:
         return candidate3
-    raise _input_invalid("undefined trait: " + module_id + " -> " + name)
+    raise _trait_id_input_invalid("undefined trait: " + module_id + " -> " + name)
 
 
 def build_trait_implementation_map(modules: list[LinkedModule]) -> tuple[set[str], dict[str, set[str]]]:
@@ -228,7 +228,7 @@ def build_trait_implementation_map(modules: list[LinkedModule]) -> tuple[set[str
         if fqcn in memo:
             return memo[fqcn]
         if fqcn in stack:
-            raise _input_invalid("trait inheritance cycle: " + " -> ".join(stack + [fqcn]))
+            raise _trait_id_input_invalid("trait inheritance cycle: " + " -> ".join(stack + [fqcn]))
         out: set[str] = {fqcn}
         for base_fqcn in trait_bases.get(fqcn, []):
             base_closure = _trait_closure(base_fqcn, stack + [fqcn])

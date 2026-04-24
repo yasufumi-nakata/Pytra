@@ -12,7 +12,7 @@ from pytra.std.json import JsonVal
 from pytra.std import json
 
 
-def _jv_obj(value: JsonVal) -> dict[str, JsonVal]:
+def _normalize_order_jv_obj(value: JsonVal) -> dict[str, JsonVal]:
     obj = json.JsonValue(value).as_obj()
     if obj is None:
         empty: dict[str, JsonVal] = {}
@@ -20,7 +20,7 @@ def _jv_obj(value: JsonVal) -> dict[str, JsonVal]:
     return obj.raw
 
 
-def _jv_arr(value: JsonVal) -> list[JsonVal]:
+def _normalize_order_jv_arr(value: JsonVal) -> list[JsonVal]:
     arr = json.JsonValue(value).as_arr()
     if arr is None:
         empty: list[JsonVal] = []
@@ -28,17 +28,17 @@ def _jv_arr(value: JsonVal) -> list[JsonVal]:
     return arr.raw
 
 
-def _jv_str(value: JsonVal) -> str:
+def _normalize_order_jv_str(value: JsonVal) -> str:
     raw = json.JsonValue(value).as_str()
     if raw is None:
         return ""
     return "" + raw
 
 
-def _dict_get_str(obj: dict[str, JsonVal], key: str) -> str:
+def _normalize_order_dict_get_str(obj: dict[str, JsonVal], key: str) -> str:
     if key not in obj:
         return ""
-    return _jv_str(obj[key])
+    return _normalize_order_jv_str(obj[key])
 
 
 def _fields_csv(csv_text: str) -> list[str]:
@@ -162,9 +162,9 @@ _KIND_FIELDS: dict[str, list[str]] = _build_kind_fields()
 
 def normalize_field_order(doc: JsonVal, parent_key: str = "") -> JsonVal:
     """Recursively normalize field ordering in a JSON document."""
-    obj = _jv_obj(doc)
+    obj = _normalize_order_jv_obj(doc)
     if len(obj) > 0:
-        kind: str = _dict_get_str(obj, "kind")
+        kind: str = _normalize_order_dict_get_str(obj, "kind")
         ordered: dict[str, JsonVal]
         if kind != "" and kind in _KIND_FIELDS:
             ordered = _reorder_dict(obj, _KIND_FIELDS[kind])
@@ -178,7 +178,7 @@ def normalize_field_order(doc: JsonVal, parent_key: str = "") -> JsonVal:
         for k, v in ordered.items():
             result[k] = normalize_field_order(v, parent_key=k)
         return result
-    arr = _jv_arr(doc)
+    arr = _normalize_order_jv_arr(doc)
     if len(arr) > 0:
         out: list[JsonVal] = []
         for item in arr:

@@ -55,7 +55,7 @@ _NUMERIC_TYPES: set[str] = {
     "float32", "float64",
 }
 
-_INT_TYPES: set[str] = {
+_TYPE_NORM_INT_TYPES: set[str] = {
     "int8", "int16", "int32", "int64",
     "uint8", "uint16", "uint32", "uint64",
 }
@@ -261,7 +261,7 @@ def is_numeric(t: str) -> bool:
 
 
 def is_int_type(t: str) -> bool:
-    return t in _INT_TYPES
+    return t in _TYPE_NORM_INT_TYPES
 
 
 def is_float_type(t: str) -> bool:

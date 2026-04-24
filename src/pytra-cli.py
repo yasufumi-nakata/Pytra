@@ -44,7 +44,7 @@ from toolchain.resolve.py.resolver import resolve_east1_to_east2
 from toolchain.resolve.py.resolver import resolve_file
 
 
-def _repo_root() -> Path:
+def _pytra_cli_repo_root() -> Path:
     """Return repository root from the current working directory.
 
     Selfhost binaries may run from /workspace, so fall back to ./Pytra when present.
@@ -62,7 +62,7 @@ def _unsupported_target_attr(module_name: str, attr_name: str) -> None:
 
 
 def _src_dir() -> Path:
-    return _repo_root().joinpath("src")
+    return _pytra_cli_repo_root().joinpath("src")
 
 
 def _python() -> str:
@@ -107,7 +107,7 @@ def _emit_ts_module(_east_doc: dict[str, JsonVal], strip_types: bool = False) ->
 
 def _builtin_registry_paths() -> tuple[Path, Path, Path, Path]:
     """Return absolute builtins/containers/containers source/stdlib registry inputs."""
-    root = _repo_root()
+    root = _pytra_cli_repo_root()
     east1_root = root.joinpath("test").joinpath("include").joinpath("east1").joinpath("py")
     return (
         east1_root.joinpath("built_in").joinpath("builtins.py.east1"),
@@ -119,7 +119,7 @@ def _builtin_registry_paths() -> tuple[Path, Path, Path, Path]:
 
 def _copy_go_runtime_files(output_dir: Path) -> int:
     """Copy native Go runtime files into the flat emit directory."""
-    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("go")
+    runtime_root = _pytra_cli_repo_root().joinpath("src").joinpath("runtime").joinpath("go")
     copied = 0
     for bucket in ["built_in", "std"]:
         for go_file in runtime_root.joinpath(bucket).glob("*.go"):
@@ -136,7 +136,7 @@ def _copy_go_runtime_files(output_dir: Path) -> int:
 
 def _copy_java_runtime_files(output_dir: Path) -> int:
     """Copy Java runtime files into the flat emit directory."""
-    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("java")
+    runtime_root = _pytra_cli_repo_root().joinpath("src").joinpath("runtime").joinpath("java")
     copied = 0
     if not runtime_root.exists():
         return copied
@@ -181,7 +181,7 @@ def _ensure_parent_dir(path: Path) -> None:
 
 def _module_source_path(module_id: str) -> Path:
     """Resolve a user module_id like toolchain.parse.py.parse_python to src path."""
-    src_root = _repo_root().joinpath("src")
+    src_root = _pytra_cli_repo_root().joinpath("src")
     module_path = src_root.joinpath(module_id.replace(".", "/") + ".py")
     if module_path.exists():
         return module_path
@@ -888,7 +888,7 @@ def _emit_rs(manifest_path: Path, output_dir: Path, *, package_mode: bool = Fals
 
 def _copy_nim_runtime_files(output_dir: Path) -> int:
     """Copy native Nim runtime files into the flat emit directory."""
-    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("nim")
+    runtime_root = _pytra_cli_repo_root().joinpath("src").joinpath("runtime").joinpath("nim")
     copied = 0
     for bucket in ["built_in", "std"]:
         bucket_dir = runtime_root.joinpath(bucket)
@@ -921,7 +921,7 @@ def _emit_go(manifest_path: Path, output_dir: Path) -> int:
 
 def _copy_ts_runtime_files(output_dir: Path) -> int:
     """Copy TypeScript/JavaScript runtime files into the flat emit directory."""
-    runtime_root = _repo_root().joinpath("src").joinpath("runtime").joinpath("ts")
+    runtime_root = _pytra_cli_repo_root().joinpath("src").joinpath("runtime").joinpath("ts")
     copied: int = 0
     for bucket in ["built_in", "std"]:
         bucket_dir = runtime_root.joinpath(bucket)

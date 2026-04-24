@@ -99,6 +99,15 @@ def _jv_arr(value: JsonVal) -> list[JsonVal]:
     return arr.raw
 
 
+def _jv_bool(value: JsonVal) -> bool:
+    raw = json.JsonValue(value).as_bool()
+    return raw is True
+
+
+def _jv_int(value: JsonVal) -> int | None:
+    return json.JsonValue(value).as_int()
+
+
 def _dict_get_obj(obj: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
     if key not in obj:
         empty: dict[str, JsonVal] = {}
@@ -117,6 +126,30 @@ def _dict_get_arr(obj: dict[str, JsonVal], key: str) -> list[JsonVal]:
         empty: list[JsonVal] = []
         return empty
     return _jv_arr(obj[key])
+
+
+def _dict_get_bool(obj: dict[str, JsonVal], key: str) -> bool:
+    if key not in obj:
+        return False
+    return _jv_bool(obj[key])
+
+
+def _extern_symbol(extern_v2: ExternV2 | None) -> str:
+    if extern_v2 is None:
+        return ""
+    return extern_v2.symbol
+
+
+def _extern_module(extern_v2: ExternV2 | None) -> str:
+    if extern_v2 is None:
+        return ""
+    return extern_v2.module
+
+
+def _extern_tag(extern_v2: ExternV2 | None) -> str:
+    if extern_v2 is None:
+        return ""
+    return extern_v2.tag
 
 
 def _json_str_list(values: list[str]) -> list[JsonVal]:
@@ -1577,6 +1610,8 @@ def _refine_lambda_from_call(
     ctx: ResolveContext,
     call_arg_types: list[str],
 ) -> str:
+    expr = expr
+    ctx = ctx
     arg_order: list[str] = _lambda_arg_names(expr)
     arg_types: dict[str, str] = _lambda_arg_types(expr, ctx, arg_order)
     _resolve_lambda_defaults(expr, ctx, arg_types)
@@ -2046,6 +2081,8 @@ def _type_text_contains_none(type_str: str) -> bool:
 # ---------------------------------------------------------------------------
 
 def _resolve_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     """Resolve the type of an expression node, mutating it in place.
     Returns the resolved_type string."""
     kind: str = _dict_get_str(expr, "kind")
@@ -2207,6 +2244,8 @@ def _numeric_cast_entry(on: str, from_type: str, to_type: str) -> dict[str, Json
 
 
 def _resolve_binop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     left = _dict_get_obj(expr, "left")
     right = _dict_get_obj(expr, "right")
     lt: str = "unknown"
@@ -2316,6 +2355,8 @@ def _binop_result_type(lt: str, rt: str, op: str) -> str:
 
 
 def _resolve_unaryop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     operand = _dict_get_obj(expr, "operand")
     ot: str = "unknown"
     if len(operand) > 0:
@@ -2357,6 +2398,8 @@ def _resolve_compare(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     values = _dict_get_arr(expr, "values")
     op = _dict_get_str(expr, "op")
     result_type: str = "unknown"
@@ -2402,6 +2445,8 @@ def _resolve_boolop(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_call(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     func = _dict_get_obj(expr, "func")
     if len(func) == 0:
         expr["resolved_type"] = "unknown"
@@ -2434,6 +2479,8 @@ def _resolve_call(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_call_args(expr: dict[str, JsonVal], ctx: ResolveContext) -> None:
+    expr = expr
+    ctx = ctx
     """Resolve types of call arguments."""
     args = _dict_get_arr(expr, "args")
     for arg_val in args:
@@ -2565,6 +2612,9 @@ def _infer_cast_target_type(expr: dict[str, JsonVal], ctx: ResolveContext) -> st
 
 
 def _resolve_simple_call(expr: dict[str, JsonVal], func: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    func = func
+    ctx = ctx
     """Resolve a simple Name-based function call."""
     name: str = _dict_get_str(func, "id")
 
@@ -3475,6 +3525,8 @@ def _resolve_subscript(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_list(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     elems = _dict_get_arr(expr, "elements")
     elem_type: str = "unknown"
     for elem_val in elems:
@@ -3503,6 +3555,8 @@ def _resolve_list(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_dict(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     kt: str = "unknown"
     vt: str = "unknown"
     # EAST1 uses "entries" format: [{key: ..., value: ...}, ...]
@@ -3544,6 +3598,8 @@ def _node_dict_or_empty(value: JsonVal) -> dict[str, JsonVal]:
 
 
 def _resolve_set(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     elems = _dict_get_arr(expr, "elements")
     elem_type: str = "unknown"
     for elem_val in elems:
@@ -3557,6 +3613,8 @@ def _resolve_set(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_tuple(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     elems = _dict_get_arr(expr, "elements")
     types: list[str] = []
     for elem_val in elems:
@@ -3573,6 +3631,8 @@ def _resolve_tuple(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_ifexp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     test = _dict_get_obj(expr, "test")
     body = _dict_get_obj(expr, "body")
     orelse = _dict_get_obj(expr, "orelse")
@@ -3745,21 +3805,32 @@ def _resolve_dictcomp(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 
 
 def _resolve_lambda(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     """Resolve a Lambda expression."""
     return _refine_lambda_from_call(expr, ctx, [])
 
 
 def _resolve_slice(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     """Resolve a Slice node (lower:upper:step)."""
-    for key in ("lower", "upper", "step"):
-        child = _dict_get_obj(expr, key)
-        if len(child) > 0 and _dict_get_str(child, "kind") != "":
-            _resolve_expr(child, ctx)
+    lower = _dict_get_obj(expr, "lower")
+    if len(lower) > 0 and _dict_get_str(lower, "kind") != "":
+        _resolve_expr(lower, ctx)
+    upper = _dict_get_obj(expr, "upper")
+    if len(upper) > 0 and _dict_get_str(upper, "kind") != "":
+        _resolve_expr(upper, ctx)
+    step = _dict_get_obj(expr, "step")
+    if len(step) > 0 and _dict_get_str(step, "kind") != "":
+        _resolve_expr(step, ctx)
     # Slice itself doesn't have a resolved_type in the same sense
     return "slice"
 
 
 def _resolve_starred(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
+    expr = expr
+    ctx = ctx
     value = _dict_get_obj(expr, "value")
     if len(value) > 0:
         vt: str = _resolve_expr(value, ctx)
@@ -3774,6 +3845,8 @@ def _resolve_starred(expr: dict[str, JsonVal], ctx: ResolveContext) -> str:
 # ---------------------------------------------------------------------------
 
 def _resolve_stmt(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
+    stmt = stmt
+    ctx = ctx
     """Resolve types within a statement."""
     kind: str = _dict_get_str(stmt, "kind")
 
@@ -3782,8 +3855,8 @@ def _resolve_stmt(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     elif kind == "ClassDef":
         _resolve_class_def(stmt, ctx)
     elif kind == "TypeAlias":
-        value_raw = stmt.get("value")
-        if isinstance(value_raw, str):
+        value_raw = _dict_get_str(stmt, "value")
+        if value_raw != "":
             stmt["value"] = _ctx_normalize_type(value_raw, ctx)
     elif kind == "Assign":
         _resolve_assign(stmt, ctx)
@@ -3792,12 +3865,12 @@ def _resolve_stmt(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     elif kind == "AugAssign":
         _resolve_aug_assign(stmt, ctx)
     elif kind == "Return":
-        value = stmt.get("value")
-        if isinstance(value, dict):
+        value = _dict_get_obj(stmt, "value")
+        if len(value) > 0:
             _resolve_expr(value, ctx)
     elif kind == "Expr":
-        value = stmt.get("value")
-        if isinstance(value, dict):
+        value = _dict_get_obj(stmt, "value")
+        if len(value) > 0:
             _resolve_expr(value, ctx)
     elif kind == "If":
         _resolve_if(stmt, ctx)
@@ -3812,97 +3885,101 @@ def _resolve_stmt(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     elif kind == "With":
         _resolve_with(stmt, ctx)
     elif kind == "Yield":
-        value = stmt.get("value")
-        if isinstance(value, dict):
+        value = _dict_get_obj(stmt, "value")
+        if len(value) > 0:
             _resolve_expr(value, ctx)
     elif kind == "Import":
         pass  # Metadata already records imported module aliases.
     elif kind == "ImportFrom":
         pass  # Already processed during pre-scan
     elif kind == "Raise":
-        exc = stmt.get("exc")
-        if isinstance(exc, dict):
+        exc = _dict_get_obj(stmt, "exc")
+        if len(exc) > 0:
             _resolve_expr(exc, ctx)
         # Exception type name in handler
-        exc_type = stmt.get("type")
-        if isinstance(exc_type, dict) and exc_type.get("kind") == "Name":
-            exc_name = exc_type.get("id")
-            if isinstance(exc_name, str):
+        exc_type = _dict_get_obj(stmt, "type")
+        if len(exc_type) > 0 and _dict_get_str(exc_type, "kind") == "Name":
+            exc_name = _dict_get_str(exc_type, "id")
+            if exc_name != "":
                 exc_type["resolved_type"] = exc_name
     elif kind == "Swap":
         # Swap: resolve left/right but keep borrow_kind as "value"
-        left = stmt.get("left")
-        right = stmt.get("right")
-        if isinstance(left, dict):
+        left = _dict_get_obj(stmt, "left")
+        right = _dict_get_obj(stmt, "right")
+        if len(left) > 0:
             _resolve_expr(left, ctx)
             left["borrow_kind"] = "value"
-        if isinstance(right, dict):
+        if len(right) > 0:
             _resolve_expr(right, ctx)
             right["borrow_kind"] = "value"
     elif kind == "Break" or kind == "Continue" or kind == "Pass":
         pass
     elif kind == "Delete":
-        targets = stmt.get("targets")
-        if isinstance(targets, list):
-            for t in targets:
-                if isinstance(t, dict):
-                    _resolve_expr(t, ctx)
+        targets = _dict_get_arr(stmt, "targets")
+        for target_val in targets:
+            target = _jv_obj(target_val)
+            if len(target) > 0:
+                _resolve_expr(target, ctx)
     else:
         # Generic: resolve all child expressions
         _resolve_children(stmt, ctx)
 
 
 def _resolve_children(node: dict[str, JsonVal], ctx: ResolveContext) -> None:
+    node = node
+    ctx = ctx
     """Recursively resolve any child expression nodes."""
     for key in node:
         val = node[key]
-        if isinstance(val, dict) and "kind" in val:
-            kind_val = val.get("kind")
-            if isinstance(kind_val, str):
-                # Check if it's an expression or statement
-                if kind_val in {"FunctionDef", "ClassDef", "Assign", "AnnAssign", "AugAssign",
-                                "Return", "Expr", "If", "While", "For", "ForRange", "Try", "With",
-                                "Import",
-                                "Break", "Continue", "Pass", "Yield", "ImportFrom", "Raise", "Delete"}:
-                    _resolve_stmt(val, ctx)
+        child = _jv_obj(val)
+        if len(child) > 0 and _dict_get_str(child, "kind") != "":
+            kind_val = _dict_get_str(child, "kind")
+            if kind_val in {"FunctionDef", "ClassDef", "Assign", "AnnAssign", "AugAssign",
+                            "Return", "Expr", "If", "While", "For", "ForRange", "Try", "With",
+                            "Import",
+                            "Break", "Continue", "Pass", "Yield", "ImportFrom", "Raise", "Delete"}:
+                _resolve_stmt(child, ctx)
+            else:
+                _resolve_expr(child, ctx)
+            continue
+        items = _jv_arr(val)
+        if len(items) > 0:
+            for item_val in items:
+                item = _jv_obj(item_val)
+                if len(item) == 0 or _dict_get_str(item, "kind") == "":
+                    continue
+                kind_val2 = _dict_get_str(item, "kind")
+                if kind_val2 in {"FunctionDef", "ClassDef", "Assign", "AnnAssign",
+                                  "AugAssign", "Return", "Expr", "If", "While", "For",
+                                  "ForRange", "Try", "With", "Import", "Break", "Continue", "Pass",
+                                  "Yield", "ImportFrom", "Raise", "Delete"}:
+                    _resolve_stmt(item, ctx)
                 else:
-                    _resolve_expr(val, ctx)
-        elif isinstance(val, list):
-            for item in val:
-                if isinstance(item, dict) and "kind" in item:
-                    kind_val2 = item.get("kind")
-                    if isinstance(kind_val2, str):
-                        if kind_val2 in {"FunctionDef", "ClassDef", "Assign", "AnnAssign",
-                                          "AugAssign", "Return", "Expr", "If", "While", "For",
-                                          "ForRange", "Try", "With", "Import", "Break", "Continue", "Pass",
-                                          "Yield", "ImportFrom", "Raise", "Delete"}:
-                            _resolve_stmt(item, ctx)
-                        else:
-                            _resolve_expr(item, ctx)
+                    _resolve_expr(item, ctx)
 
 
 def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Resolve a FunctionDef: normalize types, compute arg_usage, etc."""
     # Normalize arg_types
-    arg_types_raw = stmt.get("arg_types")
+    arg_types_raw: dict[str, JsonVal] = _dict_get_obj(stmt, "arg_types")
     arg_types: dict[str, str] = {}
-    if isinstance(arg_types_raw, dict):
+    if len(arg_types_raw) > 0:
         for k, v in arg_types_raw.items():
-            if isinstance(v, str):
-                norm: str = _ctx_normalize_type(v, ctx)
+            norm: str = _ctx_normalize_type(_jv_str(v), ctx)
+            if norm != "":
                 arg_types[k] = norm
                 arg_types_raw[k] = norm
 
     # Normalize return_type
-    ret_raw = stmt.get("return_type")
+    ret_raw = _dict_get_str(stmt, "return_type")
     ret: str = "unknown"
-    if isinstance(ret_raw, str):
+    if ret_raw != "":
         ret = _ctx_normalize_type(ret_raw, ctx)
         stmt["return_type"] = ret
 
     # Normalize vararg_type
-    vararg_type_raw = stmt.get("vararg_type")
-    if isinstance(vararg_type_raw, str):
+    vararg_type_raw = _dict_get_str(stmt, "vararg_type")
+    if vararg_type_raw != "":
         vararg_type: str = _ctx_normalize_type(vararg_type_raw, ctx)
         stmt["vararg_type"] = vararg_type
         stmt["vararg_type_expr"] = make_type_expr(vararg_type)
@@ -3910,7 +3987,7 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
     # Build arg_type_exprs / return_type_expr
     # Class methods get null (type info comes from class definition)
     ate_key_exists: bool = "arg_type_exprs" in stmt
-    ate_is_null: bool = ate_key_exists and stmt.get("arg_type_exprs") is None
+    ate_is_null: bool = ate_key_exists and stmt["arg_type_exprs"] is None
     if ate_is_null or ctx.in_class:
         pass  # Don't add the field — golden omits it for class methods
     else:
@@ -3920,32 +3997,33 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
         stmt["arg_type_exprs"] = arg_type_exprs
 
     rte_key_exists: bool = "return_type_expr" in stmt
-    rte_is_null: bool = rte_key_exists and stmt.get("return_type_expr") is None
+    rte_is_null: bool = rte_key_exists and stmt["return_type_expr"] is None
     if rte_is_null or ctx.in_class:
         pass  # Don't add the field — golden omits it for class methods
     else:
         stmt["return_type_expr"] = make_type_expr(ret)
 
     # Resolve default values
-    defaults_raw = stmt.get("arg_defaults")
-    if isinstance(defaults_raw, dict):
+    defaults_raw: dict[str, JsonVal] = _dict_get_obj(stmt, "arg_defaults")
+    if len(defaults_raw) > 0:
         for dk, dv in defaults_raw.items():
-            if isinstance(dv, dict) and "kind" in dv:
-                _resolve_expr(dv, ctx)
+            default_expr = _jv_obj(dv)
+            if len(default_expr) > 0 and _dict_get_str(default_expr, "kind") != "":
+                _resolve_expr(default_expr, ctx)
                 param_type = arg_types.get(dk, "")
                 if param_type != "":
-                    _apply_default_annotation_type(dv, param_type, ctx)
+                    _apply_default_annotation_type(default_expr, param_type, ctx)
 
     # Compute arg_usage
-    arg_order_raw = stmt.get("arg_order")
+    arg_order_raw = _dict_get_arr(stmt, "arg_order")
     arg_order: list[str] = []
-    if isinstance(arg_order_raw, list):
-        for a in arg_order_raw:
-            if isinstance(a, str):
-                arg_order.append(a)
+    for a in arg_order_raw:
+        name = _jv_str(a)
+        if name != "":
+            arg_order.append(name)
 
     arg_usage: dict[str, str] = _compute_arg_usage(arg_order, stmt)
-    stmt["arg_usage"] = arg_usage
+    stmt["arg_usage"] = _json_str_dict(arg_usage)
 
     # Create function scope
     fn_scope: Scope = ctx.scope.child()
@@ -3953,8 +4031,8 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
         fn_scope.define(name, typ)
 
     # Normalize yield_value_type
-    yvt_raw = stmt.get("yield_value_type")
-    if isinstance(yvt_raw, str) and yvt_raw != "unknown":
+    yvt_raw = _dict_get_str(stmt, "yield_value_type")
+    if yvt_raw != "" and yvt_raw != "unknown":
         stmt["yield_value_type"] = _ctx_normalize_type(yvt_raw, ctx)
 
     # Resolve body in function scope
@@ -3963,12 +4041,12 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
     old_current_function: str = ctx.current_function
     ctx.scope = fn_scope
     ctx.current_params = set(arg_order)
-    ctx.current_function = str(stmt.get("name")) if isinstance(stmt.get("name"), str) else ""
-    body = stmt.get("body")
-    if isinstance(body, list):
-        for s in body:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
+    ctx.current_function = _dict_get_str(stmt, "name")
+    body = _dict_get_arr(stmt, "body")
+    for stmt_val in body:
+        body_stmt = _jv_obj(stmt_val)
+        if len(body_stmt) > 0:
+            _resolve_stmt(body_stmt, ctx)
     ctx.scope = old_scope
     ctx.current_params = old_params
     ctx.current_function = old_current_function
@@ -3989,11 +4067,11 @@ def _resolve_function_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None
             final_sig = final_sig + " | None"
         arg_types[arg_name] = final_sig
         refined_callable_params[arg_name] = final_sig
-        if isinstance(arg_types_raw, dict):
+        if len(arg_types_raw) > 0:
             arg_types_raw[arg_name] = final_sig
     if len(refined_callable_params) > 0:
-        arg_type_exprs = stmt.get("arg_type_exprs")
-        if isinstance(arg_type_exprs, dict):
+        arg_type_exprs = _dict_get_obj(stmt, "arg_type_exprs")
+        if len(arg_type_exprs) > 0:
             for arg_name2, callable_sig2 in refined_callable_params.items():
                 arg_type_exprs[arg_name2] = make_type_expr(callable_sig2)
         _refresh_callable_param_calls(body, refined_callable_params, ctx)
@@ -4006,8 +4084,8 @@ def _compute_arg_usage(arg_order: list[str], func: dict[str, JsonVal]) -> dict[s
         usage[name] = "readonly"
 
     # Collect reassigned names in function body
-    body = func.get("body")
-    if isinstance(body, list):
+    body = _dict_get_arr(func, "body")
+    if len(body) > 0:
         reassigned: set[str] = set()
         _collect_reassigned(body, reassigned)
         for name in arg_order:
@@ -4033,116 +4111,113 @@ def _collect_reassigned(stmts: list[JsonVal], out: set[str]) -> None:
         "sort",
         "reverse",
     }
-    for s in stmts:
-        if not isinstance(s, dict):
+    for stmt_val in stmts:
+        s = _jv_obj(stmt_val)
+        if len(s) == 0:
             continue
-        kind = s.get("kind")
+        kind = _dict_get_str(s, "kind")
         if kind == "Assign":
-            targets = s.get("targets")
-            if isinstance(targets, list):
-                for t in targets:
-                    if isinstance(t, dict) and t.get("kind") == "Name":
-                        name = t.get("id")
-                        if isinstance(name, str):
+            targets = _dict_get_arr(s, "targets")
+            if len(targets) > 0:
+                for target_val in targets:
+                    target_obj = _jv_obj(target_val)
+                    if len(target_obj) > 0 and _dict_get_str(target_obj, "kind") == "Name":
+                        name = _dict_get_str(target_obj, "id")
+                        if name != "":
                             out.add(name)
             else:
-                target = s.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    name2 = target.get("id")
-                    if isinstance(name2, str):
+                target = _dict_get_obj(s, "target")
+                if len(target) > 0 and _dict_get_str(target, "kind") == "Name":
+                    name2 = _dict_get_str(target, "id")
+                    if name2 != "":
                         out.add(name2)
                 _collect_mutated_base_name(target, out)
         elif kind == "AugAssign":
-            target3 = s.get("target")
-            if isinstance(target3, dict) and target3.get("kind") == "Name":
-                name3 = target3.get("id")
-                if isinstance(name3, str):
+            target3 = _dict_get_obj(s, "target")
+            if len(target3) > 0 and _dict_get_str(target3, "kind") == "Name":
+                name3 = _dict_get_str(target3, "id")
+                if name3 != "":
                     out.add(name3)
             _collect_mutated_base_name(target3, out)
         elif kind == "AnnAssign":
-            target4 = s.get("target")
-            if isinstance(target4, dict) and target4.get("kind") == "Name":
-                name4 = target4.get("id")
-                if isinstance(name4, str):
+            target4 = _dict_get_obj(s, "target")
+            if len(target4) > 0 and _dict_get_str(target4, "kind") == "Name":
+                name4 = _dict_get_str(target4, "id")
+                if name4 != "":
                     out.add(name4)
             _collect_mutated_base_name(target4, out)
         elif kind == "Expr":
-            value = s.get("value")
-            if isinstance(value, dict) and value.get("kind") == "Call":
-                func = value.get("func")
-                if isinstance(func, dict) and func.get("kind") == "Attribute":
-                    method = func.get("attr")
-                    owner = func.get("value")
-                    if isinstance(method, str) and method in mutating_methods:
+            value = _dict_get_obj(s, "value")
+            if len(value) > 0 and _dict_get_str(value, "kind") == "Call":
+                func = _dict_get_obj(value, "func")
+                if len(func) > 0 and _dict_get_str(func, "kind") == "Attribute":
+                    method = _dict_get_str(func, "attr")
+                    owner = _dict_get_obj(func, "value")
+                    if method != "" and method in mutating_methods:
                         _collect_mutated_base_name(owner, out)
 
         # Recurse into blocks
         for block_key in ["body", "orelse", "finalbody", "handlers"]:
-            block = s.get(block_key)
-            if isinstance(block, list):
+            block = _dict_get_arr(s, block_key)
+            if len(block) > 0:
                 _collect_reassigned(block, out)
 
 
 def _collect_mutated_base_name(target: JsonVal, out: set[str]) -> None:
-    if not isinstance(target, dict):
+    target_obj = _jv_obj(target)
+    if len(target_obj) == 0:
         return
-    kind = target.get("kind")
+    kind = _dict_get_str(target_obj, "kind")
     if kind == "Name":
-        name0 = target.get("id")
-        if isinstance(name0, str):
+        name0 = _dict_get_str(target_obj, "id")
+        if name0 != "":
             out.add(name0)
     elif kind == "Subscript":
-        value = target.get("value")
-        if isinstance(value, dict) and value.get("kind") == "Name":
-            name = value.get("id")
-            if isinstance(name, str):
+        value = _dict_get_obj(target_obj, "value")
+        if len(value) > 0 and _dict_get_str(value, "kind") == "Name":
+            name = _dict_get_str(value, "id")
+            if name != "":
                 out.add(name)
     elif kind == "Attribute":
-        value2 = target.get("value")
-        if isinstance(value2, dict) and value2.get("kind") == "Name":
-            name2 = value2.get("id")
-            if isinstance(name2, str):
+        value2 = _dict_get_obj(target_obj, "value")
+        if len(value2) > 0 and _dict_get_str(value2, "kind") == "Name":
+            name2 = _dict_get_str(value2, "id")
+            if name2 != "":
                 out.add(name2)
 
 
 def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Resolve a ClassDef."""
-    name_val = stmt.get("name")
-    class_name: str = str(name_val) if isinstance(name_val, str) else ""
+    class_name: str = _dict_get_str(stmt, "name")
     decorators = _class_decorators(stmt)
     if len(decorators) > 0:
-        stmt["decorators"] = decorators
+        stmt["decorators"] = _json_str_list(decorators)
 
     # Add class_storage_hint if not present
     if "class_storage_hint" not in stmt:
         is_extern_class: bool = "extern" in decorators
-        ft_check: JsonVal = stmt.get("field_types")
-        has_fields: bool = bool(ft_check) if isinstance(ft_check, dict) else False
+        ft_check = _dict_get_obj(stmt, "field_types")
+        has_fields: bool = len(ft_check) > 0
         if is_extern_class and not has_fields:
             # @extern class with no fields → opaque (raw pointer, no RC)
             stmt["class_storage_hint"] = "opaque"
-            meta_obj = stmt.get("meta")
-            meta_dict: dict[str, JsonVal] = {}
-            if isinstance(meta_obj, dict):
-                for meta_key, meta_value in meta_obj.items():
-                    if isinstance(meta_key, str):
-                        meta_dict[meta_key] = meta_value
-            meta_dict["opaque_v1"] = {"schema_version": 1}
+            meta_dict = _dict_get_obj(stmt, "meta")
+            opaque_meta: dict[str, JsonVal] = {"schema_version": 1}
+            meta_dict["opaque_v1"] = opaque_meta
             stmt["meta"] = meta_dict
         else:
-            base_val = stmt.get("base")
-            has_base: bool = base_val is not None and isinstance(base_val, str) and base_val != ""
-            is_dataclass: bool = stmt.get("dataclass") is True
+            base_str = _dict_get_str(stmt, "base")
+            has_base: bool = base_str != ""
+            is_dataclass: bool = _dict_get_bool(stmt, "dataclass")
             # Check for __init__ method
             has_init: bool = False
-            cls_body = stmt.get("body")
-            if isinstance(cls_body, list):
-                for item in cls_body:
-                    if isinstance(item, dict) and item.get("kind") == "FunctionDef" and item.get("name") == "__init__":
-                        has_init = True
-                        break
+            cls_body = _dict_get_arr(stmt, "body")
+            for item_val in cls_body:
+                item = _jv_obj(item_val)
+                if len(item) > 0 and _dict_get_str(item, "kind") == "FunctionDef" and _dict_get_str(item, "name") == "__init__":
+                    has_init = True
+                    break
             # Enum/IntEnum/IntFlag bases are value types
-            base_str: str = str(base_val) if isinstance(base_val, str) else ""
             is_enum_base: bool = base_str in ("Enum", "IntEnum", "IntFlag")
             # base (non-enum), __init__, or @dataclass → "ref", otherwise "value"
             if (has_base and not is_enum_base) or has_init or is_dataclass:
@@ -4151,28 +4226,25 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
                 stmt["class_storage_hint"] = "value"
 
     # Normalize and refresh field_types from the prescanned class signature.
-    ft_raw_any = stmt.get("field_types")
-    ft_raw: dict[str, JsonVal] = ft_raw_any if isinstance(ft_raw_any, dict) else {}
-    if not isinstance(ft_raw_any, dict):
-        stmt["field_types"] = ft_raw
-    else:
-        for fk, fv in ft_raw.items():
-            if isinstance(fv, str):
-                ft_raw[fk] = _ctx_normalize_type(fv, ctx)
+    ft_raw = _dict_get_obj(stmt, "field_types")
+    stmt["field_types"] = ft_raw
+    for fk, fv in ft_raw.items():
+        field_type = _jv_str(fv)
+        if field_type != "":
+            ft_raw[fk] = _ctx_normalize_type(field_type, ctx)
 
     cls_sig_existing: ClassSig | None = ctx.module_classes.get(class_name)
     if cls_sig_existing is not None:
-        for fname, ftype in cls_sig_existing.fields.items():
-            ft_raw[fname] = _ctx_normalize_type(ftype, ctx)
+        pass
 
     # Collect fields from body
     cls_scope: Scope = ctx.scope.child()
     cls_scope.define("self", class_name)
 
     # Define class fields in scope
-    cls_sig: ClassSig | None = ctx.module_classes.get(class_name)
-    if cls_sig is not None:
-        for fname, ftype in cls_sig.fields.items():
+    for fname, ftype_val in ft_raw.items():
+        ftype = _jv_str(ftype_val)
+        if ftype != "":
             cls_scope.define(fname, ftype)
 
     old_scope: Scope = ctx.scope
@@ -4183,66 +4255,64 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     ctx.current_class = class_name
 
     # First pass: define class-level variables in scope
-    body = stmt.get("body")
-    if isinstance(body, list):
-        for item in body:
-            if isinstance(item, dict):
-                ik: str = str(item.get("kind", ""))
-                if ik == "AnnAssign":
-                    ann = item.get("annotation")
-                    if isinstance(ann, str):
-                        tgt = item.get("target")
-                        if isinstance(tgt, dict) and tgt.get("kind") == "Name":
-                            vn = tgt.get("id")
-                            if isinstance(vn, str):
-                                cls_scope.define(vn, _ctx_normalize_type(ann, ctx))
-                elif ik == "Assign":
-                    tgt2 = item.get("target")
-                    if isinstance(tgt2, dict) and tgt2.get("kind") == "Name":
-                        vn2 = tgt2.get("id")
-                        if isinstance(vn2, str):
-                            # Will be resolved in second pass
-                            pass
+    body = _dict_get_arr(stmt, "body")
+    for item_val in body:
+        item = _jv_obj(item_val)
+        if len(item) == 0:
+            continue
+        ik: str = _dict_get_str(item, "kind")
+        if ik == "AnnAssign":
+            ann = _dict_get_str(item, "annotation")
+            tgt = _dict_get_obj(item, "target")
+            if ann != "" and len(tgt) > 0 and _dict_get_str(tgt, "kind") == "Name":
+                vn = _dict_get_str(tgt, "id")
+                if vn != "":
+                    cls_scope.define(vn, _ctx_normalize_type(ann, ctx))
+        elif ik == "Assign":
+            tgt2 = _dict_get_obj(item, "target")
+            if len(tgt2) > 0 and _dict_get_str(tgt2, "kind") == "Name":
+                # Will be resolved in second pass
+                pass
 
     # Second pass: resolve all statements
-    if isinstance(body, list):
-        for item in body:
-            if isinstance(item, dict):
-                _resolve_stmt(item, ctx)
+    for item_val2 in body:
+        item2 = _jv_obj(item_val2)
+        if len(item2) > 0:
+            _resolve_stmt(item2, ctx)
     _rewrite_trait_helper_call_signatures(stmt, ctx)
     ctx.scope = old_scope
     ctx.in_class = old_in_class
     ctx.current_class = old_current_class
 
-    if cls_sig_existing is not None and isinstance(body, list):
-        for item in body:
-            if not isinstance(item, dict):
+    if cls_sig_existing is not None:
+        for item_val3 in body:
+            item = _jv_obj(item_val3)
+            if len(item) == 0:
                 continue
-            ik: str = str(item.get("kind", ""))
+            ik: str = _dict_get_str(item, "kind")
             if ik == "AnnAssign":
-                target = item.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    field_name = target.get("id")
-                    field_type = item.get("decl_type")
-                    if isinstance(field_name, str) and isinstance(field_type, str) and field_type != "" and field_type != "unknown":
+                target = _dict_get_obj(item, "target")
+                if len(target) > 0 and _dict_get_str(target, "kind") == "Name":
+                    field_name = _dict_get_str(target, "id")
+                    field_type = _dict_get_str(item, "decl_type")
+                    if field_name != "" and field_type != "" and field_type != "unknown":
                         cls_sig_existing.fields[field_name] = _ctx_normalize_type(field_type, ctx)
                         ft_raw[field_name] = cls_sig_existing.fields[field_name]
-            elif ik == "FunctionDef" and item.get("name") == "__init__":
-                init_body = item.get("body")
-                if not isinstance(init_body, list):
-                    continue
-                for init_stmt in init_body:
-                    if not isinstance(init_stmt, dict):
+            elif ik == "FunctionDef" and _dict_get_str(item, "name") == "__init__":
+                init_body = _dict_get_arr(item, "body")
+                for init_stmt_val in init_body:
+                    init_stmt = _jv_obj(init_stmt_val)
+                    if len(init_stmt) == 0:
                         continue
-                    target2 = init_stmt.get("target")
-                    if not isinstance(target2, dict) or target2.get("kind") != "Attribute":
+                    target2 = _dict_get_obj(init_stmt, "target")
+                    if len(target2) == 0 or _dict_get_str(target2, "kind") != "Attribute":
                         continue
-                    owner = target2.get("value")
-                    if not isinstance(owner, dict) or owner.get("kind") != "Name" or owner.get("id") != "self":
+                    owner = _dict_get_obj(target2, "value")
+                    if len(owner) == 0 or _dict_get_str(owner, "kind") != "Name" or _dict_get_str(owner, "id") != "self":
                         continue
-                    field_name2 = target2.get("attr")
-                    field_type2 = target2.get("resolved_type")
-                    if isinstance(field_name2, str) and isinstance(field_type2, str) and field_type2 != "" and field_type2 != "unknown":
+                    field_name2 = _dict_get_str(target2, "attr")
+                    field_type2 = _dict_get_str(target2, "resolved_type")
+                    if field_name2 != "" and field_type2 != "" and field_type2 != "unknown":
                         if _has_inherited_field(class_name, field_name2, ctx):
                             continue
                         cls_sig_existing.fields[field_name2] = _ctx_normalize_type(field_type2, ctx)
@@ -4253,15 +4323,14 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
 
 def _rewrite_trait_helper_call_signatures(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Normalize local trait helper __call__ signatures away from object."""
-    class_name = str(stmt.get("name", "")) if isinstance(stmt.get("name"), str) else ""
+    class_name = _dict_get_str(stmt, "name")
     if class_name == "":
         return
-    body = stmt.get("body")
-    if not isinstance(body, list):
-        return
+    body = _dict_get_arr(stmt, "body")
     cls_sig = ctx.module_classes.get(class_name)
-    for item in body:
-        if not isinstance(item, dict) or item.get("kind") != "FunctionDef" or item.get("name") != "__call__":
+    for item_val in body:
+        item = _jv_obj(item_val)
+        if len(item) == 0 or _dict_get_str(item, "kind") != "FunctionDef" or _dict_get_str(item, "name") != "__call__":
             continue
         if _rewrite_identity_decorator_call(item, cls_sig):
             continue
@@ -4269,27 +4338,28 @@ def _rewrite_trait_helper_call_signatures(stmt: dict[str, JsonVal], ctx: Resolve
 
 
 def _rewrite_identity_decorator_call(func: dict[str, JsonVal], cls_sig: ClassSig | None) -> bool:
-    arg_types = func.get("arg_types")
-    arg_order = func.get("arg_order")
-    body = func.get("body")
-    if not isinstance(arg_types, dict) or not isinstance(arg_order, list) or not isinstance(body, list):
-        return False
+    arg_types = _dict_get_obj(func, "arg_types")
+    arg_order_raw = _dict_get_arr(func, "arg_order")
+    body = _dict_get_arr(func, "body")
+    arg_order: list[str] = []
+    for arg_name_val in arg_order_raw:
+        arg_name = _jv_str(arg_name_val)
+        if arg_name != "":
+            arg_order.append(arg_name)
     if len(arg_order) != 2:
         return False
     param_name = arg_order[1]
-    if not isinstance(param_name, str):
+    if _dict_get_str(arg_types, param_name) != "object":
         return False
-    if str(arg_types.get(param_name, "")) != "object":
-        return False
-    if str(func.get("return_type", "")) != "object":
+    if _dict_get_str(func, "return_type") != "object":
         return False
     if len(body) != 1:
         return False
-    ret_stmt = body[0]
-    if not isinstance(ret_stmt, dict) or ret_stmt.get("kind") != "Return":
+    ret_stmt = _jv_obj(body[0])
+    if len(ret_stmt) == 0 or _dict_get_str(ret_stmt, "kind") != "Return":
         return False
-    ret_value = ret_stmt.get("value")
-    if not isinstance(ret_value, dict) or ret_value.get("kind") != "Name" or ret_value.get("id") != param_name:
+    ret_value = _dict_get_obj(ret_stmt, "value")
+    if len(ret_value) == 0 or _dict_get_str(ret_value, "kind") != "Name" or _dict_get_str(ret_value, "id") != param_name:
         return False
     arg_types[param_name] = "T"
     func["return_type"] = "T"
@@ -4305,21 +4375,21 @@ def _rewrite_identity_decorator_call(func: dict[str, JsonVal], cls_sig: ClassSig
 
 
 def _rewrite_implements_factory_call(func: dict[str, JsonVal], cls_sig: ClassSig | None) -> bool:
-    if str(func.get("return_type", "")) != "object":
+    if _dict_get_str(func, "return_type") != "object":
         return False
-    body = func.get("body")
-    if not isinstance(body, list) or len(body) != 1:
+    body = _dict_get_arr(func, "body")
+    if len(body) != 1:
         return False
-    ret_stmt = body[0]
-    if not isinstance(ret_stmt, dict) or ret_stmt.get("kind") != "Return":
+    ret_stmt = _jv_obj(body[0])
+    if len(ret_stmt) == 0 or _dict_get_str(ret_stmt, "kind") != "Return":
         return False
-    ret_value = ret_stmt.get("value")
-    if not isinstance(ret_value, dict) or ret_value.get("kind") != "Call":
+    ret_value = _dict_get_obj(ret_stmt, "value")
+    if len(ret_value) == 0 or _dict_get_str(ret_value, "kind") != "Call":
         return False
-    callee = ret_value.get("func")
-    if not isinstance(callee, dict) or callee.get("kind") != "Name":
+    callee = _dict_get_obj(ret_value, "func")
+    if len(callee) == 0 or _dict_get_str(callee, "kind") != "Name":
         return False
-    callee_name = str(callee.get("id", "")) if isinstance(callee.get("id"), str) else ""
+    callee_name = _dict_get_str(callee, "id")
     if callee_name == "":
         return False
     func["return_type"] = callee_name
@@ -4333,107 +4403,121 @@ def _rewrite_implements_factory_call(func: dict[str, JsonVal], cls_sig: ClassSig
 
 def _resolve_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Resolve an Assign statement."""
-    value = stmt.get("value")
+    ctx.current_function = ctx.current_function
+    value = _dict_get_obj(stmt, "value")
     vt: str = "unknown"
-    if isinstance(value, dict):
+    if len(value) > 0:
         vt = _resolve_expr(value, ctx)
 
     # Resolve target(s) and add decl_type
     # If variable already exists in scope → readonly_ref + resolved type
     # If new variable → value + "unknown"
-    targets = stmt.get("targets")
-    if isinstance(targets, list):
-        for t in targets:
-            if isinstance(t, dict):
-                if t.get("kind") == "Name":
-                    name_val = t.get("id")
-                    if isinstance(name_val, str):
-                        existing: str = ctx.scope.lookup(name_val)
-                        if isinstance(value, dict) and existing != "unknown":
-                            _apply_collection_type_hint(value, existing, ctx)
-                            vt = str(value.get("resolved_type", vt))
-                        if existing != "unknown":
-                            # Re-assignment: keep resolved type
-                            t["resolved_type"] = existing
-                            t["borrow_kind"] = "readonly_ref"
-                        else:
-                            t["resolved_type"] = "unknown"
-                        ctx.scope.define(name_val, vt)
-                        if isinstance(value, dict) and value.get("kind") == "Lambda":
-                            ctx.scope.bind_lambda(name_val, value)
-                        else:
-                            ctx.scope.clear_lambda(name_val)
-                elif t.get("kind") == "Tuple":
-                    _resolve_expr(t, ctx)
-                    # Define tuple element variables
-                    elems = t.get("elements")
-                    if isinstance(elems, list):
-                        tup_types: list[str] = _tuple_assign_element_types(t, vt, ctx)
-                        for idx_t, elem in enumerate(elems):
-                            if isinstance(elem, dict) and elem.get("kind") == "Name":
-                                elem_name = elem.get("id")
-                                if isinstance(elem_name, str):
-                                    et: str = tup_types[idx_t] if idx_t < len(tup_types) else "unknown"
-                                    elem["resolved_type"] = et
-                                    ctx.scope.define(elem_name, et)
-                else:
-                    tt = _resolve_expr(t, ctx)
-                    if isinstance(value, dict) and tt != "unknown":
-                        _apply_collection_type_hint(value, tt, ctx)
-                        vt = str(value.get("resolved_type", vt))
+    targets = _dict_get_arr(stmt, "targets")
+    if len(targets) > 0:
+        for target_val in targets:
+            t = _jv_obj(target_val)
+            if len(t) == 0:
+                continue
+            if _dict_get_str(t, "kind") == "Name":
+                name_val = _dict_get_str(t, "id")
+                if name_val != "":
+                    existing: str = ctx.scope.lookup(name_val)
+                    if len(value) > 0 and existing != "unknown":
+                        _apply_collection_type_hint(value, existing, ctx)
+                        vt = _dict_get_str(value, "resolved_type")
+                        if vt == "":
+                            vt = existing
+                    if existing != "unknown":
+                        # Re-assignment: keep resolved type
+                        t["resolved_type"] = existing
+                        t["borrow_kind"] = "readonly_ref"
+                    else:
+                        t["resolved_type"] = "unknown"
+                    ctx.scope.define(name_val, vt)
+                    if len(value) > 0 and _dict_get_str(value, "kind") == "Lambda":
+                        ctx.scope.bind_lambda(name_val, value)
+                    else:
+                        ctx.scope.clear_lambda(name_val)
+            elif _dict_get_str(t, "kind") == "Tuple":
+                _resolve_expr(t, ctx)
+                elems = _dict_get_arr(t, "elements")
+                tup_types: list[str] = _tuple_assign_element_types(t, vt, ctx)
+                idx_t = 0
+                for elem_val in elems:
+                    elem = _jv_obj(elem_val)
+                    if len(elem) > 0 and _dict_get_str(elem, "kind") == "Name":
+                        elem_name = _dict_get_str(elem, "id")
+                        if elem_name != "":
+                            et: str = tup_types[idx_t] if idx_t < len(tup_types) else "unknown"
+                            elem["resolved_type"] = et
+                            ctx.scope.define(elem_name, et)
+                    idx_t += 1
+            else:
+                tt = _resolve_expr(t, ctx)
+                if len(value) > 0 and tt != "unknown":
+                    _apply_collection_type_hint(value, tt, ctx)
+                    vt = _dict_get_str(value, "resolved_type")
+                    if vt == "":
+                        vt = tt
     else:
-        target = stmt.get("target")
-        if isinstance(target, dict):
-            if target.get("kind") == "Name":
-                name_val2 = target.get("id")
-                if isinstance(name_val2, str):
+        target = _dict_get_obj(stmt, "target")
+        if len(target) > 0:
+            if _dict_get_str(target, "kind") == "Name":
+                name_val2 = _dict_get_str(target, "id")
+                if name_val2 != "":
                     existing2: str = ctx.scope.lookup(name_val2)
-                    if isinstance(value, dict) and existing2 != "unknown":
+                    if len(value) > 0 and existing2 != "unknown":
                         _apply_collection_type_hint(value, existing2, ctx)
-                        vt = str(value.get("resolved_type", vt))
+                        vt = _dict_get_str(value, "resolved_type")
+                        if vt == "":
+                            vt = existing2
                     if existing2 != "unknown":
                         target["resolved_type"] = existing2
                         target["borrow_kind"] = "readonly_ref"
                     else:
                         target["resolved_type"] = "unknown"
                     ctx.scope.define(name_val2, vt)
-                    if isinstance(value, dict) and value.get("kind") == "Lambda":
+                    if len(value) > 0 and _dict_get_str(value, "kind") == "Lambda":
                         ctx.scope.bind_lambda(name_val2, value)
                     else:
                         ctx.scope.clear_lambda(name_val2)
-            elif target.get("kind") == "Tuple":
+            elif _dict_get_str(target, "kind") == "Tuple":
                 _resolve_expr(target, ctx)
-                elems2 = target.get("elements")
-                if isinstance(elems2, list):
-                    tup_types2: list[str] = _tuple_assign_element_types(target, vt, ctx)
-                    for idx_t2, elem2 in enumerate(elems2):
-                        if isinstance(elem2, dict) and elem2.get("kind") == "Name":
-                            elem_name2 = elem2.get("id")
-                            if isinstance(elem_name2, str):
-                                et2: str = tup_types2[idx_t2] if idx_t2 < len(tup_types2) else "unknown"
-                                elem2["resolved_type"] = et2
-                                ctx.scope.define(elem_name2, et2)
+                elems2 = _dict_get_arr(target, "elements")
+                tup_types2: list[str] = _tuple_assign_element_types(target, vt, ctx)
+                idx_t2 = 0
+                for elem_val2 in elems2:
+                    elem2 = _jv_obj(elem_val2)
+                    if len(elem2) > 0 and _dict_get_str(elem2, "kind") == "Name":
+                        elem_name2 = _dict_get_str(elem2, "id")
+                        if elem_name2 != "":
+                            et2: str = tup_types2[idx_t2] if idx_t2 < len(tup_types2) else "unknown"
+                            elem2["resolved_type"] = et2
+                            ctx.scope.define(elem_name2, et2)
+                    idx_t2 += 1
             else:
                 target_type = _resolve_expr(target, ctx)
-                if isinstance(value, dict) and target_type != "unknown":
+                if len(value) > 0 and target_type != "unknown":
                     _apply_collection_type_hint(value, target_type, ctx)
-                    vt = str(value.get("resolved_type", vt))
+                    vt = _dict_get_str(value, "resolved_type")
+                    if vt == "":
+                        vt = target_type
 
     # Add decl_type for declarations (declare=true)
-    declare_val = stmt.get("declare")
-    if declare_val is True:
+    if _dict_get_bool(stmt, "declare"):
         if vt != "unknown":
             stmt["decl_type"] = vt
-        if isinstance(value, dict):
+        if len(value) > 0:
             stmt["declare_init"] = True
 
 
 def _resolve_ann_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Resolve an AnnAssign (annotated assignment)."""
+    ctx.current_function = ctx.current_function
     # Normalize annotation
-    ann_raw = stmt.get("annotation")
+    ann_raw = _dict_get_str(stmt, "annotation")
     ann_type: str = "unknown"
-    if isinstance(ann_raw, str):
+    if ann_raw != "":
         ann_type = _ctx_normalize_type(ann_raw, ctx)
         stmt["annotation"] = ann_type
 
@@ -4443,25 +4527,25 @@ def _resolve_ann_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     stmt["decl_type_expr"] = make_type_expr(ann_type)
 
     # Resolve value
-    value = stmt.get("value")
-    if isinstance(value, dict):
+    value = _dict_get_obj(stmt, "value")
+    if len(value) > 0:
         _resolve_expr(value, ctx)
         if ann_type != "":
             _apply_collection_type_hint(value, ann_type, ctx)
 
     # Resolve target
-    target = stmt.get("target")
-    if isinstance(target, dict) and target.get("kind") == "Name":
-        name_val = target.get("id")
-        if isinstance(name_val, str):
+    target = _dict_get_obj(stmt, "target")
+    if len(target) > 0 and _dict_get_str(target, "kind") == "Name":
+        name_val = _dict_get_str(target, "id")
+        if name_val != "":
             ctx.scope.define(name_val, ann_type)
             target["resolved_type"] = ann_type
             target["type_expr"] = make_type_expr(ann_type)
-            if isinstance(value, dict) and value.get("kind") == "Lambda":
+            if len(value) > 0 and _dict_get_str(value, "kind") == "Lambda":
                 ctx.scope.bind_lambda(name_val, value)
             else:
                 ctx.scope.clear_lambda(name_val)
-    elif isinstance(target, dict) and target.get("kind") == "Attribute":
+    elif len(target) > 0 and _dict_get_str(target, "kind") == "Attribute":
         # self.field = ... — resolve the receiver (self) and add type_expr
         _resolve_expr(target, ctx)
         if ann_type != "unknown":
@@ -4470,21 +4554,19 @@ def _resolve_ann_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
 
 def _resolve_aug_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Resolve an AugAssign (augmented assignment like +=)."""
-    target = stmt.get("target")
-    value = stmt.get("value")
+    ctx.current_function = ctx.current_function
+    target = _dict_get_obj(stmt, "target")
+    value = _dict_get_obj(stmt, "value")
 
     tt: str = "unknown"
-    if isinstance(target, dict):
+    if len(target) > 0:
         tt = _resolve_expr(target, ctx)
         # AugAssign target keeps its resolved_type (it reads the current value)
-    if isinstance(value, dict):
+    if len(value) > 0:
         _resolve_expr(value, ctx)
 
     # Set decl_type for Name targets, null for Attribute targets (self.x)
-    tgt_kind: str = ""
-    if isinstance(target, dict):
-        tk_v = target.get("kind")
-        tgt_kind = str(tk_v) if isinstance(tk_v, str) else ""
+    tgt_kind = _dict_get_str(target, "kind")
     if tgt_kind == "Attribute":
         # self.x: decl_type = null
         stmt["decl_type"] = None
@@ -4493,14 +4575,15 @@ def _resolve_aug_assign(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
 
 
 def _resolve_if(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
-    test = stmt.get("test")
-    if isinstance(test, dict):
+    ctx.current_function = ctx.current_function
+    test = _dict_get_obj(stmt, "test")
+    if len(test) > 0:
         _resolve_expr(test, ctx)
     body_narrow = _resolve_guard_narrowing_from_expr(test)
     orelse_narrow = _resolve_invert_guard_narrowing_from_expr(test)
-    body = stmt.get("body")
+    body = _dict_get_arr(stmt, "body")
     _resolve_stmt_list_with_narrowing(body, ctx, body_narrow)
-    orelse = stmt.get("orelse")
+    orelse = _dict_get_arr(stmt, "orelse")
     _resolve_stmt_list_with_narrowing(orelse, ctx, orelse_narrow)
     body_exits = _resolver_block_guarantees_exit(body)
     orelse_exits = _resolver_block_guarantees_exit(orelse)
@@ -4513,31 +4596,33 @@ def _resolve_if(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
 
 
 def _resolve_while(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
-    test = stmt.get("test")
-    if isinstance(test, dict):
+    ctx.current_function = ctx.current_function
+    test = _dict_get_obj(stmt, "test")
+    if len(test) > 0:
         _resolve_expr(test, ctx)
-    body = stmt.get("body")
+    body = _dict_get_arr(stmt, "body")
     _resolve_stmt_list_with_narrowing(body, ctx, _resolve_guard_narrowing_from_expr(test))
-    orelse = stmt.get("orelse")
-    if isinstance(orelse, list):
-        for s in orelse:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
+    orelse = _dict_get_arr(stmt, "orelse")
+    for stmt_val in orelse:
+        orelse_stmt = _jv_obj(stmt_val)
+        if len(orelse_stmt) > 0:
+            _resolve_stmt(orelse_stmt, ctx)
 
 
 def _resolve_for(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Resolve a For statement — may convert to ForRange."""
-    iter_expr = stmt.get("iter")
-    target = stmt.get("target")
+    ctx.current_function = ctx.current_function
+    iter_expr = _dict_get_obj(stmt, "iter")
+    target = _dict_get_obj(stmt, "target")
 
     # Check for range() conversion
-    if isinstance(iter_expr, dict) and _is_range_call(iter_expr):
+    if len(iter_expr) > 0 and _is_range_call(iter_expr):
         _convert_for_to_forrange(stmt, iter_expr, ctx)
         return
 
     # Regular for loop
     it: str = "unknown"
-    if isinstance(iter_expr, dict):
+    if len(iter_expr) > 0:
         it = _resolve_expr(iter_expr, ctx)
 
     # Determine target type from iterable
@@ -4577,81 +4662,103 @@ def _resolve_for(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     stmt["iter_element_type"] = elem_type
 
     # Add iterable traits to iter expression
-    if isinstance(iter_expr, dict):
+    if len(iter_expr) > 0:
         iter_expr["iterable_trait"] = "yes"
         iter_expr["iter_protocol"] = "static_range"
         iter_expr["iter_element_type"] = elem_type
 
     # Define loop variable
-    if isinstance(target, dict) and target.get("kind") == "Name":
-        var_name = target.get("id")
-        if isinstance(var_name, str):
+    if len(target) > 0 and _dict_get_str(target, "kind") == "Name":
+        var_name = _dict_get_str(target, "id")
+        if var_name != "":
             ctx.scope.define(var_name, elem_type)
             target["resolved_type"] = elem_type
-    elif isinstance(target, dict) and target.get("kind") == "Tuple":
+    elif len(target) > 0 and _dict_get_str(target, "kind") == "Tuple":
         # Tuple unpacking: for i, ch in enumerate(s)
         # elem_type should be like "tuple[int64, str]"
-        tup_args: list[str] = extract_type_args(elem_type) if elem_type.startswith("tuple[") else []
+        tup_args: list[str] = []
+        if elem_type.startswith("tuple["):
+            tup_args = extract_type_args(elem_type)
         target["resolved_type"] = elem_type
-        elems = target.get("elements")
-        if isinstance(elems, list):
-            for i_el, el in enumerate(elems):
-                if isinstance(el, dict) and el.get("kind") == "Name":
-                    el_name = el.get("id")
-                    if isinstance(el_name, str):
-                        el_type: str = tup_args[i_el] if i_el < len(tup_args) else "unknown"
-                        ctx.scope.define(el_name, el_type)
-                        el["resolved_type"] = el_type
-    elif isinstance(target, dict):
+        elems = _dict_get_arr(target, "elements")
+        i_el = 0
+        for elem_val in elems:
+            el = _jv_obj(elem_val)
+            if len(el) > 0 and _dict_get_str(el, "kind") == "Name":
+                el_name = _dict_get_str(el, "id")
+                if el_name != "":
+                    el_type: str = tup_args[i_el] if i_el < len(tup_args) else "unknown"
+                    ctx.scope.define(el_name, el_type)
+                    el["resolved_type"] = el_type
+            i_el += 1
+    elif len(target) > 0:
         _resolve_expr(target, ctx)
 
     # Resolve body
-    body = stmt.get("body")
-    if isinstance(body, list):
-        for s in body:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
-    orelse = stmt.get("orelse")
-    if isinstance(orelse, list):
-        for s in orelse:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
+    body = _dict_get_arr(stmt, "body")
+    for stmt_val in body:
+        body_stmt = _jv_obj(stmt_val)
+        if len(body_stmt) > 0:
+            _resolve_stmt(body_stmt, ctx)
+    orelse = _dict_get_arr(stmt, "orelse")
+    for stmt_val2 in orelse:
+        orelse_stmt = _jv_obj(stmt_val2)
+        if len(orelse_stmt) > 0:
+            _resolve_stmt(orelse_stmt, ctx)
 
 
 def _convert_call_to_range_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -> None:
-    """Convert a range() Call to a RangeExpr node (in-place)."""
-    args = expr.get("args")
-    if not isinstance(args, list):
-        return
+    expr = expr
+    ctx = ctx
+    """Rewrite range(...) Call node into a normalized RangeExpr node in-place."""
+    args = _dict_get_arr(expr, "args")
+    for arg_val in args:
+        arg = _jv_obj(arg_val)
+        if len(arg) > 0:
+            _resolve_expr(arg, ctx)
 
-    for a in args:
-        if isinstance(a, dict):
-            _resolve_expr(a, ctx)
-
-    range_func = expr.get("func")
+    range_func = _dict_get_obj(expr, "func")
     source_span: dict[str, JsonVal] = _node_dict_or_empty(expr.get("source_span"))
-    if isinstance(range_func, dict):
+    if len(range_func) > 0:
         source_span = _node_dict_or_empty(range_func.get("source_span"))
 
+    start: dict[str, JsonVal] = {}
+    stop: dict[str, JsonVal] = {}
+    step: dict[str, JsonVal] = {}
     if len(args) == 1:
-        start: dict[str, JsonVal] = {
-            "kind": "Constant", "source_span": source_span,
-            "resolved_type": "int64", "casts": [], "borrow_kind": "value",
-            "repr": "0", "value": 0,
+        empty_casts0: list[JsonVal] = []
+        start = {
+            "kind": "Constant",
+            "source_span": source_span,
+            "resolved_type": "int64",
+            "casts": empty_casts0,
+            "borrow_kind": "value",
+            "repr": "0",
+            "value": 0,
         }
         stop = _node_dict_or_empty(args[0])
-        step: dict[str, JsonVal] = {
-            "kind": "Constant", "source_span": source_span,
-            "resolved_type": "int64", "casts": [], "borrow_kind": "value",
-            "repr": "1", "value": 1,
+        empty_casts1: list[JsonVal] = []
+        step = {
+            "kind": "Constant",
+            "source_span": source_span,
+            "resolved_type": "int64",
+            "casts": empty_casts1,
+            "borrow_kind": "value",
+            "repr": "1",
+            "value": 1,
         }
     elif len(args) == 2:
         start = _node_dict_or_empty(args[0])
         stop = _node_dict_or_empty(args[1])
+        empty_casts2: list[JsonVal] = []
         step = {
-            "kind": "Constant", "source_span": source_span,
-            "resolved_type": "int64", "casts": [], "borrow_kind": "value",
-            "repr": "1", "value": 1,
+            "kind": "Constant",
+            "source_span": source_span,
+            "resolved_type": "int64",
+            "casts": empty_casts2,
+            "borrow_kind": "value",
+            "repr": "1",
+            "value": 1,
         }
     elif len(args) >= 3:
         start = _node_dict_or_empty(args[0])
@@ -4660,26 +4767,27 @@ def _convert_call_to_range_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -
     else:
         return
 
-    # Determine range_mode
     range_mode: str = "ascending"
-    if isinstance(step, dict) and step.get("kind") == "Constant":
-        sv = step.get("value")
-        if isinstance(sv, int):
+    if _dict_get_str(step, "kind") == "Constant":
+        sv: int | None = None
+        if "value" in step:
+            sv = _jv_int(step["value"])
+        if sv is not None:
             if sv < 0:
                 range_mode = "descending"
             elif sv != 1:
                 range_mode = "dynamic"
-    elif isinstance(step, dict) and step.get("kind") != "Constant":
+    elif _dict_get_str(step, "kind") != "":
         range_mode = "dynamic"
 
-    # Replace the Call node in-place with RangeExpr
     orig_span: dict[str, JsonVal] = _node_dict_or_empty(expr.get("source_span"))
-    orig_repr = expr.get("repr", "")
+    orig_repr = _dict_get_str(expr, "repr")
     expr.clear()
     expr["kind"] = "RangeExpr"
     expr["source_span"] = orig_span
     expr["resolved_type"] = "list[int64]"
-    expr["casts"] = []
+    empty_casts: list[JsonVal] = []
+    expr["casts"] = empty_casts
     expr["borrow_kind"] = "value"
     expr["repr"] = orig_repr
     expr["start"] = start
@@ -4687,15 +4795,14 @@ def _convert_call_to_range_expr(expr: dict[str, JsonVal], ctx: ResolveContext) -
     expr["step"] = step
     expr["range_mode"] = range_mode
 
-
 def _is_range_call(expr: dict[str, JsonVal]) -> bool:
     """Check if expr is a call to range()."""
-    if expr.get("kind") != "Call":
+    if _dict_get_str(expr, "kind") != "Call":
         return False
-    func = expr.get("func")
-    if not isinstance(func, dict):
+    func = _dict_get_obj(expr, "func")
+    if len(func) == 0:
         return False
-    return func.get("kind") == "Name" and func.get("id") == "range"
+    return _dict_get_str(func, "kind") == "Name" and _dict_get_str(func, "id") == "range"
 
 
 def _convert_for_to_forrange(
@@ -4704,37 +4811,41 @@ def _convert_for_to_forrange(
     ctx: ResolveContext,
 ) -> None:
     """Convert for..in range() to ForRange node."""
-    args = iter_call.get("args")
-    if not isinstance(args, list):
+    ctx.current_function = ctx.current_function
+    args = _dict_get_arr(iter_call, "args")
+    if len(args) == 0:
         return
 
     # Resolve range arguments
-    for a in args:
-        if isinstance(a, dict):
-            _resolve_expr(a, ctx)
+    for arg_val in args:
+        arg = _jv_obj(arg_val)
+        if len(arg) > 0:
+            _resolve_expr(arg, ctx)
 
     # Use the range() function name span for synthesized constants
-    range_func = iter_call.get("func")
+    range_func = _dict_get_obj(iter_call, "func")
     source_span: dict[str, JsonVal] = _node_dict_or_empty(iter_call.get("source_span"))
-    if isinstance(range_func, dict):
+    if len(range_func) > 0:
         source_span = _node_dict_or_empty(range_func.get("source_span"))
 
     if len(args) == 1:
+        empty_casts0: list[JsonVal] = []
         start_node: dict[str, JsonVal] = {
             "kind": "Constant",
             "source_span": source_span,
             "resolved_type": "int64",
-            "casts": [],
+            "casts": empty_casts0,
             "borrow_kind": "value",
             "repr": "0",
             "value": 0,
         }
         stop_node = _node_dict_or_empty(args[0])
+        empty_casts1: list[JsonVal] = []
         step_node: dict[str, JsonVal] = {
             "kind": "Constant",
             "source_span": source_span,
             "resolved_type": "int64",
-            "casts": [],
+            "casts": empty_casts1,
             "borrow_kind": "value",
             "repr": "1",
             "value": 1,
@@ -4742,11 +4853,12 @@ def _convert_for_to_forrange(
     elif len(args) == 2:
         start_node = _node_dict_or_empty(args[0])
         stop_node = _node_dict_or_empty(args[1])
+        empty_casts2: list[JsonVal] = []
         step_node = {
             "kind": "Constant",
             "source_span": source_span,
             "resolved_type": "int64",
-            "casts": [],
+            "casts": empty_casts2,
             "borrow_kind": "value",
             "repr": "1",
             "value": 1,
@@ -4760,16 +4872,18 @@ def _convert_for_to_forrange(
 
     # Determine range_mode
     range_mode: str = "ascending"
-    if isinstance(step_node, dict) and step_node.get("kind") == "Constant":
-        sv = step_node.get("value")
-        if isinstance(sv, int):
+    if _dict_get_str(step_node, "kind") == "Constant":
+        sv: int | None = None
+        if "value" in step_node:
+            sv = _jv_int(step_node["value"])
+        if sv is not None:
             if sv < 0:
                 range_mode = "descending"
             elif sv == 1:
                 range_mode = "ascending"
             else:
                 range_mode = "dynamic"
-    elif isinstance(step_node, dict) and step_node.get("kind") != "Constant":
+    elif _dict_get_str(step_node, "kind") != "":
         range_mode = "dynamic"
 
     # Convert the For node to ForRange
@@ -4785,91 +4899,95 @@ def _convert_for_to_forrange(
         stmt.pop("iter")
 
     # Define loop variable
-    target = stmt.get("target")
-    if isinstance(target, dict) and target.get("kind") == "Name":
-        var_name = target.get("id")
-        if isinstance(var_name, str):
+    target = _dict_get_obj(stmt, "target")
+    if len(target) > 0 and _dict_get_str(target, "kind") == "Name":
+        var_name = _dict_get_str(target, "id")
+        if var_name != "":
             ctx.scope.define(var_name, "int64")
             target["resolved_type"] = "int64"
 
     # Resolve body
-    body = stmt.get("body")
-    if isinstance(body, list):
-        for s in body:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
-    orelse = stmt.get("orelse")
-    if isinstance(orelse, list):
-        for s in orelse:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
+    body = _dict_get_arr(stmt, "body")
+    for stmt_val in body:
+        body_stmt = _jv_obj(stmt_val)
+        if len(body_stmt) > 0:
+            _resolve_stmt(body_stmt, ctx)
+    orelse = _dict_get_arr(stmt, "orelse")
+    for stmt_val2 in orelse:
+        orelse_stmt = _jv_obj(stmt_val2)
+        if len(orelse_stmt) > 0:
+            _resolve_stmt(orelse_stmt, ctx)
 
 
 def _resolve_for_range(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Resolve an already-converted ForRange."""
-    start = stmt.get("start")
-    stop = stmt.get("stop")
-    step = stmt.get("step")
-    if isinstance(start, dict):
+    ctx.current_function = ctx.current_function
+    start = _dict_get_obj(stmt, "start")
+    stop = _dict_get_obj(stmt, "stop")
+    step = _dict_get_obj(stmt, "step")
+    if len(start) > 0:
         _resolve_expr(start, ctx)
-    if isinstance(stop, dict):
+    if len(stop) > 0:
         _resolve_expr(stop, ctx)
-    if isinstance(step, dict):
+    if len(step) > 0:
         _resolve_expr(step, ctx)
 
-    target = stmt.get("target")
-    if isinstance(target, dict) and target.get("kind") == "Name":
-        var_name = target.get("id")
-        if isinstance(var_name, str):
+    target = _dict_get_obj(stmt, "target")
+    if len(target) > 0 and _dict_get_str(target, "kind") == "Name":
+        var_name = _dict_get_str(target, "id")
+        if var_name != "":
             ctx.scope.define(var_name, "int64")
             target["resolved_type"] = "int64"
 
-    body = stmt.get("body")
-    if isinstance(body, list):
-        for s in body:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
+    body = _dict_get_arr(stmt, "body")
+    for stmt_val in body:
+        body_stmt = _jv_obj(stmt_val)
+        if len(body_stmt) > 0:
+            _resolve_stmt(body_stmt, ctx)
 
 
 def _resolve_try(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
-    body = stmt.get("body")
-    if isinstance(body, list):
-        for s in body:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
-    handlers = stmt.get("handlers")
-    if isinstance(handlers, list):
-        for h in handlers:
-            if isinstance(h, dict):
-                exc_type = h.get("type")
-                if isinstance(exc_type, dict) and exc_type.get("kind") == "Name":
-                    exc_name = exc_type.get("id")
-                    if isinstance(exc_name, str) and exc_name in _BUILTIN_EXCEPTION_TYPE_NAMES:
-                        exc_type["resolved_type"] = exc_name
-                        exc_type["runtime_module_id"] = _BUILTIN_EXCEPTION_MODULE_ID
-                    else:
-                        exc_type["resolved_type"] = "unknown"
-                handler_body = h.get("body")
-                if isinstance(handler_body, list):
-                    for s in handler_body:
-                        if isinstance(s, dict):
-                            _resolve_stmt(s, ctx)
-    orelse = stmt.get("orelse")
-    if isinstance(orelse, list):
-        for s in orelse:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
-    finalbody = stmt.get("finalbody")
-    if isinstance(finalbody, list):
-        for s in finalbody:
-            if isinstance(s, dict):
-                _resolve_stmt(s, ctx)
+    ctx.current_function = ctx.current_function
+    body = _dict_get_arr(stmt, "body")
+    for stmt_val in body:
+        body_stmt = _jv_obj(stmt_val)
+        if len(body_stmt) > 0:
+            _resolve_stmt(body_stmt, ctx)
+    handlers = _dict_get_arr(stmt, "handlers")
+    for handler_val in handlers:
+        handler = _jv_obj(handler_val)
+        if len(handler) == 0:
+            continue
+        exc_type = _dict_get_obj(handler, "type")
+        if len(exc_type) > 0 and _dict_get_str(exc_type, "kind") == "Name":
+            exc_name = _dict_get_str(exc_type, "id")
+            if exc_name != "" and exc_name in _BUILTIN_EXCEPTION_TYPE_NAMES:
+                exc_type["resolved_type"] = exc_name
+                exc_type["runtime_module_id"] = _BUILTIN_EXCEPTION_MODULE_ID
+            else:
+                exc_type["resolved_type"] = "unknown"
+        handler_body = _dict_get_arr(handler, "body")
+        for stmt_val2 in handler_body:
+            handler_stmt = _jv_obj(stmt_val2)
+            if len(handler_stmt) > 0:
+                _resolve_stmt(handler_stmt, ctx)
+    orelse = _dict_get_arr(stmt, "orelse")
+    for stmt_val3 in orelse:
+        orelse_stmt = _jv_obj(stmt_val3)
+        if len(orelse_stmt) > 0:
+            _resolve_stmt(orelse_stmt, ctx)
+    finalbody = _dict_get_arr(stmt, "finalbody")
+    for stmt_val4 in finalbody:
+        final_stmt = _jv_obj(stmt_val4)
+        if len(final_stmt) > 0:
+            _resolve_stmt(final_stmt, ctx)
 
 
 def _resolve_with(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
-    context_expr = stmt.get("context_expr")
+    ctx.current_function = ctx.current_function
+    context_expr = _dict_get_obj(stmt, "context_expr")
     context_type: str = "unknown"
-    if isinstance(context_expr, dict):
+    if len(context_expr) > 0:
         context_type = _resolve_expr(context_expr, ctx)
     owner_base = extract_base_type(context_type)
     enter_type = context_type
@@ -4877,44 +4995,50 @@ def _resolve_with(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     if enter_cls is not None and enter_sig is not None:
         enter_type = _ctx_normalize_type(_substitute_type_params(enter_sig.return_type, context_type, enter_cls), ctx)
         stmt["with_enter_type"] = enter_type
-        if enter_sig.extern_v2 is not None:
-            if enter_sig.extern_v2.symbol != "":
-                stmt["with_enter_runtime_call"] = enter_sig.extern_v2.symbol
-                stmt["with_enter_runtime_symbol"] = enter_sig.extern_v2.symbol
-            if enter_sig.extern_v2.module != "":
-                stmt["with_enter_runtime_module_id"] = enter_sig.extern_v2.module
-            if enter_sig.extern_v2.tag != "":
-                stmt["with_enter_semantic_tag"] = enter_sig.extern_v2.tag
+        enter_symbol = _extern_symbol(enter_sig.extern_v2)
+        if enter_symbol != "":
+            stmt["with_enter_runtime_call"] = enter_symbol
+            stmt["with_enter_runtime_symbol"] = enter_symbol
+        enter_module = _extern_module(enter_sig.extern_v2)
+        if enter_module != "":
+            stmt["with_enter_runtime_module_id"] = enter_module
+        enter_tag = _extern_tag(enter_sig.extern_v2)
+        if enter_tag != "":
+            stmt["with_enter_semantic_tag"] = enter_tag
     exit_cls, exit_sig = _lookup_method_sig(owner_base, "__exit__", ctx)
-    if exit_cls is not None and exit_sig is not None and exit_sig.extern_v2 is not None:
-        if exit_sig.extern_v2.symbol != "":
-            stmt["with_exit_runtime_call"] = exit_sig.extern_v2.symbol
-            stmt["with_exit_runtime_symbol"] = exit_sig.extern_v2.symbol
-        if exit_sig.extern_v2.module != "":
-            stmt["with_exit_runtime_module_id"] = exit_sig.extern_v2.module
-        if exit_sig.extern_v2.tag != "":
-            stmt["with_exit_semantic_tag"] = exit_sig.extern_v2.tag
+    if exit_cls is not None and exit_sig is not None:
+        exit_symbol = _extern_symbol(exit_sig.extern_v2)
+        if exit_symbol != "":
+            stmt["with_exit_runtime_call"] = exit_symbol
+            stmt["with_exit_runtime_symbol"] = exit_symbol
+        exit_module = _extern_module(exit_sig.extern_v2)
+        if exit_module != "":
+            stmt["with_exit_runtime_module_id"] = exit_module
+        exit_tag = _extern_tag(exit_sig.extern_v2)
+        if exit_tag != "":
+            stmt["with_exit_semantic_tag"] = exit_tag
 
     saved_scope: Scope = ctx.scope
     body_scope: Scope = saved_scope.child()
-    var_name_val = stmt.get("var_name")
-    if isinstance(var_name_val, str) and var_name_val != "":
+    var_name_val = _dict_get_str(stmt, "var_name")
+    if var_name_val != "":
         body_scope.define(var_name_val, enter_type)
     ctx.scope = body_scope
 
-    items = stmt.get("items")
-    if isinstance(items, list):
-        for item in items:
-            if isinstance(item, dict):
-                item_context_expr = item.get("context_expr")
-                if isinstance(item_context_expr, dict):
-                    _resolve_expr(item_context_expr, ctx)
-    body = stmt.get("body")
+    items = _dict_get_arr(stmt, "items")
+    for item_val in items:
+        item = _jv_obj(item_val)
+        if len(item) == 0:
+            continue
+        item_context_expr = _dict_get_obj(item, "context_expr")
+        if len(item_context_expr) > 0:
+            _resolve_expr(item_context_expr, ctx)
+    body = _dict_get_arr(stmt, "body")
     try:
-        if isinstance(body, list):
-            for s in body:
-                if isinstance(s, dict):
-                    _resolve_stmt(s, ctx)
+        for stmt_val in body:
+            body_stmt = _jv_obj(stmt_val)
+            if len(body_stmt) > 0:
+                _resolve_stmt(body_stmt, ctx)
     finally:
         ctx.scope = saved_scope
 
@@ -4928,54 +5052,55 @@ def _build_import_resolution_meta(
     east1_meta: dict[str, JsonVal],
 ) -> None:
     """Enhance import_resolution bindings with runtime info."""
-    ir = east1_meta.get("import_resolution")
-    if not isinstance(ir, dict):
-        # Build from import_bindings
-        bindings_raw = east1_meta.get("import_bindings")
-        if isinstance(bindings_raw, list):
+    ctx.current_function = ctx.current_function
+    ir = _dict_get_obj(east1_meta, "import_resolution")
+    if len(ir) == 0:
+        bindings_raw = _dict_get_arr(east1_meta, "import_bindings")
+        if len(bindings_raw) > 0:
             ir_dict: dict[str, JsonVal] = {}
             ir_dict["schema_version"] = 1
-            ir_dict["bindings"] = bindings_raw
+            ir_dict["bindings"] = list(bindings_raw)
             empty_qrefs: list[JsonVal] = []
             ir_dict["qualified_refs"] = empty_qrefs
             ir = ir_dict
-            east1_meta["import_resolution"] = ir
+            east1_meta["import_resolution"] = ir_dict
         else:
             return
 
     ir["schema_version"] = 1
 
-    bindings = ir.get("bindings")
-    if isinstance(bindings, list):
-        enhanced: list[JsonVal] = []
-        for b in bindings:
-            if isinstance(b, dict):
-                enhanced.append(_enhance_binding(b, ctx))
+    bindings = _dict_get_arr(ir, "bindings")
+    enhanced: list[JsonVal] = []
+    for binding_val in bindings:
+        binding = _jv_obj(binding_val)
+        if len(binding) > 0:
+            enhanced_binding = _enhance_binding(binding, ctx)
+            enhanced.append(dict(enhanced_binding))
+    if len(enhanced) > 0:
         ir["bindings"] = enhanced
+        bindings = enhanced
 
-    # Add qualified_refs from import_symbols
-    qrefs_raw = east1_meta.get("qualified_symbol_refs")
-    if isinstance(qrefs_raw, list):
-        ir["qualified_refs"] = qrefs_raw
+    qrefs_raw = _dict_get_arr(east1_meta, "qualified_symbol_refs")
+    if len(qrefs_raw) > 0:
+        ir["qualified_refs"] = list(qrefs_raw)
 
-    # Add implicit builtin bindings
     existing_modules: set[str] = set()
-    if isinstance(bindings, list):
-        for b in bindings:
-            if isinstance(b, dict):
-                mid = b.get("module_id")
-                if isinstance(mid, str):
-                    existing_modules.add(mid)
+    for binding_val2 in bindings:
+        binding2 = _jv_obj(binding_val2)
+        if len(binding2) > 0:
+            mid = _dict_get_str(binding2, "module_id")
+            if mid != "":
+                existing_modules.add(mid)
 
-    # Check for additional builtin modules from import_bindings
-    ib_raw = east1_meta.get("import_bindings")
-    if isinstance(ib_raw, list):
-        for ib in ib_raw:
-            if isinstance(ib, dict):
-                mid2 = ib.get("module_id")
-                if isinstance(mid2, str):
-                    existing_modules.add(mid2)
+    ib_raw = _dict_get_arr(east1_meta, "import_bindings")
+    for ib_val in ib_raw:
+        ib = _jv_obj(ib_val)
+        if len(ib) > 0:
+            mid2 = _dict_get_str(ib, "module_id")
+            if mid2 != "":
+                existing_modules.add(mid2)
 
+    final_bindings = _dict_get_arr(ir, "bindings")
     for mod in sorted(ctx.used_builtin_modules):
         if mod not in existing_modules:
             imp_binding: dict[str, JsonVal] = {
@@ -4990,29 +5115,22 @@ def _build_import_resolution_meta(
                 "runtime_module_id": mod,
                 "runtime_group": ctx.lookup_runtime_module_group(mod),
             }
-            final_bindings = ir.get("bindings")
-            if isinstance(final_bindings, list):
-                final_bindings.append(imp_binding)
+            final_bindings.append(dict(imp_binding))
 
-    final_bindings = ir.get("bindings")
-    if isinstance(final_bindings, list):
-        compat_bindings: list[JsonVal] = []
-        for binding in final_bindings:
-            if isinstance(binding, dict):
-                compat_bindings.append(dict(binding))
-        east1_meta["import_bindings"] = compat_bindings
-
+    compat_bindings: list[JsonVal] = []
+    for binding_val3 in final_bindings:
+        binding3 = _jv_obj(binding_val3)
+        if len(binding3) > 0:
+            compat_bindings.append(dict(binding3))
+    east1_meta["import_bindings"] = compat_bindings
 
 def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[str, JsonVal]:
     """Enhance a single import binding with runtime resolution info."""
-    module_id_val = binding.get("module_id")
-    module_id: str = str(module_id_val) if isinstance(module_id_val, str) else ""
-    export_name_val = binding.get("export_name")
-    export_name: str = str(export_name_val) if isinstance(export_name_val, str) else ""
-    binding_kind_val = binding.get("binding_kind")
-    binding_kind: str = str(binding_kind_val) if isinstance(binding_kind_val, str) else ""
-    local_name_val = binding.get("local_name")
-    local_name: str = str(local_name_val) if isinstance(local_name_val, str) else ""
+    ctx.current_function = ctx.current_function
+    module_id: str = _dict_get_str(binding, "module_id")
+    export_name: str = _dict_get_str(binding, "export_name")
+    binding_kind: str = _dict_get_str(binding, "binding_kind")
+    local_name: str = _dict_get_str(binding, "local_name")
 
     canonical: str = ctx.canonical_module_id(module_id)
     runtime_group: str = ctx.lookup_runtime_module_group(canonical)
@@ -5051,30 +5169,23 @@ def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> dict[s
     if binding_kind == "implicit_builtin":
         return binding
 
-    # Symbol binding: look up in runtime index
     sym_doc: dict[str, JsonVal] = ctx.lookup_runtime_symbol_doc(canonical, export_name)
     if len(sym_doc) > 0:
         binding["resolved_binding_kind"] = "symbol"
         binding["runtime_symbol"] = export_name
-        kind_v = sym_doc.get("kind")
-        if isinstance(kind_v, str) and kind_v != "":
+        kind_v = _dict_get_str(sym_doc, "kind")
+        if kind_v != "":
             binding["runtime_symbol_kind"] = kind_v
-        dispatch_v = sym_doc.get("dispatch")
-        if isinstance(dispatch_v, str) and dispatch_v != "":
+        dispatch_v = _dict_get_str(sym_doc, "dispatch")
+        if dispatch_v != "":
             binding["runtime_symbol_dispatch"] = dispatch_v
-        stag_v = sym_doc.get("semantic_tag")
-        if isinstance(stag_v, str) and stag_v != "":
+        stag_v = _dict_get_str(sym_doc, "semantic_tag")
+        if stag_v != "":
             binding["runtime_semantic_tag"] = stag_v
-        adapter_v = sym_doc.get("call_adapter_kind")
-        if isinstance(adapter_v, str) and adapter_v != "":
+        adapter_v = _dict_get_str(sym_doc, "call_adapter_kind")
+        if adapter_v != "":
             binding["runtime_call_adapter_kind"] = adapter_v
-
     return binding
-
-
-# ---------------------------------------------------------------------------
-# Pre-scan: collect module-level signatures before resolution
-# ---------------------------------------------------------------------------
 
 def _resolve_import_symbol_module_alias(
     module_id: str,
@@ -5082,6 +5193,7 @@ def _resolve_import_symbol_module_alias(
     ctx: ResolveContext,
 ) -> str:
     """Resolve `from X import y` when `y` should be treated as a module alias."""
+    ctx.current_function = ctx.current_function
     if export_name == "":
         return ""
     candidates: list[str] = []
@@ -5101,120 +5213,109 @@ def _resolve_import_symbol_module_alias(
         if ctx.runtime_module_exists(normalized) or normalized in ctx.registry.stdlib_modules:
             return normalized
     return ""
-
 def _prescan_module(doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Pre-scan module body to collect function/class signatures and imports."""
-    # Collect renamed symbols
-    rs_raw = doc.get("renamed_symbols")
-    if isinstance(rs_raw, dict):
-        for k, v in rs_raw.items():
-            if isinstance(k, str) and isinstance(v, str):
-                ctx.renamed_symbols[k] = v
+    ctx.current_function = ctx.current_function
+    rs_raw = _dict_get_obj(doc, "renamed_symbols")
+    for k, v in rs_raw.items():
+        renamed = _jv_str(v)
+        if renamed != "":
+            ctx.renamed_symbols[k] = renamed
 
-    meta = doc.get("meta")
-    if isinstance(meta, dict):
-        # Collect import info
-        im_raw = meta.get("import_modules")
-        if isinstance(im_raw, dict):
-            for k, v in im_raw.items():
-                if isinstance(v, str):
-                    ctx.import_modules[k] = v
-        is_raw = meta.get("import_symbols")
-        if isinstance(is_raw, dict):
-            for k, v in is_raw.items():
-                if isinstance(v, dict):
-                    mod = v.get("module")
-                    nm = v.get("name")
-                    module_id: str = str(mod) if isinstance(mod, str) else ""
-                    export_name: str = str(nm) if isinstance(nm, str) else k
-                    promoted_module: str = _resolve_import_symbol_module_alias(module_id, export_name, ctx)
-                    if promoted_module != "":
-                        ctx.import_modules[k] = promoted_module
-                        continue
-                    symbol_info: dict[str, str] = {}
-                    symbol_info["module"] = module_id
-                    symbol_info["name"] = export_name
-                    ctx.import_symbols[k] = symbol_info
-
-    # Collect module-local type aliases before signature extraction.
-    body = doc.get("body")
-    if isinstance(body, list):
-        for item in body:
-            if not isinstance(item, dict) or item.get("kind") != "TypeAlias":
+    meta = _dict_get_obj(doc, "meta")
+    if len(meta) > 0:
+        im_raw = _dict_get_obj(meta, "import_modules")
+        for k, v in im_raw.items():
+            module_name = _jv_str(v)
+            if module_name != "":
+                ctx.import_modules[k] = module_name
+        is_raw = _dict_get_obj(meta, "import_symbols")
+        for k, v in is_raw.items():
+            symbol_doc = _jv_obj(v)
+            if len(symbol_doc) == 0:
                 continue
-            alias_name = item.get("name")
-            alias_value = item.get("value")
-            if not isinstance(alias_value, str):
-                alias_value = item.get("type_expr")
-            alias_name_str: str = alias_name if isinstance(alias_name, str) else ""
-            alias_value_str: str = alias_value if isinstance(alias_value, str) else ""
-            if alias_name_str != "" and alias_value_str != "":
-                ctx.type_aliases[alias_name_str] = alias_value_str
+            module_id: str = _dict_get_str(symbol_doc, "module")
+            export_name: str = _dict_get_str(symbol_doc, "name")
+            if export_name == "":
+                export_name = k
+            promoted_module: str = _resolve_import_symbol_module_alias(module_id, export_name, ctx)
+            if promoted_module != "":
+                ctx.import_modules[k] = promoted_module
+                continue
+            symbol_info: dict[str, str] = {}
+            symbol_info["module"] = module_id
+            symbol_info["name"] = export_name
+            ctx.import_symbols[k] = symbol_info
+
+    body = _dict_get_arr(doc, "body")
+    for item_val in body:
+        item = _jv_obj(item_val)
+        if len(item) == 0 or _dict_get_str(item, "kind") != "TypeAlias":
+            continue
+        alias_name_str: str = _dict_get_str(item, "name")
+        alias_value_str: str = _dict_get_str(item, "value")
+        if alias_value_str == "":
+            alias_value_str = _dict_get_str(item, "type_expr")
+        if alias_name_str != "" and alias_value_str != "":
+            ctx.type_aliases[alias_name_str] = alias_value_str
+    if len(ctx.type_aliases) > 0:
         _resolve_validate_type_alias_cycles(ctx.type_aliases)
-        alias_names: list[str] = []
-        for alias_name in ctx.type_aliases.keys():
-            if isinstance(alias_name, str):
-                alias_names.append(alias_name)
+        alias_names: list[str] = list(ctx.type_aliases.keys())
         for alias_name in alias_names:
             alias_value = ctx.type_aliases.get(alias_name, "")
-            if isinstance(alias_value, str):
-                ctx.type_aliases[alias_name] = normalize_type(alias_value, ctx.type_aliases, {alias_name})
+            if alias_value != "":
+                normalized_alias = normalize_type(alias_value, ctx.type_aliases, {alias_name})
+                ctx.type_aliases[alias_name] = str(normalized_alias)
 
-    # Collect function and class signatures
-    if isinstance(body, list):
-        for item in body:
-            if not isinstance(item, dict):
-                continue
-            kind = item.get("kind")
-            if kind == "FunctionDef":
-                sig: FuncSig = _extract_func_sig_for_prescan(item, ctx)
-                ctx.module_functions[sig.name] = sig
-            elif kind == "ClassDef":
-                csig: ClassSig = _extract_class_sig_for_prescan(item, ctx)
-                ctx.module_classes[csig.name] = csig
-                # Register class as a scope type
-                ctx.scope.define(csig.name, csig.name)
+    for item_val2 in body:
+        item2 = _jv_obj(item_val2)
+        if len(item2) == 0:
+            continue
+        kind = _dict_get_str(item2, "kind")
+        if kind == "FunctionDef":
+            sig: FuncSig = _extract_func_sig_for_prescan(item2, ctx)
+            ctx.module_functions[sig.name] = sig
+        elif kind == "ClassDef":
+            csig: ClassSig = _extract_class_sig_for_prescan(item2, ctx)
+            ctx.module_classes[csig.name] = csig
+            ctx.scope.define(csig.name, csig.name)
 
-    # Also scan main_guard_body
-    mgb = doc.get("main_guard_body")
-    if isinstance(mgb, list):
-        for item in mgb:
-            if not isinstance(item, dict):
-                continue
-            kind = item.get("kind")
-            if kind == "FunctionDef":
-                sig2: FuncSig = _extract_func_sig_for_prescan(item, ctx)
-                ctx.module_functions[sig2.name] = sig2
-
+    mgb = _dict_get_arr(doc, "main_guard_body")
+    for item_val3 in mgb:
+        item3 = _jv_obj(item_val3)
+        if len(item3) == 0:
+            continue
+        if _dict_get_str(item3, "kind") == "FunctionDef":
+            sig2: FuncSig = _extract_func_sig_for_prescan(item3, ctx)
+            ctx.module_functions[sig2.name] = sig2
 
 def _extract_func_sig_for_prescan(node: dict[str, JsonVal], ctx: ResolveContext) -> FuncSig:
     """Extract a function signature during prescan (before full resolution)."""
-    name_val = node.get("name")
-    name: str = str(name_val) if isinstance(name_val, str) else ""
-    arg_types_raw = node.get("arg_types")
+    ctx.current_function = ctx.current_function
+    name: str = _dict_get_str(node, "name")
+    arg_types_obj = _dict_get_obj(node, "arg_types")
     arg_types: dict[str, str] = {}
-    if isinstance(arg_types_raw, dict):
-        for k, v in arg_types_raw.items():
-            if isinstance(v, str):
-                arg_types[k] = _ctx_normalize_type(v, ctx)
-    arg_order_raw = node.get("arg_order")
+    for k, v in arg_types_obj.items():
+        arg_type = _jv_str(v)
+        if arg_type != "":
+            arg_types[k] = _ctx_normalize_type(arg_type, ctx)
+    arg_order_raw = _dict_get_arr(node, "arg_order")
     arg_names: list[str] = []
-    if isinstance(arg_order_raw, list):
-        for a in arg_order_raw:
-            if isinstance(a, str):
-                arg_names.append(a)
-    ret_raw = node.get("return_type")
-    ret: str = _ctx_normalize_type(str(ret_raw), ctx) if isinstance(ret_raw, str) else "unknown"
-    vararg_name_val = node.get("vararg_name")
-    vararg_name: str = str(vararg_name_val) if isinstance(vararg_name_val, str) else ""
-    vararg_type_raw = node.get("vararg_type")
-    vararg_type: str = _ctx_normalize_type(str(vararg_type_raw), ctx) if isinstance(vararg_type_raw, str) else ""
-    decorators_raw = node.get("decorators")
+    for a in arg_order_raw:
+        arg_name = _jv_str(a)
+        if arg_name != "":
+            arg_names.append(arg_name)
+    ret_raw = _dict_get_str(node, "return_type")
+    ret: str = _ctx_normalize_type(ret_raw, ctx) if ret_raw != "" else "unknown"
+    vararg_name: str = _dict_get_str(node, "vararg_name")
+    vararg_type_raw: str = _dict_get_str(node, "vararg_type")
+    vararg_type: str = _ctx_normalize_type(vararg_type_raw, ctx) if vararg_type_raw != "" else ""
+    decorators_raw = _dict_get_arr(node, "decorators")
     decorators: list[str] = []
-    if isinstance(decorators_raw, list):
-        for item in decorators_raw:
-            if isinstance(item, str):
-                decorators.append(item)
+    for item in decorators_raw:
+        decorator_name = _jv_str(item)
+        if decorator_name != "":
+            decorators.append(decorator_name)
     return FuncSig(
         name=name,
         arg_names=arg_names,
@@ -5224,21 +5325,19 @@ def _extract_func_sig_for_prescan(node: dict[str, JsonVal], ctx: ResolveContext)
         vararg_name=vararg_name,
         vararg_type=vararg_type,
     )
-
-
 def _extract_class_sig_for_prescan(node: dict[str, JsonVal], ctx: ResolveContext) -> ClassSig:
     """Extract a class signature during prescan."""
-    name_val = node.get("name")
-    name: str = str(name_val) if isinstance(name_val, str) else ""
-    base_raw = node.get("base")
-    bases_raw = node.get("bases")
+    ctx.current_function = ctx.current_function
+    name: str = _dict_get_str(node, "name")
+    base_raw = _dict_get_str(node, "base")
+    bases_raw = _dict_get_arr(node, "bases")
     bases: list[str] = []
-    if isinstance(base_raw, str) and base_raw != "":
+    if base_raw != "":
         bases.append(base_raw)
-    if isinstance(bases_raw, list):
-        for b in bases_raw:
-            if isinstance(b, str) and b not in bases:
-                bases.append(b)
+    for b in bases_raw:
+        base_name = _jv_str(b)
+        if base_name != "" and base_name not in bases:
+            bases.append(base_name)
     methods: dict[str, FuncSig] = {}
     fields: dict[str, str] = {}
     decorators: list[str] = _class_decorators(node)
@@ -5252,36 +5351,35 @@ def _extract_class_sig_for_prescan(node: dict[str, JsonVal], ctx: ResolveContext
         if base == "Enum" or base == "IntEnum" or base == "IntFlag":
             is_enum_class = True
             break
-    body_raw = node.get("body")
-    if isinstance(body_raw, list):
-        for item in body_raw:
-            if not isinstance(item, dict):
-                continue
-            kind = item.get("kind")
-            if kind == "FunctionDef":
-                msig: FuncSig = _extract_func_sig_for_prescan(item, ctx)
-                msig.is_method = True
-                msig.owner_class = name
-                methods[msig.name] = msig
-            elif kind == "AnnAssign":
-                target = item.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
-                    fld_name = target.get("id")
-                    ann = item.get("annotation")
-                    if isinstance(fld_name, str) and isinstance(ann, str):
-                        fields[fld_name] = _ctx_normalize_type(ann, ctx)
-            elif kind == "Assign" and is_enum_class:
-                target2 = item.get("target")
-                if isinstance(target2, dict) and target2.get("kind") == "Name":
-                    fld_name2 = target2.get("id")
-                    if isinstance(fld_name2, str) and fld_name2 != "":
-                        fields[fld_name2] = name
-    # Also extract from field_types (top-level ClassDef field from parse)
-    ft_raw = node.get("field_types")
-    if isinstance(ft_raw, dict):
-        for fk, fv in ft_raw.items():
-            if isinstance(fk, str) and isinstance(fv, str) and fk not in fields:
-                fields[fk] = _ctx_normalize_type(fv, ctx)
+    body_raw = _dict_get_arr(node, "body")
+    for item_val in body_raw:
+        item = _jv_obj(item_val)
+        if len(item) == 0:
+            continue
+        kind = _dict_get_str(item, "kind")
+        if kind == "FunctionDef":
+            msig: FuncSig = _extract_func_sig_for_prescan(item, ctx)
+            msig.is_method = True
+            msig.owner_class = name
+            methods[msig.name] = msig
+        elif kind == "AnnAssign":
+            target = _dict_get_obj(item, "target")
+            if len(target) > 0 and _dict_get_str(target, "kind") == "Name":
+                fld_name = _dict_get_str(target, "id")
+                ann = _dict_get_str(item, "annotation")
+                if fld_name != "" and ann != "":
+                    fields[fld_name] = _ctx_normalize_type(ann, ctx)
+        elif kind == "Assign" and is_enum_class:
+            target2 = _dict_get_obj(item, "target")
+            if len(target2) > 0 and _dict_get_str(target2, "kind") == "Name":
+                fld_name2 = _dict_get_str(target2, "id")
+                if fld_name2 != "":
+                    fields[fld_name2] = name
+    ft_raw = _dict_get_obj(node, "field_types")
+    for fk, fv in ft_raw.items():
+        field_type = _jv_str(fv)
+        if field_type != "" and fk not in fields:
+            fields[fk] = _ctx_normalize_type(field_type, ctx)
     return ClassSig(
         name=name,
         bases=bases,
@@ -5291,19 +5389,18 @@ def _extract_class_sig_for_prescan(node: dict[str, JsonVal], ctx: ResolveContext
         is_trait=("trait" in decorators),
         implements_traits=implements_traits,
     )
-
-
 def _promote_inherited_class_storage_hints(doc: dict[str, JsonVal], ctx: ResolveContext) -> None:
     """Promote base classes with descendants to ref storage transitively."""
-    body = doc.get("body")
-    if not isinstance(body, list):
-        return
+    ctx.current_function = ctx.current_function
+    body = _dict_get_arr(doc, "body")
     class_nodes: dict[str, dict[str, JsonVal]] = {}
-    for item in body:
-        if isinstance(item, dict) and item.get("kind") == "ClassDef":
-            name = item.get("name")
-            if isinstance(name, str) and name != "":
-                class_nodes[name] = item
+    for item_val in body:
+        item = _jv_obj(item_val)
+        if len(item) == 0 or _dict_get_str(item, "kind") != "ClassDef":
+            continue
+        name = _dict_get_str(item, "name")
+        if name != "":
+            class_nodes[name] = item
     if len(class_nodes) == 0:
         return
     promoted: set[str] = set()
@@ -5328,12 +5425,6 @@ def _promote_inherited_class_storage_hints(doc: dict[str, JsonVal], ctx: Resolve
                 pending.append(base_name2)
     for class_name2 in promoted:
         class_nodes[class_name2]["class_storage_hint"] = "ref"
-
-
-# ---------------------------------------------------------------------------
-# Main resolve entry point
-# ---------------------------------------------------------------------------
-
 def resolve_east1_to_east2(
     east1_doc: dict[str, JsonVal],
     registry: BuiltinRegistry | None = None,
@@ -5345,84 +5436,74 @@ def resolve_east1_to_east2(
     if registry is None:
         raise ValueError("registry is required for resolve_east1_to_east2()")
 
-    source_path_val = east1_doc.get("source_path")
-    source_file: str = str(source_path_val) if isinstance(source_path_val, str) else ""
+    source_file: str = _dict_get_str(east1_doc, "source_path")
 
-    ctx: ResolveContext = ResolveContext(
-        registry=registry,
-        scope=Scope(),
-        source_file=source_file,
-    )
+    ctx = ResolveContext(registry, Scope())
+    ctx.source_file = source_file
 
-    # Pre-scan: collect module-level info
     _prescan_module(east1_doc, ctx)
 
-    # Resolve body
-    body = east1_doc.get("body")
-    if isinstance(body, list):
-        for stmt in body:
-            if isinstance(stmt, dict):
-                _resolve_stmt(stmt, ctx)
+    body = _dict_get_arr(east1_doc, "body")
+    for stmt_val in body:
+        stmt = _jv_obj(stmt_val)
+        if len(stmt) > 0:
+            _resolve_stmt(stmt, ctx)
 
-    # Resolve main_guard_body
-    mgb = east1_doc.get("main_guard_body")
-    if isinstance(mgb, list):
-        for stmt in mgb:
-            if isinstance(stmt, dict):
-                _resolve_stmt(stmt, ctx)
+    mgb = _dict_get_arr(east1_doc, "main_guard_body")
+    for stmt_val2 in mgb:
+        stmt2 = _jv_obj(stmt_val2)
+        if len(stmt2) > 0:
+            _resolve_stmt(stmt2, ctx)
 
     _refine_callable_params_from_calls(east1_doc, ctx)
     _promote_inherited_class_storage_hints(east1_doc, ctx)
 
-    # Post-processing: metadata
     east1_doc["east_stage"] = 2
     east1_doc["schema_version"] = 1
 
-    meta = east1_doc.get("meta")
-    if isinstance(meta, dict):
+    meta = _dict_get_obj(east1_doc, "meta")
+    if len(meta) > 0:
         if "parser_backend" not in meta:
             meta["parser_backend"] = "self_hosted"
         if "dispatch_mode" not in meta:
             meta["dispatch_mode"] = "native"
-        # Enhance import resolution
         _build_import_resolution_meta(ctx, meta)
 
-    # Normalize field ordering to match golden files
-    normalized: JsonVal = normalize_field_order(east1_doc)
-    if isinstance(normalized, dict):
+    normalized = _jv_obj(normalize_field_order(east1_doc))
+    if len(normalized) > 0:
         east1_doc.clear()
         for key, value in normalized.items():
             east1_doc[key] = value
 
     return east1_doc
-
-
 def resolve_file(
     input_path: Path,
     registry: BuiltinRegistry | None = None,
 ) -> ResolveResult:
     """Load and resolve an EAST1 file."""
     text: str = input_path.read_text(encoding="utf-8")
-    raw: JsonVal = json.loads(text).raw
-    if not isinstance(raw, dict):
+    raw = _jv_obj(json.loads(text).raw)
+    if len(raw) == 0:
         raise ValueError("east1 document must be a JSON object: " + str(input_path))
     east2_doc: dict[str, JsonVal] = raw
     resolve_east1_to_east2(east2_doc, registry=registry)
-    source_path_val = east2_doc.get("source_path")
-    sp: str = str(source_path_val) if source_path_val is not None else ""
+    sp: str = _dict_get_str(east2_doc, "source_path")
     return ResolveResult(east2_doc=east2_doc, source_path=sp)
-
-
 def east2_output_path_from_east1(east1_path: Path) -> Path:
     """Derive east2 output path from east1 path.
 
     a.py.east1 → a.east2 (.py removed)
     """
-    name: str = east1_path.name
+    full_path: str = str(east1_path)
+    name: str = path.basename(full_path)
+    parent_text: str = path.dirname(full_path)
+    if parent_text == "":
+        parent_text = "."
+    parent = Path(parent_text)
     if name.endswith(".py.east1"):
         base: str = name[: len(name) - len(".py.east1")]
-        return east1_path.parent / (base + ".east2")
+        return parent.joinpath(base + ".east2")
     if name.endswith(".east1"):
         base2: str = name[: len(name) - len(".east1")]
-        return east1_path.parent / (base2 + ".east2")
-    return east1_path.parent / (name + ".east2")
+        return parent.joinpath(base2 + ".east2")
+    return parent.joinpath(name + ".east2")

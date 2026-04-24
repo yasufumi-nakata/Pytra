@@ -17,7 +17,7 @@ _KNOWN_UNION_ALIASES: dict[str, str] = {
 }
 
 
-def normalize_type_name(value: JsonVal) -> str:
+def _common_normalize_type_name(value: JsonVal) -> str:
     if value is None:
         return "unknown"
     t = str(value).strip()
@@ -27,7 +27,7 @@ def normalize_type_name(value: JsonVal) -> str:
 
 
 def is_any_like_type(value: JsonVal) -> bool:
-    t = normalize_type_name(value)
+    t = _common_normalize_type_name(value)
     if t == "Any" or t == "any" or t == "object" or t == "unknown" or t == "":
         return True
     if "|" in t:
@@ -65,12 +65,12 @@ def split_generic_types(text: str) -> list[str]:
 
 
 def normalize_known_type_alias(type_name: JsonVal) -> str:
-    normalized = normalize_type_name(type_name)
+    normalized = _common_normalize_type_name(type_name)
     return _KNOWN_TYPE_ALIASES.get(normalized, normalized)
 
 
 def split_top_level_union_types(text: str) -> list[str]:
-    normalized = normalize_type_name(text)
+    normalized = _common_normalize_type_name(text)
     if normalized == "unknown":
         return []
     out: list[str] = []

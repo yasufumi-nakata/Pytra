@@ -36,11 +36,11 @@ def _is_function_like(node: JsonVal) -> bool:
     return jv_is_dict(node) and _is_function_like_kind(nd_kind(jv_dict(node)))
 
 
-def _empty_jv_list() -> list[JsonVal]:
+def _passes_empty_jv_list() -> list[JsonVal]:
     out: list[JsonVal] = []
     return out
 
-def _empty_node() -> Node:
+def _passes_empty_node() -> Node:
     out: dict[str, JsonVal] = {}
     return out
 
@@ -81,7 +81,7 @@ def _contains_yield(node: JsonVal) -> bool:
 
 def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonVal:
     if jv_is_list(node):
-        result: list[JsonVal] = _empty_jv_list()
+        result: list[JsonVal] = _passes_empty_jv_list()
         for item in jv_list(node):
             replaced = _replace_yield_with_append(item, acc, list_type)
             if jv_is_list(replaced):
@@ -97,12 +97,12 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
     if kind == YIELD:
         value = nd.get("value")
         if value is None:
-            value_node: Node = _empty_node()
+            value_node: Node = _passes_empty_node()
             value_node["kind"] = CONSTANT
             value_node["value"] = None
             value_node["resolved_type"] = "None"
             value = value_node
-        call_args: list[JsonVal] = _empty_jv_list()
+        call_args: list[JsonVal] = _passes_empty_jv_list()
         if value is not None:
             call_args.append(value)
         call_node = _make_container_method_call(
@@ -112,20 +112,20 @@ def _replace_yield_with_append(node: JsonVal, acc: str, list_type: str) -> JsonV
             args=call_args,
             result_type="None",
         )
-        ac: Node = _empty_node()
+        ac: Node = _passes_empty_node()
         ac["kind"] = EXPR
         ac["value"] = call_node
         span = nd.get("source_span")
         if jv_is_dict(span):
             ac["source_span"] = span
         return ac
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     for key_s in nd.keys():
         value_jv = nd[key_s]
         if key_s == "body" or key_s == "orelse" or key_s == "finalbody":
             out[key_s] = _replace_yield_with_append(value_jv, acc, list_type)
         elif key_s == "handlers" and jv_is_list(value_jv):
-            hs: list[JsonVal] = _empty_jv_list()
+            hs: list[JsonVal] = _passes_empty_jv_list()
             for h in jv_list(value_jv):
                 if jv_is_dict(h):
                     h_copy: JsonVal = deep_copy_json(h)
@@ -155,15 +155,15 @@ def _lower_generator_function(func: Node) -> None:
         func["return_type"] = "list[" + ret_type + "]"
     acc = "__yield_values"
     lt = "list[" + elem_type + "]"
-    target: Node = _empty_node()
+    target: Node = _passes_empty_node()
     target["kind"] = NAME
     target["id"] = acc
     target["resolved_type"] = lt
-    list_value: Node = _empty_node()
+    list_value: Node = _passes_empty_node()
     list_value["kind"] = LIST
-    list_value["elements"] = _empty_jv_list()
+    list_value["elements"] = _passes_empty_jv_list()
     list_value["resolved_type"] = lt
-    init: Node = _empty_node()
+    init: Node = _passes_empty_node()
     init["kind"] = ANN_ASSIGN
     init["target"] = target
     init["annotation"] = lt
@@ -171,14 +171,14 @@ def _lower_generator_function(func: Node) -> None:
     init["declare"] = True
     init["value"] = list_value
     new_body = _replace_yield_with_append(body, acc, lt)
-    ret_name: Node = _empty_node()
+    ret_name: Node = _passes_empty_node()
     ret_name["kind"] = NAME
     ret_name["id"] = acc
     ret_name["resolved_type"] = lt
-    ret_stmt: Node = _empty_node()
+    ret_stmt: Node = _passes_empty_node()
     ret_stmt["kind"] = RETURN
     ret_stmt["value"] = ret_name
-    final_body: list[JsonVal] = _empty_jv_list()
+    final_body: list[JsonVal] = _passes_empty_jv_list()
     final_body.append(init)
     if jv_is_list(new_body):
         for stmt in jv_list(new_body):
@@ -241,7 +241,7 @@ def _build_lc_target_plan(target: JsonVal) -> Node:
         target_node: Node = jv_dict(target)
         kind = nd_kind(target_node)
         if kind == NAME:
-            plan: Node = _empty_node()
+            plan: Node = _passes_empty_node()
             plan["kind"] = NAME_TARGET
             plan["id"] = target_node["id"] if "id" in target_node else "_"
             rt = "" + jv_str(target_node.get("resolved_type", ""))
@@ -249,7 +249,7 @@ def _build_lc_target_plan(target: JsonVal) -> Node:
                 plan["target_type"] = rt
             return plan
         if kind == TUPLE:
-            elements = _empty_jv_list()
+            elements = _passes_empty_jv_list()
             elems_obj = target_node.get("elements")
             if jv_is_list(elems_obj):
                 for elem in jv_list(elems_obj):
@@ -259,17 +259,17 @@ def _build_lc_target_plan(target: JsonVal) -> Node:
                 if jv_is_list(elts_obj):
                     for elem in jv_list(elts_obj):
                         elements.append(elem)
-            eps: list[JsonVal] = _empty_jv_list()
+            eps: list[JsonVal] = _passes_empty_jv_list()
             for elem in elements:
                 eps.append(_build_lc_target_plan(elem))
-            plan: Node = _empty_node()
+            plan: Node = _passes_empty_node()
             plan["kind"] = TUPLE_TARGET
             plan["elements"] = eps
             rt = "" + jv_str(target_node.get("resolved_type", ""))
             if rt not in ("", "unknown"):
                 plan["target_type"] = rt
             return plan
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     out["kind"] = NAME_TARGET
     out["id"] = "_"
     return out
@@ -282,15 +282,15 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
             rt = annotation_type
         elif rt in ("", "unknown"):
             rt = "list[unknown]"
-    target_node: Node = _empty_node()
+    target_node: Node = _passes_empty_node()
     target_node["kind"] = NAME
     target_node["id"] = result_name
     target_node["resolved_type"] = rt
-    value_node: Node = _empty_node()
+    value_node: Node = _passes_empty_node()
     value_node["kind"] = LIST
-    value_node["elements"] = _empty_jv_list()
+    value_node["elements"] = _passes_empty_jv_list()
     value_node["resolved_type"] = rt
-    init: Node = _empty_node()
+    init: Node = _passes_empty_node()
     init["kind"] = ANN_ASSIGN
     init["target"] = target_node
     init["annotation"] = rt
@@ -315,12 +315,12 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
             append_node["resolved_type"] = elem_type
         elif append_kind == SET and append_rt in ("", "unknown", "set[unknown]"):
             append_node["resolved_type"] = elem_type
-    generator_list: list[JsonVal] = _empty_jv_list()
+    generator_list: list[JsonVal] = _passes_empty_jv_list()
     generators = lc.get("generators")
     if jv_is_list(generators):
         for gen_item in jv_list(generators):
             generator_list.append(gen_item)
-    append_args: list[JsonVal] = _empty_jv_list()
+    append_args: list[JsonVal] = _passes_empty_jv_list()
     if append_arg is not None:
         append_args.append(append_arg)
     append_call = _make_container_method_call(
@@ -330,10 +330,10 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         args=append_args,
         result_type="None",
     )
-    append_stmt: Node = _empty_node()
+    append_stmt: Node = _passes_empty_node()
     append_stmt["kind"] = EXPR
     append_stmt["value"] = append_call
-    body: list[JsonVal] = _empty_jv_list()
+    body: list[JsonVal] = _passes_empty_jv_list()
     body.append(append_stmt)
     for gen_idx in range(len(generator_list) - 1, -1, -1):
         gen = generator_list[gen_idx]
@@ -344,70 +344,70 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
         if jv_is_list(ifs):
             for cond in jv_list(ifs):
                 if jv_is_dict(cond):
-                    if_stmt: Node = _empty_node()
+                    if_stmt: Node = _passes_empty_node()
                     if_stmt["kind"] = IF
                     if_stmt["test"] = deep_copy_json(cond)
                     if_stmt["body"] = body
-                    if_stmt["orelse"] = _empty_jv_list()
-                    body2: list[JsonVal] = _empty_jv_list()
+                    if_stmt["orelse"] = _passes_empty_jv_list()
+                    body2: list[JsonVal] = _passes_empty_jv_list()
                     body2.append(if_stmt)
                     body = body2
         target = gen_node.get("target")
         iter_expr = gen_node.get("iter")
         iter_kind = ""
-        iter_node: Node = _empty_node()
+        iter_node: Node = _passes_empty_node()
         if jv_is_dict(iter_expr):
             iter_node = jv_dict(iter_expr)
             iter_kind = "" + nd_kind(iter_node)
         tp = _build_lc_target_plan(target)
         if iter_kind in ("RangeExpr", FOR_RANGE):
-            iter_plan: Node = _empty_node()
+            iter_plan: Node = _passes_empty_node()
             iter_plan["kind"] = STATIC_RANGE_FOR_PLAN
-            start_default: Node = _empty_node()
+            start_default: Node = _passes_empty_node()
             start_default["kind"] = CONSTANT
             start_default["value"] = 0
             start_default["resolved_type"] = "int64"
-            stop_default: Node = _empty_node()
+            stop_default: Node = _passes_empty_node()
             stop_default["kind"] = CONSTANT
             stop_default["value"] = 0
-            step_default: Node = _empty_node()
+            step_default: Node = _passes_empty_node()
             step_default["kind"] = CONSTANT
             step_default["value"] = 1
             step_default["resolved_type"] = "int64"
             iter_plan["start"] = deep_copy_json(iter_node.get("start", start_default))
             iter_plan["stop"] = deep_copy_json(iter_node.get("stop", stop_default))
             iter_plan["step"] = deep_copy_json(iter_node.get("step", step_default))
-            fs: Node = _empty_node()
+            fs: Node = _passes_empty_node()
             fs["kind"] = FOR_CORE
             fs["iter_mode"] = "static_fastpath"
             fs["iter_plan"] = iter_plan
             fs["target_plan"] = tp
             fs["body"] = body
-            fs["orelse"] = _empty_jv_list()
+            fs["orelse"] = _passes_empty_jv_list()
         else:
-            iter_plan: Node = _empty_node()
+            iter_plan: Node = _passes_empty_node()
             iter_plan["kind"] = RUNTIME_ITER_FOR_PLAN
             if iter_expr is not None:
                 iter_plan["iter_expr"] = deep_copy_json(iter_expr)
             else:
-                empty_name: Node = _empty_node()
+                empty_name: Node = _passes_empty_node()
                 empty_name["kind"] = NAME
                 empty_name["id"] = "__empty"
                 iter_plan["iter_expr"] = empty_name
             iter_plan["dispatch_mode"] = "generic"
             iter_plan["init_op"] = "ObjIterInit"
             iter_plan["next_op"] = "ObjIterNext"
-            fs: Node = _empty_node()
+            fs: Node = _passes_empty_node()
             fs["kind"] = FOR_CORE
             fs["iter_mode"] = "runtime_protocol"
             fs["iter_plan"] = iter_plan
             fs["target_plan"] = tp
             fs["body"] = body
-            fs["orelse"] = _empty_jv_list()
-        body3: list[JsonVal] = _empty_jv_list()
+            fs["orelse"] = _passes_empty_jv_list()
+        body3: list[JsonVal] = _passes_empty_jv_list()
         body3.append(fs)
         body = body3
-    out: list[JsonVal] = _empty_jv_list()
+    out: list[JsonVal] = _passes_empty_jv_list()
     out.append(init)
     for stmt in body:
         if jv_is_dict(stmt):
@@ -416,7 +416,7 @@ def _expand_lc_to_stmts(lc: Node, result_name: str, annotation_type: str = "") -
 
 
 def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
-    result: list[JsonVal] = _empty_jv_list()
+    result: list[JsonVal] = _passes_empty_jv_list()
     stmt_idx = 0
     for stmt in stmts:
         if not jv_is_dict(stmt):
@@ -444,11 +444,11 @@ def _lc_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                 value_node = jv_dict(value)
                 expanded = _expand_lc_to_stmts(value_node, cn, at)
                 if cn != tn and jv_is_dict(target):
-                    assign_value: Node = _empty_node()
+                    assign_value: Node = _passes_empty_node()
                     assign_value["kind"] = NAME
                     assign_value["id"] = cn
                     assign_value["resolved_type"] = nd_get_str(value_node, "resolved_type")
-                    assign_stmt: Node = _empty_node()
+                    assign_stmt: Node = _passes_empty_node()
                     assign_stmt["kind"] = ASSIGN
                     assign_stmt["target"] = deep_copy_json(target)
                     assign_stmt["value"] = assign_value
@@ -652,6 +652,7 @@ def _bump_reassigned(out: dict[str, int], name: str) -> None:
 
 
 def _collect_reassigned_lexical(stmts: list[JsonVal], out: dict[str, int]) -> None:
+    out = out
     for stmt in stmts:
         if not jv_is_dict(stmt):
             continue
@@ -699,6 +700,7 @@ def _collect_reassigned_lexical(stmts: list[JsonVal], out: dict[str, int]) -> No
 
 
 def _collect_target_write_counts(target: JsonVal, out: dict[str, int]) -> None:
+    out = out
     if not jv_is_dict(target):
         return
     target_node: Node = jv_dict(target)
@@ -716,6 +718,7 @@ def _collect_target_write_counts(target: JsonVal, out: dict[str, int]) -> None:
 
 
 def _collect_target_plan_write_counts(target_plan: JsonVal, out: dict[str, int]) -> None:
+    out = out
     if not jv_is_dict(target_plan):
         return
     target_plan_node: Node = jv_dict(target_plan)
@@ -792,7 +795,7 @@ def _closure_capture_entries(
     if jv_is_list(body):
         for stmt in jv_list(body):
             _collect_name_refs_lexical(stmt, used_names, descend_into_root=False)
-    captures: list[JsonVal] = _empty_jv_list()
+    captures: list[JsonVal] = _passes_empty_jv_list()
     sorted_names: list[str] = []
     for used_name in used_names:
         sorted_names.append(used_name)
@@ -802,7 +805,7 @@ def _closure_capture_entries(
             continue
         capture_type = visible_types.get(name, "")
         capture_mode = "mutable" if name in visible_mutable else "readonly"
-        capture: Node = _empty_node()
+        capture: Node = _passes_empty_node()
         capture["name"] = name
         capture["mode"] = capture_mode
         capture["type"] = capture_type
@@ -815,7 +818,7 @@ def _lower_closure_stmt_list(
     visible_types: dict[str, str],
     visible_mutable: set[str],
 ) -> list[JsonVal]:
-    result: list[JsonVal] = _empty_jv_list()
+    result: list[JsonVal] = _passes_empty_jv_list()
     for stmt in stmts:
         if not jv_is_dict(stmt):
             result.append(stmt)
@@ -826,8 +829,8 @@ def _lower_closure_stmt_list(
             captures, is_recursive = _closure_capture_entries(visible_types, visible_mutable, stmt_node)
             stmt_node["kind"] = CLOSURE_DEF
             stmt_node["captures"] = captures
-            capture_types: Node = _empty_node()
-            capture_modes: Node = _empty_node()
+            capture_types: Node = _passes_empty_node()
+            capture_modes: Node = _passes_empty_node()
             for capture in captures:
                 capture_node: Node = jv_dict(capture)
                 capture_name = "" + jv_str(capture_node.get("name", ""))
@@ -936,12 +939,12 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
         ad = node.get("arg_defaults")
         if not jv_is_list(ao):
             return
-        sig: Node = _empty_node()
+        sig: Node = _passes_empty_node()
         sig["arg_order"] = jv_list(ao)
         if jv_is_dict(ad):
             sig["arg_defaults"] = jv_dict(ad)
         else:
-            empty_defaults: Node = _empty_node()
+            empty_defaults: Node = _passes_empty_node()
             sig["arg_defaults"] = empty_defaults
         full = name
         if class_name != "":
@@ -987,8 +990,8 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
     args = value_node.get("args")
     if lambda_name == "" or not jv_is_list(args):
         return
-    arg_order: list[JsonVal] = _empty_jv_list()
-    arg_defaults: Node = _empty_node()
+    arg_order: list[JsonVal] = _passes_empty_jv_list()
+    arg_defaults: Node = _passes_empty_node()
     for arg in jv_list(args):
         if not jv_is_dict(arg):
             continue
@@ -1000,7 +1003,7 @@ def _collect_sig_node(node: Node, sigs: dict[str, Node], class_name: str) -> Non
         default_node = arg_node.get("default")
         if jv_is_dict(default_node):
             arg_defaults[arg_name] = deep_copy_json(default_node)
-    lambda_sig: Node = _empty_node()
+    lambda_sig: Node = _passes_empty_node()
     lambda_sig["arg_order"] = arg_order
     lambda_sig["arg_defaults"] = arg_defaults
     sigs[lambda_name] = lambda_sig
@@ -1041,7 +1044,7 @@ def _expand_defaults_walk(node: JsonVal, sigs: dict[str, Node]) -> None:
             ad = sig.get("arg_defaults")
             args = nd.get("args")
             if jv_is_list(args) and jv_is_list(ao) and jv_is_dict(ad):
-                args_list: list[JsonVal] = _empty_jv_list()
+                args_list: list[JsonVal] = _passes_empty_jv_list()
                 for arg in jv_list(args):
                     args_list.append(arg)
                 ad_node: Node = jv_dict(ad)
@@ -1100,15 +1103,15 @@ def expand_default_arguments(module: Node, ctx: CompileContext) -> Node:
 # ===========================================================================
 
 def _tte_subscript(owner: str, index: int, elem_type: str) -> Node:
-    value_node: Node = _empty_node()
+    value_node: Node = _passes_empty_node()
     value_node["kind"] = NAME
     value_node["id"] = owner
     value_node["resolved_type"] = "tuple"
-    slice_node: Node = _empty_node()
+    slice_node: Node = _passes_empty_node()
     slice_node["kind"] = CONSTANT
     slice_node["value"] = index
     slice_node["resolved_type"] = "int64"
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     out["kind"] = SUBSCRIPT
     out["value"] = value_node
     out["slice"] = slice_node
@@ -1145,8 +1148,8 @@ def _tte_walk(node: JsonVal, ctx: CompileContext) -> None:
                     elements_list = jv_list(elements)
                     if len(elements_list) >= 2:
                         tmp = _local_tmp_name("__tte_", nd)
-                        assigns: list[JsonVal] = _empty_jv_list()
-                        direct_names: list[JsonVal] = _empty_jv_list()
+                        assigns: list[JsonVal] = _passes_empty_jv_list()
+                        direct_names: list[JsonVal] = _passes_empty_jv_list()
                         all_flat_names = True
                         i = 0
                         for elem in elements_list:
@@ -1162,11 +1165,11 @@ def _tte_walk(node: JsonVal, ctx: CompileContext) -> None:
                             if en == "":
                                 all_flat_names = False
                                 continue
-                            target_node: Node = _empty_node()
+                            target_node: Node = _passes_empty_node()
                             target_node["kind"] = NAME
                             target_node["id"] = en
                             target_node["resolved_type"] = et if et != "" else "unknown"
-                            assign: Node = _empty_node()
+                            assign: Node = _passes_empty_node()
                             assign["kind"] = ASSIGN
                             assign["target"] = target_node
                             assign["value"] = _tte_subscript(tmp, i, et)
@@ -1176,7 +1179,7 @@ def _tte_walk(node: JsonVal, ctx: CompileContext) -> None:
                             direct_names.append(en)
                             i += 1
                         if all_flat_names and len(direct_names) == len(elements_list):
-                            tp_out: Node = _empty_node()
+                            tp_out: Node = _passes_empty_node()
                             tp_out["kind"] = NAME_TARGET
                             tp_out["id"] = tmp
                             tp_out["target_type"] = tp_node.get("target_type", "")
@@ -1185,7 +1188,7 @@ def _tte_walk(node: JsonVal, ctx: CompileContext) -> None:
                             nd["target_plan"] = tp_out
                             body = nd.get("body")
                             if jv_is_list(body):
-                                new_body: list[JsonVal] = _empty_jv_list()
+                                new_body: list[JsonVal] = _passes_empty_jv_list()
                                 for stmt in assigns:
                                     new_body.append(stmt)
                                 for stmt in jv_list(body):
@@ -1208,7 +1211,7 @@ def expand_forcore_tuple_targets(module: Node, ctx: CompileContext) -> Node:
 
 def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
     """Expand Assign(target=Tuple, value=expr) into temp + individual assigns."""
-    result: list[JsonVal] = _empty_jv_list()
+    result: list[JsonVal] = _passes_empty_jv_list()
     for stmt in stmts:
         if not jv_is_dict(stmt):
             result.append(stmt)
@@ -1270,7 +1273,7 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
                     if jv_is_dict(elem):
                         rights.append(jv_dict(elem))
                 if len(lefts) == 2 and len(rights) == 2 and _same_lvalue(lefts[0], rights[1]) and _same_lvalue(lefts[1], rights[0]):
-                    swap_node: Node = _empty_node()
+                    swap_node: Node = _passes_empty_node()
                     swap_node["kind"] = SWAP
                     swap_node["left"] = deep_copy_json(lefts[0])
                     swap_node["right"] = deep_copy_json(lefts[1])
@@ -1292,11 +1295,11 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
             continue
         tmp_name = _local_tmp_name("__tuple_unpack_", stmt_node, len(result))
         tmp_value, tmp_rt = _make_tuple_unpack_source(value, val_rt, target_rt)
-        tmp_target: Node = _empty_node()
+        tmp_target: Node = _passes_empty_node()
         tmp_target["kind"] = NAME
         tmp_target["id"] = tmp_name
         tmp_target["resolved_type"] = tmp_rt
-        tmp_assign: Node = _empty_node()
+        tmp_assign: Node = _passes_empty_node()
         tmp_assign["kind"] = ASSIGN
         tmp_assign["target"] = tmp_target
         tmp_assign["value"] = tmp_value
@@ -1311,15 +1314,15 @@ def _expand_tuple_unpack_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> 
             if not jv_is_dict(elem):
                 continue
             elem_rt = elem_types[i] if i < len(elem_types) else "unknown"
-            idx_value: Node = _empty_node()
+            idx_value: Node = _passes_empty_node()
             idx_value["kind"] = NAME
             idx_value["id"] = tmp_name
             idx_value["resolved_type"] = tmp_rt
-            idx_slice: Node = _empty_node()
+            idx_slice: Node = _passes_empty_node()
             idx_slice["kind"] = CONSTANT
             idx_slice["value"] = i
             idx_slice["resolved_type"] = "int64"
-            idx_node: Node = _empty_node()
+            idx_node: Node = _passes_empty_node()
             idx_node["kind"] = SUBSCRIPT
             idx_node["value"] = idx_value
             idx_node["slice"] = idx_slice
@@ -1351,11 +1354,11 @@ def _append_tuple_unpack_target_assignments(
         elem_name = jv_str(target.get("id"))
         if elem_name == "":
             return
-        elem_target: Node = _empty_node()
+        elem_target: Node = _passes_empty_node()
         elem_target["kind"] = NAME
         elem_target["id"] = elem_name
         elem_target["resolved_type"] = elem_rt
-        elem_assign: Node = _empty_node()
+        elem_assign: Node = _passes_empty_node()
         elem_assign["kind"] = ASSIGN
         elem_assign["target"] = elem_target
         elem_assign["value"] = value
@@ -1364,7 +1367,7 @@ def _append_tuple_unpack_target_assignments(
         out.append(elem_assign)
         return
 
-    elem_assign: Node = _empty_node()
+    elem_assign: Node = _passes_empty_node()
     elem_assign["kind"] = ASSIGN
     elem_assign["target"] = deep_copy_json(target)
     elem_assign["value"] = value
@@ -1471,12 +1474,12 @@ def _make_tuple_unpack_source(value: JsonVal, source_type: str, target_type: str
         if normalized_source.startswith("tuple["):
             return value, normalized_source
         if normalized_source.find("None") >= 0:
-            out: Node = _empty_node()
+            out: Node = _passes_empty_node()
             out["kind"] = UNBOX
             out["value"] = deep_copy_json(value)
             out["resolved_type"] = normalized_target
             out["borrow_kind"] = "value"
-            out["casts"] = _empty_jv_list()
+            out["casts"] = _passes_empty_jv_list()
             out["target"] = normalized_target
             out["on_fail"] = "raise"
             if jv_is_dict(value):
@@ -1497,10 +1500,10 @@ def _make_tuple_unpack_high_level(
     value: JsonVal,
     elem_types: list[str],
 ) -> Node:
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     out["kind"] = style_kind
-    targets: list[JsonVal] = _empty_jv_list()
-    target_types: list[JsonVal] = _empty_jv_list()
+    targets: list[JsonVal] = _passes_empty_jv_list()
+    target_types: list[JsonVal] = _passes_empty_jv_list()
     i = 0
     for elem in elements_list:
         if not jv_is_dict(elem):
@@ -1601,62 +1604,62 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
         return None
     body_list = jv_list(body_obj)
     counter = _local_tmp_name("__enum_", stmt)
-    len_func: Node = _empty_node()
+    len_func: Node = _passes_empty_node()
     len_func["kind"] = NAME
     len_func["id"] = "len"
     len_func["resolved_type"] = "callable"
-    len_call: Node = _empty_node()
+    len_call: Node = _passes_empty_node()
     len_call["kind"] = CALL
     len_call["resolved_type"] = "int64"
     len_call["func"] = len_func
-    len_args: list[JsonVal] = _empty_jv_list()
+    len_args: list[JsonVal] = _passes_empty_jv_list()
     len_args.append(deep_copy_json(xs_node))
     len_call["args"] = len_args
-    len_call["keywords"] = _empty_jv_list()
+    len_call["keywords"] = _passes_empty_jv_list()
     len_call["lowered_kind"] = "BuiltinCall"
     len_call["runtime_call"] = "len"
     len_call["runtime_module_id"] = "pytra.core.py_runtime"
     len_call["runtime_symbol"] = "len"
     len_call["runtime_call_adapter_kind"] = "builtin"
     len_call["semantic_tag"] = "core.len"
-    one: Node = _empty_node()
+    one: Node = _passes_empty_node()
     one["kind"] = CONSTANT
     one["value"] = 1
     one["resolved_type"] = "int64"
-    start_expr: Node = _empty_node()
+    start_expr: Node = _passes_empty_node()
     start_expr["kind"] = BIN_OP
     start_expr["resolved_type"] = "int64"
     start_expr["left"] = len_call
     start_expr["op"] = "Sub"
     start_expr["right"] = one
-    init_target: Node = _empty_node()
+    init_target: Node = _passes_empty_node()
     init_target["kind"] = NAME
     init_target["id"] = counter
     init_target["resolved_type"] = "int64"
-    init: Node = _empty_node()
+    init: Node = _passes_empty_node()
     init["kind"] = ASSIGN
     init["target"] = init_target
     init["value"] = start_expr
     init["declare"] = True
     init["decl_type"] = "int64"
-    nip: Node = _empty_node()
+    nip: Node = _passes_empty_node()
     for k, v in ip_node.items():
         nip[k] = deep_copy_json(v)
-    ntp: Node = _empty_node()
+    ntp: Node = _passes_empty_node()
     ntp["kind"] = NAME_TARGET
     ntp["id"] = counter
     ntp["target_type"] = "int64"
-    assign_idx: Node = _empty_node()
+    assign_idx: Node = _passes_empty_node()
     assign_idx["kind"] = ASSIGN
-    idx_target: Node = _empty_node()
+    idx_target: Node = _passes_empty_node()
     idx_target["kind"] = NAME
     idx_target["id"] = v_name
     idx_target["resolved_type"] = v_type
     assign_idx["target"] = idx_target
-    idx_value: Node = _empty_node()
+    idx_value: Node = _passes_empty_node()
     idx_value["kind"] = SUBSCRIPT
     idx_value["value"] = deep_copy_json(xs_node)
-    idx_slice: Node = _empty_node()
+    idx_slice: Node = _passes_empty_node()
     idx_slice["kind"] = NAME
     idx_slice["id"] = counter
     idx_slice["resolved_type"] = "int64"
@@ -1665,38 +1668,38 @@ def _try_lower_enum_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     assign_idx["value"] = idx_value
     assign_idx["declare"] = True
     assign_idx["decl_type"] = v_type
-    increment_target: Node = _empty_node()
+    increment_target: Node = _passes_empty_node()
     increment_target["kind"] = NAME
     increment_target["id"] = counter
     increment_target["resolved_type"] = "int64"
-    increment_value: Node = _empty_node()
+    increment_value: Node = _passes_empty_node()
     increment_value["kind"] = CONSTANT
     increment_value["value"] = 1
     increment_value["resolved_type"] = "int64"
-    increment: Node = _empty_node()
+    increment: Node = _passes_empty_node()
     increment["kind"] = AUG_ASSIGN
     increment["target"] = increment_target
     increment["op"] = "Add"
     increment["value"] = increment_value
-    nb: list[JsonVal] = _empty_jv_list()
+    nb: list[JsonVal] = _passes_empty_jv_list()
     nb.append(assign_idx)
     for item in body_list:
         nb.append(item)
     nb.append(increment)
-    nf: Node = _empty_node()
+    nf: Node = _passes_empty_node()
     nf["kind"] = FOR_CORE
     nf["iter_mode"] = stmt.get("iter_mode", "runtime_protocol")
     nf["iter_plan"] = nip
     nf["target_plan"] = ntp
     nf["body"] = nb
-    nf["orelse"] = stmt.get("orelse", _empty_jv_list())
-    out_nodes: list[JsonVal] = _empty_jv_list()
+    nf["orelse"] = stmt.get("orelse", _passes_empty_jv_list())
+    out_nodes: list[JsonVal] = _passes_empty_jv_list()
     out_nodes.append(init)
     out_nodes.append(nf)
     return out_nodes
 
 def _enum_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
-    result: list[JsonVal] = _empty_jv_list()
+    result: list[JsonVal] = _passes_empty_jv_list()
     for stmt in stmts:
         if not jv_is_dict(stmt):
             result.append(stmt)
@@ -1774,75 +1777,75 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
         return None
     body_list = jv_list(body_obj)
     counter = _local_tmp_name("__reversed_", stmt)
-    len_func: Node = _empty_node()
+    len_func: Node = _passes_empty_node()
     len_func["kind"] = NAME
     len_func["id"] = "len"
     len_func["resolved_type"] = "callable"
-    len_call: Node = _empty_node()
+    len_call: Node = _passes_empty_node()
     len_call["kind"] = CALL
     len_call["resolved_type"] = "int64"
     len_call["func"] = len_func
-    len_args: list[JsonVal] = _empty_jv_list()
+    len_args: list[JsonVal] = _passes_empty_jv_list()
     len_args.append(deep_copy_json(xs_node))
     len_call["args"] = len_args
-    len_call["keywords"] = _empty_jv_list()
+    len_call["keywords"] = _passes_empty_jv_list()
     len_call["lowered_kind"] = "BuiltinCall"
     len_call["runtime_call"] = "len"
     len_call["runtime_module_id"] = "pytra.core.py_runtime"
     len_call["runtime_symbol"] = "len"
     len_call["runtime_call_adapter_kind"] = "builtin"
     len_call["semantic_tag"] = "core.len"
-    one: Node = _empty_node()
+    one: Node = _passes_empty_node()
     one["kind"] = CONSTANT
     one["value"] = 1
     one["resolved_type"] = "int64"
-    start_expr: Node = _empty_node()
+    start_expr: Node = _passes_empty_node()
     start_expr["kind"] = BIN_OP
     start_expr["resolved_type"] = "int64"
     start_expr["left"] = len_call
     start_expr["op"] = "Sub"
     start_expr["right"] = one
-    stop_expr: Node = _empty_node()
+    stop_expr: Node = _passes_empty_node()
     stop_expr["kind"] = CONSTANT
     stop_expr["value"] = -1
     stop_expr["resolved_type"] = "int64"
-    step_expr: Node = _empty_node()
+    step_expr: Node = _passes_empty_node()
     step_expr["kind"] = CONSTANT
     step_expr["value"] = -1
     step_expr["resolved_type"] = "int64"
-    iter_plan: Node = _empty_node()
+    iter_plan: Node = _passes_empty_node()
     iter_plan["kind"] = STATIC_RANGE_FOR_PLAN
     iter_plan["start"] = start_expr
     iter_plan["stop"] = stop_expr
     iter_plan["step"] = step_expr
-    ntp: Node = _empty_node()
+    ntp: Node = _passes_empty_node()
     ntp["kind"] = NAME_TARGET
     ntp["id"] = counter
     ntp["target_type"] = "int64"
-    idx_name_node: Node = _empty_node()
+    idx_name_node: Node = _passes_empty_node()
     idx_name_node["kind"] = NAME
     idx_name_node["id"] = counter
     idx_name_node["resolved_type"] = "int64"
-    sub_node: Node = _empty_node()
+    sub_node: Node = _passes_empty_node()
     sub_node["kind"] = SUBSCRIPT
     sub_node["resolved_type"] = v_type
     sub_node["value"] = deep_copy_json(xs_node)
     sub_node["slice"] = idx_name_node
-    assign_target: Node = _empty_node()
+    assign_target: Node = _passes_empty_node()
     assign_target["kind"] = NAME
     assign_target["id"] = v_name
     assign_target["resolved_type"] = v_type
-    elem_assign: Node = _empty_node()
+    elem_assign: Node = _passes_empty_node()
     elem_assign["kind"] = ASSIGN
     elem_assign["target"] = assign_target
     elem_assign["value"] = sub_node
     elem_assign["decl_type"] = v_type
     elem_assign["declare"] = True
-    nb: list[JsonVal] = _empty_jv_list()
+    nb: list[JsonVal] = _passes_empty_jv_list()
     nb.append(elem_assign)
     for item in body_list:
         nb.append(item)
-    nf: Node = _empty_node()
+    nf: Node = _passes_empty_node()
     nf["kind"] = FOR_CORE
     nf["iter_mode"] = "static_fastpath"
     nf["iter_plan"] = iter_plan
@@ -1852,11 +1855,11 @@ def _try_lower_reversed_forcore(stmt: Node, ctx: CompileContext) -> JsonVal:
     if jv_is_list(orelse_obj):
         nf["orelse"] = jv_list(orelse_obj)
     else:
-        nf["orelse"] = _empty_jv_list()
+        nf["orelse"] = _passes_empty_jv_list()
     return nf
 
 def _reversed_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
-    result: list[JsonVal] = _empty_jv_list()
+    result: list[JsonVal] = _passes_empty_jv_list()
     for stmt in stmts:
         if not jv_is_dict(stmt):
             result.append(stmt)
@@ -2176,7 +2179,7 @@ def _collect_multi_branch(if_stmt: Node) -> set[str]:
 
 
 def _hoist_in_stmt_list(stmts: list[JsonVal], param_names: set[str]) -> list[JsonVal]:
-    result: list[JsonVal] = _empty_jv_list()
+    result: list[JsonVal] = _passes_empty_jv_list()
     already: set[str] = set(param_names)
     for i in range(len(stmts)):
         stmt = stmts[i]
@@ -2237,7 +2240,7 @@ def _hoist_in_stmt_list(stmts: list[JsonVal], param_names: set[str]) -> list[Jso
         for n in sorted(to_hoist.keys()):
             if n == "":
                 continue
-            vd: Node = _empty_node()
+            vd: Node = _passes_empty_node()
             vd["kind"] = VAR_DECL
             vd["name"] = n
             vd["type"] = to_hoist[n] if to_hoist[n] != "" else "unknown"
@@ -2937,7 +2940,7 @@ def _invert_guard_narrowing_from_expr(expr: JsonVal) -> dict[str, str]:
 
 
 def _make_guard_unbox(name_node: Node, target_type: str, storage_type: str = "") -> Node:
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     out["kind"] = UNBOX
     inner = deep_copy_json(name_node)
     if storage_type != "" and storage_type != target_type and jv_is_dict(inner):
@@ -2946,7 +2949,7 @@ def _make_guard_unbox(name_node: Node, target_type: str, storage_type: str = "")
     out["value"] = inner
     out["resolved_type"] = target_type
     out["borrow_kind"] = "value"
-    out["casts"] = _empty_jv_list()
+    out["casts"] = _passes_empty_jv_list()
     out["target"] = target_type
     out["on_fail"] = "raise"
     span = name_node.get("source_span")
@@ -2979,7 +2982,7 @@ def _guard_needs_unbox(current_type: str, storage_type: str, target_type: str) -
 
 def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
     if jv_is_list(node):
-        out_list: list[JsonVal] = _empty_jv_list()
+        out_list: list[JsonVal] = _passes_empty_jv_list()
         for item in jv_list(node):
             out_list.append(_guard_expr(item, env))
         return out_list
@@ -3031,7 +3034,7 @@ def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
             and_env: dict[str, str] = {}
             for key, val in env.items():
                 and_env[key] = val
-            out_values: list[JsonVal] = _empty_jv_list()
+            out_values: list[JsonVal] = _passes_empty_jv_list()
             for value_item in values_list:
                 guarded_value = _guard_expr(value_item, and_env)
                 out_values.append(guarded_value)
@@ -3080,7 +3083,7 @@ def _guard_expr(node: JsonVal, env: dict[str, str]) -> JsonVal:
             nd["left"] = _guard_expr(left, env)
         if jv_is_list(comparators):
             comparator_list_cmp = jv_list(comparators)
-            out_comparators: list[JsonVal] = _empty_jv_list()
+            out_comparators: list[JsonVal] = _passes_empty_jv_list()
             for comp in comparator_list_cmp:
                 out_comparators.append(_guard_expr(comp, env))
             nd["comparators"] = out_comparators
@@ -3114,7 +3117,7 @@ def _guard_lvalue(node: JsonVal, env: dict[str, str]) -> JsonVal:
     if kind in (TUPLE, LIST):
         elements = nd.get("elements")
         if jv_is_list(elements):
-            out_elements: list[JsonVal] = _empty_jv_list()
+            out_elements: list[JsonVal] = _passes_empty_jv_list()
             for elem in jv_list(elements):
                 out_elements.append(_guard_lvalue(elem, env))
             nd["elements"] = out_elements
@@ -3455,6 +3458,8 @@ def _guard_collect_storage_types(stmts: list[JsonVal], out: dict[str, str]) -> N
 
 
 def _guard_collect_target_storage(target: JsonVal, stmt: Node, out: dict[str, str]) -> None:
+    stmt = stmt
+    out = out
     decl_type = _tp_safe(stmt.get("decl_type"))
     if decl_type == "":
         decl_type = _tp_safe(stmt.get("annotation"))
@@ -3653,14 +3658,14 @@ def _tp_truediv(node: JsonVal) -> JsonVal:
     replacement = _try_truediv(node)
     current = node if replacement is None else replacement
     if jv_is_list(current):
-        out_list: list[JsonVal] = _empty_jv_list()
+        out_list: list[JsonVal] = _passes_empty_jv_list()
         for item in jv_list(current):
             out_list.append(_tp_truediv(item))
         return out_list
     if not jv_is_dict(current):
         return current
     nd: Node = jv_dict(current)
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     for key in nd.keys():
         key_s = "" + jv_str(key)
         if key_s == "":
@@ -3687,19 +3692,19 @@ def _try_truediv(node: JsonVal) -> JsonVal:
     if left_type != "Path":
         return None
     right = node_obj.get("right")
-    func_node: Node = _empty_node()
+    func_node: Node = _passes_empty_node()
     func_node["kind"] = ATTRIBUTE
     func_node["value"] = left_node
     func_node["attr"] = "joinpath"
     func_node["resolved_type"] = "Path"
-    args: list[JsonVal] = _empty_jv_list()
+    args: list[JsonVal] = _passes_empty_jv_list()
     if right is not None:
         args.append(right)
-    call: Node = _empty_node()
+    call: Node = _passes_empty_node()
     call["kind"] = CALL
     call["func"] = func_node
     call["args"] = args
-    call["keywords"] = _empty_jv_list()
+    call["keywords"] = _passes_empty_jv_list()
     call["resolved_type"] = "Path"
     span = node_obj.get("source_span")
     if jv_is_dict(span):
@@ -3794,7 +3799,7 @@ _FLOAT_TAGS: set[str] = {
     "stdlib.method.log10", "stdlib.method.fabs", "stdlib.method.floor",
     "stdlib.method.ceil", "stdlib.method.pow",
 }
-_INT_TYPES: set[str] = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
+_PASSES_INT_TYPES: set[str] = {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}
 
 
 def _tp_numeric_casts(node: JsonVal) -> None:
@@ -3818,13 +3823,13 @@ def _tp_numeric_casts(node: JsonVal) -> None:
                     if jv_is_dict(arg):
                         arg_node: Node = jv_dict(arg)
                         arg_type = _tp_safe(arg_node.get("resolved_type"))
-                        if arg_type in _INT_TYPES:
+                        if arg_type in _PASSES_INT_TYPES:
                             existing_casts = arg_node.get("casts")
-                            cast_list: list[JsonVal] = _empty_jv_list()
+                            cast_list: list[JsonVal] = _passes_empty_jv_list()
                             if jv_is_list(existing_casts):
                                 for cast_item in jv_list(existing_casts):
                                     cast_list.append(cast_item)
-                            cast_entry: Node = _empty_node()
+                            cast_entry: Node = _passes_empty_node()
                             cast_entry["on"] = "body"
                             cast_entry["from"] = arg_type
                             cast_entry["to"] = "float64"
@@ -3885,7 +3890,7 @@ def _tp_assert_eq_peer_literals(node: JsonVal) -> None:
                 if jv_is_list(args):
                     arg_list = jv_list(args)
                     if len(arg_list) >= 2:
-                        arg_items: list[JsonVal] = _empty_jv_list()
+                        arg_items: list[JsonVal] = _passes_empty_jv_list()
                         for arg_item in arg_list:
                             arg_items.append(arg_item)
                             if len(arg_items) >= 2:
@@ -3958,7 +3963,7 @@ def apply_yields_dynamic(module: Node, ctx: CompileContext) -> None:
 # ===========================================================================
 
 def _make_name_ref(name: str, resolved_type: str) -> Node:
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     out["kind"] = NAME
     out["id"] = name
     out["resolved_type"] = resolved_type
@@ -3966,7 +3971,7 @@ def _make_name_ref(name: str, resolved_type: str) -> Node:
 
 
 def _make_none_const() -> Node:
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     out["kind"] = CONSTANT
     out["value"] = None
     out["resolved_type"] = "None"
@@ -3981,17 +3986,17 @@ def _make_container_method_call(
     args: list[JsonVal],
     result_type: str,
 ) -> Node:
-    attr_node: Node = _empty_node()
+    attr_node: Node = _passes_empty_node()
     attr_node["kind"] = ATTRIBUTE
     attr_node["value"] = _make_name_ref(owner_name, owner_type)
     attr_node["attr"] = attr
     attr_node["resolved_type"] = "callable"
 
-    call_node: Node = _empty_node()
+    call_node: Node = _passes_empty_node()
     call_node["kind"] = CALL
     call_node["func"] = attr_node
     call_node["args"] = args
-    call_node["keywords"] = _empty_jv_list()
+    call_node["keywords"] = _passes_empty_jv_list()
     call_node["resolved_type"] = result_type
     call_node["lowered_kind"] = "BuiltinCall"
 
@@ -4017,7 +4022,7 @@ def _make_container_method_call(
     call_node["runtime_owner"] = deep_copy_json(attr_node["value"])
 
     if attr in ("append", "extend", "insert", "remove", "pop", "clear", "update", "add", "discard", "setdefault", "sort", "reverse"):
-        meta: Node = _empty_node()
+        meta: Node = _passes_empty_node()
         meta["mutates_receiver"] = True
         call_node["meta"] = meta
     return call_node
@@ -4035,16 +4040,16 @@ def _make_with_method_call(
     runtime_module_id: str = "",
     semantic_tag: str = "",
 ) -> Node:
-    attr_node: Node = _empty_node()
+    attr_node: Node = _passes_empty_node()
     attr_node["kind"] = ATTRIBUTE
     attr_node["value"] = _make_name_ref(owner_name, owner_type)
     attr_node["attr"] = attr
     attr_node["resolved_type"] = "callable"
-    call_node: Node = _empty_node()
+    call_node: Node = _passes_empty_node()
     call_node["kind"] = CALL
     call_node["func"] = attr_node
     call_node["args"] = args
-    call_node["keywords"] = _empty_jv_list()
+    call_node["keywords"] = _passes_empty_jv_list()
     call_node["resolved_type"] = result_type
     if runtime_call != "":
         call_node["runtime_call"] = runtime_call
@@ -4059,7 +4064,7 @@ def _make_with_method_call(
 
 
 def _make_expr_stmt(value: Node) -> Node:
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     out["kind"] = EXPR
     out["value"] = value
     return out
@@ -4082,7 +4087,7 @@ def _lower_covariant_copy(node: Node, ctx: CompileContext) -> JsonVal:
     target_elem_type = _list_elem_type(target_type)
     if source_elem_type == "" or target_elem_type == "" or source_elem_type == target_elem_type:
         return node
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     out["kind"] = COVARIANT_COPY
     out["source"] = deep_copy_json(source_node)
     out["source_type"] = source_type
@@ -4095,13 +4100,13 @@ def _lower_covariant_copy(node: Node, ctx: CompileContext) -> JsonVal:
 
 def _apply_profile_expr(node: JsonVal, ctx: CompileContext) -> JsonVal:
     if jv_is_list(node):
-        items: list[JsonVal] = _empty_jv_list()
+        items: list[JsonVal] = _passes_empty_jv_list()
         for item in jv_list(node):
             items.append(_apply_profile_expr(item, ctx))
         return items
     if not jv_is_dict(node):
         return node
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     node_map: Node = jv_dict(node)
     for key in node_map.keys():
         key_s = "" + jv_str(key)
@@ -4228,7 +4233,7 @@ def _is_can_raise_call(value: JsonVal, can_raise_symbols: set[str]) -> bool:
 
 
 def _make_error_check(call_node: Node, ok_target: JsonVal, ok_type: str, on_error: str) -> Node:
-    out: Node = _empty_node()
+    out: Node = _passes_empty_node()
     out["kind"] = ERROR_CHECK
     out["call"] = call_node
     out["ok_target"] = ok_target
@@ -4244,18 +4249,18 @@ def _rewrite_expr_error_checks(
     on_error: str,
 ) -> tuple[list[JsonVal], JsonVal]:
     if jv_is_list(node):
-        prefix: list[JsonVal] = _empty_jv_list()
-        items: list[JsonVal] = _empty_jv_list()
+        prefix: list[JsonVal] = _passes_empty_jv_list()
+        items: list[JsonVal] = _passes_empty_jv_list()
         for item in jv_list(node):
             item_prefix, item_out = _rewrite_expr_error_checks(item, ctx, can_raise_symbols, on_error)
             prefix.extend(item_prefix)
             items.append(item_out)
         return prefix, items
     if not jv_is_dict(node):
-        empty_prefix: list[JsonVal] = _empty_jv_list()
+        empty_prefix: list[JsonVal] = _passes_empty_jv_list()
         return empty_prefix, node
-    out: Node = _empty_node()
-    prefix2: list[JsonVal] = _empty_jv_list()
+    out: Node = _passes_empty_node()
+    prefix2: list[JsonVal] = _passes_empty_jv_list()
     node_map4: Node = jv_dict(node)
     for key in node_map4.keys():
         key_s = "" + jv_str(key)
@@ -4287,12 +4292,12 @@ def _apply_profile_stmt(
     catch_mode: bool = False,
 ) -> list[JsonVal]:
     if not jv_is_dict(stmt):
-        single_stmt: list[JsonVal] = _empty_jv_list()
+        single_stmt: list[JsonVal] = _passes_empty_jv_list()
         single_stmt.append(stmt)
         return single_stmt
     out = _apply_profile_expr(stmt, ctx)
     if not jv_is_dict(out):
-        single_out: list[JsonVal] = _empty_jv_list()
+        single_out: list[JsonVal] = _passes_empty_jv_list()
         single_out.append(out)
         return single_out
     out_node: Node = jv_dict(out)
@@ -4316,17 +4321,17 @@ def _apply_profile_stmt(
             if fn_can_raise:
                 out_node["return_type"] = _union_return_type(_str(out_node, "return_type"))
                 meta = out_node.get("meta")
-                meta_node: Node = _empty_node()
+                meta_node: Node = _passes_empty_node()
                 if jv_is_dict(meta):
                     meta_src: Node = jv_dict(meta)
                     for meta_key_s in meta_src.keys():
                         meta_node[meta_key_s] = meta_src.get(meta_key_s)
-                can_raise_meta: Node = _empty_node()
+                can_raise_meta: Node = _passes_empty_node()
                 can_raise_meta["schema_version"] = 1
-                can_raise_meta["exception_types"] = _empty_jv_list()
+                can_raise_meta["exception_types"] = _passes_empty_jv_list()
                 meta_node["can_raise_v1"] = can_raise_meta
                 out_node["meta"] = meta_node
-            result_fn: list[JsonVal] = _empty_jv_list()
+            result_fn: list[JsonVal] = _passes_empty_jv_list()
             result_fn.append(out_node)
             return result_fn
         if kind0 == CLASS_DEF:
@@ -4337,19 +4342,19 @@ def _apply_profile_stmt(
                 current_function_can_raise=False,
                 catch_mode=False,
             )
-            result_class: list[JsonVal] = _empty_jv_list()
+            result_class: list[JsonVal] = _passes_empty_jv_list()
             result_class.append(out_node)
             return result_class
         if kind0 == "Raise":
-            err: Node = _empty_node()
+            err: Node = _passes_empty_node()
             err["kind"] = ERROR_RETURN
             err["value"] = out_node.get("exc")
             err["exception_type"] = _raise_exception_type(out_node)
-            result_err: list[JsonVal] = _empty_jv_list()
+            result_err: list[JsonVal] = _passes_empty_jv_list()
             result_err.append(err)
             return result_err
         if kind0 == TRY:
-            err_catch: Node = _empty_node()
+            err_catch: Node = _passes_empty_node()
             err_catch["kind"] = ERROR_CATCH
             err_catch["body"] = _apply_profile_stmts(
                 _node_list(out_node, "body"),
@@ -4358,7 +4363,7 @@ def _apply_profile_stmt(
                 current_function_can_raise=current_function_can_raise,
                 catch_mode=True,
             )
-            handlers: list[JsonVal] = _empty_jv_list()
+            handlers: list[JsonVal] = _passes_empty_jv_list()
             for handler in _node_list(out_node, "handlers"):
                 if jv_is_dict(handler):
                     handler_out = _apply_profile_expr(handler, ctx)
@@ -4380,7 +4385,7 @@ def _apply_profile_stmt(
                 current_function_can_raise=current_function_can_raise,
                 catch_mode=False,
             )
-            result_try: list[JsonVal] = _empty_jv_list()
+            result_try: list[JsonVal] = _passes_empty_jv_list()
             result_try.append(err_catch)
             return result_try
         if kind0 in (ASSIGN, ANN_ASSIGN):
@@ -4392,14 +4397,14 @@ def _apply_profile_stmt(
                     ok_type = _str(jv_dict(ok_target), "resolved_type")
                 if ok_type == "" and jv_is_dict(value):
                     ok_type = _str(jv_dict(value), "resolved_type")
-                checks: list[JsonVal] = _empty_jv_list()
+                checks: list[JsonVal] = _passes_empty_jv_list()
                 if jv_is_dict(value):
                     checks.append(_make_error_check(jv_dict(value), ok_target, ok_type, "catch" if catch_mode else "propagate"))
                     return checks
             value_prefix, value_out = _rewrite_expr_error_checks(value, ctx, active_symbols, "catch" if catch_mode else "propagate")
             if len(value_prefix) != 0:
                 out_node["value"] = value_out
-                result_assign: list[JsonVal] = _empty_jv_list()
+                result_assign: list[JsonVal] = _passes_empty_jv_list()
                 for item in value_prefix:
                     result_assign.append(item)
                 result_assign.append(out_node)
@@ -4410,7 +4415,7 @@ def _apply_profile_stmt(
                 value_prefix2, value_out2 = _rewrite_expr_error_checks(value3, ctx, active_symbols, "catch" if catch_mode else "propagate")
                 if len(value_prefix2) != 0:
                     out_node["value"] = value_out2
-                    result_return: list[JsonVal] = _empty_jv_list()
+                    result_return: list[JsonVal] = _passes_empty_jv_list()
                     for item in value_prefix2:
                         result_return.append(item)
                     result_return.append(out_node)
@@ -4419,7 +4424,7 @@ def _apply_profile_stmt(
             value2 = out_node.get("value")
             if _is_can_raise_call(value2, active_symbols):
                 ok_type2 = ""
-                expr_checks: list[JsonVal] = _empty_jv_list()
+                expr_checks: list[JsonVal] = _passes_empty_jv_list()
                 if jv_is_dict(value2):
                     ok_type2 = _str(jv_dict(value2), "resolved_type")
                     expr_checks.append(_make_error_check(jv_dict(value2), None, ok_type2, "catch" if catch_mode else "propagate"))
@@ -4427,7 +4432,7 @@ def _apply_profile_stmt(
             value_prefix3, value_out3 = _rewrite_expr_error_checks(value2, ctx, active_symbols, "catch" if catch_mode else "propagate")
             if len(value_prefix3) != 0:
                 out_node["value"] = value_out3
-                result_expr: list[JsonVal] = _empty_jv_list()
+                result_expr: list[JsonVal] = _passes_empty_jv_list()
                 for item in value_prefix3:
                     result_expr.append(item)
                 result_expr.append(out_node)
@@ -4438,7 +4443,7 @@ def _apply_profile_stmt(
                 test_prefix, test_out = _rewrite_expr_error_checks(test, ctx, active_symbols, "catch" if catch_mode else "propagate")
                 if len(test_prefix) != 0:
                     out_node["test"] = test_out
-                    result_test: list[JsonVal] = _empty_jv_list()
+                    result_test: list[JsonVal] = _passes_empty_jv_list()
                     for item in test_prefix:
                         result_test.append(item)
                     result_test.append(out_node)
@@ -4449,7 +4454,7 @@ def _apply_profile_stmt(
                 expr_prefix, expr_out = _rewrite_expr_error_checks(context_expr0, ctx, active_symbols, "catch" if catch_mode else "propagate")
                 if len(expr_prefix) != 0:
                     out_node["context_expr"] = expr_out
-                    result_context: list[JsonVal] = _empty_jv_list()
+                    result_context: list[JsonVal] = _passes_empty_jv_list()
                     for item in expr_prefix:
                         result_context.append(item)
                     result_context.append(out_node)
@@ -4461,7 +4466,7 @@ def _apply_profile_stmt(
         style = ctx.lowering_profile.with_style
         out_node["with_lowering_style"] = style
         if style != "try_finally":
-            result_with: list[JsonVal] = _empty_jv_list()
+            result_with: list[JsonVal] = _passes_empty_jv_list()
             result_with.append(out_node)
             return result_with
         var_name = _str(out_node, "var_name")
@@ -4471,7 +4476,7 @@ def _apply_profile_stmt(
         context_type = ""
         if jv_is_dict(context_expr):
             context_type = "" + normalize_type_name(nd_get_str(context_expr, "resolved_type"))
-        bind_ctx_stmt: Node = _empty_node()
+        bind_ctx_stmt: Node = _passes_empty_node()
         bind_ctx_stmt["kind"] = ASSIGN
         bind_ctx_stmt["target"] = _make_name_ref(ctx_name, context_type)
         bind_ctx_stmt["value"] = context_expr
@@ -4485,7 +4490,7 @@ def _apply_profile_stmt(
             ctx_name,
             context_type,
             "__enter__",
-            args=_empty_jv_list(),
+            args=_passes_empty_jv_list(),
             result_type=enter_type if enter_type != "" else context_type,
             runtime_call=_str(out_node, "with_enter_runtime_call"),
             runtime_symbol=_str(out_node, "with_enter_runtime_symbol"),
@@ -4494,7 +4499,7 @@ def _apply_profile_stmt(
         )
         enter_stmt: Node
         if var_name != "":
-            enter_stmt = _empty_node()
+            enter_stmt = _passes_empty_node()
             enter_stmt["kind"] = ASSIGN
             enter_stmt["target"] = _make_name_ref(var_name, enter_type)
             enter_stmt["value"] = enter_call
@@ -4503,7 +4508,7 @@ def _apply_profile_stmt(
                 enter_stmt["decl_type"] = enter_type
         else:
             enter_stmt = _make_expr_stmt(enter_call)
-        exit_args: list[JsonVal] = _empty_jv_list()
+        exit_args: list[JsonVal] = _passes_empty_jv_list()
         exit_args.append(_make_none_const())
         exit_args.append(_make_none_const())
         exit_args.append(_make_none_const())
@@ -4518,15 +4523,15 @@ def _apply_profile_stmt(
             runtime_module_id=_str(out_node, "with_exit_runtime_module_id"),
             semantic_tag=_str(out_node, "with_exit_semantic_tag"),
         )
-        try_stmt: Node = _empty_node()
+        try_stmt: Node = _passes_empty_node()
         try_stmt["kind"] = TRY
         try_stmt["body"] = out_node["body"]
-        try_stmt["handlers"] = _empty_jv_list()
-        try_stmt["orelse"] = _empty_jv_list()
-        finalbody: list[JsonVal] = _empty_jv_list()
+        try_stmt["handlers"] = _passes_empty_jv_list()
+        try_stmt["orelse"] = _passes_empty_jv_list()
+        finalbody: list[JsonVal] = _passes_empty_jv_list()
         finalbody.append(_make_expr_stmt(exit_call))
         try_stmt["finalbody"] = finalbody
-        result_try_finally: list[JsonVal] = _empty_jv_list()
+        result_try_finally: list[JsonVal] = _passes_empty_jv_list()
         result_try_finally.append(bind_ctx_stmt)
         result_try_finally.append(enter_stmt)
         result_try_finally.append(try_stmt)
@@ -4542,7 +4547,7 @@ def _apply_profile_stmt(
         out_node["finalbody"] = _apply_profile_stmts(jv_list(nested_finalbody), ctx, can_raise_symbols, current_function_can_raise=current_function_can_raise, catch_mode=catch_mode)
     handlers_obj = out_node.get("handlers")
     if jv_is_list(handlers_obj):
-        new_handlers: list[JsonVal] = _empty_jv_list()
+        new_handlers: list[JsonVal] = _passes_empty_jv_list()
         for handler in jv_list(handlers_obj):
             if jv_is_dict(handler):
                 handler_out = _apply_profile_expr(handler, ctx)
@@ -4555,7 +4560,7 @@ def _apply_profile_stmt(
             else:
                 new_handlers.append(handler)
         out_node["handlers"] = new_handlers
-    result_default: list[JsonVal] = _empty_jv_list()
+    result_default: list[JsonVal] = _passes_empty_jv_list()
     result_default.append(out_node)
     return result_default
 
@@ -4567,7 +4572,7 @@ def _apply_profile_stmts(
     current_function_can_raise: bool = False,
     catch_mode: bool = False,
 ) -> list[JsonVal]:
-    out: list[JsonVal] = _empty_jv_list()
+    out: list[JsonVal] = _passes_empty_jv_list()
     for stmt in stmts:
         lowered = _apply_profile_stmt(
             stmt,
@@ -4624,7 +4629,7 @@ def _expr_key(node: JsonVal) -> str:
     return ""
 
 def _swap_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
-    result: list[JsonVal] = _empty_jv_list()
+    result: list[JsonVal] = _passes_empty_jv_list()
     for stmt in stmts:
         if not jv_is_dict(stmt):
             result.append(stmt)
@@ -4640,15 +4645,15 @@ def _swap_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                 if nd_get_str(target_node, "kind") == TUPLE and nd_get_str(value_node, "kind") == TUPLE:
                     te = target_node.get("elements")
                     if not jv_is_list(te):
-                        te = target_node.get("elts", _empty_jv_list())
+                        te = target_node.get("elts", _passes_empty_jv_list())
                     ve = value_node.get("elements")
                     if not jv_is_list(ve):
-                        ve = value_node.get("elts", _empty_jv_list())
+                        ve = value_node.get("elts", _passes_empty_jv_list())
                     if jv_is_list(te) and jv_is_list(ve):
-                        te_items: list[JsonVal] = _empty_jv_list()
+                        te_items: list[JsonVal] = _passes_empty_jv_list()
                         for item in jv_list(te):
                             te_items.append(item)
-                        ve_items: list[JsonVal] = _empty_jv_list()
+                        ve_items: list[JsonVal] = _passes_empty_jv_list()
                         for item in jv_list(ve):
                             ve_items.append(item)
                         if len(te_items) == 2 and len(ve_items) == 2:
@@ -4665,34 +4670,34 @@ def _swap_in_stmts(stmts: list[JsonVal], ctx: CompileContext) -> list[JsonVal]:
                                     ctx2 = ctx
                                     tmp = ctx2.next_swap_name()
                                     span = stmt_node.get("source_span")
-                                    bs: Node = _empty_node()
+                                    bs: Node = _passes_empty_node()
                                     if jv_is_dict(span):
                                         bs = jv_dict(span)
                                     if nd_get_str(left_node, "kind") == NAME and nd_get_str(right_node, "kind") == NAME:
-                                        tt: Node = _empty_node()
+                                        tt: Node = _passes_empty_node()
                                         tt["kind"] = NAME
                                         tt["id"] = tmp
                                         if len(bs) != 0:
                                             tt["source_span"] = bs
-                                        a1: Node = _empty_node()
+                                        a1: Node = _passes_empty_node()
                                         a1["kind"] = ASSIGN
                                         a1["target"] = tt
                                         a1["value"] = te_items[0]
                                         a1["declare"] = True
                                         if len(bs) != 0:
                                             a1["source_span"] = bs
-                                        a2: Node = _empty_node()
+                                        a2: Node = _passes_empty_node()
                                         a2["kind"] = ASSIGN
                                         a2["target"] = te_items[0]
                                         a2["value"] = te_items[1]
                                         if len(bs) != 0:
                                             a2["source_span"] = bs
-                                        tr: Node = _empty_node()
+                                        tr: Node = _passes_empty_node()
                                         tr["kind"] = NAME
                                         tr["id"] = tmp
                                         if len(bs) != 0:
                                             tr["source_span"] = bs
-                                        a3: Node = _empty_node()
+                                        a3: Node = _passes_empty_node()
                                         a3["kind"] = ASSIGN
                                         a3["target"] = te_items[1]
                                         a3["value"] = tr

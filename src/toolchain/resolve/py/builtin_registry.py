@@ -34,14 +34,14 @@ def _path_join(base: Path, part: str) -> Path:
     return Path(path.join(str(base), part))
 
 
-def _path_parent(base: Path) -> Path:
+def _builtin_registry_path_parent(base: Path) -> Path:
     parent_text: str = path.dirname(str(base))
     if parent_text == "":
         parent_text = "."
     return Path(parent_text)
 
 
-def _path_parents(base: Path) -> list[Path]:
+def _builtin_registry_path_parents(base: Path) -> list[Path]:
     out: list[Path] = []
     current: str = path.dirname(str(base))
     while True:
@@ -80,7 +80,7 @@ def _path_relative_str(child: Path, base: Path) -> str:
     return str(child)
 
 
-def _jv_obj(value: JsonVal) -> dict[str, JsonVal]:
+def _builtin_registry_jv_obj(value: JsonVal) -> dict[str, JsonVal]:
     obj = json.JsonValue(value).as_obj()
     if obj is None:
         empty: dict[str, JsonVal] = {}
@@ -88,7 +88,7 @@ def _jv_obj(value: JsonVal) -> dict[str, JsonVal]:
     return obj.raw
 
 
-def _jv_arr(value: JsonVal) -> list[JsonVal]:
+def _builtin_registry_jv_arr(value: JsonVal) -> list[JsonVal]:
     arr = json.JsonValue(value).as_arr()
     if arr is None:
         empty: list[JsonVal] = []
@@ -96,31 +96,31 @@ def _jv_arr(value: JsonVal) -> list[JsonVal]:
     return arr.raw
 
 
-def _jv_str(value: JsonVal) -> str:
+def _builtin_registry_jv_str(value: JsonVal) -> str:
     raw = json.JsonValue(value).as_str()
     if raw is None:
         return ""
     return "" + raw
 
 
-def _dict_get_obj(obj: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
+def _builtin_registry_dict_get_obj(obj: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
     if key not in obj:
         empty: dict[str, JsonVal] = {}
         return empty
-    return _jv_obj(obj[key])
+    return _builtin_registry_jv_obj(obj[key])
 
 
-def _dict_get_arr(obj: dict[str, JsonVal], key: str) -> list[JsonVal]:
+def _builtin_registry_dict_get_arr(obj: dict[str, JsonVal], key: str) -> list[JsonVal]:
     if key not in obj:
         empty: list[JsonVal] = []
         return empty
-    return _jv_arr(obj[key])
+    return _builtin_registry_jv_arr(obj[key])
 
 
-def _dict_get_str(obj: dict[str, JsonVal], key: str) -> str:
+def _builtin_registry_dict_get_str(obj: dict[str, JsonVal], key: str) -> str:
     if key not in obj:
         return ""
-    return _jv_str(obj[key])
+    return _builtin_registry_jv_str(obj[key])
 
 
 def _split_once(text: str, sep: str) -> tuple[str, str]:
@@ -358,16 +358,16 @@ class BuiltinRegistry:
 
 def _extract_extern_v2(node: dict[str, JsonVal]) -> ExternV2 | None:
     """Extract ExternV2 from a node's meta.extern_v2."""
-    meta = _dict_get_obj(node, "meta")
+    meta = _builtin_registry_dict_get_obj(node, "meta")
     if len(meta) == 0:
         return None
-    ev2 = _dict_get_obj(meta, "extern_v2")
+    ev2 = _builtin_registry_dict_get_obj(meta, "extern_v2")
     if len(ev2) == 0:
         return None
-    module = _dict_get_str(ev2, "module")
-    symbol = _dict_get_str(ev2, "symbol")
-    tag = _dict_get_str(ev2, "tag")
-    kind = _dict_get_str(ev2, "kind")
+    module = _builtin_registry_dict_get_str(ev2, "module")
+    symbol = _builtin_registry_dict_get_str(ev2, "symbol")
+    tag = _builtin_registry_dict_get_str(ev2, "tag")
+    kind = _builtin_registry_dict_get_str(ev2, "kind")
     if module == "" and symbol == "" and tag == "":
         return None
     return ExternV2(module=module, symbol=symbol, tag=tag, kind=kind)
@@ -375,29 +375,29 @@ def _extract_extern_v2(node: dict[str, JsonVal]) -> ExternV2 | None:
 
 def _extract_func_sig(node: dict[str, JsonVal], is_method: bool, owner: str) -> FuncSig:
     """Extract FuncSig from a FunctionDef EAST1 node."""
-    name: str = _dict_get_str(node, "name")
-    arg_types_raw = _dict_get_obj(node, "arg_types")
+    name: str = _builtin_registry_dict_get_str(node, "name")
+    arg_types_raw = _builtin_registry_dict_get_obj(node, "arg_types")
     arg_types: dict[str, str] = {}
     for k, v in arg_types_raw.items():
-        v_str = _jv_str(v)
+        v_str = _builtin_registry_jv_str(v)
         if v_str != "":
             norm_v: str = _norm_type(v_str)
             arg_types[k] = norm_v
-    arg_order_raw = _dict_get_arr(node, "arg_order")
+    arg_order_raw = _builtin_registry_dict_get_arr(node, "arg_order")
     arg_names: list[str] = []
     for a in arg_order_raw:
-        a_str = _jv_str(a)
+        a_str = _builtin_registry_jv_str(a)
         if a_str != "":
             arg_names.append(a_str)
-    ret_raw = _dict_get_str(node, "return_type")
+    ret_raw = _builtin_registry_dict_get_str(node, "return_type")
     ret: str = _norm_type(ret_raw) if ret_raw != "" else "unknown"
-    vararg_name: str = _dict_get_str(node, "vararg_name")
-    vararg_type_raw = _dict_get_str(node, "vararg_type")
+    vararg_name: str = _builtin_registry_dict_get_str(node, "vararg_name")
+    vararg_type_raw = _builtin_registry_dict_get_str(node, "vararg_type")
     vararg_type: str = _norm_type(vararg_type_raw) if vararg_type_raw != "" else ""
-    decs_raw = _dict_get_arr(node, "decorators")
+    decs_raw = _builtin_registry_dict_get_arr(node, "decorators")
     decs: list[str] = []
     for d in decs_raw:
-        d_str = _jv_str(d)
+        d_str = _builtin_registry_jv_str(d)
         if d_str != "":
             decs.append(d_str)
     extern_v2: ExternV2 | None = _extract_extern_v2(node)
@@ -658,42 +658,42 @@ def _default_io_source_path() -> Path:
 
 def _extract_class_sig(node: dict[str, JsonVal]) -> ClassSig:
     """Extract ClassSig from a ClassDef EAST1 node."""
-    name: str = _dict_get_str(node, "name")
+    name: str = _builtin_registry_dict_get_str(node, "name")
     bases: list[str] = []
-    bases_raw = _dict_get_arr(node, "bases")
+    bases_raw = _builtin_registry_dict_get_arr(node, "bases")
     for b in bases_raw:
-        b_str = _jv_str(b)
+        b_str = _builtin_registry_jv_str(b)
         if b_str != "":
             bases.append(b_str)
     if len(bases) == 0:
-        base_raw = _dict_get_str(node, "base")
+        base_raw = _builtin_registry_dict_get_str(node, "base")
         if base_raw != "":
             bases.append(base_raw)
     methods: dict[str, FuncSig] = {}
     fields: dict[str, str] = {}
-    body_raw = _dict_get_arr(node, "body")
+    body_raw = _builtin_registry_dict_get_arr(node, "body")
     for item in body_raw:
-        item_obj = _jv_obj(item)
+        item_obj = _builtin_registry_jv_obj(item)
         if len(item_obj) == 0:
             continue
-        kind = _dict_get_str(item_obj, "kind")
+        kind = _builtin_registry_dict_get_str(item_obj, "kind")
         if kind == "FunctionDef":
             sig: FuncSig = _extract_func_sig(item_obj, is_method=True, owner=name)
             methods[sig.name] = sig
         elif kind == "AnnAssign":
-            target = _dict_get_obj(item_obj, "target")
-            if _dict_get_str(target, "kind") == "Name":
-                field_name_val = _dict_get_str(target, "id")
-                ann_val = _dict_get_str(item_obj, "annotation")
+            target = _builtin_registry_dict_get_obj(item_obj, "target")
+            if _builtin_registry_dict_get_str(target, "kind") == "Name":
+                field_name_val = _builtin_registry_dict_get_str(target, "id")
+                ann_val = _builtin_registry_dict_get_str(item_obj, "annotation")
                 if field_name_val != "" and ann_val != "":
                     normalized_field_type: str = _norm_type(ann_val)
                     fields[field_name_val] = normalized_field_type
     # Template params from decorators
-    decs_raw = _dict_get_arr(node, "decorators")
+    decs_raw = _builtin_registry_dict_get_arr(node, "decorators")
     decorators: list[str] = []
     tparams: list[str] = []
     for d_raw in decs_raw:
-        d = _jv_str(d_raw)
+        d = _builtin_registry_jv_str(d_raw)
         if d == "":
             continue
         decorators.append(d)
@@ -734,17 +734,17 @@ def _load_module_sig(east1_path: Path, module_id: str) -> ModuleSig:
     msig: ModuleSig = ModuleSig(module_id=module_id)
     text: str = east1_path.read_text(encoding="utf-8")
     raw: JsonVal = json.loads(text).raw
-    raw_obj = _jv_obj(raw)
+    raw_obj = _builtin_registry_jv_obj(raw)
     if len(raw_obj) == 0:
         return msig
-    body = _dict_get_arr(raw_obj, "body")
+    body = _builtin_registry_dict_get_arr(raw_obj, "body")
     if len(body) == 0:
         return msig
     for item in body:
-        item_obj = _jv_obj(item)
+        item_obj = _builtin_registry_jv_obj(item)
         if len(item_obj) == 0:
             continue
-        kind = _dict_get_str(item_obj, "kind")
+        kind = _builtin_registry_dict_get_str(item_obj, "kind")
         if kind == "FunctionDef":
             sig: FuncSig = _extract_func_sig(item_obj, is_method=False, owner="")
             msig.functions[sig.name] = sig
@@ -752,10 +752,10 @@ def _load_module_sig(east1_path: Path, module_id: str) -> ModuleSig:
             csig: ClassSig = _extract_class_sig(item_obj)
             msig.classes[csig.name] = csig
         elif kind == "AnnAssign":
-            target = _dict_get_obj(item_obj, "target")
-            if _dict_get_str(target, "kind") == "Name":
-                var_name_val = _dict_get_str(target, "id")
-                ann_val = _dict_get_str(item_obj, "annotation")
+            target = _builtin_registry_dict_get_obj(item_obj, "target")
+            if _builtin_registry_dict_get_str(target, "kind") == "Name":
+                var_name_val = _builtin_registry_dict_get_str(target, "id")
+                ann_val = _builtin_registry_dict_get_str(item_obj, "annotation")
                 var_type: str = _norm_type(ann_val) if ann_val != "" else "unknown"
                 extern_v: ExternV2 | None = _extract_extern_v2(item_obj)
                 if var_name_val != "":
@@ -845,10 +845,10 @@ def _candidate_module_dirs(base_dir: Path, group: str) -> list[Path]:
     """Return runtime module directories in merge order for std/utils/built_in overlays."""
     dirs: list[Path] = []
     if base_dir.exists():
-        base_parents: list[Path] = _path_parents(base_dir)
+        base_parents: list[Path] = _builtin_registry_path_parents(base_dir)
         if len(base_parents) >= 4 and _path_name(base_parents[3]) == "test":
             test_root: Path = base_parents[3]
-            repo_root: Path = _path_parent(test_root)
+            repo_root: Path = _builtin_registry_path_parent(test_root)
             runtime_dir = _path_join(_path_join(_path_join(_path_join(repo_root, "src"), "runtime"), "east"), group)
             pytra_dir = _path_join(_path_join(_path_join(_path_join(test_root, "pytra"), "east1"), "py"), group)
             include_dir = _path_join(_path_join(_path_join(_path_join(test_root, "include"), "east1"), "py"), group)
@@ -906,13 +906,13 @@ def load_builtin_registry(
     if builtins_east1_path is not None and builtins_east1_path.exists():
         text: str = builtins_east1_path.read_text(encoding="utf-8")
         raw: JsonVal = json.loads(text).raw
-        raw_obj = _jv_obj(raw)
-        body = _dict_get_arr(raw_obj, "body")
+        raw_obj = _builtin_registry_jv_obj(raw)
+        body = _builtin_registry_dict_get_arr(raw_obj, "body")
         for item in body:
-            item_obj = _jv_obj(item)
+            item_obj = _builtin_registry_jv_obj(item)
             if len(item_obj) == 0:
                 continue
-            kind = _dict_get_str(item_obj, "kind")
+            kind = _builtin_registry_dict_get_str(item_obj, "kind")
             if kind == "FunctionDef":
                 sig: FuncSig = _extract_func_sig(item_obj, is_method=False, owner="")
                 reg.functions[sig.name] = sig
@@ -921,13 +921,13 @@ def load_builtin_registry(
     if containers_east1_path is not None and containers_east1_path.exists():
         text2: str = containers_east1_path.read_text(encoding="utf-8")
         raw2: JsonVal = json.loads(text2).raw
-        raw2_obj = _jv_obj(raw2)
-        body2 = _dict_get_arr(raw2_obj, "body")
+        raw2_obj = _builtin_registry_jv_obj(raw2)
+        body2 = _builtin_registry_dict_get_arr(raw2_obj, "body")
         for item2 in body2:
-            item2_obj = _jv_obj(item2)
+            item2_obj = _builtin_registry_jv_obj(item2)
             if len(item2_obj) == 0:
                 continue
-            kind2 = _dict_get_str(item2_obj, "kind")
+            kind2 = _builtin_registry_dict_get_str(item2_obj, "kind")
             if kind2 == "ClassDef":
                 csig: ClassSig = _extract_class_sig(item2_obj)
                 reg.classes[csig.name] = csig

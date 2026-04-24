@@ -30,14 +30,14 @@ _TYPE_ONLY_SYMBOL_BINDINGS: set[tuple[str, str]] = {
     ("pytra.std.json", "JsonVal"),
 }
 
-_TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
+_DEPENDENCIES_TYPE_ID_RUNTIME_NODE_KINDS: set[str] = {
     "IsInstance",
     "IsSubclass",
     "IsSubtype",
     "ClassDef",
 }
 
-_STRING_OP_RUNTIME_SYMBOLS: set[str] = {
+_DEPENDENCIES_STRING_OP_RUNTIME_SYMBOLS: set[str] = {
     "str.strip",
     "str.lstrip",
     "str.rstrip",
@@ -72,10 +72,10 @@ def _is_type_only_symbol_binding(binding: JsonVal) -> bool:
     return module_id != "" and export_name != "" and (module_id, export_name) in _TYPE_ONLY_SYMBOL_BINDINGS
 
 
-def _scan_runtime_refs(node: JsonVal, out: set[str], *, include_type_id_runtime: bool = True) -> None:
+def _dependencies_scan_runtime_refs(node: JsonVal, out: set[str], *, include_type_id_runtime: bool = True) -> None:
     if jv_is_list(node):
         for item in jv_list(node):
-            _scan_runtime_refs(item, out, include_type_id_runtime=include_type_id_runtime)
+            _dependencies_scan_runtime_refs(item, out, include_type_id_runtime=include_type_id_runtime)
         return
     if not jv_is_dict(node):
         return
@@ -85,12 +85,12 @@ def _scan_runtime_refs(node: JsonVal, out: set[str], *, include_type_id_runtime:
     if runtime_module_id != "":
         out.add(runtime_module_id)
     kind = nd_get_str(node_map, "kind")
-    if include_type_id_runtime and kind in _TYPE_ID_RUNTIME_NODE_KINDS:
+    if include_type_id_runtime and kind in _DEPENDENCIES_TYPE_ID_RUNTIME_NODE_KINDS:
         out.add("pytra.built_in.type_id")
 
     for _key, value in node_map.items():
         if jv_is_dict(value) or jv_is_list(value):
-            _scan_runtime_refs(value, out, include_type_id_runtime=include_type_id_runtime)
+            _dependencies_scan_runtime_refs(value, out, include_type_id_runtime=include_type_id_runtime)
 
 
 def _normalized_runtime_module_id(node: JsonVal) -> str:
@@ -103,7 +103,7 @@ def _normalized_runtime_module_id(node: JsonVal) -> str:
     if runtime_module_id == "pytra.core.str":
         runtime_symbol = nd_get_str(node_map, "runtime_symbol")
         runtime_call = nd_get_str(node_map, "runtime_call")
-        if runtime_symbol in _STRING_OP_RUNTIME_SYMBOLS or runtime_call in _STRING_OP_RUNTIME_SYMBOLS:
+        if runtime_symbol in _DEPENDENCIES_STRING_OP_RUNTIME_SYMBOLS or runtime_call in _DEPENDENCIES_STRING_OP_RUNTIME_SYMBOLS:
             return "pytra.built_in.string_ops"
     return "" + runtime_module_id
 
@@ -167,7 +167,7 @@ def _build_resolved_dependencies(
             deps.append(mod_id)
 
     embedded_runtime_refs: set[str] = set()
-    _scan_runtime_refs(
+    _dependencies_scan_runtime_refs(
         east_doc.get("body"),
         embedded_runtime_refs,
         include_type_id_runtime=(target != "cpp"),
