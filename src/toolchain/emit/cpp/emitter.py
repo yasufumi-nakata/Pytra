@@ -173,6 +173,13 @@ def _selfhost_cpp_signature_type(resolved_type: str) -> str:
     return resolved_type
 
 
+def _selfhost_normalize_cpp_container_alias(resolved_type: str) -> str:
+    normalized = normalize_cpp_nominal_adt_type(resolved_type)
+    if normalized == "Node":
+        return "dict[str,JsonVal]"
+    return normalized + ""
+
+
 def _resolve_runtime_symbol_name_local(
     symbol: str,
     mapping: RuntimeMapping,
@@ -2897,26 +2904,34 @@ def _emit_direct_container_subscript(
 
 def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     value = _emit_expr(ctx, node.get("value"))
-    sl = node.get("slice")
-    value_node = node.get("value")
-    value_type = _str(value_node, "resolved_type") if isinstance(value_node, dict) else ""
+    sl: JsonVal = node.get("slice")
+    sl_obj = json.JsonValue(sl).as_obj()
+    sl_dict: dict[str, JsonVal] = {}
+    if sl_obj is not None:
+        sl_dict = sl_obj.raw
+    value_node: JsonVal = node.get("value")
+    value_obj = json.JsonValue(value_node).as_obj()
+    value_dict: dict[str, JsonVal] = {}
+    if value_obj is not None:
+        value_dict = value_obj.raw
+    value_type = _str(value_dict, "resolved_type") if value_obj is not None else ""
     storage_type = _expr_storage_type(ctx, value_node)
     if (value_type in ("", "unknown", "tuple", "list", "dict", "set") or value_type == storage_type) and storage_type != "":
         value_type = storage_type
-    value_type = normalize_cpp_container_alias(value_type)
+    value_type = _selfhost_normalize_cpp_container_alias(value_type)
     class_var_spec = _class_var_spec(ctx, value_node)
     if class_var_spec is not None and value_type in ("", "unknown", "tuple", "list", "dict", "set"):
         spec_type = _str(class_var_spec, "type")
         if spec_type != "":
             value_type = spec_type
-    if isinstance(sl, dict) and _str(sl, "kind") == "Slice":
-        return _emit_slice_expr(ctx, node, value, sl)
-    if isinstance(sl, dict) and _str(sl, "kind") == "Constant":
-        iv = sl.get("value")
-        if isinstance(iv, int) and iv >= 0:
+    if sl_obj is not None and _str(sl_dict, "kind") == "Slice":
+        return _emit_slice_expr(ctx, node, value, sl_dict)
+    if sl_obj is not None and _str(sl_dict, "kind") == "Constant":
+        iv = json.JsonValue(sl_dict.get("value")).as_int()
+        if iv is not None and iv >= 0:
             if value_type.startswith("tuple["):
                 return "::std::get<" + str(iv) + ">(" + value + ")"
-            if isinstance(value_node, dict) and _str(value_node, "kind") == "Name" and _str(value_node, "id").startswith("__tuple_unpack_"):
+            if value_obj is not None and _str(value_dict, "kind") == "Name" and _str(value_dict, "id").startswith("__tuple_unpack_"):
                 return "::std::get<" + str(iv) + ">(" + value + ")"
     if value_type == "str":
         raw_idx = _emit_expr(ctx, sl)
@@ -2937,7 +2952,7 @@ def _emit_subscript_store_target(ctx: CppEmitContext, node: dict[str, JsonVal]) 
     value = _emit_expr(ctx, node.get("value"))
     sl = node.get("slice")
     value_node = node.get("value")
-    value_type = normalize_cpp_container_alias(_effective_resolved_type(value_node))
+    value_type = _selfhost_normalize_cpp_container_alias(_effective_resolved_type(value_node))
     class_var_spec = _class_var_spec(ctx, value_node)
     if class_var_spec is not None and value_type in ("", "unknown", "tuple", "list", "dict", "set"):
         spec_type = _str(class_var_spec, "type")
@@ -2973,10 +2988,14 @@ def _emit_dict_literal(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return "rc_from_value(dict<str, object>{})"
     plain_ct = cpp_type(rt, prefer_value_container=True)
     if len(entries) > 0:
-        parts = []
+        parts: list[str] = []
         for e in entries:
-            if isinstance(e, dict):
-                parts.append(plain_ct + "::value_type{" + _emit_expr(ctx, e.get("key")) + ", " + _emit_expr(ctx, e.get("value")) + "}")
+            e_obj = json.JsonValue(e).as_obj()
+            if e_obj is not None:
+                entry = e_obj.raw
+                key_node: JsonVal = entry.get("key")
+                value_node: JsonVal = entry.get("value")
+                parts.append(plain_ct + "::value_type{" + _emit_expr(ctx, key_node) + ", " + _emit_expr(ctx, value_node) + "}")
         literal = plain_ct + "{" + ", ".join(parts) + "}"
         return _wrap_container_value_expr(rt, literal) if is_container_resolved_type(rt) else literal
     literal = plain_ct + "{}"
@@ -2999,12 +3018,17 @@ def _emit_tuple_literal(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 
 
 def _is_python_type_alias_expr(node: JsonVal) -> bool:
-    if not isinstance(node, dict) or _str(node, "kind") != "Subscript":
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is None:
         return False
-    base = node.get("value")
-    if not isinstance(base, dict):
+    node_dict = node_obj.raw
+    if _str(node_dict, "kind") != "Subscript":
         return False
-    base_id = _str(base, "id")
+    base = node_dict.get("value")
+    base_obj = json.JsonValue(base).as_obj()
+    if base_obj is None:
+        return False
+    base_id = _str(base_obj.raw, "id")
     return base_id in {
         "Union",
         "Optional",
@@ -3029,9 +3053,15 @@ def _emit_range_expr(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     start = node.get("start")
     stop = node.get("stop")
     step = node.get("step")
-    start_code = _emit_expr(ctx, start) if isinstance(start, dict) else "0"
-    stop_code = _emit_expr(ctx, stop) if isinstance(stop, dict) else "0"
-    step_code = _emit_expr(ctx, step) if isinstance(step, dict) else "1"
+    start_code = "0"
+    if json.JsonValue(start).as_obj() is not None:
+        start_code = _emit_expr(ctx, start)
+    stop_code = "0"
+    if json.JsonValue(stop).as_obj() is not None:
+        stop_code = _emit_expr(ctx, stop)
+    step_code = "1"
+    if json.JsonValue(step).as_obj() is not None:
+        step_code = _emit_expr(ctx, step)
     mode = _str(node, "range_mode")
     if mode == "":
         mode = "dynamic"
