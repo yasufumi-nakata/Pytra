@@ -45,6 +45,40 @@ from toolchain.parse.py.type_resolver import default_type_aliases
 # ---------------------------------------------------------------------------
 
 @dataclass
+class ImportBindingDraft:
+    module_id: str
+    export_name: str
+    local_name: str
+    binding_kind: str
+    source_file: str
+    source_line: int
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {
+            "module_id": self.module_id,
+            "export_name": self.export_name,
+            "local_name": self.local_name,
+            "binding_kind": self.binding_kind,
+            "source_file": self.source_file,
+            "source_line": self.source_line,
+        }
+
+
+@dataclass
+class QualifiedSymbolRefDraft:
+    module_id: str
+    symbol: str
+    local_name: str
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        return {
+            "module_id": self.module_id,
+            "symbol": self.symbol,
+            "local_name": self.local_name,
+        }
+
+
+@dataclass
 class ParseContext:
     """パーサーの状態。全て関数引数で渡す。"""
     filename: str
@@ -53,8 +87,8 @@ class ParseContext:
     class_names: dict[str, bool]  # 定義されたクラス名
     import_symbols: dict[str, dict[str, str]]
     import_modules: dict[str, str]
-    import_bindings: list[dict[str, JsonVal]]
-    qualified_refs: list[dict[str, JsonVal]]
+    import_bindings: list[ImportBindingDraft]
+    qualified_refs: list[QualifiedSymbolRefDraft]
     type_aliases: dict[str, str] = field(default_factory=default_type_aliases)
 
 
@@ -175,6 +209,28 @@ def _parse_runtime_decorator(s: str) -> tuple[str, str, str]:
             elif key == "tag":
                 tag_override = val
     return runtime_ns, symbol_override, tag_override
+
+
+def _make_import_binding(
+    ctx: ParseContext,
+    module_id: str,
+    export_name: str,
+    local_name: str,
+    binding_kind: str,
+    source_line: int,
+) -> ImportBindingDraft:
+    return ImportBindingDraft(
+        module_id=module_id,
+        export_name=export_name,
+        local_name=local_name,
+        binding_kind=binding_kind,
+        source_file=ctx.filename,
+        source_line=source_line,
+    )
+
+
+def _make_qualified_symbol_ref(module_id: str, symbol: str, local_name: str) -> QualifiedSymbolRefDraft:
+    return QualifiedSymbolRefDraft(module_id=module_id, symbol=symbol, local_name=local_name)
 
 
 def _runtime_fn_extern_v2(runtime_ns: str, fn_name: str, symbol_override: str, tag_override: str) -> dict[str, str]:
@@ -1472,8 +1528,8 @@ def parse_python_source(source: str, filename: str) -> Module:
     class_names: dict[str, bool] = {}
     import_symbols: dict[str, dict[str, str]] = {}
     import_modules: dict[str, str] = {}
-    import_bindings: list[dict[str, JsonVal]] = []
-    qualified_refs: list[dict[str, JsonVal]] = []
+    import_bindings: list[ImportBindingDraft] = []
+    qualified_refs: list[QualifiedSymbolRefDraft] = []
     ctx = ParseContext(
         filename=filename,
         lines=lines,
@@ -1498,7 +1554,7 @@ def parse_python_source(source: str, filename: str) -> Module:
     _postprocess(ctx, body_items, renamed_symbols)
 
     # Build meta
-    meta = _build_meta(ctx, ctx.qualified_refs)
+    meta = _build_meta(ctx)
 
     return Module(
         source_path=filename,
@@ -1687,22 +1743,9 @@ def _parse_module_body(
                         symbol_info["name"] = alias_name
                         ctx.import_symbols[local] = symbol_info
                         ctx.import_bindings.append(
-                            {
-                                "module_id": mod,
-                                "export_name": alias_name,
-                                "local_name": local,
-                                "binding_kind": "symbol",
-                                "source_file": ctx.filename,
-                                "source_line": ln_no + 1,
-                            }
+                            _make_import_binding(ctx, mod, alias_name, local, "symbol", ln_no + 1)
                         )
-                        ctx.qualified_refs.append(
-                            {
-                                "module_id": mod,
-                                "symbol": alias_name,
-                                "local_name": local,
-                            }
-                        )
+                        ctx.qualified_refs.append(_make_qualified_symbol_ref(mod, alias_name, local))
                 ln_no += 1
                 skip_next_blanks = True
                 continue
@@ -1713,19 +1756,10 @@ def _parse_module_body(
             for alias in aliases:
                 alias_name: str = "" + alias.name
                 local: str = _alias_local(alias)
-                binding: dict[str, JsonVal] = {}
-                binding["module_id"] = mod
-                binding["export_name"] = alias_name
-                binding["local_name"] = local
-                binding["binding_kind"] = "symbol"
-                binding["source_file"] = ctx.filename
-                binding["source_line"] = ln_no + 1
-                ctx.import_bindings.append(binding)
-                ctx.qualified_refs.append({
-                    "module_id": mod,
-                    "symbol": alias_name,
-                    "local_name": local,
-                })
+                ctx.import_bindings.append(
+                    _make_import_binding(ctx, mod, alias_name, local, "symbol", ln_no + 1)
+                )
+                ctx.qualified_refs.append(_make_qualified_symbol_ref(mod, alias_name, local))
             ln_no += 1
             # import 後の空行は trivia に蓄積しない
             skip_next_blanks = True
@@ -1756,14 +1790,9 @@ def _parse_module_body(
             for alias in imp_aliases:
                 alias_name: str = "" + alias.name
                 local: str = _alias_local(alias)
-                binding: dict[str, JsonVal] = {}
-                binding["module_id"] = alias_name
-                binding["export_name"] = ""
-                binding["local_name"] = local
-                binding["binding_kind"] = "module"
-                binding["source_file"] = ctx.filename
-                binding["source_line"] = ln_no + 1
-                ctx.import_bindings.append(binding)
+                ctx.import_bindings.append(
+                    _make_import_binding(ctx, alias_name, "", local, "module", ln_no + 1)
+                )
             ln_no += 1
             skip_next_blanks = True
             continue
@@ -2610,22 +2639,9 @@ def _parse_block_lines(
                         symbol_info["name"] = alias_name
                         ctx.import_symbols[local] = symbol_info
                         ctx.import_bindings.append(
-                            {
-                                "module_id": mod,
-                                "export_name": alias_name,
-                                "local_name": local,
-                                "binding_kind": "symbol",
-                                "source_file": ctx.filename,
-                                "source_line": abs_ln,
-                            }
+                            _make_import_binding(ctx, mod, alias_name, local, "symbol", abs_ln)
                         )
-                        ctx.qualified_refs.append(
-                            {
-                                "module_id": mod,
-                                "symbol": alias_name,
-                                "local_name": local,
-                            }
-                        )
+                        ctx.qualified_refs.append(_make_qualified_symbol_ref(mod, alias_name, local))
                 i += 1
                 pending_trivia = []
                 pending_comments = []
@@ -2636,19 +2652,10 @@ def _parse_block_lines(
             for alias in aliases:
                 alias_name: str = "" + alias.name
                 local: str = _alias_local(alias)
-                binding: dict[str, JsonVal] = {}
-                binding["module_id"] = mod
-                binding["export_name"] = alias_name
-                binding["local_name"] = local
-                binding["binding_kind"] = "symbol"
-                binding["source_file"] = ctx.filename
-                binding["source_line"] = abs_ln
-                ctx.import_bindings.append(binding)
-                qref: dict[str, JsonVal] = {}
-                qref["module_id"] = mod
-                qref["symbol"] = alias_name
-                qref["local_name"] = local
-                ctx.qualified_refs.append(qref)
+                ctx.import_bindings.append(
+                    _make_import_binding(ctx, mod, alias_name, local, "symbol", abs_ln)
+                )
+                ctx.qualified_refs.append(_make_qualified_symbol_ref(mod, alias_name, local))
             i += 1
             pending_trivia = []
             pending_comments = []
@@ -2678,14 +2685,9 @@ def _parse_block_lines(
             for alias in imp_aliases:
                 alias_name: str = "" + alias.name
                 local: str = _alias_local(alias)
-                binding: dict[str, JsonVal] = {}
-                binding["module_id"] = alias_name
-                binding["export_name"] = ""
-                binding["local_name"] = local
-                binding["binding_kind"] = "module"
-                binding["source_file"] = ctx.filename
-                binding["source_line"] = abs_ln
-                ctx.import_bindings.append(binding)
+                ctx.import_bindings.append(
+                    _make_import_binding(ctx, alias_name, "", local, "module", abs_ln)
+                )
             i += 1
             pending_trivia = []
             pending_comments = []
@@ -3785,7 +3787,7 @@ def _postprocess(ctx: ParseContext, body_items: list[JsonVal], renamed_symbols: 
             stmt_obj.raw["name"] = "__pytra_main"
 
 
-def _build_meta(ctx: ParseContext, qualified_refs: list[dict[str, JsonVal]]) -> dict[str, JsonVal]:
+def _build_meta(ctx: ParseContext) -> dict[str, JsonVal]:
     """Module.meta を構築する (EAST1: 構文情報のみ、runtime 解決なし)。"""
     import_symbols_jv: dict[str, JsonVal] = {}
     for local, info in ctx.import_symbols.items():
@@ -3794,9 +3796,17 @@ def _build_meta(ctx: ParseContext, qualified_refs: list[dict[str, JsonVal]]) -> 
             info_jv[info_key] = info_value
         import_symbols_jv[local] = info_jv
 
+    import_bindings_jv: list[JsonVal] = []
+    for binding in ctx.import_bindings:
+        import_bindings_jv.append(binding.to_jv())
+
+    qualified_refs_jv: list[JsonVal] = []
+    for qref in ctx.qualified_refs:
+        qualified_refs_jv.append(qref.to_jv())
+
     import_resolution: dict[str, JsonVal] = {
-        "bindings": list(ctx.import_bindings),
-        "qualified_refs": list(qualified_refs),
+        "bindings": list(import_bindings_jv),
+        "qualified_refs": list(qualified_refs_jv),
     }
 
     import_modules_jv: dict[str, JsonVal] = {}
@@ -3805,8 +3815,8 @@ def _build_meta(ctx: ParseContext, qualified_refs: list[dict[str, JsonVal]]) -> 
 
     meta: dict[str, JsonVal] = {
         "import_resolution": import_resolution,
-        "import_bindings": list(ctx.import_bindings),
-        "qualified_symbol_refs": list(qualified_refs),
+        "import_bindings": list(import_bindings_jv),
+        "qualified_symbol_refs": list(qualified_refs_jv),
         "import_modules": import_modules_jv,
         "import_symbols": import_symbols_jv,
     }
