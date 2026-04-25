@@ -92,26 +92,30 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
     calls_obj = raw_obj.get_obj("calls")
     if calls_obj is not None:
         for key, value in calls_obj.raw.items():
-            if isinstance(key, str) and isinstance(value, str):
-                calls[key] = value
+            value_str = json.JsonValue(value).as_str()
+            if value_str is not None:
+                calls[key] = value_str
 
     types_obj = raw_obj.get_obj("types")
     if types_obj is not None:
         for key, value in types_obj.raw.items():
-            if isinstance(key, str) and isinstance(value, str):
-                types[key] = value
+            value_str = json.JsonValue(value).as_str()
+            if value_str is not None:
+                types[key] = value_str
 
     skip_arr = raw_obj.get_arr("skip_modules")
     if skip_arr is not None:
         for item in skip_arr.raw:
-            if isinstance(item, str):
-                skip.append(item)
+            item_str = json.JsonValue(item).as_str()
+            if item_str is not None:
+                skip.append(item_str)
 
     skip_exact_arr = raw_obj.get_arr("skip_modules_exact")
     if skip_exact_arr is not None:
         for item in skip_exact_arr.raw:
-            if isinstance(item, str):
-                skip_exact.add(item)
+            item_str = json.JsonValue(item).as_str()
+            if item_str is not None:
+                skip_exact.add(item_str)
 
     implicit_promotions_arr = raw_obj.get_arr("implicit_promotions")
     if implicit_promotions_arr is not None:
@@ -127,38 +131,44 @@ def load_runtime_mapping(mapping_path: Path) -> RuntimeMapping:
     module_native_files_obj = raw_obj.get_obj("module_native_files")
     if module_native_files_obj is not None:
         for key, value in module_native_files_obj.raw.items():
-            if isinstance(key, str) and isinstance(value, str):
-                module_native_files[key] = value
+            value_str = json.JsonValue(value).as_str()
+            if value_str is not None:
+                module_native_files[key] = value_str
 
     module_namespace_exprs_obj = raw_obj.get_obj("module_namespace_exprs")
     if module_namespace_exprs_obj is not None:
         for key, value in module_namespace_exprs_obj.raw.items():
-            if isinstance(key, str) and isinstance(value, str):
-                module_namespace_exprs[key] = value
+            value_str = json.JsonValue(value).as_str()
+            if value_str is not None:
+                module_namespace_exprs[key] = value_str
 
     call_adapters_obj = raw_obj.get_obj("call_adapters")
     if call_adapters_obj is not None:
         for key, value in call_adapters_obj.raw.items():
-            if isinstance(key, str) and isinstance(value, str):
-                call_adapters[key] = value
+            value_str = json.JsonValue(value).as_str()
+            if value_str is not None:
+                call_adapters[key] = value_str
 
     non_native_modules_arr = raw_obj.get_arr("non_native_modules")
     if non_native_modules_arr is not None:
         for item in non_native_modules_arr.raw:
-            if isinstance(item, str):
-                non_native_modules.add(item)
+            item_str = json.JsonValue(item).as_str()
+            if item_str is not None:
+                non_native_modules.add(item_str)
 
     exception_types_arr = raw_obj.get_arr("exception_types")
     if exception_types_arr is not None:
         for item in exception_types_arr.raw:
-            if isinstance(item, str):
-                exception_types.add(item)
+            item_str = json.JsonValue(item).as_str()
+            if item_str is not None:
+                exception_types.add(item_str)
 
     predicate_types_obj = raw_obj.get_obj("predicate_types")
     if predicate_types_obj is not None:
         for key, value in predicate_types_obj.raw.items():
-            if isinstance(key, str) and isinstance(value, str):
-                predicate_types[key] = value
+            value_str = json.JsonValue(value).as_str()
+            if value_str is not None:
+                predicate_types[key] = value_str
 
     return RuntimeMapping(
         builtin_prefix=prefix_str,
@@ -188,49 +198,56 @@ def build_import_alias_map(meta: dict[str, JsonVal]) -> dict[str, str]:
     alias_map: dict[str, str] = {}
 
     ir = meta.get("import_resolution")
-    if isinstance(ir, dict):
-        bindings = ir.get("bindings")
-        if isinstance(bindings, list):
-            for binding in bindings:
-                if not isinstance(binding, dict):
+    ir_obj = json.JsonValue(ir).as_obj()
+    if ir_obj is not None:
+        bindings_arr = ir_obj.get_arr("bindings")
+        if bindings_arr is not None:
+            for binding in bindings_arr.raw:
+                binding_obj = json.JsonValue(binding).as_obj()
+                if binding_obj is None:
                     continue
-                local = binding.get("local_name")
-                resolved_kind = binding.get("resolved_binding_kind")
-                runtime_module_id = binding.get("runtime_module_id")
-                if (
-                    isinstance(local, str) and local != ""
-                    and isinstance(resolved_kind, str) and resolved_kind == "module"
-                    and isinstance(runtime_module_id, str) and runtime_module_id != ""
-                ):
+                local_raw = binding_obj.get_str("local_name")
+                if local_raw is None:
+                    continue
+                local: str = local_raw
+                if local == "":
+                    continue
+                resolved_kind_raw = binding_obj.get_str("resolved_binding_kind")
+                if resolved_kind_raw is None:
+                    continue
+                resolved_kind: str = resolved_kind_raw
+                if resolved_kind != "module":
+                    continue
+                runtime_module_id_raw = binding_obj.get_str("runtime_module_id")
+                if runtime_module_id_raw is None:
+                    continue
+                runtime_module_id: str = runtime_module_id_raw
+                if runtime_module_id != "":
                     alias_map[local] = runtime_module_id
 
     # From import_modules: {alias: module_id}
     im = meta.get("import_modules")
-    if isinstance(im, dict):
-        for alias in im:
-            mod_id = im[alias]
-            if isinstance(alias, str) and isinstance(mod_id, str):
-                alias_map[alias] = mod_id
+    im_obj = json.JsonValue(im).as_obj()
+    if im_obj is not None:
+        for alias, mod_id in im_obj.raw.items():
+            mod_id_str = json.JsonValue(mod_id).as_str()
+            if mod_id_str is not None:
+                alias_map[alias] = mod_id_str
 
     # From import_symbols: {alias: {module: str, name: str}}
     isyms = meta.get("import_symbols")
-    if isinstance(isyms, dict):
-        for alias in isyms:
-            info = isyms[alias]
-            if isinstance(alias, str) and isinstance(info, dict):
-                mod = info.get("module")
-                name = info.get("name")
-                if isinstance(mod, str) and mod != "" and alias not in alias_map:
-                    nested_mod = ""
-                    if isinstance(name, str) and name != "":
-                        root = Path(__file__).resolve().parents[3]
-                        nested_py = root
-                        for part in (mod + "." + name).split("."):
-                            nested_py = nested_py / part
-                        nested_py = nested_py.with_suffix(".py")
-                        if nested_py.exists():
-                            nested_mod = mod + "." + name
-                    alias_map[alias] = nested_mod if nested_mod != "" else mod
+    isyms_obj = json.JsonValue(isyms).as_obj()
+    if isyms_obj is not None:
+        for alias, info in isyms_obj.raw.items():
+            info_obj = json.JsonValue(info).as_obj()
+            if info_obj is None:
+                continue
+            mod_raw = info_obj.get_str("module")
+            if mod_raw is None:
+                continue
+            mod: str = mod_raw
+            if mod != "" and alias not in alias_map:
+                alias_map[alias] = mod
 
     return alias_map
 
@@ -282,33 +299,46 @@ def build_runtime_import_map(
     """Build local import name -> native/runtime symbol name for runtime bindings."""
     runtime_imports: dict[str, str] = {}
     bindings = meta.get("import_bindings")
-    if not isinstance(bindings, list):
+    bindings_arr = json.JsonValue(bindings).as_arr()
+    if bindings_arr is None:
         return runtime_imports
 
-    for binding in bindings:
-        if not isinstance(binding, dict):
+    for binding in bindings_arr.raw:
+        binding_obj = json.JsonValue(binding).as_obj()
+        if binding_obj is None:
             continue
-        binding_kind = binding.get("binding_kind")
-        local_name = binding.get("local_name")
-        if not isinstance(binding_kind, str) or binding_kind != "symbol":
+        binding_kind_raw = binding_obj.get_str("binding_kind")
+        if binding_kind_raw is None:
             continue
-        if not isinstance(local_name, str) or local_name == "":
+        binding_kind: str = binding_kind_raw
+        if binding_kind != "symbol":
+            continue
+        local_name_raw = binding_obj.get_str("local_name")
+        if local_name_raw is None:
+            continue
+        local_name: str = local_name_raw
+        if local_name == "":
             continue
         # Skip module-resolved bindings (e.g. "from pytra.std import glob" where glob is a
         # namespace, not a callable symbol). These are handled via import_alias_modules.
-        resolved_binding_kind = binding.get("resolved_binding_kind")
-        if isinstance(resolved_binding_kind, str) and resolved_binding_kind == "module":
+        resolved_binding_kind_raw = binding_obj.get_str("resolved_binding_kind")
+        if resolved_binding_kind_raw is not None:
+            resolved_binding_kind: str = resolved_binding_kind_raw
+            if resolved_binding_kind == "module":
+                continue
+
+        module_id_raw = binding_obj.get_str("runtime_module_id")
+        if module_id_raw is None or module_id_raw == "":
+            module_id_raw = binding_obj.get_str("module_id")
+        if module_id_raw is None:
+            continue
+        module_id: str = module_id_raw
+        if module_id == "":
             continue
 
-        module_id = binding.get("runtime_module_id")
-        if not isinstance(module_id, str) or module_id == "":
-            module_id = binding.get("module_id")
-        if not isinstance(module_id, str) or module_id == "":
-            continue
-
-        export_name = binding.get("export_name")
+        export_name = binding_obj.get_str("export_name")
         export_symbol = local_name
-        if isinstance(export_name, str) and export_name != "":
+        if export_name is not None and export_name != "":
             export_symbol = export_name
         full_module_id = module_id + "." + export_symbol
         is_runtime_namespace = module_id.startswith("pytra.")
@@ -337,9 +367,9 @@ def build_runtime_import_map(
         ):
             continue
 
-        runtime_symbol = binding.get("runtime_symbol")
+        runtime_symbol = binding_obj.get_str("runtime_symbol")
         symbol_name = export_symbol
-        if isinstance(runtime_symbol, str) and runtime_symbol != "":
+        if runtime_symbol is not None and runtime_symbol != "":
             symbol_name = runtime_symbol
         is_native_runtime = (
             is_runtime_namespace
@@ -363,12 +393,11 @@ def build_runtime_import_map(
             if symbol_name in mapping.calls:
                 # Use explicit mapping.calls entry (highest priority)
                 mapped = mapping.calls[symbol_name]
-                resolved_symbol = mapped if isinstance(mapped, str) and mapped != "" else symbol_name
+                resolved_symbol = mapped if mapped != "" else symbol_name
             else:
                 resolved_symbol = resolve_runtime_symbol_name(symbol_name, mapping, module_id=module_id)
                 if (
                     resolved_symbol == symbol_name
-                    and isinstance(module_id, str)
                     and module_id != ""
                     and "." not in module_id
                 ):

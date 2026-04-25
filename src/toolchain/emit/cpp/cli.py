@@ -1,6 +1,7 @@
 """C++ backend CLI: manifest.json → C++ multi-file output."""
 from __future__ import annotations
 
+from pytra.std import json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
@@ -22,15 +23,16 @@ def _emit_cpp_direct(east_doc: dict[str, JsonVal], output_dir: Path) -> int:
     module_id: str = ""
     module_kind: str = ""
     source_path: str = ""
-    if isinstance(meta, dict):
-        mid: JsonVal = meta.get("_cli_module_id")
-        if isinstance(mid, str):
+    meta_obj = json.JsonValue(meta).as_obj()
+    if meta_obj is not None:
+        mid = json.JsonValue(meta_obj.raw.get("_cli_module_id")).as_str()
+        if mid is not None:
             module_id = mid
-        mk: JsonVal = meta.get("_cli_module_kind")
-        if isinstance(mk, str):
+        mk = json.JsonValue(meta_obj.raw.get("_cli_module_kind")).as_str()
+        if mk is not None:
             module_kind = mk
-        sp: JsonVal = meta.get("_cli_source_path")
-        if isinstance(sp, str):
+        sp = json.JsonValue(meta_obj.raw.get("_cli_source_path")).as_str()
+        if sp is not None:
             source_path = sp
     if module_kind == "runtime":
         return write_runtime_module_artifacts(

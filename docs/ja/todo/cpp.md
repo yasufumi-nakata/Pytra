@@ -59,6 +59,7 @@
 1. [x] [ID: P1-EMITTER-SELFHOST-CPP-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cpp -o work/selfhost/emit/cpp/` を実行し、変換が通るようにする
    - 2026-04-25: `types.py` の top-level dict/set literal と標準 `re` 依存を selfhost-safe な builder/scanner に置換。`python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target cpp -o work/selfhost/emit/cpp/` が parse/resolve/compile/optimize/link と C++ emit まで通過。
 2. [ ] [ID: P1-EMITTER-SELFHOST-CPP-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
+   - 2026-04-25: `cli_runner.py` / `cpp/cli.py` / `code_emitter.py` の `JsonVal` に対する `isinstance` と optional 判定の一部を `JsonValue` accessor と段階的な `None` check に置換。`g++ -std=c++20 -O0 -fmax-errors=60` の次 blocker は `common_renderer` 生成ヘッダの重複宣言、class field 未生成、残りの `isinstance` lowering。
 3. [ ] [ID: P1-EMITTER-SELFHOST-CPP-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する
 
 

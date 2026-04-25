@@ -37,30 +37,33 @@ class ManifestModuleEntryDraft:
     is_entry: bool = False
     source_path: str = ""
 
-    @classmethod
-    def from_jv(cls, entry: dict[str, JsonVal], index: int) -> ManifestModuleEntryDraft:
-        output_raw = entry.get("output")
-        if not isinstance(output_raw, str) or output_raw == "":
+    @staticmethod
+    def from_jv(entry: dict[str, JsonVal], index: int) -> ManifestModuleEntryDraft:
+        output_raw = json.JsonValue(entry.get("output")).as_str()
+        if output_raw is None:
+            raise RuntimeError("manifest.modules[" + str(index) + "].output must be non-empty string")
+        output: str = output_raw
+        if output == "":
             raise RuntimeError("manifest.modules[" + str(index) + "].output must be non-empty string")
         module_id = ""
-        module_id_raw = entry.get("module_id")
-        if isinstance(module_id_raw, str):
+        module_id_raw = json.JsonValue(entry.get("module_id")).as_str()
+        if module_id_raw is not None:
             module_id = module_id_raw
         module_kind = ""
-        module_kind_raw = entry.get("module_kind")
-        if isinstance(module_kind_raw, str):
+        module_kind_raw = json.JsonValue(entry.get("module_kind")).as_str()
+        if module_kind_raw is not None:
             module_kind = module_kind_raw
         is_entry = False
-        is_entry_raw = entry.get("is_entry")
-        if isinstance(is_entry_raw, bool):
+        is_entry_raw = json.JsonValue(entry.get("is_entry")).as_bool()
+        if is_entry_raw is not None:
             is_entry = is_entry_raw
         source_path = ""
-        source_path_raw = entry.get("source_path")
-        if isinstance(source_path_raw, str):
+        source_path_raw = json.JsonValue(entry.get("source_path")).as_str()
+        if source_path_raw is not None:
             source_path = source_path_raw
-        return cls(
+        return ManifestModuleEntryDraft(
             module_id=module_id,
-            output=output_raw,
+            output=output,
             module_kind=module_kind,
             is_entry=is_entry,
             source_path=source_path,
@@ -69,8 +72,9 @@ class ManifestModuleEntryDraft:
     def inject_cli_meta(self, east_doc: dict[str, JsonVal]) -> None:
         meta_val: JsonVal = east_doc.get("meta")
         typed_meta: dict[str, JsonVal] = {}
-        if isinstance(meta_val, dict):
-            typed_meta = meta_val
+        meta_obj = json.JsonValue(meta_val).as_obj()
+        if meta_obj is not None:
+            typed_meta = meta_obj.raw
         else:
             east_doc["meta"] = typed_meta
         if self.module_id != "":
@@ -111,31 +115,62 @@ def _parse_args(argv: list[str]) -> tuple[str, str, str]:
     return input_text, output_dir_text, file_ext
 
 
+def _path_name(path: Path) -> str:
+    text: str = str(path)
+    last: int = -1
+    i: int = 0
+    while i < len(text):
+        if text[i] == "/":
+            last = i
+        i += 1
+    return text[last + 1 :]
+
+
+def _path_parent(path: Path) -> Path:
+    text: str = str(path)
+    last: int = -1
+    i: int = 0
+    while i < len(text):
+        if text[i] == "/":
+            last = i
+        i += 1
+    if last <= 0:
+        return Path(".")
+    return Path(text[:last])
+
+
 def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
     """Load linked modules from a manifest.json file."""
     manifest_text: str = manifest_path.read_text(encoding="utf-8")
     manifest_doc: JsonVal = json.loads(manifest_text).raw
-    if not isinstance(manifest_doc, dict):
+    manifest_obj = json.JsonValue(manifest_doc).as_obj()
+    if manifest_obj is None:
         raise RuntimeError("manifest root must be object: " + str(manifest_path))
-    typed_manifest: dict[str, JsonVal] = manifest_doc
-    modules_raw: JsonVal = typed_manifest.get("modules", [])
-    if not isinstance(modules_raw, list):
+    typed_manifest: dict[str, JsonVal] = manifest_obj.raw
+    modules_raw: JsonVal = typed_manifest.get("modules")
+    modules_arr = json.JsonValue(modules_raw).as_arr()
+    if modules_arr is None:
         raise RuntimeError("manifest.modules must be list")
-    manifest_dir: Path = manifest_path.parent
+    manifest_dir: Path = _path_parent(manifest_path)
     result: list[dict[str, JsonVal]] = []
-    for index, entry in enumerate(modules_raw):
-        if not isinstance(entry, dict):
+    index: int = 0
+    while index < len(modules_arr.raw):
+        entry: JsonVal = modules_arr.raw[index]
+        entry_obj = json.JsonValue(entry).as_obj()
+        if entry_obj is None:
             raise RuntimeError("manifest.modules[" + str(index) + "] must be object")
-        typed_entry: dict[str, JsonVal] = entry
+        typed_entry: dict[str, JsonVal] = entry_obj.raw
         manifest_entry = ManifestModuleEntryDraft.from_jv(typed_entry, index)
         east_path: Path = manifest_dir.joinpath(manifest_entry.output)
         east_text: str = east_path.read_text(encoding="utf-8")
         east_doc: JsonVal = json.loads(east_text).raw
-        if not isinstance(east_doc, dict):
+        east_obj = json.JsonValue(east_doc).as_obj()
+        if east_obj is None:
             raise RuntimeError("linked EAST root must be object: " + str(east_path))
-        typed_east: dict[str, JsonVal] = east_doc
+        typed_east: dict[str, JsonVal] = east_obj.raw
         manifest_entry.inject_cli_meta(typed_east)
         result.append(typed_east)
+        index += 1
     return result
 
 
@@ -163,9 +198,12 @@ def run_emit_cli(
     Returns:
         Exit code (0 on success).
     """
+    argv_list: list[str] = []
     if argv is None:
-        argv = []
-    input_text, output_dir_text, file_ext = _parse_args(argv)
+        argv_list = []
+    else:
+        argv_list = argv
+    input_text, output_dir_text, file_ext = _parse_args(argv_list)
 
     use_direct = direct_emit_fn is not None
     if not use_direct:
@@ -181,7 +219,7 @@ def run_emit_cli(
         return 1
 
     manifest_path: Path = Path(input_text)
-    if manifest_path.name != "manifest.json":
+    if _path_name(manifest_path) != "manifest.json":
         manifest_path = manifest_path.joinpath("manifest.json")
     if not manifest_path.exists():
         print("error: manifest.json not found: " + str(manifest_path))
@@ -196,18 +234,21 @@ def run_emit_cli(
     written: int = 0
 
     if use_direct and direct_emit_fn is not None:
+        active_direct_emit_fn = direct_emit_fn
         for east_doc in modules:
-            written += direct_emit_fn(east_doc, output_dir)
+            written = written + active_direct_emit_fn(east_doc, output_dir)
     elif emit_fn is not None:
+        active_emit_fn = emit_fn
         for east_doc in modules:
-            code: str = emit_fn(east_doc)
+            code = active_emit_fn(east_doc)
             if code.strip() == "":
                 continue
             meta: JsonVal = east_doc.get("meta")
             module_id: str = ""
-            if isinstance(meta, dict):
-                mid: JsonVal = meta.get("_cli_module_id")
-                if isinstance(mid, str):
+            meta_obj = json.JsonValue(meta).as_obj()
+            if meta_obj is not None:
+                mid = json.JsonValue(meta_obj.raw.get("_cli_module_id")).as_str()
+                if mid is not None:
                     module_id = mid
             if module_id == "":
                 module_id = "module_" + str(written)
