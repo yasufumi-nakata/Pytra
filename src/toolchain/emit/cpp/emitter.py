@@ -4413,10 +4413,12 @@ def _cpp_type_is_unknownish(type_name: str) -> bool:
 
 def _handler_type_name(handler: dict[str, JsonVal]) -> str:
     handler_type = handler.get("type")
-    if isinstance(handler_type, dict):
-        kind = _str(handler_type, "kind")
+    handler_type_obj = json.JsonValue(handler_type).as_obj()
+    if handler_type_obj is not None:
+        handler_type_dict = handler_type_obj.raw
+        kind = _str(handler_type_dict, "kind")
         if kind == "Name":
-            return _str(handler_type, "id")
+            return _str(handler_type_dict, "id")
     return ""
 
 
@@ -4443,15 +4445,17 @@ def _render_except_alternates(ctx: CppEmitContext, handler: dict[str, JsonVal]) 
 
 def _render_raise_value(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     exc = node.get("exc")
-    if isinstance(exc, dict):
-        rc = _str(exc, "runtime_call")
+    exc_obj = json.JsonValue(exc).as_obj()
+    if exc_obj is not None:
+        exc_dict = exc_obj.raw
+        rc = _str(exc_dict, "runtime_call")
         if rc == "std::runtime_error":
-            ea = _list(exc, "args")
+            ea = _list(exc_dict, "args")
             if len(ea) >= 1:
                 return "RuntimeError(" + _emit_expr(ctx, ea[0]) + ")"
             return "RuntimeError(" + _cpp_string("RuntimeError") + ")"
         else:
-            return _emit_expr(ctx, exc)
+            return _emit_expr(ctx, exc_dict)
     if exc is None:
         return ""
     return _emit_expr(ctx, exc)
@@ -4460,13 +4464,13 @@ def _render_raise_value(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_try(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     renderer = _CppStmtCommonRenderer(ctx)
     renderer.emit_try_stmt(node)
-    ctx.indent_level = renderer.state.indent_level
+    ctx.indent_level = renderer.state.indent_level + 0
 
 
 def _emit_raise(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     renderer = _CppStmtCommonRenderer(ctx)
     renderer.emit_raise_stmt(node)
-    ctx.indent_level = renderer.state.indent_level
+    ctx.indent_level = renderer.state.indent_level + 0
 
 
 def _emit_with(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
@@ -4517,28 +4521,35 @@ def _collect_with_hoisted_names(ctx: CppEmitContext, body: list[JsonVal]) -> lis
 
     def walk(stmts: list[JsonVal]) -> None:
         for raw_stmt in stmts:
-            if not isinstance(raw_stmt, dict):
+            raw_stmt_obj = json.JsonValue(raw_stmt).as_obj()
+            if raw_stmt_obj is None:
                 continue
-            kind = _str(raw_stmt, "kind")
+            raw_stmt_dict = raw_stmt_obj.raw
+            kind = _str(raw_stmt_dict, "kind")
             if kind == "AnnAssign":
-                target = raw_stmt.get("target")
-                if isinstance(target, dict) and _str(target, "kind") in ("Name", "NameTarget"):
-                    add_name(_str(target, "id"), _str(raw_stmt, "decl_type"))
+                target = raw_stmt_dict.get("target")
+                target_obj = json.JsonValue(target).as_obj()
+                if target_obj is not None and _str(target_obj.raw, "kind") in ("Name", "NameTarget"):
+                    add_name(_str(target_obj.raw, "id"), _str(raw_stmt_dict, "decl_type"))
             elif kind == "Assign":
-                target = raw_stmt.get("target")
-                if not isinstance(target, dict):
-                    targets = _list(raw_stmt, "targets")
-                    if len(targets) > 0 and isinstance(targets[0], dict):
+                target = raw_stmt_dict.get("target")
+                target_obj = json.JsonValue(target).as_obj()
+                if target_obj is None:
+                    targets = _list(raw_stmt_dict, "targets")
+                    first_obj = json.JsonValue(targets[0]).as_obj() if len(targets) > 0 else None
+                    if first_obj is not None:
                         target = targets[0]
-                if isinstance(target, dict) and _str(target, "kind") in ("Name", "NameTarget"):
-                    add_name(_str(target, "id"), _str(raw_stmt, "decl_type"))
+                        target_obj = first_obj
+                if target_obj is not None and _str(target_obj.raw, "kind") in ("Name", "NameTarget"):
+                    add_name(_str(target_obj.raw, "id"), _str(raw_stmt_dict, "decl_type"))
             elif kind in ("If", "While", "With", "Try", "ForCore"):
-                walk(_list(raw_stmt, "body"))
-                walk(_list(raw_stmt, "orelse"))
-                walk(_list(raw_stmt, "finalbody"))
-                for handler in _list(raw_stmt, "handlers"):
-                    if isinstance(handler, dict):
-                        walk(_list(handler, "body"))
+                walk(_list(raw_stmt_dict, "body"))
+                walk(_list(raw_stmt_dict, "orelse"))
+                walk(_list(raw_stmt_dict, "finalbody"))
+                for handler in _list(raw_stmt_dict, "handlers"):
+                    handler_obj = json.JsonValue(handler).as_obj()
+                    if handler_obj is not None:
+                        walk(_list(handler_obj.raw, "body"))
 
     walk(body)
     return out
@@ -4560,7 +4571,8 @@ def _emit_function_def_impl(ctx: CppEmitContext, node: dict[str, JsonVal], owner
     ctx.current_function_scope = _scope_key(ctx, func_name, owner_name)
     ctx.current_value_container_locals = _container_value_locals_for_scope(ctx, func_name, owner_name)
     ctx.current_class = owner_name
-    ctx.visible_local_scopes = [set()]
+    empty_scope: set[str] = set()
+    ctx.visible_local_scopes = [empty_scope]
     for arg_name, arg_type, _ in _function_param_meta(node, ctx):
         _register_local_storage(ctx, arg_name, arg_type)
         _declare_local_visible(ctx, arg_name)
@@ -4623,7 +4635,8 @@ def _function_signature(
     if name == "__init__" and owner_name != "":
         prefix = owner_name if declaration_only else owner_name + "::" + owner_name
         return static_prefix + prefix + "(" + ", ".join(params) + ")"
-    ret = cpp_signature_type(_return_type(node))
+    return_type_arg = _return_type(node) + ""
+    ret = cpp_signature_type(return_type_arg) + ""
     qual_name = name
     if owner_name != "" and not declaration_only:
         qual_name = owner_name + "::" + name
