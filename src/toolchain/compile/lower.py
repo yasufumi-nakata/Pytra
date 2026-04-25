@@ -8,6 +8,7 @@ Port of toolchain/compile/east2_to_east3_lowering.py for toolchain.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Union
 
 from pytra.typing import cast
@@ -173,6 +174,58 @@ def _lower_empty_jv_list() -> list[JsonVal]:
 def _lower_empty_node() -> Node:
     out: dict[str, JsonVal] = {}
     return out
+
+
+@dataclass
+class TargetPlanDraft:
+    kind: str
+    target_type: str = ""
+    id: JsonVal = ""
+    elements: list[JsonVal] = field(default_factory=list)
+    target: JsonVal = None
+
+    def to_jv(self) -> Node:
+        out: Node = _lower_empty_node()
+        out["kind"] = self.kind
+        if self.kind == NAME_TARGET:
+            out["id"] = self.id
+        elif self.kind == TUPLE_TARGET:
+            out["elements"] = list(self.elements)
+        elif self.kind == EXPR_TARGET:
+            out["target"] = self.target
+        if self.target_type != "unknown" and self.target_type != "":
+            out["target_type"] = self.target_type
+        return out
+
+
+@dataclass
+class RuntimeIterPlanDraft:
+    iter_expr: JsonVal
+    dispatch_mode: str
+
+    def to_jv(self) -> Node:
+        out: Node = _lower_empty_node()
+        out["kind"] = RUNTIME_ITER_FOR_PLAN
+        out["iter_expr"] = self.iter_expr
+        out["dispatch_mode"] = self.dispatch_mode
+        out["init_op"] = OBJ_ITER_INIT
+        out["next_op"] = OBJ_ITER_NEXT
+        return out
+
+
+@dataclass
+class StaticRangePlanDraft:
+    start: JsonVal
+    stop: JsonVal
+    step: JsonVal
+
+    def to_jv(self) -> Node:
+        out: Node = _lower_empty_node()
+        out["kind"] = STATIC_RANGE_FOR_PLAN
+        out["start"] = self.start
+        out["stop"] = self.stop
+        out["step"] = self.step
+        return out
 
 
 
@@ -740,12 +793,7 @@ def _build_target_plan(
         td: Node = jv_dict(target)
         kind = nd_kind(td)
         if kind == NAME:
-            name_plan: dict[str, JsonVal] = {}
-            name_plan["kind"] = NAME_TARGET
-            name_plan["id"] = td.get("id", "")
-            if tt_norm != "unknown":
-                name_plan["target_type"] = tt_norm
-            return name_plan
+            return TargetPlanDraft(kind=NAME_TARGET, id=td.get("id", ""), target_type=tt_norm).to_jv()
         if kind == TUPLE:
             elems_obj = td.get("elements")
             elem_plans: list[JsonVal] = []
@@ -759,18 +807,12 @@ def _build_target_plan(
                         et = elem_types[i]
                     elem_plans.append(_build_target_plan(elem, et, dispatch_mode=dispatch_mode, ctx=ctx))
                     i += 1
-            tuple_plan: dict[str, JsonVal] = {}
-            tuple_plan["kind"] = TUPLE_TARGET
-            tuple_plan["elements"] = elem_plans
-            if tt_norm != "unknown":
-                tuple_plan["target_type"] = tt_norm
-            return tuple_plan
-    expr_plan: dict[str, JsonVal] = {}
-    expr_plan["kind"] = EXPR_TARGET
-    expr_plan["target"] = _lower_node(target, dispatch_mode=dispatch_mode, ctx=ctx)
-    if tt_norm != "unknown":
-        expr_plan["target_type"] = tt_norm
-    return expr_plan
+            return TargetPlanDraft(kind=TUPLE_TARGET, elements=elem_plans, target_type=tt_norm).to_jv()
+    return TargetPlanDraft(
+        kind=EXPR_TARGET,
+        target=_lower_node(target, dispatch_mode=dispatch_mode, ctx=ctx),
+        target_type=tt_norm,
+    ).to_jv()
 
 
 def _lower_assignment_like_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
@@ -884,12 +926,7 @@ def _lower_function_def_stmt(
 
 def _lower_for_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:
     iter_expr = _lower_node(stmt.get("iter"), dispatch_mode=dispatch_mode, ctx=ctx)
-    iter_plan: dict[str, JsonVal] = {}
-    iter_plan["kind"] = RUNTIME_ITER_FOR_PLAN
-    iter_plan["iter_expr"] = iter_expr
-    iter_plan["dispatch_mode"] = dispatch_mode
-    iter_plan["init_op"] = OBJ_ITER_INIT
-    iter_plan["next_op"] = OBJ_ITER_NEXT
+    iter_plan = RuntimeIterPlanDraft(iter_expr=iter_expr, dispatch_mode=dispatch_mode).to_jv()
     target_type = _normalize_type_name(stmt.get("target_type"))
     if target_type == "unknown":
         target_type = _normalize_type_name(stmt.get("iter_element_type"))
@@ -919,11 +956,7 @@ def _lower_forrange_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext)
     step_node = _lower_node(stmt.get("step"), dispatch_mode=dispatch_mode, ctx=ctx)
     if not jv_is_dict(step_node):
         step_node = _const_int_node(1)
-    iter_plan: dict[str, JsonVal] = {}
-    iter_plan["kind"] = STATIC_RANGE_FOR_PLAN
-    iter_plan["start"] = start_node
-    iter_plan["stop"] = stop_node
-    iter_plan["step"] = step_node
+    iter_plan = StaticRangePlanDraft(start=start_node, stop=stop_node, step=step_node).to_jv()
     out: Node = _lower_empty_node()
     out["kind"] = FOR_CORE
     out["iter_mode"] = "static_fastpath"
