@@ -28,14 +28,21 @@ class CommonRenderer:
     profile: dict[str, JsonVal]
     state: CommonRendererState
     _op_prec_table: dict[str, int]
-    _literal_nowrap_ranges: dict[str, tuple[int, int] | str]
+    _literal_nowrap_always: dict[str, bool]
+    _literal_nowrap_ranges: dict[str, tuple[int, int]]
+    _tmp_counter: int
 
-    def __init__(self, language: str) -> None:
+    def __init__(self, language: str = "") -> None:
         self.language = language
-        self.profile = load_profile_doc(language)
+        if language == "":
+            self.profile = {}
+        else:
+            self.profile = load_profile_doc(language)
         self.state = CommonRendererState()
         self._op_prec_table: dict[str, int] = {}
-        self._literal_nowrap_ranges: dict[str, tuple[int, int] | str] = {}
+        self._literal_nowrap_always: dict[str, bool] = {}
+        self._literal_nowrap_ranges: dict[str, tuple[int, int]] = {}
+        self._tmp_counter = 0
         operators = self.profile.get("operators")
         operators_obj = json.JsonValue(operators).as_obj()
         if operators_obj is not None:
@@ -48,13 +55,13 @@ class CommonRenderer:
         literal_nowrap = self.profile.get("literal_nowrap_ranges")
         literal_nowrap_obj = json.JsonValue(literal_nowrap).as_obj()
         if literal_nowrap_obj is not None:
-                for key, value in literal_nowrap_obj.raw.items():
-                    value_str = json.JsonValue(value).as_str()
-                    if value_str is not None:
-                        value_text: str = value_str
-                        if value_text == "always":
-                            self._literal_nowrap_ranges[key] = "always"
-                            continue
+            for key, value in literal_nowrap_obj.raw.items():
+                value_str = json.JsonValue(value).as_str()
+                if value_str is not None:
+                    value_text: str = value_str
+                    if value_text == "always":
+                        self._literal_nowrap_always[key] = True
+                        continue
                 value_arr = json.JsonValue(value).as_arr()
                 if value_arr is not None and len(value_arr.raw) == 2:
                     value0 = value_arr.get_int(0)
@@ -68,35 +75,65 @@ class CommonRenderer:
 
     def _lowering(self) -> dict[str, JsonVal]:
         raw = self.profile.get("lowering")
-        return raw if isinstance(raw, dict) else {}
+        obj = json.JsonValue(raw).as_obj()
+        if obj is None:
+            return {}
+        return obj.raw
 
     def _syntax(self) -> dict[str, JsonVal]:
         raw = self.profile.get("syntax")
-        return raw if isinstance(raw, dict) else {}
+        obj = json.JsonValue(raw).as_obj()
+        if obj is None:
+            return {}
+        return obj.raw
 
     def _operators(self) -> dict[str, JsonVal]:
         raw = self.profile.get("operators")
-        return raw if isinstance(raw, dict) else {}
+        obj = json.JsonValue(raw).as_obj()
+        if obj is None:
+            return {}
+        return obj.raw
 
     def _syntax_text(self, key: str, fallback: str) -> str:
         value = self._syntax().get(key)
-        return value if isinstance(value, str) and value != "" else fallback
+        value_str = json.JsonValue(value).as_str()
+        if value_str is None:
+            return fallback
+        if value_str == "":
+            return fallback
+        return value_str
 
     def _stmt_terminator(self) -> str:
         value = self._lowering().get("stmt_terminator")
-        return value if isinstance(value, str) else ""
+        value_str = json.JsonValue(value).as_str()
+        if value_str is None:
+            return ""
+        return value_str
 
     def _condition_parens(self) -> bool:
         value = self._lowering().get("condition_parens")
-        return value if isinstance(value, bool) else True
+        value_bool = json.JsonValue(value).as_bool()
+        if value_bool is None:
+            return True
+        return value_bool
 
     def _none_literal(self) -> str:
         value = self._lowering().get("none_literal")
-        return value if isinstance(value, str) and value != "" else "null"
+        value_str = json.JsonValue(value).as_str()
+        if value_str is None:
+            return "null"
+        if value_str == "":
+            return "null"
+        return value_str
 
     def _exception_style(self) -> str:
         value = self._lowering().get("exception_style")
-        return value if isinstance(value, str) and value != "" else "native_throw"
+        value_str = json.JsonValue(value).as_str()
+        if value_str is None:
+            return "native_throw"
+        if value_str == "":
+            return "native_throw"
+        return value_str
 
     def _require_exception_style(self, expected: str) -> None:
         actual = self._exception_style()
@@ -112,39 +149,45 @@ class CommonRenderer:
 
     def _bool_literal(self, value: bool) -> str:
         raw = self._lowering().get("bool_literals")
-        if isinstance(raw, list) and len(raw) == 2:
-            true_lit = raw[0]
-            false_lit = raw[1]
-            if isinstance(true_lit, str) and isinstance(false_lit, str):
+        arr = json.JsonValue(raw).as_arr()
+        if arr is not None and len(arr.raw) == 2:
+            true_lit = arr.get_str(0)
+            false_lit = arr.get_str(1)
+            if true_lit is not None and false_lit is not None:
                 return true_lit if value else false_lit
         return "true" if value else "false"
 
     def _operator_text(self, group: str, op: str, fallback: str) -> str:
         operators = self._operators().get(group)
-        if isinstance(operators, dict):
-            value = operators.get(op)
-            if isinstance(value, str) and value != "":
-                return value
+        operators_obj = json.JsonValue(operators).as_obj()
+        if operators_obj is not None:
+            value = operators_obj.raw.get(op)
+            value_str = json.JsonValue(value).as_str()
+            if value_str is not None and value_str != "":
+                return value_str
         return fallback
 
     def _operator_precedence(self, op: str) -> int:
-        value = self._op_prec_table.get(op)
-        return value if isinstance(value, int) else -1
+        if op in self._op_prec_table:
+            return self._op_prec_table[op]
+        return -1
 
     def _literal_type_text(self, resolved_type: str) -> str:
         raw = self.profile.get("types")
-        if isinstance(raw, dict):
-            mapped = raw.get(resolved_type)
-            if isinstance(mapped, str) and mapped != "":
-                return mapped
+        raw_obj = json.JsonValue(raw).as_obj()
+        if raw_obj is not None:
+            mapped = raw_obj.raw.get(resolved_type)
+            mapped_str = json.JsonValue(mapped).as_str()
+            if mapped_str is not None and mapped_str != "":
+                return mapped_str
         return resolved_type
 
     def _literal_can_omit_wrap(self, resolved_type: str, value: int) -> bool:
-        spec = self._literal_nowrap_ranges.get(resolved_type)
-        if spec == "always":
+        if resolved_type in self._literal_nowrap_always:
             return True
-        if isinstance(spec, tuple):
-            return spec[0] <= value <= spec[1]
+        if resolved_type in self._literal_nowrap_ranges:
+            lo, hi = self._literal_nowrap_ranges[resolved_type]
+            return lo <= value <= hi
         return False
 
     def _wrap_int_literal(self, resolved_type: str, value: int) -> str:
@@ -156,22 +199,28 @@ class CommonRenderer:
         return literal_type + "(" + str(value) + ")"
 
     def _expr_precedence(self, node: JsonVal) -> int:
-        if not isinstance(node, dict):
+        node_obj = json.JsonValue(node).as_obj()
+        if node_obj is None:
             return 100
-        kind = self._str(node, "kind")
+        node_raw = node_obj.raw
+        kind = self._str(node_raw, "kind")
         if kind == "BinOp":
-            return self._operator_precedence(self._str(node, "op"))
+            return self._operator_precedence(self._str(node_raw, "op"))
         if kind == "BoolOp":
-            return self._operator_precedence(self._str(node, "op"))
+            return self._operator_precedence(self._str(node_raw, "op"))
         if kind == "Compare":
-            ops = self._list(node, "ops")
+            ops = self._list(node_raw, "ops")
             if len(ops) == 0:
                 return 100
             op_obj = ops[0]
-            op_name = op_obj if isinstance(op_obj, str) else self._str(op_obj, "kind")
+            op_name_raw = json.JsonValue(op_obj).as_str()
+            if op_name_raw is None:
+                op_name = self._str(op_obj, "kind")
+            else:
+                op_name = op_name_raw
             return self._operator_precedence(op_name)
         if kind == "UnaryOp":
-            return self._operator_precedence(self._str(node, "op"))
+            return self._operator_precedence(self._str(node_raw, "op"))
         return 100
 
     def _needs_parentheses(self, child: JsonVal, parent_op: str, *, is_right: bool = False) -> bool:
@@ -183,7 +232,8 @@ class CommonRenderer:
             return False
         if child_prec < parent_prec:
             return True
-        if is_right and child_prec == parent_prec and isinstance(child, dict):
+        child_obj = json.JsonValue(child).as_obj()
+        if is_right and child_prec == parent_prec and child_obj is not None:
             kind = self._str(child, "kind")
             if kind in ("BinOp", "BoolOp", "Compare"):
                 return True
@@ -249,46 +299,56 @@ class CommonRenderer:
     # ------------------------------------------------------------------
 
     def _str(self, node: JsonVal, key: str) -> str:
-        if isinstance(node, dict):
-            value = node.get(key)
-            if isinstance(value, str):
-                return value
+        node_obj = json.JsonValue(node).as_obj()
+        if node_obj is not None:
+            value = node_obj.raw.get(key)
+            value_str = json.JsonValue(value).as_str()
+            if value_str is not None:
+                return value_str
         return ""
 
     def _list(self, node: JsonVal, key: str) -> list[JsonVal]:
-        if isinstance(node, dict):
-            value = node.get(key)
-            if isinstance(value, list):
-                return value
+        node_obj = json.JsonValue(node).as_obj()
+        if node_obj is not None:
+            value = node_obj.raw.get(key)
+            value_arr = json.JsonValue(value).as_arr()
+            if value_arr is not None:
+                return value_arr.raw
         return []
 
     def _quote_string(self, value: str) -> str:
         return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
 
     def _boundary_target_name(self, node: JsonVal) -> str:
-        if not isinstance(node, dict):
+        node_obj = json.JsonValue(node).as_obj()
+        if node_obj is None:
             return ""
-        kind = self._str(node, "kind")
+        node_raw = node_obj.raw
+        kind = self._str(node_raw, "kind")
         if kind == "Unbox":
-            target = self._str(node, "target")
+            target = self._str(node_raw, "target")
             if target != "":
                 return target
-        return self._str(node, "resolved_type")
+        return self._str(node_raw, "resolved_type")
 
     def _normalize_boundary_expr(self, node: JsonVal) -> JsonVal:
         current = node
-        while isinstance(current, dict):
-            kind = self._str(current, "kind")
+        current_obj = json.JsonValue(current).as_obj()
+        while current_obj is not None:
+            current_raw = current_obj.raw
+            kind = self._str(current_raw, "kind")
             if kind not in ("Box", "Unbox"):
                 return current
-            inner = current.get("value")
-            if not isinstance(inner, dict) or self._str(inner, "kind") != kind:
+            inner = current_raw.get("value")
+            inner_obj = json.JsonValue(inner).as_obj()
+            if inner_obj is None or self._str(inner_obj.raw, "kind") != kind:
                 return current
             outer_target = self._boundary_target_name(current)
             inner_target = self._boundary_target_name(inner)
             if outer_target == "" or outer_target != inner_target:
                 return current
             current = inner
+            current_obj = json.JsonValue(current).as_obj()
         return current
 
     def _format_condition(self, rendered: str) -> str:
@@ -342,15 +402,9 @@ class CommonRenderer:
         )
 
     def _next_tmp(self, prefix: str) -> str:
-        owner = getattr(self, "owner", None)
-        owner_seq = getattr(owner, "tmp_seq", None)
-        if isinstance(owner_seq, int):
-            name = prefix + "_" + str(owner_seq)
-            owner.tmp_seq += 1
-            self.state.tmp_counter = owner.tmp_seq
-            return name
-        self.state.tmp_counter += 1
-        return prefix + "_" + str(self.state.tmp_counter)
+        self._tmp_counter += 1
+        self.state.tmp_counter = self._tmp_counter
+        return prefix + "_" + str(self._tmp_counter)
 
     # ------------------------------------------------------------------
     # overridable hooks
@@ -369,20 +423,28 @@ class CommonRenderer:
         raise RuntimeError("common renderer requires assign override for " + self.language)
 
     def render_condition_expr(self, node: JsonVal) -> str:
-        return self._format_condition(self.render_expr(node))
+        node_value: JsonVal = node
+        return self._format_condition(self.render_expr(node_value))
 
     def emit_return_stmt(self, node: dict[str, JsonVal]) -> None:
         value = node.get("value")
-        if isinstance(value, dict):
-            self._emit_stmt_line(self._syntax_text("return", "return") + " " + self.render_expr(value))
+        value_obj = json.JsonValue(value).as_obj()
+        if value_obj is not None:
+            value_expr: JsonVal = value
+            line = self._syntax_text("return", "return") + " " + self.render_expr(value_expr)
+            self._emit_stmt_line(line)
         else:
-            self._emit_stmt_line(self._syntax_text("return", "return"))
+            line = self._syntax_text("return", "return")
+            self._emit_stmt_line(line)
 
     def emit_expr_stmt(self, node: dict[str, JsonVal]) -> None:
-        self._emit_stmt_line(self.render_expr(node.get("value")))
+        value_expr: JsonVal = node.get("value")
+        line = self.render_expr(value_expr)
+        self._emit_stmt_line(line)
 
     def emit_assign_stmt(self, node: dict[str, JsonVal]) -> None:
-        self._emit_stmt_line(self.render_assign_stmt(node))
+        line = self.render_assign_stmt(node)
+        self._emit_stmt_line(line)
 
     def render_raise_value(self, node: dict[str, JsonVal]) -> str:
         raise RuntimeError("common renderer requires raise override for " + self.language)
@@ -400,7 +462,6 @@ class CommonRenderer:
         self.emit_body(self._list(handler, "body"))
 
     def emit_exception_handler_binding_prelude(self, handler: dict[str, JsonVal]) -> None:
-        del handler
         return None
 
     def emit_exception_handler_prelude(self, handler: dict[str, JsonVal]) -> None:
@@ -466,7 +527,6 @@ class CommonRenderer:
         )
 
     def emit_exception_handler_binding_teardown(self, handler: dict[str, JsonVal]) -> None:
-        del handler
         return None
 
     def emit_exception_handler_teardown(self, handler: dict[str, JsonVal]) -> None:
@@ -485,8 +545,9 @@ class CommonRenderer:
 
     def iter_exception_match_type_names(self, handler: dict[str, JsonVal]) -> list[str]:
         type_node = handler.get("type")
-        if isinstance(type_node, dict):
-            type_name = self._str(type_node, "id")
+        type_obj = json.JsonValue(type_node).as_obj()
+        if type_obj is not None:
+            type_name = self._str(type_obj.raw, "id")
             if type_name != "":
                 return [type_name]
         return []
@@ -499,8 +560,9 @@ class CommonRenderer:
 
     def exception_handler_type_name(self, handler: dict[str, JsonVal]) -> str:
         type_node = handler.get("type")
-        if isinstance(type_node, dict):
-            return self._str(type_node, "id")
+        type_obj = json.JsonValue(type_node).as_obj()
+        if type_obj is not None:
+            return self._str(type_obj.raw, "id")
         return ""
 
     def render_exception_match_condition(
@@ -508,7 +570,6 @@ class CommonRenderer:
         handler: dict[str, JsonVal],
         caught_type_expr: str,
     ) -> str:
-        del handler, caught_type_expr
         return "true"
 
     def render_user_exception_handler_open(
@@ -517,11 +578,9 @@ class CommonRenderer:
         caught_expr: str,
         is_first: bool,
     ) -> str:
-        del handler, caught_expr, is_first
         raise RuntimeError("common renderer requires user exception handler open override for " + self.language)
 
     def emit_string_exception_binding(self, caught_expr: str, target_name: str) -> None:
-        del caught_expr, target_name
         return None
 
     def render_string_exception_handler_else_open(self) -> str:
@@ -531,56 +590,45 @@ class CommonRenderer:
         return "}"
 
     def render_try_success_arm(self, ok_binding: str, returns_value: bool) -> str:
-        del ok_binding, returns_value
         raise RuntimeError("common renderer requires try success arm override for " + self.language)
 
     def render_try_error_arm_open(self, err_binding: str, borrowed: bool = False) -> str:
-        del err_binding, borrowed
         raise RuntimeError("common renderer requires try error arm hook for " + self.language)
 
     def render_try_error_arm_close(self) -> str:
         return "}"
 
     def render_try_match_open(self, result_name: str) -> str:
-        del result_name
         raise RuntimeError("common renderer requires try match open hook for " + self.language)
 
     def render_try_match_close(self) -> str:
         raise RuntimeError("common renderer requires try match close hook for " + self.language)
 
     def emit_try_capture(self, result_name: str, body: list[JsonVal]) -> None:
-        del result_name, body
         raise RuntimeError("common renderer requires try capture hook for " + self.language)
 
     def render_try_capture_open(self, result_name: str) -> str:
-        del result_name
         raise RuntimeError("common renderer requires try capture open hook for " + self.language)
 
     def render_try_capture_close(self) -> str:
         raise RuntimeError("common renderer requires try capture close hook for " + self.language)
 
     def render_try_rethrow_fallback(self, result_name: str, err_binding: str) -> str:
-        del result_name, err_binding
         raise RuntimeError("common renderer requires try rethrow fallback hook for " + self.language)
 
     def render_resume_unwind(self, err_binding: str) -> str:
-        del err_binding
         raise RuntimeError("common renderer requires rethrow hook for " + self.language)
 
     def render_panic_any(self, value_expr: str) -> str:
-        del value_expr
         raise RuntimeError("common renderer requires panic_any hook for " + self.language)
 
     def render_panic_message(self, message_expr: str) -> str:
-        del message_expr
         raise RuntimeError("common renderer requires panic message hook for " + self.language)
 
     def render_panic_literal(self, message: str) -> str:
-        del message
         raise RuntimeError("common renderer requires panic literal hook for " + self.language)
 
     def render_exception_dispatch_condition(self, caught_type_expr: str) -> str:
-        del caught_type_expr
         return ""
 
     def render_exception_dispatch_open(self, caught_type_expr: str) -> str:
@@ -590,7 +638,6 @@ class CommonRenderer:
         return "}"
 
     def render_exception_dispatch_state_init_stmt(self, handled_name: str) -> str:
-        del handled_name
         raise RuntimeError("common renderer requires exception dispatch state init stmt for " + self.language)
 
     def emit_exception_dispatch_state_init(self, handled_name: str) -> None:
@@ -638,7 +685,6 @@ class CommonRenderer:
         return ctx_name
 
     def resolve_with_context_capture(self, context_expr: JsonVal) -> tuple[str, str, str]:
-        del context_expr
         raise RuntimeError("common renderer requires with context capture resolver for " + self.language)
 
     def next_bounds_checked_index_names(self) -> tuple[str, str, str]:
@@ -726,11 +772,9 @@ class CommonRenderer:
         handled_name: str,
         caught_type_expr: str,
     ) -> str:
-        del handler, handled_name, caught_type_expr
         raise RuntimeError("common renderer requires exception handler guard condition hook for " + self.language)
 
     def render_exception_handler_guard_close(self, handler: dict[str, JsonVal]) -> str:
-        del handler
         return "}"
 
     def partition_exception_handlers(
@@ -740,16 +784,17 @@ class CommonRenderer:
         user_handlers: list[dict[str, JsonVal]] = []
         other_handlers: list[dict[str, JsonVal]] = []
         for handler in handlers:
-            if not isinstance(handler, dict):
+            handler_obj = json.JsonValue(handler).as_obj()
+            if handler_obj is None:
                 continue
-            if self.is_user_exception_handler(handler):
-                user_handlers.append(handler)
+            typed_handler = handler_obj.raw
+            if self.is_user_exception_handler(typed_handler):
+                user_handlers.append(typed_handler)
             else:
-                other_handlers.append(handler)
+                other_handlers.append(typed_handler)
         return user_handlers, other_handlers
 
     def render_exception_handler_mark_handled_stmt(self, handled_name: str) -> str:
-        del handled_name
         raise RuntimeError("common renderer requires exception handled stmt for " + self.language)
 
     def emit_exception_handler_mark_handled(self, handled_name: str) -> None:
@@ -765,16 +810,18 @@ class CommonRenderer:
         self.state.indent_level += 1
         self.emit_exception_dispatch_state_init(handled_name)
         for handler in handlers:
-            if not isinstance(handler, dict):
+            handler_obj = json.JsonValue(handler).as_obj()
+            if handler_obj is None:
                 continue
+            typed_handler = handler_obj.raw
             self.emit_backend_line(
-                self.render_exception_handler_guard_open(handler, handled_name, caught_type_expr)
+                self.render_exception_handler_guard_open(typed_handler, handled_name, caught_type_expr)
             )
             self.state.indent_level += 1
             self.emit_exception_handler_mark_handled(handled_name)
-            self.emit_exception_handler(handler)
+            self.emit_exception_handler(typed_handler)
             self.state.indent_level -= 1
-            self.emit_backend_line(self.render_exception_handler_guard_close(handler))
+            self.emit_backend_line(self.render_exception_handler_guard_close(typed_handler))
         self.state.indent_level -= 1
         self.emit_backend_line(self.render_exception_dispatch_close())
 
@@ -783,11 +830,14 @@ class CommonRenderer:
         caught_expr: str,
         handlers: list[dict[str, JsonVal]],
     ) -> None:
-        for index, handler in enumerate(handlers):
+        index = 0
+        while index < len(handlers):
+            handler = handlers[index]
             self.emit_backend_line(self.render_user_exception_handler_open(handler, caught_expr, index == 0))
             self.state.indent_level += 1
             self.emit_exception_handler(handler)
             self.state.indent_level -= 1
+            index += 1
 
     def emit_string_exception_handler_chain(
         self,
@@ -818,7 +868,6 @@ class CommonRenderer:
         self.emit_string_exception_handler_chain(caught_expr, string_bind_name, string_handlers)
 
     def render_try_body_post_stmt_stmt(self, stmt: dict[str, JsonVal], try_label: str) -> str:
-        del stmt, try_label
         return ""
 
     def emit_try_body_post_stmt(self, stmt: dict[str, JsonVal], try_label: str) -> None:
@@ -827,19 +876,15 @@ class CommonRenderer:
             self.emit_backend_line(stmt_text)
 
     def render_labeled_block_open(self, block_label: str) -> str:
-        del block_label
         return self._syntax_text("try", "try {")
 
     def render_labeled_block_close(self, block_label: str) -> str:
-        del block_label
         return self._syntax_text("block_close", "}")
 
     def render_break_to_label(self, block_label: str) -> str:
-        del block_label
         raise RuntimeError("common renderer requires label-break hook for " + self.language)
 
     def render_break_to_label_value(self, block_label: str, value_expr: str) -> str:
-        del block_label, value_expr
         raise RuntimeError("common renderer requires labeled break-value hook for " + self.language)
 
     def render_try_break(self, try_label: str) -> str:
@@ -869,7 +914,6 @@ class CommonRenderer:
         self.emit_backend_line(self.render_raise_propagation_stmt(try_label, return_stmt))
 
     def render_raise_propagation_stmt(self, try_label: str, return_stmt: str) -> str:
-        del try_label, return_stmt
         raise RuntimeError("common renderer requires raise propagation stmt for " + self.language)
 
     def emit_bare_raise_restore(self) -> None:
@@ -960,7 +1004,8 @@ class CommonRenderer:
         rendered = self.render_raise_value(node)
         keyword = self._syntax_text("raise", "throw")
         if rendered != "":
-            self._emit_stmt_line(keyword + " " + rendered)
+            line = keyword + " " + rendered
+            self._emit_stmt_line(line)
         else:
             self._emit_stmt_line(keyword)
 
@@ -969,10 +1014,12 @@ class CommonRenderer:
         if exc is None:
             self.emit_bare_raise_stmt(node)
             return
-        if isinstance(exc, dict) and self._str(exc, "kind") == "Call":
-            func = exc.get("func")
-            if isinstance(func, dict) and self._str(func, "kind") == "Name":
-                self.emit_raise_call_stmt(node, exc, self._str(func, "id"), self._list(exc, "args"))
+        exc_obj = json.JsonValue(exc).as_obj()
+        if exc_obj is not None and self._str(exc_obj.raw, "kind") == "Call":
+            func = exc_obj.raw.get("func")
+            func_obj = json.JsonValue(func).as_obj()
+            if func_obj is not None and self._str(func_obj.raw, "kind") == "Name":
+                self.emit_raise_call_stmt(node, exc_obj.raw, self._str(func_obj.raw, "id"), self._list(exc_obj.raw, "args"))
                 return
         self.emit_raise_value_stmt(node, exc)
 
@@ -1013,11 +1060,13 @@ class CommonRenderer:
         self.state.indent_level -= 1
         self._emit(self._syntax_text("block_close", "}"))
         for raw_handler in handlers:
-            if not isinstance(raw_handler, dict):
+            raw_handler_obj = json.JsonValue(raw_handler).as_obj()
+            if raw_handler_obj is None:
                 continue
-            self._emit(self.render_except_open(raw_handler))
+            raw_handler_dict = raw_handler_obj.raw
+            self._emit(self.render_except_open(raw_handler_dict))
             self.state.indent_level += 1
-            self.emit_try_handler_body(raw_handler)
+            self.emit_try_handler_body(raw_handler_dict)
             self.state.indent_level -= 1
             self._emit(self._syntax_text("block_close", "}"))
         if len(finalbody) > 0:
@@ -1036,28 +1085,34 @@ class CommonRenderer:
 
         def walk(stmts: list[JsonVal]) -> None:
             for raw_stmt in stmts:
-                if not isinstance(raw_stmt, dict):
+                raw_stmt_obj = json.JsonValue(raw_stmt).as_obj()
+                if raw_stmt_obj is None:
                     continue
-                kind = self._str(raw_stmt, "kind")
+                raw_stmt_dict = raw_stmt_obj.raw
+                kind = self._str(raw_stmt_dict, "kind")
                 if kind == "AnnAssign":
-                    target = raw_stmt.get("target")
-                    if isinstance(target, dict) and self._str(target, "kind") == "Name":
-                        add_name(self._str(target, "id"), self._str(raw_stmt, "decl_type"))
+                    target = raw_stmt_dict.get("target")
+                    target_obj = json.JsonValue(target).as_obj()
+                    if target_obj is not None and self._str(target_obj.raw, "kind") == "Name":
+                        add_name(self._str(target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
                 elif kind == "Assign":
-                    target = raw_stmt.get("target")
-                    if not isinstance(target, dict):
-                        targets = self._list(raw_stmt, "targets")
-                        if len(targets) > 0 and isinstance(targets[0], dict):
+                    target = raw_stmt_dict.get("target")
+                    target_obj = json.JsonValue(target).as_obj()
+                    if target_obj is None:
+                        targets = self._list(raw_stmt_dict, "targets")
+                        if len(targets) > 0:
                             target = targets[0]
-                    if isinstance(target, dict) and self._str(target, "kind") == "Name":
-                        add_name(self._str(target, "id"), self._str(raw_stmt, "decl_type"))
+                            target_obj = json.JsonValue(target).as_obj()
+                    if target_obj is not None and self._str(target_obj.raw, "kind") == "Name":
+                        add_name(self._str(target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
                 elif kind in ("If", "While", "Try", "With", "ForCore"):
-                    walk(self._list(raw_stmt, "body"))
-                    walk(self._list(raw_stmt, "orelse"))
-                    walk(self._list(raw_stmt, "finalbody"))
-                    for handler in self._list(raw_stmt, "handlers"):
-                        if isinstance(handler, dict):
-                            walk(self._list(handler, "body"))
+                    walk(self._list(raw_stmt_dict, "body"))
+                    walk(self._list(raw_stmt_dict, "orelse"))
+                    walk(self._list(raw_stmt_dict, "finalbody"))
+                    for handler in self._list(raw_stmt_dict, "handlers"):
+                        handler_obj = json.JsonValue(handler).as_obj()
+                        if handler_obj is not None:
+                            walk(self._list(handler_obj.raw, "body"))
 
         walk(body)
         return out
@@ -1065,15 +1120,17 @@ class CommonRenderer:
     def _collect_with_hoisted_names(self, body: list[JsonVal]) -> list[dict[str, JsonVal]]:
         out: list[dict[str, JsonVal]] = []
         for name, resolved_type in self.collect_with_hoisted_specs(body):
-            out.append(
-                {
-                    "kind": "AnnAssign",
-                    "target": {"kind": "Name", "id": name, "resolved_type": resolved_type},
-                    "decl_type": resolved_type,
-                    "value": None,
-                    "declare": True,
-                }
-            )
+            target: dict[str, JsonVal] = {}
+            target["kind"] = "Name"
+            target["id"] = name
+            target["resolved_type"] = resolved_type
+            hoisted: dict[str, JsonVal] = {}
+            hoisted["kind"] = "AnnAssign"
+            hoisted["target"] = target
+            hoisted["decl_type"] = resolved_type
+            hoisted["value"] = None
+            hoisted["declare"] = True
+            out.append(hoisted)
         return out
 
     def emit_with_stmt(self, node: dict[str, JsonVal]) -> None:
@@ -1085,32 +1142,44 @@ class CommonRenderer:
         if enter_name == "":
             enter_name = self._next_tmp("__with_value")
         context_expr = node.get("context_expr")
-        context_type = self._str(context_expr, "resolved_type") if isinstance(context_expr, dict) else ""
-        context_kind = self._str(context_expr, "kind") if isinstance(context_expr, dict) else ""
+        context_obj = json.JsonValue(context_expr).as_obj()
+        context_type = ""
+        context_kind = ""
+        if context_obj is not None:
+            context_type = self._str(context_obj.raw, "resolved_type")
+            context_kind = self._str(context_obj.raw, "kind")
         enter_type = self._str(node, "with_enter_type")
         self.emit_with_enter_prelude(node, enter_name, enter_type)
-        ctx_assign = {
-            "kind": "Assign",
-            "target": {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
-            "value": context_expr,
-            "declare": True,
-            "decl_type": context_type,
-        }
+        ctx_target: dict[str, JsonVal] = {}
+        ctx_target["kind"] = "Name"
+        ctx_target["id"] = ctx_name
+        ctx_target["resolved_type"] = context_type
+        ctx_assign: dict[str, JsonVal] = {}
+        ctx_assign["kind"] = "Assign"
+        ctx_assign["target"] = ctx_target
+        ctx_assign["value"] = context_expr
+        ctx_assign["declare"] = True
+        ctx_assign["decl_type"] = context_type
         if context_kind in ("Name", "Attribute", "Subscript"):
             ctx_assign["bind_ref"] = True
         self.emit_assign_stmt(ctx_assign)
-        enter_call = {
-            "kind": "Call",
-            "func": {
-                "kind": "Attribute",
-                "value": {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
-                "attr": "__enter__",
-                "resolved_type": "callable",
-            },
-            "args": [],
-            "keywords": [],
-            "resolved_type": enter_type,
-        }
+        enter_value: dict[str, JsonVal] = {}
+        enter_value["kind"] = "Name"
+        enter_value["id"] = ctx_name
+        enter_value["resolved_type"] = context_type
+        enter_func: dict[str, JsonVal] = {}
+        enter_func["kind"] = "Attribute"
+        enter_func["value"] = enter_value
+        enter_func["attr"] = "__enter__"
+        enter_func["resolved_type"] = "callable"
+        enter_args: list[JsonVal] = []
+        enter_keywords: list[JsonVal] = []
+        enter_call: dict[str, JsonVal] = {}
+        enter_call["kind"] = "Call"
+        enter_call["func"] = enter_func
+        enter_call["args"] = enter_args
+        enter_call["keywords"] = enter_keywords
+        enter_call["resolved_type"] = enter_type
         if self._str(node, "with_enter_runtime_call") != "":
             enter_call["runtime_call"] = self._str(node, "with_enter_runtime_call")
             enter_call["resolved_runtime_call"] = self._str(node, "with_enter_runtime_call")
@@ -1118,25 +1187,41 @@ class CommonRenderer:
             enter_call["runtime_module_id"] = self._str(node, "with_enter_runtime_module_id")
             enter_call["semantic_tag"] = self._str(node, "with_enter_semantic_tag")
         if context_type != "" and enter_type != "" and context_type == enter_type:
-            self.emit_expr_stmt({"kind": "Expr", "value": enter_call})
+            enter_expr_stmt: dict[str, JsonVal] = {}
+            enter_expr_stmt["kind"] = "Expr"
+            enter_expr_stmt["value"] = enter_call
+            self.emit_expr_stmt(enter_expr_stmt)
         else:
             self.emit_assign_stmt(self.build_with_enter_assign(node, enter_name, enter_type, enter_call))
-        exit_call = {
-            "kind": "Call",
-            "func": {
-                "kind": "Attribute",
-                "value": {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
-                "attr": "__exit__",
-                "resolved_type": "callable",
-            },
-            "args": [
-                {"kind": "Constant", "value": None, "resolved_type": "None"},
-                {"kind": "Constant", "value": None, "resolved_type": "None"},
-                {"kind": "Constant", "value": None, "resolved_type": "None"},
-            ],
-            "keywords": [],
-            "resolved_type": "None",
-        }
+        exit_value: dict[str, JsonVal] = {}
+        exit_value["kind"] = "Name"
+        exit_value["id"] = ctx_name
+        exit_value["resolved_type"] = context_type
+        exit_func: dict[str, JsonVal] = {}
+        exit_func["kind"] = "Attribute"
+        exit_func["value"] = exit_value
+        exit_func["attr"] = "__exit__"
+        exit_func["resolved_type"] = "callable"
+        none_arg_a: dict[str, JsonVal] = {}
+        none_arg_a["kind"] = "Constant"
+        none_arg_a["value"] = None
+        none_arg_a["resolved_type"] = "None"
+        none_arg_b: dict[str, JsonVal] = {}
+        none_arg_b["kind"] = "Constant"
+        none_arg_b["value"] = None
+        none_arg_b["resolved_type"] = "None"
+        none_arg_c: dict[str, JsonVal] = {}
+        none_arg_c["kind"] = "Constant"
+        none_arg_c["value"] = None
+        none_arg_c["resolved_type"] = "None"
+        exit_args: list[JsonVal] = [none_arg_a, none_arg_b, none_arg_c]
+        exit_keywords: list[JsonVal] = []
+        exit_call: dict[str, JsonVal] = {}
+        exit_call["kind"] = "Call"
+        exit_call["func"] = exit_func
+        exit_call["args"] = exit_args
+        exit_call["keywords"] = exit_keywords
+        exit_call["resolved_type"] = "None"
         if self._str(node, "with_exit_runtime_call") != "":
             exit_call["runtime_call"] = self._str(node, "with_exit_runtime_call")
             exit_call["resolved_runtime_call"] = self._str(node, "with_exit_runtime_call")
@@ -1145,22 +1230,34 @@ class CommonRenderer:
             exit_call["semantic_tag"] = self._str(node, "with_exit_semantic_tag")
         try_body = body
         if context_type != "" and enter_type != "" and context_type == enter_type:
-            try_body = [
-                self.build_with_enter_assign(
-                    node,
-                    enter_name,
-                    enter_type,
-                    {"kind": "Name", "id": ctx_name, "resolved_type": context_type},
-                    bind_ref=True,
-                )
-            ] + body
-        try_node = {
-            "kind": "Try",
-            "body": try_body,
-            "handlers": [],
-            "orelse": [],
-            "finalbody": [{"kind": "Expr", "value": exit_call}],
-        }
+            enter_value_name: dict[str, JsonVal] = {}
+            enter_value_name["kind"] = "Name"
+            enter_value_name["id"] = ctx_name
+            enter_value_name["resolved_type"] = context_type
+            with_assign = self.build_with_enter_assign(
+                node,
+                enter_name,
+                enter_type,
+                enter_value_name,
+                bind_ref=True,
+            )
+            expanded_try_body: list[JsonVal] = []
+            expanded_try_body.append(with_assign)
+            for stmt in body:
+                expanded_try_body.append(stmt)
+            try_body = expanded_try_body
+        final_expr: dict[str, JsonVal] = {}
+        final_expr["kind"] = "Expr"
+        final_expr["value"] = exit_call
+        finalbody: list[JsonVal] = [final_expr]
+        empty_handlers: list[JsonVal] = []
+        empty_orelse: list[JsonVal] = []
+        try_node: dict[str, JsonVal] = {}
+        try_node["kind"] = "Try"
+        try_node["body"] = try_body
+        try_node["handlers"] = empty_handlers
+        try_node["orelse"] = empty_orelse
+        try_node["finalbody"] = finalbody
         self.emit_try_stmt(try_node)
 
     def emit_with_enter_prelude(
@@ -1172,7 +1269,6 @@ class CommonRenderer:
         return None
 
     def render_with_fallback_enter_stmt(self, target_name: str, target_type: str) -> str:
-        del target_name, target_type
         raise RuntimeError("common renderer requires with fallback enter stmt for " + self.language)
 
     def emit_with_fallback_enter(self, target_name: str, target_type: str) -> None:
@@ -1188,19 +1284,18 @@ class CommonRenderer:
     ) -> None:
         if enter_runtime_call == "":
             return
-        self.emit_expr_stmt(
-            {
-                "kind": "Expr",
-                "value": self.build_with_protocol_call(
-                    target_name,
-                    target_type,
-                    "__enter__",
-                    enter_runtime_call,
-                    enter_runtime_symbol,
-                    resolved_type,
-                ),
-            }
+        enter_call = self.build_with_protocol_call(
+            target_name,
+            target_type,
+            "__enter__",
+            enter_runtime_call,
+            enter_runtime_symbol,
+            resolved_type,
         )
+        enter_stmt: dict[str, JsonVal] = {}
+        enter_stmt["kind"] = "Expr"
+        enter_stmt["value"] = enter_call
+        self.emit_expr_stmt(enter_stmt)
 
     def emit_with_enter_fallback_action(
         self,
@@ -1222,14 +1317,12 @@ class CommonRenderer:
         self.emit_assign_stmt(self.build_with_enter_assign(node, enter_name, enter_type, value, bind_ref=bind_ref))
 
     def render_with_fallback_exit_stmt(self, target_name: str, target_type: str) -> str:
-        del target_name, target_type
         raise RuntimeError("common renderer requires with fallback exit stmt for " + self.language)
 
     def emit_with_fallback_exit(self, target_name: str, target_type: str) -> None:
         self.emit_backend_line(self.render_with_fallback_exit_stmt(target_name, target_type))
 
     def render_with_close_fallback_stmt(self, target_name: str, target_type: str) -> str:
-        del target_name, target_type
         raise RuntimeError("common renderer requires with close fallback stmt for " + self.language)
 
     def emit_with_close_fallback(self, target_name: str, target_type: str) -> None:
@@ -1242,7 +1335,6 @@ class CommonRenderer:
         source_type: str,
         declare: bool,
     ) -> str:
-        del target_name, source_name, source_type, declare
         raise RuntimeError("common renderer requires with context bind stmt for " + self.language)
 
     def emit_with_context_bind(
@@ -1257,11 +1349,9 @@ class CommonRenderer:
         )
 
     def with_source_uses_enter_fallback(self, source_type: str) -> bool:
-        del source_type
         return False
 
     def with_source_uses_exit_fallback(self, source_type: str) -> bool:
-        del source_type
         return False
 
     def emit_with_exit_action(
@@ -1273,24 +1363,32 @@ class CommonRenderer:
         use_exit_fallback: bool,
     ) -> None:
         if exit_runtime_call != "":
-            self.emit_expr_stmt(
-                {
-                    "kind": "Expr",
-                    "value": self.build_with_protocol_call(
-                        target_name,
-                        target_type,
-                        "__exit__",
-                        exit_runtime_call,
-                        exit_runtime_symbol,
-                        "None",
-                        [
-                            {"kind": "Constant", "value": None, "resolved_type": "None"},
-                            {"kind": "Constant", "value": None, "resolved_type": "None"},
-                            {"kind": "Constant", "value": None, "resolved_type": "None"},
-                        ],
-                    ),
-                }
+            none_arg_a: dict[str, JsonVal] = {}
+            none_arg_a["kind"] = "Constant"
+            none_arg_a["value"] = None
+            none_arg_a["resolved_type"] = "None"
+            none_arg_b: dict[str, JsonVal] = {}
+            none_arg_b["kind"] = "Constant"
+            none_arg_b["value"] = None
+            none_arg_b["resolved_type"] = "None"
+            none_arg_c: dict[str, JsonVal] = {}
+            none_arg_c["kind"] = "Constant"
+            none_arg_c["value"] = None
+            none_arg_c["resolved_type"] = "None"
+            exit_args: list[JsonVal] = [none_arg_a, none_arg_b, none_arg_c]
+            exit_call = self.build_with_protocol_call(
+                target_name,
+                target_type,
+                "__exit__",
+                exit_runtime_call,
+                exit_runtime_symbol,
+                "None",
+                exit_args,
             )
+            exit_stmt: dict[str, JsonVal] = {}
+            exit_stmt["kind"] = "Expr"
+            exit_stmt["value"] = exit_call
+            self.emit_expr_stmt(exit_stmt)
             return
         if use_exit_fallback:
             self.emit_with_fallback_exit(target_name, target_type)
@@ -1322,7 +1420,8 @@ class CommonRenderer:
         type_map: dict[str, str],
     ) -> tuple[str, str, str, str, str, str] | None:
         context_expr = item.get("context_expr")
-        if not isinstance(context_expr, dict):
+        context_obj = json.JsonValue(context_expr).as_obj()
+        if context_obj is None:
             return None
         ctx_name, source_type, source_rendered_type = self.resolve_with_context_capture(context_expr)
         bound_name = self.with_item_bound_name(item)
@@ -1331,7 +1430,9 @@ class CommonRenderer:
         enter_target_type = self.with_item_enter_target_type(item, source_type)
         if bound_name != "":
             if self.with_item_declares_bound_name(item, declared_names):
-                self.register_with_bound_name(item, declared_names, type_map, enter_target_type)
+                declared_names.add(bound_name)
+                if enter_target_type != "":
+                    type_map[bound_name] = enter_target_type
                 self.emit_with_context_bind(bound_target_name, ctx_name, source_rendered_type, True)
             else:
                 self.emit_with_context_bind(bound_target_name, ctx_name, source_rendered_type, False)
@@ -1362,11 +1463,16 @@ class CommonRenderer:
         declared_names: set[str],
         type_map: dict[str, str],
     ) -> list[tuple[str, str, str, str, str, str]]:
+        if len(declared_names) < 0:
+            declared_names.add("")
+        if len(type_map) < 0:
+            type_map[""] = ""
         entries: list[tuple[str, str, str, str, str, str]] = []
         for item in items:
-            if not isinstance(item, dict):
+            item_obj = json.JsonValue(item).as_obj()
+            if item_obj is None:
                 continue
-            entry = self.emit_with_item(item, declared_names, type_map)
+            entry = self.emit_with_item(item_obj.raw, declared_names, type_map)
             if entry is not None:
                 entries.append(entry)
         return entries
@@ -1391,15 +1497,12 @@ class CommonRenderer:
         declared_names: set[str],
         type_map: dict[str, str],
     ) -> None:
-        del body, declared_names, type_map
         raise RuntimeError("common renderer requires hoisted with binding hook for " + self.language)
 
     def emit_with_capture_body(self, with_result: str, body: list[JsonVal]) -> None:
-        del with_result, body
         raise RuntimeError("common renderer requires with capture body hook for " + self.language)
 
     def emit_with_resume_unwind(self, with_result: str, with_err: str) -> None:
-        del with_result, with_err
         raise RuntimeError("common renderer requires with resume unwind hook for " + self.language)
 
     def emit_custom_with_stmt(
@@ -1410,7 +1513,10 @@ class CommonRenderer:
         declared_names: set[str],
         type_map: dict[str, str],
     ) -> None:
-        del node
+        if len(declared_names) < 0:
+            declared_names.add("")
+        if len(type_map) < 0:
+            type_map[""] = ""
         with_result = self.next_with_result_name()
         with_err = self.next_with_error_name()
         self.emit_with_hoisted_bindings(body, declared_names, type_map)
@@ -1421,8 +1527,9 @@ class CommonRenderer:
 
     def with_item_bound_name(self, item: dict[str, JsonVal]) -> str:
         opt_vars = item.get("optional_vars")
-        if isinstance(opt_vars, dict):
-            name = self._str(opt_vars, "id")
+        opt_vars_obj = json.JsonValue(opt_vars).as_obj()
+        if opt_vars_obj is not None:
+            name = self._str(opt_vars_obj.raw, "id")
             if name != "":
                 return name
         return self._str(item, "var_name")
@@ -1479,20 +1586,28 @@ class CommonRenderer:
         runtime_call: str,
         runtime_symbol: str,
         resolved_type: str,
-        args: list[dict[str, JsonVal]] | None = None,
+        args: list[JsonVal] | None = None,
     ) -> dict[str, JsonVal]:
-        call_node: dict[str, JsonVal] = {
-            "kind": "Call",
-            "func": {
-                "kind": "Attribute",
-                "value": {"kind": "Name", "id": target_name, "resolved_type": target_type},
-                "attr": method,
-                "resolved_type": "callable",
-            },
-            "args": args or [],
-            "keywords": [],
-            "resolved_type": resolved_type,
-        }
+        value_node: dict[str, JsonVal] = {}
+        value_node["kind"] = "Name"
+        value_node["id"] = target_name
+        value_node["resolved_type"] = target_type
+        func_node: dict[str, JsonVal] = {}
+        func_node["kind"] = "Attribute"
+        func_node["value"] = value_node
+        func_node["attr"] = method
+        func_node["resolved_type"] = "callable"
+        actual_args: list[JsonVal] = []
+        if args is not None:
+            for arg in args:
+                actual_args.append(arg)
+        keywords: list[JsonVal] = []
+        call_node: dict[str, JsonVal] = {}
+        call_node["kind"] = "Call"
+        call_node["func"] = func_node
+        call_node["args"] = actual_args
+        call_node["keywords"] = keywords
+        call_node["resolved_type"] = resolved_type
         if runtime_call != "":
             call_node["runtime_call"] = runtime_call
             call_node["resolved_runtime_call"] = runtime_call
@@ -1507,13 +1622,16 @@ class CommonRenderer:
         value: JsonVal,
         bind_ref: bool = False,
     ) -> dict[str, JsonVal]:
-        enter_assign: dict[str, JsonVal] = {
-            "kind": "Assign",
-            "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
-            "value": value,
-            "declare": True,
-            "decl_type": enter_type,
-        }
+        target: dict[str, JsonVal] = {}
+        target["kind"] = "Name"
+        target["id"] = enter_name
+        target["resolved_type"] = enter_type
+        enter_assign: dict[str, JsonVal] = {}
+        enter_assign["kind"] = "Assign"
+        enter_assign["target"] = target
+        enter_assign["value"] = value
+        enter_assign["declare"] = True
+        enter_assign["decl_type"] = enter_type
         if bind_ref:
             enter_assign["bind_ref"] = True
         return enter_assign
@@ -1543,32 +1661,39 @@ class CommonRenderer:
         value = node.get("value")
         if value is None:
             return self._none_literal()
-        if isinstance(value, bool):
-            return self._bool_literal(value)
-        if isinstance(value, str):
-            return self._quote_string(value)
-        if isinstance(value, int):
+        value_bool = json.JsonValue(value).as_bool()
+        if value_bool is not None:
+            return self._bool_literal(value_bool)
+        value_str = json.JsonValue(value).as_str()
+        if value_str is not None:
+            return self._quote_string(value_str)
+        value_int = json.JsonValue(value).as_int()
+        if value_int is not None:
             resolved_type = self._str(node, "resolved_type")
-            if self._literal_can_omit_wrap(resolved_type, value):
-                return str(value)
-            return self._wrap_int_literal(resolved_type, value)
+            if self._literal_can_omit_wrap(resolved_type, value_int):
+                return str(value_int)
+            return self._wrap_int_literal(resolved_type, value_int)
         return str(value)
 
     def render_binop(self, node: dict[str, JsonVal]) -> str:
-        left = self.render_expr(node.get("left"))
-        right = self.render_expr(node.get("right"))
+        left_node = node.get("left")
+        right_node = node.get("right")
+        left = self.render_expr(left_node)
+        right = self.render_expr(right_node)
         op_name = self._str(node, "op")
         op = self._operator_text("bin", op_name, self._str(node, "op"))
-        return self._render_infix_expr(node.get("left"), left, node.get("right"), right, op_name, op)
+        return self._render_infix_expr(left_node, left, right_node, right, op_name, op)
 
     def render_unaryop(self, node: dict[str, JsonVal]) -> str:
-        operand = self.render_expr(node.get("operand"))
+        operand_node = node.get("operand")
+        operand = self.render_expr(operand_node)
         op_name = self._str(node, "op")
         op = self._operator_text("unary", op_name, self._str(node, "op"))
-        return self._render_prefix_expr(node.get("operand"), operand, op_name, op)
+        return self._render_prefix_expr(operand_node, operand, op_name, op)
 
     def render_compare(self, node: dict[str, JsonVal]) -> str:
-        left = self.render_expr(node.get("left"))
+        left_node = node.get("left")
+        left = self.render_expr(left_node)
         comparators = self._list(node, "comparators")
         ops = self._list(node, "ops")
         if len(comparators) == 0 or len(ops) == 0:
@@ -1576,23 +1701,38 @@ class CommonRenderer:
         if len(self._op_prec_table) == 0:
             parts: list[str] = []
             current_left = left
-            for idx, comparator in enumerate(comparators):
-                op_obj = ops[idx] if idx < len(ops) else None
-                op_name = op_obj if isinstance(op_obj, str) else self._str(op_obj, "kind")
+            idx = 0
+            for comparator in comparators:
+                op_name = ""
+                if idx < len(ops):
+                    op_obj = ops[idx]
+                    op_name_raw = json.JsonValue(op_obj).as_str()
+                    if op_name_raw is not None:
+                        op_name = op_name_raw
+                    else:
+                        op_name = self._str(op_obj, "kind")
                 op_text = self._operator_text("cmp", op_name, op_name)
                 right = self.render_expr(comparator)
                 parts.append("(" + current_left + " " + op_text + " " + right + ")")
                 current_left = right
+                idx += 1
             if len(parts) == 1:
                 return parts[0]
             joiner = " " + self._operator_text("bool", "And", "&&") + " "
             return "(" + joiner.join(parts) + ")"
         parts: list[str] = []
         current_left = left
-        current_left_node = node.get("left")
-        for idx, comparator in enumerate(comparators):
-            op_obj = ops[idx] if idx < len(ops) else None
-            op_name = op_obj if isinstance(op_obj, str) else self._str(op_obj, "kind")
+        current_left_node = left_node
+        idx = 0
+        for comparator in comparators:
+            op_name = ""
+            if idx < len(ops):
+                op_obj = ops[idx]
+                op_name_raw = json.JsonValue(op_obj).as_str()
+                if op_name_raw is not None:
+                    op_name = op_name_raw
+                else:
+                    op_name = self._str(op_obj, "kind")
             op_text = self._operator_text("cmp", op_name, op_name)
             right = self.render_expr(comparator)
             left_part = self._wrap_expr_for_precedence(current_left, current_left_node, op_name)
@@ -1600,6 +1740,7 @@ class CommonRenderer:
             parts.append(left_part + " " + op_text + " " + right_part)
             current_left = right
             current_left_node = comparator
+            idx += 1
         if len(parts) == 1:
             return parts[0]
         joiner = " " + self._operator_text("bool", "And", "&&") + " "
@@ -1612,15 +1753,18 @@ class CommonRenderer:
             return "(" + (" " + op_text + " ").join(self.render_expr(value) for value in values) + ")"
         op_name = self._str(node, "op")
         parts: list[str] = []
-        for idx, value in enumerate(values):
+        idx = 0
+        for value in values:
             rendered = self.render_expr(value)
             parts.append(self._wrap_expr_for_precedence(rendered, value, op_name, is_right=idx > 0))
+            idx += 1
         return (" " + op_text + " ").join(parts)
 
     def render_expr(self, node: JsonVal) -> str:
-        if not isinstance(node, dict):
+        node_obj = json.JsonValue(node).as_obj()
+        if node_obj is None:
             raise RuntimeError("common renderer expected dict expr node")
-        node = self._normalize_boundary_expr(node)
+        node = self._normalize_boundary_expr(node_obj.raw)
         kind = self._str(node, "kind")
         if kind == "Constant":
             return self.render_constant(node)
@@ -1658,8 +1802,10 @@ class CommonRenderer:
         self.state.indent_level -= 1
         orelse = self._list(node, "orelse")
         if len(orelse) > 0:
-            if len(orelse) == 1 and isinstance(orelse[0], dict) and self._str(orelse[0], "kind") == "If":
-                self._emit_if_chain(orelse[0], is_elif=True)
+            first_orelse = orelse[0]
+            first_orelse_obj = json.JsonValue(first_orelse).as_obj()
+            if len(orelse) == 1 and first_orelse_obj is not None and self._str(first_orelse_obj.raw, "kind") == "If":
+                self._emit_if_chain(first_orelse_obj.raw, is_elif=True)
                 return
             self._emit(self._syntax_text("else", "} else {"))
             self.state.indent_level += 1
@@ -1668,8 +1814,10 @@ class CommonRenderer:
         self._emit(self._syntax_text("block_close", "}"))
 
     def emit_stmt(self, node: JsonVal) -> None:
-        if not isinstance(node, dict):
+        node_obj = json.JsonValue(node).as_obj()
+        if node_obj is None:
             return
+        node = node_obj.raw
         kind = self._str(node, "kind")
         if kind == "Expr":
             self.emit_expr_stmt(node)

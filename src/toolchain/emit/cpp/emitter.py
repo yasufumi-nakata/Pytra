@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 
+from pytra.std import json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
@@ -82,8 +83,10 @@ class CppClassVarSpecDraft:
     value: JsonVal = None
 
     def to_jv(self) -> dict[str, JsonVal]:
-        out: dict[str, JsonVal] = {"type": self.type_name}
-        if isinstance(self.value, dict):
+        out: dict[str, JsonVal] = {}
+        out["type"] = self.type_name
+        value_obj = json.JsonValue(self.value).as_obj()
+        if value_obj is not None:
             out["value"] = self.value
         return out
 
@@ -128,28 +131,35 @@ def _emit_fail(ctx: CppEmitContext, code: str, detail: str) -> None:
 
 
 def _module_needs_error_header(node: JsonVal) -> bool:
-    if isinstance(node, dict):
-        kind = _str(node, "kind")
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is not None:
+        node_dict = node_obj.raw
+        kind = _str(node_dict, "kind")
         if kind in ("Raise", "Try"):
             return True
-        if kind == "Name" and is_builtin_exception_type_name(_str(node, "id")):
+        if kind == "Name" and is_builtin_exception_type_name(_str(node_dict, "id")):
             return True
-        if kind == "ClassDef" and is_builtin_exception_type_name(_str(node, "base")):
+        if kind == "ClassDef" and is_builtin_exception_type_name(_str(node_dict, "base")):
             return True
-        for value in node.values():
+        for _key, value in node_dict.items():
             if _module_needs_error_header(value):
                 return True
         return False
-    if isinstance(node, list):
-        for item in node:
+    node_arr = json.JsonValue(node).as_arr()
+    if node_arr is not None:
+        for item in node_arr.raw:
             if _module_needs_error_header(item):
                 return True
     return False
 
 
 class _CppStmtCommonRenderer(CommonRenderer):
+    ctx: CppEmitContext
+    _mutation_count: int
+
     def __init__(self, ctx: CppEmitContext) -> None:
         self.ctx = ctx
+        self._mutation_count = 0
         super().__init__("cpp")
         self.state.lines = ctx.lines
         self.state.indent_level = ctx.indent_level
@@ -176,17 +186,20 @@ class _CppStmtCommonRenderer(CommonRenderer):
         raise RuntimeError("cpp common renderer assign string hook is not used directly")
 
     def emit_return_stmt(self, node: dict[str, JsonVal]) -> None:
-        self.ctx.indent_level = self.state.indent_level
+        self._mutation_count += 1
+        self.ctx.indent_level = self.state.indent_level + 0
         _emit_return(ctx=self.ctx, node=node)
         self.state.indent_level = self.ctx.indent_level
 
     def emit_expr_stmt(self, node: dict[str, JsonVal]) -> None:
-        self.ctx.indent_level = self.state.indent_level
+        self._mutation_count += 1
+        self.ctx.indent_level = self.state.indent_level + 0
         _emit_expr_stmt(self.ctx, node)
         self.state.indent_level = self.ctx.indent_level
 
     def emit_assign_stmt(self, node: dict[str, JsonVal]) -> None:
-        self.ctx.indent_level = self.state.indent_level
+        self._mutation_count += 1
+        self.ctx.indent_level = self.state.indent_level + 0
         kind = self._str(node, "kind")
         if kind == "AnnAssign":
             _emit_ann_assign(self.ctx, node)
@@ -195,15 +208,19 @@ class _CppStmtCommonRenderer(CommonRenderer):
         self.state.indent_level = self.ctx.indent_level
 
     def emit_stmt(self, node: JsonVal) -> None:
+        self._mutation_count += 1
         kind = self._str(node, "kind")
         if kind in ("Expr", "Return", "Assign", "AnnAssign", "Pass", "comment", "blank", "If", "While", "Raise", "Try", "With"):
-            super().emit_stmt(node)
-            self.ctx.indent_level = self.state.indent_level
+            stmt = node
+            super().emit_stmt(stmt)
+            self.ctx.indent_level = self.state.indent_level + 0
             return
-        if isinstance(node, dict):
-            self.emit_stmt_extension(node)
+        node_obj = json.JsonValue(node).as_obj()
+        if node_obj is not None:
+            self.emit_stmt_extension(node_obj.raw)
 
     def emit_body(self, body: list[JsonVal]) -> None:
+        self._mutation_count += 1
         _push_local_scope(self.ctx)
         try:
             super().emit_body(body)
@@ -211,7 +228,8 @@ class _CppStmtCommonRenderer(CommonRenderer):
             _pop_local_scope(self.ctx)
 
     def emit_raise_stmt(self, node: dict[str, JsonVal]) -> None:
-        self.ctx.indent_level = self.state.indent_level
+        self._mutation_count += 1
+        self.ctx.indent_level = self.state.indent_level + 0
         value = _render_raise_value(self.ctx, node)
         if value != "":
             self._emit("throw " + value + ";")
@@ -231,20 +249,20 @@ class _CppStmtCommonRenderer(CommonRenderer):
         finally_name = _next_temp(self.ctx, "__finally")
         self._emit("{")
         self.state.indent_level += 1
-        self.ctx.indent_level = self.state.indent_level
+        self.ctx.indent_level = self.state.indent_level + 0
         self._emit("auto " + finally_name + " = py_make_scope_exit([&]() {")
         self.state.indent_level += 1
-        self.ctx.indent_level = self.state.indent_level
+        self.ctx.indent_level = self.state.indent_level + 0
         self.emit_body(finalbody)
         self.state.indent_level -= 1
-        self.ctx.indent_level = self.state.indent_level
+        self.ctx.indent_level = self.state.indent_level + 0
         self._emit("});")
 
     def emit_try_teardown(self, node: dict[str, JsonVal]) -> None:
         if len(self._list(node, "finalbody")) == 0:
             return
         self.state.indent_level -= 1
-        self.ctx.indent_level = self.state.indent_level
+        self.ctx.indent_level = self.state.indent_level + 0
         self._emit("}")
 
     def emit_try_stmt(self, node: dict[str, JsonVal]) -> None:
@@ -263,14 +281,17 @@ class _CppStmtCommonRenderer(CommonRenderer):
         self.state.indent_level -= 1
         self._emit("}")
         for raw_handler in handlers:
-            if not isinstance(raw_handler, dict):
+            raw_handler_obj = json.JsonValue(raw_handler).as_obj()
+            if raw_handler_obj is None:
                 continue
-            catch_opens = [self.render_except_open(raw_handler)]
-            catch_opens.extend(_render_except_alternates(self.ctx, raw_handler))
+            raw_handler_dict = raw_handler_obj.raw
+            catch_opens: list[str] = []
+            catch_opens.append(self.render_except_open(raw_handler_dict))
+            catch_opens.extend(_render_except_alternates(self.ctx, raw_handler_dict))
             for catch_open in catch_opens:
                 self._emit(catch_open)
                 self.state.indent_level += 1
-                self.emit_try_handler_body(raw_handler)
+                self.emit_try_handler_body(raw_handler_dict)
                 self.state.indent_level -= 1
                 self._emit("}")
         self.emit_try_teardown(node)
@@ -283,7 +304,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
             had_saved_type = handler_name in self.ctx.var_types
             saved_type = self.ctx.var_types.get(handler_name, "")
             self.ctx.var_types[handler_name] = _handler_type_name(handler)
-        self.ctx.indent_level = self.state.indent_level
+        self.ctx.indent_level = self.state.indent_level + 0
         self.emit_body(self._list(handler, "body"))
         if handler_name != "":
             if had_saved_type:
@@ -295,7 +316,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
     def emit_stmt_extension(self, node: dict[str, JsonVal]) -> None:
         # P3-CR-CPP-S1: C++ 固有ノードの直接ディスパッチ。
         # _emit_stmt を経由しないことで循環を回避する。
-        self.ctx.indent_level = self.state.indent_level
+        self.ctx.indent_level = self.state.indent_level + 0
         kind = self._str(node, "kind")
         if kind == "AugAssign": _emit_aug_assign(self.ctx, node)
         elif kind == "ForCore": _emit_for_core(self.ctx, node)
@@ -311,6 +332,8 @@ class _CppStmtCommonRenderer(CommonRenderer):
 
 
 class _CppExprCommonRenderer(CommonRenderer):
+    ctx: CppEmitContext
+
     def __init__(self, ctx: CppEmitContext) -> None:
         self.ctx = ctx
         super().__init__("cpp")
@@ -353,27 +376,42 @@ class _CppExprCommonRenderer(CommonRenderer):
 
 def _str(node: dict[str, JsonVal], key: str) -> str:
     v = node.get(key)
-    return v if isinstance(v, str) else ""
+    value = json.JsonValue(v).as_str()
+    if value is not None:
+        return value
+    return ""
 
 def _int(node: dict[str, JsonVal], key: str) -> int:
     v = node.get(key)
-    return v if isinstance(v, int) else 0
+    value = json.JsonValue(v).as_int()
+    if value is not None:
+        return value
+    return 0
 
 def _bool(node: dict[str, JsonVal], key: str) -> bool:
     v = node.get(key)
-    return v if isinstance(v, bool) else False
+    value = json.JsonValue(v).as_bool()
+    if value is not None:
+        return value
+    return False
 
 def _list(node: dict[str, JsonVal], key: str) -> list[JsonVal]:
     v = node.get(key)
-    return v if isinstance(v, list) else []
+    value = json.JsonValue(v).as_arr()
+    if value is not None:
+        return value.raw
+    return []
 
 def _dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
     v = node.get(key)
-    return v if isinstance(v, dict) else {}
+    value = json.JsonValue(v).as_obj()
+    if value is not None:
+        return value.raw
+    return {}
 
 
 def _sanitize_ident(text: str) -> str:
-    out = []
+    out: list[str] = []
     for ch in text:
         if ch.isalnum() or ch == "_":
             out.append(ch)
@@ -429,84 +467,101 @@ def _lookup_explicit_runtime_symbol_mapping(
     runtime_symbol: str = "",
     fallback_symbol: str = "",
 ) -> str:
-    for key in (resolved_runtime_call, runtime_call, runtime_symbol, fallback_symbol):
+    keys: list[str] = [resolved_runtime_call, runtime_call, runtime_symbol, fallback_symbol]
+    for key in keys:
         if key != "" and key in ctx.mapping.calls:
             return ctx.mapping.calls[key]
     return ""
 
 
 def _effective_resolved_type(node: JsonVal) -> str:
-    if not isinstance(node, dict):
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is None:
         return ""
-    resolved_type = _str(node, "resolved_type")
+    node_dict = node_obj.raw
+    resolved_type = _str(node_dict, "resolved_type")
     if resolved_type not in ("", "unknown"):
-        return normalize_cpp_nominal_adt_type(resolved_type)
-    summary = _dict(node, "type_expr_summary_v1")
+        normalized = normalize_cpp_nominal_adt_type(resolved_type)
+        return normalized
+    summary = _dict(node_dict, "type_expr_summary_v1")
     if _str(summary, "category") == "static":
         mirror = _str(summary, "mirror")
         if mirror != "":
-            return normalize_cpp_nominal_adt_type(mirror)
+            normalized_mirror = normalize_cpp_nominal_adt_type(mirror)
+            return normalized_mirror
     return resolved_type
 
 
 def _attribute_static_type(ctx: CppEmitContext, node: JsonVal) -> str:
-    if not isinstance(node, dict) or _str(node, "kind") != "Attribute":
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is None:
         return ""
-    owner_node = node.get("value")
+    node_dict = node_obj.raw
+    if _str(node_dict, "kind") != "Attribute":
+        return ""
+    owner_node = node_dict.get("value")
     owner_type = _effective_resolved_type(owner_node)
-    if owner_type in ("", "unknown") and isinstance(owner_node, dict):
-        owner_id = _str(owner_node, "id")
+    owner_obj = json.JsonValue(owner_node).as_obj()
+    if owner_type in ("", "unknown") and owner_obj is not None:
+        owner_id = _str(owner_obj.raw, "id")
         if owner_id in ("self", "this") and ctx.current_class != "":
             owner_type = ctx.current_class
     if owner_type == "":
-        owner_type = _str(owner_node, "id") if isinstance(owner_node, dict) else ""
+        if owner_obj is not None:
+            owner_type = _str(owner_obj.raw, "id")
     fields = ctx.class_field_types.get(owner_type, {})
-    attr = _str(node, "attr")
-    field_type = fields.get(attr)
-    return field_type if isinstance(field_type, str) else ""
+    attr = _str(node_dict, "attr")
+    return fields.get(attr, "")
 
 
 def _expr_static_type(ctx: CppEmitContext, node: JsonVal) -> str:
-    if isinstance(node, dict):
-        kind = _str(node, "kind")
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is not None:
+        node_dict = node_obj.raw
+        kind = _str(node_dict, "kind")
         # Prefer the actual storage type from context for Name nodes
         if kind in ("Name", "NameTarget"):
-            name = _str(node, "id")
+            name = _str(node_dict, "id")
             if name != "" and name in ctx.var_types:
                 return ctx.var_types[name]
         if kind == "Attribute":
-            attr_type = _attribute_static_type(ctx, node)
+            attr_type = _attribute_static_type(ctx, node_dict)
             if attr_type not in ("", "unknown"):
                 return attr_type
     inferred = _effective_resolved_type(node)
     if inferred not in ("", "unknown"):
         return inferred
-    if isinstance(node, dict):
-        kind = _str(node, "kind")
+    if node_obj is not None:
+        node_dict = node_obj.raw
+        kind = _str(node_dict, "kind")
         if kind in ("Name", "NameTarget"):
-            name = _str(node, "id")
+            name = _str(node_dict, "id")
             if name != "":
                 return ctx.var_types.get(name, "")
         if kind == "Attribute":
-            return _attribute_static_type(ctx, node)
+            return _attribute_static_type(ctx, node_dict)
     return ""
 
 
 def _expr_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
-    if not isinstance(node, dict):
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is None:
         return ""
-    kind = _str(node, "kind")
+    node_dict = node_obj.raw
+    kind = _str(node_dict, "kind")
     if kind in ("Name", "NameTarget"):
-        name = _str(node, "id")
+        name = _str(node_dict, "id")
         if name != "":
             return ctx.var_types.get(name, "")
     if kind == "Attribute":
-        return _attribute_static_type(ctx, node)
+        return _attribute_static_type(ctx, node_dict)
     if kind == "Subscript":
-        value_node = node.get("value")
-        container_type = normalize_cpp_container_alias(_effective_resolved_type(value_node))
+        value_node = node_dict.get("value")
+        effective_type = _effective_resolved_type(value_node)
+        container_type = normalize_cpp_container_alias(effective_type)
         if container_type in ("", "unknown"):
-            container_type = normalize_cpp_container_alias(_expr_storage_type(ctx, value_node))
+            storage_type = _expr_storage_type(ctx, value_node)
+            container_type = normalize_cpp_container_alias(storage_type)
         if container_type.startswith("list[") or container_type.startswith("set["):
             parts = _container_type_args(container_type)
             return parts[0] if len(parts) == 1 else ""
@@ -515,15 +570,18 @@ def _expr_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
             return parts[1] if len(parts) == 2 else ""
         if container_type.startswith("tuple["):
             parts = _container_type_args(container_type)
-            slice_node = node.get("slice")
-            if isinstance(slice_node, dict) and _str(slice_node, "kind") == "Constant":
-                idx = slice_node.get("value")
-                if isinstance(idx, int) and 0 <= idx < len(parts):
+            slice_node = node_dict.get("slice")
+            slice_obj = json.JsonValue(slice_node).as_obj()
+            if slice_obj is not None and _str(slice_obj.raw, "kind") == "Constant":
+                idx_raw = slice_obj.raw.get("value")
+                idx = json.JsonValue(idx_raw).as_int()
+                if idx is not None and 0 <= idx < len(parts):
                     return parts[idx]
     if kind == "Call":
-        func = node.get("func")
-        if isinstance(func, dict) and _str(func, "kind") == "Name":
-            func_name = _str(func, "id")
+        func = node_dict.get("func")
+        func_obj = json.JsonValue(func).as_obj()
+        if func_obj is not None and _str(func_obj.raw, "kind") == "Name":
+            func_name = _str(func_obj.raw, "id")
             func_type = ctx.var_types.get(func_name, "")
             ret = _extract_std_function_return_type(func_type)
             if ret not in ("", "unknown"):
@@ -532,12 +590,13 @@ def _expr_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
             if ret not in ("", "unknown"):
                 return ret
     if kind == "Unbox":
-        target = normalize_cpp_container_alias(_str(node, "target"))
+        target_text = _str(node_dict, "target")
+        target = normalize_cpp_container_alias(target_text)
         if target not in ("", "unknown", "Obj", "Any", "object"):
             return target
     if kind == "BinOp":
-        left_type = _expr_storage_type(ctx, node.get("left"))
-        right_type = _expr_storage_type(ctx, node.get("right"))
+        left_type = _expr_storage_type(ctx, node_dict.get("left"))
+        right_type = _expr_storage_type(ctx, node_dict.get("right"))
         if (
             left_type not in ("", "unknown")
             and left_type == right_type

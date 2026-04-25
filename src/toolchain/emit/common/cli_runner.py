@@ -177,7 +177,6 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
 def run_emit_cli(
     emit_fn: EmitFn | None = None,
     argv: list[str] | None = None,
-    *,
     default_ext: str = "",
     post_emit: PostEmitFn | None = None,
     direct_emit_fn: DirectEmitFn | None = None,

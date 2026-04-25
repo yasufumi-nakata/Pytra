@@ -558,7 +558,12 @@ def _node_uses_callable_types(node: dict[str, JsonVal]) -> bool:
 
 
 def _type_uses_callable(resolved_type: str) -> bool:
-    return resolved_type == "callable" or resolved_type == "Callable" or resolved_type.startswith("callable[")
+    return (
+        resolved_type == "callable"
+        or resolved_type == "Callable"
+        or resolved_type.startswith("callable[")
+        or resolved_type.startswith("Callable[")
+    )
 
 
 def _infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> str:

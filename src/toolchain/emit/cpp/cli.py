@@ -56,10 +56,12 @@ def _emit_cpp_direct(east_doc: dict[str, JsonVal], output_dir: Path) -> int:
     )
 
 
-def main() -> int:
+def _pytra_cli_main() -> int:
     import sys
-    return run_emit_cli(argv=sys.argv[1:], direct_emit_fn=_emit_cpp_direct)
+    cli_argv: list[str] | None = sys.argv[1:]
+    result = run_emit_cli(None, cli_argv, "", None, _emit_cpp_direct)
+    return result
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(_pytra_cli_main())
