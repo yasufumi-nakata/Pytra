@@ -10,6 +10,8 @@ and related helpers.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from pytra.typing import cast
 
 from toolchain.compile.jv import JsonVal, Node, CompileContext
@@ -60,6 +62,52 @@ _JSON_RECEIVER_PREFIXES: list[tuple[str, str]] = [
     ("json.obj.", "JsonObj"),
     ("json.arr.", "JsonArr"),
 ]
+
+
+@dataclass
+class TypeSummary:
+    """Typed builder for type_expr_summary_v1 payloads."""
+
+    kind: str = "unknown"
+    category: str = "unknown"
+    mirror: str = "unknown"
+    dynamic_name: str = ""
+    nominal_adt_name: str = ""
+    nominal_adt_family: str = ""
+    nominal_variant_domain: str = ""
+    inner_mirror: str = ""
+    inner_category: str = ""
+    union_mode: str = ""
+    tuple_shape: str = ""
+    item_mirror: str = ""
+    item_category: str = ""
+
+    def to_node(self) -> Node:
+        out: dict[str, JsonVal] = {}
+        out["kind"] = self.kind
+        out["category"] = self.category
+        out["mirror"] = self.mirror
+        if self.dynamic_name != "":
+            out["dynamic_name"] = self.dynamic_name
+        if self.nominal_adt_name != "":
+            out["nominal_adt_name"] = self.nominal_adt_name
+        if self.nominal_adt_family != "":
+            out["nominal_adt_family"] = self.nominal_adt_family
+        if self.nominal_variant_domain != "":
+            out["nominal_variant_domain"] = self.nominal_variant_domain
+        if self.inner_mirror != "":
+            out["inner_mirror"] = self.inner_mirror
+        if self.inner_category != "":
+            out["inner_category"] = self.inner_category
+        if self.union_mode != "":
+            out["union_mode"] = self.union_mode
+        if self.tuple_shape != "":
+            out["tuple_shape"] = self.tuple_shape
+        if self.item_mirror != "":
+            out["item_mirror"] = self.item_mirror
+        if self.item_category != "":
+            out["item_category"] = self.item_category
+        return out
 
 
 def _type_summary_copy_node(node: Node) -> Node:
@@ -304,83 +352,84 @@ def _is_type_expr_payload(value: JsonVal) -> bool:
     return jv_str(d.get("kind", "")) != ""
 
 
-def summarize_type_expr(expr: JsonVal) -> Node:
-    out: dict[str, JsonVal] = {}
-    out["kind"] = "unknown"
-    out["category"] = "unknown"
-    out["mirror"] = "unknown"
+def _summarize_type_expr_data(expr: JsonVal) -> TypeSummary:
+    summary = TypeSummary()
     if not _is_type_expr_payload(expr):
-        return out
+        return summary
     if not jv_is_dict(expr):
-        return out
+        return summary
     d: Node = jv_dict(expr)
     kind = jv_str(d.get("kind", "unknown"))
-    out["kind"] = kind
-    out["mirror"] = _type_expr_to_string(d)
+    summary.kind = kind
+    summary.mirror = _type_expr_to_string(d)
     if kind == DYNAMIC_TYPE:
-        out["category"] = "dynamic"
-        out["dynamic_name"] = jv_str(d.get("name", "unknown"))
-        return out
+        summary.category = "dynamic"
+        summary.dynamic_name = jv_str(d.get("name", "unknown"))
+        return summary
     if kind == NOMINAL_ADT_TYPE:
-        out["category"] = "nominal_adt"
+        summary.category = "nominal_adt"
         nn = jv_str(d.get("name", ""))
         if nn != "":
-            out["nominal_adt_name"] = nn
+            summary.nominal_adt_name = nn
         af = jv_str(d.get("adt_family", ""))
         vd = jv_str(d.get("variant_domain", ""))
         if af != "":
-            out["nominal_adt_family"] = af
+            summary.nominal_adt_family = af
         if vd != "":
-            out["nominal_variant_domain"] = vd
-        return out
+            summary.nominal_variant_domain = vd
+        return summary
     if kind == OPTIONAL_TYPE:
-        out["category"] = "optional"
-        inner_summary = summarize_type_expr(d.get("inner"))
-        im = jv_str(inner_summary.get("mirror", "unknown"))
+        summary.category = "optional"
+        inner_summary = _summarize_type_expr_data(d.get("inner"))
+        im = inner_summary.mirror
         if im != "" and im != "unknown":
-            out["inner_mirror"] = im
-        ic = jv_str(inner_summary.get("category", "unknown"))
+            summary.inner_mirror = im
+        ic = inner_summary.category
         if ic != "unknown":
-            out["inner_category"] = ic
-        nn2 = jv_str(inner_summary.get("nominal_adt_name", ""))
+            summary.inner_category = ic
+        nn2 = inner_summary.nominal_adt_name
         if nn2 != "":
-            out["nominal_adt_name"] = nn2
-        nf2 = jv_str(inner_summary.get("nominal_adt_family", ""))
+            summary.nominal_adt_name = nn2
+        nf2 = inner_summary.nominal_adt_family
         if nf2 != "":
-            out["nominal_adt_family"] = nf2
-        vd2 = jv_str(inner_summary.get("nominal_variant_domain", ""))
+            summary.nominal_adt_family = nf2
+        vd2 = inner_summary.nominal_variant_domain
         if vd2 != "":
-            out["nominal_variant_domain"] = vd2
-        return out
+            summary.nominal_variant_domain = vd2
+        return summary
     if kind == UNION_TYPE:
         um = jv_str(d.get("union_mode", ""))
-        out["union_mode"] = um
+        summary.union_mode = um
         if um == "dynamic":
-            out["category"] = "dynamic_union"
+            summary.category = "dynamic_union"
         else:
-            out["category"] = "general_union"
-        return out
+            summary.category = "general_union"
+        return summary
     if kind == GENERIC_TYPE and _is_homogeneous_tuple_ellipsis(d):
-        out["category"] = "homogeneous_tuple"
-        out["tuple_shape"] = "homogeneous_ellipsis"
+        summary.category = "homogeneous_tuple"
+        summary.tuple_shape = "homogeneous_ellipsis"
         args = d.get("args")
         if jv_is_list(args):
             for arg0 in jv_list(args):
                 if not jv_is_dict(arg0):
                     break
-                item_s = summarize_type_expr(arg0)
-                im_homo: str = "" + jv_str(item_s.get("mirror", "unknown"))
-                ic_homo: str = "" + jv_str(item_s.get("category", "unknown"))
+                item_s = _summarize_type_expr_data(arg0)
+                im_homo: str = "" + item_s.mirror
+                ic_homo: str = "" + item_s.category
                 if im_homo != "" and im_homo != "unknown":
-                    out["item_mirror"] = im_homo
+                    summary.item_mirror = im_homo
                 if ic_homo != "" and ic_homo != "unknown":
-                    out["item_category"] = ic_homo
+                    summary.item_category = ic_homo
                 break
-        return out
+        return summary
     if kind == NAMED_TYPE or kind == GENERIC_TYPE:
-        out["category"] = "static"
-        return out
-    return out
+        summary.category = "static"
+        return summary
+    return summary
+
+
+def summarize_type_expr(expr: JsonVal) -> Node:
+    return _summarize_type_expr_data(expr).to_node()
 
 
 def summarize_type_text(raw: JsonVal) -> Node:
@@ -395,11 +444,7 @@ def summarize_type_text(raw: JsonVal) -> Node:
 # ---------------------------------------------------------------------------
 
 def unknown_type_summary() -> Node:
-    out: dict[str, JsonVal] = {}
-    out["kind"] = "unknown"
-    out["category"] = "unknown"
-    out["mirror"] = "unknown"
-    return out
+    return TypeSummary().to_node()
 
 
 def type_expr_summary_from_payload(ctx: CompileContext, type_expr: JsonVal, mirror: JsonVal) -> Node:

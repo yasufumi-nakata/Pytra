@@ -90,10 +90,12 @@
 
 toolchain 内部で一時的なデータ受け渡しに `dict[str, JsonVal]` を多用している箇所を `@dataclass` に置き換え、selfhost の型解決を安定させる。emitter の手前の段（parse/resolve/compile/link）を優先。
 
-1. [ ] [ID: P1-DATACLASS-DICT-S1] 棚卸し: selfhost blocker に直結する/しそうな一時構造体の洗い出しと優先順位付け
+1. [x] [ID: P1-DATACLASS-DICT-S1] 棚卸し: selfhost blocker に直結する/しそうな一時構造体の洗い出しと優先順位付け
+   - 2026-04-25: `dict[str, JsonVal]` 出現箇所を parse/resolve/compile/link で棚卸し。優先順を `type_summary.py` summary dataclass 化、`parser.py` import metadata、`resolver.py` import resolution metadata、`linker.py` manifest row の順に確定。
 2. [ ] [ID: P1-DATACLASS-DICT-S2] parse 層（`src/toolchain/parse/py/`）の @dataclass 化
 3. [ ] [ID: P1-DATACLASS-DICT-S3] resolve 層（`src/toolchain/resolve/py/`）の @dataclass 化
 4. [ ] [ID: P1-DATACLASS-DICT-S4] compile 層（`src/toolchain/compile/`）の @dataclass 化
+   - 2026-04-25: 先行小片として `type_summary.py` の type summary payload builder を `TypeSummary` dataclass 経由に変更。`lower.py` / `passes.py` など compile 層全体は未完了。
 5. [ ] [ID: P1-DATACLASS-DICT-S5] link 層（`src/toolchain/link/`）の @dataclass 化
 
 ### 保留中タスク
