@@ -5048,7 +5048,7 @@ def _trait_simple_names(node: dict[str, JsonVal]) -> list[str]:
     for item in traits:
         item_text = _json_str_value(item)
         if item_text != "":
-            parts = item_text.rsplit(".", 1)
+            parts = item_text.split(".")
             out.append(parts[len(parts) - 1])
     return out
 
@@ -5069,11 +5069,13 @@ def _method_trait_impl_count(node: dict[str, JsonVal]) -> int:
 
 
 def _is_type_owner(ctx: CppEmitContext, owner_node: JsonVal) -> bool:
-    if not isinstance(owner_node, dict):
+    owner_obj = json.JsonValue(owner_node).as_obj()
+    if owner_obj is None:
         return False
-    if _str(owner_node, "type_object_of") != "":
+    owner_dict = owner_obj.raw
+    if _str(owner_dict, "type_object_of") != "":
         return True
-    owner_id = _str(owner_node, "id")
+    owner_id = _str(owner_dict, "id")
     return owner_id != "" and (owner_id in ctx.class_names or owner_id in ctx.enum_kinds)
 
 
@@ -5086,75 +5088,92 @@ def _is_int_like_enum(ctx: CppEmitContext, type_name: str) -> bool:
 
 
 def _is_zero_arg_super_call(node: JsonVal) -> bool:
-    if not isinstance(node, dict) or _str(node, "kind") != "Call":
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is None or _str(node_obj.raw, "kind") != "Call":
         return False
-    func = node.get("func")
-    if not isinstance(func, dict) or _str(func, "kind") != "Name":
+    node_dict = node_obj.raw
+    func = node_dict.get("func")
+    func_obj = json.JsonValue(func).as_obj()
+    if func_obj is None or _str(func_obj.raw, "kind") != "Name":
         return False
-    return _str(func, "id") == "super" and len(_list(node, "args")) == 0 and len(_list(node, "keywords")) == 0
+    return _str(func_obj.raw, "id") == "super" and len(_list(node_dict, "args")) == 0 and len(_list(node_dict, "keywords")) == 0
 
 
 def _node_mutates_class_storage(ctx: CppEmitContext, node: JsonVal, owner_name: str = "") -> bool:
-    if isinstance(node, dict):
-        kind = _str(node, "kind")
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is not None:
+        node_dict = node_obj.raw
+        kind = _str(node_dict, "kind")
         if kind in ("Assign", "AugAssign", "AnnAssign"):
             targets: list[JsonVal] = []
-            target = node.get("target")
+            target = node_dict.get("target")
             if target is not None:
                 targets.append(target)
-            targets.extend(_list(node, "targets"))
+            targets.extend(_list(node_dict, "targets"))
             for candidate in targets:
-                if not isinstance(candidate, dict) or _str(candidate, "kind") != "Attribute":
+                candidate_obj = json.JsonValue(candidate).as_obj()
+                if candidate_obj is None or _str(candidate_obj.raw, "kind") != "Attribute":
                     continue
-                value_node = candidate.get("value")
+                value_node = candidate_obj.raw.get("value")
                 if _is_type_owner(ctx, value_node):
                     return True
-                if isinstance(value_node, dict) and _str(value_node, "kind") == "Name":
-                    owner_id = _str(value_node, "id")
+                value_obj = json.JsonValue(value_node).as_obj()
+                if value_obj is not None and _str(value_obj.raw, "kind") == "Name":
+                    owner_id = _str(value_obj.raw, "id")
                     if owner_id != "" and owner_id == owner_name:
                         return True
-        for value in node.values():
+        for value in node_dict.values():
             if _node_mutates_class_storage(ctx, value, owner_name):
                 return True
         return False
-    if isinstance(node, list):
-        for item in node:
+    node_arr = json.JsonValue(node).as_arr()
+    if node_arr is not None:
+        for item in node_arr.raw:
             if _node_mutates_class_storage(ctx, item, owner_name):
                 return True
     return False
 
 
 def _node_mutates_self_fields(node: JsonVal) -> bool:
-    if isinstance(node, dict):
-        kind = _str(node, "kind")
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is not None:
+        node_dict = node_obj.raw
+        kind = _str(node_dict, "kind")
         if kind in ("Assign", "AugAssign", "AnnAssign"):
             targets: list[JsonVal] = []
-            target = node.get("target")
+            target = node_dict.get("target")
             if target is not None:
                 targets.append(target)
-            targets.extend(_list(node, "targets"))
+            targets.extend(_list(node_dict, "targets"))
             for candidate in targets:
-                if not isinstance(candidate, dict) or _str(candidate, "kind") != "Attribute":
+                candidate_obj = json.JsonValue(candidate).as_obj()
+                if candidate_obj is None or _str(candidate_obj.raw, "kind") != "Attribute":
                     continue
-                owner = candidate.get("value")
-                if isinstance(owner, dict) and _str(owner, "kind") == "Name" and _str(owner, "id") == "self":
+                owner = candidate_obj.raw.get("value")
+                owner_obj = json.JsonValue(owner).as_obj()
+                if owner_obj is not None and _str(owner_obj.raw, "kind") == "Name" and _str(owner_obj.raw, "id") == "self":
                     return True
         if kind == "Call":
-            meta = node.get("meta")
-            if isinstance(meta, dict) and meta.get("mutates_receiver") is True:
+            meta = node_dict.get("meta")
+            meta_obj = json.JsonValue(meta).as_obj()
+            if meta_obj is not None and json.JsonValue(meta_obj.raw.get("mutates_receiver")).as_bool() is True:
                 return True
-            func = node.get("func")
-            if isinstance(func, dict) and _str(func, "kind") == "Attribute":
-                owner = func.get("value")
-                if isinstance(owner, dict) and _str(owner, "kind") == "Name" and _str(owner, "id") == "self":
+            func = node_dict.get("func")
+            func_obj = json.JsonValue(func).as_obj()
+            if func_obj is not None and _str(func_obj.raw, "kind") == "Attribute":
+                owner = func_obj.raw.get("value")
+                owner_obj = json.JsonValue(owner).as_obj()
+                if owner_obj is not None and _str(owner_obj.raw, "kind") == "Name" and _str(owner_obj.raw, "id") == "self":
                     return True
-                if isinstance(owner, dict) and _str(owner, "kind") == "Attribute":
-                    base = owner.get("value")
-                    if isinstance(base, dict) and _str(base, "kind") == "Name" and _str(base, "id") == "self":
-                        call_owner = node.get("runtime_owner")
-                        if isinstance(call_owner, dict) and _str(call_owner, "borrow_kind") == "mutable_ref":
+                if owner_obj is not None and _str(owner_obj.raw, "kind") == "Attribute":
+                    base = owner_obj.raw.get("value")
+                    base_obj = json.JsonValue(base).as_obj()
+                    if base_obj is not None and _str(base_obj.raw, "kind") == "Name" and _str(base_obj.raw, "id") == "self":
+                        call_owner = node_dict.get("runtime_owner")
+                        call_owner_obj = json.JsonValue(call_owner).as_obj()
+                        if call_owner_obj is not None and _str(call_owner_obj.raw, "borrow_kind") == "mutable_ref":
                             return True
-                        runtime_call = _str(node, "runtime_call")
+                        runtime_call = _str(node_dict, "runtime_call")
                         if runtime_call in {
                             "list.append",
                             "list.extend",
@@ -5177,12 +5196,13 @@ def _node_mutates_self_fields(node: JsonVal) -> bool:
                             "bytearray.clear",
                         }:
                             return True
-        for value in node.values():
+        for value in node_dict.values():
             if _node_mutates_self_fields(value):
                 return True
         return False
-    if isinstance(node, list):
-        for item in node:
+    node_arr = json.JsonValue(node).as_arr()
+    if node_arr is not None:
+        for item in node_arr.raw:
             if _node_mutates_self_fields(item):
                 return True
     return False
