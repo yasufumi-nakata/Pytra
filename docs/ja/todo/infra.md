@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-14
+最終更新: 2026-04-25
 
 ## 運用ルール
 
@@ -82,6 +82,18 @@
 5. [ ] [ID: P1-PARITY-CONSOLIDATION-S5] 旧版削除とテスト整理
 6. [x] [ID: P1-PARITY-CONSOLIDATION-S6] `pytra-cli.py` の `_build_pipeline` で `target="js"` → `target_language="ts"` 変換を追加する
    - 2026-04-14: `_build_pipeline()` に lowering 用 `js -> ts` マッピングを追加。
+
+### P1-DATACLASS-OVER-JSONVAL-DICT: 一時構造体の dict[str, JsonVal] を @dataclass に置き換える
+
+文脈: [docs/ja/plans/p1-dataclass-over-jsonval-dict.md](../plans/p1-dataclass-over-jsonval-dict.md)
+
+toolchain 内部で一時的なデータ受け渡しに `dict[str, JsonVal]` を多用している箇所を `@dataclass` に置き換え、selfhost の型解決を安定させる。emitter の手前の段（parse/resolve/compile/link）を優先。
+
+1. [ ] [ID: P1-DATACLASS-DICT-S1] 棚卸し: selfhost blocker に直結する/しそうな一時構造体の洗い出しと優先順位付け
+2. [ ] [ID: P1-DATACLASS-DICT-S2] parse 層（`src/toolchain/parse/py/`）の @dataclass 化
+3. [ ] [ID: P1-DATACLASS-DICT-S3] resolve 層（`src/toolchain/resolve/py/`）の @dataclass 化
+4. [ ] [ID: P1-DATACLASS-DICT-S4] compile 層（`src/toolchain/compile/`）の @dataclass 化
+5. [ ] [ID: P1-DATACLASS-DICT-S5] link 層（`src/toolchain/link/`）の @dataclass 化
 
 ### 保留中タスク
 

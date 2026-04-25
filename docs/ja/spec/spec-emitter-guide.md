@@ -91,6 +91,7 @@ emitter 自体のコード（`src/toolchain/emit/` 配下の Python ファイル
 - **`pytra.std.*` 以外の Python 標準モジュールを import しないこと。**
 - **動的 import（`try/except ImportError`、`importlib`）を使わないこと。**
 - **Python 標準 `ast` モジュールに依存しないこと。**
+- **一時的な構造体に `dict[str, JsonVal]` を使わないこと。** `@dataclass` でクラスを定義し、フィールドに具体型を付けること。`dict[str, JsonVal]` は EAST ノードの走査で受け取る入力型としてのみ使い、emitter 内部のデータ受け渡しに新規で使ってはならない。理由: (1) フィールド型が `JsonVal` に埋もれて EAST の型推論が効かない、(2) selfhost 時に None-only dict や covariance の問題で C++ コンパイルが壊れやすい、(3) `span.lineno` のほうが `span["lineno"]` より意図が明確。
 
 ### 1.4 生成コードの品質要件
 
