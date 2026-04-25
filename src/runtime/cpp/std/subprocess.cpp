@@ -40,6 +40,12 @@ str _read_file_text(const char* path) {
 }
 }
 
+CompletedProcess::CompletedProcess(int64 returncode, const str& stdout, const str& stderr) {
+    this->returncode = returncode;
+    this->stdout = stdout;
+    this->stderr = stderr;
+}
+
 CompletedProcess run(const Object<list<str>>& cmd, const str& cwd, bool capture_output, const Object<dict<str, str>>& env) {
     str command;
     if (py_len(env) > int64(0)) {

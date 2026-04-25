@@ -4894,8 +4894,10 @@ def emit_cpp_module(
     # main() for entry
     if ctx.is_entry:
         _emit_blank(ctx)
-        _emit(ctx, "int main() {")
+        _emit(ctx, "int main(int argc, char** argv) {")
         ctx.indent_level += 1
+        _emit(ctx, "pytra_configure_from_argv(argc, argv);")
+        _emit(ctx, "set_argv(rc_list_from_value(py_runtime_argv()));")
         if len(main_guard) > 0:
             _emit(ctx, "__pytra_main_guard();")
         _emit(ctx, "return 0;")
@@ -4935,6 +4937,7 @@ def emit_cpp_module(
         "#include <stdexcept>",
         "#include <cmath>",
         '#include "core/py_runtime.h"',
+        '#include "core/process_runtime.h"',
     ]
     if _module_needs_error_header(body):
         header.append('#include "built_in/error.h"')
