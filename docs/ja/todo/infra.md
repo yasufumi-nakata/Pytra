@@ -100,6 +100,8 @@ toolchain 内部で一時的なデータ受け渡しに `dict[str, JsonVal]` を
    - 2026-04-25: `type_summary.py` の type summary payload builder を `TypeSummary` dataclass 経由に変更。追加で `lower.py` の target/iter plan draft を `TargetPlanDraft` / `RuntimeIterPlanDraft` / `StaticRangePlanDraft` に置換。EAST node builder と JSON accessor は非対象として維持。
 5. [x] [ID: P1-DATACLASS-DICT-S5] link 層（`src/toolchain/link/`）の @dataclass 化
    - 2026-04-25: `linker.py` の `linked_program_v1` / manifest module entry / manifest global / diagnostics を draft dataclass 経由で生成。`type_stubgen.py` などの synthetic EAST node builder は非対象として維持。
+6. [ ] [ID: P1-DATACLASS-DICT-S6] emit/common/ の @dataclass 化（`common_renderer.py` 82箇所、`cli_runner.py` 9箇所、`profile_loader.py` 6箇所）
+7. [ ] [ID: P1-DATACLASS-DICT-S7] emit/cpp/ の @dataclass 化（`emitter.py` 116箇所、`header_gen.py` 18箇所、`runtime_bundle.py` 11箇所）
 
 ### 保留中タスク
 
