@@ -4909,31 +4909,39 @@ def _infer_callable_return_from_parent(
     grandparent: JsonVal,
     func_node: dict[str, JsonVal],
 ) -> str:
-    if isinstance(parent, dict):
-        parent_kind = _str(parent, "kind")
+    parent_obj = json.JsonValue(parent).as_obj()
+    if parent_obj is not None:
+        parent_dict = parent_obj.raw
+        parent_kind = _str(parent_dict, "kind")
         if parent_kind == "Return":
             return _return_type(func_node)
         if parent_kind == "Unbox":
-            resolved = _effective_resolved_type(parent)
+            resolved = _effective_resolved_type(parent_dict)
             if resolved != "":
                 return resolved
         if parent_kind == "Call":
-            runtime_call = _str(parent, "runtime_call")
+            runtime_call = _str(parent_dict, "runtime_call")
             if runtime_call == "list.append":
-                owner = parent.get("runtime_owner")
-                owner_type = _effective_resolved_type(owner) if isinstance(owner, dict) else ""
+                owner = parent_dict.get("runtime_owner")
+                owner_obj = json.JsonValue(owner).as_obj()
+                owner_type = _effective_resolved_type(owner) if owner_obj is not None else ""
                 if owner_type.startswith("list[") and owner_type.endswith("]"):
                     return owner_type[5:-1]
-            func = parent.get("func")
-            if isinstance(func, dict) and _str(func, "kind") == "Name" and _str(func, "id") == _str(call_node.get("func"), "id"):
-                if isinstance(grandparent, dict) and _str(grandparent, "kind") == "Return":
+            func = parent_dict.get("func")
+            func_obj = json.JsonValue(func).as_obj()
+            call_func_obj = json.JsonValue(call_node.get("func")).as_obj()
+            call_func_id = _str(call_func_obj.raw, "id") if call_func_obj is not None else ""
+            if func_obj is not None and _str(func_obj.raw, "kind") == "Name" and _str(func_obj.raw, "id") == call_func_id:
+                grandparent_obj = json.JsonValue(grandparent).as_obj()
+                grandparent_kind = _str(grandparent_obj.raw, "kind") if grandparent_obj is not None else ""
+                if grandparent_kind == "Return":
                     return _return_type(func_node)
-                if isinstance(grandparent, dict) and _str(grandparent, "kind") == "Unbox":
-                    resolved = _effective_resolved_type(grandparent)
+                if grandparent_obj is not None and grandparent_kind == "Unbox":
+                    resolved = _effective_resolved_type(grandparent_obj.raw)
                     if resolved != "":
                         return resolved
         if parent_kind in ("Assign", "AnnAssign"):
-            declared = _str(parent, "decl_type")
+            declared = _str(parent_dict, "decl_type")
             if declared != "":
                 return declared
     return ""
@@ -4949,46 +4957,55 @@ def _function_self_mutates(node: dict[str, JsonVal]) -> bool:
 
 
 def _collect_function_mutable_param_indexes(node: JsonVal, out: dict[str, set[int]]) -> None:
-    if not isinstance(node, dict):
-        if isinstance(node, list):
-            for item in node:
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is None:
+        node_arr = json.JsonValue(node).as_arr()
+        if node_arr is not None:
+            for item in node_arr.raw:
                 _collect_function_mutable_param_indexes(item, out)
         return
-    kind = _str(node, "kind")
+    node_dict = node_obj.raw
+    kind = _str(node_dict, "kind")
     if kind in ("FunctionDef", "ClosureDef"):
-        name = _str(node, "name")
+        name = _str(node_dict, "name")
         if name != "":
             indexes: set[int] = set()
-            for idx, (_arg_name, _arg_type, is_mutable) in enumerate(_function_param_meta(node)):
+            param_meta = _function_param_meta(node_dict)
+            for idx in range(len(param_meta)):
+                _arg_name, _arg_type, is_mutable = param_meta[idx]
                 if is_mutable:
                     indexes.add(idx)
             out[name] = indexes
-    for child in node.values():
+    for child in node_dict.values():
         _collect_function_mutable_param_indexes(child, out)
 
 
 def _attribute_target_type(ctx: CppEmitContext, node: JsonVal) -> str:
-    if not isinstance(node, dict) or _str(node, "kind") != "Attribute":
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is None or _str(node_obj.raw, "kind") != "Attribute":
         return ""
-    owner = node.get("value")
-    attr = _str(node, "attr")
-    if not isinstance(owner, dict) or attr == "":
+    node_dict = node_obj.raw
+    owner = node_dict.get("value")
+    owner_obj = json.JsonValue(owner).as_obj()
+    attr = _str(node_dict, "attr")
+    if owner_obj is None or attr == "":
         return ""
-    owner_type = _effective_resolved_type(owner)
+    owner_dict = owner_obj.raw
+    owner_type = _effective_resolved_type(owner_dict)
     if owner_type in ("", "unknown"):
-        owner_id = _str(owner, "id")
+        owner_id = _str(owner_dict, "id")
         if owner_id in ("self", "this") and ctx.current_class != "":
             owner_type = ctx.current_class
     if owner_type in ctx.class_field_types and attr in ctx.class_field_types[owner_type]:
         return ctx.class_field_types[owner_type][attr]
-    owner_id = _str(owner, "id")
+    owner_id = _str(owner_dict, "id")
     if owner_id in ctx.class_field_types and attr in ctx.class_field_types[owner_id]:
         return ctx.class_field_types[owner_id][attr]
     return ""
 
 
 def _param_decl_text(resolved_type: str, name: str, is_mutable: bool) -> str:
-    return cpp_param_decl(resolved_type, name, is_mutable=is_mutable)
+    return cpp_param_decl(resolved_type, name, is_mutable=is_mutable) + ""
 
 
 def _return_type(node: dict[str, JsonVal]) -> str:
@@ -4997,12 +5014,13 @@ def _return_type(node: dict[str, JsonVal]) -> str:
         return_type = _str(node, "returns")
     if return_type == "":
         return_type = "None"
-    return normalize_cpp_nominal_adt_type(return_type)
+    return normalize_cpp_nominal_adt_type(return_type) + ""
 
 
 def _has_decorator(node: dict[str, JsonVal], name: str) -> bool:
     for d in _list(node, "decorators"):
-        if isinstance(d, str) and d == name:
+        d_text = _json_str_value(d)
+        if d_text == name:
             return True
     return False
 
@@ -5028,20 +5046,23 @@ def _trait_simple_names(node: dict[str, JsonVal]) -> list[str]:
     else:
         traits = _list(_implements_meta(node), "traits")
     for item in traits:
-        if isinstance(item, str) and item != "":
-            out.append(item.rsplit(".", 1)[-1])
+        item_text = _json_str_value(item)
+        if item_text != "":
+            parts = item_text.rsplit(".", 1)
+            out.append(parts[len(parts) - 1])
     return out
 
 
 def _method_trait_impl_count(node: dict[str, JsonVal]) -> int:
     meta = _dict(node, "meta")
     impl = meta.get("trait_impl_v1")
-    if isinstance(impl, dict):
+    if json.JsonValue(impl).as_obj() is not None:
         return 1
-    if isinstance(impl, list):
+    impl_arr = json.JsonValue(impl).as_arr()
+    if impl_arr is not None:
         count = 0
-        for item in impl:
-            if isinstance(item, dict):
+        for item in impl_arr.raw:
+            if json.JsonValue(item).as_obj() is not None:
                 count += 1
         return count
     return 0
