@@ -55,20 +55,41 @@ class LoweringProfile:
     exception_style: str
 
 
+@dataclass
+class LoweringProfileDocDraft:
+    profile: LoweringProfile
+    schema_version: int = 1
+
+    def to_jv(self) -> dict[str, JsonVal]:
+        lowering: dict[str, JsonVal] = {
+            "tuple_unpack_style": self.profile.tuple_unpack_style,
+            "container_covariance": self.profile.container_covariance,
+            "closure_style": self.profile.closure_style,
+            "with_style": self.profile.with_style,
+            "property_style": self.profile.property_style,
+            "swap_style": self.profile.swap_style,
+            "exception_style": self.profile.exception_style,
+        }
+        return {
+            "schema_version": self.schema_version,
+            "lowering": lowering,
+        }
+
+
+def _default_lowering_profile() -> LoweringProfile:
+    return LoweringProfile(
+        tuple_unpack_style="subscript",
+        container_covariance=False,
+        closure_style="native_nested",
+        with_style="try_finally",
+        property_style="field_access",
+        swap_style="temp_var",
+        exception_style="native_throw",
+    )
+
+
 def _default_profile_doc() -> dict[str, JsonVal]:
-    lowering: dict[str, JsonVal] = {
-        "tuple_unpack_style": "subscript",
-        "container_covariance": False,
-        "closure_style": "native_nested",
-        "with_style": "try_finally",
-        "property_style": "field_access",
-        "swap_style": "temp_var",
-        "exception_style": "native_throw",
-    }
-    return {
-        "schema_version": 1,
-        "lowering": lowering,
-    }
+    return LoweringProfileDocDraft(profile=_default_lowering_profile()).to_jv()
 
 
 
@@ -87,15 +108,7 @@ def _validate_enum(value: str, allowed: set[str], field_name: str) -> str:
 
 def parse_lowering_profile(doc: dict[str, JsonVal]) -> LoweringProfile:
     _ = doc
-    return LoweringProfile(
-        tuple_unpack_style="subscript",
-        container_covariance=False,
-        closure_style="native_nested",
-        with_style="try_finally",
-        property_style="field_access",
-        swap_style="temp_var",
-        exception_style="native_throw",
-    )
+    return _default_lowering_profile()
 
 
 

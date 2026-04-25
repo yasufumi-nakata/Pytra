@@ -16,6 +16,7 @@ accept an EAST3 document and return a code string.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Callable
 
 from pytra.std import json
@@ -26,6 +27,59 @@ from pytra.std.pathlib import Path
 type EmitFn = Callable[[dict[str, JsonVal]], str]
 type DirectEmitFn = Callable[[dict[str, JsonVal], Path], int]
 type PostEmitFn = Callable[[Path], None]
+
+
+@dataclass
+class ManifestModuleEntryDraft:
+    module_id: str = ""
+    output: str = ""
+    module_kind: str = ""
+    is_entry: bool = False
+    source_path: str = ""
+
+    @classmethod
+    def from_jv(cls, entry: dict[str, JsonVal], index: int) -> ManifestModuleEntryDraft:
+        output_raw = entry.get("output")
+        if not isinstance(output_raw, str) or output_raw == "":
+            raise RuntimeError("manifest.modules[" + str(index) + "].output must be non-empty string")
+        module_id = ""
+        module_id_raw = entry.get("module_id")
+        if isinstance(module_id_raw, str):
+            module_id = module_id_raw
+        module_kind = ""
+        module_kind_raw = entry.get("module_kind")
+        if isinstance(module_kind_raw, str):
+            module_kind = module_kind_raw
+        is_entry = False
+        is_entry_raw = entry.get("is_entry")
+        if isinstance(is_entry_raw, bool):
+            is_entry = is_entry_raw
+        source_path = ""
+        source_path_raw = entry.get("source_path")
+        if isinstance(source_path_raw, str):
+            source_path = source_path_raw
+        return cls(
+            module_id=module_id,
+            output=output_raw,
+            module_kind=module_kind,
+            is_entry=is_entry,
+            source_path=source_path,
+        )
+
+    def inject_cli_meta(self, east_doc: dict[str, JsonVal]) -> None:
+        meta_val: JsonVal = east_doc.get("meta")
+        typed_meta: dict[str, JsonVal] = {}
+        if isinstance(meta_val, dict):
+            typed_meta = meta_val
+        else:
+            east_doc["meta"] = typed_meta
+        if self.module_id != "":
+            typed_meta["_cli_module_id"] = self.module_id
+        if self.module_kind != "":
+            typed_meta["_cli_module_kind"] = self.module_kind
+        typed_meta["_cli_is_entry"] = self.is_entry
+        if self.source_path != "":
+            typed_meta["_cli_source_path"] = self.source_path
 
 
 def _parse_args(argv: list[str]) -> tuple[str, str, str]:
@@ -73,34 +127,14 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
         if not isinstance(entry, dict):
             raise RuntimeError("manifest.modules[" + str(index) + "] must be object")
         typed_entry: dict[str, JsonVal] = entry
-        output_rel: JsonVal = typed_entry.get("output")
-        if not isinstance(output_rel, str) or output_rel == "":
-            raise RuntimeError("manifest.modules[" + str(index) + "].output must be non-empty string")
-        east_path: Path = manifest_dir.joinpath(output_rel)
+        manifest_entry = ManifestModuleEntryDraft.from_jv(typed_entry, index)
+        east_path: Path = manifest_dir.joinpath(manifest_entry.output)
         east_text: str = east_path.read_text(encoding="utf-8")
         east_doc: JsonVal = json.loads(east_text).raw
         if not isinstance(east_doc, dict):
             raise RuntimeError("linked EAST root must be object: " + str(east_path))
         typed_east: dict[str, JsonVal] = east_doc
-        # Inject module metadata from manifest entry into east_doc meta
-        meta_val: JsonVal = typed_east.get("meta")
-        typed_meta: dict[str, JsonVal] = {}
-        if isinstance(meta_val, dict):
-            typed_meta = meta_val
-        else:
-            typed_east["meta"] = typed_meta
-        module_id: JsonVal = typed_entry.get("module_id")
-        if isinstance(module_id, str):
-            typed_meta["_cli_module_id"] = module_id
-        module_kind: JsonVal = typed_entry.get("module_kind")
-        if isinstance(module_kind, str):
-            typed_meta["_cli_module_kind"] = module_kind
-        is_entry: JsonVal = typed_entry.get("is_entry")
-        if isinstance(is_entry, bool):
-            typed_meta["_cli_is_entry"] = is_entry
-        source_path: JsonVal = typed_entry.get("source_path")
-        if isinstance(source_path, str):
-            typed_meta["_cli_source_path"] = source_path
+        manifest_entry.inject_cli_meta(typed_east)
         result.append(typed_east)
     return result
 
