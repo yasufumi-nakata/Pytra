@@ -170,4 +170,5 @@ S0〜S4 完了済み（[archive/20260402.md](archive/20260402.md) 参照）。
    - 2026-04-26: 修正済み selfhost binary で full fixture parity を再実行し、`fixture_pass=134 / fixture_fail=27` を確認。S6 全体は未完了。
    - 2026-04-26: C++ header generator の enum 前方宣言を `enum class <Name> : int64;` に揃え、selfhost C++ の `enum_basic` / `intenum_basic` / `intflag_basic` が emit/run まで PASS。S6 全体は未完了。
    - 2026-04-26: C++ emitter が `type.isinstance` の Call を既存 `_emit_isinstance` 経路へ通すよう修正し、selfhost C++ の `class_inherit_basic` / `is_instance` / `isinstance_user_class` が emit/run まで PASS。trait 系は別原因で未完了。
+   - 2026-04-26: 空 `set[tuple[...]]` ctor の C++ 型名生成と `@property` getter 属性参照を修正し、host C++ parity と selfhost C++ emit/run の両方で `object_container_access` / `property_method_call` が PASS。S6 全体は未完了。
 3. [ ] [ID: P20-CPP-SELFHOST-S7] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root sample` で sample parity が PASS することを確認する

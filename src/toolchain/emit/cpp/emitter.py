@@ -56,6 +56,7 @@ class CppEmitContext:
     class_names: set[str] = field(default_factory=set)
     class_field_types: dict[str, dict[str, str]] = field(default_factory=dict)
     class_vars: dict[str, dict[str, dict[str, JsonVal]]] = field(default_factory=dict)
+    class_property_methods: dict[str, set[str]] = field(default_factory=dict)
     class_bases: dict[str, str] = field(default_factory=dict)
     enum_kinds: dict[str, str] = field(default_factory=dict)
     class_type_ids: dict[str, int] = field(default_factory=dict)
@@ -170,6 +171,23 @@ def _selfhost_cpp_signature_type(resolved_type: str) -> str:
         return "str"
     if resolved_type in ("Obj", "Any", "object", "unknown", ""):
         return "object"
+    if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        return "Object<list<" + _selfhost_cpp_signature_type(inner) + ">>"
+    if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+        inner = resolved_type[4:-1]
+        return "Object<set<" + _selfhost_cpp_signature_type(inner) + ">>"
+    if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+        inner = resolved_type[5:-1]
+        parts = split_generic_types(inner)
+        if len(parts) == 2:
+            return "Object<dict<" + _selfhost_cpp_signature_type(parts[0]) + ", " + _selfhost_cpp_signature_type(parts[1]) + ">>"
+    if resolved_type.startswith("tuple[") and resolved_type.endswith("]"):
+        inner = resolved_type[6:-1]
+        parts = split_generic_types(inner)
+        if len(parts) > 0:
+            rendered = [_selfhost_cpp_signature_type(part) for part in parts]
+            return "::std::tuple<" + ", ".join(rendered) + ">"
     return resolved_type
 
 
@@ -2884,13 +2902,15 @@ def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         )
     if owner == "this":
         expr = "this->" + attr
-        return expr + "()" if access_kind == "property_getter" else expr
+        property_methods = ctx.class_property_methods.get(ctx.current_class, set())
+        return expr + "()" if access_kind == "property_getter" or attr in property_methods else expr
     member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
     expr = owner + member_sep + attr
     owner_type = _effective_resolved_type(owner_node)
     if owner_type == "Path" and attr in ("parent", "parents", "name", "suffix", "stem"):
         return expr + "()"
-    return expr + "()" if access_kind == "property_getter" else expr
+    property_methods = ctx.class_property_methods.get(owner_type, set())
+    return expr + "()" if access_kind == "property_getter" or attr in property_methods else expr
 
 
 def _class_var_spec(ctx: CppEmitContext, node: JsonVal) -> dict[str, JsonVal] | None:
@@ -4315,6 +4335,19 @@ def _emit_class_def(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
         ctx.class_names.add(name)
     else:
         ctx.enum_kinds[name] = enum_kind
+
+    property_methods: set[str] = set()
+    for s in body:
+        s_obj = json.JsonValue(s).as_obj()
+        if s_obj is None or _str(s_obj.raw, "kind") not in ("FunctionDef", "ClosureDef"):
+            continue
+        decorators = _list(s_obj.raw, "decorators")
+        for decorator_value in decorators:
+            if _json_str_value(decorator_value) == "property":
+                property_name = _str(s_obj.raw, "name")
+                if property_name != "":
+                    property_methods.add(property_name)
+    ctx.class_property_methods[name] = property_methods
 
     fields: list[tuple[str, str]] = []
     class_vars = ctx.class_vars.get(name, {})
