@@ -1513,8 +1513,62 @@ def _lower_call_expr(call: Node, *, dispatch_mode: str, ctx: CompileContext) -> 
         return out
     if nd_kind(out) != CALL:
         return out
+    out["args"] = _expand_static_starred_call_args(out)
     set_type_expr_summary(out, type_expr_summary_from_node(ctx, out))
     return out
+
+
+def _make_starred_tuple_arg(value: Node, index: int, item_type: str) -> Node:
+    out: Node = _lower_empty_node()
+    out["kind"] = "Subscript"
+    out["value"] = value
+    slice_node: Node = _lower_empty_node()
+    slice_node["kind"] = "Constant"
+    slice_node["resolved_type"] = "int64"
+    slice_node["casts"] = _lower_empty_jv_list()
+    slice_node["borrow_kind"] = "value"
+    slice_node["repr"] = str(index)
+    slice_node["value"] = index
+    out["slice"] = slice_node
+    out["resolved_type"] = item_type
+    out["casts"] = _lower_empty_jv_list()
+    out["borrow_kind"] = "value"
+    out["repr"] = _lower_str(value, "repr") + "[" + str(index) + "]"
+    out["call_arg_type"] = item_type
+    return out
+
+
+def _expand_static_starred_call_args(call: Node) -> list[JsonVal]:
+    out: list[JsonVal] = []
+    args_raw = call.get("args")
+    if not jv_is_list(args_raw):
+        return out
+    for arg in jv_list(args_raw):
+        if not jv_is_dict(arg):
+            out.append(arg)
+            continue
+        arg_obj = jv_dict(arg)
+        if _lower_str(arg_obj, "kind") != "Starred":
+            out.append(arg)
+            continue
+        value_raw = arg_obj.get("value")
+        if not jv_is_dict(value_raw):
+            raise RuntimeError("unsupported_syntax: starred call arg requires tuple value")
+        value = jv_dict(value_raw)
+        tuple_type = _lower_str(value, "resolved_type")
+        elem_types = _tuple_element_types(tuple_type)
+        if len(elem_types) == 0:
+            raise RuntimeError("unsupported_syntax: starred call arg requires fixed tuple, got " + tuple_type)
+        idx = 0
+        for item_type in elem_types:
+            out.append(_make_starred_tuple_arg(value, idx, item_type))
+            idx += 1
+    return out
+
+
+def _lower_str(node: Node, key: str) -> str:
+    raw = node.get(key)
+    return "" + jv_str(raw)
 
 
 # ---------------------------------------------------------------------------

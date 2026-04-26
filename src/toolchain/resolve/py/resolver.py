@@ -4267,6 +4267,40 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
     # Normalize and refresh field_types from the prescanned class signature.
     ft_raw = _dict_get_obj(stmt, "field_types")
     stmt["field_types"] = ft_raw
+    class_var_types = _dict_get_obj(stmt, "class_var_types")
+    stmt["class_var_types"] = class_var_types
+    is_dataclass_class: bool = _dict_get_bool(stmt, "dataclass")
+    class_body_for_vars = _dict_get_arr(stmt, "body")
+    for class_item_val in class_body_for_vars:
+        if is_dataclass_class:
+            continue
+        class_item = _jv_obj(class_item_val)
+        if len(class_item) == 0:
+            continue
+        class_item_kind = _dict_get_str(class_item, "kind")
+        if class_item_kind != "AnnAssign" and class_item_kind != "Assign":
+            continue
+        target_obj = _dict_get_obj(class_item, "target")
+        if len(target_obj) == 0 or _dict_get_str(target_obj, "kind") != "Name":
+            continue
+        class_var_name = _dict_get_str(target_obj, "id")
+        if class_var_name == "":
+            continue
+        class_item_value = _dict_get_obj(class_item, "value")
+        is_class_var_assignment = class_item_kind == "Assign" or len(class_item_value) > 0
+        if not is_dataclass_class and not is_class_var_assignment:
+            continue
+        if class_item_kind == "AnnAssign":
+            class_var_type = _dict_get_str(class_item, "annotation")
+            if class_var_type == "":
+                class_var_type = _dict_get_str(class_item, "decl_type")
+        else:
+            value_obj = _dict_get_obj(class_item, "value")
+            class_var_type = _dict_get_str(value_obj, "resolved_type")
+        if class_var_type != "" and class_var_type != "unknown":
+            class_var_types[class_var_name] = _ctx_normalize_type(class_var_type, ctx)
+        if not is_dataclass_class and class_var_name in ft_raw:
+            ft_raw.pop(class_var_name)
     for fk, fv in ft_raw.items():
         field_type = _jv_str(fv)
         if field_type != "":
@@ -4335,8 +4369,16 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
                     field_name = _dict_get_str(target, "id")
                     field_type = _dict_get_str(item, "decl_type")
                     if field_name != "" and field_type != "" and field_type != "unknown":
-                        cls_sig_existing.fields[field_name] = _ctx_normalize_type(field_type, ctx)
-                        ft_raw[field_name] = cls_sig_existing.fields[field_name]
+                        norm_field_type = _ctx_normalize_type(field_type, ctx)
+                        item_value = _dict_get_obj(item, "value")
+                        is_class_var_assignment2 = len(item_value) > 0
+                        if is_dataclass_class or not is_class_var_assignment2:
+                            cls_sig_existing.fields[field_name] = norm_field_type
+                            ft_raw[field_name] = norm_field_type
+                        else:
+                            class_var_types[field_name] = norm_field_type
+                            if field_name in ft_raw:
+                                ft_raw.pop(field_name)
             elif ik == "FunctionDef" and _dict_get_str(item, "name") == "__init__":
                 init_body = _dict_get_arr(item, "body")
                 for init_stmt_val in init_body:
@@ -4344,6 +4386,10 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
                     if len(init_stmt) == 0:
                         continue
                     target2 = _dict_get_obj(init_stmt, "target")
+                    if len(target2) == 0:
+                        targets2 = _dict_get_arr(init_stmt, "targets")
+                        if len(targets2) > 0:
+                            target2 = _jv_obj(targets2[0])
                     if len(target2) == 0 or _dict_get_str(target2, "kind") != "Attribute":
                         continue
                     owner = _dict_get_obj(target2, "value")
@@ -4351,6 +4397,11 @@ def _resolve_class_def(stmt: dict[str, JsonVal], ctx: ResolveContext) -> None:
                         continue
                     field_name2 = _dict_get_str(target2, "attr")
                     field_type2 = _dict_get_str(target2, "resolved_type")
+                    if field_type2 == "" or field_type2 == "unknown":
+                        field_type2 = _dict_get_str(init_stmt, "decl_type")
+                    if field_type2 == "" or field_type2 == "unknown":
+                        value2 = _dict_get_obj(init_stmt, "value")
+                        field_type2 = _dict_get_str(value2, "resolved_type")
                     if field_name2 != "" and field_type2 != "" and field_type2 != "unknown":
                         if _has_inherited_field(class_name, field_name2, ctx):
                             continue

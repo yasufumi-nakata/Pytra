@@ -30,6 +30,21 @@ def _count_residual_for(node: JsonVal) -> int:
     return count
 
 
+def _count_residual_starred(node: JsonVal) -> int:
+    count: int = 0
+    if jv_is_dict(node):
+        node_dict: Node = jv_dict(node)
+        kind = jv_str(node_dict.get("kind", ""))
+        if kind == "Starred":
+            count += 1
+        for _, value in node_dict.items():
+            count += _count_residual_starred(value)
+    elif jv_is_list(node):
+        for item in jv_list(node):
+            count += _count_residual_starred(item)
+    return count
+
+
 def validate_east3(doc: Node) -> ValidationResult:
     result = ValidationResult()
     result.source_path = "" + jv_str(doc.get("source_path", ""))
@@ -46,6 +61,11 @@ def validate_east3(doc: Node) -> ValidationResult:
     if residual_for > 0:
         result.errors.append("residual For/ForRange nodes: " + str(residual_for) + " (must be lowered to ForCore)")
     result.stats["residual_for"] = residual_for
+
+    residual_starred: int = _count_residual_starred(doc)
+    if residual_starred > 0:
+        result.errors.append("residual Starred nodes: " + str(residual_starred) + " (must be lowered before EAST3)")
+    result.stats["residual_starred"] = residual_starred
 
     result.stats["object_resolved_type"] = 0
     return result

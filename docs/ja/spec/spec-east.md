@@ -178,12 +178,16 @@ emitter は以下の変換表に従って EAST3 ノードを処理する。emitt
 
 | Python | EAST3 ノード | 主要フィールド |
 |---|---|---|
-| `class Foo:` | `ClassDef` | `class_storage_hint`, `field_types`, `base` |
+| `class Foo:` | `ClassDef` | `class_storage_hint`, `field_types`, `class_var_types`, `base` |
 | `class Foo(Bar):` | `ClassDef` | `base: "Bar"` |
 | `@dataclass class Foo:` | `ClassDef` | `dataclass: true` |
 | `@trait class Foo:` | `ClassDef` + `meta.trait_v1` | |
 | `type X = A \| B` | `ClassDef` + `meta.nominal_adt_v1` | `role: "family"` / `"variant"` |
 | `match x:` | `Match` | `subject`, `cases: [MatchCase]` |
+
+- `ClassDef.field_types` は instance field 専用。`__init__` 内の `self.<field> = expr` は resolver 後に `expr.resolved_type` から補完してよい。
+- `ClassDef.class_var_types` は非 dataclass の class body 直接代入（値を持つ `AnnAssign` / `Assign`）を表す。annotation-only の class body 宣言は instance field 宣言として `field_types` に残す。
+- EAST3 では `Call.args` 内の `Starred` を残さない。fixed tuple の starred call は lowering で `Subscript` 引数列に展開し、展開不能な starred call は fail-closed とする。
 
 #### import
 

@@ -121,9 +121,10 @@
 
 **方針**: resolver の `_resolve_class` で `__init__` body を resolve した後に `self.attr = expr` を再走査し、field_types に未登録のフィールドを `expr.resolved_type` から補完する。parser 段階では型が未解決なので resolver でやるのが正道。
 
-1. [ ] [ID: P0-RESOLVE-FIELD-S1] resolver の `_resolve_class` で `__init__` body の `self.attr = expr` から field_types を補完する
-2. [ ] [ID: P0-RESOLVE-FIELD-S2] `alias_arg` fixture が field_types 付きで EAST3 を出力し、C++ parity PASS することを確認する
-3. [ ] [ID: P0-RESOLVE-FIELD-S3] `__init__` 以外のメソッドで self.attr に代入するケースの扱いを決める（v1 では __init__ のみ対象）
+1. [x] [ID: P0-RESOLVE-FIELD-S1] resolver の `_resolve_class` で `__init__` body の `self.attr = expr` から field_types を補完する
+2. [x] [ID: P0-RESOLVE-FIELD-S2] `alias_arg` fixture が field_types 付きで EAST3 を出力し、C++ parity PASS することを確認する
+3. [x] [ID: P0-RESOLVE-FIELD-S3] `__init__` 以外のメソッドで self.attr に代入するケースの扱いを決める（v1 では __init__ のみ対象）
+   - 2026-04-26: v1 は `__init__` 内の `self.attr` のみ補完対象。annotation-only の class body 宣言は instance field 宣言として維持。
 
 ### P0-CLASS-VAR-VS-FIELD: class 変数と instance field の metadata を分離する
 
@@ -133,9 +134,10 @@
 
 **方針**: field_types の各エントリに `"class_var"` / `"instance"` のフラグを追加するか、`class_var_types` を別フィールドとして分離する。spec-east.md §11 のクラス情報事前収集に追記が必要。
 
-1. [ ] [ID: P0-CLASSVAR-S1] ClassDef に `class_var_types` を追加し、class body の直接 `AnnAssign` を class_var、`__init__` 内の `self.attr` を instance field として分離する
-2. [ ] [ID: P0-CLASSVAR-S2] C++ emitter が class_var を static / グローバル変数として、instance field を struct メンバとして出力することを確認する
-3. [ ] [ID: P0-CLASSVAR-S3] `class_member` fixture が C++ parity PASS することを確認する
+1. [x] [ID: P0-CLASSVAR-S1] ClassDef に `class_var_types` を追加し、class body の直接 `AnnAssign` を class_var、`__init__` 内の `self.attr` を instance field として分離する
+2. [x] [ID: P0-CLASSVAR-S2] C++ emitter が class_var を static / グローバル変数として、instance field を struct メンバとして出力することを確認する
+3. [x] [ID: P0-CLASSVAR-S3] `class_member` fixture が C++ parity PASS することを確認する
+   - 2026-04-26: 非 dataclass で値を持つ class body `AnnAssign` / `Assign` を `class_var_types` に分離。C++ header の const 判定も class storage mutation を見るよう補正。
 
 ### P1-LOWER-STARRED-EXPAND: Call.args 内の Starred を lower で展開する
 
@@ -145,9 +147,10 @@
 
 **方針**: lower の Call 処理で、Starred の value が静的サイズの tuple 型のとき、tuple 要素数分の Subscript に展開する。動的サイズや不明型の場合は `unsupported_syntax` で fail-closed。
 
-1. [ ] [ID: P1-LOWER-STARRED-S1] lower.py の `_lower_call_expr` で Starred(tuple) を静的展開する
-2. [ ] [ID: P1-LOWER-STARRED-S2] validate_east3 に Starred 残留検出を追加する（For 残留検出と同様）
-3. [ ] [ID: P1-LOWER-STARRED-S3] `starred_call_tuple_basic` fixture が C++ parity PASS することを確認する
+1. [x] [ID: P1-LOWER-STARRED-S1] lower.py の `_lower_call_expr` で Starred(tuple) を静的展開する
+2. [x] [ID: P1-LOWER-STARRED-S2] validate_east3 に Starred 残留検出を追加する（For 残留検出と同様）
+3. [x] [ID: P1-LOWER-STARRED-S3] `starred_call_tuple_basic` fixture が C++ parity PASS することを確認する
+   - 2026-04-26: fixed tuple の `*arg` を `Subscript` 引数列へ展開し、EAST3 validator で `Starred` 残留を禁止。
 
 ### P20-CPP-SELFHOST: C++ emitter で toolchain を C++ に変換し g++ build を通す
 

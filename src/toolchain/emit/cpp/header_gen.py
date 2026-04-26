@@ -253,7 +253,8 @@ def _hg_function_decl(
         prefix = owner_name + "::"
     if owner_name != "" and _hg_has_decorator(node, "staticmethod") and in_class:
         static_prefix = "static "
-    if owner_name != "" and not _hg_has_decorator(node, "staticmethod") and name != "__init__" and not _hg_function_self_mutates(node):
+    self_mutates = _hg_function_self_mutates(node) or _hg_node_mutates_class_storage(node.get("body"), owner_name)
+    if owner_name != "" and not _hg_has_decorator(node, "staticmethod") and name != "__init__" and not self_mutates:
         suffix = " const"
     signature = static_prefix + ret + " " + prefix + name + "(" + ", ".join(params) + ")" + suffix
     template_prefix = _hg_function_template_prefix(node)
@@ -573,6 +574,40 @@ def _hg_node_mutates_self_fields(node: JsonVal) -> bool:
     if node_arr is not None:
         for item in node_arr.raw:
             if _hg_node_mutates_self_fields(item):
+                return True
+    return False
+
+
+def _hg_node_mutates_class_storage(node: JsonVal, owner_name: str) -> bool:
+    if owner_name == "":
+        return False
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is not None:
+        node_dict = node_obj.raw
+        kind = _hg_str(node_dict, "kind")
+        if kind in ("Assign", "AugAssign", "AnnAssign"):
+            target = node_dict.get("target")
+            targets: list[JsonVal] = []
+            if target is not None:
+                targets.append(target)
+            extra_targets_arr = json.JsonValue(node_dict.get("targets")).as_arr()
+            if extra_targets_arr is not None:
+                targets.extend(extra_targets_arr.raw)
+            for candidate in targets:
+                candidate_obj = json.JsonValue(candidate).as_obj()
+                if candidate_obj is None or _hg_str(candidate_obj.raw, "kind") != "Attribute":
+                    continue
+                owner_obj = json.JsonValue(candidate_obj.raw.get("value")).as_obj()
+                if owner_obj is not None and _hg_str(owner_obj.raw, "kind") == "Name" and _hg_str(owner_obj.raw, "id") == owner_name:
+                    return True
+        for value in node_dict.values():
+            if _hg_node_mutates_class_storage(value, owner_name):
+                return True
+        return False
+    node_arr = json.JsonValue(node).as_arr()
+    if node_arr is not None:
+        for item in node_arr.raw:
+            if _hg_node_mutates_class_storage(item, owner_name):
                 return True
     return False
 
