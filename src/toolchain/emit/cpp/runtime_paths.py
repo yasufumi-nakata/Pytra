@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytra.std.json as json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
@@ -11,8 +12,8 @@ from toolchain.link.runtime_discovery import is_runtime_namespace_module
 from toolchain.link.runtime_discovery import resolve_runtime_module_rel_tail
 
 
-_RUNTIME_CPP_ROOT = Path(__file__).resolve().parents[3] / "runtime" / "cpp"
-_TYPE_ONLY_SYMBOL_BINDINGS: set[tuple[str, str]] = set()
+_RUNTIME_CPP_ROOT = Path("src").joinpath("runtime").joinpath("cpp")
+_CPP_TYPE_ONLY_SYMBOL_KEYS: set[str] = set()
 _CPP_SKIP_MODULE_IDS: set[str] = {
     "abc",
     "readonly",
@@ -21,7 +22,7 @@ _CPP_SKIP_MODULE_IDS: set[str] = {
 
 
 def runtime_rel_tail_for_module(module_id: str) -> str:
-    return resolve_runtime_module_rel_tail(module_id)
+    return resolve_runtime_module_rel_tail(module_id) + ""
 
 
 def cpp_include_for_module(module_id: str) -> str:
@@ -46,28 +47,24 @@ def collect_cpp_dependency_module_ids(module_id: str, meta: dict[str, JsonVal]) 
     fixtures often lack it, so fall back to `import_bindings` while filtering
     host-only Python modules like `os.path`.
     """
-    linked = meta.get("linked_program_v1")
     dep_ids: list[str] = []
-    if isinstance(linked, dict):
-        deps = linked.get("resolved_dependencies_v1")
-        if isinstance(deps, list):
-            for dep in deps:
-                if isinstance(dep, str) and dep != "":
-                    dep_ids.append(dep)
-    bindings = meta.get("import_bindings")
-    if isinstance(bindings, list):
-        for binding in bindings:
-            dep_id = _binding_cpp_dependency_module_id(binding)
-            if dep_id != "":
-                dep_ids.append(dep_id)
-    import_resolution = meta.get("import_resolution")
-    if isinstance(import_resolution, dict):
-        bindings = import_resolution.get("bindings")
-        if isinstance(bindings, list):
-            for binding in bindings:
-                dep_id = _binding_cpp_dependency_module_id(binding)
-                if dep_id != "":
-                    dep_ids.append(dep_id)
+    linked = _dict(meta, "linked_program_v1")
+    deps = _list(linked, "resolved_dependencies_v1")
+    for dep in deps:
+        dep_text = _json_str_value(dep)
+        if dep_text != "":
+            dep_ids.append(dep_text)
+    bindings = _list(meta, "import_bindings")
+    for binding in bindings:
+        dep_id = _binding_cpp_dependency_module_id(binding)
+        if dep_id != "":
+            dep_ids.append(dep_id)
+    import_resolution = _dict(meta, "import_resolution")
+    resolution_bindings = _list(import_resolution, "bindings")
+    for binding in resolution_bindings:
+        dep_id = _binding_cpp_dependency_module_id(binding)
+        if dep_id != "":
+            dep_ids.append(dep_id)
 
     out: list[str] = []
     seen: set[str] = set()
@@ -82,26 +79,28 @@ def collect_cpp_dependency_module_ids(module_id: str, meta: dict[str, JsonVal]) 
 
 
 def _binding_cpp_dependency_module_id(binding: JsonVal) -> str:
-    if not isinstance(binding, dict):
+    binding_obj = json.JsonValue(binding).as_obj()
+    if binding_obj is None:
         return ""
-    module_id = binding.get("module_id")
-    export_name = binding.get("export_name")
-    if isinstance(module_id, str) and isinstance(export_name, str) and (module_id, export_name) in _TYPE_ONLY_SYMBOL_BINDINGS:
+    binding_dict = binding_obj.raw
+    module_id = _str(binding_dict, "module_id")
+    export_name = _str(binding_dict, "export_name")
+    if module_id != "" and export_name != "" and module_id + "|" + export_name in _CPP_TYPE_ONLY_SYMBOL_KEYS:
         return ""
-    runtime_module_id = binding.get("runtime_module_id")
-    runtime_group = binding.get("runtime_group")
-    host_only = binding.get("host_only") is True
+    runtime_module_id = _str(binding_dict, "runtime_module_id")
+    runtime_group = _str(binding_dict, "runtime_group")
+    host_only = _bool(binding_dict, "host_only")
 
-    if isinstance(runtime_module_id, str) and runtime_module_id != "":
+    if runtime_module_id != "":
         if host_only:
             return ""
-        if isinstance(runtime_group, str) and runtime_group != "":
+        if runtime_group != "":
             return runtime_module_id
         if not host_only:
             return runtime_module_id
         return ""
 
-    if isinstance(module_id, str) and module_id != "":
+    if module_id != "":
         if module_id.startswith("pytra.") or not host_only:
             return module_id
     return ""
@@ -111,7 +110,7 @@ def native_companion_header_path(module_id: str) -> Path:
     rel = runtime_rel_tail_for_module(module_id)
     if rel == "":
         return Path("")
-    p = _RUNTIME_CPP_ROOT / (rel + ".h")
+    p = _RUNTIME_CPP_ROOT.joinpath(rel + ".h")
     return p if p.exists() else Path("")
 
 
@@ -119,5 +118,40 @@ def native_companion_source_path(module_id: str) -> Path:
     rel = runtime_rel_tail_for_module(module_id)
     if rel == "":
         return Path("")
-    p = _RUNTIME_CPP_ROOT / (rel + ".cpp")
+    p = _RUNTIME_CPP_ROOT.joinpath(rel + ".cpp")
     return p if p.exists() else Path("")
+
+
+def _str(node: dict[str, JsonVal], key: str) -> str:
+    raw = json.JsonValue(node.get(key)).as_str()
+    if raw is not None:
+        return raw
+    return ""
+
+
+def _bool(node: dict[str, JsonVal], key: str) -> bool:
+    raw = json.JsonValue(node.get(key)).as_bool()
+    if raw is not None:
+        return raw
+    return False
+
+
+def _json_str_value(value: JsonVal) -> str:
+    raw = json.JsonValue(value).as_str()
+    if raw is not None:
+        return raw
+    return ""
+
+
+def _list(node: dict[str, JsonVal], key: str) -> list[JsonVal]:
+    raw = json.JsonValue(node.get(key)).as_arr()
+    if raw is not None:
+        return raw.raw
+    return []
+
+
+def _dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
+    raw = json.JsonValue(node.get(key)).as_obj()
+    if raw is not None:
+        return raw.raw
+    return {}

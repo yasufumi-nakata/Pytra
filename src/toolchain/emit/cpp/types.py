@@ -11,7 +11,7 @@ from __future__ import annotations
 
 
 # mapping.json "types" テーブルの注入先。emitter 起動時に init_types_mapping() で設定する。
-_g_types: dict[str, str] = dict()
+_g_types: dict[str, str] = {}
 
 
 def init_types_mapping(types: dict[str, str]) -> None:
@@ -24,7 +24,7 @@ def init_types_mapping(types: dict[str, str]) -> None:
 def _build_type_map() -> dict[str, str]:
     # フォールバック: mapping.json が空の場合に使うハードコード表。
     # 正本は src/runtime/cpp/mapping.json の "types" テーブル。
-    out: dict[str, str] = dict()
+    out: dict[str, str] = {}
     out["int"] = "int64"
     out["int8"] = "int8"
     out["int16"] = "int16"
@@ -56,7 +56,7 @@ def _build_type_map() -> dict[str, str]:
 
 
 def _build_cpp_alias_union_expansions() -> dict[str, str]:
-    out: dict[str, str] = dict()
+    out: dict[str, str] = {}
     out["JsonVal"] = "None | bool | int64 | float64 | str | list[JsonVal] | dict[str,JsonVal]"
     return out
 
@@ -73,7 +73,7 @@ _JSONVAL_INNER_CANON: str = "bool | int64 | float64 | str | list[JsonVal] | dict
 
 
 def _norm_type_text(text: str) -> str:
-    return "".join(ch for ch in text if ch != " " and ch != "\n" and ch != "\t")
+    return text.replace(" ", "").replace("\n", "").replace("\t", "")
 
 
 def normalize_cpp_nominal_adt_type(resolved_type: str) -> str:
@@ -165,7 +165,10 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
         inner = resolved_type[6:-1]
         parts = _split_generic_args(inner)
         if len(parts) > 0:
-            return "::std::tuple<" + ", ".join(cpp_type(p) for p in parts) + ">"
+            cpp_parts: list[str] = []
+            for p in parts:
+                cpp_parts.append(cpp_type(p))
+            return "::std::tuple<" + ", ".join(cpp_parts) + ">"
 
     optional_inner = _top_level_optional_inner(resolved_type)
     if optional_inner != "":
@@ -185,19 +188,30 @@ def cpp_type(resolved_type: str, *, prefer_value_container: bool = False) -> str
             ret_raw = parts[1].strip()
             if params_raw.startswith("[") and params_raw.endswith("]"):
                 params_inner = params_raw[1:-1].strip()
-                param_types = _split_generic_args(params_inner) if params_inner else []
-                cpp_params = ", ".join(cpp_signature_type(p) for p in param_types)
+                param_types: list[str] = []
+                if params_inner != "":
+                    param_types = _split_generic_args(params_inner)
+                cpp_param_parts: list[str] = []
+                for p in param_types:
+                    cpp_param_parts.append(cpp_signature_type(p))
+                cpp_params = ", ".join(cpp_param_parts)
                 cpp_ret = cpp_signature_type(ret_raw)
                 return "::std::function<" + cpp_ret + "(" + cpp_params + ")>"
 
     if _is_top_level_union(resolved_type):
         lanes = _split_top_level_union(resolved_type)
         if len(lanes) > 0:
-            non_none = [l for l in lanes if l not in ("None", "none")]
+            non_none: list[str] = []
+            for lane in lanes:
+                if lane != "None" and lane != "none":
+                    non_none.append(lane)
             has_none = len(non_none) < len(lanes)
             if has_none and len(non_none) == 0:
                 return "void"
-            variant = "::std::variant<" + ", ".join(_cpp_variant_lane_type(lane) for lane in non_none) + ">"
+            variant_parts: list[str] = []
+            for lane in non_none:
+                variant_parts.append(_cpp_variant_lane_type(lane))
+            variant = "::std::variant<" + ", ".join(variant_parts) + ">"
             if has_none:
                 return "::std::optional<" + variant + ">"
             return variant
@@ -214,9 +228,9 @@ def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = Fal
     resolved_type = normalize_cpp_nominal_adt_type(resolved_type)
     if resolved_type == "" or resolved_type == "unknown":
         return "object"
-    if resolved_type in ("Callable", "callable"):
+    if resolved_type == "Callable" or resolved_type == "callable":
         return "::std::function<object(object)>"
-    if resolved_type in ("Any", "Obj", "object"):
+    if resolved_type == "Any" or resolved_type == "Obj" or resolved_type == "object":
         return "object"
     optional_inner = _top_level_optional_inner(resolved_type)
     if optional_inner != "":
@@ -227,11 +241,17 @@ def cpp_signature_type(resolved_type: str, *, prefer_value_container: bool = Fal
     if _is_top_level_union(resolved_type):
         lanes = _split_top_level_union(resolved_type)
         if len(lanes) > 0:
-            non_none = [l for l in lanes if l not in ("None", "none")]
+            non_none: list[str] = []
+            for lane in lanes:
+                if lane != "None" and lane != "none":
+                    non_none.append(lane)
             has_none = len(non_none) < len(lanes)
             if has_none and len(non_none) == 0:
                 return "void"
-            variant = "::std::variant<" + ", ".join(_cpp_variant_lane_type(lane) for lane in non_none) + ">"
+            variant_parts: list[str] = []
+            for lane in non_none:
+                variant_parts.append(_cpp_variant_lane_type(lane))
+            variant = "::std::variant<" + ", ".join(variant_parts) + ">"
             if has_none:
                 return "::std::optional<" + variant + ">"
             return variant
@@ -361,9 +381,9 @@ def _top_level_optional_inner(resolved_type: str) -> str:
     parts = _split_top_level_union(resolved_type)
     if len(parts) != 2:
         return ""
-    if parts[0] in ("None", "none"):
+    if parts[0] == "None" or parts[0] == "none":
         return parts[1]
-    if parts[1] in ("None", "none"):
+    if parts[1] == "None" or parts[1] == "none":
         return parts[0]
     return ""
 

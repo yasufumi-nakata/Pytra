@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import pytra.std.json as json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
@@ -17,7 +18,7 @@ from toolchain.emit.cpp.runtime_paths import (
 from toolchain.emit.cpp.types import collect_cpp_type_vars
 
 
-_RUNTIME_CPP_ROOT = Path(__file__).resolve().parents[3] / "runtime" / "cpp"
+_RUNTIME_CPP_ROOT = Path("src").joinpath("runtime").joinpath("cpp")
 
 
 @dataclass
@@ -43,54 +44,65 @@ def _is_extern_decorator_name(name: str) -> bool:
 
 
 def _is_extern_function_decl(stmt: dict[str, JsonVal]) -> bool:
-    if stmt.get("kind") != "FunctionDef":
+    if _str(stmt, "kind") != "FunctionDef":
         return False
     decorators = stmt.get("decorators")
-    if not isinstance(decorators, list):
-        return False
-    for decorator in decorators:
-        if isinstance(decorator, str) and _is_extern_decorator_name(decorator):
-            return True
+    decorators_arr = json.JsonValue(decorators).as_arr()
+    if decorators_arr is not None:
+        for decorator in decorators_arr.raw:
+            decorator_text = _json_str_value(decorator)
+            if decorator_text != "" and _is_extern_decorator_name(decorator_text):
+                return True
     meta = stmt.get("meta")
-    if isinstance(meta, dict) and isinstance(meta.get("extern_v1"), dict):
-        return True
+    meta_obj = json.JsonValue(meta).as_obj()
+    if meta_obj is not None and json.JsonValue(meta_obj.raw.get("extern_v1")).as_obj() is not None:
+            return True
     return False
 
 
 def _is_extern_call_expr(expr: JsonVal) -> bool:
-    if not isinstance(expr, dict):
+    expr_obj = json.JsonValue(expr).as_obj()
+    if expr_obj is None:
         return False
-    if expr.get("kind") != "Call":
+    expr_dict = expr_obj.raw
+    if _str(expr_dict, "kind") != "Call":
         return False
-    func = expr.get("func")
-    if not isinstance(func, dict):
+    func_obj = json.JsonValue(expr_dict.get("func")).as_obj()
+    if func_obj is None:
         return False
-    if func.get("kind") == "Name":
-        func_id = func.get("id")
-        return isinstance(func_id, str) and _is_extern_decorator_name(func_id)
-    if func.get("kind") == "Attribute":
-        attr = func.get("attr")
-        return isinstance(attr, str) and attr == "extern"
+    func = func_obj.raw
+    if _str(func, "kind") == "Name":
+        func_id = _str(func, "id")
+        return func_id != "" and _is_extern_decorator_name(func_id)
+    if _str(func, "kind") == "Attribute":
+        return _str(func, "attr") == "extern"
     return False
 
 
 def _is_extern_variable_decl(stmt: dict[str, JsonVal]) -> bool:
-    kind = stmt.get("kind")
+    kind = _str(stmt, "kind")
     if kind not in ("Assign", "AnnAssign"):
         return False
     return _is_extern_call_expr(stmt.get("value"))
 
 
 def _strip_extern_decls_from_stmt(stmt: JsonVal) -> JsonVal:
-    if not isinstance(stmt, dict):
+    stmt_obj = json.JsonValue(stmt).as_obj()
+    if stmt_obj is None:
         return stmt
-    if _is_extern_function_decl(stmt) or _is_extern_variable_decl(stmt):
+    stmt_dict = stmt_obj.raw
+    if _is_extern_function_decl(stmt_dict) or _is_extern_variable_decl(stmt_dict):
         return None
-    kind = stmt.get("kind")
-    copied = dict(stmt)
+    kind = _str(stmt_dict, "kind")
+    copied: dict[str, JsonVal] = {}
+    for key, value in stmt_dict.items():
+        copied[key] = value
     if kind == "ClassDef":
         body = copied.get("body")
-        items = body if isinstance(body, list) else []
+        body_arr = json.JsonValue(body).as_arr()
+        items: list[JsonVal] = []
+        if body_arr is not None:
+            items = body_arr.raw
         new_body: list[JsonVal] = []
         for child in items:
             kept = _strip_extern_decls_from_stmt(child)
@@ -101,9 +113,14 @@ def _strip_extern_decls_from_stmt(stmt: JsonVal) -> JsonVal:
 
 
 def _build_emit_doc_without_extern_decls(east_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
-    copied = dict(east_doc)
+    copied: dict[str, JsonVal] = {}
+    for key, value in east_doc.items():
+        copied[key] = value
     body = copied.get("body")
-    items = body if isinstance(body, list) else []
+    body_arr = json.JsonValue(body).as_arr()
+    items: list[JsonVal] = []
+    if body_arr is not None:
+        items = body_arr.raw
     new_body: list[JsonVal] = []
     for stmt in items:
         kept = _strip_extern_decls_from_stmt(stmt)
@@ -115,58 +132,69 @@ def _build_emit_doc_without_extern_decls(east_doc: dict[str, JsonVal]) -> dict[s
 
 def _has_cpp_emit_definitions(east_doc: dict[str, JsonVal]) -> bool:
     body = east_doc.get("body")
-    items = body if isinstance(body, list) else []
+    body_arr = json.JsonValue(body).as_arr()
+    items: list[JsonVal] = []
+    if body_arr is not None:
+        items = body_arr.raw
     for stmt in items:
-        if not isinstance(stmt, dict):
+        stmt_obj = json.JsonValue(stmt).as_obj()
+        if stmt_obj is None:
             continue
-        kind = stmt.get("kind")
+        stmt_dict = stmt_obj.raw
+        kind = _str(stmt_dict, "kind")
         if kind in ("Import", "ImportFrom", "Pass"):
             continue
         if kind == "Expr":
-            value = stmt.get("value")
-            if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
+            value_obj = json.JsonValue(stmt_dict.get("value")).as_obj()
+            if value_obj is not None and _str(value_obj.raw, "kind") == "Constant" and json.JsonValue(value_obj.raw.get("value")).as_str() is not None:
                 continue
         return True
     return False
 
 
 def _is_template_function_stmt(stmt: dict[str, JsonVal]) -> bool:
-    if stmt.get("kind") not in ("FunctionDef", "ClosureDef"):
+    if _str(stmt, "kind") not in ("FunctionDef", "ClosureDef"):
         return False
-    arg_types = stmt.get("arg_types")
-    if isinstance(arg_types, dict):
-        for arg_type in arg_types.values():
-            if isinstance(arg_type, str) and len(collect_cpp_type_vars(arg_type)) > 0:
+    arg_types = _dict(stmt, "arg_types")
+    for arg_type in arg_types.values():
+        arg_type_text = _json_str_value(arg_type)
+        if arg_type_text != "":
+            if len(collect_cpp_type_vars(arg_type_text)) > 0:
                 return True
     return len(collect_cpp_type_vars(_return_type(stmt))) > 0
 
 
 def _runtime_module_is_header_only_template_lane(east_doc: dict[str, JsonVal]) -> bool:
     body = east_doc.get("body")
-    items = body if isinstance(body, list) else []
+    body_arr = json.JsonValue(body).as_arr()
+    items: list[JsonVal] = []
+    if body_arr is not None:
+        items = body_arr.raw
     saw_template_fn = False
     for stmt in items:
-        if not isinstance(stmt, dict):
+        stmt_obj = json.JsonValue(stmt).as_obj()
+        if stmt_obj is None:
             continue
-        kind = stmt.get("kind")
+        stmt_dict = stmt_obj.raw
+        kind = _str(stmt_dict, "kind")
         if kind in ("Import", "ImportFrom", "Pass", "TypeAlias"):
             continue
         if kind == "Expr":
-            value = stmt.get("value")
-            if isinstance(value, dict) and value.get("kind") == "Constant" and isinstance(value.get("value"), str):
+            value_obj = json.JsonValue(stmt_dict.get("value")).as_obj()
+            if value_obj is not None and _str(value_obj.raw, "kind") == "Constant" and json.JsonValue(value_obj.raw.get("value")).as_str() is not None:
                 continue
-        if not _is_template_function_stmt(stmt):
+        if not _is_template_function_stmt(stmt_dict):
             return False
         saw_template_fn = True
     return saw_template_fn
 
 
 def _return_type(node: dict[str, JsonVal]) -> str:
-    return_type = node.get("return_type")
-    if isinstance(return_type, str) and return_type != "":
+    return_type = _json_str_value(node.get("return_type"))
+    if return_type != "":
         return return_type
-    returns = node.get("returns")
-    if isinstance(returns, str) and returns != "":
+    returns = _json_str_value(node.get("returns"))
+    if returns != "":
         return returns
     return "None"
 
@@ -186,12 +214,22 @@ def _append_header_only_impls(header_text: str, cpp_text: str) -> str:
         return header_text
     lines = header_text.splitlines()
     insert_at = len(lines)
-    for i, line in enumerate(lines):
+    i = 0
+    for line in lines:
         if line.startswith("#endif"):
             insert_at = i
             break
+        i += 1
     impl_lines = ["", impl_body, ""]
-    new_lines = lines[:insert_at] + impl_lines + lines[insert_at:]
+    new_lines: list[str] = []
+    i = 0
+    for line in lines:
+        if i == insert_at:
+            new_lines.extend(impl_lines)
+        new_lines.append(line)
+        i += 1
+    if insert_at == len(lines):
+        new_lines.extend(impl_lines)
     return "\n".join(new_lines) + "\n"
 
 
@@ -199,23 +237,36 @@ def _inject_runtime_native_companion_include(header_text: str, module_id: str) -
     native_hdr = native_companion_header_path(module_id)
     if not native_hdr.exists():
         return header_text
-    rel = str(native_hdr.relative_to(_RUNTIME_CPP_ROOT)).replace("\\", "/")
+    rel = str(native_hdr).replace("\\", "/")
+    if rel.startswith("src/"):
+        rel = rel[4:]
     include_line = '#include "' + rel + '"'
     if include_line in header_text:
         return header_text
     lines = header_text.splitlines()
     insert_at = len(lines)
-    for i, line in enumerate(lines):
+    i = 0
+    for line in lines:
         if line.startswith("#endif"):
             insert_at = i
             break
-    lines.insert(insert_at, include_line)
-    if insert_at > 0 and lines[insert_at - 1] != "":
-        lines.insert(insert_at, "")
-        insert_at += 1
-    if insert_at + 1 < len(lines) and lines[insert_at + 1] != "":
-        lines.insert(insert_at + 1, "")
-    return "\n".join(lines) + "\n"
+        i += 1
+    new_lines: list[str] = []
+    i = 0
+    for line in lines:
+        if i == insert_at:
+            if len(new_lines) > 0 and new_lines[-1] != "":
+                new_lines.append("")
+            new_lines.append(include_line)
+            if line != "":
+                new_lines.append("")
+        new_lines.append(line)
+        i += 1
+    if insert_at == len(lines):
+        if len(new_lines) > 0 and new_lines[-1] != "":
+            new_lines.append("")
+        new_lines.append(include_line)
+    return "\n".join(new_lines) + "\n"
 
 
 def emit_runtime_module_artifacts(
@@ -234,21 +285,25 @@ def emit_runtime_module_artifacts(
     if rel == "":
         return "", ""
 
-    header_path = output_dir / (rel + ".h")
+    header_path = output_dir.joinpath(rel + ".h")
     header_path.parent.mkdir(parents=True, exist_ok=True)
 
     emit_doc = _build_emit_doc_without_extern_decls(east_doc)
-    if "meta" not in emit_doc or not isinstance(emit_doc["meta"], dict):
-        emit_doc["meta"] = {}
-    meta = emit_doc["meta"]
-    if not isinstance(meta, dict):
-        raise RuntimeError("emit_doc.meta must be a dict")
+    meta_obj = json.JsonValue(emit_doc.get("meta")).as_obj()
+    meta: dict[str, JsonVal] = {}
+    if meta_obj is None:
+        meta = {}
+    else:
+        meta = meta_obj.raw
     linked = meta.get("linked_program_v1")
-    if not isinstance(linked, dict):
-        linked = {"module_id": module_id}
-        meta["linked_program_v1"] = linked
-    elif not isinstance(linked.get("module_id"), str) or linked.get("module_id") == "":
-        linked["module_id"] = module_id
+    linked_obj = json.JsonValue(linked).as_obj()
+    if linked_obj is None:
+        linked_dict: dict[str, JsonVal] = {}
+        linked_dict["module_id"] = module_id
+    else:
+        linked_dict = linked_obj.raw
+        if _json_str_value(linked_dict.get("module_id")) == "":
+            linked_dict["module_id"] = module_id
 
     cpp_text = ""
     source_out = ""
@@ -259,9 +314,9 @@ def emit_runtime_module_artifacts(
             emit_doc,
             allow_runtime_module=True,
             self_header=rel + ".h",
-        )
+        ) + ""
         if cpp_text.strip() != "" and not header_only_templates:
-            source_path_out = output_dir / (rel + ".cpp")
+            source_path_out = output_dir.joinpath(rel + ".cpp")
             source_path_out.parent.mkdir(parents=True, exist_ok=True)
             source_path_out.write_text(cpp_text, encoding="utf-8")
             source_out = str(source_path_out)
@@ -271,8 +326,9 @@ def emit_runtime_module_artifacts(
     if native_header.exists():
         # Use path relative to src/ so the generated #include resolves via -I src_dir
         # rather than self-shadowing via -I emit_dir (which takes search precedence).
-        _src_root = _RUNTIME_CPP_ROOT.parents[1]  # .../src
-        native_include = str(native_header.relative_to(_src_root)).replace("\\", "/")
+        native_include = str(native_header).replace("\\", "/")
+        if native_include.startswith("src/"):
+            native_include = native_include[4:]
     header_text = build_cpp_header_from_east3(
         module_id,
         east_doc,
@@ -311,8 +367,8 @@ def write_helper_module_artifacts(
     rel_header_path: str,
 ) -> int:
     """Write helper module source/header and return emitted file count."""
-    cpp_path = output_dir / (rel_header_path[:-2] + ".cpp")
-    header_path = output_dir / rel_header_path
+    cpp_path = output_dir.joinpath(rel_header_path[:-2] + ".cpp")
+    header_path = output_dir.joinpath(rel_header_path)
     cpp_path.parent.mkdir(parents=True, exist_ok=True)
     header_path.parent.mkdir(parents=True, exist_ok=True)
     cpp_text = emit_cpp_module(east_doc, self_header=rel_header_path)
@@ -337,8 +393,8 @@ def write_user_module_artifacts(
     cpp_text = emit_cpp_module(east_doc, self_header=rel_header_path)
     if cpp_text.strip() == "":
         return 0
-    cpp_path = output_dir / (module_id.replace(".", "_") + ".cpp")
-    header_path = output_dir / rel_header_path
+    cpp_path = output_dir.joinpath(module_id.replace(".", "_") + ".cpp")
+    header_path = output_dir.joinpath(rel_header_path)
     header_path.parent.mkdir(parents=True, exist_ok=True)
     header_text = build_cpp_header_from_east3(
         module_id,
@@ -348,3 +404,24 @@ def write_user_module_artifacts(
     cpp_path.write_text(cpp_text, encoding="utf-8")
     header_path.write_text(header_text, encoding="utf-8")
     return 2
+
+
+def _str(node: dict[str, JsonVal], key: str) -> str:
+    raw = json.JsonValue(node.get(key)).as_str()
+    if raw is not None:
+        return raw
+    return ""
+
+
+def _json_str_value(value: JsonVal) -> str:
+    raw = json.JsonValue(value).as_str()
+    if raw is not None:
+        return raw
+    return ""
+
+
+def _dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
+    raw = json.JsonValue(node.get(key)).as_obj()
+    if raw is not None:
+        return raw.raw
+    return {}

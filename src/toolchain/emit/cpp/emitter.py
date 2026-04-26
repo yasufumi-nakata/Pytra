@@ -230,9 +230,9 @@ class _CppStmtCommonRenderer(CommonRenderer):
     _mutation_count: int
 
     def __init__(self, ctx: CppEmitContext) -> None:
+        super().__init__("cpp")
         self.ctx = ctx
         self._mutation_count = 0
-        super().__init__("cpp")
         self.state.lines = ctx.lines
         self.state.indent_level = ctx.indent_level
 
@@ -382,7 +382,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
             if had_saved_type:
                 self.ctx.var_types[handler_name] = saved_type
             elif handler_name in self.ctx.var_types:
-                self.ctx.var_types.pop(handler_name, None)
+                self.ctx.var_types.pop(handler_name, "")
         self.state.indent_level = self.ctx.indent_level
 
     def emit_stmt_extension(self, node: dict[str, JsonVal]) -> None:
@@ -407,8 +407,8 @@ class _CppExprCommonRenderer(CommonRenderer):
     ctx: CppEmitContext
 
     def __init__(self, ctx: CppEmitContext) -> None:
-        self.ctx = ctx
         super().__init__("cpp")
+        self.ctx = ctx
 
     def render_name(self, node: dict[str, JsonVal]) -> str:
         return _emit_name(self.ctx, node)
@@ -2816,6 +2816,9 @@ def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return expr + "()" if access_kind == "property_getter" else expr
     member_sep = "->" if _uses_ref_container_storage(ctx, owner_node) else "."
     expr = owner + member_sep + attr
+    owner_type = _effective_resolved_type(owner_node)
+    if owner_type == "Path" and attr in ("parent", "parents", "name", "suffix", "stem"):
+        return expr + "()"
     return expr + "()" if access_kind == "property_getter" else expr
 
 
@@ -5229,7 +5232,8 @@ def _emit_cast_expr(ctx: CppEmitContext, target_node: JsonVal, value_node: JsonV
         boxed_value = value_dict.get("value")
         boxed_obj = json.JsonValue(boxed_value).as_obj()
         if boxed_obj is not None:
-            return _emit_expr_as_type(ctx, boxed_obj.raw, target_name)
+            boxed_value_copy: JsonVal = boxed_value
+            return _emit_expr_as_type(ctx, boxed_value_copy, target_name)
     if (
         has_concrete_target
         and value_obj is not None
@@ -5391,7 +5395,6 @@ def _load_container_value_locals(
 
 def emit_cpp_module(
     east3_doc: dict[str, JsonVal],
-    *,
     allow_runtime_module: bool = False,
     self_header: str = "",
 ) -> str:
@@ -5402,34 +5405,36 @@ def emit_cpp_module(
     if module_id == "":
         module_id = _str(meta, "module_id")
     lp = _dict(meta, "linked_program_v1")
-    if module_id == "" and lp: module_id = _str(lp, "module_id")
+    if module_id == "" and len(lp) > 0: module_id = _str(lp, "module_id")
 
-    mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "cpp" / "mapping.json"
+    mapping_path = Path("src").joinpath("runtime").joinpath("cpp").joinpath("mapping.json")
     mapping = load_runtime_mapping(mapping_path)
     init_types_mapping(mapping.types)  # P0-CPP-TYPEMAP-S3: inject types table into cpp type resolver
 
     if should_skip_module(module_id, mapping) and not allow_runtime_module: return ""
 
-    ctx = CppEmitContext(
-        module_id=module_id,
-        is_entry=_bool(emit_ctx_meta, "is_entry") if emit_ctx_meta else False,
-        mapping=mapping,
-        emit_class_decls=(self_header == ""),
-    )
+    ctx = CppEmitContext()
+    ctx.module_id = module_id
+    ctx.is_entry = _bool(emit_ctx_meta, "is_entry") if len(emit_ctx_meta) > 0 else False
+    ctx.mapping = mapping
+    ctx.emit_class_decls = self_header == ""
     type_id_table_raw = _dict(lp, "type_id_table")
     if len(type_id_table_raw) == 0:
         type_id_table_raw = _dict(lp, "type_id_resolved_v1")
     type_info_table_raw = _dict(lp, "type_info_table_v1")
-    ctx.class_type_ids = {
-        key: value
-        for key, value in type_id_table_raw.items()
-        if isinstance(key, str) and isinstance(value, int)
-    }
-    ctx.class_type_info = {
-        key: value
-        for key, value in type_info_table_raw.items()
-        if isinstance(key, str) and isinstance(value, dict)
-    }
+    for key, value in type_id_table_raw.items():
+        id_value = _json_int_value(value)
+        if key != "" and id_value is not None:
+            ctx.class_type_ids[key] = id_value
+    for key, value in type_info_table_raw.items():
+        info_obj = json.JsonValue(value).as_obj()
+        if key != "" and info_obj is not None:
+            info_out: dict[str, int] = {}
+            for info_key, info_value in info_obj.raw.items():
+                info_int = _json_int_value(info_value)
+                if info_key != "" and info_int is not None:
+                    info_out[info_key] = info_int
+            ctx.class_type_info[key] = info_out
     ctx.container_value_locals_by_scope = _load_container_value_locals(lp)
 
     body = _list(east3_doc, "body")
@@ -5442,52 +5447,63 @@ def emit_cpp_module(
     ctx.import_aliases = build_import_alias_map(meta)
     ctx.runtime_imports = build_runtime_import_map(meta, mapping)
     for s in body:
-        if isinstance(s, dict) and _str(s, "kind") == "FunctionDef":
-            fn_name = _str(s, "name")
+        s_obj = json.JsonValue(s).as_obj()
+        if s_obj is None:
+            continue
+        s_dict = s_obj.raw
+        if _str(s_dict, "kind") == "FunctionDef":
+            fn_name = _str(s_dict, "name")
             if fn_name != "":
-                ctx.function_defs[fn_name] = s
-        if isinstance(s, dict) and _str(s, "kind") == "ClassDef":
-            class_name = _str(s, "name")
-            base_name = _str(s, "base")
+                ctx.function_defs[fn_name] = s_dict
+        if _str(s_dict, "kind") == "ClassDef":
+            class_name = _str(s_dict, "name")
+            base_name = _str(s_dict, "base")
             if base_name in ("Enum", "IntEnum", "IntFlag"):
                 ctx.enum_kinds[class_name] = base_name
             else:
                 ctx.class_names.add(class_name)
             if base_name != "":
                 ctx.class_bases[class_name] = base_name
-            ctx.class_field_types[class_name] = {
-                k: normalize_cpp_nominal_adt_type(v)
-                for k, v in _dict(s, "field_types").items()
-                if isinstance(k, str) and isinstance(v, str)
-            }
+            field_types: dict[str, str] = {}
+            for k, v in _dict(s_dict, "field_types").items():
+                field_type = _json_str_value(v)
+                if k != "" and field_type != "":
+                    field_types[k] = normalize_cpp_nominal_adt_type(field_type) + ""
+            ctx.class_field_types[class_name] = field_types
             class_vars = ctx.class_vars.setdefault(class_name, {})
-            is_dataclass = _bool(s, "dataclass")
+            is_dataclass = _bool(s_dict, "dataclass")
             if base_name not in ("Enum", "IntEnum", "IntFlag"):
-                for class_stmt in _list(s, "body"):
-                    if not isinstance(class_stmt, dict):
+                for class_stmt in _list(s_dict, "body"):
+                    class_stmt_obj = json.JsonValue(class_stmt).as_obj()
+                    if class_stmt_obj is None:
                         continue
-                    class_stmt_kind = _str(class_stmt, "kind")
+                    class_stmt_dict = class_stmt_obj.raw
+                    class_stmt_kind = _str(class_stmt_dict, "kind")
                     if class_stmt_kind == "AnnAssign" and not is_dataclass:
-                        target = class_stmt.get("target")
-                        var_name = _str(target, "id") if isinstance(target, dict) else ""
+                        target = class_stmt_dict.get("target")
+                        target_obj = json.JsonValue(target).as_obj()
+                        var_name = _str(target_obj.raw, "id") if target_obj is not None else ""
                         if var_name == "":
                             continue
-                        value = class_stmt.get("value")
-                        if not isinstance(value, dict):
+                        value = class_stmt_dict.get("value")
+                        value_obj = json.JsonValue(value).as_obj()
+                        if value_obj is None:
                             continue
-                        var_type = _str(class_stmt, "decl_type")
+                        var_type = _str(class_stmt_dict, "decl_type")
                         if var_type == "":
-                            var_type = _str(class_stmt, "annotation")
+                            var_type = _str(class_stmt_dict, "annotation")
                         class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=value).to_jv()
                     elif class_stmt_kind == "Assign" and not is_dataclass:
-                        target = class_stmt.get("target")
-                        var_name = _str(target, "id") if isinstance(target, dict) else ""
+                        target = class_stmt_dict.get("target")
+                        target_obj = json.JsonValue(target).as_obj()
+                        var_name = _str(target_obj.raw, "id") if target_obj is not None else ""
                         if var_name == "":
                             continue
-                        value = class_stmt.get("value")
-                        var_type = _str(class_stmt, "decl_type")
-                        if var_type == "" and isinstance(value, dict):
-                            var_type = _str(value, "resolved_type")
+                        value = class_stmt_dict.get("value")
+                        value_obj = json.JsonValue(value).as_obj()
+                        var_type = _str(class_stmt_dict, "decl_type")
+                        if var_type == "" and value_obj is not None:
+                            var_type = _str(value_obj.raw, "resolved_type")
                         class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=value).to_jv()
     ctx.class_symbol_fqcns = _build_class_symbol_fqcn_map(meta, module_id, ctx.class_names, ctx.class_type_ids)
 
