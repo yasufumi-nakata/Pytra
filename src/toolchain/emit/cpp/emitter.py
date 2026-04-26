@@ -1173,6 +1173,13 @@ def _emit_expr_as_type(ctx: CppEmitContext, node: JsonVal, target_type: str) -> 
         return cpp_signature_type(target_type) + "(" + expr + ")"
     target_type_check = target_type + ""
     if is_container_resolved_type(target_type_check):
+        node_kind_for_container = _str(node, "kind")
+        if node_kind_for_container == "List":
+            return _emit_list_literal_for_target_type(ctx, node, target_type)
+        if node_kind_for_container == "Dict":
+            return _emit_dict_literal_for_target_type(ctx, node, target_type)
+        if node_kind_for_container == "Set":
+            return _emit_set_literal_for_target_type(ctx, node, target_type)
         expr = _emit_expr(ctx, node)
         source_type = _expr_storage_type(ctx, node)
         if source_type in ("", "unknown"):
@@ -2263,6 +2270,15 @@ def _emit_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 static_type = _expanded_union_type(_expr_static_type(ctx, a))
                 if static_type not in ("", "unknown") and not _is_top_level_union_type(static_type) and not _needs_object_cast(static_type):
                     direct_source_type = static_type
+            if direct_source_type in ("", "list[unknown]") and func_name == "py_assert_eq" and index == 1 and _str(a_dict, "kind") == "List" and len(_list(a_dict, "elements")) == 0:
+                actual_arg = args[0] if len(args) > 0 else None
+                actual_type = _expanded_union_type(_expr_storage_type(ctx, actual_arg))
+                if actual_type in ("", "unknown") or _is_top_level_union_type(actual_type):
+                    actual_type = _expanded_union_type(_expr_static_type(ctx, actual_arg))
+                if actual_type in ("", "unknown") or _is_top_level_union_type(actual_type):
+                    actual_type = _expanded_union_type(_effective_resolved_type(actual_arg))
+                if actual_type.startswith("list["):
+                    direct_source_type = actual_type
             if direct_source_type != "":
                 lane = _select_union_lane(expected_type, direct_source_type)
                 if lane != "":
