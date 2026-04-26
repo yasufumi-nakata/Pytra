@@ -2694,6 +2694,8 @@ def _emit_builtin_call(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     if rc in ("py_to_string", "str") and len(arg_strs) >= 1:
         if len(args) >= 1 and a0_obj is not None and _str(a0_dict, "resolved_type") == "str":
             arg_kind = _str(a0_dict, "kind")
+            if arg_kind == "Call" and (_bool(a0_dict, "yields_dynamic") or _str(a0_dict, "call_arg_type") in ("Obj", "Any", "object")):
+                return "str(py_to_string(" + arg_strs[0] + "))"
             if arg_kind in ("Name", "Attribute", "Subscript"):
                 return _emit_expr_as_type(ctx, a0, "str")
             storage_type = _expanded_union_type(_expr_storage_type(ctx, a0))
