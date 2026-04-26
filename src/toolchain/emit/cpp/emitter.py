@@ -704,6 +704,29 @@ def _expr_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
         value_node = node_dict.get("value")
         effective_type = _effective_resolved_type(value_node)
         container_type = normalize_cpp_container_alias(effective_type)
+        expanded_container_type = _expanded_union_type(container_type)
+        if _is_top_level_union_type(expanded_container_type):
+            selected_container_lane = ""
+            slice_node = node_dict.get("slice")
+            slice_obj = json.JsonValue(slice_node).as_obj()
+            slice_type = _effective_resolved_type(slice_node)
+            if slice_type == "str":
+                for lane in _split_top_level_union_type(expanded_container_type):
+                    if lane.startswith("dict["):
+                        selected_container_lane = lane
+                        break
+            if selected_container_lane == "":
+                for lane in _split_top_level_union_type(expanded_container_type):
+                    if lane.startswith("list[") or lane.startswith("set["):
+                        selected_container_lane = lane
+                        break
+            if selected_container_lane == "" and slice_obj is not None and _str(slice_obj.raw, "kind") == "Constant":
+                for lane in _split_top_level_union_type(expanded_container_type):
+                    if lane.startswith("tuple["):
+                        selected_container_lane = lane
+                        break
+            if selected_container_lane != "":
+                container_type = selected_container_lane
         if container_type in ("", "unknown"):
             storage_type = _expr_storage_type(ctx, value_node)
             container_type = normalize_cpp_container_alias(storage_type)
@@ -1373,6 +1396,15 @@ def _union_effectively_single_type(type_name: str, expected: str) -> bool:
     return True
 
 
+def _single_non_none_union_lane(type_name: str) -> str:
+    if not _is_top_level_union_type(type_name):
+        return type_name if type_name not in ("None", "none") else ""
+    lanes = [lane for lane in _split_top_level_union_type(type_name) if lane not in ("None", "none")]
+    if len(lanes) == 1:
+        return lanes[0]
+    return ""
+
+
 def _has_variant_storage(type_name: str) -> bool:
     if type_name in ("", "unknown"):
         return False
@@ -1895,10 +1927,21 @@ def _emit_name(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         and resolved_type != storage_type
     ):
         expanded_resolved = _expanded_union_type(resolved_type)
+        if expanded_resolved in ("None", "none"):
+            return name
         if _is_top_level_union_type(expanded_resolved):
+            single_lane = _single_non_none_union_lane(expanded_resolved)
+            if single_lane != "" and _has_variant_storage(storage_type):
+                lane_expr = _emit_union_get_expr(name, storage_type, single_lane)
+                if lane_expr != name:
+                    return lane_expr
             return name
         if optional_storage_inner != "" and optional_storage_inner == resolved_type:
             return "(*" + name + ")"
+        if _has_variant_storage(storage_type):
+            lane_expr = _emit_union_get_expr(name, storage_type, resolved_type)
+            if lane_expr != name:
+                return lane_expr
         if _needs_object_cast(storage_type):
             if resolved_type in ("str", "int", "int64", "float", "float64", "bool"):
                 return _emit_object_unbox(name, resolved_type)
@@ -1930,6 +1973,13 @@ def _emit_name_storage(node: dict[str, JsonVal]) -> str:
     if name == "main":
         return "__pytra_main"
     return _safe_cpp_ident(name)
+
+
+def _emit_storage_expr(ctx: CppEmitContext, node: JsonVal) -> str:
+    node_obj = json.JsonValue(node).as_obj()
+    if node_obj is not None and _str(node_obj.raw, "kind") == "Name":
+        return _emit_name_storage(node_obj.raw)
+    return _emit_expr(ctx, node)
 
 
 def _emit_binop(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
@@ -2072,9 +2122,9 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             if prev_is_none and comp_is_none:
                 parts.append("true")
             elif prev_is_none:
-                parts.append("py_is_none(" + right + ")")
+                parts.append("py_is_none(" + _emit_storage_expr(ctx, comp) + ")")
             elif comp_is_none:
-                parts.append("py_is_none(" + prev + ")")
+                parts.append("py_is_none(" + _emit_storage_expr(ctx, prev_node) + ")")
             elif prev_type in ctx.class_names and comp_type in ctx.class_names:
                 parts.append(
                     "([&]() -> bool { auto&& __pytra_left = "
@@ -2091,9 +2141,9 @@ def _emit_compare(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
             if prev_is_none and comp_is_none:
                 parts.append("false")
             elif prev_is_none:
-                parts.append("!py_is_none(" + right + ")")
+                parts.append("!py_is_none(" + _emit_storage_expr(ctx, comp) + ")")
             elif comp_is_none:
-                parts.append("!py_is_none(" + prev + ")")
+                parts.append("!py_is_none(" + _emit_storage_expr(ctx, prev_node) + ")")
             elif prev_type in ctx.class_names and comp_type in ctx.class_names:
                 parts.append(
                     "([&]() -> bool { auto&& __pytra_left = "
@@ -3072,6 +3122,28 @@ def _emit_subscript(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         spec_type = _str(class_var_spec, "type")
         if spec_type != "":
             value_type = spec_type
+    if _is_top_level_union_type(_expanded_union_type(value_type)):
+        union_value_type = _expanded_union_type(value_type)
+        selected_lane = ""
+        slice_type = _effective_resolved_type(sl)
+        if slice_type == "str":
+            for lane in _split_top_level_union_type(union_value_type):
+                if lane.startswith("dict["):
+                    selected_lane = lane
+                    break
+        if selected_lane == "":
+            for lane in _split_top_level_union_type(union_value_type):
+                if lane.startswith("list[") or lane.startswith("set[") or lane in ("bytes", "bytearray"):
+                    selected_lane = lane
+                    break
+        if selected_lane == "":
+            for lane in _split_top_level_union_type(union_value_type):
+                if lane == "str":
+                    selected_lane = lane
+                    break
+        if selected_lane != "":
+            value = _emit_union_get_expr(_emit_storage_expr(ctx, value_node), union_value_type, selected_lane)
+            value_type = selected_lane
     if sl_obj is not None and _str(sl_dict, "kind") == "Slice":
         return _emit_slice_expr(ctx, node, value, sl_dict)
     if sl_obj is not None and _str(sl_dict, "kind") == "Constant":
@@ -3757,7 +3829,11 @@ def _emit_isinstance(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         expected_obj = json.JsonValue(expected).as_obj()
         expected_name = _str(expected_obj.raw, "id") if expected_obj is not None else ""
     expected_name = _canonical_expected_type_name(expected_name)
-    value_expr = _emit_expr(ctx, value)
+    value_obj = json.JsonValue(value).as_obj()
+    if value_obj is not None and _str(value_obj.raw, "kind") == "Name":
+        value_expr = _emit_name_storage(value_obj.raw)
+    else:
+        value_expr = _emit_expr(ctx, value)
     value_type = _expanded_union_type(_effective_resolved_type(value))
     storage_type = _expanded_union_type(_expr_storage_type(ctx, value))
     union_type = storage_type if _is_top_level_union_type(storage_type) else value_type
@@ -4243,6 +4319,24 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                 iter_expr = iter_plan_dict.get("iter_expr")
                 iter_code = _emit_expr(ctx, iter_expr) if iter_expr else "{}"
                 iter_type = _effective_resolved_type(iter_expr)
+                expanded_iter_type = _expanded_union_type(iter_type)
+                if _is_top_level_union_type(expanded_iter_type):
+                    selected_iter_lane = ""
+                    for lane in _split_top_level_union_type(expanded_iter_type):
+                        if lane.startswith("list[") or lane.startswith("set[") or lane.startswith("dict[") or lane in ("bytes", "bytearray"):
+                            selected_iter_lane = lane
+                            break
+                    if selected_iter_lane == "":
+                        for lane in _split_top_level_union_type(expanded_iter_type):
+                            if lane == "str":
+                                selected_iter_lane = lane
+                                break
+                    if selected_iter_lane != "":
+                        iter_code = _emit_union_get_expr(_emit_storage_expr(ctx, iter_expr), expanded_iter_type, selected_iter_lane)
+                        iter_type = selected_iter_lane
+                iter_lane = _single_non_none_union_lane(_expanded_union_type(iter_type))
+                if iter_lane != "":
+                    iter_type = iter_lane
                 iter_expr_obj = json.JsonValue(iter_expr).as_obj()
                 if iter_type in ("", "unknown") and iter_expr_obj is not None and _str(iter_expr_obj.raw, "kind") == "Call":
                     func = iter_expr_obj.raw.get("func")
@@ -4271,6 +4365,12 @@ def _emit_for_core(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
                             if len(parts) == 2:
                                 iter_type = "tuple[" + parts[0] + "," + parts[1] + "]"
                 target_type = _str(target_plan_dict, "target_type") if target_plan_obj is not None else ""
+                if target_type in ("", "unknown"):
+                    normalized_iter_type = normalize_cpp_container_alias(iter_type)
+                    if normalized_iter_type.startswith("list[") or normalized_iter_type.startswith("set["):
+                        parts = _container_type_args(normalized_iter_type)
+                        if len(parts) == 1:
+                            target_type = parts[0]
                 if target_type == "" and iter_type.startswith("tuple["):
                     target_type = iter_type
                 if iter_type == "str" and target_type == "str":
