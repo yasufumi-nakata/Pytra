@@ -119,10 +119,11 @@
 
 S0〜S4 完了済み（[archive/20260402.md](archive/20260402.md) 参照）。
 
-1. [ ] [ID: P20-CPP-SELFHOST-S5] selfhost C++ バイナリを g++ でビルドし、リンクが通ることを確認する
+1. [x] [ID: P20-CPP-SELFHOST-S5] selfhost C++ バイナリを g++ でビルドし、リンクが通ることを確認する
    - build 失敗の都度、backend で直るか EAST 修正が必要か判断する
    - EAST 修正が必要と思われる場合は **作業を停止し、問題報告フォーマットで報告する**
    - 2026-04-11: `expand_defaults.py → type_norm.py` の transitive closure 疑いは infra 側で誤診と確定。closure 自体は保持されており、現在は g++ build の残 blocker に戻っている。
    - 2026-04-13: resolve narrowing / type alias / union member append の前提 TODO を先に消化。次は fresh selfhost build を再開する。
+   - 2026-04-26: `src/pytra-cli.py` 全体を C++ emit し、`g++ -O0 -std=c++20` で runtime sources 11 件込みの selfhost binary `work/selfhost/bin/cpp` を link 成功。`./work/selfhost/bin/cpp --help` も終了コード 0。途中 blocker は `TargetPlanDraft` keyword lowering、`TypeSummary` str unbox、resolver の classmethod/tuple set/dict literal narrowing、常時 TRACE 出力を selfhost-safe に修正。
 2. [ ] [ID: P20-CPP-SELFHOST-S6] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root fixture` で fixture parity が PASS することを確認する
 3. [ ] [ID: P20-CPP-SELFHOST-S7] `run_selfhost_parity.py --selfhost-lang cpp --emit-target cpp --case-root sample` で sample parity が PASS することを確認する

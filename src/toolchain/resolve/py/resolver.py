@@ -179,32 +179,6 @@ class ImportResolutionBinding:
 
     payload: dict[str, JsonVal]
 
-    @classmethod
-    def from_jv(cls, binding: dict[str, JsonVal]) -> ImportResolutionBinding:
-        return cls(payload=dict(binding))
-
-    @classmethod
-    def implicit_builtin(
-        cls,
-        module_id: str,
-        source_file: str,
-        runtime_group: str,
-    ) -> ImportResolutionBinding:
-        return cls(
-            payload={
-                "module_id": module_id,
-                "export_name": "",
-                "local_name": module_id,
-                "binding_kind": "implicit_builtin",
-                "source_file": source_file,
-                "source_line": 0,
-                "source_module_id": module_id,
-                "source_binding_kind": "implicit_builtin",
-                "runtime_module_id": module_id,
-                "runtime_group": runtime_group,
-            }
-        )
-
     def to_jv(self) -> dict[str, JsonVal]:
         return dict(self.payload)
 
@@ -213,6 +187,29 @@ class ImportResolutionBinding:
 
     def set_value(self, key: str, value: JsonVal) -> None:
         self.payload[key] = value
+
+
+def _import_resolution_binding_from_jv(binding: dict[str, JsonVal]) -> ImportResolutionBinding:
+    return ImportResolutionBinding(payload=dict(binding))
+
+
+def _implicit_builtin_import_resolution_binding(
+    module_id: str,
+    source_file: str,
+    runtime_group: str,
+) -> ImportResolutionBinding:
+    payload: dict[str, JsonVal] = {}
+    payload["module_id"] = module_id
+    payload["export_name"] = ""
+    payload["local_name"] = module_id
+    payload["binding_kind"] = "implicit_builtin"
+    payload["source_file"] = source_file
+    payload["source_line"] = 0
+    payload["source_module_id"] = module_id
+    payload["source_binding_kind"] = "implicit_builtin"
+    payload["runtime_module_id"] = module_id
+    payload["runtime_group"] = runtime_group
+    return ImportResolutionBinding(payload=payload)
 
 
 def _path_parent(base: Path) -> Path:
@@ -2010,10 +2007,10 @@ def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: Reso
         return _make_callable_type(params, ret_obj)
 
     observed: dict[str, dict[str, str]] = {}
-    invalid: set[tuple[str, str]] = set()
+    invalid: set[str] = set()
 
     def _record(fn_name: str, param_name: str, callable_type: str) -> None:
-        key = (fn_name, param_name)
+        key = fn_name + "\t" + param_name
         if key in invalid:
             return
         cur = observed.setdefault(fn_name, {})
@@ -2087,7 +2084,7 @@ def _refine_callable_params_from_calls(module_doc: dict[str, JsonVal], ctx: Reso
             continue
         refined: dict[str, str] = {}
         for param_name, callable_type in param_map.items():
-            if (fn_name, param_name) in invalid:
+            if (fn_name + "\t" + param_name) in invalid:
                 continue
             declared_prev = _dict_get_str(arg_types_obj, param_name)
             final_type = callable_type
@@ -5145,10 +5142,10 @@ def _build_import_resolution_meta(
     final_bindings = _dict_get_arr(ir, "bindings")
     for mod in sorted(ctx.used_builtin_modules):
         if mod not in existing_modules:
-            imp_binding = ImportResolutionBinding.implicit_builtin(
-                module_id=mod,
-                source_file=ctx.source_file,
-                runtime_group=ctx.lookup_runtime_module_group(mod),
+            imp_binding = _implicit_builtin_import_resolution_binding(
+                mod,
+                ctx.source_file,
+                ctx.lookup_runtime_module_group(mod),
             )
             final_bindings.append(imp_binding.to_jv())
 
@@ -5162,7 +5159,7 @@ def _build_import_resolution_meta(
 def _enhance_binding(binding: dict[str, JsonVal], ctx: ResolveContext) -> ImportResolutionBinding:
     """Enhance a single import binding with runtime resolution info."""
     ctx.current_function = ctx.current_function
-    out = ImportResolutionBinding.from_jv(binding)
+    out = _import_resolution_binding_from_jv(binding)
     module_id: str = out.str_value("module_id")
     export_name: str = out.str_value("export_name")
     binding_kind: str = out.str_value("binding_kind")

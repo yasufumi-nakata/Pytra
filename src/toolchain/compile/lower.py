@@ -793,7 +793,7 @@ def _build_target_plan(
         td: Node = jv_dict(target)
         kind = nd_kind(td)
         if kind == NAME:
-            return TargetPlanDraft(kind=NAME_TARGET, id=td.get("id", ""), target_type=tt_norm).to_jv()
+            return TargetPlanDraft(NAME_TARGET, tt_norm, td.get("id", ""), _lower_empty_jv_list(), None).to_jv()
         if kind == TUPLE:
             elems_obj = td.get("elements")
             elem_plans: list[JsonVal] = []
@@ -807,12 +807,8 @@ def _build_target_plan(
                         et = elem_types[i]
                     elem_plans.append(_build_target_plan(elem, et, dispatch_mode=dispatch_mode, ctx=ctx))
                     i += 1
-            return TargetPlanDraft(kind=TUPLE_TARGET, elements=elem_plans, target_type=tt_norm).to_jv()
-    return TargetPlanDraft(
-        kind=EXPR_TARGET,
-        target=_lower_node(target, dispatch_mode=dispatch_mode, ctx=ctx),
-        target_type=tt_norm,
-    ).to_jv()
+            return TargetPlanDraft(TUPLE_TARGET, tt_norm, "", elem_plans, None).to_jv()
+    return TargetPlanDraft(EXPR_TARGET, tt_norm, "", _lower_empty_jv_list(), _lower_node(target, dispatch_mode=dispatch_mode, ctx=ctx)).to_jv()
 
 
 def _lower_assignment_like_stmt(stmt: Node, *, dispatch_mode: str, ctx: CompileContext) -> Node:

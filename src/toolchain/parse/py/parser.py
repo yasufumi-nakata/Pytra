@@ -3227,7 +3227,7 @@ def _bracket_depth(text: str) -> int:
             # Check for triple quote
             if i + 2 < n and text[i+1] == ch and text[i+2] == ch:
                 # Triple-quoted string: skip to closing triple
-                close = ch * 3
+                close = ch + ch + ch
                 end = _find_substr_from(text, close, i + 3)
                 if end >= 0:
                     i = end + 3

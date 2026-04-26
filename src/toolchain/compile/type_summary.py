@@ -359,20 +359,20 @@ def _summarize_type_expr_data(expr: JsonVal) -> TypeSummary:
     if not jv_is_dict(expr):
         return summary
     d: Node = jv_dict(expr)
-    kind = jv_str(d.get("kind", "unknown"))
+    kind = "" + jv_str(d.get("kind", "unknown"))
     summary.kind = kind
     summary.mirror = _type_expr_to_string(d)
     if kind == DYNAMIC_TYPE:
         summary.category = "dynamic"
-        summary.dynamic_name = jv_str(d.get("name", "unknown"))
+        summary.dynamic_name = "" + jv_str(d.get("name", "unknown"))
         return summary
     if kind == NOMINAL_ADT_TYPE:
         summary.category = "nominal_adt"
-        nn = jv_str(d.get("name", ""))
+        nn = "" + jv_str(d.get("name", ""))
         if nn != "":
             summary.nominal_adt_name = nn
-        af = jv_str(d.get("adt_family", ""))
-        vd = jv_str(d.get("variant_domain", ""))
+        af = "" + jv_str(d.get("adt_family", ""))
+        vd = "" + jv_str(d.get("variant_domain", ""))
         if af != "":
             summary.nominal_adt_family = af
         if vd != "":
@@ -398,7 +398,7 @@ def _summarize_type_expr_data(expr: JsonVal) -> TypeSummary:
             summary.nominal_variant_domain = vd2
         return summary
     if kind == UNION_TYPE:
-        um = jv_str(d.get("union_mode", ""))
+        um = "" + jv_str(d.get("union_mode", ""))
         summary.union_mode = um
         if um == "dynamic":
             summary.category = "dynamic_union"
