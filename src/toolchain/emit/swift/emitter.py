@@ -1383,6 +1383,10 @@ def _render_binop_expr(expr: dict[str, Any]) -> str:
     right_expr = _render_expr(right_node)
     resolved = expr.get("resolved_type")
 
+    left_type = str(left_node.get("resolved_type", "")) if isinstance(left_node, dict) else ""
+    if op == "Div" and left_type in ("Path", "pathlib.Path", "pytra.std.pathlib.Path"):
+        return left_expr + ".__truediv__(" + right_expr + ")"
+
     if op == "Div":
         return "(" + _float_operand(left_expr, left_node) + " / " + _float_operand(right_expr, right_node) + ")"
 

@@ -1210,6 +1210,8 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     # List concatenation
     if op == "Add" and (left_rt.startswith("list[") or left_rt == "list"):
         return "array_merge(" + left + ", " + right + ")"
+    if op == "Div" and left_rt in ("Path", "pathlib.Path", "pytra.std.pathlib.Path"):
+        return "(" + left + ")->joinpath(" + right + ")"
     # String repetition
     if op == "Mult" and (left_rt == "str" or left_rt == "string"):
         return "str_repeat(" + left + ", " + right + ")"

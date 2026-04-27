@@ -95,6 +95,8 @@ def kotlin_type(resolved_type: str) -> str:
         return "Any?"
     if resolved_type in ("Path", "__pytra_Path"):
         return "Path"
+    if resolved_type in ("IOBase", "TextIOWrapper", "BufferedWriter", "BufferedReader"):
+        return "PyFile"
     if resolved_type.startswith("list[") and resolved_type.endswith("]"):
         return "MutableList<" + kotlin_type(resolved_type[5:-1]) + ">"
     if resolved_type.startswith("set[") and resolved_type.endswith("]"):

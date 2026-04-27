@@ -1140,20 +1140,20 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     _OP_MAP["LShift"] = "<<"
     _OP_MAP["RShift"] = ">>>"
     op_str = _OP_MAP.get(op, op)
+    left_rt = _str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
+    right_rt = _str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
+    if op == "Div" and left_rt in ("Path", "PyPath", "pathlib.Path", "pytra.std.pathlib.Path"):
+        return left + ".joinpath(" + right + ")"
     if op_str == "__floordiv":
         return "pyFloorDiv(" + left + ", " + right + ")"
     # List concat: list + list → .concat()
     if op_str == "+":
-        left_rt = _str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
-        right_rt = _str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
         left_is_list = left_rt.startswith("list[") or left_rt == "list"
         right_is_list = right_rt.startswith("list[") or right_rt == "list"
         if left_is_list and right_is_list:
             return left + ".concat(" + right + ")"
     # List repeat: list * number → Array.from({length: n}, (_, i) => template[i % len])
     if op_str == "*":
-        left_rt = _str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
-        right_rt = _str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
         _INT_TYPES = ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "number")
         left_is_list = left_rt.startswith("list[") or left_rt == "list"
         right_is_list = right_rt.startswith("list[") or right_rt == "list"

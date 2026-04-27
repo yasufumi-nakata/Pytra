@@ -4788,20 +4788,18 @@ def _emit_with(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     _emit(ctx, "auto&& " + context_name + " = " + context_expr + ";")
     enter_expr = context_name + ".__enter__()"
     exit_expr = context_name + ".__exit__(object(), object(), object())"
-    if var_name != "":
-        if _is_local_visible(ctx, var_name):
-            _emit(ctx, var_name + " = " + enter_expr + ";")
-        else:
-            _register_local_storage(ctx, var_name, context_type)
-            _declare_local_visible(ctx, var_name)
-            if _cpp_type_is_unknownish(context_type):
-                _emit(ctx, "auto&& " + var_name + " = " + enter_expr + ";")
-            else:
-                _emit(ctx, _decl_cpp_type(ctx, context_type, var_name) + "& " + var_name + " = " + enter_expr + ";")
-    else:
-        _emit(ctx, "(void)(" + enter_expr + ");")
     _emit(ctx, "{")
     ctx.indent_level += 1
+    if var_name != "":
+        if not _is_local_visible(ctx, var_name):
+            _register_local_storage(ctx, var_name, context_type)
+            _declare_local_visible(ctx, var_name)
+        if _cpp_type_is_unknownish(context_type):
+            _emit(ctx, "auto&& " + var_name + " = " + enter_expr + ";")
+        else:
+            _emit(ctx, _decl_cpp_type(ctx, context_type, var_name) + "& " + var_name + " = " + enter_expr + ";")
+    else:
+        _emit(ctx, "(void)(" + enter_expr + ");")
     _emit(ctx, "auto " + finally_name + " = py_make_scope_exit([&]() {")
     ctx.indent_level += 1
     _emit(ctx, exit_expr + ";")

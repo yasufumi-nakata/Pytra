@@ -480,6 +480,9 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 left_code = left_code + ".to_f"
             elif on == "right":
                 right_code = right_code + ".to_f"
+    left_rt = _str(left, "resolved_type") if isinstance(left, dict) else ""
+    if op == "Div" and left_rt in ("Path", "pathlib.Path", "pytra.std.pathlib.Path"):
+        return left_code + ".joinpath(" + right_code + ")"
     if op == "FloorDiv":
         return "__pytra_floordiv(" + left_code + ", " + right_code + ")"
     if op == "Div":

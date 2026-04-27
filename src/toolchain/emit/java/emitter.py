@@ -627,6 +627,9 @@ class _JavaExprRenderer(CommonRenderer):
         right_node = node.get("right")
         left = self.render_expr(node.get("left"))
         right = self.render_expr(node.get("right"))
+        left_type = _str(left_node, "resolved_type")
+        if op == "Div" and left_type in ("Path", "pathlib.Path", "pytra.std.pathlib.Path"):
+            return left + ".__truediv__(" + right + ")"
         if op == "Div":
             return "(((double) (" + left + ")) / ((double) (" + right + ")))"
         if op == "FloorDiv":

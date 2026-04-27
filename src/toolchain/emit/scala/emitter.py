@@ -1572,6 +1572,8 @@ class ScalaRenderer(CommonRenderer):
                 return "((" + left + ") << (" + right + ").toInt)"
             if op == "RShift":
                 return "((" + left + ") >> (" + right + ").toInt)"
+            if op == "Div" and left_type in ("Path", "pathlib.Path", "pytra.std.pathlib.Path"):
+                return "(" + left + " / " + right + ")"
             if op == "Div":
                 return "((" + left + ").toDouble / (" + right + ").toDouble)"
             if op == "FloorDiv":

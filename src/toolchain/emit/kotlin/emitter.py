@@ -1688,6 +1688,8 @@ class KotlinRenderer(CommonRenderer):
                 return "(__pytra_list_repeat(" + right + ", " + left + ") as " + self._render_type(self._str(node, "resolved_type")) + ")"
             if op == "Add" and ((left_type.startswith("list[") or left_type in ("list", "tuple", "bytes", "bytearray")) or (right_type.startswith("list[") or right_type in ("list", "tuple", "bytes", "bytearray"))):
                 return "(__pytra_list_concat(" + left + ", " + right + ") as " + self._render_type(self._str(node, "resolved_type")) + ")"
+            if op == "Div" and left_type in ("Path", "pathlib.Path", "pytra.std.pathlib.Path"):
+                return "(" + left + " / " + right + ")"
             if op == "Div":
                 return "((" + left + ").toDouble() / (" + right + ").toDouble())"
             if op == "FloorDiv":

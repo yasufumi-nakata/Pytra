@@ -83,6 +83,8 @@ def scala_type(resolved_type: str) -> str:
         return "Obj"
     if resolved_type in ("Path", "__pytra_Path"):
         return "Path"
+    if resolved_type in ("IOBase", "TextIOWrapper", "BufferedWriter", "BufferedReader"):
+        return "PyFile"
     if resolved_type == "deque":
         return "pytra_std_collections.deque"
     if resolved_type in ("bytes", "bytearray"):
