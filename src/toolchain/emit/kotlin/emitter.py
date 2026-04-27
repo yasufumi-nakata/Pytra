@@ -1112,8 +1112,11 @@ class KotlinRenderer(CommonRenderer):
         if kind == "Name":
             ident = self._str(node, "id")
             resolved_type = self._str(node, "resolved_type")
+            local_resolved_type = self._lookup_local_type(_safe_kotlin_ident(ident))
+            if local_resolved_type in ("str", "string") and resolved_type in ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"):
+                resolved_type = local_resolved_type
             if resolved_type in ("", "unknown"):
-                resolved_type = self._lookup_local_type(_safe_kotlin_ident(ident))
+                resolved_type = local_resolved_type
             callable_type = self._callable_type(resolved_type)
             if ident == "self" and self.current_class_name is not None:
                 return "this"
