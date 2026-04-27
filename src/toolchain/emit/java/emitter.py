@@ -1090,7 +1090,12 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if kind == "Unbox":
         target_type = _str(node, "resolved_type")
         if "|" in target_type:
-            return _emit_expr(ctx, node.get("value"))
+            value_node = node.get("value")
+            if isinstance(value_node, dict) and _str(value_node, "kind") == "Call":
+                func_node = value_node.get("func")
+                if isinstance(func_node, dict) and _str(func_node, "kind") == "Attribute" and _str(func_node, "attr") == "get":
+                    return _emit_cast_expr(ctx, target_type, _emit_expr(ctx, value_node))
+            return _emit_expr(ctx, value_node)
         return _emit_cast_expr(ctx, target_type, _emit_expr(ctx, node.get("value")))
     if kind == "Box":
         return _emit_expr(ctx, node.get("value"))
