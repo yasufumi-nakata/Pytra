@@ -984,6 +984,21 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 
             if fn_id == "isinstance" and len(args) >= 2:
                 type_arg = args[1] if isinstance(args[1], dict) else None
+                if isinstance(type_arg, dict) and _str(type_arg, "kind") == "Tuple":
+                    type_names: list[str] = []
+                    for element in _list(type_arg, "elements"):
+                        if not isinstance(element, dict):
+                            continue
+                        item_name = _str(element, "type_object_of")
+                        if item_name == "":
+                            item_name = _str(element, "id")
+                        if item_name != "":
+                            type_names.append(item_name)
+                    return _emit_isinstance(ctx, {
+                        "kind": "IsInstance",
+                        "value": args[0],
+                        "type_names": type_names,
+                    })
                 type_name = _str(type_arg, "id") if isinstance(type_arg, dict) else ""
                 if type_name == "":
                     type_name = _str(type_arg, "repr") if isinstance(type_arg, dict) else ""

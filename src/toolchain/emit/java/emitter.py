@@ -1040,6 +1040,19 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         }
         expected_name = _str(node, "expected_type_name")
         expected_node = node.get("expected_type_id")
+        if isinstance(expected_node, dict) and _str(expected_node, "kind") == "Tuple":
+            value_expr = _emit_expr(ctx, node.get("value"))
+            checks: list[str] = []
+            for element in _list(expected_node, "elements"):
+                if not isinstance(element, dict):
+                    continue
+                item_name = _str(element, "type_object_of")
+                if item_name == "":
+                    item_name = _str(element, "id")
+                if item_name in ctx.class_names or item_name in ctx.class_bases:
+                    checks.append("(((Object) (" + value_expr + ")) instanceof " + _safe_java_ident(item_name) + ")")
+            if len(checks) > 0:
+                return "(" + " || ".join(checks) + ")"
         if isinstance(expected_node, dict):
             expected_name = _str(expected_node, "id")
             if expected_name == "":

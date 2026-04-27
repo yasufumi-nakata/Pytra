@@ -622,6 +622,11 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         obj_node = node.get("obj")
     type_node = node.get("type")
     obj_code = _emit_expr(ctx, obj_node)
+    type_names = _list(node, "type_names")
+    if len(type_names) > 0:
+        checks = [_emit_isinstance(ctx, {"kind": "IsInstance", "value": obj_node, "expected_type_name": item}) for item in type_names if isinstance(item, str) and item != ""]
+        if len(checks) > 0:
+            return "(" + " || ".join(checks) + ")"
     type_name = _str(node, "expected_type_name")
     if isinstance(type_node, dict):
         if type_name == "":
@@ -853,6 +858,17 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         fn_id = _str(func, "id")
         if fn_id == "isinstance" and len(args) >= 2 and isinstance(args[0], dict) and isinstance(args[1], dict):
             type_node = args[1]
+            if _str(type_node, "kind") == "Tuple":
+                type_names: list[str] = []
+                for element in _list(type_node, "elements"):
+                    if not isinstance(element, dict):
+                        continue
+                    item_name = _str(element, "type_object_of")
+                    if item_name == "":
+                        item_name = _str(element, "id")
+                    if item_name != "":
+                        type_names.append(item_name)
+                return _emit_isinstance(ctx, {"kind": "IsInstance", "value": args[0], "type_names": type_names})
             type_name = _str(type_node, "id")
             if type_name == "":
                 type_name = _str(type_node, "repr")

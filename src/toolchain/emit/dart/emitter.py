@@ -2909,6 +2909,20 @@ class DartNativeEmitter:
         if kind == "IsInstance":
             value = self._render_expr(ed.get("value"))
             expected_any = ed.get("expected_type_id")
+            if isinstance(expected_any, dict) and expected_any.get("kind") == "Tuple":
+                checks: list[str] = []
+                elements_any = expected_any.get("elements")
+                elements = elements_any if isinstance(elements_any, list) else []
+                for element in elements:
+                    if not isinstance(element, dict):
+                        continue
+                    item = element.get("type_object_of")
+                    if not isinstance(item, str) or item == "":
+                        item = element.get("id")
+                    if isinstance(item, str) and item in self.class_names:
+                        checks.append("(" + value + " is " + item + ")")
+                if len(checks) > 0:
+                    return "(" + " || ".join(checks) + ")"
             expected = ""
             expected_name_any = ed.get("expected_type_name")
             if isinstance(expected_name_any, str) and expected_name_any != "":

@@ -360,6 +360,23 @@ def _isinstance_expected_name(node: dict[str, JsonVal]) -> str:
     return ""
 
 
+def _isinstance_expected_names(node: dict[str, JsonVal]) -> list[str]:
+    expected_any = node.get("expected_type_id")
+    if isinstance(expected_any, dict) and _str(expected_any, "kind") == "Tuple":
+        out: list[str] = []
+        for element in _list(expected_any, "elements"):
+            if not isinstance(element, dict):
+                continue
+            item_name = _str(element, "type_object_of")
+            if item_name == "":
+                item_name = _str(element, "id")
+            if item_name != "":
+                out.append(item_name)
+        return out
+    name = _isinstance_expected_name(node)
+    return [name] if name != "" else []
+
+
 def _call_keywords_supported(keywords: list[JsonVal]) -> bool:
     return all(
         isinstance(item, dict)
@@ -1109,14 +1126,17 @@ class JuliaSubsetRenderer:
 
     def _render_isinstance_expr(self, node: dict[str, JsonVal]) -> str:
         value = self._render_expr(node.get("value"))
-        expected_name = _isinstance_expected_name(node)
-        mapped = self.mapping.predicate_types.get(expected_name, "")
-        if mapped == "":
-            mapped = self.mapping.types.get(expected_name, "")
-        if mapped != "":
-            return "(isa(" + value + ", " + mapped + "))"
-        if expected_name in self.class_names or expected_name in self.exception_class_names:
-            return "(isa(" + value + ", " + expected_name + "))"
+        checks: list[str] = []
+        for expected_name in _isinstance_expected_names(node):
+            mapped = self.mapping.predicate_types.get(expected_name, "")
+            if mapped == "":
+                mapped = self.mapping.types.get(expected_name, "")
+            if mapped != "":
+                checks.append("(isa(" + value + ", " + mapped + "))")
+            elif expected_name in self.class_names or expected_name in self.exception_class_names:
+                checks.append("(isa(" + value + ", " + expected_name + "))")
+        if len(checks) > 0:
+            return "(" + " || ".join(checks) + ")"
         return "false"
 
     def _render_subscript_expr(self, node: dict[str, JsonVal]) -> str:
