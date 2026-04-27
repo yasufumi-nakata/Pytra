@@ -63,12 +63,17 @@ def _load_case(path: Path) -> dict[str, Any]:
 
 
 def _assert_rendered(path: Path, case: dict[str, Any], rendered: str) -> None:
+    if case.get("non_empty") is True:
+        assert rendered.strip(), f"{path}: expected non-empty output"
     if "expected" in case:
         assert rendered == case["expected"], path
     for item in case.get("expected_contains", []):
         assert item in rendered, f"{path}: expected {item!r} in {rendered!r}"
     for item in case.get("expected_not_contains", []):
         assert item not in rendered, f"{path}: expected {item!r} not in {rendered!r}"
+    rendered_lower = rendered.lower()
+    for item in case.get("expected_not_contains_lower", []):
+        assert item not in rendered_lower, f"{path}: expected lower-case output not to contain {item!r}"
 
 
 def _emit_cpp_case(case: dict[str, Any]) -> str:
@@ -160,9 +165,7 @@ def _emit_module_case(target: str, case: dict[str, Any]) -> str:
     raise AssertionError(f"unsupported module emit target: {target!r}")
 
 
-def _run_emit_case(path: Path) -> None:
-    case = _load_case(path)
-    target = case.get("target")
+def _run_emit_case_for_target(path: Path, case: dict[str, Any], target: str) -> None:
     level = case.get("level")
     if target == "cpp" and level != "module":
         rendered = _emit_cpp_case(case)
@@ -171,6 +174,21 @@ def _run_emit_case(path: Path) -> None:
     else:
         raise AssertionError(f"{path}: unsupported target {target!r}")
     _assert_rendered(path, case, rendered)
+
+
+def _run_emit_case(path: Path) -> None:
+    case = _load_case(path)
+    targets = case.get("targets")
+    if isinstance(targets, list):
+        for target in targets:
+            if not isinstance(target, str):
+                raise AssertionError(f"{path}: targets entries must be strings")
+            _run_emit_case_for_target(path, case, target)
+        return
+    target = case.get("target")
+    if not isinstance(target, str):
+        raise AssertionError(f"{path}: target must be a string")
+    _run_emit_case_for_target(path, case, target)
 
 
 if pytest is not None:
