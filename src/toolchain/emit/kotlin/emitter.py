@@ -1508,7 +1508,7 @@ class KotlinRenderer(CommonRenderer):
                         if type_name != "":
                             if type_name in ("dict", "list", "set", "tuple", "str", "int", "int64", "float", "float64", "bool"):
                                 return "__pytra_is_instance(" + self._emit_expr(call_args[0]) + ", " + self._quote_string(type_name) + ")"
-                            return "(" + self._emit_expr(call_args[0]) + " is " + _safe_kotlin_ident(type_name) + ")"
+                            return "((" + self._emit_expr(call_args[0]) + " as Any?) is " + _safe_kotlin_ident(type_name) + ")"
                 mapped = self.mapping.calls.get(func_id)
                 node_runtime_symbol = self._str(node, "runtime_symbol")
                 node_runtime_call = self._str(node, "runtime_call")
