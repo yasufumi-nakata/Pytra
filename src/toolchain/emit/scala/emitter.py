@@ -1500,6 +1500,12 @@ class ScalaRenderer(CommonRenderer):
                     return "__pytra_sum(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ").asInstanceOf[" + scala_type(self._str(node, "resolved_type")) + "]"
                 if func_id == "zip":
                     return "__pytra_zip(" + ", ".join(self._emit_expr(arg) for arg in self._list(node, "args")) + ")"
+                if func_id == "bytearray":
+                    args_text = ", ".join(self._emit_expr(arg) for arg in self._list(node, "args"))
+                    return "__pytra_bytearray(" + args_text + ")"
+                if func_id == "bytes":
+                    args_text = ", ".join(self._emit_expr(arg) for arg in self._list(node, "args"))
+                    return "__pytra_bytes(" + args_text + ")"
                 if func_id == "bool" or (node_runtime_call == "static_cast" and node_runtime_symbol == "bool"):
                     args_for_bool = self._list(node, "args")
                     if len(args_for_bool) >= 1:

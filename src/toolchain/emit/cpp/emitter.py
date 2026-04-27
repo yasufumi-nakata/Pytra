@@ -4985,7 +4985,12 @@ def _function_signature(
         prefix = owner_name if declaration_only else owner_name + "::" + owner_name
         return static_prefix + prefix + "(" + ", ".join(params) + ")"
     return_type_arg = _return_type(node) + ""
-    if owner_name != "" and name == "__enter__" and return_type_arg == owner_name:
+    if (
+        owner_name != ""
+        and name == "__enter__"
+        and return_type_arg == owner_name
+        and owner_name not in ("IOBase", "TextIOWrapper", "BufferedWriter", "BufferedReader")
+    ):
         ret = owner_name + "&"
     else:
         ret = cpp_signature_type(return_type_arg) + ""
