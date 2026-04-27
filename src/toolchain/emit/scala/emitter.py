@@ -754,7 +754,7 @@ class ScalaRenderer(CommonRenderer):
             params.append(param_name + ": " + scala_type(arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"))
         if vararg_name != "":
             safe_vararg = _safe_scala_ident(vararg_name)
-            params.append(safe_vararg + ": " + scala_type(vararg_type if vararg_type != "" else "Any") + "*")
+            params.append(safe_vararg + "__in: " + scala_type(vararg_type if vararg_type != "" else "Any") + "*")
         return_type = scala_type(self._str(node, "return_type"))
         method_prefix = ""
         base_methods = self.class_method_names.get(self.current_class_base or "", set())
@@ -774,7 +774,9 @@ class ScalaRenderer(CommonRenderer):
                 arg_type = arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"
                 self._record_local_type(_safe_scala_ident(arg), arg_type)
         if vararg_name != "":
-            self._record_local_type(_safe_scala_ident(vararg_name), "list[" + (vararg_type if vararg_type != "" else "Any") + "]")
+            safe_vararg = _safe_scala_ident(vararg_name)
+            self._emit("val " + safe_vararg + " = mutable.ArrayBuffer.from(" + safe_vararg + "__in)")
+            self._record_local_type(safe_vararg, "list[" + (vararg_type if vararg_type != "" else "Any") + "]")
         for local_name, param_name in rebinding:
             self._emit("var " + local_name + " = " + param_name)
             self._record_local_type(local_name, self._lookup_local_type(param_name))

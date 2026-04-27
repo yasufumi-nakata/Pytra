@@ -980,6 +980,9 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if kind == "List":
         elements = [_emit_expr(ctx, elem) for elem in _list(node, "elements")]
         if len(elements) == 0:
+            resolved_type = _str(node, "resolved_type")
+            if resolved_type.startswith("list[") and resolved_type.endswith("]"):
+                return "new ArrayList<" + _java_ref_type(resolved_type[5:-1], ctx.runtime_imports) + ">()"
             return "new ArrayList<>()"
         return "new ArrayList<>(java.util.Arrays.asList(" + ", ".join(elements) + "))"
     if kind == "Tuple":
@@ -990,11 +993,21 @@ def _emit_expr_extension(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if kind == "Set":
         elements = [_emit_expr(ctx, elem) for elem in _list(node, "elements")]
         if len(elements) == 0:
+            resolved_type = _str(node, "resolved_type")
+            if resolved_type.startswith("set[") and resolved_type.endswith("]"):
+                return "new HashSet<" + _java_ref_type(resolved_type[4:-1], ctx.runtime_imports) + ">()"
             return "new HashSet<>()"
         return "new HashSet<>(java.util.Arrays.asList(" + ", ".join(elements) + "))"
     if kind == "Dict":
         entries = _list(node, "entries")
         if len(entries) == 0:
+            resolved_type = _str(node, "resolved_type")
+            if resolved_type.startswith("dict[") and resolved_type.endswith("]"):
+                parts = _split_generic_args(resolved_type[5:-1])
+                if len(parts) == 2:
+                    key_type = _java_ref_type(parts[0], ctx.runtime_imports)
+                    value_type = _java_ref_type(parts[1], ctx.runtime_imports)
+                    return "new HashMap<" + key_type + ", " + value_type + ">()"
             return "new HashMap<>()"
         parts: list[str] = []
         for entry in entries:

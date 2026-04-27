@@ -362,6 +362,14 @@ class KotlinRenderer(CommonRenderer):
                 elem_name = _safe_kotlin_ident(self._str(elem, "id"))
                 elem_type = kotlin_type(self._str(elem, "resolved_type"))
                 prelude.append("val " + elem_name + " = (" + tuple_expr + "[" + str(idx2) + "] as " + elem_type + ")")
+        elif isinstance(target, dict):
+            resolved_target_type = self._str(target, "resolved_type")
+            if resolved_target_type in ("", "unknown", "Any", "object"):
+                resolved_target_type = self._str(target, "target_type")
+            if resolved_target_type not in ("", "unknown", "Any", "object"):
+                target_name = self._for_target_name(target)
+                loop_var = self._next_tmp("__iterItem")
+                prelude.append("val " + target_name + " = (" + loop_var + " as " + self._render_type(resolved_target_type) + ")")
         if len(prelude) > 0:
             inner = " ".join(line + "; " for line in prelude) + inner
         return "for (" + loop_var + " in " + iter_expr + ") { " + inner + " }"
@@ -766,7 +774,7 @@ class KotlinRenderer(CommonRenderer):
             local_scope.add(safe_arg)
         if vararg_name != "":
             safe_vararg = _safe_kotlin_ident(vararg_name)
-            params.append("vararg " + safe_vararg + ": " + self._render_type(vararg_type if vararg_type != "" else "Any"))
+            params.append("vararg " + safe_vararg + "__in: " + self._render_type(vararg_type if vararg_type != "" else "Any"))
             local_scope.add(safe_vararg)
         return_type_name = self._str(node, "return_type")
         if return_type_name in ("", "None", "none", "Unit"):
@@ -802,7 +810,9 @@ class KotlinRenderer(CommonRenderer):
                 arg_type = arg_type_map.get(arg, "Any") if isinstance(arg_type_map.get(arg), str) else "Any"
                 self._record_local_type(_safe_kotlin_ident(arg), arg_type)
         if vararg_name != "":
-            self._record_local_type(_safe_kotlin_ident(vararg_name), "list[" + (vararg_type if vararg_type != "" else "Any") + "]")
+            safe_vararg = _safe_kotlin_ident(vararg_name)
+            self._emit("val " + safe_vararg + " = " + safe_vararg + "__in.toMutableList()")
+            self._record_local_type(safe_vararg, "list[" + (vararg_type if vararg_type != "" else "Any") + "]")
         for local_name, param_name in rebinding:
             self._emit("var " + local_name + " = " + param_name)
             self._record_local_type(local_name, self._lookup_local_type(param_name))
@@ -1055,6 +1065,8 @@ class KotlinRenderer(CommonRenderer):
                 prelude.append("val " + tuple_var + " = (__pytra_as_list(" + loop_var + ") as MutableList<Any?>)")
             else:
                 resolved_target_type = self._str(target_node, "resolved_type")
+                if resolved_target_type in ("", "unknown", "Any", "object"):
+                    resolved_target_type = self._str(target_node, "target_type")
                 iter_expr_node = iter_plan.get("iter_expr") if isinstance(iter_plan, dict) else node.get("iter")
                 if resolved_target_type in ("", "unknown", "Any", "object") and isinstance(iter_expr_node, dict) and self._str(iter_expr_node, "kind") == "Call":
                     func_node = iter_expr_node.get("func")
