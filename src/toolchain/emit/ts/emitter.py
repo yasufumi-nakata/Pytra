@@ -293,13 +293,14 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         upper_code = _emit_expr(ctx, upper) if isinstance(upper, dict) else "undefined"
         return owner + ".slice(" + lower_code + ", " + upper_code + ")"
     # For dicts/Maps: use .get() instead of []
-    is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict"
+    union_lanes = [part.strip() for part in owner_rt.split("|")]
+    is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict" or any(part.startswith("dict[") for part in union_lanes)
     if is_dict_type and isinstance(slice_node, dict):
         slice_code = _emit_expr(ctx, slice_node)
         out = owner + ".get(" + slice_code + ")"
         return out if ctx.strip_types else out + "!"
     # For lists/strings: handle negative constant indices (Python arr[-1] → JS arr[arr.length - 1])
-    is_array_like = (owner_rt.startswith("list[") or owner_rt in ("list", "str", "string", "bytes", "bytearray"))
+    is_array_like = (owner_rt.startswith("list[") or owner_rt in ("list", "str", "string", "bytes", "bytearray") or any(part.startswith("list[") for part in union_lanes))
     if is_array_like and isinstance(slice_node, dict):
         neg_val = _get_negative_int_literal(slice_node)
         if neg_val is not None:

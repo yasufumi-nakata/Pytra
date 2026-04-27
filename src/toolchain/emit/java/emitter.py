@@ -549,6 +549,8 @@ def _emit_container_method_call(ctx: EmitContext, owner_node: JsonVal, arg_strs:
     owner_type = _node_type(ctx, owner_node)
     call_type = _str(node, "resolved_type")
     if fn_name != "":
+        if fn_name == "__LIST_APPEND__" and len(arg_strs) >= 1 and owner_type.startswith("list[") and owner_type.endswith("]"):
+            return owner + ".add(" + _emit_cast_expr(ctx, owner_type[5:-1], arg_strs[0]) + ")"
         special = _emit_builtin_placeholder(ctx, fn_name, [owner] + arg_strs, node)
         if special != "":
             return special
@@ -1224,7 +1226,18 @@ def _emit_builtin_placeholder(ctx: EmitContext, fn_name: str, all_arg_strs: list
             return "new HashSet<>()"
         return "new HashSet<>(java.util.Arrays.asList(" + ", ".join(all_arg_strs) + "))"
     if fn_name == "__LIST_APPEND__" and len(all_arg_strs) >= 2:
-        return owner + ".add(" + all_arg_strs[1] + ")"
+        owner_type = ""
+        func_node = node.get("func")
+        if isinstance(func_node, dict):
+            owner_node = func_node.get("value")
+            runtime_owner = node.get("runtime_owner")
+            if isinstance(runtime_owner, dict):
+                owner_node = runtime_owner
+            owner_type = _node_type(ctx, owner_node)
+        arg_expr = all_arg_strs[1]
+        if owner_type.startswith("list[") and owner_type.endswith("]"):
+            arg_expr = _emit_cast_expr(ctx, owner_type[5:-1], arg_expr)
+        return owner + ".add(" + arg_expr + ")"
     if fn_name == "__LIST_EXTEND__" and len(all_arg_strs) >= 2:
         return owner + ".addAll(" + all_arg_strs[1] + ")"
     if fn_name == "__DEQUE_APPENDLEFT__" and len(all_arg_strs) >= 2:
@@ -1376,11 +1389,13 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             runtime_call = _str(node, "resolved_runtime_call")
             if runtime_call == "":
                 runtime_call = _str(node, "runtime_call")
+            owner_type = _node_type(ctx, owner_node)
+            if attr in ("append", "add") and owner_type.startswith("list[") and owner_type.endswith("]") and len(call_arg_strs) >= 1:
+                return owner + ".add(" + _emit_cast_expr(ctx, owner_type[5:-1], call_arg_strs[0]) + ")"
             if runtime_call != "" or fn_name in ctx.mapping.calls.values():
                 method_args = [owner] + call_arg_strs
                 if is_module_owner:
                     method_args = list(call_arg_strs)
-                owner_type = _node_type(ctx, owner_node)
                 if not is_module_owner and _is_dynamic_type(owner_type) and fn_name in (
                     "PyRuntime.pyStrJoin",
                     "PyRuntime.pyStrStrip",

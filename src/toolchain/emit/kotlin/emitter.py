@@ -1042,6 +1042,8 @@ class KotlinRenderer(CommonRenderer):
             iter_expr = "__pytra_as_list(" + iter_expr + ")"
         if iter_type == "list" or iter_type.startswith("list["):
             iter_expr = "__pytra_as_list(" + iter_expr + ")"
+        elif any(part.strip().startswith("list[") for part in iter_type.split("|")):
+            iter_expr = "__pytra_as_list(" + iter_expr + ")"
         loop_var = target_name
         prelude: list[str] = []
         if isinstance(target_node, dict):
@@ -1166,6 +1168,9 @@ class KotlinRenderer(CommonRenderer):
             owner = self._emit_expr(node.get("value"))
             owner_node = node.get("value")
             owner_type = self._str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
+            union_lanes = [part.strip() for part in owner_type.split("|")]
+            dict_owner_type = owner_type if owner_type.startswith("dict[") else next((part for part in union_lanes if part.startswith("dict[")), "")
+            list_owner_type = owner_type if owner_type.startswith("list[") else next((part for part in union_lanes if part.startswith("list[")), "")
             slice_node = node.get("slice")
             if isinstance(slice_node, dict) and self._str(slice_node, "kind") == "Slice":
                 lower_node = slice_node.get("lower")
@@ -1178,22 +1183,24 @@ class KotlinRenderer(CommonRenderer):
                     return owner + ".slice((" + lower + ").toInt() until (" + upper + ").toInt()).toMutableList()"
                 return "__pytra_slice(" + owner + ", " + lower + ", " + upper + ")"
             index = self._emit_expr(slice_node)
-            if owner_type.startswith("dict["):
+            if dict_owner_type != "":
                 key_node = slice_node if isinstance(slice_node, dict) else None
                 key_code = index
                 if isinstance(key_node, dict):
                     key_type = self._str(key_node, "resolved_type")
                     if key_type == "str":
                         key_code = self._emit_expr(key_node)
-                expr = owner + "[" + key_code + "]"
+                dict_owner = owner if owner_type.startswith("dict[") else "(" + owner + " as " + self._render_type(dict_owner_type) + ")"
+                expr = dict_owner + "[" + key_code + "]"
                 resolved = self._str(node, "resolved_type")
                 if resolved not in ("", "unknown", "Any", "Any?", "object", "None", "none") and "|" not in resolved:
                     return "(" + expr + "!! as " + self._render_type(resolved) + ")"
                 return expr
             if owner_type in ("str", "string"):
                 return "(__pytra_get_index(" + owner + ", " + index + ") as String)"
-            if owner_type.startswith("list[") or owner_type.startswith("tuple[") or owner_type in ("list", "tuple", "bytes", "bytearray"):
-                expr = "__pytra_get_index(" + owner + ", " + index + ")"
+            if list_owner_type != "" or owner_type.startswith("list[") or owner_type.startswith("tuple[") or owner_type in ("list", "tuple", "bytes", "bytearray"):
+                list_owner = owner if list_owner_type == "" or owner_type.startswith("list[") else "(" + owner + " as " + self._render_type(list_owner_type) + ")"
+                expr = "__pytra_get_index(" + list_owner + ", " + index + ")"
                 resolved = self._str(node, "resolved_type")
                 if resolved not in ("", "unknown", "Any", "object"):
                     return "(" + expr + " as " + self._render_type(resolved) + ")"
@@ -1490,7 +1497,10 @@ class KotlinRenderer(CommonRenderer):
                     if attr == "index" and len(arg_nodes) == 1:
                         return owner_expr + ".indexOf(" + self._emit_expr(arg_nodes[0]) + ").toLong()"
                     if resolved_method == self._mapping_call("list.append") and len(arg_nodes) == 1:
-                        return owner_expr + ".add(" + self._emit_expr(arg_nodes[0]) + ")"
+                        arg_expr = self._emit_expr(arg_nodes[0])
+                        if owner_type.startswith("list[") and owner_type.endswith("]"):
+                            arg_expr = "(" + arg_expr + " as " + self._render_type(owner_type[5:-1]) + ")"
+                        return owner_expr + ".add(" + arg_expr + ")"
                     if resolved_method == self._mapping_call("list.extend") and len(arg_nodes) == 1:
                         if owner_type in ("bytes", "bytearray"):
                             return owner_expr + ".addAll(__pytra_bytes(" + self._emit_expr(arg_nodes[0]) + "))"

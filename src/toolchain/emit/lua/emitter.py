@@ -1202,12 +1202,13 @@ def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         lower_code = _emit_expr(ctx, lower) if isinstance(lower, dict) else "nil"
         upper_code = _emit_expr(ctx, upper) if isinstance(upper, dict) else "nil"
         return "__pytra_slice(" + owner + ", " + lower_code + ", " + upper_code + ")"
-    is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict"
+    union_lanes = [part.strip() for part in owner_rt.split("|")]
+    is_dict_type = owner_rt.startswith("dict[") or owner_rt == "dict" or any(part.startswith("dict[") for part in union_lanes)
     if is_dict_type and isinstance(slice_node, dict):
         slice_code = _emit_expr(ctx, slice_node)
         return owner + "[" + slice_code + "]"
     # For lists: adjust to 1-based index
-    is_list_type = owner_rt.startswith("list[") or owner_rt in ("list", "bytes", "bytearray")
+    is_list_type = owner_rt.startswith("list[") or owner_rt in ("list", "bytes", "bytearray") or any(part.startswith("list[") for part in union_lanes)
     is_tuple_type = owner_rt.startswith("tuple[") or owner_rt == "tuple"
     is_str_type = owner_rt in ("str", "string")
     if (is_list_type or is_tuple_type) and isinstance(slice_node, dict):

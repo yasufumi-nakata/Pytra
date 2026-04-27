@@ -1155,7 +1155,8 @@ class JuliaSubsetRenderer:
                 return owner + "[(" + lower_text + " + 1):end]"
             return owner + "[(" + lower_text + " + 1):" + upper_text + "]"
         index = self._render_expr(slice_node)
-        if owner_type.startswith("dict["):
+        union_lanes = [part.strip() for part in owner_type.split("|")]
+        if owner_type.startswith("dict[") or any(part.startswith("dict[") for part in union_lanes):
             return owner + "[" + index + "]"
         if owner_type == "str":
             return "string(" + owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))])"

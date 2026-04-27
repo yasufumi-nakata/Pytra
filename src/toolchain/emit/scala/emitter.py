@@ -970,6 +970,8 @@ class ScalaRenderer(CommonRenderer):
             iter_expr = "__pytra_as_list(" + iter_expr + ")"
         if iter_type == "list" or iter_type.startswith("list["):
             iter_expr = "__pytra_as_list(" + iter_expr + ")"
+        elif any(part.strip().startswith("list[") for part in iter_type.split("|")):
+            iter_expr = "__pytra_as_list(" + iter_expr + ")"
         loop_var = target_name
         prelude: list[str] = []
         if isinstance(target_node, dict):
@@ -1400,6 +1402,11 @@ class ScalaRenderer(CommonRenderer):
                             return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                         return expr
                 if owner_type.startswith("list[") or owner_type in ("list", "bytearray", "bytes"):
+                    if resolved_method == self._mapping_call("list.append") and len(arg_nodes) == 1:
+                        arg_expr = self._emit_expr(arg_nodes[0])
+                        if owner_type.startswith("list[") and owner_type.endswith("]"):
+                            arg_expr = arg_expr + ".asInstanceOf[" + scala_type(owner_type[5:-1]) + "]"
+                        return owner_expr + ".append(" + arg_expr + ")"
                     if resolved_method == self._mapping_call("list.index") and len(arg_nodes) >= 1:
                         return owner_expr + ".indexOf(" + self._emit_expr(arg_nodes[0]) + ").toLong"
                     if resolved_method == self._mapping_call("list.extend") and len(arg_nodes) == 1:
