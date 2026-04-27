@@ -1413,7 +1413,7 @@ class KotlinRenderer(CommonRenderer):
                             call_parts = self._emit_call_parts(arg_nodes) + self._emit_keyword_parts(keyword_nodes)
                             return resolved + "(" + ", ".join(call_parts) + ")"
                 owner_union_lanes = [part.strip() for part in owner_type.split("|")]
-                union_dict_owner = any(part == "dict" or part.startswith("dict[") for part in owner_union_lanes)
+                union_dict_owner = "|" in owner_type and any(part == "dict" or part.startswith("dict[") for part in owner_union_lanes)
                 dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal") or union_dict_owner
                 if owner_expr == "pytra_built_in_error" and self._is_exception_name(attr):
                     first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""

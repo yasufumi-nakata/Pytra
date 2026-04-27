@@ -1311,7 +1311,7 @@ class ScalaRenderer(CommonRenderer):
                         first_arg = self._emit_expr(arg_nodes[0]) if len(arg_nodes) > 0 else "\"error\""
                         return "{ val __pytra_obj = new " + _safe_scala_ident(attr) + "(); __pytra_obj.__init__(" + first_arg + "); __pytra_obj }"
                 owner_union_lanes = [part.strip() for part in owner_type.split("|")]
-                union_dict_owner = any(part == "dict" or part.startswith("dict[") for part in owner_union_lanes)
+                union_dict_owner = "|" in owner_type and any(part == "dict" or part.startswith("dict[") for part in owner_union_lanes)
                 dynamic_dict_owner = owner_type in ("JsonVal", "Any", "object", "unknown", "pytra.std.json.JsonVal", "pytra_std_json.JsonVal") or union_dict_owner
                 if dynamic_dict_owner and (resolved_method == self._mapping_call("dict.get") or attr == "get") and len(arg_nodes) == 1:
                     return "__pytra_as_dict(" + owner_expr + ").get(" + self._emit_expr(arg_nodes[0]) + ")"
@@ -1377,19 +1377,19 @@ class ScalaRenderer(CommonRenderer):
                         return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                     return expr
                 if owner_type.startswith("dict[") or owner_type == "dict":
-                    if resolved_method == self._mapping_call("dict.keys"):
+                    if resolved_method == self._mapping_call("dict.keys") or attr == "keys":
                         result_type = self._str(node, "resolved_type")
                         expr = "__pytra_dict_keys(__pytra_as_dict(" + owner_expr + "))"
                         if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
                             return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                         return expr
-                    if resolved_method == self._mapping_call("dict.values"):
+                    if resolved_method == self._mapping_call("dict.values") or attr == "values":
                         result_type = self._str(node, "resolved_type")
                         expr = "__pytra_dict_values(__pytra_as_dict(" + owner_expr + "))"
                         if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
                             return expr + ".asInstanceOf[" + scala_type(result_type) + "]"
                         return expr
-                    if resolved_method == self._mapping_call("dict.items"):
+                    if resolved_method == self._mapping_call("dict.items") or attr == "items":
                         result_type = self._str(node, "resolved_type")
                         expr = "__pytra_dict_items(__pytra_as_dict(" + owner_expr + "))"
                         if result_type not in ("", "unknown", "Any", "object", "JsonVal"):
