@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-25
+最終更新: 2026-04-27
 
 ## 運用ルール
 
@@ -16,85 +16,9 @@
 - **タスク完了時は `[ ]` を `[x]` に変更し、完了メモを追記してコミットすること。**
 - 完了済みタスクは定期的に `docs/ja/todo/archive/` へ移動する。
 
-完了済みタスクは [アーカイブ](archive/20260403.md) を参照。
+完了済みタスクは [アーカイブ](archive/20260427.md) を参照。
 
 ## 未完了タスク
-
-### P0-SELFHOST-MODULE-CLOSURE: selfhost build の transitive import 解決漏れを調査・固定する
-
-2026-04-11 の再調査で、当初疑った build driver の `ImportFrom` closure 欠落は再現しなかった。`_collect_build_sources()`、link manifest、C++ emit のいずれにも `expand_defaults.py -> type_norm.py` は入っていた。最初の missing include は、C++ backend の別 abort 後に見ていた partial emit 生成物を blocker と誤診していたもの。
-
-このタスクで実際に直したのは、
-- `_collect_build_sources()` に対する closure regression test の追加
-- `run_selfhost_parity.py` が欠損していた `collect_runtime_cpp_sources` helper 依存を fallback で復旧
-
-までであり、build driver 本体の closure ロジック変更は不要だった。
-
-1. [x] [ID: P0-SELFHOST-CLOSURE-S1] selfhost build driver の module collection ロジックを調査し、transitive import 解決漏れの原因を特定する
-   - 2026-04-11: `_collect_build_sources()` は `toolchain.link.expand_defaults` と `toolchain.resolve.py.type_norm` を正しく収集していた。誤診だったことを確認。
-2. [x] [ID: P0-SELFHOST-CLOSURE-S2] entry point からの reachability closure が `ImportFrom` を確実に追うように修正する
-   - 2026-04-11: build driver 本体の修正は不要。代わりに `tools/unittest/tooling/test_pytra_cli2.py` に selfhost closure 回帰テストを追加。
-3. [x] [ID: P0-SELFHOST-CLOSURE-S3] C++ selfhost で `expand_defaults.py → type_norm.py` が emit 対象に入ることを確認する
-   - 2026-04-11: linked manifest と C++ emit 単体で `toolchain/resolve/py/type_norm.h` / `toolchain_resolve_py_type_norm.cpp` が出ることを確認。
-4. [x] [ID: P0-SELFHOST-CLOSURE-S4] Go selfhost の既存テストに回帰がないことを確認する（module set が広がるため）
-   - 2026-04-11: `run_selfhost_parity.py` の fallback は C++ branch 限定で、共通 regression test も通過。Go selfhost 側の driver 挙動に変更なし。
-
-### ~~P20-DATA-DRIVEN-TESTS~~ (廃止)
-
-2026-04-27 廃止。fixture parity check が全 backend で充実しており、emitter 単体の JSON テストケースと smoke テストは役割が重複するため、`test/cases/` ディレクトリ・`test_emit_cases.py`・`test_pipeline_cases.py`・全言語の `test_py2*_smoke.py` をまとめて削除した。emitter のエッジケース検証は fixture 追加で対応する。
-   - 2026-04-27: 壊れていた `tools/unittest/emit/dart/test_py2dart_smoke.py` の fixture smoke を `test/cases/emit/dart/` へ移行し、空になったスクリプトを削除。
-   - 2026-04-27: `tools/unittest/emit/test_py2starred_smoke.py` の all-target starred tuple fixture smoke を `test/cases/emit/<lang>/starred_call_tuple_basic.json` へ移行し、スクリプトを削除。
-   - 2026-04-27: Nim の `for_range` fixture smoke を `test/cases/emit/nim/for_range.json` へ移行。
-   - 2026-04-27: PowerShell の `bitwise_invert_basic` ヘッダー確認を既存 JSON ケースへ統合。
-   - 2026-04-27: `go` / `java` / `kotlin` / `rb` / `scala` / `swift` の `inheritance` skeleton smoke を JSON ケースへ移行。
-   - 2026-04-27: Lua / Swift の `tuple_assign` swap lowering smoke を JSON ケースへ移行。
-   - 2026-04-27: Lua の `if_else` branch structure smoke を JSON ケースへ移行。
-   - 2026-04-27: representative 契約の `property_method_call` / `list_bool_index` smoke を `test/cases/emit/multilang/` の multi-target JSON ケースへ移行。
-   - 2026-04-27: Go / JS / TS の secondary representative fixture bundle を `fixtures` 配列対応の JSON ケースへ移行。
-8. [x] [ID: P20-DDT-S8] `tools/unittest/common/test_pylib_*.py` (~10件) を JSON に移行する
-   - 2026-04-27: `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` / `json` / `path` / `os_glob` を `test/cases/pylib/` へ移行し、`tools/unittest/test_pylib_cases.py` で実行する。
-9. [x] [ID: P20-DDT-S9] 空になったスクリプトを削除する
-   - 2026-04-27: `tools/unittest/common/test_pylib_*.py` を削除し、pylib ケースを JSON runner へ一本化。
-
-### P1-PARITY-CONSOLIDATION: runtime_parity_check.py を fast 版に統合する
-
-文脈: [docs/ja/plans/p1-parity-check-consolidation.md](../plans/p1-parity-check-consolidation.md)
-
-旧版 `runtime_parity_check.py` は `pytra-cli.py` subprocess 方式で、JS の `"js"` → `"ts"` マッピング漏れ等メンテが追いついていない。fast 版（in-memory API）に一本化する。
-
-1. [x] [ID: P1-PARITY-CONSOLIDATION-S1] `check_noncpp_backend_health.py` の旧版呼び出しを fast 版に切り替える
-   - 2026-04-14: parity 実行を `tools/check/runtime_parity_check_fast.py` へ切替。
-2. [x] [ID: P1-PARITY-CONSOLIDATION-S2] `regenerate_samples.py` の旧版参照を fast 版に変更する
-   - 2026-04-14: `--verify-cpp-on-diff` の検証経路を fast 版へ切替。
-3. [x] [ID: P1-PARITY-CONSOLIDATION-S3] ドキュメント一括更新（tutorial / README / spec-tools.md のコマンド例を fast 版に書き換え）
-   - 2026-04-14: `spec-tools.md` / tutorial / `tools/README.md` / `sample/README*.md` を更新し、`runtime_parity_check.py` を fast-backed 正規エントリとして明記。
-4. [x] [ID: P1-PARITY-CONSOLIDATION-S4] fast 版を `runtime_parity_check.py` にリネームするか検討・実施する
-   - 2026-04-14: 物理リネームは見送り。`runtime_parity_check.py` を fast 実装へ委譲する正規エントリにし、`runtime_parity_check_fast.py` は互換エイリアスとして維持する方針に決定。
-5. [x] [ID: P1-PARITY-CONSOLIDATION-S5] 旧版削除とテスト整理
-   - 2026-04-25: `runtime_parity_check.py` を fast 実装へ委譲する薄い正規エントリに置換し、共有 helper を `runtime_parity_shared.py` へ分離。旧 subprocess 版の `build_targets` / `check_case` を削除し、CLI テストを fast 経路へ整理。
-6. [x] [ID: P1-PARITY-CONSOLIDATION-S6] `pytra-cli.py` の `_build_pipeline` で `target="js"` → `target_language="ts"` 変換を追加する
-   - 2026-04-14: `_build_pipeline()` に lowering 用 `js -> ts` マッピングを追加。
-
-### P1-DATACLASS-OVER-JSONVAL-DICT: 一時構造体の dict[str, JsonVal] を @dataclass に置き換える
-
-文脈: [docs/ja/plans/p1-dataclass-over-jsonval-dict.md](../plans/p1-dataclass-over-jsonval-dict.md)
-
-toolchain 内部で一時的なデータ受け渡しに `dict[str, JsonVal]` を多用している箇所を `@dataclass` に置き換え、selfhost の型解決を安定させる。emitter の手前の段（parse/resolve/compile/link）を優先。
-
-1. [x] [ID: P1-DATACLASS-DICT-S1] 棚卸し: selfhost blocker に直結する/しそうな一時構造体の洗い出しと優先順位付け
-   - 2026-04-25: `dict[str, JsonVal]` 出現箇所を parse/resolve/compile/link で棚卸し。優先順を `type_summary.py` summary dataclass 化、`parser.py` import metadata、`resolver.py` import resolution metadata、`linker.py` manifest row の順に確定。
-2. [x] [ID: P1-DATACLASS-DICT-S2] parse 層（`src/toolchain/parse/py/`）の @dataclass 化
-   - 2026-04-25: `parser.py` の `import_bindings` / `qualified_refs` を `ImportBindingDraft` / `QualifiedSymbolRefDraft` に置換。`nodes.py` の `to_jv()` と EAST JSON metadata 生成は外部 JSON 契約のため非対象として維持。
-3. [x] [ID: P1-DATACLASS-DICT-S3] resolve 層（`src/toolchain/resolve/py/`）の @dataclass 化
-   - 2026-04-25: `resolver.py` の import resolution binding 拡張を `ImportResolutionBinding` 経由に変更。EAST 入力 accessor と最終 metadata JSON は従来どおり dict/list のまま維持。
-4. [x] [ID: P1-DATACLASS-DICT-S4] compile 層（`src/toolchain/compile/`）の @dataclass 化
-   - 2026-04-25: `type_summary.py` の type summary payload builder を `TypeSummary` dataclass 経由に変更。追加で `lower.py` の target/iter plan draft を `TargetPlanDraft` / `RuntimeIterPlanDraft` / `StaticRangePlanDraft` に置換。EAST node builder と JSON accessor は非対象として維持。
-5. [x] [ID: P1-DATACLASS-DICT-S5] link 層（`src/toolchain/link/`）の @dataclass 化
-   - 2026-04-25: `linker.py` の `linked_program_v1` / manifest module entry / manifest global / diagnostics を draft dataclass 経由で生成。`type_stubgen.py` などの synthetic EAST node builder は非対象として維持。
-6. [x] [ID: P1-DATACLASS-DICT-S6] emit/common/ の @dataclass 化（`common_renderer.py` 82箇所、`cli_runner.py` 9箇所、`profile_loader.py` 6箇所）
-   - 2026-04-25: `profile_loader.py` の default profile doc を `LoweringProfileDocDraft` 経由に変更し、`cli_runner.py` の manifest module entry 取り込みを `ManifestModuleEntryDraft` に集約。`common_renderer.py` の EAST node 入力 dict は非対象として維持。
-7. [x] [ID: P1-DATACLASS-DICT-S7] emit/cpp/ の @dataclass 化（`emitter.py` 116箇所、`header_gen.py` 18箇所、`runtime_bundle.py` 11箇所）
-   - 2026-04-25: `runtime_bundle.py` の runtime artifact result、`header_gen.py` の include 行 draft、`emitter.py` の class variable spec を dataclass 経由に変更。EAST node 入力 dict と C++ AST 走査 helper は非対象として維持。
 
 ### P0-FIXTURE-PARITY-161: 全 backend を fixture 161/161 に揃える
 
