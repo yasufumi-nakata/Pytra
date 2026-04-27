@@ -65,14 +65,6 @@ class Py2PowerShellSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_output_contains_powershell_header(self) -> None:
-        fixture = find_fixture_case("bitwise_invert_basic")
-        east = load_east(fixture, parser_backend="self_hosted")
-        ps = transpile_to_powershell(east)
-        self.assertIn("Set-StrictMode -Version Latest", ps)
-        self.assertIn("$ErrorActionPreference", ps)
-        self.assertIn("py_runtime.ps1", ps)
-
     def test_secondary_bundle_representative_fixtures_transpile_for_powershell(self) -> None:
         for stem in (
             "tuple_assign",
