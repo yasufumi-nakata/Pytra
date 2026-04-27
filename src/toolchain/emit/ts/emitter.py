@@ -2737,11 +2737,16 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     base_class = ctx.class_bases.get(ctx.current_class, "")
     if fn_name == "constructor" and ctx.current_class != "" and base_class != "":
         if not _is_exception_type_name(ctx, ctx.current_class) and not _is_exception_type_name(ctx, base_class):
-            has_super_call = any(
-                isinstance(s, dict) and isinstance(s.get("value"), dict)
-                and "super" in s.get("value", {}).get("repr", "")
-                for s in body
-            )
+            def has_super_call_node(value: JsonVal) -> bool:
+                if isinstance(value, dict):
+                    if _str(value, "special_form") == "super":
+                        return True
+                    return any(has_super_call_node(child) for child in value.values() if isinstance(child, (dict, list)))
+                if isinstance(value, list):
+                    return any(has_super_call_node(child) for child in value)
+                return False
+
+            has_super_call = any(has_super_call_node(s) for s in body)
             if not has_super_call:
                 _emit(ctx, "super();")
     # Pre-declare variables first-assigned inside nested blocks (Python is function-scoped,
