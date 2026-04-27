@@ -276,6 +276,19 @@ def emit_<lang>_module(east_doc: dict[str, JsonVal]) -> str:
 
 Languages such as C++ that need to branch on `module_kind` read `module_kind` from `meta` inside `east_doc` and branch internally. The cli.py and common runner have no knowledge of `module_kind`.
 
+#### C++ Multi-File Header Contract
+
+C++ is a multi-file emitter that separates `.cpp` and `.h`, so source generation and header generation must agree on signatures, types, and inheritance.
+
+- Generated headers for user modules must be placed under `__pytra_user/<module/path>.h`. Plain header names such as `string.py` → `string.h` are prohibited because they can self-shadow standard C/C++ headers such as `<string.h>` / `<cstring>`.
+- Runtime and helper modules keep their canonical paths, such as `built_in/io_ops.h` and `utils/gif.h`. Only user modules are moved under `__pytra_user/`.
+- Include paths are centralized through shared path helpers such as `cpp_include_for_module()` / `cpp_user_header_for_module()`. Emitters, header generators, and runtime bundle code must not independently synthesize `module_id.replace(".", "/") + ".h"`.
+- Function/method definitions in `.cpp` and declarations in `.h` must be generated from the same EAST3 information and convention. In particular, header generation must preserve:
+  - typed varargs: `*args: T` becomes a `list[T]` parameter in C++ declarations
+  - `@trait` / `@implements`: C++ headers include trait bases with `virtual public`
+  - trait methods: pure interface methods are declared as `virtual ... = 0`
+  - `const` / mutable receiver decisions: source definitions and header declarations must agree
+
 ### 2.4 Invocation from runtime_parity_check_fast.py
 
 `tools/check/runtime_parity_check_fast.py` is under `tools/` (not a selfhost target), so it may import `emit_<lang>_module` directly. However, use the common emit loop (equivalent to `run_emit_cli`) and do not write language-specific logic in the parity check.
@@ -958,6 +971,7 @@ Mapping principles:
 - If the language has a resource-management construct (Java try-with-resources, C# using, Go defer, etc.), use it.
 - If no resource-management construct is available, use a `try/finally` pattern to guarantee `close()` / release.
 - Guarantee that resources are released even if an exception occurs in the body of the `with` block.
+- In runtimes where `__enter__()` returns a reference to a non-copyable type, such as C++ file handles, the `as` variable must not be value-copied. If EAST3 has `bind_ref: true`, bind by reference. For older runtime EAST where `bind_ref` is missing, assignment from `Call(Attribute(..., "__enter__"))` or `semantic_tag: "dunder.enter"` is still treated as a reference binding.
 
 Prohibited:
 
@@ -1329,6 +1343,8 @@ Use case: items such as `@extern class` that have no implementation and cannot b
 test/fixture/source/py/oop/eo_extern_opaque_basic.py  ← emit-only
 test/fixture/source/py/oop/class_instance.py           ← normal (run parity)
 ```
+
+`tools/run/run_selfhost_parity.py` follows the same `eo_` contract as `tools/check/runtime_parity_check.py` / `runtime_parity_check_fast.py`. For `eo_` fixtures, the selfhost runner must not run Python or the target binary; successful emit by the selfhost binary is the PASS condition.
 
 ### Relationship to Existing Tools
 

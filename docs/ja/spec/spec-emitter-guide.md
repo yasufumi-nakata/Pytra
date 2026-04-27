@@ -279,6 +279,19 @@ def emit_<lang>_module(east_doc: dict[str, JsonVal]) -> str:
 
 C++ のように `module_kind` で処理を分ける必要がある言語は、`east_doc` 内の `meta` から `module_kind` を読んで内部で分岐する。cli.py や共通ランナーは `module_kind` を知らない。
 
+#### C++ multi-file header 契約
+
+C++ は `.cpp` と `.h` を分ける multi-file emitter なので、ソース生成と header 生成の署名・型・継承が一致していなければならない。
+
+- ユーザーモジュールの生成 header は `__pytra_user/<module/path>.h` 配下に置く。`string.py` → `string.h` のような素の header 名は、標準 C/C++ header（例: `<string.h>` / `<cstring>`）を self-shadow するため禁止。
+- runtime / helper module は既存の canonical path（例: `built_in/io_ops.h`, `utils/gif.h`）を使う。ユーザーモジュールだけを `__pytra_user/` へ逃がす。
+- include path は `cpp_include_for_module()` / `cpp_user_header_for_module()` などの共通 path helper で一元化する。emitter / header generator / runtime bundle が個別に `module_id.replace(".", "/") + ".h"` を合成してはならない。
+- `.cpp` 側の function/method definition と `.h` 側の declaration は、同じ EAST3 情報から同じ convention で作る。特に以下を header generator でも落としてはならない:
+  - typed varargs: `*args: T` は C++ declaration でも `list[T]` parameter になる
+  - `@trait` / `@implements`: C++ header でも trait base を `virtual public` に含める
+  - trait method: pure interface method は `virtual ... = 0` として宣言する
+  - `const` / mutable receiver 判定: source definition と header declaration で一致させる
+
 ### 2.4 runtime_parity_check_fast.py からの呼び出し
 
 `tools/check/runtime_parity_check_fast.py` は `tools/` 配下（selfhost 対象外）なので、`emit_<lang>_module` を直接 import してよい。ただし共通の emit ループ（`run_emit_cli` 相当）を使い、言語固有のロジックを parity check に書かないこと。
@@ -972,6 +985,7 @@ Subscript swap は Assign として到達するため、emitter の通常の Ass
 - 言語にリソース管理構文がある場合（Java の try-with-resources、C# の using、Go の defer 等）はそれを使う。
 - リソース管理構文がない場合は `try/finally` パターンで `close()` / 解放を保証する。
 - `with` ブロックの本体で例外が発生しても、リソースが解放されることを保証する。
+- C++ のように `__enter__()` が非コピー型への参照（例: file handle）を返す runtime では、`as` 変数を値コピーしてはならない。`bind_ref: true` が EAST3 にある場合は参照束縛し、古い runtime EAST などで `bind_ref` が欠けていても `Call(Attribute(..., "__enter__"))` または `semantic_tag: "dunder.enter"` の代入は参照束縛として扱う。
 
 禁止事項:
 
@@ -1371,6 +1385,8 @@ sample の実行時間は parity check の sample 実行時に自動計測され
 test/fixture/source/py/oop/eo_extern_opaque_basic.py  ← emit-only
 test/fixture/source/py/oop/class_instance.py           ← 通常（run parity）
 ```
+
+`tools/check/runtime_parity_check.py` / `runtime_parity_check_fast.py` だけでなく、`tools/run/run_selfhost_parity.py` も同じ `eo_` 契約に従う。selfhost runner は `eo_` fixture で Python 実行・ターゲット実行を行わず、selfhost バイナリによる emit 成功だけを PASS 条件にする。
 
 ### 既存ツールとの関係
 
