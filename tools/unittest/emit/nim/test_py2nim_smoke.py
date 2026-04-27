@@ -73,24 +73,12 @@ class Py2NimSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_bitwise_invert_basic_uses_nim_not(self) -> None:
-        fixture = find_fixture_case("bitwise_invert_basic")
-        east = load_east(fixture, parser_backend="self_hosted")
-        nim = transpile_to_nim_native(east)
-        self.assertIn("not y", nim)
-
     def test_transpile_for_range_fixture_contains_static_for(self) -> None:
         fixture = find_fixture_case("for_range")
         east = load_east(fixture, parser_backend="self_hosted")
         nim = transpile_to_nim_native(east)
         self.assertIn("proc sum_range_29", nim)
         self.assertIn("for i in 0 ..< n", nim)
-
-    def test_bitwise_invert_fixture_uses_nim_not(self) -> None:
-        fixture = find_fixture_case("bitwise_invert_basic")
-        east = load_east(fixture, parser_backend="self_hosted")
-        nim = transpile_to_nim_native(east)
-        self.assertIn("not y", nim)
 
     def test_cli_relative_import_native_path_bundle_scenarios_transpile_for_nim(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):

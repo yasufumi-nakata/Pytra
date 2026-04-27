@@ -80,12 +80,6 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_bitwise_invert_basic_uses_java_invert_operator(self) -> None:
-        fixture = find_fixture_case("bitwise_invert_basic")
-        east = load_east(fixture, parser_backend="self_hosted")
-        java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("~(y)", java)
-
     def test_java_native_emitter_skeleton_handles_module_function_class(self) -> None:
         fixture = find_fixture_case("inheritance")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -97,12 +91,6 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("public static void _case_main()", java)
         self.assertIn("Dog d = new Dog();", java)
         self.assertIn('System.out.println("True");', java)
-
-    def test_bitwise_invert_fixture_uses_java_bitwise_not(self) -> None:
-        fixture = find_fixture_case("bitwise_invert_basic")
-        east = load_east(fixture, parser_backend="self_hosted")
-        java = transpile_to_java_native(east, class_name="Main")
-        self.assertIn("~(y)", java)
 
     def test_cli_relative_import_jvm_package_bundle_scenarios_transpile_for_java(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):

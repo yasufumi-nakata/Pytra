@@ -18,9 +18,20 @@ if str(ROOT / "src") not in sys.path:
 from toolchain.emit.cpp.emitter import CppEmitContext
 from toolchain.emit.cpp.emitter import _emit_expr as emit_cpp_expr
 from toolchain.emit.cpp.emitter import _emit_stmt as emit_cpp_stmt
+from toolchain.emit.cpp.emitter import emit_cpp_module
+from toolchain.emit.dart.emitter import emit_dart_module
 from toolchain.compile.lower import lower_east2_to_east3
 from toolchain.emit.go.emitter import emit_go_module
+from toolchain.emit.julia.emitter import emit_julia_module
+from toolchain.emit.kotlin.emitter import emit_kotlin_module
+from toolchain.emit.lua.emitter import emit_lua_module
+from toolchain.emit.nim.emitter import emit_nim_module
+from toolchain.emit.php.emitter import emit_php_module
+from toolchain.emit.powershell.emitter import emit_ps1_module
+from toolchain.emit.ruby.emitter import emit_ruby_module
 from toolchain.emit.rs.emitter import emit_rs_module
+from toolchain.emit.scala.emitter import emit_scala_module
+from toolchain.emit.swift.emitter import emit_swift_module
 from toolchain.emit.ts.emitter import emit_ts_module
 from toolchain.parse.py.parser import parse_python_source
 from toolchain.resolve.py.builtin_registry import load_builtin_registry
@@ -110,10 +121,32 @@ def _module_input(case: dict[str, Any]) -> tuple[str, str]:
 def _emit_module_case(target: str, case: dict[str, Any]) -> str:
     source, source_path = _module_input(case)
     east3 = _build_east3_from_source(source, source_path, target)
+    if target == "cpp":
+        return emit_cpp_module(east3)
+    if target == "dart":
+        return emit_dart_module(east3)
     if target == "go":
         return emit_go_module(east3)
+    if target == "julia":
+        return emit_julia_module(east3)
+    if target == "kotlin":
+        return emit_kotlin_module(east3)
+    if target == "lua":
+        return emit_lua_module(east3)
+    if target == "nim":
+        return emit_nim_module(east3)
+    if target == "php":
+        return emit_php_module(east3)
+    if target == "powershell":
+        return emit_ps1_module(east3)
+    if target == "rb":
+        return emit_ruby_module(east3)
     if target == "rs":
         return emit_rs_module(east3)
+    if target == "scala":
+        return emit_scala_module(east3)
+    if target == "swift":
+        return emit_swift_module(east3)
     if target == "ts":
         return emit_ts_module(east3)
     if target == "js":
@@ -125,7 +158,7 @@ def _run_emit_case(path: Path) -> None:
     case = _load_case(path)
     target = case.get("target")
     level = case.get("level")
-    if target == "cpp":
+    if target == "cpp" and level != "module":
         rendered = _emit_cpp_case(case)
     elif isinstance(target, str) and level == "module":
         rendered = _emit_module_case(target, case)

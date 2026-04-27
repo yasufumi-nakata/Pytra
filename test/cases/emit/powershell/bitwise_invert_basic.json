@@ -1,0 +1,7 @@
+{
+  "description": "PowerShell emits the representative bitwise fixture module",
+  "target": "powershell",
+  "level": "module",
+  "fixture": "bitwise_invert_basic",
+  "expected_contains": ["#Requires -Version 5.1"]
+}

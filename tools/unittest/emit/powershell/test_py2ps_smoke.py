@@ -65,13 +65,6 @@ class Py2PowerShellSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_bitwise_invert_basic_transpiles(self) -> None:
-        fixture = find_fixture_case("bitwise_invert_basic")
-        east = load_east(fixture, parser_backend="self_hosted")
-        ps = transpile_to_powershell(east)
-        self.assertTrue(ps.strip())
-        self.assertIn("#Requires -Version 5.1", ps)
-
     def test_output_contains_powershell_header(self) -> None:
         fixture = find_fixture_case("bitwise_invert_basic")
         east = load_east(fixture, parser_backend="self_hosted")

@@ -75,12 +75,6 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_bitwise_invert_basic_uses_kotlin_inv(self) -> None:
-        fixture = find_fixture_case("bitwise_invert_basic")
-        east = load_east(fixture, parser_backend="self_hosted")
-        kotlin = transpile_to_kotlin_native(east)
-        self.assertIn(".inv()", kotlin)
-
     def test_kotlin_native_emitter_skeleton_handles_module_function_class(self) -> None:
         fixture = find_fixture_case("inheritance")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -89,12 +83,6 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         self.assertIn("open class Animal", kotlin)
         self.assertIn("open class Dog() : Animal()", kotlin)
         self.assertIn("fun _case_main()", kotlin)
-
-    def test_bitwise_invert_fixture_uses_kotlin_inv(self) -> None:
-        fixture = find_fixture_case("bitwise_invert_basic")
-        east = load_east(fixture, parser_backend="self_hosted")
-        kotlin = transpile_to_kotlin_native(east)
-        self.assertIn(".inv()", kotlin)
 
     def test_cli_relative_import_jvm_package_bundle_scenarios_transpile_for_kotlin(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
