@@ -473,6 +473,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
         elif kind == "VarDecl": _emit_var_decl(self.ctx, node)
         elif kind == "TupleUnpack": _emit_tuple_unpack(self.ctx, node)
         elif kind == "Swap": _emit_swap(self.ctx, node)
+        elif kind == "With": _emit_with(self.ctx, node)
         else: _emit_fail(self.ctx, "unsupported_stmt_kind", kind)
         self.state.indent_level = self.ctx.indent_level
 
@@ -4767,8 +4768,7 @@ def _emit_raise(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
 def _emit_with(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     context_expr = _emit_expr(ctx, node.get("context_expr"))
     var_name = _str(node, "var_name")
-    if var_name == "":
-        var_name = _next_temp(ctx, "__with")
+    context_type = _effective_resolved_type(node.get("context_expr"))
     body = _list(node, "body")
     hoisted = _collect_with_hoisted_names(ctx, body)
     for name, resolved_type in hoisted:
@@ -4781,18 +4781,30 @@ def _emit_with(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
             _emit(ctx, "auto " + name + " = " + _decl_cpp_zero_value(ctx, storage_type, name) + ";")
         else:
             _emit(ctx, _decl_cpp_type(ctx, storage_type, name) + " " + name + " = " + _decl_cpp_zero_value(ctx, storage_type, name) + ";")
+    context_name = _next_temp(ctx, "__with_ctx")
     finally_name = _next_temp(ctx, "__finally")
-    if _is_local_visible(ctx, var_name):
-        _emit(ctx, var_name + " = " + context_expr + ";")
+    _register_local_storage(ctx, context_name, context_type)
+    _declare_local_visible(ctx, context_name)
+    _emit(ctx, "auto&& " + context_name + " = " + context_expr + ";")
+    enter_expr = context_name + ".__enter__()"
+    exit_expr = context_name + ".__exit__(object(), object(), object())"
+    if var_name != "":
+        if _is_local_visible(ctx, var_name):
+            _emit(ctx, var_name + " = " + enter_expr + ";")
+        else:
+            _register_local_storage(ctx, var_name, context_type)
+            _declare_local_visible(ctx, var_name)
+            if _cpp_type_is_unknownish(context_type):
+                _emit(ctx, "auto&& " + var_name + " = " + enter_expr + ";")
+            else:
+                _emit(ctx, _decl_cpp_type(ctx, context_type, var_name) + "& " + var_name + " = " + enter_expr + ";")
     else:
-        _register_local_storage(ctx, var_name, _effective_resolved_type(node.get("context_expr")))
-        _declare_local_visible(ctx, var_name)
-        _emit(ctx, "auto " + var_name + " = " + context_expr + ";")
+        _emit(ctx, "(void)(" + enter_expr + ");")
     _emit(ctx, "{")
     ctx.indent_level += 1
     _emit(ctx, "auto " + finally_name + " = py_make_scope_exit([&]() {")
     ctx.indent_level += 1
-    _emit(ctx, var_name + ".close();")
+    _emit(ctx, exit_expr + ";")
     ctx.indent_level -= 1
     _emit(ctx, "});")
     _emit_body(ctx, body)
@@ -4975,7 +4987,10 @@ def _function_signature(
         prefix = owner_name if declaration_only else owner_name + "::" + owner_name
         return static_prefix + prefix + "(" + ", ".join(params) + ")"
     return_type_arg = _return_type(node) + ""
-    ret = cpp_signature_type(return_type_arg) + ""
+    if owner_name != "" and name == "__enter__" and return_type_arg == owner_name:
+        ret = owner_name + "&"
+    else:
+        ret = cpp_signature_type(return_type_arg) + ""
     qual_name = name
     if owner_name != "" and not declaration_only:
         qual_name = owner_name + "::" + name
