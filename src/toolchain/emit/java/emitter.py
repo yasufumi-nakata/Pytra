@@ -837,9 +837,14 @@ def _emit_expr(ctx: EmitContext, node: JsonVal) -> str:
 def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     raw_name = _str(node, "id")
     rendered = _java_symbol_name(ctx, raw_name)
-    name_type = _callable_type_for_node(ctx, node)
-    if _parse_callable_type(name_type) is not None and (raw_name in ctx.function_names or rendered in ctx.function_names):
+    callable_type = _callable_type_for_node(ctx, node)
+    if _parse_callable_type(callable_type) is not None and (raw_name in ctx.function_names or rendered in ctx.function_names):
         return _wrap_callable_arg(ctx, node, rendered)
+    name_type = _str(node, "resolved_type")
+    if name_type == "":
+        name_type = ctx.var_types.get(rendered, "")
+    if name_type == "":
+        name_type = ctx.var_types.get(raw_name, "")
     original_type = ctx.var_types.get(rendered, "")
     if original_type == "":
         original_type = ctx.var_types.get(raw_name, "")

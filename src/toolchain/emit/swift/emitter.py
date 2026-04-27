@@ -1243,7 +1243,17 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
     ident = _safe_ident(expr.get("id"), "value")
     if ident == "main" and _MAIN_CALL_ALIAS[0] != "":
         return _MAIN_CALL_ALIAS[0]
-    return _RELATIVE_IMPORT_NAME_ALIASES[0].get(ident, ident)
+    rendered = _RELATIVE_IMPORT_NAME_ALIASES[0].get(ident, ident)
+    if ident in _FUNCTION_SIGNATURES[0]:
+        return rendered
+    resolved = expr.get("resolved_type")
+    if isinstance(resolved, str) and (
+        resolved in {"str", "bool", "int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "float", "float32", "float64"}
+    ):
+        swift_type = _swift_type(resolved, allow_void=False)
+        if swift_type != "Any":
+            return _cast_from_any(rendered, swift_type)
+    return rendered
 
 
 def _render_format_spec(spec_expr: Any) -> str:

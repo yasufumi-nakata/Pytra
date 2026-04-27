@@ -578,7 +578,11 @@ class ScalaRenderer(CommonRenderer):
             self._emit("}")
             return
         if kind == "AugAssign":
-            target = self._emit_expr(node.get("target"))
+            target_node = node.get("target")
+            if isinstance(target_node, dict) and self._str(target_node, "kind") == "Name":
+                target = _safe_scala_ident(self._str(target_node, "id"))
+            else:
+                target = self._emit_expr(target_node)
             value = self._emit_expr(node.get("value"))
             op = self._str(node, "op")
             op_text = {"Add": "+", "Sub": "-", "Mult": "*", "Div": "/"}.get(op, op)
@@ -956,6 +960,8 @@ class ScalaRenderer(CommonRenderer):
         iter_type = self._str(iter_node, "resolved_type") if isinstance(iter_node, dict) else ""
         if iter_type in ("str", "string"):
             iter_expr = "__pytra_as_list(" + iter_expr + ")"
+        if iter_type == "list" or iter_type.startswith("list["):
+            iter_expr = "__pytra_as_list(" + iter_expr + ")"
         loop_var = target_name
         prelude: list[str] = []
         if isinstance(target_node, dict):
@@ -1037,7 +1043,11 @@ class ScalaRenderer(CommonRenderer):
                 return _safe_scala_ident(self.local_function_aliases[ident])
             if ident in self.module_function_names and callable_type != "":
                 return _safe_scala_ident(ident)
-            return _safe_scala_ident(ident)
+            rendered = _safe_scala_ident(ident)
+            rendered_type = scala_type(resolved_type)
+            if resolved_type not in ("", "unknown", "Any", "object") and rendered_type != "Any":
+                return rendered + ".asInstanceOf[" + rendered_type + "]"
+            return rendered
         if kind == "Attribute":
             owner_node = node.get("value")
             if isinstance(owner_node, dict) and self._str(owner_node, "kind") == "Call":
