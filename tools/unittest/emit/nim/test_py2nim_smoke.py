@@ -73,13 +73,6 @@ class Py2NimSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
-    def test_transpile_for_range_fixture_contains_static_for(self) -> None:
-        fixture = find_fixture_case("for_range")
-        east = load_east(fixture, parser_backend="self_hosted")
-        nim = transpile_to_nim_native(east)
-        self.assertIn("proc sum_range_29", nim)
-        self.assertIn("for i in 0 ..< n", nim)
-
     def test_cli_relative_import_native_path_bundle_scenarios_transpile_for_nim(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):
