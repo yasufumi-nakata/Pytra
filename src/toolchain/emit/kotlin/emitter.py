@@ -1140,6 +1140,8 @@ class KotlinRenderer(CommonRenderer):
                 owner_id = self._str(owner_node, "id")
                 module_id = self.import_alias_modules.get(owner_id, "")
                 attr_name = _safe_kotlin_ident(self._str(node, "attr"))
+                if owner_id in self.module_class_names:
+                    return _safe_kotlin_ident(owner_id) + "." + attr_name
                 namespace_expr = self._module_namespace_expr(module_id)
                 if namespace_expr != "":
                     return self._module_member_expr(module_id, attr_name)
