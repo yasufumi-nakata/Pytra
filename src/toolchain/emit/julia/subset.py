@@ -748,7 +748,7 @@ class JuliaSubsetRenderer:
             return self._render_static_cast_call(builtin_name, result_type, args, source_type)
         if mapped == "__MAKEDIRS__":
             if len(args) == 1 and len(kw_items) == 1 and kw_items[0].get("arg") == "exist_ok":
-                return "__pytra_makedirs(" + args[0] + ", " + self._render_expr(kw_items[0].get("value")) + ")"
+                return "__OsNative.makedirs(" + args[0] + ", " + self._render_expr(kw_items[0].get("value")) + ")"
             return ""
         scalar_expr = self._render_scalar_runtime_call(mapped, args)
         if scalar_expr != "":

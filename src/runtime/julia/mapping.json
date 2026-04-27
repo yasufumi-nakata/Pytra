@@ -75,6 +75,8 @@
     "pytra.std.math.exp": "exp",
     "pytra.std.math.pow": "^",
     "pytra.std.math.fabs": "abs",
+    "pytra.std.os.makedirs": "__MAKEDIRS__",
+    "os.makedirs": "__MAKEDIRS__",
     "write_rgb_png": "write_rgb_png",
     "open": "py_open",
     "time.perf_counter": "__TimeNative.perf_counter",
