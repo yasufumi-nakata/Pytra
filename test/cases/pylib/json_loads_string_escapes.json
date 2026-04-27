@@ -1,0 +1,7 @@
+{
+  "description": "pytra json loads decodes string escapes",
+  "case": "json_loads_string_escapes",
+  "assertions": [
+    {"path": "s", "equals": "a\\b\n\t\"/"}
+  ]
+}

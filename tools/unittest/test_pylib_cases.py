@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 import unittest
 import typing as py_typing
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, Path as StdPath
 from typing import Any
 
 try:
@@ -20,12 +21,17 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.pytra.std import argparse as py_argparse
+from src.pytra.std import glob as py_glob
+from src.pytra.std import json as py_json
+from src.pytra.std import os as py_os
 from src.pytra.std import re as py_re
 from src.pytra.std import sys as py_sys
 from src.pytra.enum import Enum, IntEnum, IntFlag
+from src.pytra.std.pathlib import Path as PyPath
 
 
 CASE_ROOT = ROOT / "test" / "cases" / "pylib"
+WORK_ROOT = ROOT / "work" / "tmp" / "pylib-cases"
 _MISSING = object()
 
 
@@ -157,7 +163,169 @@ def _run_named_case(name: str) -> dict[str, Any]:
     if name == "typing_typevar_callable":
         t = py_typing.TypeVar("T")
         return {"typevar_exists": t is not None, "callable_exists": py_typing.Callable is not None}
+    if name == "json_loads_basic_object":
+        obj = py_json.loads_obj('{"a":1,"b":[true,false,null],"c":"x"}')
+        assert obj is not None
+        b = obj.get_arr("b")
+        assert b is not None
+        null_value = b.get(2)
+        return {
+            "is_obj": True,
+            "a": obj.get_int("a"),
+            "b0": b.get_bool(0),
+            "b1": b.get_bool(1),
+            "b2_is_null": null_value is not None and null_value.raw is None,
+            "c": obj.get_str("c"),
+        }
+    if name == "json_loads_unicode_escape":
+        obj = py_json.loads_obj('{"s":"\\u3042"}')
+        assert obj is not None
+        return {"s": obj.get_str("s")}
+    if name == "json_loads_numbers_and_exponent":
+        obj = py_json.loads_obj('{"i":-12,"f":3.25,"e":1.5e2,"ez":2E-1}')
+        assert obj is not None
+        return {
+            "i": obj.get_int("i"),
+            "f": obj.get_float("f"),
+            "e": obj.get_float("e"),
+            "ez": obj.get_float("ez"),
+        }
+    if name == "json_loads_string_escapes":
+        obj = py_json.loads_obj('{"s":"a\\\\b\\n\\t\\\"\\/"}')
+        assert obj is not None
+        return {"s": obj.get_str("s")}
+    if name == "json_loads_nested_roundtrip":
+        src = {
+            "name": "alpha",
+            "ok": True,
+            "none": None,
+            "vals": [1, 2, {"x": "y", "z": [False, 3.5]}],
+        }
+        txt = py_json.dumps(src, ensure_ascii=False, separators=(",", ":"))
+        return {"roundtrip": py_json.loads(txt).raw == src}
+    if name == "json_loads_obj_decode_helpers":
+        obj = py_json.loads_obj('{"name":"alpha","meta":{"ok":true},"vals":[1,2.5,false]}')
+        assert obj is not None
+        name_val = obj.get("name")
+        meta = obj.get_obj("meta")
+        vals = obj.get_arr("vals")
+        assert name_val is not None and meta is not None and vals is not None
+        return {
+            "name": obj.get_str("name"),
+            "name_as_str": name_val.as_str(),
+            "meta_ok": meta.get_bool("ok"),
+            "vals_0": vals.get_int(0),
+            "vals_1": vals.get_float(1),
+            "vals_2": vals.get_bool(2),
+        }
+    if name == "json_loads_arr_decode_helpers":
+        arr = py_json.loads_arr('[{"ok":true}, ["x"], 5, "name", false]')
+        assert arr is not None
+        first_obj = arr.get_obj(0)
+        nested = arr.get_arr(1)
+        assert first_obj is not None and nested is not None
+        return {
+            "first_ok": first_obj.get_bool("ok"),
+            "nested_0": nested.get_str(0),
+            "int_2": arr.get_int(2),
+            "str_3": arr.get_str(3),
+            "bool_4": arr.get_bool(4),
+        }
+    if name == "json_loads_obj_rejects_shape_mismatch":
+        return {
+            "obj_is_none": py_json.loads_obj("[1,2,3]") is None,
+            "arr_is_none": py_json.loads_arr('{"name":"alpha"}') is None,
+        }
+    if name == "json_loads_rejects_invalid_inputs":
+        bad_cases = [
+            "",
+            "{",
+            '{"a":1',
+            '{"a",1}',
+            '{"a":}',
+            "[1,2,]",
+            '{"a":tru}',
+            '{"a":"\\x"}',
+            '{"a":"\\u12G4"}',
+            '{"a":1} trailing',
+        ]
+        rejected = 0
+        for case in bad_cases:
+            try:
+                py_json.loads(case)
+            except ValueError:
+                rejected += 1
+        return {"rejected": rejected, "total": len(bad_cases)}
+    if name == "json_dumps_compact_and_pretty":
+        obj = {"x": [1, 2], "y": "z"}
+        compact = py_json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+        pretty = py_json.dumps(obj, ensure_ascii=False, indent=2)
+        return {
+            "compact_has_x": '"x":[1,2]' in compact,
+            "pretty_has_newline": "\n" in pretty,
+            "pretty_has_indent": '  "x"' in pretty,
+        }
+    if name == "json_dumps_ensure_ascii":
+        obj = {"s": "あ"}
+        text_ascii = py_json.dumps(obj, ensure_ascii=True, separators=(",", ":"))
+        text_utf8 = py_json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+        return {"ascii_has_escape": "\\u3042" in text_ascii, "utf8_has_char": "あ" in text_utf8}
+    if name == "json_dumps_escapes_control_chars":
+        out = py_json.dumps({"s": "\"\\\b\f\n\r\t"}, ensure_ascii=False, separators=(",", ":"))
+        return {
+            "quote": '\\"' in out,
+            "backslash": "\\\\" in out,
+            "backspace": "\\b" in out,
+            "formfeed": "\\f" in out,
+            "newline": "\\n" in out,
+            "carriage": "\\r" in out,
+            "tab": "\\t" in out,
+        }
+    if name == "json_dumps_rejects_unsupported_type":
+        try:
+            py_json.dumps({"x": {1, 2, 3}})
+        except TypeError:
+            return {"raises_type_error": True}
+        return {"raises_type_error": False}
+    if name == "path_basic_properties":
+        p = PyPath("a/b/file.txt")
+        return {"name": p.name, "stem": p.stem, "suffix": p.suffix, "parent": str(p.parent)}
+    if name == "path_join_and_resolve":
+        p = PyPath("a") / "b" / "c.txt"
+        return {"path": str(p), "resolve_endswith": str(p.resolve()).endswith("a/b/c.txt")}
+    if name == "path_text_io_and_exists":
+        d = _fresh_work_dir("path_text_io_and_exists")
+        p = PyPath(str(d)) / "x.txt"
+        p.write_text("hello", encoding="utf-8")
+        return {"exists": p.exists(), "text": p.read_text(encoding="utf-8")}
+    if name == "path_mkdir_and_glob":
+        d = PyPath(str(_fresh_work_dir("path_mkdir_and_glob"))) / "a" / "b"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "f1.txt").write_text("1")
+        (d / "f2.py").write_text("2")
+        return {"names": sorted(x.name for x in d.glob("*.txt"))}
+    if name == "path_parents_index":
+        p = PyPath("a/b/c/d.txt")
+        return {"parent0": str(p.parents[0]), "parent1": str(p.parents[1])}
+    if name == "os_path_subset":
+        p = py_os.path.join("a", "b.txt")
+        root, ext = py_os.path.splitext(p)
+        return {"basename": py_os.path.basename(p), "root_ok": root.endswith("a/b") or root.endswith("a\\b"), "ext": ext}
+    if name == "glob_basic":
+        d = _fresh_work_dir("glob_basic")
+        (d / "x.txt").write_text("x", encoding="utf-8")
+        (d / "y.bin").write_text("y", encoding="utf-8")
+        out = py_glob.glob(str(d / "*.txt"))
+        return {"count": len(out), "first_endswith": len(out) == 1 and out[0].endswith("x.txt")}
     raise AssertionError(f"unknown pylib case: {name}")
+
+
+def _fresh_work_dir(name: str) -> StdPath:
+    path = WORK_ROOT / name
+    if path.exists():
+        shutil.rmtree(path)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def _get_path(doc: Any, path_expr: str) -> Any:

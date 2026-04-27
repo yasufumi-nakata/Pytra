@@ -1,0 +1,7 @@
+{
+  "description": "pytra json loads decodes unicode escapes",
+  "case": "json_loads_unicode_escape",
+  "assertions": [
+    {"path": "s", "equals": "あ"}
+  ]
+}

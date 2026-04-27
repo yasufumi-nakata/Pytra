@@ -183,7 +183,7 @@ tools/unittest/       # ~190件の Python テスト（残存）
 
 ## ステータス
 
-Phase 1 着手済み。
+Phase 1 / Phase 2 完了。Phase 3 は smoke 統合が継続中で、pylib 統合は完了。
 
 - 2026-04-27: [ID: P20-DDT-S1] `test/cases/emit/cpp/` に C++ expr レベル JSON ケース 8 件を追加。
 - 2026-04-27: [ID: P20-DDT-S2] `tools/unittest/test_emit_cases.py` を追加。`pytest` がある環境では parametrize、最小ローカル環境では `unittest` fallback で同じ JSON ケースを実行する。
@@ -192,5 +192,5 @@ Phase 1 着手済み。
 - 2026-04-27: [ID: P20-DDT-S5] `tools/unittest/test_pipeline_cases.py` を追加。ソース文字列から EAST1/EAST2/EAST3 を in-memory で生成し、JSON path assertion を評価する。
 - 2026-04-27: [ID: P20-DDT-S6] `tools/unittest/ir/test_east_core_parser_behavior_exprs.py` と `tools/unittest/toolchain2/test_tuple_unpack_lowering_profile.py` から対応テスト 2 件を JSON ケースへ移行。
 - 2026-04-27: [ID: P20-DDT-S7] 先行移行として `go` / `js` / `ts` / `rs` の `bitwise_invert_basic` smoke を `test/cases/emit/<lang>/bitwise_invert_basic.json` へ移動し、`test_emit_cases.py` に module-level fixture emit を追加。
-- 2026-04-27: [ID: P20-DDT-S8] `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` の pylib テストを `test/cases/pylib/` へ移行し、`tools/unittest/test_pylib_cases.py` を追加。I/O 系の `json` / `path` / `os_glob` は未移行。
-- 2026-04-27: [ID: P20-DDT-S9] 空になった `test_pylib_argparse.py` / `test_pylib_dataclasses.py` / `test_pylib_enum.py` / `test_pylib_re.py` / `test_pylib_sys.py` / `test_pylib_typing.py` を削除。
+- 2026-04-27: [ID: P20-DDT-S8] `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` / `json` / `path` / `os_glob` の pylib テストを `test/cases/pylib/` へ移行し、`tools/unittest/test_pylib_cases.py` へ集約。
+- 2026-04-27: [ID: P20-DDT-S9] 空になった `tools/unittest/common/test_pylib_*.py` を削除。

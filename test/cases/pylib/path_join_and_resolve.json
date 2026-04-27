@@ -1,0 +1,8 @@
+{
+  "description": "pytra pathlib joins and resolves paths",
+  "case": "path_join_and_resolve",
+  "assertions": [
+    {"path": "path", "equals": "a/b/c.txt"},
+    {"path": "resolve_endswith", "equals": true}
+  ]
+}

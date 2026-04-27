@@ -1,0 +1,7 @@
+{
+  "description": "pytra pathlib mkdir and glob work together",
+  "case": "path_mkdir_and_glob",
+  "assertions": [
+    {"path": "names", "equals": ["f1.txt"]}
+  ]
+}

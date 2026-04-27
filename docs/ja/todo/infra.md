@@ -43,7 +43,7 @@
 
 文脈: [docs/ja/plans/plan-emit-expect-data-driven-tests.md](../plans/plan-emit-expect-data-driven-tests.md)
 
-ステータス: **Phase 1 / Phase 2 完了、Phase 3 未着手** — emit / pipeline の JSON runner は導入済み。smoke / pylib 系の統合は次タスク。
+ステータス: **Phase 1 / Phase 2 完了、Phase 3 一部完了** — emit / pipeline / pylib の JSON runner は導入済み。smoke 系の統合は次タスク。
 
 `tools/unittest/` の 267 スクリプトのうち ~80件はパイプライン系（入力→parse/resolve/lower/emit→期待出力）で、JSON データで定義できる。残り ~190件（tooling/selfhost/link 等）は Python テストとして残す。
 
@@ -69,10 +69,10 @@
 
 7. [ ] [ID: P20-DDT-S7] `tools/unittest/emit/<lang>/test_py2*_smoke.py` (~20件) を JSON に移行する
    - 2026-04-27: 先行移行として `go` / `js` / `ts` / `rs` の `bitwise_invert_basic` smoke を `test/cases/emit/<lang>/bitwise_invert_basic.json` へ移動。`test_emit_cases.py` に module-level fixture emit を追加。
-8. [ ] [ID: P20-DDT-S8] `tools/unittest/common/test_pylib_*.py` (~10件) を JSON に移行する
-   - 2026-04-27: `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` を `test/cases/pylib/` へ移行し、`tools/unittest/test_pylib_cases.py` を追加。I/O を伴う `json` / `path` / `os_glob` は未移行。
-9. [ ] [ID: P20-DDT-S9] 空になったスクリプトを削除する
-   - 2026-04-27: 上記 6 モジュールの空になった `test_pylib_*.py` を削除。
+8. [x] [ID: P20-DDT-S8] `tools/unittest/common/test_pylib_*.py` (~10件) を JSON に移行する
+   - 2026-04-27: `argparse` / `dataclasses` / `enum` / `re` / `sys` / `typing` / `json` / `path` / `os_glob` を `test/cases/pylib/` へ移行し、`tools/unittest/test_pylib_cases.py` で実行する。
+9. [x] [ID: P20-DDT-S9] 空になったスクリプトを削除する
+   - 2026-04-27: `tools/unittest/common/test_pylib_*.py` を削除し、pylib ケースを JSON runner へ一本化。
 
 ### P1-PARITY-CONSOLIDATION: runtime_parity_check.py を fast 版に統合する
 
