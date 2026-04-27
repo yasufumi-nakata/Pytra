@@ -105,6 +105,36 @@ toolchain 内部で一時的なデータ受け渡しに `dict[str, JsonVal]` を
 7. [x] [ID: P1-DATACLASS-DICT-S7] emit/cpp/ の @dataclass 化（`emitter.py` 116箇所、`header_gen.py` 18箇所、`runtime_bundle.py` 11箇所）
    - 2026-04-25: `runtime_bundle.py` の runtime artifact result、`header_gen.py` の include 行 draft、`emitter.py` の class variable spec を dataclass 経由に変更。EAST node 入力 dict と C++ AST 走査 helper は非対象として維持。
 
+### P0-FIXTURE-PARITY-161: 全 backend を fixture 161/161 に揃える
+
+fixture が 146 → 161 に増えたが、C++ 以外の 17 backend が追いついていない。各 backend で fail しているケースを修正し 161/161 に揃える。
+
+現状（2026-04-27 gen_backend_progress.py 出力）:
+
+| backend | pass/total | fail |
+|---|---|---|
+| rs | 151/161 | 10 |
+| cs | 135/161 | 26 |
+| ps1 | 153/161 | 8 |
+| js | 151/161 | 10 |
+| ts | 150/161 | 11 |
+| dart | 148/161 | 13 |
+| go | 154/161 | 7 |
+| java | 152/161 | 9 |
+| scala | 139/161 | 22 |
+| kotlin | 141/161 | 20 |
+| swift | 153/161 | 8 |
+| ruby | 155/161 | 6 |
+| lua | 157/161 | 4 |
+| php | 154/161 | 7 |
+| nim | 142/161 | 19 |
+| julia | 156/161 | 5 |
+| zig | 150/161 | 11 |
+
+1. [ ] [ID: P0-FIX161-S1] 各 backend の fail ケースを `runtime_parity_check_fast.py --targets <lang> --case-root fixture` で特定し、fail リストを作成する
+2. [ ] [ID: P0-FIX161-S2] fail 原因を分類する（emitter 未対応 / runtime 未実装 / golden 未生成 / EAST3 前段問題）
+3. [ ] [ID: P0-FIX161-S3] 各 backend 担当が自分の言語を 161/161 に修正する（各言語 TODO にサブタスク展開）
+
 ### 保留中タスク
 
 - P20-INT32 は [plans/p4-int32-default.md](../plans/p4-int32-default.md) に保留中。再開時にここへ戻す。
