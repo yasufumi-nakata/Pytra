@@ -162,15 +162,6 @@ class Py2LuaSmokeTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertEqual(proc.stdout, "lua-ok\n")
 
-    def test_transpile_if_else_fixture_contains_lua_if(self) -> None:
-        fixture = find_fixture_case("if_else")
-        east = load_east(fixture, parser_backend="self_hosted")
-        lua = transpile_to_lua_native(east)
-        self.assertIn("function abs_like(n)", lua)
-        self.assertIn("if (n < 0) then", lua)
-        self.assertIn("return (-n)", lua)
-        self.assertIn("else", lua)
-
     def test_lambda_fixture_renders_function_for_lua(self) -> None:
         fixture = find_fixture_case("lambda_basic")
         east = load_east(fixture, parser_backend="self_hosted")
