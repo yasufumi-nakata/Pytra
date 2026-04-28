@@ -14,7 +14,6 @@ from toolchain.common.jv import deep_copy_json as deep_copy_json
 
 Node = dict[str, JsonVal]
 
-
 def normalize_type_name(value: JsonVal) -> str:
     if value is None:
         return "unknown"
@@ -71,7 +70,7 @@ class CompileContext:
         t = normalize_type_name(type_name)
         if n == "" or t == "" or len(self.local_storage_scopes) == 0:
             return
-        self.local_storage_scopes[-1][n] = t
+        self.local_storage_scopes[len(self.local_storage_scopes) - 1][n] = t
 
     def lookup_storage_type(self, name: str) -> str:
         n = name.strip()

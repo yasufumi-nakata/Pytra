@@ -117,7 +117,7 @@ def _declare_local_visible(ctx: CppEmitContext, name: str) -> None:
         return
     if len(ctx.visible_local_scopes) == 0:
         ctx.visible_local_scopes.append(set())
-    ctx.visible_local_scopes[-1].add(name)
+    ctx.visible_local_scopes[len(ctx.visible_local_scopes) - 1].add(name)
 
 
 def _is_local_visible(ctx: CppEmitContext, name: str) -> bool:
@@ -281,6 +281,16 @@ class _CppStmtCommonRenderer(CommonRenderer):
     def render_condition_expr(self, node: JsonVal) -> str:
         return _emit_condition_expr(self.ctx, node)
 
+    def _emit(self, line: str) -> None:
+        _emit(self.ctx, line)
+        self.state.lines = self.ctx.lines
+        self.state.indent_level = self.ctx.indent_level
+
+    def _emit_blank(self) -> None:
+        _emit_blank(self.ctx)
+        self.state.lines = self.ctx.lines
+        self.state.indent_level = self.ctx.indent_level
+
     def render_assign_stmt(self, node: dict[str, JsonVal]) -> str:
         raise RuntimeError("cpp common renderer assign string hook is not used directly")
 
@@ -299,7 +309,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
     def emit_assign_stmt(self, node: dict[str, JsonVal]) -> None:
         self._mutation_count += 1
         self.ctx.indent_level = self.state.indent_level + 0
-        kind = self._str(node, "kind")
+        kind: str = self._str(node, "kind")
         if kind == "AnnAssign":
             _emit_ann_assign(self.ctx, node)
         else:
@@ -312,7 +322,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
         if node_obj is None:
             return
         node_dict = node_obj.raw
-        kind = self._str(node_dict, "kind")
+        kind: str = self._str(node_dict, "kind")
         if kind == "Expr":
             self.emit_expr_stmt(node_dict)
         elif kind == "Return":
@@ -472,7 +482,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
         # P3-CR-CPP-S1: C++ 固有ノードの直接ディスパッチ。
         # _emit_stmt を経由しないことで循環を回避する。
         self.ctx.indent_level = self.state.indent_level + 0
-        kind = self._str(node, "kind")
+        kind: str = self._str(node, "kind")
         if kind == "AugAssign": _emit_aug_assign(self.ctx, node)
         elif kind == "ForCore": _emit_for_core(self.ctx, node)
         elif kind == "FunctionDef": _emit_function_def(self.ctx, node)
@@ -770,9 +780,11 @@ def _expr_storage_type(ctx: CppEmitContext, node: JsonVal) -> str:
             slice_obj = json.JsonValue(slice_node).as_obj()
             if slice_obj is not None and _str(slice_obj.raw, "kind") == "Constant":
                 idx_raw = slice_obj.raw.get("value")
-                idx = json.JsonValue(idx_raw).as_int()
-                if idx is not None and 0 <= idx < len(parts):
-                    return parts[idx]
+                idx_value = json.JsonValue(idx_raw).as_int()
+                if idx_value is not None:
+                    idx: int = idx_value
+                    if 0 <= idx < len(parts):
+                        return parts[idx]
     if kind == "Call":
         func = node_dict.get("func")
         func_obj = json.JsonValue(func).as_obj()
@@ -3006,7 +3018,7 @@ def _emit_attribute(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
                 arg_type = _str(arg0_obj.raw, "resolved_type") if arg0_obj is not None else ""
                 if arg_type not in ("", "unknown"):
                     arg_parts = arg_type.split(".")
-                    bare = arg_parts[-1]
+                    bare = arg_parts[len(arg_parts) - 1]
                     return 'str("' + bare + '")'
     owner = _emit_expr(ctx, owner_node)
     access_kind = _str(node, "attribute_access_kind")
@@ -3577,9 +3589,9 @@ def _emit_covariant_copy_expr(
     source_parts = _container_type_args(source_type)
     target_parts = _container_type_args(target_type)
     if len(source_parts) > 0:
-        source_elem_type = source_parts[-1]
+        source_elem_type = source_parts[len(source_parts) - 1]
     if len(target_parts) > 0:
-        target_elem_type = target_parts[-1]
+        target_elem_type = target_parts[len(target_parts) - 1]
     target_type_arg = target_type + ""
     plain_ct: str = cpp_type_pref(target_type_arg, True)
     out_name = _next_temp(ctx, "__cov")

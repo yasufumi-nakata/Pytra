@@ -109,25 +109,29 @@ def _read_profile_doc(profile_path: Path) -> dict[str, JsonVal]:
 
 
 def _clone_profile_value(value: JsonVal) -> JsonVal:
-    if isinstance(value, dict):
+    value_obj = json.JsonValue(value).as_obj()
+    if value_obj is not None:
         child: dict[str, JsonVal] = {}
-        for child_key, child_value in value.items():
+        for child_key, child_value in value_obj.raw.items():
             child[child_key] = _clone_profile_value(child_value)
         return child
-    if isinstance(value, list):
+    value_arr = json.JsonValue(value).as_arr()
+    if value_arr is not None:
         out: list[JsonVal] = []
-        for item in value:
+        for item in value_arr.raw:
             out.append(_clone_profile_value(item))
         return out
     return value
 
 
 def _merge_profile_values(base: JsonVal, override: JsonVal) -> JsonVal:
-    if isinstance(base, dict) and isinstance(override, dict):
+    base_obj = json.JsonValue(base).as_obj()
+    override_obj = json.JsonValue(override).as_obj()
+    if base_obj is not None and override_obj is not None:
         merged: dict[str, JsonVal] = {}
-        for key, value in base.items():
+        for key, value in base_obj.raw.items():
             merged[key] = _clone_profile_value(value)
-        for key, value in override.items():
+        for key, value in override_obj.raw.items():
             if key in merged:
                 merged[key] = _merge_profile_values(merged[key], value)
             else:
@@ -167,45 +171,47 @@ def _validate_enum(value: str, allowed: set[str], field_name: str) -> str:
 
 def parse_lowering_profile(doc: dict[str, JsonVal]) -> LoweringProfile:
     lowering_raw = doc.get("lowering")
-    if not isinstance(lowering_raw, dict):
+    lowering_obj = json.JsonValue(lowering_raw).as_obj()
+    if lowering_obj is None:
         raise RuntimeError("lowering profile must define lowering object")
+    lowering = lowering_obj.raw
     defaults = _default_lowering_profile()
-    tuple_unpack_style = lowering_raw.get("tuple_unpack_style")
-    container_covariance = lowering_raw.get("container_covariance")
-    closure_style = lowering_raw.get("closure_style")
-    with_style = lowering_raw.get("with_style")
-    property_style = lowering_raw.get("property_style")
-    swap_style = lowering_raw.get("swap_style")
-    exception_style = lowering_raw.get("exception_style")
+    tuple_unpack_style = json.JsonValue(lowering.get("tuple_unpack_style")).as_str()
+    container_covariance = json.JsonValue(lowering.get("container_covariance")).as_bool()
+    closure_style = json.JsonValue(lowering.get("closure_style")).as_str()
+    with_style = json.JsonValue(lowering.get("with_style")).as_str()
+    property_style = json.JsonValue(lowering.get("property_style")).as_str()
+    swap_style = json.JsonValue(lowering.get("swap_style")).as_str()
+    exception_style = json.JsonValue(lowering.get("exception_style")).as_str()
     return LoweringProfile(
         tuple_unpack_style=_validate_enum(
-            tuple_unpack_style if isinstance(tuple_unpack_style, str) else defaults.tuple_unpack_style,
+            tuple_unpack_style if tuple_unpack_style is not None else defaults.tuple_unpack_style,
             _VALID_TUPLE_UNPACK_STYLES,
             "tuple_unpack_style",
         ),
-        container_covariance=container_covariance if isinstance(container_covariance, bool) else defaults.container_covariance,
+        container_covariance=container_covariance if container_covariance is not None else defaults.container_covariance,
         closure_style=_validate_enum(
-            closure_style if isinstance(closure_style, str) else defaults.closure_style,
+            closure_style if closure_style is not None else defaults.closure_style,
             _VALID_CLOSURE_STYLES,
             "closure_style",
         ),
         with_style=_validate_enum(
-            with_style if isinstance(with_style, str) else defaults.with_style,
+            with_style if with_style is not None else defaults.with_style,
             _VALID_WITH_STYLES,
             "with_style",
         ),
         property_style=_validate_enum(
-            property_style if isinstance(property_style, str) else defaults.property_style,
+            property_style if property_style is not None else defaults.property_style,
             _VALID_PROPERTY_STYLES,
             "property_style",
         ),
         swap_style=_validate_enum(
-            swap_style if isinstance(swap_style, str) else defaults.swap_style,
+            swap_style if swap_style is not None else defaults.swap_style,
             _VALID_SWAP_STYLES,
             "swap_style",
         ),
         exception_style=_validate_enum(
-            exception_style if isinstance(exception_style, str) else defaults.exception_style,
+            exception_style if exception_style is not None else defaults.exception_style,
             _VALID_EXCEPTION_STYLES,
             "exception_style",
         ),
@@ -223,9 +229,8 @@ def load_lowering_profile(language: str) -> LoweringProfile:
 def load_profile_doc(language: str) -> dict[str, JsonVal]:
     if language == "":
         raise RuntimeError("language must not be empty")
-    cached = _PROFILE_DOC_CACHE.get(language)
-    if cached is not None:
-        return cached
+    if language in _PROFILE_DOC_CACHE:
+        return _PROFILE_DOC_CACHE[language]
     loaded: dict[str, JsonVal] = load_profile_with_includes(_profile_root() / (language + ".json"))
     _PROFILE_DOC_CACHE[language] = loaded
     return loaded

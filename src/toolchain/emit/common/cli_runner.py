@@ -75,8 +75,6 @@ class ManifestModuleEntryDraft:
         meta_obj = json.JsonValue(meta_val).as_obj()
         if meta_obj is not None:
             typed_meta = meta_obj.raw
-        else:
-            east_doc["meta"] = typed_meta
         if self.module_id != "":
             typed_meta["_cli_module_id"] = self.module_id
         if self.module_kind != "":
@@ -84,6 +82,7 @@ class ManifestModuleEntryDraft:
         typed_meta["_cli_is_entry"] = self.is_entry
         if self.source_path != "":
             typed_meta["_cli_source_path"] = self.source_path
+        east_doc["meta"] = typed_meta
 
 
 def _parse_args(argv: list[str]) -> tuple[str, str, str]:
@@ -178,7 +177,7 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
 
 def run_emit_cli(
     emit_fn: EmitFn | None = None,
-    argv: list[str] | None = None,
+    argv: list[str] = [],
     default_ext: str = "",
     post_emit: PostEmitFn | None = None,
     direct_emit_fn: DirectEmitFn | None = None,
@@ -199,11 +198,7 @@ def run_emit_cli(
     Returns:
         Exit code (0 on success).
     """
-    argv_list: list[str] = []
-    if argv is None:
-        argv_list = []
-    else:
-        argv_list = argv
+    argv_list: list[str] = argv
     parsed_args: tuple[str, str, str] = _parse_args(argv_list)
     input_text = parsed_args[0]
     output_dir_text = parsed_args[1]
@@ -248,7 +243,7 @@ def run_emit_cli(
         active_direct_emit_fn = direct_emit_fn
         for east_doc in modules:
             written = written + active_direct_emit_fn(east_doc, output_dir)
-    elif emit_fn is not None:
+    else:
         active_emit_fn = emit_fn
         for east_doc in modules:
             code: str = active_emit_fn(east_doc)

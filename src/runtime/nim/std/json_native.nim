@@ -1,53 +1,166 @@
 import std/json
 import std/strutils
+import std/tables
 import py_runtime
 
 type JsonVal* = PyObj
 
 type JsonValue* = ref object
-  raw*: JsonNode
+  raw*: PyObj
 
 type JsonArr* = ref object
-  raw*: JsonNode
+  raw*: seq[PyObj]
+  jsonarr_val*: JsonArr
 
 type JsonObj* = ref object
-  raw*: JsonNode
+  raw*: Table[string, PyObj]
+  jsonobj_val*: JsonObj
 
-proc as_str*(value: JsonValue): string =
+converter toJsonValue*(raw: PyObj): JsonValue =
+  JsonValue(raw: raw)
+
+converter toJsonValue*(raw: Table[string, PyObj]): JsonValue =
+  JsonValue(raw: py_box(raw))
+
+converter toJsonValue*(raw: seq[PyObj]): JsonValue =
+  JsonValue(raw: py_box(raw))
+
+proc as_str*(value: JsonValue): PyObj =
   if value.isNil:
-    return ""
-  if value.raw.kind == JString:
-    return value.raw.getStr()
-  return ""
+    return nil
+  if value.raw != nil and value.raw of PyStrObj:
+    return value.raw
+  return nil
+
+proc as_int*(value: JsonValue): PyObj =
+  if value.isNil or value.raw.isNil:
+    return nil
+  if value.raw of PyIntObj:
+    return value.raw
+  return nil
+
+proc as_float*(value: JsonValue): PyObj =
+  if value.isNil or value.raw.isNil:
+    return nil
+  if value.raw of PyFloatObj:
+    return value.raw
+  return nil
+
+proc as_bool*(value: JsonValue): PyObj =
+  if value.isNil or value.raw.isNil:
+    return nil
+  if value.raw of PyBoolObj:
+    return value.raw
+  return nil
 
 proc as_arr*(value: JsonValue): JsonArr =
   if value.isNil:
     return nil
-  if value.raw.kind == JArray:
-    return JsonArr(raw: value.raw)
+  if value.raw != nil and value.raw of PyListObj:
+    result = JsonArr(raw: PyListObj(value.raw).value)
+    result.jsonarr_val = result
+    return result
   return nil
 
 proc as_obj*(value: JsonValue): JsonObj =
   if value.isNil:
     return nil
-  if value.raw.kind == JObject:
-    return JsonObj(raw: value.raw)
+  if value.raw != nil and value.raw of PyDictObj:
+    result = JsonObj(raw: PyDictObj(value.raw).value)
+    result.jsonobj_val = result
+    return result
   return nil
+
+proc get*(obj: JsonObj, key: string): JsonValue =
+  if obj.isNil or not obj.raw.hasKey(key):
+    return nil
+  return JsonValue(raw: obj.raw[key])
+
+proc get_obj*(obj: JsonObj, key: string): JsonObj =
+  let value = obj.get(key)
+  if value.isNil:
+    return nil
+  return value.as_obj()
+
+proc get_arr*(obj: JsonObj, key: string): JsonArr =
+  let value = obj.get(key)
+  if value.isNil:
+    return nil
+  return value.as_arr()
+
+proc get_str*(obj: JsonObj, key: string): PyObj =
+  let value = obj.get(key)
+  if value.isNil:
+    return nil
+  return value.as_str()
+
+proc get_int*(obj: JsonObj, key: string): PyObj =
+  let value = obj.get(key)
+  if value.isNil:
+    return nil
+  return value.as_int()
+
+proc get_float*(obj: JsonObj, key: string): PyObj =
+  let value = obj.get(key)
+  if value.isNil:
+    return nil
+  return value.as_float()
+
+proc get_bool*(obj: JsonObj, key: string): PyObj =
+  let value = obj.get(key)
+  if value.isNil:
+    return nil
+  return value.as_bool()
+
+proc get*(arr: JsonArr, index: int): JsonValue =
+  if arr.isNil or index < 0 or index >= arr.raw.len:
+    return nil
+  return JsonValue(raw: arr.raw[index])
+
+proc get_obj*(arr: JsonArr, index: int): JsonObj =
+  let value = arr.get(index)
+  if value.isNil:
+    return nil
+  return value.as_obj()
+
+proc get_arr*(arr: JsonArr, index: int): JsonArr =
+  let value = arr.get(index)
+  if value.isNil:
+    return nil
+  return value.as_arr()
+
+proc get_str*(arr: JsonArr, index: int): PyObj =
+  let value = arr.get(index)
+  if value.isNil:
+    return nil
+  return value.as_str()
+
+proc get_int*(arr: JsonArr, index: int): PyObj =
+  let value = arr.get(index)
+  if value.isNil:
+    return nil
+  return value.as_int()
+
+proc get_float*(arr: JsonArr, index: int): PyObj =
+  let value = arr.get(index)
+  if value.isNil:
+    return nil
+  return value.as_float()
+
+proc get_bool*(arr: JsonArr, index: int): PyObj =
+  let value = arr.get(index)
+  if value.isNil:
+    return nil
+  return value.as_bool()
 
 proc loads*(text: string): JsonValue =
-  JsonValue(raw: parseJson(text))
+  JsonValue(raw: py_box(parseJson(text)))
 
 proc loads_arr*(text: string): JsonArr =
-  let node = parseJson(text)
-  if node.kind == JArray:
-    return JsonArr(raw: node)
-  return nil
+  loads(text).as_arr()
 
 proc loads_obj*(text: string): JsonObj =
-  let node = parseJson(text)
-  if node.kind == JObject:
-    return JsonObj(raw: node)
-  return nil
+  loads(text).as_obj()
 
 proc asciiEscapeJson(text: string): string =
   result = ""
@@ -160,11 +273,49 @@ proc dumps*(obj: int64, ensure_ascii: bool = true, indent: PyObj = nil, separato
   discard separators
   $obj
 
+proc pyObjToJsonNode(obj: PyObj): JsonNode =
+  if obj.isNil:
+    return newJNull()
+  if obj of PyStrObj:
+    return newJString(PyStrObj(obj).value)
+  if obj of PyBoolObj:
+    return newJBool(PyBoolObj(obj).value)
+  if obj of PyIntObj:
+    return newJInt(PyIntObj(obj).value)
+  if obj of PyFloatObj:
+    return newJFloat(PyFloatObj(obj).value)
+  if obj of PyListObj:
+    result = newJArray()
+    for item in PyListObj(obj).value:
+      result.add(pyObjToJsonNode(item))
+    return result
+  if obj of PyDictObj:
+    result = newJObject()
+    for key, value in PyDictObj(obj).value:
+      result[key] = pyObjToJsonNode(value)
+    return result
+  return newJString(py_to_string(obj))
+
+proc dumps*(obj: seq[PyObj], ensure_ascii: bool = true, indent: PyObj = nil, separators: PyObj = nil): string =
+  var arr = newJArray()
+  for item in obj:
+    arr.add(pyObjToJsonNode(item))
+  dumps(arr, ensure_ascii, indent, separators)
+
+proc dumps*(obj: Table[string, PyObj], ensure_ascii: bool = true, indent: PyObj = nil, separators: PyObj = nil): string =
+  var table_obj = newJObject()
+  for key, value in obj:
+    table_obj[key] = pyObjToJsonNode(value)
+  dumps(table_obj, ensure_ascii, indent, separators)
+
+proc dumps*(obj: PyObj, ensure_ascii: bool = true, indent: PyObj = nil, separators: PyObj = nil): string =
+  dumps(pyObjToJsonNode(obj), ensure_ascii, indent, separators)
+
 proc dumps*(obj: JsonArr, ensure_ascii: bool = true, indent: PyObj = nil, separators: PyObj = nil): string =
   dumps(obj.raw, ensure_ascii, indent, separators)
 
 proc dumps*(obj: JsonValue, ensure_ascii: bool = true, indent: PyObj = nil, separators: PyObj = nil): string =
   dumps(obj.raw, ensure_ascii, indent, separators)
 
-proc dumps_jv*(jv: JsonNode, ensure_ascii: bool = true, indent: PyObj = nil, separators: PyObj = nil): string =
+proc dumps_jv*(jv: PyObj, ensure_ascii: bool = true, indent: PyObj = nil, separators: PyObj = nil): string =
   dumps(jv, ensure_ascii, indent, separators)

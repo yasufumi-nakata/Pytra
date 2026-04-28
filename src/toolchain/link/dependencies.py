@@ -67,8 +67,8 @@ def _is_type_only_symbol_binding(binding: JsonVal) -> bool:
     if not jv_is_dict(binding):
         return False
     binding_node: dict[str, JsonVal] = jv_dict(binding)
-    module_id = nd_get_str(binding_node, "module_id")
-    export_name = nd_get_str(binding_node, "export_name")
+    module_id: str = nd_get_str(binding_node, "module_id")
+    export_name: str = nd_get_str(binding_node, "export_name")
     return module_id != "" and export_name != "" and (module_id, export_name) in _TYPE_ONLY_SYMBOL_BINDINGS
 
 
@@ -84,7 +84,7 @@ def _dependencies_scan_runtime_refs(node: JsonVal, out: set[str], *, include_typ
     runtime_module_id = _normalized_runtime_module_id(node_map)
     if runtime_module_id != "":
         out.add(runtime_module_id)
-    kind = nd_get_str(node_map, "kind")
+    kind: str = nd_get_str(node_map, "kind")
     if include_type_id_runtime and kind in _DEPENDENCIES_TYPE_ID_RUNTIME_NODE_KINDS:
         out.add("pytra.built_in.type_id")
 

@@ -7,6 +7,7 @@ import std/math
 import std/sequtils
 import std/sets
 import std/algorithm
+import std/json
 
 let py_pi*: float64 = math.PI
 let py_e*: float64 = math.E
@@ -23,6 +24,10 @@ type PyBoolObj* = ref object of PyObj
   value*: bool
 type PyFloatObj* = ref object of PyObj
   value*: float64
+type PyListObj* = ref object of PyObj
+  value*: seq[PyObj]
+type PyDictObj* = ref object of PyObj
+  value*: Table[string, PyObj]
 type RuntimeError* = object of CatchableError
 type TypeError* = object of CatchableError
 type IndexError* = object of CatchableError
@@ -127,13 +132,97 @@ proc py_box*(v: string): PyObj = PyStrObj(value: v)
 proc py_box*(v: bool): PyObj = PyBoolObj(value: v)
 proc py_box*(v: SomeInteger): PyObj = PyIntObj(value: int64(v))
 proc py_box*(v: SomeFloat): PyObj = PyFloatObj(value: float64(v))
+proc py_box*(v: seq[PyObj]): PyObj = PyListObj(value: v)
+proc py_box*(v: Table[string, PyObj]): PyObj = PyDictObj(value: v)
+proc py_box*(v: JsonNode): PyObj =
+  if v.isNil:
+    return nil
+  case v.kind
+  of JNull:
+    nil
+  of JBool:
+    py_box(v.getBool())
+  of JInt:
+    py_box(v.getInt())
+  of JFloat:
+    py_box(v.getFloat())
+  of JString:
+    py_box(v.getStr())
+  of JArray:
+    var items: seq[PyObj] = @[]
+    for item in v.elems:
+      items.add(py_box(item))
+    PyListObj(value: items)
+  of JObject:
+    var items = initTable[string, PyObj]()
+    for key, value in v.fields:
+      items[key] = py_box(value)
+    PyDictObj(value: items)
+
+proc py_box*[T](v: seq[T]): PyObj =
+  var items: seq[PyObj] = @[]
+  for item in v:
+    items.add(py_box(item))
+  PyListObj(value: items)
+
+proc py_box*[T](v: Table[string, T]): PyObj =
+  var items = initTable[string, PyObj]()
+  for key, value in v:
+    items[key] = py_box(value)
+  PyDictObj(value: items)
+
+converter string_to_pyobj*(v: string): PyObj = py_box(v)
+converter bool_to_pyobj*(v: bool): PyObj = py_box(v)
+converter int_to_pyobj*(v: int): PyObj = py_box(v)
+converter int64_to_pyobj*(v: int64): PyObj = py_box(v)
+converter float64_to_pyobj*(v: float64): PyObj = py_box(v)
+converter seq_to_pyobj*(v: seq[PyObj]): PyObj = py_box(v)
+converter table_to_pyobj*(v: Table[string, PyObj]): PyObj = py_box(v)
+converter pyobj_to_table*(v: PyObj): Table[string, PyObj] =
+  if v != nil and v of PyDictObj:
+    return PyDictObj(v).value
+  return initTable[string, PyObj]()
+converter pyobj_to_seq*(v: PyObj): seq[PyObj] =
+  if v != nil and v of PyListObj:
+    return PyListObj(v).value
+  return newSeq[PyObj]()
+converter pyobj_to_string*(v: PyObj): string = py_to_string(v)
+converter pyobj_to_bool*(v: PyObj): bool =
+  if v.isNil:
+    false
+  elif v of PyBoolObj:
+    PyBoolObj(v).value
+  else:
+    true
+converter pyobj_to_int64*(v: PyObj): int64 =
+  if v.isNil:
+    0
+  elif v of PyIntObj:
+    PyIntObj(v).value
+  elif v of PyBoolObj:
+    if PyBoolObj(v).value: 1 else: 0
+  elif v of PyFloatObj:
+    int64(PyFloatObj(v).value)
+  elif v of PyStrObj:
+    int64(parseInt(PyStrObj(v).value))
+  else:
+    0
+converter pyobj_to_float64*(v: PyObj): float64 =
+  if v.isNil:
+    0.0
+  elif v of PyFloatObj:
+    PyFloatObj(v).value
+  elif v of PyIntObj:
+    float64(PyIntObj(v).value)
+  else:
+    parseFloat(py_to_string(v))
 
 # ---------------------------------------------------------------------------
 # Print
 # ---------------------------------------------------------------------------
 var py_capture_stdout_active = false
 var py_capture_stdout_lines: seq[string] = @[]
-var py_argv*: seq[string] = @[]
+var py_argv*: seq[string] = @[paramStr(0)] & commandLineParams()
 var py_path*: seq[string] = @[]
 
 proc py_print*() =
@@ -228,6 +317,10 @@ proc py_to_string*(v: PyObj): string =
     if PyBoolObj(v).value: "True" else: "False"
   elif v of PyFloatObj:
     $PyFloatObj(v).value
+  elif v of PyListObj:
+    py_to_string(PyListObj(v).value)
+  elif v of PyDictObj:
+    py_to_string(PyDictObj(v).value)
   else:
     "PyObj"
 
@@ -257,6 +350,8 @@ proc py_to_string*[T](v: HashSet[T]): string =
   "{" & parts.join(", ") & "}"
 
 proc py_str*[T](v: HashSet[T]): string = py_to_string(v)
+
+proc toHashSet*[T](v: HashSet[T]): HashSet[T] = v
 
 proc py_to_string*[A, B](v: (A, B)): string =
   "(" & py_repr_item(v[0]) & ", " & py_repr_item(v[1]) & ")"
@@ -289,6 +384,8 @@ proc py_to_string*(v: auto): string =
   else:
     "<object>"
 
+proc py_repr*(v: auto): string = py_repr_item(v)
+
 proc py_bool*(v: auto): bool =
   when v is bool:
     v
@@ -315,6 +412,8 @@ proc py_bool*(v: PyObj): bool =
 
 proc py_ord*(c: string): int =
   if c.len > 0: int(c[0]) else: 0
+
+proc ord*(c: string): int = py_ord(c)
 
 proc py_chr*(i: int): string =
   $chr(i)
@@ -415,6 +514,43 @@ proc py_len*(v: string): int = v.len
 proc py_len*[T](v: seq[T]): int = v.len
 proc py_len*[K, V](v: Table[K, V]): int = v.len
 proc py_len*[T](v: HashSet[T]): int = v.len
+proc py_len*(v: JsonNode): int =
+  if v.isNil:
+    return 0
+  case v.kind
+  of JArray:
+    v.elems.len
+  of JObject:
+    v.fields.len
+  of JString:
+    v.getStr().len
+  else:
+    0
+proc py_len*(v: PyObj): int =
+  if v.isNil:
+    0
+  elif v of PyListObj:
+    PyListObj(v).value.len
+  elif v of PyDictObj:
+    PyDictObj(v).value.len
+  elif v of PyStrObj:
+    PyStrObj(v).value.len
+  else:
+    0
+
+proc hasKey*(v: PyObj, key: string): bool =
+  if v != nil and v of PyDictObj:
+    return tables.hasKey(PyDictObj(v).value, key)
+  return false
+
+proc `[]`*(v: PyObj, key: string): PyObj =
+  if v != nil and v of PyDictObj and tables.hasKey(PyDictObj(v).value, key):
+    return tables.`[]`(PyDictObj(v).value, key)
+  return nil
+
+proc `[]=`*(v: PyObj, key: string, value: PyObj): void =
+  if v != nil and v of PyDictObj:
+    tables.`[]=`(PyDictObj(v).value, key, value)
 
 proc py_repeat*(s: string, n: SomeInteger): string =
   if n <= 0:

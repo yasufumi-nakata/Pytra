@@ -380,8 +380,8 @@ def build_type_id_table(
         current_module_id = module.module_id + ""
         class_defs = module_class_defs.get(current_module_id, [])
         local_classes = module_local_classes.get(current_module_id, {})
-        import_modules = collect_import_modules(module.east_doc)
-        import_symbols = collect_import_symbols(module.east_doc)
+        import_modules: dict[str, str] = collect_import_modules(module.east_doc)
+        import_symbols: dict[str, str] = collect_import_symbols(module.east_doc)
 
         for class_def in class_defs:
             if _type_id_is_trait_class(class_def):

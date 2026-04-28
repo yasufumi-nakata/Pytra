@@ -106,6 +106,31 @@ def _norm_type_text(text: str) -> str:
     return text.replace(" ", "").replace("\n", "").replace("\t", "")
 
 
+def _split_generic_args(s: str) -> list[str]:
+    parts: list[str] = []
+    depth = 0
+    current: list[str] = []
+    i = 0
+    while i < len(s):
+        ch = s[i:i + 1]
+        if ch == "[" or ch == "<":
+            depth += 1
+            current.append(ch)
+        elif ch == "]" or ch == ">":
+            depth -= 1
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(ch)
+        i += 1
+    tail = "".join(current).strip()
+    if tail != "":
+        parts.append(tail)
+    return parts
+
+
 def normalize_cpp_nominal_adt_type(resolved_type: str) -> str:
     norm = _norm_type_text(resolved_type)
     if norm in _JSONVAL_EXPANDED_NORMS:
@@ -353,7 +378,7 @@ def _is_small_value_type(cpp_text: str) -> bool:
     return cpp_text in _SMALL_VALUE_TYPES
 
 
-def _split_generic_args(s: str) -> list[str]:
+def _split_generic_args_late_unused(s: str) -> list[str]:
     parts: list[str] = []
     depth = 0
     current: list[str] = []

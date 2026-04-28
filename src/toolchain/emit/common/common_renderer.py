@@ -47,8 +47,9 @@ class CommonRenderer:
             precedence_obj = operators_obj.get_obj("precedence")
             if precedence_obj is not None:
                 for key, value in precedence_obj.raw.items():
-                    value_int = json.JsonValue(value).as_int()
-                    if value_int is not None:
+                    value_int_raw = json.JsonValue(value).as_int()
+                    if value_int_raw is not None:
+                        value_int: int = value_int_raw
                         self._op_prec_table[key] = value_int
         literal_nowrap = self.profile.get("literal_nowrap_ranges")
         literal_nowrap_obj = json.JsonValue(literal_nowrap).as_obj()
@@ -65,7 +66,9 @@ class CommonRenderer:
                     value0 = value_arr.get_int(0)
                     value1 = value_arr.get_int(1)
                     if value0 is not None and value1 is not None:
-                        self._literal_nowrap_ranges[key] = (value0, value1)
+                        value0_int: int = value0
+                        value1_int: int = value1
+                        self._literal_nowrap_ranges[key] = (value0_int, value1_int)
 
     # ------------------------------------------------------------------
     # profile helpers
@@ -1419,11 +1422,11 @@ class CommonRenderer:
         item: dict[str, JsonVal],
         declared_names: set[str],
         type_map: dict[str, str],
-    ) -> list[str] | None:
+    ) -> list[str]:
         context_expr = item.get("context_expr")
         context_obj = json.JsonValue(context_expr).as_obj()
         if context_obj is None:
-            return None
+            return []
         ctx_name, source_type, source_rendered_type = self.resolve_with_context_capture(context_expr)
         bound_name = self.with_item_bound_name(item)
         bound_target_name = self.with_item_bound_target_name(item)
@@ -1474,7 +1477,7 @@ class CommonRenderer:
             if item_obj is None:
                 continue
             entry = self.emit_with_item(item_obj.raw, declared_names, type_map)
-            if entry is not None:
+            if len(entry) > 0:
                 entries.append(entry)
         return entries
 
@@ -1593,7 +1596,7 @@ class CommonRenderer:
         runtime_call: str,
         runtime_symbol: str,
         resolved_type: str,
-        args: list[JsonVal] | None = None,
+        args: list[JsonVal] = [],
     ) -> dict[str, JsonVal]:
         value_node: dict[str, JsonVal] = {}
         value_node["kind"] = "Name"
@@ -1605,9 +1608,8 @@ class CommonRenderer:
         func_node["attr"] = method
         func_node["resolved_type"] = "callable"
         actual_args: list[JsonVal] = []
-        if args is not None:
-            for arg in args:
-                actual_args.append(arg)
+        for arg in args:
+            actual_args.append(arg)
         keywords: list[JsonVal] = []
         call_node: dict[str, JsonVal] = {}
         call_node["kind"] = "Call"
