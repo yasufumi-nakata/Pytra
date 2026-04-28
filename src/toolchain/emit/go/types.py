@@ -7,7 +7,7 @@ from __future__ import annotations
 
 # EAST3 resolved_type → Go type
 # Includes cross-module aliases such as parse.py.nodes union helper names.
-_TYPE_MAP: dict[str, str] = {
+_GO_TYPE_MAP: dict[str, str] = {
     "int": "int64",
     "int8": "int8",
     "int16": "int16",
@@ -118,8 +118,8 @@ def go_type(resolved_type: str) -> str:
         return "(" + ", ".join(go_type(part) for part in parts) + ")"
 
     # Direct mapping
-    mapped = _TYPE_MAP.get(resolved_type, "")
-    if resolved_type in _TYPE_MAP:
+    mapped = _GO_TYPE_MAP.get(resolved_type, "")
+    if resolved_type in _GO_TYPE_MAP:
         return mapped
 
     # list[T] → []T
