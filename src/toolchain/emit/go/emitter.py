@@ -12,8 +12,9 @@ import re
 from pathlib import Path
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Any, cast
+from typing import cast
 
+from pytra.std.json import JsonVal
 from toolchain.emit.go.types import go_type, go_zero_value, _safe_go_ident, _split_generic_args, _parse_callable_signature
 from toolchain.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
@@ -27,8 +28,6 @@ from toolchain.link.expand_defaults import expand_cross_module_defaults
 # ---------------------------------------------------------------------------
 # Emit context (mutable state for one module emission)
 # ---------------------------------------------------------------------------
-
-JsonVal = Any
 
 @dataclass
 class EmitContext:
@@ -104,34 +103,51 @@ class EmitContext:
     dispatch_len: str = ""
     # Builtin exception type metadata: loaded from mapping.json "go_class_names"
     builtin_exc_bounds: dict[str, tuple[int, int]] = field(default_factory=dict)
-    builtin_exc_ctor_types: frozenset[str] = field(default_factory=frozenset)
+    builtin_exc_ctor_types: set[str] = field(default_factory=set)
     path_type_name: str = ""
     # Known method signatures keyed by (class_name, method_name): built in emit_go_module
     known_method_signatures: dict[tuple[str, str], dict[str, JsonVal]] = field(default_factory=dict)
 
 
-_ARGPARSE_ADD_ARGUMENT_SIG: dict[str, JsonVal] = {
-    "arg_order": ["self", "name0", "name1", "name2", "name3", "help", "action", "choices", "default"],
-    "arg_types": {
-        "name0": "str",
-        "name1": "str",
-        "name2": "str",
-        "name3": "str",
-        "help": "str",
-        "action": "str",
-        "choices": "list[str]",
-        "default": "str | bool | None",
-    },
-    "arg_defaults": {
-        "name1": {"kind": "Constant", "value": "", "resolved_type": "str"},
-        "name2": {"kind": "Constant", "value": "", "resolved_type": "str"},
-        "name3": {"kind": "Constant", "value": "", "resolved_type": "str"},
-        "help": {"kind": "Constant", "value": "", "resolved_type": "str"},
-        "action": {"kind": "Constant", "value": "", "resolved_type": "str"},
-        "choices": {"kind": "List", "elements": [], "resolved_type": "list[str]"},
-        "default": {"kind": "Constant", "value": None, "resolved_type": "None"},
-    },
-}
+def _constant_default(value: JsonVal, resolved_type: str) -> dict[str, JsonVal]:
+    out: dict[str, JsonVal] = {}
+    out["kind"] = "Constant"
+    out["value"] = value
+    out["resolved_type"] = resolved_type
+    return out
+
+
+def _argparse_add_argument_sig() -> dict[str, JsonVal]:
+    sig: dict[str, JsonVal] = {}
+    arg_order: list[str] = ["self", "name0", "name1", "name2", "name3", "help", "action", "choices", "default"]
+    arg_types: dict[str, str] = {}
+    arg_types["name0"] = "str"
+    arg_types["name1"] = "str"
+    arg_types["name2"] = "str"
+    arg_types["name3"] = "str"
+    arg_types["help"] = "str"
+    arg_types["action"] = "str"
+    arg_types["choices"] = "list[str]"
+    arg_types["default"] = "str | bool | None"
+
+    arg_defaults: dict[str, JsonVal] = {}
+    arg_defaults["name1"] = _constant_default("", "str")
+    arg_defaults["name2"] = _constant_default("", "str")
+    arg_defaults["name3"] = _constant_default("", "str")
+    arg_defaults["help"] = _constant_default("", "str")
+    arg_defaults["action"] = _constant_default("", "str")
+    choices_default: dict[str, JsonVal] = {}
+    empty_elements: list[JsonVal] = []
+    choices_default["kind"] = "List"
+    choices_default["elements"] = empty_elements
+    choices_default["resolved_type"] = "list[str]"
+    arg_defaults["choices"] = choices_default
+    arg_defaults["default"] = _constant_default(None, "None")
+
+    sig["arg_order"] = arg_order
+    sig["arg_types"] = arg_types
+    sig["arg_defaults"] = arg_defaults
+    return sig
 
 
 class _GoStmtCommonRenderer(CommonRenderer):
@@ -4916,7 +4932,7 @@ def _emit_static_range_for(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     _emit_runtime_iter_for(ctx, node)
 
 
-def _scan_body_for_return_type(body: list) -> str:
+def _scan_body_for_return_type(body: list[JsonVal]) -> str:
     """Find the resolved_type of the first Return-with-value in body (shallow recursion)."""
     for stmt in body:
         if not isinstance(stmt, dict):
@@ -6315,13 +6331,13 @@ def emit_go_module(east3_doc: dict[str, JsonVal]) -> str:
         ctx.builtin_exc_bounds = {k: (v[0], v[1]) for k, v in _exc_bounds_raw.items()
                                    if isinstance(v, list) and len(v) >= 2} if isinstance(_exc_bounds_raw, dict) else {}
         _ctor_list = _go_cn.get("exception_ctor_types") or []
-        ctx.builtin_exc_ctor_types = frozenset(_ctor_list) if isinstance(_ctor_list, list) else frozenset()
+        ctx.builtin_exc_ctor_types = set(_ctor_list) if isinstance(_ctor_list, list) else set()
         ctx.path_type_name = (_go_cn.get("path_type") or "") if True else ""
         _argparse_type = (_go_cn.get("argparse_type") or "") if True else ""
     else:
         _argparse_type = ""
     ctx.known_method_signatures = {
-        (_argparse_type, "add_argument"): _ARGPARSE_ADD_ARGUMENT_SIG,
+        (_argparse_type, "add_argument"): _argparse_add_argument_sig(),
     } if _argparse_type else {}
 
     body = _list(east3_doc, "body")

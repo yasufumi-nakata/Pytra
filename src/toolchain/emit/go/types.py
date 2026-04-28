@@ -56,11 +56,13 @@ def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
         (resolved_type.startswith("callable[") or resolved_type.startswith("Callable["))
         and resolved_type.endswith("]")
     ):
-        return ([], "unknown")
+        empty_params: list[str] = []
+        return (empty_params, "unknown")
     prefix_len = len("Callable[") if resolved_type.startswith("Callable[") else len("callable[")
     inner = resolved_type[prefix_len:-1].strip()
     if inner == "":
-        return ([], "unknown")
+        empty_params2: list[str] = []
+        return (empty_params2, "unknown")
     if inner.startswith("["):
         depth = 0
         close_idx = -1
@@ -93,7 +95,8 @@ def _parse_callable_signature(resolved_type: str) -> tuple[list[str], str]:
                 if item != "":
                     params2.append(item)
         return (params2, ret_text2 if ret_text2 != "" else "unknown")
-    return ([], inner)
+    empty_params3: list[str] = []
+    return (empty_params3, inner)
 
 
 def go_type(resolved_type: str) -> str:
