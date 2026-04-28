@@ -78,6 +78,36 @@ class EmitContext:
     function_return_types: dict[str, str] = field(default_factory=dict)
 
 
+def _new_emit_context() -> EmitContext:
+    ctx = EmitContext()
+    ctx.lines = []
+    ctx.var_types = {}
+    ctx.storage_var_types = {}
+    ctx.mapping = RuntimeMapping()
+    ctx.import_alias_modules = {}
+    ctx.runtime_imports = {}
+    ctx.class_names = set()
+    ctx.class_bases = {}
+    ctx.class_fields = {}
+    ctx.class_methods = {}
+    ctx.class_static_methods = {}
+    ctx.class_property_methods = {}
+    ctx.class_static_attrs = {}
+    ctx.enum_bases = {}
+    ctx.enum_members = {}
+    ctx.trait_names = set()
+    ctx.class_traits = {}
+    ctx.exception_type_ids = {}
+    ctx.class_type_ids = {}
+    ctx.renamed_symbols = {}
+    ctx.vararg_functions = set()
+    ctx.declared_vars = set()
+    ctx.general_unions = []
+    ctx.function_arg_types = {}
+    ctx.function_return_types = {}
+    return ctx
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -1650,7 +1680,9 @@ def _emit_expr_with_expected_type(ctx: EmitContext, node: JsonVal, expected_type
             if len(rendered) == 1:
                 return "(" + rendered[0] + ",)"
             return "(" + ", ".join(rendered) + ")"
-        typed_node = dict(node)
+        typed_node: dict[str, JsonVal] = {}
+        for key, value in node.items():
+            typed_node[key] = value
         if is_general_union_type(expected_type):
             node_kind = _str(node, "kind")
             lane_type = expected_type
@@ -4350,7 +4382,9 @@ def _should_emit_list_alias_template(target_rt: str, value: JsonVal) -> bool:
 
 def _emit_module_imports(ctx: EmitContext, body: list[JsonVal]) -> None:
     """Emit import statements for user modules."""
-    src_pytra_root = Path(__file__).resolve().parents[3] / "pytra"
+    src_pytra_root = Path("src").joinpath("pytra")
+    if not src_pytra_root.exists():
+        src_pytra_root = Path(__file__).resolve().parents[3] / "pytra"
     native_helper_imports: dict[str, dict[str, list[str]]] = {
         "argparse_native": {
             "*": ["add_argument", "parse_args"],
@@ -4542,7 +4576,9 @@ def emit_nim_module(east3_doc: dict[str, JsonVal]) -> str:
         expand_cross_module_defaults(modules_for_defaults)
 
     # Load runtime mapping
-    mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "nim" / "mapping.json"
+    mapping_path = Path("src").joinpath("runtime").joinpath("nim").joinpath("mapping.json")
+    if not mapping_path.exists():
+        mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "nim" / "mapping.json"
     mapping = load_runtime_mapping(mapping_path)
 
     # Skip runtime modules
@@ -4559,7 +4595,7 @@ def emit_nim_module(east3_doc: dict[str, JsonVal]) -> str:
 
     is_type_id_table = (module_id == "pytra.built_in.type_id_table")
 
-    ctx = EmitContext()
+    ctx = _new_emit_context()
     ctx.module_id = module_id
     ctx.source_path = _str(east3_doc, "source_path")
     if len(emit_ctx_meta) > 0:

@@ -23,6 +23,7 @@ from toolchain.emit.common.code_emitter import (
     should_skip_module, build_import_alias_map, build_runtime_import_map,
 )
 from toolchain.emit.common.common_renderer import CommonRenderer
+from toolchain.emit.common.common_renderer import CommonRendererState
 from toolchain.link.expand_defaults import expand_cross_module_defaults
 
 
@@ -76,6 +77,29 @@ class EmitContext:
     vararg_functions: set[str] = field(default_factory=set)
 
 
+def _new_emit_context() -> EmitContext:
+    ctx = EmitContext()
+    ctx.lines = []
+    ctx.var_types = {}
+    ctx.mapping = RuntimeMapping()
+    ctx.import_alias_modules = {}
+    ctx.runtime_imports = {}
+    ctx.class_names = set()
+    ctx.class_bases = {}
+    ctx.class_static_methods = {}
+    ctx.class_property_methods = {}
+    ctx.class_instance_methods = {}
+    ctx.class_fields = {}
+    ctx.enum_bases = {}
+    ctx.enum_members = {}
+    ctx.exception_type_ids = {}
+    ctx.class_type_ids = {}
+    ctx.tid_const_types = {}
+    ctx.renamed_symbols = {}
+    ctx.vararg_functions = set()
+    return ctx
+
+
 # ---------------------------------------------------------------------------
 # Built-in runtime symbols exported by py_runtime.ts
 # ---------------------------------------------------------------------------
@@ -91,6 +115,13 @@ _BUILTIN_RUNTIME_MODULE: str = "pytra_built_in_py_runtime"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _ensure_builtin_runtime_symbols() -> None:
+    if len(_BUILTIN_RUNTIME_SYMBOLS) > 0:
+        return
+    for builtin_runtime_symbol in TS_BUILTIN_RUNTIME_SYMBOLS:
+        _BUILTIN_RUNTIME_SYMBOLS.add(builtin_runtime_symbol)
+
 
 def _indent(ctx: EmitContext) -> str:
     return "    " * ctx.indent_level
@@ -1399,7 +1430,47 @@ def _emit_boolop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 class _TsExprRenderer(CommonRenderer):
     def __init__(self, ctx: EmitContext) -> None:
         self.ctx = ctx
-        super().__init__("ts")
+        self.language = "ts"
+        profile_doc: dict[str, JsonVal] = {}
+        self.profile = profile_doc
+        self.state = CommonRendererState()
+        state_lines: list[str] = []
+        self.state.lines = state_lines
+        self.state.indent_level = 0
+        self.state.tmp_counter = 0
+        op_prec_table: dict[str, int] = {}
+        literal_nowrap_always: dict[str, bool] = {}
+        literal_nowrap_ranges: dict[str, tuple[int, int]] = {}
+        self._op_prec_table = op_prec_table
+        self._literal_nowrap_always = literal_nowrap_always
+        self._literal_nowrap_ranges = literal_nowrap_ranges
+        self._tmp_counter = 0
+
+    def render_expr(self, node: JsonVal) -> str:
+        if not isinstance(node, dict):
+            raise RuntimeError("ts renderer expected dict expr node")
+        normalized = self._normalize_boundary_expr(node)
+        normalized_node = _as_dict(normalized)
+        if len(normalized_node) == 0:
+            raise RuntimeError("ts renderer expected normalized dict expr node")
+        kind = _str(normalized_node, "kind")
+        if kind == "Constant":
+            return self.render_constant(normalized_node)
+        if kind == "Name":
+            return self.render_name(normalized_node)
+        if kind == "BinOp":
+            return self.render_binop(normalized_node)
+        if kind == "UnaryOp":
+            return self.render_unaryop(normalized_node)
+        if kind == "Compare":
+            return self.render_compare(normalized_node)
+        if kind == "BoolOp":
+            return self.render_boolop(normalized_node)
+        if kind == "Attribute":
+            return self.render_attribute(normalized_node)
+        if kind == "Call":
+            return self.render_call(normalized_node)
+        return self.render_expr_extension(normalized_node)
 
     def render_name(self, node: dict[str, JsonVal]) -> str:
         return _emit_name(self.ctx, node)
@@ -1435,9 +1506,20 @@ class _TsExprRenderer(CommonRenderer):
 class _TsStmtRenderer(CommonRenderer):
     def __init__(self, ctx: EmitContext) -> None:
         self.ctx = ctx
-        super().__init__("ts")
+        self.language = "ts"
+        profile_doc: dict[str, JsonVal] = {}
+        self.profile = profile_doc
+        self.state = CommonRendererState()
         self.state.lines = ctx.lines
         self.state.indent_level = ctx.indent_level
+        self.state.tmp_counter = 0
+        op_prec_table: dict[str, int] = {}
+        literal_nowrap_always: dict[str, bool] = {}
+        literal_nowrap_ranges: dict[str, tuple[int, int]] = {}
+        self._op_prec_table = op_prec_table
+        self._literal_nowrap_always = literal_nowrap_always
+        self._literal_nowrap_ranges = literal_nowrap_ranges
+        self._tmp_counter = 0
 
     def render_name(self, node: dict[str, JsonVal]) -> str:
         return _emit_name(self.ctx, node)
@@ -3273,7 +3355,9 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
         expand_cross_module_defaults(modules_for_defaults)
 
     # Load runtime mapping
-    mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "ts" / "mapping.json"
+    mapping_path = Path("src").joinpath("runtime").joinpath("ts").joinpath("mapping.json")
+    if not mapping_path.exists():
+        mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "ts" / "mapping.json"
     mapping = load_runtime_mapping(mapping_path)
 
     # Skip runtime modules
@@ -3290,7 +3374,7 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
 
     is_type_id_table = (module_id == "pytra.built_in.type_id_table")
 
-    ctx = EmitContext()
+    ctx = _new_emit_context()
     ctx.module_id = module_id
     ctx.source_path = _str(east3_doc, "source_path")
     if len(emit_ctx_meta) > 0:
@@ -3340,6 +3424,7 @@ def emit_ts_module(east3_doc: dict[str, JsonVal], *, strip_types: bool = False) 
         _emit_body(ctx, main_guard)
 
     # Detect built-in runtime symbols used in the output and prepend import
+    _ensure_builtin_runtime_symbols()
     body_text = "\n".join(ctx.lines)
     used_builtins: list[str] = []
     for sym in sorted(_BUILTIN_RUNTIME_SYMBOLS):

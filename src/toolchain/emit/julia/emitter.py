@@ -9,6 +9,8 @@ from toolchain.emit.common.code_emitter import RuntimeMapping
 from toolchain.emit.common.code_emitter import load_runtime_mapping
 from toolchain.emit.common.code_emitter import should_skip_module
 from toolchain.emit.common.common_renderer import CommonRenderer
+from toolchain.emit.common.common_renderer import CommonRendererState
+from toolchain.emit.common.profile_loader import load_profile_doc
 from toolchain.emit.julia.bootstrap import JuliaBootstrapRewriter
 from toolchain.emit.julia.bootstrap import JuliaLegacyEmitterBridge
 from toolchain.emit.julia.bootstrap import module_id_from_doc
@@ -26,8 +28,21 @@ class JuliaRenderer(CommonRenderer):
 
     mapping: RuntimeMapping
     def __init__(self) -> None:
-        super().__init__("julia")
-        mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "julia" / "mapping.json"
+        self.language = "julia"
+        self.profile = load_profile_doc("julia")
+        self.state = CommonRendererState()
+        state_lines: list[str] = []
+        op_prec_table: dict[str, int] = {}
+        literal_nowrap_always: dict[str, bool] = {}
+        literal_nowrap_ranges: dict[str, tuple[int, int]] = {}
+        self.state.lines = state_lines
+        self._op_prec_table = op_prec_table
+        self._literal_nowrap_always = literal_nowrap_always
+        self._literal_nowrap_ranges = literal_nowrap_ranges
+        self._tmp_counter = 0
+        mapping_path = Path("src").joinpath("runtime").joinpath("julia").joinpath("mapping.json")
+        if not mapping_path.exists():
+            mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "julia" / "mapping.json"
         self.mapping = load_runtime_mapping(mapping_path)
 
     def _module_id_from_doc(self, east3_doc: dict[str, JsonVal]) -> str:

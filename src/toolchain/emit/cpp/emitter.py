@@ -5954,7 +5954,15 @@ def emit_cpp_module(
         if "pytra.std.sys" in dep_ids or "sys" in dep_ids:
             _emit(ctx, "set_argv(rc_list_from_value(py_runtime_argv()));")
         if len(main_guard) > 0:
+            _emit(ctx, "try {")
+            ctx.indent_level += 1
             _emit(ctx, "__pytra_main_guard();")
+            ctx.indent_level -= 1
+            _emit(ctx, "} catch (const SystemExit& e) {")
+            ctx.indent_level += 1
+            _emit(ctx, "return e.code;")
+            ctx.indent_level -= 1
+            _emit(ctx, "}")
         _emit(ctx, "return 0;")
         ctx.indent_level -= 1
         _emit(ctx, "}")

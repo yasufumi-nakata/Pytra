@@ -95,6 +95,9 @@ def _default_profile_doc() -> dict[str, JsonVal]:
 
 
 def _profile_root() -> Path:
+    cwd_profile_root = Path("src").joinpath("toolchain").joinpath("emit").joinpath("profiles")
+    if cwd_profile_root.exists():
+        return cwd_profile_root
     return Path(__file__).resolve().parents[1] / "profiles"
 
 
