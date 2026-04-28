@@ -1074,48 +1074,47 @@ class CommonRenderer:
             self.emit_body(finalbody)
         self.emit_try_teardown(node)
 
+    def _collect_with_add_name(self, out: list[tuple[str, str]], seen: set[str], name: str, resolved_type: str) -> None:
+        if name == "" or name in seen:
+            return
+        seen.add(name)
+        out.append((name, resolved_type))
+
+    def _collect_with_walk(self, out: list[tuple[str, str]], seen: set[str], stmts: list[JsonVal]) -> None:
+        for raw_stmt in stmts:
+            raw_stmt_obj = json.JsonValue(raw_stmt).as_obj()
+            if raw_stmt_obj is None:
+                continue
+            raw_stmt_dict = raw_stmt_obj.raw
+            kind = self._str(raw_stmt_dict, "kind")
+            if kind == "AnnAssign":
+                target = raw_stmt_dict.get("target")
+                target_obj = json.JsonValue(target).as_obj()
+                if target_obj is not None and self._str(target_obj.raw, "kind") == "Name":
+                    self._collect_with_add_name(out, seen, self._str(target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
+            elif kind == "Assign":
+                target = raw_stmt_dict.get("target")
+                target_obj = json.JsonValue(target).as_obj()
+                if target_obj is None:
+                    targets = self._list(raw_stmt_dict, "targets")
+                    if len(targets) > 0:
+                        target = targets[0]
+                        target_obj = json.JsonValue(target).as_obj()
+                if target_obj is not None and self._str(target_obj.raw, "kind") == "Name":
+                    self._collect_with_add_name(out, seen, self._str(target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
+            elif kind in ("If", "While", "Try", "With", "ForCore"):
+                self._collect_with_walk(out, seen, self._list(raw_stmt_dict, "body"))
+                self._collect_with_walk(out, seen, self._list(raw_stmt_dict, "orelse"))
+                self._collect_with_walk(out, seen, self._list(raw_stmt_dict, "finalbody"))
+                for handler in self._list(raw_stmt_dict, "handlers"):
+                    handler_obj = json.JsonValue(handler).as_obj()
+                    if handler_obj is not None:
+                        self._collect_with_walk(out, seen, self._list(handler_obj.raw, "body"))
+
     def collect_with_hoisted_specs(self, body: list[JsonVal]) -> list[tuple[str, str]]:
         out: list[tuple[str, str]] = []
         seen: set[str] = set()
-
-        def add_name(name: str, resolved_type: str) -> None:
-            if name == "" or name in seen:
-                return
-            seen.add(name)
-            out.append((name, resolved_type))
-
-        def walk(stmts: list[JsonVal]) -> None:
-            for raw_stmt in stmts:
-                raw_stmt_obj = json.JsonValue(raw_stmt).as_obj()
-                if raw_stmt_obj is None:
-                    continue
-                raw_stmt_dict = raw_stmt_obj.raw
-                kind = self._str(raw_stmt_dict, "kind")
-                if kind == "AnnAssign":
-                    target = raw_stmt_dict.get("target")
-                    target_obj = json.JsonValue(target).as_obj()
-                    if target_obj is not None and self._str(target_obj.raw, "kind") == "Name":
-                        add_name(self._str(target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
-                elif kind == "Assign":
-                    target = raw_stmt_dict.get("target")
-                    target_obj = json.JsonValue(target).as_obj()
-                    if target_obj is None:
-                        targets = self._list(raw_stmt_dict, "targets")
-                        if len(targets) > 0:
-                            target = targets[0]
-                            target_obj = json.JsonValue(target).as_obj()
-                    if target_obj is not None and self._str(target_obj.raw, "kind") == "Name":
-                        add_name(self._str(target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
-                elif kind in ("If", "While", "Try", "With", "ForCore"):
-                    walk(self._list(raw_stmt_dict, "body"))
-                    walk(self._list(raw_stmt_dict, "orelse"))
-                    walk(self._list(raw_stmt_dict, "finalbody"))
-                    for handler in self._list(raw_stmt_dict, "handlers"):
-                        handler_obj = json.JsonValue(handler).as_obj()
-                        if handler_obj is not None:
-                            walk(self._list(handler_obj.raw, "body"))
-
-        walk(body)
+        self._collect_with_walk(out, seen, body)
         return out
 
     def _collect_with_hoisted_names(self, body: list[JsonVal]) -> list[dict[str, JsonVal]]:

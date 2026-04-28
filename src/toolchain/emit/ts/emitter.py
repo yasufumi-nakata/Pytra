@@ -21,6 +21,7 @@ from toolchain.emit.ts.types import (
 from toolchain.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping,
     should_skip_module, build_import_alias_map, build_runtime_import_map,
+    resolve_runtime_symbol_name,
 )
 from toolchain.emit.common.common_renderer import CommonRenderer
 from toolchain.emit.common.common_renderer import CommonRendererState
