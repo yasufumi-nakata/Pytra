@@ -1286,6 +1286,10 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         _INT_TYPES = ("int", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64", "number")
         left_is_list = left_rt.startswith("list[") or left_rt == "list"
         right_is_list = right_rt.startswith("list[") or right_rt == "list"
+        if left_rt in ("str", "string") and right_rt in _INT_TYPES:
+            return left + ".repeat(" + right + ")"
+        if right_rt in ("str", "string") and left_rt in _INT_TYPES:
+            return right + ".repeat(" + left + ")"
         if left_is_list and right_rt in _INT_TYPES:
             return "(() => { const _arr = " + left + "; const _n = " + right + "; return Array.from({length: _n * _arr.length}, (_, i) => _arr[i % _arr.length]); })()"
         if right_is_list and left_rt in _INT_TYPES:
@@ -2979,8 +2983,9 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         # ClosureDef: arrow function assigned to variable
         _emit(ctx, "const " + fn_name + " = (" + ", ".join(params) + ")" + ret_ann + " => {")
     else:
-        # Top-level functions: export them unless they start with _ (private convention)
-        export_kw = "" if fn_name.startswith("_") else "export "
+        # Top-level functions may be imported explicitly even when Python names
+        # use a leading underscore, so export all module-level functions.
+        export_kw = "export "
         _emit(ctx, export_kw + "function " + fn_name + "(" + ", ".join(params) + ")" + ret_ann + " {")
 
     ctx.indent_level += 1

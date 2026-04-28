@@ -932,7 +932,10 @@ def _copy_ts_runtime_files(output_dir: Path) -> int:
         if not bucket_dir.exists():
             continue
         for ts_file in bucket_dir.glob("*.ts"):
-            dst = output_dir.joinpath(_path_text_name(ts_file))
+            dst_name = _path_text_name(ts_file)
+            if dst_name == "py_runtime.ts":
+                dst_name = "pytra_built_in_py_runtime.ts"
+            dst = output_dir.joinpath(dst_name)
             dst.write_text(ts_file.read_text(encoding="utf-8"), encoding="utf-8")
             copied += 1
     return copied

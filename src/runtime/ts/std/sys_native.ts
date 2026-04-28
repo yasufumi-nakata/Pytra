@@ -1,10 +1,17 @@
 // Generated std/sys.ts delegates host bindings through this native seam.
 
+declare const process: {
+    argv: string[];
+    stderr: { write(text: string): void };
+    stdout: { write(text: string): void };
+    exit(code?: number): never;
+};
+
 export type SysApi = {
     argv: string[];
     path: string[];
-    stderr: NodeJS.WriteStream;
-    stdout: NodeJS.WriteStream;
+    stderr: { write(text: string): void };
+    stdout: { write(text: string): void };
     exit: (code?: number) => never;
     set_argv: (values: unknown) => void;
     set_path: (values: unknown) => void;

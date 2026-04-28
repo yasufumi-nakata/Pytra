@@ -156,7 +156,9 @@ def build_cpp_header_from_east3(
         lines.append("#include <functional>")
 
     seen: set[str] = {"core/py_runtime.h"}
-    if prefer_native_header and native_header_include != "":
+    native_header_text = str(native_header_include)
+    native_header_missing = native_header_include == "" or native_header_text == "None" or native_header_text == "undefined"
+    if prefer_native_header and not native_header_missing:
         if native_header_include not in seen:
             lines.append('#include "' + native_header_include + '"')
         lines.extend([
@@ -167,12 +169,16 @@ def build_cpp_header_from_east3(
         return "\n".join(lines)
 
     for dep_id in dep_ids:
+        dep_text = str(dep_id)
+        if dep_id == "" or dep_text == "None" or dep_text == "undefined":
+            continue
         include_path = cpp_include_for_module(dep_id)
-        if include_path == "" or include_path in seen:
+        include_text = str(include_path)
+        if include_path == "" or include_text == "None" or include_text == "undefined" or include_path in seen:
             continue
         seen.add(include_path)
         lines.append(CppIncludeDraft(include_path).to_line())
-    if native_header_include != "" and native_header_include not in seen:
+    if (not native_header_missing) and native_header_include not in seen:
         lines.append(CppIncludeDraft(native_header_include).to_line())
     lines.append("")
 

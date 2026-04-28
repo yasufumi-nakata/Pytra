@@ -1,30 +1,32 @@
 // Generated std/os_path.ts delegates host bindings through this native seam.
 
-import nodePath from "node:path";
-import { existsSync } from "node:fs";
+declare function require(id: string): any;
+
+const __pytraPath = require("path");
+const __pytraFs = require("fs");
 
 export function join(a: string, b: string): string {
-    return nodePath.join(a, b);
+    return __pytraPath.join(a, b);
 }
 
 export function dirname(p: string): string {
-    return nodePath.dirname(p);
+    return __pytraPath.dirname(p);
 }
 
 export function basename(p: string): string {
-    return nodePath.basename(p);
+    return __pytraPath.basename(p);
 }
 
 export function splitext(p: string): [string, string] {
-    const ext = nodePath.extname(p);
+    const ext = __pytraPath.extname(p);
     const root = ext !== "" ? p.substring(0, p.length - ext.length) : p;
     return [root, ext];
 }
 
 export function abspath(p: string): string {
-    return nodePath.resolve(p);
+    return __pytraPath.resolve(p);
 }
 
 export function exists(p: string): boolean {
-    return existsSync(p);
+    return __pytraFs.existsSync(p);
 }

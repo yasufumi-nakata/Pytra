@@ -449,7 +449,7 @@ def build_runtime_import_map(
 
 def resolve_runtime_call(
     runtime_call: str,
-    builtin_name: str,  # used only as legacy fallback when runtime_call == ""
+    builtin_name: str,
     adapter_kind: str,
     mapping: RuntimeMapping,
 ) -> str:

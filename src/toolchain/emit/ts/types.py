@@ -90,7 +90,7 @@ TS_BUILTIN_RUNTIME_SYMBOLS: list[str] = [
     "pyisfinite", "pyisinf", "pyisnan",
     "dumps", "loads",
     "pydumps", "pyloads", "pyloads_arr", "pyloads_obj",
-    "JsonValue", "JsonArr", "JsonObj",
+    "JsonValue", "pyJsonValue", "JsonArr", "JsonObj",
     "Path", "PyPath", "py_math_tau",
     "pyjoin", "pysplitext", "pybasename", "pydirname", "pyexists", "pyisfile", "pyisdir",
     "pymakedirs",
@@ -98,15 +98,15 @@ TS_BUILTIN_RUNTIME_SYMBOLS: list[str] = [
     "pywrite_rgb_png",
     "pyopen",
     "pyPerfCounter",
-    "sys", "pyset_argv", "pyset_path",
-    "sub", "match", "search", "findall", "split",
+    "sys", "pyargv", "pyset_argv", "pyset_path",
+    "sub", "pysub", "match", "search", "findall", "split",
     "pyglob",
     "pyupdate", "pypop", "pysetdefault", "pyextend", "pysort", "pyreverse", "pyclear",
     "pydel",
-    "pyinsert", "pybool", "pyrepr",
+    "pyinsert", "__LIST_INSERT__", "pybool", "pyrepr",
     "pyTuple", "pyTupleToString",
     "dict", "list", "set_", "field", "___",
-    "__file__",
+    "SystemExit", "cast", "__file__",
 ]
 
 TS_BUILTIN_EXCEPTION_NAMES: set[str] = {

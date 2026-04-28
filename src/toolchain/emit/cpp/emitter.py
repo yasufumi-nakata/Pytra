@@ -6013,10 +6013,12 @@ def emit_cpp_module(
     if self_header != "":
         header.append('#include "' + self_header + '"')
     for dep_id in dep_ids:
-        if dep_id == "" or dep_id == module_id:
+        dep_text = str(dep_id)
+        if dep_id == "" or dep_text == "None" or dep_text == "undefined" or dep_id == module_id:
             continue
         include_path = cpp_include_for_module(dep_id)
-        if include_path == "" or include_path in seen_includes:
+        include_text = str(include_path)
+        if include_path == "" or include_text == "None" or include_text == "undefined" or include_path in seen_includes:
             continue
         seen_includes.add(include_path)
         header.append('#include "' + include_path + '"')

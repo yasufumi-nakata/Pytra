@@ -3,7 +3,7 @@
 
 // Minimal OS-glue declarations — no @types/node required.
 declare function require(id: string): any;
-declare const process: { hrtime?: () => [number, number] };
+declare const process: { argv?: string[]; cwd?: () => string; hrtime?: (() => [number, number]) & { bigint?: () => bigint } };
 declare const performance: { now(): number } | undefined;
 declare const console: { log(...args: unknown[]): void };
 declare const __dirname: string;
@@ -1209,9 +1209,19 @@ export class JsonValue {
   as_arr(): JsonArr | null { return Array.isArray(this.raw) ? new JsonArr(this.raw as JsonVal[]) : null; }
 }
 
+export function pyJsonValue(raw: JsonVal): JsonValue {
+  return new JsonValue(raw);
+}
+
 export class JsonArr {
   raw: JsonVal[];
-  constructor(raw: JsonVal[]) { this.raw = raw; }
+  constructor(raw: JsonVal[]) {
+    this.raw = raw;
+    (this.raw as any).get = (index: number): JsonVal | null => {
+      if (index < 0 || index >= this.raw.length) return null;
+      return this.raw[index];
+    };
+  }
   get(index: number): JsonValue | null {
     if (index < 0 || index >= this.raw.length) return null;
     return new JsonValue(this.raw[index]);
@@ -1310,6 +1320,7 @@ export class PyPath {
     const suffix = parts.map((part) => part instanceof PyPath ? part._p : String(part)).join("/");
     return new PyPath(this._p + "/" + suffix);
   }
+  resolve(): PyPath { return new PyPath(_getpath().resolve(this._p)); }
   toString(): string { return this._p; }
   exists(): boolean { try { return _getfs().existsSync(this._p); } catch { return false; } }
   mkdir(parents: boolean = false, exist_ok: boolean = false): void {
@@ -1323,6 +1334,12 @@ export class PyPath {
 
 export function Path(p: string | PyPath): PyPath {
   return p instanceof PyPath ? p : new PyPath(typeof p === "string" ? p : String(p));
+}
+
+export namespace Path {
+  export function cwd(): PyPath {
+    return new PyPath(process.cwd ? process.cwd() : ".");
+  }
 }
 
 export const py_math_tau: number = 2 * Math.PI;
@@ -1385,7 +1402,8 @@ export function pyPerfCounter(): number {
 // ---------------------------------------------------------------------------
 // sys module
 // ---------------------------------------------------------------------------
-export const sys: { argv: string[]; path: string[] } = { argv: [], path: [] };
+export const sys: { argv: string[]; path: string[] } = { argv: Array.from(process.argv ?? []).slice(1), path: [] };
+export const pyargv: string[] = sys.argv;
 export function pyset_argv(args: string[]): void { sys.argv = args; }
 export function pyset_path(paths: string[]): void { sys.path = paths; }
 
@@ -1404,6 +1422,7 @@ export function sub(pattern: string, repl: string, s: string, count: number = 0)
   }
   return s.replace(re, repl);
 }
+export const pysub = sub;
 
 export function match(pattern: string, s: string): RegExpMatchArray | null {
   return s.match(new RegExp("^" + pattern));
@@ -1641,7 +1660,15 @@ export function set_<T = any>(): Set<T> { return new Set<T>(); }
 
 /** Python dataclasses.field(default_factory) — call factory and return value. */
 export function field<T>(factory: (() => T) | T): T {
-  return typeof factory === "function" ? (factory as () => T)() : factory;
+  if (typeof factory !== "function") return factory;
+  try {
+    return (factory as () => T)();
+  } catch (e: unknown) {
+    if (e instanceof TypeError) {
+      return new (factory as { new(): T })();
+    }
+    throw e;
+  }
 }
 
 /** Placeholder for Python Ellipsis (...) in type annotations like tuple[str, ...]. */
@@ -1656,6 +1683,7 @@ export type float = number;
 export function pyinsert<T>(lst: T[], index: number, item: T): void {
   lst.splice(index, 0, item);
 }
+export const __LIST_INSERT__ = pyinsert;
 // Python bool(x)
 export function pybool(x: any): boolean {
   if (x === null || x === undefined || x === false || x === 0 || x === "") return false;
@@ -1680,3 +1708,18 @@ export function pyrepr(x: any): string {
   }
   return String(x);
 }
+
+export class SystemExit extends Error {
+  code: number;
+  constructor(code: number = 0) {
+    super(String(code));
+    this.name = "SystemExit";
+    this.code = code;
+  }
+}
+
+export function cast<T>(_target: unknown, value: T): T {
+  return value;
+}
+
+export const __file__ = "";

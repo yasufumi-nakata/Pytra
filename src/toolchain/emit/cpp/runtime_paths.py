@@ -75,9 +75,12 @@ def collect_cpp_dependency_module_ids(module_id: str, meta: dict[str, JsonVal]) 
     out: list[str] = []
     seen: set[str] = set()
     for dep_id in dep_ids:
-        if dep_id == "" or dep_id == module_id or dep_id in seen:
+        dep_text = str(dep_id)
+        if dep_id == "" or dep_text == "None" or dep_text == "undefined" or dep_id == module_id or dep_id in seen:
             continue
-        if cpp_include_for_module(dep_id) == "":
+        include_path = cpp_include_for_module(dep_id)
+        include_text = str(include_path)
+        if include_path == "" or include_text == "None" or include_text == "undefined":
             continue
         seen.add(dep_id)
         out.append(dep_id)
