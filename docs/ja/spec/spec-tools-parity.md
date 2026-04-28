@@ -139,3 +139,34 @@ python3 tools/gen/gen_sample_benchmark.py
 - scripting / mixed target の bootstrap command:
   - `apt-get install -y ruby lua5.4 php-cli`
 - bootstrap 後の `runner_needs` 実測では `cpp,rs,cs,js,ruby,lua,php,ts,go,java,swift,kotlin,scala,nim` がすべて `OK` になっていることを確認済みとする。
+
+### 6.1 Codex Docker container toolchain locations
+
+Codex 作業環境の標準 Dockerfile では、Pytra backend 用 toolchain を Debian 12 (`bookworm`) ベースの Node 20 container に配置する。parity / selfhost 作業では、`command -v` で見えない場合も以下の Dockerfile 由来の配置を canonical path として扱う。
+
+| 用途 | command | Dockerfile 上の配置 / PATH |
+| --- | --- | --- |
+| Python | `python3` | `/usr/local/bin/python3`（`python:3.13-slim-bookworm` から `/usr/local/` をコピー） |
+| Node.js / npm | `node`, `npm` | `/usr/local/bin/node`, `/usr/local/bin/npm`（`node:20-bookworm-slim` base） |
+| TypeScript | `tsc` | `npm install -g typescript` により `/usr/local/bin/tsc` |
+| C / C++ | `gcc`, `g++` | `build-essential` により `/usr/bin/gcc`, `/usr/bin/g++` |
+| Go | `go` | `/usr/local/go/bin/go`（Dockerfile `GO_VERSION=1.24.1`; `PATH=/usr/local/go/bin:$PATH`） |
+| Rust | `rustc`, `cargo` | `/usr/local/cargo/bin/rustc`, `/usr/local/cargo/bin/cargo`（`RUSTUP_HOME=/usr/local/rustup`, `CARGO_HOME=/usr/local/cargo`） |
+| Java | `java`, `javac` | `default-jdk-headless` により `/usr/bin/java`, `/usr/bin/javac` |
+| C# / .NET | `dotnet` | `/usr/local/bin/dotnet` -> `/usr/share/dotnet/dotnet`（Dockerfile `DOTNET_ROOT=/usr/share/dotnet`） |
+| PowerShell | `pwsh` | `powershell` package により通常 `/usr/bin/pwsh` |
+| Kotlin | `kotlinc` | `/usr/local/kotlinc/bin/kotlinc`（Dockerfile `KOTLIN_VERSION=2.1.10`; `PATH=/usr/local/kotlinc/bin:$PATH`） |
+| Swift | `swift`, `swiftc` | `/usr/local/bin/swift`, `/usr/local/bin/swiftc`（Dockerfile `SWIFT_VERSION=6.0.3`） |
+| Lua | `lua`, `lua5.4` | `lua5.4` package により `/usr/bin/lua`, `/usr/bin/lua5.4` |
+| Ruby | `ruby` | `ruby` package により `/usr/bin/ruby` |
+| PHP | `php` | `php-cli` package により `/usr/bin/php` |
+| Nim | `nim` | `/usr/local/bin/nim`（Dockerfile `NIM_VERSION=2.2.2`; archive 展開後の `bin/nim`） |
+| Scala | `scala-cli` | `/usr/local/bin/scala-cli` |
+| Dart | `dart` | `/usr/lib/dart/bin/dart`（package symlink として `/usr/bin/dart` もあり得る; `PATH=/usr/lib/dart/bin:$PATH`） |
+| Zig | `zig` | `/usr/local/bin/zig` -> `/usr/local/zig-linux-x86_64-0.14.0/zig` |
+| Julia | `julia` | `/usr/local/bin/julia` -> `/opt/julia-1.11.7/bin/julia`（Dockerfile `JULIA_VERSION=1.11.7`） |
+
+補足:
+
+- Codex の非 login shell / 既存 container では Dockerfile の `ENV PATH=...` と一致しないことがある。その場合は、上表の明示パスを使うか、必要な prefix を `PATH` に追加して実行する。
+- Go については、runtime parity helper が repository local fallback として `work/tmp/go-toolchain/bin/go` も参照する。Dockerfile 標準の Go は `/usr/local/go/bin/go` であり、repo local fallback は検証用 cache / override として扱う。
