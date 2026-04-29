@@ -33,15 +33,19 @@ TIOBE Index 2026-04 の top 100 を初期スナップショットとして、Pyt
 2. [x] [ID: P2-TOP100-LANG-S2] 既存 backend / host / interop / syntax / defer の初期分類を確定する
    - 既存 backend 群: cpp, rs, cs, js, ts, dart, go, java, scala, kotlin, swift, ruby, lua, php, nim, julia, zig, powershell を現状 matrix に接続する。
    - 完了: 2026-04-30。Top100 matrix で Pytra 既存 target を `backend` / Python を `host` / C と SQL 系を `interop` / 未接続候補を `syntax` / visual・platform-specific・historical 系を `defer` に初期分類した。
-3. [ ] [ID: P2-TOP100-LANG-S3] top 50 の未対応候補から優先 backend plan を作る
+3. [x] [ID: P2-TOP100-LANG-S3] top 50 の未対応候補から優先 backend plan を作る
    - 初期候補: Visual Basic, R, Delphi/Object Pascal, Perl, Fortran, MATLAB, Ada, PL/SQL, Prolog, COBOL, SAS, Objective-C, Lisp, ML, Haskell, VBScript, ABAP, OCaml, Caml, Erlang, X++, Transact-SQL, Solidity。
-4. [ ] [ID: P2-TOP100-LANG-S4] DSL / visual / shell / query 系の defer 条件を明文化する
+   - 完了: 2026-04-30。`tools/gen/gen_top100_language_coverage.py` で Top50 syntax 候補に T1/T2/T3 の backend plan を生成し、`docs/ja/progress/top100-language-coverage.md` へ反映した。
+4. [x] [ID: P2-TOP100-LANG-S4] DSL / visual / shell / query 系の defer 条件を明文化する
    - 対象例: SQL, Scratch, Assembly language, GML, LabVIEW, Ladder Logic, FoxPro, Pure Data, VHDL, Wolfram など。
-5. [ ] [ID: P2-TOP100-LANG-S5] `gen_backend_progress.py` または新規 progress generator で top100 coverage を自動出力する
+   - 完了: 2026-04-30。defer row に解除条件を持たせ、visual/block/dataflow/platform-specific/proprietary/historical/niche runtime の保留理由を `docs/ja/progress/top100-language-coverage.md` と JSON に出力するようにした。
+5. [x] [ID: P2-TOP100-LANG-S5] `gen_backend_progress.py` または新規 progress generator で top100 coverage を自動出力する
    - 出力には source snapshot date、分類、実測コマンド、最後の blocker、次アクションを含める。
-6. [ ] [ID: P2-TOP100-LANG-S6] devcontainer / Docker 検証を top100 coverage 更新の標準ゲートにする
+   - 完了: 2026-04-30。`tools/gen/gen_top100_language_coverage.py` で JA/EN Markdown と `docs/ja/progress/top100-language-coverage.json` を生成し、`--check` を stale 検出ゲートにした。
+6. [x] [ID: P2-TOP100-LANG-S6] devcontainer / Docker 検証を top100 coverage 更新の標準ゲートにする
    - Docker Desktop 同梱 CLI が PATH に無い場合は `/Applications/Docker.app/Contents/Resources/bin/docker` を使う。
    - Docker が使えない run では coverage を完了扱いにせず、exact blocker と再開条件だけを残す。
+   - 完了: 2026-04-30。`docker version` / `docker run --rm hello-world` / `.devcontainer/Dockerfile` build / `.devcontainer/scripts/verify-toolchain.sh` を標準 gate とし、常設 `devcontainer` CLI 不在時は Dockerfile 直接 run に fallback する手順を progress に固定した。
 
 ### P1-EMITTER-HOST-MATRIX: emitter host マトリクスの新設と全言語 PASS
 
