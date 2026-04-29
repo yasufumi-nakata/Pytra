@@ -42,9 +42,10 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を zig に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-ZIG-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target zig -o work/selfhost/host-cpp/zig/` で変換 + build を通す
+1. [x] [ID: P1-HOST-CPP-EMITTER-ZIG-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target zig -o work/selfhost/host-cpp/zig/` で変換 + build を通す
    - 進捗: 2026-04-29 に実行し、変換前に FAIL。`--target` の available 一覧には `zig` が出るが、実際には `error: unsupported target: zig (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, zig)` で停止する。target wiring が一覧と実行 dispatch で不整合。
    - 進捗: 2026-04-29。`--target zig` を build dispatch へ再接続し、Docker `python:3.12-slim` 隔離環境で `test/fixture/source/py/core/add.py --target zig` は 12 files 生成まで PASS。C++ emitter host exact command は unsupported target を解消し、30 modules link 後に Zig emitter 側の `RuntimeError: lang=zig unsupported stmt kind: TupleUnpack` で停止する。
+   - 完了: 2026-04-30。Docker Desktop CLI で `.devcontainer/Dockerfile` を直接 build した隔離環境にて、`timeout 240s python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target zig -o work/tmp/verify_pytra_20260430/host_cpp_zig` が PASS。18 source / 30 linked modules / Zig 30 files を出力し、`TupleUnpack` blocker は解消。devcontainer には `zig` CLI が無いため、生成 Zig の compile/parity は S2 blocker として残す。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-ZIG-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_zig.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
    - 進捗: 2026-04-29 時点では S1 が変換前に失敗するため未実行。参考として `python3 tools/run/run_selfhost_parity.py --selfhost-lang zig --emit-target cpp --case-root fixture` も実行し、同じ `--target zig` unsupported を `.parity-results/selfhost_zig.json` に build_failed として記録済み。
 

@@ -157,3 +157,4 @@ SQL, Scratch, Assembly language, GML, LabVIEW, Ladder Logic, (Visual) FoxPro, Al
 
 - 2026-04-29: TIOBE April 2026 top 100 を初期スナップショットとして採用。全 100 言語を一律 backend 化するのではなく、backend / host / interop / syntax / defer に分類して coverage を管理する。
 - 2026-04-29: `.devcontainer/` と Dockerfile が未統合だった run では、Docker Desktop CLI (`/Applications/Docker.app/Contents/Resources/bin/docker`) と `python:3.12-slim` を使い、`tools.unittest.tooling.test_pytra_cli2`、`core/add.py --target dart/lua/php/zig/powershell`、Ruby focused fixture/stdlib/sample smoke を隔離実行した。devcontainer 追加後は `.devcontainer/scripts/verify-toolchain.sh` を優先する。
+- 2026-04-30: 公式 TIOBE April 2026 を再確認し、`docs/ja/progress/top100-language-coverage.md` に 100 言語分の coverage matrix を追加した。Docker Desktop CLI で `.devcontainer/Dockerfile` を直接 build し、`verify-toolchain.sh`、runtime east 生成、Dart/Zig host emitter 生成、progress-preview 生成を実測した。Dart/Zig native CLI は devcontainer 未導入のため compile/parity の blocker として残す。
