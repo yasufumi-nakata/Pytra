@@ -43,7 +43,7 @@
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を lua に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-LUA-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target lua -o work/selfhost/host-cpp/lua/` で変換 + build を通す
-2. [ ] [ID: P1-HOST-CPP-EMITTER-LUA-S2] lua 版 C++ emitter で fixture manifest を処理し、Python 版 emitter と parity 一致を確認する
+2. [ ] [ID: P1-HOST-CPP-EMITTER-LUA-S2] `run_selfhost_parity.py --selfhost-lang lua --emit-target cpp --case-root fixture` で fixture parity PASS を確認する（結果は `.parity-results/selfhost_lua.json` に書き込まれ、`gen_backend_progress.py` で selfhost マトリクスに反映される）
 
 ### P1-EMITTER-SELFHOST-LUA: emit/lua/cli.py を単独で selfhost C++ build に通す
 
