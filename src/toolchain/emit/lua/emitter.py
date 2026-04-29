@@ -1769,6 +1769,16 @@ def _emit_slice_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     return lower_code + ", " + upper_code
 
 
+def _is_type_alias_assign(node: dict[str, JsonVal]) -> bool:
+    if not _bool(node, "declare"):
+        return False
+    value = node.get("value")
+    if not isinstance(value, dict) or _str(value, "kind") != "Subscript":
+        return False
+    owner = value.get("value")
+    return isinstance(owner, dict) and _str(owner, "type_object_of") != ""
+
+
 # ---------------------------------------------------------------------------
 # Statement emission
 # ---------------------------------------------------------------------------
@@ -1955,6 +1965,8 @@ def _emit_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    if _is_type_alias_assign(node):
+        return
     # Check for extern_var_v1 (skip, handled by native runtime)
     meta = _dict(node, "meta")
     extern_v1 = meta.get("extern_var_v1") if isinstance(meta, dict) else None

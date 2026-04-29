@@ -1454,6 +1454,16 @@ def _keyword_arg_map(ctx: EmitContext, keywords: list[JsonVal]) -> dict[str, str
     return out
 
 
+def _is_type_alias_assign(node: dict[str, JsonVal]) -> bool:
+    if not _bool(node, "declare"):
+        return False
+    value = node.get("value")
+    if not isinstance(value, dict) or _str(value, "kind") != "Subscript":
+        return False
+    owner = value.get("value")
+    return isinstance(owner, dict) and _str(owner, "type_object_of") != ""
+
+
 # ---------------------------------------------------------------------------
 # Statement emission
 # ---------------------------------------------------------------------------
@@ -1583,6 +1593,8 @@ def _emit_return_stmt(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
 
 def _emit_assign(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    if _is_type_alias_assign(node):
+        return
     target = node.get("target")
     value = node.get("value")
     if not isinstance(target, dict):
