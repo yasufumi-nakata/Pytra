@@ -1,49 +1,159 @@
-# P2 Top100 language coverage plan
+<a href="../../en/plans/p2-top100-language-coverage.md">
+  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
+</a>
+
+# P2: 使用上位 100 言語への適応計画
 
 ## 目的
 
-使用上位 100 言語への適応を、全言語を一律 backend 化する計画ではなく、`backend` / `host` / `interop` / `syntax` / `defer` の分類で継続管理する。
+Pytra の backend / runtime / 検証基盤を、使用上位 100 言語へ段階的に適応できる形へ広げる。
+ここでの「適応」は、全言語を同じ深さで native backend 化する意味ではない。言語ごとに実用上の役割が異なるため、次のいずれかの到達状態を明示して管理する。
 
-## 2026-04-29 source snapshot
+- `backend`: Pytra から対象言語へ emit し、compile/run/parity を確認できる。
+- `host`: Pytra の emitter/toolchain の一部を対象言語で host できる。
+- `interop`: 対象言語の外部関数、既存 runtime、または生成物と連携できる。
+- `syntax`: 対象言語の構文・型・モジュール体系を調査し、backend 化判断に必要な仕様メモがある。
+- `defer`: Scratch / Ladder Logic / LabVIEW など、通常の text backend として扱う前に別設計が必要なものとして保留理由を明記する。
 
-- 外部 Top100 source はまだ固定していない。本 run では、リポジトリ内の現行 coverage を基準 snapshot とし、外部ランキングの採用は次アクションに残す。
-- 現行 backend progress snapshot: `docs/ja/progress/backend-progress-summary.md` の 18 言語（`cpp`, `rs`, `cs`, `ps1`, `js`, `ts`, `dart`, `go`, `java`, `scala`, `kotlin`, `swift`, `ruby`, `lua`, `php`, `nim`, `julia`, `zig`）。
-- 現行 build target snapshot: `src/pytra-cli.py -build` は `cpp`, `go`, `rs`, `cs`, `java`, `scala`, `kotlin`, `ts`, `js`, `nim`, `swift`, `julia`, `powershell`, `ps1`, `zig`, `dart`, `lua`, `php`, `ruby` を受け付ける。
+## ランキング正本
 
-## 分類
+- 出典: TIOBE Index for April 2026
+- URL: https://www.tiobe.com/tiobe-index/
+- 注意: TIOBE は「最良の言語」や「コード行数」ではなく、検索・教材・ベンダー等から算出した人気指標である。Pytra では優先度付けの外部スナップショットとして使い、技術的適性は別途判断する。
 
-| 分類 | 意味 | 現在の扱い |
-|---|---|---|
-| `backend` | Pytra の emit / runtime / parity 対象として実装する | 現行 18 言語を対象に継続 |
-| `host` | 既存 backend で Pytra の emitter / runtime を host する | emitter-host/selfhost マトリクスで継続 |
-| `interop` | FFI、VM、外部 CLI、既存 runtime 連携で扱う | Top100 source 固定後に選別 |
-| `syntax` | frontend/parser の構文受理や変換元として扱う | Python source 以外の入力計画で扱う |
-| `defer` | 現時点では対応しない | source snapshot 固定時に理由を明記 |
+## 2026-04 スナップショット
 
-## 実測コマンド
+### 1-50
 
-2026-04-29 は `.devcontainer/` と Dockerfile が存在しないため、Docker Engine 確認後、`/Applications/Docker.app/Contents/Resources/bin/docker` と `python:3.12-slim` を使った隔離実行で確認した。
+1. Python
+2. C
+3. C++
+4. Java
+5. C#
+6. JavaScript
+7. Visual Basic
+8. SQL
+9. R
+10. Delphi/Object Pascal
+11. Scratch
+12. Perl
+13. Fortran
+14. PHP
+15. Go
+16. Rust
+17. MATLAB
+18. Assembly language
+19. Swift
+20. Ada
+21. PL/SQL
+22. Prolog
+23. COBOL
+24. Kotlin
+25. SAS
+26. Classic Visual Basic
+27. Objective-C
+28. Dart
+29. Ruby
+30. Lua
+31. Lisp
+32. Julia
+33. ML
+34. TypeScript
+35. Haskell
+36. VBScript
+37. ABAP
+38. OCaml
+39. Zig
+40. Caml
+41. Erlang
+42. X++
+43. Scala
+44. Transact-SQL
+45. PowerShell
+46. GML
+47. LabVIEW
+48. Ladder Logic
+49. Solidity
+50. (Visual) FoxPro
 
-```bash
-/Applications/Docker.app/Contents/Resources/bin/docker version
-PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH \
-  docker run --rm --pull=never hello-world
-PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH \
-  docker run --rm -v "$PWD":/workspace -w /workspace -e PYTHONPATH=src python:3.12-slim \
-  python -m unittest tools.unittest.tooling.test_pytra_cli2 -v
-PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH \
-  docker run --rm -v "$PWD":/workspace -w /workspace -e PYTHONPATH=src python:3.12-slim \
-  sh -lc 'for target in dart lua php zig powershell; do python src/pytra-cli.py -build test/fixture/source/py/core/add.py --target "$target" -o "work/tmp/verify_pytra_20260429/build_add_$target"; done'
-```
+### 51-100
 
-## 最後の blocker
+TIOBE の 51-100 は差が小さいためアルファベット順で公表されている。Pytra 側でも順位差を細かく扱わず、同一 tier として管理する。
 
-- 外部 Top100 source が未固定のため、100 言語の分類表はまだ作れない。
-- Docker 内 `python:3.12-slim` には `pwsh` / `powershell` がなく、PowerShell の run parity は未実行。
-- Ruby は focused fixture 5/5 PASS だが、`os_glob_extended` と sample `01_mandelbrot` は stdout mismatch が残る。
+- ActionScript
+- Algol
+- Apex
+- Applescript
+- Awk
+- Bash
+- bc
+- BCPL
+- Bourne shell
+- CFML
+- CL (OS/400)
+- Clojure
+- CoffeeScript
+- Curl
+- D
+- Elixir
+- F#
+- GAMS
+- Groovy
+- Icon
+- Inform
+- Io
+- J
+- J#
+- JScript
+- JScript.NET
+- Logo
+- LotusScript
+- LPC
+- Mojo
+- MQL5
+- NetLogo
+- Nim
+- OpenCL
+- PL/I
+- Pure Data
+- Q
+- REBOL
+- Ring
+- RPG
+- RPL
+- S
+- Small Basic
+- Smalltalk
+- Tcl
+- V
+- Vala/Genie
+- VHDL
+- Wolfram
+- Xojo
 
-## 次アクション
+## 初期分類
 
-1. 外部 Top100 source を 1 つに固定し、取得日・URL・保存場所をこのファイルへ追記する。
-2. 100 言語を `backend` / `host` / `interop` / `syntax` / `defer` に分類する。
-3. `backend` / `host` 候補は既存 progress matrix に接続し、`interop` / `syntax` / `defer` は個別 plan へ切り出す。
+### 既存 backend / target として継続強化するもの
+
+Python, C, C++, Java, C#, JavaScript, PHP, Go, Rust, Swift, Kotlin, Dart, Ruby, Lua, Julia, TypeScript, Zig, Scala, PowerShell, Nim
+
+### P2 で backend 候補として調査するもの
+
+Visual Basic, R, Delphi/Object Pascal, Perl, Fortran, MATLAB, Ada, PL/SQL, Prolog, COBOL, SAS, Objective-C, Lisp, ML, Haskell, VBScript, ABAP, OCaml, Caml, Erlang, X++, Transact-SQL, Solidity, ActionScript, Apex, Applescript, Awk, Bash, Clojure, CoffeeScript, D, Elixir, F#, Groovy, Mojo, OpenCL, Tcl, V, Vala/Genie, VHDL, Wolfram
+
+### interop / DSL / 非通常 backend として別設計にするもの
+
+SQL, Scratch, Assembly language, GML, LabVIEW, Ladder Logic, (Visual) FoxPro, Algol, bc, BCPL, Bourne shell, CFML, CL (OS/400), Curl, GAMS, Icon, Inform, Io, J, J#, JScript, JScript.NET, Logo, LotusScript, LPC, MQL5, NetLogo, PL/I, Pure Data, Q, REBOL, Ring, RPG, RPL, S, Small Basic, Smalltalk, Xojo
+
+## 完了条件
+
+1. `docs/ja/progress/top100-language-coverage.md` に 100 言語分の coverage matrix がある。
+2. 各言語に `backend` / `host` / `interop` / `syntax` / `defer` の状態が付いている。
+3. `backend` 状態の言語には最低 1 件の build/parity 実測がある。
+4. `defer` 状態の言語には保留理由と、解除条件がある。
+5. 新規 backend を増やす場合は、profile / emitter / runtime mapping / smoke fixture / progress entry を同一タスクで追加する。
+
+## 決定ログ
+
+- 2026-04-29: TIOBE April 2026 top 100 を初期スナップショットとして採用。全 100 言語を一律 backend 化するのではなく、backend / host / interop / syntax / defer に分類して coverage を管理する。
+- 2026-04-29: `.devcontainer/` と Dockerfile が未統合だった run では、Docker Desktop CLI (`/Applications/Docker.app/Contents/Resources/bin/docker`) と `python:3.12-slim` を使い、`tools.unittest.tooling.test_pytra_cli2`、`core/add.py --target dart/lua/php/zig/powershell`、Ruby focused fixture/stdlib/sample smoke を隔離実行した。devcontainer 追加後は `.devcontainer/scripts/verify-toolchain.sh` を優先する。

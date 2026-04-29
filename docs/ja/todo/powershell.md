@@ -45,9 +45,9 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を powershell に
 
 1. [x] [ID: P1-HOST-CPP-EMITTER-PS1-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target powershell -o work/selfhost/host-cpp/powershell/` で変換 + build を通す
    - 進捗: 2026-04-29 に `--target powershell` は `src/toolchain/emit/profiles/powershell.json` 不在で失敗。`--target ps1` では変換 PASS（20 files）。現コンテナでは `pwsh` / `powershell` が PATH に存在せず、生成済み `work/selfhost/host-cpp/powershell/toolchain_emit_cpp_cli.ps1` の実行検証は未実施。Dockerfile 仕様上は PowerShell を apt で入れる想定なので、環境差分を解消してから S1 build/run を再開する。
-   - 完了: 2026-04-29。`--target powershell` を `ps1` profile / linker target に alias し、emit subprocess は `toolchain.emit.powershell.cli` を使うよう接続した。Docker `python:3.12-slim` 隔離環境で `python src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target powershell -o work/tmp/verify_pytra_20260429/host_cpp_powershell` を実行し、18 source / 30 linked modules / 20 ps1 files の生成まで PASS。
+   - 完了: 2026-04-29 `powershell -> ps1` profile alias と subprocess dispatch を再接続し、Docker `python:3.12-slim` 隔離環境で `python src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target powershell -o work/tmp/verify_pytra_20260429/host_cpp_powershell` が PASS。18 source / 30 linked modules / PowerShell 20 files を出力。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-PS1-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_powershell.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
-   - 進捗: 2026-04-29。Docker `python:3.12-slim` には `pwsh` / `powershell` がなく、生成済み ps1 emitter の実行 parity は未実施。再開条件は隔離環境へ PowerShell runtime を追加すること。
+   - 進捗: 2026-04-29。Docker `python:3.12-slim` と macOS host のどちらにも `pwsh` / `powershell` がないため、生成済み PowerShell emitter の実行 parity は devcontainer または PowerShell 導入済み環境で再開する。
 
 ### P1-EMITTER-SELFHOST-PS1: emit/powershell/cli.py を単独で selfhost C++ build に通す
 
