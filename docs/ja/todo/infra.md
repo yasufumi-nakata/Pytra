@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-28
+最終更新: 2026-04-29
 
 ## 運用ルール
 
@@ -20,7 +20,16 @@
 
 ## 未完了タスク
 
-（現在未完了タスクなし）
+### P1-EMITTER-HOST-MATRIX: emitter host マトリクスの新設と全言語 PASS
+
+文脈: [docs/ja/plans/p1-emitter-host-matrix.md](../plans/p1-emitter-host-matrix.md)
+
+selfhost マトリクス（full compiler）とは別に、「C++ emitter（16 モジュール）を各言語で host できるか」の emitter host マトリクスを新設する。全 18 言語で PASS を中間目標とする。
+
+1. [ ] [ID: P1-EHOST-MATRIX-S1] `gen_backend_progress.py` に emitter host マトリクス生成を追加する（`.parity-results/emitter_host_<lang>.json` から読み取り）
+2. [ ] [ID: P1-EHOST-MATRIX-S2] `progress-preview/backend-progress-emitter-host.md` を出力するようにする
+3. [ ] [ID: P1-EHOST-MATRIX-S3] 各 backend の P1-HOST-CPP-EMITTER タスクの S2 で `.parity-results/emitter_host_<lang>.json` に結果を書き込むよう更新する
+4. [ ] [ID: P1-EHOST-MATRIX-S4] 全 18 言語で emitter host parity PASS を達成する（中間目標）
 
 ### 保留中タスク
 
