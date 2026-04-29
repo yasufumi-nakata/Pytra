@@ -1188,6 +1188,8 @@ def _emit_path_method(ctx: EmitContext, owner: str, method: str, args: list[str]
 def _emit_subscript(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     owner_node = node.get("value")
     owner = _emit_expr(ctx, owner_node)
+    if isinstance(owner_node, dict) and _str(owner_node, "kind") in ("Dict", "List", "Set", "Tuple"):
+        owner = "(" + owner + ")"
     owner_rt = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
     if owner_rt in ("", "unknown") and isinstance(owner_node, dict) and _str(owner_node, "kind") == "Attribute":
         attr = _str(owner_node, "attr")
