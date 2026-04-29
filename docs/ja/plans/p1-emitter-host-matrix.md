@@ -74,8 +74,8 @@ python3 src/pytra-cli.py -build src/toolchain/emit/rs/cli.py --target go -o work
 1. [x] [ID: P1-EHOST-MATRIX-S1] `gen_backend_progress.py` に emitter host マトリクス生成を追加する
 2. [x] [ID: P1-EHOST-MATRIX-S2] `progress-preview/backend-progress-emitter-host.md` を出力するようにする
 3. [x] [ID: P1-EHOST-MATRIX-S3] 各 backend の P1-HOST-CPP-EMITTER タスクの S2 で `.parity-results/emitter_host_<lang>.json` に結果を書き込むよう更新する
-4. [ ] [ID: P1-EHOST-MATRIX-S4] JSON 形式を N×N 対応に拡張する（1ファイルに複数 hosted emitter の結果を持てるようにする）
-5. [ ] [ID: P1-EHOST-MATRIX-S5] `gen_backend_progress.py` を N×N マトリクス表示に対応させる
+4. [x] [ID: P1-EHOST-MATRIX-S4] JSON 形式を N×N 対応に拡張する（1ファイルに複数 hosted emitter の結果を持てるようにする）
+5. [x] [ID: P1-EHOST-MATRIX-S5] `gen_backend_progress.py` を N×N マトリクス表示に対応させる
 
 全 18 言語での emitter host PASS は中間目標として設定するが、実作業は各 backend 担当が P1-HOST-CPP-EMITTER-<LANG> 等で進める。
 
@@ -84,3 +84,4 @@ python3 src/pytra-cli.py -build src/toolchain/emit/rs/cli.py --target go -o work
 - 2026-04-29: 起票。selfhost マトリクス（full compiler）と emitter host マトリクス（emitter のみ）を分離する方針を決定。emitter host 全言語 PASS を full selfhost 前の中間目標とする。
 - 2026-04-29: [ID: P1-EHOST-MATRIX-S1/S2/S3] C++ emitter host の列だけで初版マトリクスを生成。Go, TS, Nim が PASS。
 - 2026-04-29: マトリクスを全言語 × 全言語の N×N 構造に拡張する方針を決定。C++ emitter の列は初版の実績を維持しつつ、他 emitter の列を追加可能にする。
+- 2026-04-29: [ID: P1-EHOST-MATRIX-S4/S5] `emitter_host_<host_lang>.json` の `emitters` map を正本形式として固定し、`gen_backend_progress.py` を host 言語 × hosted emitter の N×N 表示へ対応させた。既存の単一 `hosted_emitter` 形式と `hosted_emitters` / `results` alias は後方互換として受理する。

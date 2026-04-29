@@ -203,9 +203,16 @@ def _load_selfhost_results() -> dict[str, dict[str, object]]:
     return data
 
 
-def _load_emitter_host_results() -> dict[str, dict[str, object]]:
-    """Return {host_lang: emitter_host_doc} from emitter_host_<lang>.json."""
-    data: dict[str, dict[str, object]] = {}
+def _load_emitter_host_results() -> dict[str, dict[str, dict[str, object]]]:
+    """Return {host_lang: {hosted_emitter: emitter_host_doc}}.
+
+    Current single-emitter JSON:
+      {"host_lang": "go", "hosted_emitter": "cpp", "build_status": "ok", ...}
+
+    N×N JSON:
+      {"host_lang": "go", "emitters": {"cpp": {...}, "go": {...}}}
+    """
+    data: dict[str, dict[str, dict[str, object]]] = {}
     for lang in EMITTER_HOST_LANGS:
         path = PARITY_DIR / f"emitter_host_{lang}.json"
         if not path.exists():
@@ -213,10 +220,42 @@ def _load_emitter_host_results() -> dict[str, dict[str, object]]:
             continue
         try:
             doc = json.loads(path.read_text(encoding="utf-8"))
-            data[lang] = doc if isinstance(doc, dict) else {}
+            data[lang] = _normalize_emitter_host_doc(doc if isinstance(doc, dict) else {})
         except Exception:
             data[lang] = {}
     return data
+
+
+def _normalize_emitter_host_doc(doc: dict[str, object]) -> dict[str, dict[str, object]]:
+    hosted = doc.get("emitters")
+    if isinstance(hosted, dict):
+        out: dict[str, dict[str, object]] = {}
+        for hosted_lang, entry in hosted.items():
+            if isinstance(entry, dict):
+                out[str(hosted_lang)] = entry
+        return out
+
+    # Accept aliases so hand-written result files are less brittle.
+    hosted = doc.get("hosted_emitters")
+    if isinstance(hosted, dict):
+        out = {}
+        for hosted_lang, entry in hosted.items():
+            if isinstance(entry, dict):
+                out[str(hosted_lang)] = entry
+        return out
+
+    hosted = doc.get("results")
+    if isinstance(hosted, dict):
+        out = {}
+        for hosted_lang, entry in hosted.items():
+            if isinstance(entry, dict):
+                out[str(hosted_lang)] = entry
+        return out
+
+    hosted_lang = str(doc.get("hosted_emitter", "cpp"))
+    if hosted_lang == "":
+        hosted_lang = "cpp"
+    return {hosted_lang: doc}
 
 
 def _selfhost_stage_icon(doc: dict[str, object], emit_lang: str) -> str:
@@ -299,16 +338,33 @@ def _emitter_host_parity_icon(doc: dict[str, object]) -> str:
         return "🟥"
 
 
-def _emitter_host_summary_cell(emitter_host_data: dict[str, dict[str, object]], lang: str) -> str:
-    doc = emitter_host_data.get(lang, {})
+def _emitter_host_cell_icon(doc: dict[str, object]) -> str:
     build_icon = _emitter_host_build_icon(doc)
     parity_icon = _emitter_host_parity_icon(doc)
     if build_icon == "⬜" and parity_icon == "⬜":
-        return "⬜<br>&nbsp;"
+        return "⬜"
     if build_icon == "🟩" and parity_icon == "🟩":
-        return "🟩<br>2/2"
-    passed = (1 if build_icon == "🟩" else 0) + (1 if parity_icon == "🟩" else 0)
-    return f"🟥<br>{passed}/2"
+        return "🟩"
+    return "🟥"
+
+
+def _emitter_host_summary_cell(emitter_host_data: dict[str, dict[str, dict[str, object]]], lang: str) -> str:
+    hosted_docs = emitter_host_data.get(lang, {})
+    if not hosted_docs:
+        return "⬜<br>&nbsp;"
+    icons = [_emitter_host_cell_icon(hosted_docs.get(hosted_lang, {})) for hosted_lang in EMITTER_HOST_LANGS]
+    tested = [ic for ic in icons if ic != "⬜"]
+    if not tested:
+        return "⬜<br>&nbsp;"
+    passed = icons.count("🟩")
+    total = len(icons)
+    if passed == total:
+        icon = "🟩"
+    elif passed > 0:
+        icon = "🟨"
+    else:
+        icon = "🟥"
+    return f"{icon}<br>{passed}/{total}"
 
 
 # ---------------------------------------------------------------------------
@@ -567,7 +623,7 @@ def _build_selfhost_matrix_en(selfhost_data: dict[str, dict[str, object]]) -> li
     return lines
 
 
-def _build_emitter_host_matrix(emitter_host_data: dict[str, dict[str, object]]) -> list[str]:
+def _build_emitter_host_matrix(emitter_host_data: dict[str, dict[str, dict[str, object]]]) -> list[str]:
     lang_labels = {
         "cpp": "C++", "rs": "Rust", "cs": "C#", "powershell": "PowerShell",
         "js": "JS", "ts": "TS", "dart": "Dart", "go": "Go", "java": "Java",
@@ -575,38 +631,35 @@ def _build_emitter_host_matrix(emitter_host_data: dict[str, dict[str, object]]) 
         "scala": "Scala3", "php": "PHP", "nim": "Nim", "julia": "Julia", "zig": "Zig",
     }
     lines: list[str] = []
-    lines.append("| host 言語 | build | parity | fixture PASS | fixture FAIL | timestamp |")
-    lines.append("|---|---:|---:|---:|---:|---|")
+    hosted_langs = EMITTER_HOST_LANGS
+    lines.append(f"| host 言語 \\ hosted emitter | {' | '.join(_col_name(l) for l in hosted_langs)} |")
+    lines.append(f"|{'|'.join(['---'] * (len(hosted_langs) + 1))}|")
 
-    build_icons: list[str] = []
-    parity_icons: list[str] = []
-    for lang in EMITTER_HOST_LANGS:
-        doc = emitter_host_data.get(lang, {})
-        build_icon = _emitter_host_build_icon(doc)
-        parity_icon = _emitter_host_parity_icon(doc)
-        build_icons.append(build_icon)
-        parity_icons.append(parity_icon)
-        pass_count = doc.get("parity_fixture_pass", "—") if doc else "—"
-        fail_count = doc.get("parity_fixture_fail", "—") if doc else "—"
-        timestamp = str(doc.get("timestamp", "—")) if doc else "—"
-        lines.append(
-            f"| {lang_labels.get(lang, lang)} | {build_icon} | {parity_icon} | "
-            f"{pass_count} | {fail_count} | {timestamp} |"
-        )
+    all_rows_icons: list[list[str]] = []
+    for host_lang in EMITTER_HOST_LANGS:
+        hosted_docs = emitter_host_data.get(host_lang, {})
+        cells = [_emitter_host_cell_icon(hosted_docs.get(hosted_lang, {})) for hosted_lang in hosted_langs]
+        all_rows_icons.append(cells)
+        lines.append(f"| {lang_labels.get(host_lang, host_lang)} | {' | '.join(cells)} |")
 
-    lines.append(
-        f"| **🟩 PASS** | {_count_icon(build_icons, '🟩')} | {_count_icon(parity_icons, '🟩')} |  |  |  |"
-    )
-    lines.append(
-        f"| **🟥 FAIL** | {_count_icon(build_icons, '🟥')} | {_count_icon(parity_icons, '🟥')} |  |  |  |"
-    )
-    lines.append(
-        f"| **⬜ 未実行** | {_count_icon(build_icons, '⬜')} | {_count_icon(parity_icons, '⬜')} |  |  |  |"
-    )
+    total_rows = len(all_rows_icons)
+    ok_cells = []
+    fail_cells = []
+    untested_cells = []
+    for col in range(len(hosted_langs)):
+        ok = sum(1 for row in all_rows_icons if row[col] == "🟩")
+        fail = sum(1 for row in all_rows_icons if row[col] == "🟥")
+        untested = total_rows - ok - fail
+        ok_cells.append(str(ok) if ok > 0 else "—")
+        fail_cells.append(str(fail) if fail > 0 else "—")
+        untested_cells.append(str(untested) if untested > 0 else "—")
+    lines.append(f"| **🟩 PASS** | {' | '.join(ok_cells)} |")
+    lines.append(f"| **🟥 FAIL** | {' | '.join(fail_cells)} |")
+    lines.append(f"| **⬜ 未実行** | {' | '.join(untested_cells)} |")
     return lines
 
 
-def _build_emitter_host_matrix_en(emitter_host_data: dict[str, dict[str, object]]) -> list[str]:
+def _build_emitter_host_matrix_en(emitter_host_data: dict[str, dict[str, dict[str, object]]]) -> list[str]:
     lang_labels = {
         "cpp": "C++", "rs": "Rust", "cs": "C#", "powershell": "PowerShell",
         "js": "JS", "ts": "TS", "dart": "Dart", "go": "Go", "java": "Java",
@@ -614,40 +667,32 @@ def _build_emitter_host_matrix_en(emitter_host_data: dict[str, dict[str, object]
         "scala": "Scala3", "php": "PHP", "nim": "Nim", "julia": "Julia", "zig": "Zig",
     }
     lines: list[str] = []
-    lines.append("| Host language | build | parity | fixture PASS | fixture FAIL | timestamp |")
-    lines.append("|---|---:|---:|---:|---:|---|")
+    hosted_langs = EMITTER_HOST_LANGS
+    lines.append(f"| host language \\ hosted emitter | {' | '.join(_col_name(l) for l in hosted_langs)} |")
+    lines.append(f"|{'|'.join(['---'] * (len(hosted_langs) + 1))}|")
 
-    build_icons: list[str] = []
-    parity_icons: list[str] = []
-    for lang in EMITTER_HOST_LANGS:
-        doc = emitter_host_data.get(lang, {})
-        build_icon = _emitter_host_build_icon(doc)
-        parity_icon = _emitter_host_parity_icon(doc)
-        build_icons.append(build_icon)
-        parity_icons.append(parity_icon)
-        pass_count = doc.get("parity_fixture_pass", "—") if doc else "—"
-        fail_count = doc.get("parity_fixture_fail", "—") if doc else "—"
-        timestamp = str(doc.get("timestamp", "—")) if doc else "—"
-        lines.append(
-            f"| {lang_labels.get(lang, lang)} | {build_icon} | {parity_icon} | "
-            f"{pass_count} | {fail_count} | {timestamp} |"
-        )
+    all_rows_icons: list[list[str]] = []
+    for host_lang in EMITTER_HOST_LANGS:
+        hosted_docs = emitter_host_data.get(host_lang, {})
+        cells = [_emitter_host_cell_icon(hosted_docs.get(hosted_lang, {})) for hosted_lang in hosted_langs]
+        all_rows_icons.append(cells)
+        lines.append(f"| {lang_labels.get(host_lang, host_lang)} | {' | '.join(cells)} |")
 
-    lines.append(
-        f"| **🟩 PASS** | {_count_icon(build_icons, '🟩')} | {_count_icon(parity_icons, '🟩')} |  |  |  |"
-    )
-    lines.append(
-        f"| **🟥 FAIL** | {_count_icon(build_icons, '🟥')} | {_count_icon(parity_icons, '🟥')} |  |  |  |"
-    )
-    lines.append(
-        f"| **⬜ Untested** | {_count_icon(build_icons, '⬜')} | {_count_icon(parity_icons, '⬜')} |  |  |  |"
-    )
+    total_rows = len(all_rows_icons)
+    ok_cells = []
+    fail_cells = []
+    untested_cells = []
+    for col in range(len(hosted_langs)):
+        ok = sum(1 for row in all_rows_icons if row[col] == "🟩")
+        fail = sum(1 for row in all_rows_icons if row[col] == "🟥")
+        untested = total_rows - ok - fail
+        ok_cells.append(str(ok) if ok > 0 else "—")
+        fail_cells.append(str(fail) if fail > 0 else "—")
+        untested_cells.append(str(untested) if untested > 0 else "—")
+    lines.append(f"| **🟩 PASS** | {' | '.join(ok_cells)} |")
+    lines.append(f"| **🟥 FAIL** | {' | '.join(fail_cells)} |")
+    lines.append(f"| **⬜ Untested** | {' | '.join(untested_cells)} |")
     return lines
-
-
-def _count_icon(icons: list[str], icon: str) -> str:
-    count = icons.count(icon)
-    return str(count) if count > 0 else "—"
 
 
 def _selfhost_summary_cell(selfhost_data: dict[str, dict[str, object]], emit_lang: str) -> str:
@@ -738,7 +783,7 @@ def _build_summary_matrix(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
-    emitter_host_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, dict[str, object]]],
     lint_results: dict[str, int | None],
 ) -> list[str]:
     """Build JA summary matrix: rows=area, cols=language.
@@ -780,7 +825,7 @@ def _build_summary_matrix_en(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
-    emitter_host_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, dict[str, object]]],
     lint_results: dict[str, int | None],
 ) -> list[str]:
     """English version of _build_summary_matrix."""
@@ -913,7 +958,7 @@ def _render_ja_summary(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
-    emitter_host_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, dict[str, object]]],
     lint_results: dict[str, int | None],
     generated_at: str,
 ) -> str:
@@ -954,7 +999,7 @@ def _render_en_summary(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
-    emitter_host_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, dict[str, object]]],
     lint_results: dict[str, int | None],
     generated_at: str,
 ) -> str:
@@ -995,7 +1040,7 @@ def _render_ja(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
-    emitter_host_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, dict[str, object]]],
     lint_results: dict[str, int | None],
     generated_at: str,
 ) -> dict[str, str]:
@@ -1122,7 +1167,7 @@ def _render_ja_emitter_host(emitter_host_data: dict, generated_at: str) -> str:
         f"> 生成日時: {generated_at}",
         "> [関連リンク](./index.md)",
         "",
-        "C++ emitter（16 モジュール）を各言語で host し、Python 版 emitter と同じ C++ 出力を生成できるかを示す。",
+        "各 hosted emitter を各 host 言語で実行し、Python 版 emitter と同じ出力を生成できるかを示す。",
         "",
         "| アイコン | 意味 |",
         "|---|---|",
@@ -1144,7 +1189,7 @@ def _render_en(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
-    emitter_host_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, dict[str, object]]],
     lint_results: dict[str, int | None],
     generated_at: str,
 ) -> dict[str, str]:
@@ -1271,7 +1316,7 @@ def _render_en_emitter_host(emitter_host_data: dict, generated_at: str) -> str:
         f"> Generated at: {generated_at}",
         "> [Links](./index.md)",
         "",
-        "Shows whether each language can host the C++ emitter (16 modules) and produce the same C++ output as the Python emitter.",
+        "Shows whether each host language can run each hosted emitter and produce the same output as the Python emitter.",
         "",
         "| Icon | Meaning |",
         "|---|---|",
