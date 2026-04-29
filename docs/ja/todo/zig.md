@@ -42,11 +42,13 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を zig に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-ZIG-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target zig -o work/selfhost/host-cpp/zig/` で変換 + build を通す
+1. [x] [ID: P1-HOST-CPP-EMITTER-ZIG-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target zig -o work/selfhost/host-cpp/zig/` で変換 + build を通す
    - 進捗: 2026-04-29 に実行し、変換前に FAIL。`--target` の available 一覧には `zig` が出るが、実際には `error: unsupported target: zig (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, zig)` で停止する。target wiring が一覧と実行 dispatch で不整合。
    - 進捗: 2026-04-29。`--target zig` を build dispatch へ再接続し、Docker `python:3.12-slim` 隔離環境で `test/fixture/source/py/core/add.py --target zig` は 12 files 生成まで PASS。C++ emitter host exact command は unsupported target を解消し、30 modules link 後に Zig emitter 側の `RuntimeError: lang=zig unsupported stmt kind: TupleUnpack` で停止する。
+   - 完了: 2026-04-29。Zig emitter の文レベル `TupleUnpack` / `MultiAssign` を既存 tuple 代入レンダラへ接続し、Docker 隔離環境で C++ emitter host exact command が 30 modules link 後に 30 files 生成まで PASS。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-ZIG-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_zig.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
    - 進捗: 2026-04-29 時点では S1 が変換前に失敗するため未実行。参考として `python3 tools/run/run_selfhost_parity.py --selfhost-lang zig --emit-target cpp --case-root fixture` も実行し、同じ `--target zig` unsupported を `.parity-results/selfhost_zig.json` に build_failed として記録済み。
+   - 進捗: 2026-04-29。Zig host 出力を module-id path 配置へ揃え、root `main.zig` shim と linked user module / `pytra.std.json` module import 生成を接続。Docker 隔離環境の `zig build-exe work/selfhost/host-cpp/zig/main.zig` は import 不整合を越え、次ブロッカーは `field()` / `dict` / `anytype` 型式 / `__file__` / `_` 変数名 / shadowing・unused const など Zig emitter の未実装生成。
 
 ### P1-EMITTER-SELFHOST-ZIG: emit/zig/cli.py を単独で selfhost C++ build に通す
 

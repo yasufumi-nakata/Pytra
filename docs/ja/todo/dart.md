@@ -42,10 +42,12 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を dart に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-DART-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target dart -o work/selfhost/host-cpp/dart/` で変換 + build を通す
+1. [x] [ID: P1-HOST-CPP-EMITTER-DART-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target dart -o work/selfhost/host-cpp/dart/` で変換 + build を通す
    - 進捗: 2026-04-29 現在、このコマンドは `error: unsupported target: dart` で開始前に失敗する。`pytra-cli.py -build` の target registry に dart を再接続してから、C++ emitter host 変換を再実行する。
    - 進捗: 2026-04-29。`--target dart` を build dispatch へ再接続し、Docker `python:3.12-slim` 隔離環境で `test/fixture/source/py/core/add.py --target dart` は 2 files 生成まで PASS。C++ emitter host exact command は unsupported target を解消し、30 modules link 後に Dart emitter 側の `RuntimeError: lang=dart unsupported stmt kind: TupleUnpack` で停止する。
+   - 完了: 2026-04-29。Dart emitter の文レベル `TupleUnpack` / `MultiAssign` を既存 tuple 代入レンダラへ接続し、Docker 隔離環境で C++ emitter host exact command が 30 modules link 後に 25 files 生成まで PASS。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-DART-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_dart.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
+   - 進捗: 2026-04-29。Dart host 出力を module-id path 配置（例: `std/json.dart`, `toolchain/emit/common/cli_runner.dart`）へ揃え、linked user module / nested import の import 生成を接続。Docker 隔離環境で生成済み C++ emitter host の `dart run` は import 不整合を越え、次ブロッカーは `extern()` / `field()` / `dict` / `sorted()` / `__file__` / Dart Map の `items()`・`get_()` など Python runtime helper 未接続。
 
 ### P1-EMITTER-SELFHOST-DART: emit/dart/cli.py を単独で selfhost C++ build に通す
 

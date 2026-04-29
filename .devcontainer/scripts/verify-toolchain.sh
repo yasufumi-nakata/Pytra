@@ -27,6 +27,8 @@ run tsc --version
 run go version
 run rustc --version
 run cargo --version
+run dart --version
+run zig version
 run dotnet --info
 run pwsh -NoLogo -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
 run ruby --version

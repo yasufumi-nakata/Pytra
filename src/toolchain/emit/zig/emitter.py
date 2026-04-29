@@ -2046,6 +2046,12 @@ class ZigNativeEmitter:
         meta = meta if isinstance(meta, dict) else {}
         import_bindings_any = meta.get("import_bindings")
         import_bindings = import_bindings_any if isinstance(import_bindings_any, list) else []
+        linked_module_ids: set[str] = set()
+        linked_any = meta.get("_cli_all_module_ids")
+        linked_list = linked_any if isinstance(linked_any, list) else []
+        for linked_item in linked_list:
+            if isinstance(linked_item, str) and linked_item != "":
+                linked_module_ids.add(linked_item)
         known_nominals_by_module = {
             'pytra.std.json': {'JsonObj', 'JsonArr', 'JsonValue'},
             'pytra.std.pathlib': {'Path'},
@@ -2068,11 +2074,6 @@ class ZigNativeEmitter:
             # Skip pytra.built_in (provided by py_runtime.zig)
             if module_id.startswith("pytra.built_in"):
                 continue
-            if module_id == "pytra.std.json":
-                if export_name == "JsonVal" and "JsonVal" not in emitted:
-                    self._emit_line("const JsonVal = pytra.JsonVal;")
-                    emitted.add("JsonVal")
-                continue
             if module_id in {"pytra.types", "pytra.typing", "typing", "typing.cast"} or module_id.startswith("pytra.types.") or module_id.startswith("pytra.typing."):
                 if not (module_id == "typing" and binding.get("export_name") != "cast"):
                     continue
@@ -2083,6 +2084,11 @@ class ZigNativeEmitter:
             binding_kind = binding.get("resolved_binding_kind", "")
             if not isinstance(binding_kind, str) or binding_kind == "":
                 binding_kind = binding.get("binding_kind", "")
+            if module_id == "pytra.std.json" and binding_kind != "module":
+                if export_name == "JsonVal" and "JsonVal" not in emitted:
+                    self._emit_line("const JsonVal = pytra.JsonVal;")
+                    emitted.add("JsonVal")
+                continue
             nominal_module_id = runtime_module_id if runtime_module_id != "" else module_id
             for nominal in known_nominals_by_module.get(nominal_module_id, set()):
                 self._import_alias_map[nominal] = nominal
@@ -2099,15 +2105,26 @@ class ZigNativeEmitter:
                 import_path = self._root_rel_prefix() + "std/time_native.zig"
                 safe_mod = "time_native"
             else:
-                if not candidate_module.startswith("pytra.") and not candidate_module.startswith("."):
+                if (
+                    not candidate_module.startswith("pytra.")
+                    and not candidate_module.startswith(".")
+                    and candidate_module not in linked_module_ids
+                ):
                     canonical = canonical_runtime_module_id(candidate_module)
                     if isinstance(canonical, str) and canonical != "" and canonical != candidate_module:
                         imported_module = canonical
                         candidate_module = canonical
-                if not candidate_module.startswith("pytra.") and not candidate_module.startswith("."):
+                if (
+                    not candidate_module.startswith("pytra.")
+                    and not candidate_module.startswith(".")
+                    and candidate_module not in linked_module_ids
+                ):
                     continue
                 import_path = self._module_id_to_import_path(imported_module)
-                safe_mod = _safe_ident(imported_module.split(".")[-1], "mod")
+                if imported_module.startswith("pytra."):
+                    safe_mod = _safe_ident(imported_module.split(".")[-1], "mod")
+                else:
+                    safe_mod = _safe_ident(imported_module.replace(".", "_"), "mod")
             if safe_mod not in emitted:
                 self._emit_line("const " + safe_mod + " = @import(\"" + import_path + "\");")
                 emitted.add(safe_mod)
@@ -2490,6 +2507,9 @@ class ZigNativeEmitter:
                 self._emit_line(target + " = " + value + ";")
                 return
             raise RuntimeError("lang=zig unsupported assign shape")
+        if kind in {"MultiAssign", "TupleUnpack"}:
+            self._emit_multi_assign(stmt)
+            return
         if kind == "AugAssign":
             target = self._render_target(stmt.get("target"))
             op = str(stmt.get("op"))
@@ -3678,6 +3698,13 @@ class ZigNativeEmitter:
                         continue
                 self._emit_line(name + " = " + field_access + ";")
             i += 1
+
+    def _emit_multi_assign(self, stmt: dict[str, Any]) -> None:
+        targets_any = stmt.get("targets")
+        targets = targets_any if isinstance(targets_any, list) else []
+        if len(targets) == 0:
+            raise RuntimeError("lang=zig unsupported multi assign target: empty")
+        self._emit_tuple_assign({"kind": "Tuple", "elements": targets}, stmt.get("value"))
 
     def _emit_swap(self, stmt: dict[str, Any]) -> None:
         lhs_node = stmt.get("lhs") if stmt.get("lhs") is not None else stmt.get("left")

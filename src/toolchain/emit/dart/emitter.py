@@ -1498,6 +1498,7 @@ class DartNativeEmitter:
         rt_prefix = self._root_rel_prefix
         dart_import_lines: list[str] = []
         alias_lines: list[str] = []
+        alias_line_names: set[str] = set()
         # Always import py_runtime
         dart_import_lines.append("import '" + rt_prefix + "built_in/py_runtime.dart';")
         # Use build_import_alias_map + resolve_import_binding_doc (§3/§7)
@@ -1597,7 +1598,73 @@ class DartNativeEmitter:
                             # Class constructor: use name alias (module.Class) instead of var
                             self.relative_import_name_aliases[alias_txt] = mod_alias + "." + sym_safe
                         else:
-                            alias_lines.append("var " + alias_txt + " = " + mod_alias + "." + sym_safe + ";")
+                            if alias_txt not in alias_line_names:
+                                alias_lines.append("var " + alias_txt + " = " + mod_alias + "." + sym_safe + ";")
+                                alias_line_names.add(alias_txt)
+        linked_module_ids: set[str] = set()
+        linked_any = meta.get("_cli_all_module_ids")
+        linked_list = linked_any if isinstance(linked_any, list) else []
+        for linked_any_item in linked_list:
+            if isinstance(linked_any_item, str) and linked_any_item != "":
+                linked_module_ids.add(linked_any_item)
+        import_bindings_any = meta.get("import_bindings")
+        import_bindings = import_bindings_any if isinstance(import_bindings_any, list) else []
+        for binding_any in import_bindings:
+            if not isinstance(binding_any, dict):
+                continue
+            module_id_any = binding_any.get("module_id")
+            module_id = module_id_any if isinstance(module_id_any, str) else ""
+            if module_id == "":
+                continue
+            runtime_mod_any = binding_any.get("runtime_module_id")
+            runtime_mod = runtime_mod_any if isinstance(runtime_mod_any, str) else ""
+            export_any = binding_any.get("export_name")
+            export_name = export_any if isinstance(export_any, str) else ""
+            local_any = binding_any.get("local_name")
+            local_name = local_any if isinstance(local_any, str) else ""
+            binding_kind_any = binding_any.get("resolved_binding_kind")
+            binding_kind = binding_kind_any if isinstance(binding_kind_any, str) and binding_kind_any != "" else ""
+            if binding_kind == "":
+                raw_kind_any = binding_any.get("binding_kind")
+                binding_kind = raw_kind_any if isinstance(raw_kind_any, str) else ""
+            if export_name in _COMPILETIME_STD_IMPORT_SYMBOLS or local_name in _COMPILETIME_STD_IMPORT_SYMBOLS:
+                continue
+            mod_canon = canonical_runtime_module_id(runtime_mod if runtime_mod != "" else module_id)
+            if mod_canon == "":
+                mod_canon = runtime_mod if runtime_mod != "" else module_id
+            if mod_canon.startswith("pytra.built_in") or mod_canon.startswith("pytra.core."):
+                continue
+            if mod_canon in {"pytra.types", "pytra.typing", "typing", "typing.cast"}:
+                continue
+            if mod_canon.startswith("pytra.types.") or mod_canon.startswith("pytra.typing."):
+                continue
+            if not mod_canon.startswith("pytra.") and mod_canon not in linked_module_ids:
+                continue
+            if module_id == "pytra.std.json" and export_name == "JsonVal":
+                continue
+            public_alias = local_name
+            if public_alias == "":
+                public_alias = export_name
+            if public_alias == "":
+                public_alias = mod_canon.split(".")[-1]
+            safe_public_alias = _safe_ident(public_alias, "value")
+            if mod_canon not in imported_module_paths:
+                mod_alias_seq += 1
+                mod_alias = "__mod_" + str(mod_alias_seq)
+                leaf_alias = _safe_ident(mod_canon.split(".")[-1], "")
+                if leaf_alias != "" and ("__mod_" + leaf_alias) not in self.imported_modules:
+                    mod_alias = "__mod_" + leaf_alias
+                imp_path = _module_id_to_import_path(mod_canon, ".dart", rt_prefix)
+                dart_import_lines.append("import '" + imp_path + "' as " + mod_alias + ";")
+                imported_module_paths[mod_canon] = mod_alias
+                self._module_aliases[mod_canon] = mod_alias
+                self.imported_modules.add(mod_alias)
+            mod_alias = imported_module_paths[mod_canon]
+            if binding_kind == "module":
+                self.relative_import_name_aliases[safe_public_alias] = mod_alias
+                continue
+            if binding_kind == "symbol" and export_name != "":
+                self.relative_import_name_aliases[safe_public_alias] = mod_alias + "." + _safe_ident(export_name, export_name)
         for node in self._walk_nodes(body):
             runtime_module_id = node.get("runtime_module_id") if isinstance(node, dict) and isinstance(node.get("runtime_module_id"), str) else ""
             if runtime_module_id != "":
@@ -1814,6 +1881,9 @@ class DartNativeEmitter:
                 self._emit_line(target + " = " + value + ";")
                 return
             raise RuntimeError("lang=dart unsupported assign shape")
+        if kind in {"MultiAssign", "TupleUnpack"}:
+            self._emit_multi_assign(stmt)
+            return
         if kind == "AugAssign":
             target = self._render_target(stmt.get("target"))
             op = str(stmt.get("op"))
@@ -2660,6 +2730,13 @@ class DartNativeEmitter:
                         continue
                 self._emit_line(target_txt + " = " + tmp_name + "[" + str(i) + "];")
             i += 1
+
+    def _emit_multi_assign(self, stmt: dict[str, Any]) -> None:
+        targets_any = stmt.get("targets")
+        targets = targets_any if isinstance(targets_any, list) else []
+        if len(targets) == 0:
+            raise RuntimeError("lang=dart unsupported multi assign target: empty")
+        self._emit_tuple_assign({"kind": "Tuple", "elements": targets}, stmt.get("value"))
 
     def _emit_swap(self, stmt: dict[str, Any]) -> None:
         left = self._render_target(stmt.get("left"))

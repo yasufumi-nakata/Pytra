@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 from toolchain.compile.lower import lower_east2_to_east3
+from toolchain.emit.dart.cli import _copy_dart_runtime
 from toolchain.emit.dart.emitter import emit_dart_module
 from toolchain.parse.py.parser import parse_python_source
 from toolchain.resolve.py.builtin_registry import load_builtin_registry
@@ -65,6 +66,13 @@ def _assert_dart_runs(source: str) -> str:
 
 
 class DartEmitterSmokeTest(unittest.TestCase):
+    def test_cli_runtime_copy_provides_import_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out_dir = Path(tmp)
+            _copy_dart_runtime(out_dir)
+            self.assertTrue((out_dir / "built_in" / "py_runtime.dart").exists())
+            self.assertTrue((out_dir / "std" / "sys_native.dart").exists())
+
     def test_emit_add_function(self) -> None:
         source = """
 def add(a: int, b: int) -> int:
@@ -73,7 +81,7 @@ def add(a: int, b: int) -> int:
         east3 = _build_east3(source)
         code = emit_dart_module(east3)
         self.assertIn("int add(", code)
-        self.assertIn("return (a + b);", code)
+        self.assertIn("return pytraInt((a + b));", code)
 
     def test_emit_if_else(self) -> None:
         source = """
@@ -86,6 +94,95 @@ def f(x: int) -> int:
         code = emit_dart_module(east3)
         self.assertIn("if ((x < 1))", code)
         self.assertIn("return 10;", code)
+
+    def test_import_bindings_emit_linked_user_symbol_import(self) -> None:
+        east3 = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [],
+            "meta": {
+                "_cli_all_module_ids": ["toolchain.emit.common.cli_runner"],
+                "import_bindings": [
+                    {
+                        "module_id": "toolchain.emit.common.cli_runner",
+                        "runtime_module_id": "toolchain.emit.common.cli_runner",
+                        "export_name": "run_emit_cli",
+                        "local_name": "run_emit_cli",
+                        "binding_kind": "symbol",
+                    }
+                ],
+                "emit_context": {"module_id": "toolchain.emit.cpp.cli", "root_rel_prefix": "./", "is_entry": True},
+            },
+        }
+        code = emit_dart_module(east3)
+
+        self.assertIn("import './toolchain/emit/common/cli_runner.dart' as __mod_cli_runner;", code)
+
+    def test_emit_tuple_unpack_stmt(self) -> None:
+        east3 = {
+            "kind": "Module",
+            "east_stage": 3,
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "pair",
+                    "args": [],
+                    "arg_types": {},
+                    "return_type": "tuple[int64,int64]",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Tuple",
+                                "elements": [
+                                    {"kind": "Constant", "value": 1, "resolved_type": "int64"},
+                                    {"kind": "Constant", "value": 2, "resolved_type": "int64"},
+                                ],
+                                "resolved_type": "tuple[int64,int64]",
+                            },
+                        }
+                    ],
+                },
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "args": [],
+                    "arg_types": {},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "TupleUnpack",
+                            "declare": True,
+                            "targets": [
+                                {"kind": "Name", "id": "x", "resolved_type": "int64"},
+                                {"kind": "Name", "id": "y", "resolved_type": "int64"},
+                            ],
+                            "value": {
+                                "kind": "Call",
+                                "func": {"kind": "Name", "id": "pair"},
+                                "args": [],
+                                "resolved_type": "tuple[int64,int64]",
+                            },
+                        },
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "BinOp",
+                                "left": {"kind": "Name", "id": "x", "resolved_type": "int64"},
+                                "op": "Add",
+                                "right": {"kind": "Name", "id": "y", "resolved_type": "int64"},
+                                "resolved_type": "int64",
+                            },
+                        },
+                    ],
+                },
+            ],
+            "meta": {"emit_context": {"module_id": "app", "root_rel_prefix": "./", "is_entry": True}},
+        }
+        code = emit_dart_module(east3)
+        self.assertIn("var __pytraTuple_", code)
+        self.assertIn("var x = __pytraTuple_", code)
+        self.assertIn("var y = __pytraTuple_", code)
 
     def test_emit_and_run_print(self) -> None:
         out = _assert_dart_runs(

@@ -138,6 +138,42 @@ def _path_parent(path: Path) -> Path:
     return Path(text[:last])
 
 
+def _module_output_path(output_dir: Path, module_id: str, file_ext: str, module_path_style: bool) -> Path:
+    if not module_path_style:
+        return output_dir.joinpath(module_id.replace(".", "_") + file_ext)
+    rel: str = module_id
+    if rel.startswith("pytra."):
+        rel = rel[len("pytra.") :]
+    while rel.startswith("."):
+        rel = rel[1:]
+    if rel == "":
+        rel = "module"
+    return output_dir.joinpath(rel.replace(".", "/") + file_ext)
+
+
+def _module_root_rel_prefix(module_id: str, file_ext: str, module_path_style: bool) -> str:
+    if not module_path_style:
+        return "./"
+    out_path: Path = _module_output_path(Path("."), module_id, file_ext, module_path_style)
+    parent_txt: str = str(_path_parent(out_path))
+    if parent_txt.startswith("./"):
+        parent_txt = parent_txt[2:]
+    if parent_txt == "." or parent_txt == "":
+        return "./"
+    depth: int = 1
+    i: int = 0
+    while i < len(parent_txt):
+        if parent_txt[i] == "/":
+            depth += 1
+        i += 1
+    prefix: str = ""
+    i = 0
+    while i < depth:
+        prefix += "../"
+        i += 1
+    return prefix
+
+
 def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
     """Load linked modules from a manifest.json file."""
     manifest_text: str = manifest_path.read_text(encoding="utf-8")
@@ -181,6 +217,7 @@ def run_emit_cli(
     default_ext: str = "",
     post_emit: PostEmitFn | None = None,
     direct_emit_fn: DirectEmitFn | None = None,
+    module_path_style: bool = False,
 ) -> int:
     """Run the emit CLI with the given language-specific emit function.
 
@@ -195,6 +232,10 @@ def run_emit_cli(
                         When set, emit_fn and default_ext are ignored.
         default_ext: Default file extension (e.g. ".rs", ".go"). If empty,
                      must be provided via --ext.
+        module_path_style: If true, write modules as module-id paths
+                           (pytra.std.json -> std/json.ext) instead of flat
+                           names (pytra_std_json.ext). Used by import-path
+                           based backends.
     Returns:
         Exit code (0 on success).
     """
@@ -237,6 +278,35 @@ def run_emit_cli(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     modules: list[dict[str, JsonVal]] = _load_linked_modules(manifest_path)
+    all_module_ids: list[str] = []
+    for east_doc in modules:
+        meta_any: JsonVal = east_doc.get("meta")
+        meta_obj = json.JsonValue(meta_any).as_obj()
+        if meta_obj is None:
+            continue
+        mid = json.JsonValue(meta_obj.raw.get("_cli_module_id")).as_str()
+        if mid is not None and mid != "":
+            all_module_ids.append(mid)
+    for east_doc in modules:
+        meta_any = east_doc.get("meta")
+        typed_meta: dict[str, JsonVal] = {}
+        meta_obj = json.JsonValue(meta_any).as_obj()
+        if meta_obj is not None:
+            typed_meta = meta_obj.raw
+        typed_meta["_cli_all_module_ids"] = all_module_ids
+        mid = json.JsonValue(typed_meta.get("_cli_module_id")).as_str()
+        if mid is not None and mid != "" and file_ext != "":
+            emit_context: dict[str, JsonVal] = {}
+            emit_context_any = typed_meta.get("emit_context")
+            emit_context_obj = json.JsonValue(emit_context_any).as_obj()
+            if emit_context_obj is not None:
+                emit_context = emit_context_obj.raw
+            emit_context["module_id"] = mid
+            emit_context["root_rel_prefix"] = _module_root_rel_prefix(mid, file_ext, module_path_style)
+            is_entry = json.JsonValue(typed_meta.get("_cli_is_entry")).as_bool()
+            emit_context["is_entry"] = bool(is_entry)
+            typed_meta["emit_context"] = emit_context
+        east_doc["meta"] = typed_meta
     written: int = 0
 
     if use_direct and direct_emit_fn is not None:
@@ -258,8 +328,9 @@ def run_emit_cli(
                     module_id = mid
             if module_id == "":
                 module_id = "module_" + str(written)
-            out_name: str = module_id.replace(".", "_") + file_ext
-            output_dir.joinpath(out_name).write_text(code, encoding="utf-8")
+            out_path: Path = _module_output_path(output_dir, module_id, file_ext, module_path_style)
+            _path_parent(out_path).mkdir(parents=True, exist_ok=True)
+            out_path.write_text(code, encoding="utf-8")
             written += 1
 
     if post_emit is not None:
