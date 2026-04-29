@@ -1090,6 +1090,11 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 for a in args:
                     arg_strs2.append(_emit_expr(ctx, a))
                 return _ruby_class_name(fn_name) + ".new(" + ", ".join(arg_strs2) + ")"
+            if len(fn_name) > 0 and fn_name[0].isupper():
+                arg_strs2: list[str] = []
+                for a in args:
+                    arg_strs2.append(_emit_expr(ctx, a))
+                return _ruby_class_name(fn_name) + ".new(" + ", ".join(arg_strs2) + ")"
             # Exception constructors
             if _is_exception_type_name(ctx, fn_name):
                 exc_cls = ruby_exception_class(fn_name)
@@ -1210,6 +1215,8 @@ def _emit_method_call(
             if _should_skip_module_ruby(owner_mod, ctx.mapping):
                 resolved = resolve_runtime_symbol_name(attr, ctx.mapping, module_id=owner_mod)
                 if resolved != "":
+                    if len(resolved) > 0 and resolved[0].isupper() and "." not in resolved and "::" not in resolved:
+                        return resolved + ".new(" + ", ".join(arg_strs) + ")"
                     return resolved + "(" + ", ".join(arg_strs) + ")"
             if not _should_skip_module_ruby(owner_mod, ctx.mapping):
                 return _ruby_method_name(attr) + "(" + ", ".join(arg_strs) + ")"
