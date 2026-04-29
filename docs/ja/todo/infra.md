@@ -26,11 +26,13 @@
 
 TIOBE Index 2026-04 の top 100 を初期スナップショットとして、Pytra がどの言語へどの深さで適応できるかを coverage matrix で管理する。全 100 言語を一律 native backend 化するのではなく、`backend` / `host` / `interop` / `syntax` / `defer` に分類して進める。
 
-1. [ ] [ID: P2-TOP100-LANG-S1] top 100 言語 catalog を machine-readable にする（rank/source/category/current_status）
+1. [x] [ID: P2-TOP100-LANG-S1] top 100 言語 catalog を machine-readable にする（rank/source/category/current_status）
    - 入力正本: `docs/ja/plans/p2-top100-language-coverage.md`
    - 出力候補: `specs/top100-language-coverage.yaml` または `docs/ja/progress/top100-language-coverage.md`
-2. [ ] [ID: P2-TOP100-LANG-S2] 既存 backend / host / interop / syntax / defer の初期分類を確定する
+   - 完了: 2026-04-30。公式 TIOBE April 2026 を再確認し、`docs/ja/progress/top100-language-coverage.md` に source snapshot、100言語 matrix、分類、実測コマンド、blocker、次アクションを固定した。
+2. [x] [ID: P2-TOP100-LANG-S2] 既存 backend / host / interop / syntax / defer の初期分類を確定する
    - 既存 backend 群: cpp, rs, cs, js, ts, dart, go, java, scala, kotlin, swift, ruby, lua, php, nim, julia, zig, powershell を現状 matrix に接続する。
+   - 完了: 2026-04-30。Top100 matrix で Pytra 既存 target を `backend` / Python を `host` / C と SQL 系を `interop` / 未接続候補を `syntax` / visual・platform-specific・historical 系を `defer` に初期分類した。
 3. [ ] [ID: P2-TOP100-LANG-S3] top 50 の未対応候補から優先 backend plan を作る
    - 初期候補: Visual Basic, R, Delphi/Object Pascal, Perl, Fortran, MATLAB, Ada, PL/SQL, Prolog, COBOL, SAS, Objective-C, Lisp, ML, Haskell, VBScript, ABAP, OCaml, Caml, Erlang, X++, Transact-SQL, Solidity。
 4. [ ] [ID: P2-TOP100-LANG-S4] DSL / visual / shell / query 系の defer 条件を明文化する

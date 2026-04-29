@@ -2494,6 +2494,9 @@ class ZigNativeEmitter:
                 self._emit_line(target + " = " + value + ";")
                 return
             raise RuntimeError("lang=zig unsupported assign shape")
+        if kind == "TupleUnpack" or kind == "MultiAssign":
+            self._emit_multi_assign(stmt)
+            return
         if kind == "AugAssign":
             target = self._render_target(stmt.get("target"))
             op = str(stmt.get("op"))
@@ -3795,6 +3798,24 @@ class ZigNativeEmitter:
                         continue
                 self._emit_line(name + " = " + field_access + ";")
             i += 1
+
+    def _emit_multi_assign(self, stmt: dict[str, Any]) -> None:
+        targets_any = stmt.get("targets")
+        targets = targets_any if isinstance(targets_any, list) else []
+        if len(targets) == 0:
+            raise RuntimeError("lang=zig unsupported multi assign target: empty")
+        target_types_any = stmt.get("target_types")
+        target_types = target_types_any if isinstance(target_types_any, list) else []
+        i = 0
+        while i < len(targets):
+            target_any = targets[i]
+            if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                target_name = _safe_ident(target_any.get("id"), "value")
+                if i < len(target_types) and isinstance(target_types[i], str) and target_types[i].strip() != "":
+                    self._current_type_map()[target_name] = target_types[i].strip()
+                    self._current_storage_type_map().setdefault(target_name, target_types[i].strip())
+            i += 1
+        self._emit_tuple_assign({"kind": "Tuple", "elements": targets}, stmt.get("value"))
 
     def _emit_swap(self, stmt: dict[str, Any]) -> None:
         lhs_node = self._dict_get_any(stmt, "lhs")
