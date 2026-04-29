@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-27
+最終更新: 2026-04-29
 
 ## 運用ルール
 
@@ -43,7 +43,9 @@
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を julia に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-JULIA-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target julia -o work/selfhost/host-cpp/julia/` で変換 + build を通す
-2. [ ] [ID: P1-HOST-CPP-EMITTER-JULIA-S2] `run_selfhost_parity.py --selfhost-lang julia --emit-target cpp --case-root fixture` で fixture parity PASS を確認する（結果は `.parity-results/selfhost_julia.json` に書き込まれ、`gen_backend_progress.py` で selfhost マトリクスに反映される）
+   - 進捗: 2026-04-29 に実行し、変換段階で FAIL。`build: parsed/resolved/compiled/optimized/linked 18 files / 33 modules` までは通るが、Julia emitter が `julia subset: unsupported expr kind: Name` で停止する。発生箇所は `src/toolchain/emit/julia/subset.py` の class method 内 return 式 render。
+2. [ ] [ID: P1-HOST-CPP-EMITTER-JULIA-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_julia.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
+   - 進捗: 2026-04-29 時点では S1 が変換失敗のため未実行。参考として `PATH=/usr/local/bin:... python3 tools/run/run_selfhost_parity.py --selfhost-lang julia --emit-target cpp --case-root fixture` も実行し、同じ `unsupported expr kind: Name` を `.parity-results/selfhost_julia.json` に build_failed として記録済み。
 
 ### P1-EMITTER-SELFHOST-JULIA: emit/julia/cli.py を単独で selfhost C++ build に通す
 

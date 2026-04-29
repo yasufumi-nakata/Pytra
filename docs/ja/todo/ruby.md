@@ -45,7 +45,7 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を ruby に変換
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` で変換 + build を通す
    - 進捗: 2026-04-29 に実行し、変換前に FAIL。現在の `pytra-cli.py -build` の `--target` 一覧に `ruby` がなく、`unsupported target: ruby (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, zig)` で停止する。旧 toolchain1 Ruby emitter は変更禁止のため、target wiring / toolchain2 側の整備が先。
-2. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S2] `run_selfhost_parity.py --selfhost-lang ruby --emit-target cpp --case-root fixture` で fixture parity PASS を確認する（結果は `.parity-results/selfhost_ruby.json` に書き込まれ、`gen_backend_progress.py` で selfhost マトリクスに反映される）
+2. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_ruby.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
    - 進捗: 2026-04-29 に実行し、`.parity-results/selfhost_ruby.json` に `emit_targets.cpp.status = build_failed` を記録。runner の build 段階も `--target ruby` unsupported で停止する。
 
 ### P1-EMITTER-SELFHOST-RUBY: emit/ruby/cli.py を単独で selfhost C++ build に通す

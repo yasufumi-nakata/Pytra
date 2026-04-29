@@ -5,9 +5,11 @@ Reads .parity-results/*.json and fixture/sample lists, then writes:
   docs/ja/progress-preview/backend-progress-fixture.md
   docs/ja/progress-preview/backend-progress-sample.md
   docs/ja/progress-preview/backend-progress-selfhost.md
+  docs/ja/progress-preview/backend-progress-emitter-host.md
   docs/en/progress-preview/backend-progress-fixture.md
   docs/en/progress-preview/backend-progress-sample.md
   docs/en/progress-preview/backend-progress-selfhost.md
+  docs/en/progress-preview/backend-progress-emitter-host.md
 
 Generated files are placed in progress-preview/ (git-ignored).
 To publish, manually copy from progress-preview/ to progress/.
@@ -37,6 +39,7 @@ PARITY_LANGS = [
     "java", "scala", "kotlin", "swift", "ruby", "lua", "php", "nim", "julia", "zig",
 ]
 SELFHOST_LANGS = PARITY_LANGS
+EMITTER_HOST_LANGS = PARITY_LANGS
 
 # Short display names for table headers (keep columns narrow)
 _LANG_SHORT: dict[str, str] = {
@@ -200,6 +203,22 @@ def _load_selfhost_results() -> dict[str, dict[str, object]]:
     return data
 
 
+def _load_emitter_host_results() -> dict[str, dict[str, object]]:
+    """Return {host_lang: emitter_host_doc} from emitter_host_<lang>.json."""
+    data: dict[str, dict[str, object]] = {}
+    for lang in EMITTER_HOST_LANGS:
+        path = PARITY_DIR / f"emitter_host_{lang}.json"
+        if not path.exists():
+            data[lang] = {}
+            continue
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            data[lang] = doc if isinstance(doc, dict) else {}
+        except Exception:
+            data[lang] = {}
+    return data
+
+
 def _selfhost_stage_icon(doc: dict[str, object], emit_lang: str) -> str:
     """Return icon for one cell in the selfhost matrix.
 
@@ -240,6 +259,56 @@ def _selfhost_stage_icon(doc: dict[str, object], emit_lang: str) -> str:
     parity = stages.get("parity", {})
     parity_ok = isinstance(parity, dict) and str(parity.get("status", "")) == "ok"
     return "🟩" if parity_ok else "🟥"
+
+
+def _status_ok(value: object) -> bool:
+    text = str(value).lower()
+    return text == "ok" or text == "pass" or text == "passed" or text == "success"
+
+
+def _emitter_host_build_icon(doc: dict[str, object]) -> str:
+    if not doc:
+        return "⬜"
+    status = doc.get("build_status")
+    if status is None:
+        build = doc.get("build")
+        if isinstance(build, dict):
+            status = build.get("status")
+    if status is None:
+        return "⬜"
+    return "🟩" if _status_ok(status) else "🟥"
+
+
+def _emitter_host_parity_icon(doc: dict[str, object]) -> str:
+    if not doc:
+        return "⬜"
+    status = doc.get("parity_status")
+    if status is None:
+        parity = doc.get("parity")
+        if isinstance(parity, dict):
+            status = parity.get("status")
+    if status is not None:
+        return "🟩" if _status_ok(status) else "🟥"
+    fail = doc.get("parity_fixture_fail")
+    passed = doc.get("parity_fixture_pass")
+    if fail is None:
+        return "⬜"
+    try:
+        return "🟩" if int(fail) == 0 and passed is not None else "🟥"
+    except Exception:
+        return "🟥"
+
+
+def _emitter_host_summary_cell(emitter_host_data: dict[str, dict[str, object]], lang: str) -> str:
+    doc = emitter_host_data.get(lang, {})
+    build_icon = _emitter_host_build_icon(doc)
+    parity_icon = _emitter_host_parity_icon(doc)
+    if build_icon == "⬜" and parity_icon == "⬜":
+        return "⬜<br>&nbsp;"
+    if build_icon == "🟩" and parity_icon == "🟩":
+        return "🟩<br>2/2"
+    passed = (1 if build_icon == "🟩" else 0) + (1 if parity_icon == "🟩" else 0)
+    return f"🟥<br>{passed}/2"
 
 
 # ---------------------------------------------------------------------------
@@ -498,6 +567,89 @@ def _build_selfhost_matrix_en(selfhost_data: dict[str, dict[str, object]]) -> li
     return lines
 
 
+def _build_emitter_host_matrix(emitter_host_data: dict[str, dict[str, object]]) -> list[str]:
+    lang_labels = {
+        "cpp": "C++", "rs": "Rust", "cs": "C#", "powershell": "PowerShell",
+        "js": "JS", "ts": "TS", "dart": "Dart", "go": "Go", "java": "Java",
+        "swift": "Swift", "kotlin": "Kotlin", "ruby": "Ruby", "lua": "Lua",
+        "scala": "Scala3", "php": "PHP", "nim": "Nim", "julia": "Julia", "zig": "Zig",
+    }
+    lines: list[str] = []
+    lines.append("| host 言語 | build | parity | fixture PASS | fixture FAIL | timestamp |")
+    lines.append("|---|---:|---:|---:|---:|---|")
+
+    build_icons: list[str] = []
+    parity_icons: list[str] = []
+    for lang in EMITTER_HOST_LANGS:
+        doc = emitter_host_data.get(lang, {})
+        build_icon = _emitter_host_build_icon(doc)
+        parity_icon = _emitter_host_parity_icon(doc)
+        build_icons.append(build_icon)
+        parity_icons.append(parity_icon)
+        pass_count = doc.get("parity_fixture_pass", "—") if doc else "—"
+        fail_count = doc.get("parity_fixture_fail", "—") if doc else "—"
+        timestamp = str(doc.get("timestamp", "—")) if doc else "—"
+        lines.append(
+            f"| {lang_labels.get(lang, lang)} | {build_icon} | {parity_icon} | "
+            f"{pass_count} | {fail_count} | {timestamp} |"
+        )
+
+    lines.append(
+        f"| **🟩 PASS** | {_count_icon(build_icons, '🟩')} | {_count_icon(parity_icons, '🟩')} |  |  |  |"
+    )
+    lines.append(
+        f"| **🟥 FAIL** | {_count_icon(build_icons, '🟥')} | {_count_icon(parity_icons, '🟥')} |  |  |  |"
+    )
+    lines.append(
+        f"| **⬜ 未実行** | {_count_icon(build_icons, '⬜')} | {_count_icon(parity_icons, '⬜')} |  |  |  |"
+    )
+    return lines
+
+
+def _build_emitter_host_matrix_en(emitter_host_data: dict[str, dict[str, object]]) -> list[str]:
+    lang_labels = {
+        "cpp": "C++", "rs": "Rust", "cs": "C#", "powershell": "PowerShell",
+        "js": "JS", "ts": "TS", "dart": "Dart", "go": "Go", "java": "Java",
+        "swift": "Swift", "kotlin": "Kotlin", "ruby": "Ruby", "lua": "Lua",
+        "scala": "Scala3", "php": "PHP", "nim": "Nim", "julia": "Julia", "zig": "Zig",
+    }
+    lines: list[str] = []
+    lines.append("| Host language | build | parity | fixture PASS | fixture FAIL | timestamp |")
+    lines.append("|---|---:|---:|---:|---:|---|")
+
+    build_icons: list[str] = []
+    parity_icons: list[str] = []
+    for lang in EMITTER_HOST_LANGS:
+        doc = emitter_host_data.get(lang, {})
+        build_icon = _emitter_host_build_icon(doc)
+        parity_icon = _emitter_host_parity_icon(doc)
+        build_icons.append(build_icon)
+        parity_icons.append(parity_icon)
+        pass_count = doc.get("parity_fixture_pass", "—") if doc else "—"
+        fail_count = doc.get("parity_fixture_fail", "—") if doc else "—"
+        timestamp = str(doc.get("timestamp", "—")) if doc else "—"
+        lines.append(
+            f"| {lang_labels.get(lang, lang)} | {build_icon} | {parity_icon} | "
+            f"{pass_count} | {fail_count} | {timestamp} |"
+        )
+
+    lines.append(
+        f"| **🟩 PASS** | {_count_icon(build_icons, '🟩')} | {_count_icon(parity_icons, '🟩')} |  |  |  |"
+    )
+    lines.append(
+        f"| **🟥 FAIL** | {_count_icon(build_icons, '🟥')} | {_count_icon(parity_icons, '🟥')} |  |  |  |"
+    )
+    lines.append(
+        f"| **⬜ Untested** | {_count_icon(build_icons, '⬜')} | {_count_icon(parity_icons, '⬜')} |  |  |  |"
+    )
+    return lines
+
+
+def _count_icon(icons: list[str], icon: str) -> str:
+    count = icons.count(icon)
+    return str(count) if count > 0 else "—"
+
+
 def _selfhost_summary_cell(selfhost_data: dict[str, dict[str, object]], emit_lang: str) -> str:
     """Cell for selfhost row in summary: '🟩<br>P/T' or '🟨<br>P/T' or '🟥<br>P/T' or '⬜'.
 
@@ -586,12 +738,13 @@ def _build_summary_matrix(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, object]],
     lint_results: dict[str, int | None],
 ) -> list[str]:
     """Build JA summary matrix: rows=area, cols=language.
 
     fixture/sample/stdlib cells show '🟩 N/T' or '🟥 N/T'.
-    selfhost shows icon only. lint shows '🟩 0' / '🟥 N'.
+    selfhost and emitter host show pass counts. lint shows pass categories.
     [P0-PROGRESS-SUMMARY-S5]
     """
     fixture_stems = {stem for _, stem in fixture_cases}
@@ -610,6 +763,7 @@ def _build_summary_matrix(
         ("sample",       [_parity_summary_cell(sample_results,  l, sample_stems)  for l in PARITY_LANGS]),
         ("stdlib",       [_parity_summary_cell(stdlib_results,  l, stdlib_stems)  for l in PARITY_LANGS]),
         ("selfhost",     [_selfhost_summary_cell(selfhost_data, l)                for l in PARITY_LANGS]),
+        ("emitter host", [_emitter_host_summary_cell(emitter_host_data, l)        for l in PARITY_LANGS]),
         ("emitter lint", [_lint_cell(lint_results.get(l))                         for l in PARITY_LANGS]),
     ]
     for label, cells in areas:
@@ -626,6 +780,7 @@ def _build_summary_matrix_en(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, object]],
     lint_results: dict[str, int | None],
 ) -> list[str]:
     """English version of _build_summary_matrix."""
@@ -645,6 +800,7 @@ def _build_summary_matrix_en(
         ("sample",       [_parity_summary_cell(sample_results,  l, sample_stems)  for l in PARITY_LANGS]),
         ("stdlib",       [_parity_summary_cell(stdlib_results,  l, stdlib_stems)  for l in PARITY_LANGS]),
         ("selfhost",     [_selfhost_summary_cell(selfhost_data, l)                for l in PARITY_LANGS]),
+        ("emitter host", [_emitter_host_summary_cell(emitter_host_data, l)        for l in PARITY_LANGS]),
         ("emitter lint", [_lint_cell(lint_results.get(l))                         for l in PARITY_LANGS]),
     ]
     for label, cells in areas:
@@ -757,6 +913,7 @@ def _render_ja_summary(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, object]],
     lint_results: dict[str, int | None],
     generated_at: str,
 ) -> str:
@@ -771,7 +928,7 @@ def _render_ja_summary(
         f"> 生成日時: {generated_at}",
         "> [関連リンク](./index.md)",
         "",
-        "各言語の fixture / sample / stdlib / selfhost / emitter lint の状況を一覧表示する。",
+        "各言語の fixture / sample / stdlib / selfhost / emitter host / emitter lint の状況を一覧表示する。",
         "",
         "| アイコン | 意味 |",
         "|---|---|",
@@ -783,7 +940,7 @@ def _render_ja_summary(
     lines += _build_summary_matrix(
         fixture_cases, sample_cases, stdlib_cases,
         fixture_results, sample_results, stdlib_results,
-        selfhost_data, lint_results,
+        selfhost_data, emitter_host_data, lint_results,
     )
     lines.append("")
     return "\n".join(lines)
@@ -797,6 +954,7 @@ def _render_en_summary(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, object]],
     lint_results: dict[str, int | None],
     generated_at: str,
 ) -> str:
@@ -811,7 +969,7 @@ def _render_en_summary(
         f"> Generated at: {generated_at}",
         "> [Links](./index.md)",
         "",
-        "Overview of fixture / sample / stdlib / selfhost / emitter lint status per language.",
+        "Overview of fixture / sample / stdlib / selfhost / emitter host / emitter lint status per language.",
         "",
         "| Icon | Meaning |",
         "|---|---|",
@@ -823,7 +981,7 @@ def _render_en_summary(
     lines += _build_summary_matrix_en(
         fixture_cases, sample_cases, stdlib_cases,
         fixture_results, sample_results, stdlib_results,
-        selfhost_data, lint_results,
+        selfhost_data, emitter_host_data, lint_results,
     )
     lines.append("")
     return "\n".join(lines)
@@ -837,15 +995,17 @@ def _render_ja(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, object]],
     lint_results: dict[str, int | None],
     generated_at: str,
 ) -> dict[str, str]:
     return {
-        "summary": _render_ja_summary(fixture_cases, sample_cases, stdlib_cases, fixture_results, sample_results, stdlib_results, selfhost_data, lint_results, generated_at),
+        "summary": _render_ja_summary(fixture_cases, sample_cases, stdlib_cases, fixture_results, sample_results, stdlib_results, selfhost_data, emitter_host_data, lint_results, generated_at),
         "fixture": _render_ja_fixture(fixture_cases, fixture_results, generated_at),
         "sample": _render_ja_sample(sample_cases, sample_results, generated_at),
         "stdlib": _render_ja_stdlib(stdlib_cases, stdlib_results, generated_at),
         "selfhost": _render_ja_selfhost(selfhost_data, generated_at),
+        "emitter-host": _render_ja_emitter_host(emitter_host_data, generated_at),
     }
 
 
@@ -950,6 +1110,32 @@ def _render_ja_selfhost(selfhost_data: dict, generated_at: str) -> str:
     return "\n".join(lines)
 
 
+def _render_ja_emitter_host(emitter_host_data: dict, generated_at: str) -> str:
+    lines: list[str] = [
+        '<a href="../../en/progress/backend-progress-emitter-host.md">',
+        '  <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">',
+        "</a>",
+        "",
+        "# emitter host マトリクス",
+        "",
+        f"> 機械生成ファイル。`python3 tools/gen/gen_backend_progress.py` で更新する。",
+        f"> 生成日時: {generated_at}",
+        "> [関連リンク](./index.md)",
+        "",
+        "C++ emitter（16 モジュール）を各言語で host し、Python 版 emitter と同じ C++ 出力を生成できるかを示す。",
+        "",
+        "| アイコン | 意味 |",
+        "|---|---|",
+        "| 🟩 | PASS |",
+        "| 🟥 | FAIL |",
+        "| ⬜ | 未実行 |",
+        "",
+    ]
+    lines += _build_emitter_host_matrix(emitter_host_data)
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _render_en(
     fixture_cases: list[tuple[str, str]],
     sample_cases: list[str],
@@ -958,15 +1144,17 @@ def _render_en(
     sample_results: dict[str, dict[str, dict[str, object]]],
     stdlib_results: dict[str, dict[str, dict[str, object]]],
     selfhost_data: dict[str, dict[str, object]],
+    emitter_host_data: dict[str, dict[str, object]],
     lint_results: dict[str, int | None],
     generated_at: str,
 ) -> dict[str, str]:
     return {
-        "summary": _render_en_summary(fixture_cases, sample_cases, stdlib_cases, fixture_results, sample_results, stdlib_results, selfhost_data, lint_results, generated_at),
+        "summary": _render_en_summary(fixture_cases, sample_cases, stdlib_cases, fixture_results, sample_results, stdlib_results, selfhost_data, emitter_host_data, lint_results, generated_at),
         "fixture": _render_en_fixture(fixture_cases, fixture_results, generated_at),
         "sample": _render_en_sample(sample_cases, sample_results, generated_at),
         "stdlib": _render_en_stdlib(stdlib_cases, stdlib_results, generated_at),
         "selfhost": _render_en_selfhost(selfhost_data, generated_at),
+        "emitter-host": _render_en_emitter_host(emitter_host_data, generated_at),
     }
 
 
@@ -1071,6 +1259,32 @@ def _render_en_selfhost(selfhost_data: dict, generated_at: str) -> str:
     return "\n".join(lines)
 
 
+def _render_en_emitter_host(emitter_host_data: dict, generated_at: str) -> str:
+    lines: list[str] = [
+        '<a href="../../ja/progress/backend-progress-emitter-host.md">',
+        '  <img alt="日本語で読む" src="https://img.shields.io/badge/docs-日本語-DC2626?style=flat-square">',
+        "</a>",
+        "",
+        "# Emitter host matrix",
+        "",
+        f"> Machine-generated file. Run `python3 tools/gen/gen_backend_progress.py` to update.",
+        f"> Generated at: {generated_at}",
+        "> [Links](./index.md)",
+        "",
+        "Shows whether each language can host the C++ emitter (16 modules) and produce the same C++ output as the Python emitter.",
+        "",
+        "| Icon | Meaning |",
+        "|---|---|",
+        "| 🟩 | PASS |",
+        "| 🟥 | FAIL |",
+        "| ⬜ | Not run |",
+        "",
+    ]
+    lines += _build_emitter_host_matrix_en(emitter_host_data)
+    lines.append("")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -1083,23 +1297,24 @@ def main() -> int:
     sample_results = _load_results("sample")
     stdlib_results = _load_results("stdlib")
     selfhost_data = _load_selfhost_results()
+    emitter_host_data = _load_emitter_host_results()
     lint_results = _load_lint_results()
 
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    ja_pages = _render_ja(fixture_cases, sample_cases, stdlib_cases, fixture_results, sample_results, stdlib_results, selfhost_data, lint_results, generated_at)
-    en_pages = _render_en(fixture_cases, sample_cases, stdlib_cases, fixture_results, sample_results, stdlib_results, selfhost_data, lint_results, generated_at)
+    ja_pages = _render_ja(fixture_cases, sample_cases, stdlib_cases, fixture_results, sample_results, stdlib_results, selfhost_data, emitter_host_data, lint_results, generated_at)
+    en_pages = _render_en(fixture_cases, sample_cases, stdlib_cases, fixture_results, sample_results, stdlib_results, selfhost_data, emitter_host_data, lint_results, generated_at)
 
     ja_dir = ROOT / "docs" / "ja" / "progress-preview"
     en_dir = ROOT / "docs" / "en" / "progress-preview"
     ja_dir.mkdir(parents=True, exist_ok=True)
     en_dir.mkdir(parents=True, exist_ok=True)
 
-    for key in ("summary", "fixture", "sample", "stdlib", "selfhost"):
+    for key in ("summary", "fixture", "sample", "stdlib", "selfhost", "emitter-host"):
         (ja_dir / f"backend-progress-{key}.md").write_text(ja_pages[key], encoding="utf-8")
         (en_dir / f"backend-progress-{key}.md").write_text(en_pages[key], encoding="utf-8")
 
-    for key in ("summary", "fixture", "sample", "stdlib", "selfhost"):
+    for key in ("summary", "fixture", "sample", "stdlib", "selfhost", "emitter-host"):
         print(f"[OK] {ja_dir / f'backend-progress-{key}.md'}")
         print(f"[OK] {en_dir / f'backend-progress-{key}.md'}")
 
