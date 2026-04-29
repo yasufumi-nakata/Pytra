@@ -20,7 +20,43 @@
 
 ## 未完了タスク
 
-（現在未完了タスクなし）
+### P2-TOP100-LANGUAGE-COVERAGE: 使用上位 100 言語への適応範囲を管理する
+
+文脈: [docs/ja/plans/p2-top100-language-coverage.md](../plans/p2-top100-language-coverage.md)
+
+TIOBE Index 2026-04 の top 100 を初期スナップショットとして、Pytra がどの言語へどの深さで適応できるかを coverage matrix で管理する。全 100 言語を一律 native backend 化するのではなく、`backend` / `host` / `interop` / `syntax` / `defer` に分類して進める。
+
+1. [ ] [ID: P2-TOP100-LANG-S1] top 100 言語 catalog を machine-readable にする（rank/source/category/current_status）
+   - 入力正本: `docs/ja/plans/p2-top100-language-coverage.md`
+   - 出力候補: `specs/top100-language-coverage.yaml` または `docs/ja/progress/top100-language-coverage.md`
+2. [ ] [ID: P2-TOP100-LANG-S2] 既存 backend / host / interop / syntax / defer の初期分類を確定する
+   - 既存 backend 群: cpp, rs, cs, js, ts, dart, go, java, scala, kotlin, swift, ruby, lua, php, nim, julia, zig, powershell を現状 matrix に接続する。
+3. [ ] [ID: P2-TOP100-LANG-S3] top 50 の未対応候補から優先 backend plan を作る
+   - 初期候補: Visual Basic, R, Delphi/Object Pascal, Perl, Fortran, MATLAB, Ada, PL/SQL, Prolog, COBOL, SAS, Objective-C, Lisp, ML, Haskell, VBScript, ABAP, OCaml, Caml, Erlang, X++, Transact-SQL, Solidity。
+4. [ ] [ID: P2-TOP100-LANG-S4] DSL / visual / shell / query 系の defer 条件を明文化する
+   - 対象例: SQL, Scratch, Assembly language, GML, LabVIEW, Ladder Logic, FoxPro, Pure Data, VHDL, Wolfram など。
+5. [ ] [ID: P2-TOP100-LANG-S5] `gen_backend_progress.py` または新規 progress generator で top100 coverage を自動出力する
+   - 出力には source snapshot date、分類、実測コマンド、最後の blocker、次アクションを含める。
+6. [ ] [ID: P2-TOP100-LANG-S6] devcontainer / Docker 検証を top100 coverage 更新の標準ゲートにする
+   - Docker Desktop 同梱 CLI が PATH に無い場合は `/Applications/Docker.app/Contents/Resources/bin/docker` を使う。
+   - Docker が使えない run では coverage を完了扱いにせず、exact blocker と再開条件だけを残す。
+
+### P1-EMITTER-HOST-MATRIX: emitter host マトリクスの新設と全言語 PASS
+
+文脈: [docs/ja/plans/p1-emitter-host-matrix.md](../plans/p1-emitter-host-matrix.md)
+
+selfhost マトリクス（full compiler）とは別に、「C++ emitter（16 モジュール）を各言語で host できるか」の emitter host マトリクスを新設する。全 18 言語で PASS を中間目標とする。
+
+1. [x] [ID: P1-EHOST-MATRIX-S1] `gen_backend_progress.py` に emitter host マトリクス生成を追加する（`.parity-results/emitter_host_<lang>.json` から読み取り）
+   - 完了: 2026-04-29。`_load_emitter_host_results()` と build/parity のアイコン化を追加した。
+2. [x] [ID: P1-EHOST-MATRIX-S2] `progress-preview/backend-progress-emitter-host.md` を出力するようにする
+   - 完了: 2026-04-29。`python3 tools/gen/gen_backend_progress.py` で JA/EN の `backend-progress-emitter-host.md` を生成するようにした。
+3. [x] [ID: P1-EHOST-MATRIX-S3] 各 backend の P1-HOST-CPP-EMITTER タスクの S2 で `.parity-results/emitter_host_<lang>.json` に結果を書き込むよう更新する
+   - 完了: 2026-04-29。各 backend TODO の S2 を emitter host 結果 JSON へ向けた。
+4. [x] [ID: P1-EHOST-MATRIX-S4] JSON 形式を N×N 対応に拡張する（1ファイルに複数 hosted emitter の結果を持てるようにする）
+   - 完了: 2026-04-29。`emitter_host_<host_lang>.json` の `emitters` map を正本形式として読み込むようにした。
+5. [x] [ID: P1-EHOST-MATRIX-S5] `gen_backend_progress.py` を N×N マトリクス表示に対応させる（行: host 言語、列: hosted emitter）
+   - 完了: 2026-04-29。`backend-progress-emitter-host.md` を host 言語 × hosted emitter の N×N 表示へ変更した。
 
 ### 保留中タスク
 
