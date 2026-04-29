@@ -712,6 +712,22 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if arg0_kind == "Dict" and len(_list(arg0, "keys")) == 0 and len(_list(arg0, "entries")) == 0 and arg0_rt.startswith("dict["):
                 return '"{}"'
 
+    if isinstance(func_node, dict) and _str(func_node, "kind") == "Name" and _str(func_node, "id") == "field":
+        for kw in keywords:
+            if not isinstance(kw, dict) or kw.get("arg") != "default_factory":
+                continue
+            value = kw.get("value")
+            if not isinstance(value, dict):
+                continue
+            factory = _str(value, "type_object_of")
+            if factory == "":
+                factory = _str(value, "id")
+            if factory == "dict" or factory == "list" or factory == "set":
+                return "{}"
+            if factory != "":
+                return _safe_lua_ident(factory) + ".new()"
+        return "nil"
+
     if semantic_tag == "core.bytearray_ctor":
         if len(arg_strs) >= 1:
             return "__pytra_bytearray(" + arg_strs[0] + ")"

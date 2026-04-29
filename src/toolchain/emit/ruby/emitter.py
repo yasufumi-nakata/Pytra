@@ -851,6 +851,25 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 builtin_name = _str(func, "repr")
     if builtin_name == "cast":
         return _emit_cast_call(ctx, node, args)
+    if builtin_name == "field":
+        for kw in keywords:
+            if not isinstance(kw, dict) or kw.get("arg") != "default_factory":
+                continue
+            value = kw.get("value")
+            if not isinstance(value, dict):
+                continue
+            factory = _str(value, "type_object_of")
+            if factory == "":
+                factory = _str(value, "id")
+            if factory == "dict":
+                return "{}"
+            if factory == "list":
+                return "[]"
+            if factory == "set":
+                return "Set.new"
+            if factory != "":
+                return _ruby_class_name(factory) + ".new"
+        return "nil"
     if builtin_name == "isinstance" and len(args) >= 2 and isinstance(args[0], dict) and isinstance(args[1], dict):
         type_node = args[1]
         if _str(type_node, "kind") == "Tuple":
