@@ -1739,6 +1739,26 @@ class KotlinRenderer(CommonRenderer):
             left = self._emit_expr(node.get("left"))
             comparators = self._list(node, "comparators")
             ops = self._list(node, "ops")
+            def emit_compare_part(left_expr: str, right_expr: str, op_name: str) -> str:
+                if op_name == "Eq":
+                    return "__pytra_eq(" + left_expr + ", " + right_expr + ")"
+                if op_name == "NotEq":
+                    return "!__pytra_eq(" + left_expr + ", " + right_expr + ")"
+                if op_name == "In":
+                    return "__pytra_contains(" + right_expr + ", " + left_expr + ")"
+                if op_name == "NotIn":
+                    return "!__pytra_contains(" + right_expr + ", " + left_expr + ")"
+                op_text = {
+                    "Eq": "==",
+                    "NotEq": "!=",
+                    "Lt": "<",
+                    "LtE": "<=",
+                    "Gt": ">",
+                    "GtE": ">=",
+                    "Is": "==",
+                    "IsNot": "!=",
+                }.get(op_name, op_name)
+                return left_expr + " " + op_text + " " + right_expr
             if len(comparators) == 1 and len(ops) == 1:
                 right = self._emit_expr(comparators[0])
                 op = ops[0] if isinstance(ops[0], str) else self._str(ops[0], "kind")
@@ -1757,25 +1777,17 @@ class KotlinRenderer(CommonRenderer):
                         obj_expr = _safe_kotlin_ident(self._str(obj_node, "id"))
                     op_text = "==" if op in {"Eq", "Is"} else "!="
                     return obj_expr + " " + op_text + " null"
-                if op == "Eq":
-                    return "__pytra_eq(" + left + ", " + right + ")"
-                if op == "NotEq":
-                    return "!__pytra_eq(" + left + ", " + right + ")"
-                if op == "In":
-                    return "__pytra_contains(" + right + ", " + left + ")"
-                if op == "NotIn":
-                    return "!__pytra_contains(" + right + ", " + left + ")"
-                op_text = {
-                    "Eq": "==",
-                    "NotEq": "!=",
-                    "Lt": "<",
-                    "LtE": "<=",
-                    "Gt": ">",
-                    "GtE": ">=",
-                    "Is": "==",
-                    "IsNot": "!=",
-                }.get(op, op)
-                return left + " " + op_text + " " + right
+                return emit_compare_part(left, right, op)
+            if len(comparators) > 1 and len(ops) > 0:
+                current_left = left
+                parts: list[str] = []
+                for idx, comparator in enumerate(comparators):
+                    op_obj = ops[idx] if idx < len(ops) else None
+                    op = op_obj if isinstance(op_obj, str) else self._str(op_obj, "kind") if isinstance(op_obj, dict) else ""
+                    right = self._emit_expr(comparator)
+                    parts.append(emit_compare_part(current_left, right, op))
+                    current_left = right
+                return "(" + " && ".join(parts) + ")"
         if kind == "UnaryOp":
             operand = self._emit_expr(node.get("operand"))
             op = self._str(node, "op")

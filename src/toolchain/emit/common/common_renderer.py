@@ -318,7 +318,7 @@ class CommonRenderer:
         return []
 
     def _quote_string(self, value: str) -> str:
-        return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
+        return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t") + '"'
 
     def _boundary_target_name(self, node: JsonVal) -> str:
         node_obj = json.JsonValue(node).as_obj()

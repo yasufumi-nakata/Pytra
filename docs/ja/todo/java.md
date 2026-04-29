@@ -7,7 +7,7 @@
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 > Java / Scala / Kotlin は全て JVM ターゲットのため、このファイルで一括管理する。
 
-最終更新: 2026-04-27
+最終更新: 2026-04-29
 
 ## 運用ルール
 
@@ -56,10 +56,13 @@
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を各 JVM 言語に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-JAVA-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target java -o work/selfhost/host-cpp/java/` で変換 + javac build を通す
+   - 進捗: 2026-04-29 に変換は PASS（20 files）。`javac -d work/selfhost/host-cpp/java/classes $(find src/runtime/java -name '*.java' | sort) $(find work/selfhost/host-cpp/java -name '*.java' | sort)` は未 PASS。先頭 blocker は callable 型 interface 未生成（`Callable__dict_str__JsonVal___str_` など）、`LinkedModule` 未解決、`field(...)` / `dict` / `str` / `PyRuntime.__pytra_JsonVal` などの Python 型・dataclass default lowering 残り、`pytra_std_json` 参照と Java runtime `json` の naming mismatch。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-JAVA-S2] `run_selfhost_parity.py --selfhost-lang java --emit-target cpp --case-root fixture` で fixture parity PASS を確認する（結果は `.parity-results/selfhost_java.json` に書き込まれ、`gen_backend_progress.py` で反映）
 3. [ ] [ID: P1-HOST-CPP-EMITTER-SCALA-S1] `--target scala` で変換 + scalac build を通す
+   - 進捗: 2026-04-29 に `Compare` の連鎖比較 emit と共通 string escape（CR/TAB）を補い、`python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target scala -o work/selfhost/host-cpp/scala/` は PASS（33 files）。`timeout 120s scala-cli compile --server=false work/selfhost/host-cpp/scala` は未 PASS。先頭 blocker は全生成モジュールが `object Main` になり namespace 衝突すること（`Main is already defined`）と、各 `Main` 内の `__pytra_continue_signal` 重複。
 4. [ ] [ID: P1-HOST-CPP-EMITTER-SCALA-S2] `run_selfhost_parity.py --selfhost-lang scala --emit-target cpp --case-root fixture` で fixture parity PASS を確認する
 5. [ ] [ID: P1-HOST-CPP-EMITTER-KOTLIN-S1] `--target kotlin` で変換 + kotlinc build を通す
+   - 進捗: 2026-04-29 に `Compare` の連鎖比較 emit と共通 string escape（CR/TAB）を補い、`python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target kotlin -o work/selfhost/host-cpp/kotlin/` は PASS（33 files）。`timeout 120s kotlinc $(find work/selfhost/host-cpp/kotlin -name '*.kt' | sort) -d work/selfhost/host-cpp/kotlin/classes` は未 PASS。先頭 blocker は `Any?` への算術/比較 operator 適用、`__pytra_ord` / `__pytra_chr` / `__pytra_id_table` / `__pytra_JsonValue` / `LinkedModule` 未解決、`pytra_types.int64` など Python 型名の Kotlin 型 lowering 残り、`Path.write_text(..., encoding=...)` など keyword lowering 不整合。
 6. [ ] [ID: P1-HOST-CPP-EMITTER-KOTLIN-S2] `run_selfhost_parity.py --selfhost-lang kotlin --emit-target cpp --case-root fixture` で fixture parity PASS を確認する
 
 ### P1-EMITTER-SELFHOST-JAVA: emit/java/cli.py を単独で selfhost C++ build に通す
