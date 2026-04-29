@@ -53,6 +53,7 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を dart に変換
 各 backend emitter は subprocess で独立起動する自己完結プログラム。pytra-cli.py 全体の selfhost とは切り離し、`toolchain.emit.dart.cli` をエントリに単独で C++ build を通す。
 
 1. [ ] [ID: P1-EMITTER-SELFHOST-DART-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/dart/cli.py --target cpp -o work/selfhost/emit/dart/` を実行し、変換が通るようにする
-   - 進捗: 2026-04-29 に実行し、変換は未 PASS。`rm -rf work/selfhost/emit/dart && timeout 180s python3 src/pytra-cli.py -build src/toolchain/emit/dart/cli.py --target cpp -o work/selfhost/emit/dart/` は `error: build failed: expected ) but got "var __out: [Any] = []; "` で失敗する。
+   - 進捗: 2026-04-30 に `src/toolchain/emit/swift/emitter.py` の暗黙の隣接文字列結合を明示的な `+` 結合へ修正し、`error: build failed: expected ) but got "var __out: [Any] = []; "` は解消済み。
+   - 進捗: 2026-04-30 に `rm -rf work/selfhost/emit/dart && timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/dart/cli.py --target cpp -o work/selfhost/emit/dart/` を実行し、exit 124 で 1 時間 timeout。部分生成は 36 files / 13 `*.cpp`。
 2. [ ] [ID: P1-EMITTER-SELFHOST-DART-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
 3. [ ] [ID: P1-EMITTER-SELFHOST-DART-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する

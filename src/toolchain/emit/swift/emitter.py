@@ -2818,16 +2818,16 @@ def _render_expr(expr: Any) -> str:
             step = _render_expr(id.get("step"))
             return (
                 "({ () -> [Any] in "
-                "var __out: [Any] = []; "
-                "let __step = __pytra_int("
+                + "var __out: [Any] = []; "
+                + "let __step = __pytra_int("
                 + step
                 + "); "
-                "var "
+                + "var "
                 + loop_var
                 + " = __pytra_int("
                 + start
                 + "); "
-                "while ((__step >= 0 && "
+                + "while ((__step >= 0 && "
                 + loop_var
                 + " < __pytra_int("
                 + stop
@@ -2836,14 +2836,14 @@ def _render_expr(expr: Any) -> str:
                 + " > __pytra_int("
                 + stop
                 + "))) { "
-                "__out.append("
+                + "__out.append("
                 + elt
                 + "); "
                 + loop_var
                 + " += __step "
-                "}; "
-                "return __out "
-                "})()"
+                + "}; "
+                + "return __out "
+                + "})()"
             )
         iter_expr = _render_expr(iter_any)
         cond = ""
@@ -2871,13 +2871,13 @@ def _render_expr(expr: Any) -> str:
                 i += 1
             return (
                 "({ () -> [Any] in "
-                "var __out: [Any] = []; "
-                "for __item in __pytra_as_list(" + iter_expr + ") { let __target = __pytra_as_list(__item); "
+                + "var __out: [Any] = []; "
+                + "for __item in __pytra_as_list(" + iter_expr + ") { let __target = __pytra_as_list(__item); "
                 + "".join(bindings)
                 + cond
                 + " }; "
-                "return __out "
-                "})()"
+                + "return __out "
+                + "})()"
             )
         if td2.get("kind") != "Name":
             return "[]"
@@ -2887,8 +2887,8 @@ def _render_expr(expr: Any) -> str:
         loop_type = _swift_type(td2.get("resolved_type"), allow_void=False)
         return (
             "({ () -> [Any] in "
-            "var __out: [Any] = []; "
-            "for __item in __pytra_as_list("
+            + "var __out: [Any] = []; "
+            + "for __item in __pytra_as_list("
             + iter_expr
             + ") { let "
             + loop_var
@@ -2899,8 +2899,8 @@ def _render_expr(expr: Any) -> str:
             + "; "
             + cond
             + " }; "
-            "return __out "
-            "})()"
+            + "return __out "
+            + "})()"
         )
 
     if kind == "SetComp":
@@ -2928,10 +2928,10 @@ def _render_expr(expr: Any) -> str:
             cond = "__pytra_set_add(&__out, " + elt + ")"
         return (
             "({ () -> [Any] in "
-            "var __out: [Any] = []; "
-            "for __item in __pytra_as_list(" + iter_expr + ") { let " + loop_var + ": " + loop_type + " = " + _cast_from_any("__item", loop_type) + "; " + cond + " }; "
-            "return __out "
-            "})()"
+            + "var __out: [Any] = []; "
+            + "for __item in __pytra_as_list(" + iter_expr + ") { let " + loop_var + ": " + loop_type + " = " + _cast_from_any("__item", loop_type) + "; " + cond + " }; "
+            + "return __out "
+            + "})()"
         )
 
     if kind == "DictComp":
@@ -2958,10 +2958,10 @@ def _render_expr(expr: Any) -> str:
             store = "if " + _render_truthy_expr(ifs[0]) + " { " + store + " }"
         return (
             "({ () -> [AnyHashable: Any] in "
-            "var __out: [AnyHashable: Any] = [:]; "
-            "for __item in __pytra_as_list(" + iter_expr + ") { let " + loop_var + ": " + loop_type + " = " + _cast_from_any("__item", loop_type) + "; " + store + " }; "
-            "return __out "
-            "})()"
+            + "var __out: [AnyHashable: Any] = [:]; "
+            + "for __item in __pytra_as_list(" + iter_expr + ") { let " + loop_var + ": " + loop_type + " = " + _cast_from_any("__item", loop_type) + "; " + store + " }; "
+            + "return __out "
+            + "})()"
         )
 
     if kind == "IfExp":
