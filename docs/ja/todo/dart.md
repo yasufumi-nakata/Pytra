@@ -44,6 +44,7 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を dart に変換
 
 1. [ ] [ID: P1-HOST-CPP-EMITTER-DART-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target dart -o work/selfhost/host-cpp/dart/` で変換 + build を通す
    - 進捗: 2026-04-29 現在、このコマンドは `error: unsupported target: dart` で開始前に失敗する。`pytra-cli.py -build` の target registry に dart を再接続してから、C++ emitter host 変換を再実行する。
+   - 進捗: 2026-04-29。`--target dart` は `_BUILD_TARGETS` と subprocess dispatch へ接続済み。Docker `python:3.12-slim` 隔離環境で `test/fixture/source/py/core/add.py --target dart` は 2 files 生成まで PASS。C++ emitter host build は parse/resolve/compile/link 後に `RuntimeError: lang=dart unsupported stmt kind: TupleUnpack` で FAIL。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-DART-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_dart.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
 
 ### P1-EMITTER-SELFHOST-DART: emit/dart/cli.py を単独で selfhost C++ build に通す

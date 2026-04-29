@@ -49,12 +49,20 @@ def _pytra_cli_repo_root() -> Path:
 
     Selfhost binaries may run from /workspace, so fall back to ./Pytra when present.
     """
+    script_parent = Path(__file__).resolve().parent
+    if script_parent.name == "src" and script_parent.joinpath("pytra").exists():
+        return script_parent.parent
     cwd = Path.cwd()
     if cwd.joinpath("src").exists():
         return cwd
     if cwd.joinpath("Pytra").joinpath("src").exists():
         return cwd.joinpath("Pytra")
     return cwd
+
+
+def _repo_root() -> Path:
+    """Compatibility wrapper for tests and older tooling."""
+    return _pytra_cli_repo_root()
 
 
 def _unsupported_target_attr(module_name: str, attr_name: str) -> None:
@@ -805,6 +813,30 @@ _SUBPROCESS_EMIT_TARGETS: list[str] = [
 ]
 
 
+_BUILD_TARGETS: list[str] = [
+    "cpp", "go", "rs", "cs", "java", "scala", "kotlin", "ts", "js",
+    "nim", "swift", "julia", "powershell", "ps1", "zig", "dart", "lua",
+    "php", "ruby",
+]
+
+
+_SUBPROCESS_BUILD_TARGETS: list[str] = [
+    "cs", "java", "scala", "kotlin", "dart", "lua", "php", "ruby", "zig",
+    "swift", "julia",
+]
+
+
+_AVAILABLE_BUILD_TARGETS = "cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, ps1, zig, dart, lua, php, ruby"
+
+
+def _profile_target(target: str) -> str:
+    if target == "js":
+        return "ts"
+    if target == "powershell":
+        return "ps1"
+    return target
+
+
 def cmd_emit(args: list[str]) -> int:
     """emit サブコマンド: linked output → target code (暫定: 現行 toolchain/emit/ への橋渡し)"""
     input_text = ""
@@ -1033,8 +1065,8 @@ def cmd_build(args: list[str]) -> int:
         print("error: at least one input .py file is required")
         return 1
 
-    if target not in ["cpp", "go", "rs", "cs", "java", "scala", "kotlin", "ts", "js", "nim", "swift", "julia", "powershell", "ps1"]:
-        print("error: unsupported target: " + target + " (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, zig)")
+    if target not in _BUILD_TARGETS:
+        print("error: unsupported target: " + target + " (available: " + _AVAILABLE_BUILD_TARGETS + ")")
         return 1
 
     try:
@@ -1063,7 +1095,7 @@ def _build_pipeline(
     bounds_check_mode: str = "",
 ) -> int:
     """Run the full build pipeline in-memory."""
-    lowering_target = "ts" if target == "js" else target
+    profile_target = _profile_target(target)
 
     # 1. Parse
     east1_docs = _collect_build_sources(inputs)
@@ -1083,7 +1115,7 @@ def _build_pipeline(
     # 3. Compile
     east3_docs: list[tuple[str, dict[str, JsonVal]]] = []
     for inp, east2_doc in east2_docs:
-        compiled_doc = lower_east2_to_east3(east2_doc, target_language=lowering_target)
+        compiled_doc = lower_east2_to_east3(east2_doc, target_language=profile_target)
         east3_docs.append((inp, compiled_doc))
     print("build: compiled " + str(len(east3_docs)) + " files")
 
@@ -1120,7 +1152,7 @@ def _build_pipeline(
         )
         east3_opt_paths.append(str(out_path.resolve()))
 
-    link_result = link_modules(east3_opt_paths, target=target, dispatch_mode="native")
+    link_result = link_modules(east3_opt_paths, target=profile_target, dispatch_mode="native")
     for module in link_result.linked_modules:
         if module.module_kind not in ("runtime", "helper"):
             continue
@@ -1159,14 +1191,8 @@ def _build_pipeline(
         return _emit_rs(linked_dir.joinpath("manifest.json"), output_dir, package_mode=rs_package)
     if target == "go":
         return _emit_go(linked_dir.joinpath("manifest.json"), output_dir)
-    if target == "cs":
-        return _emit_target_subprocess("cs", linked_dir.joinpath("manifest.json"), output_dir)
-    if target == "java":
-        return _emit_target_subprocess("java", linked_dir.joinpath("manifest.json"), output_dir)
-    if target == "scala":
-        return _emit_target_subprocess("scala", linked_dir.joinpath("manifest.json"), output_dir)
-    if target == "kotlin":
-        return _emit_target_subprocess("kotlin", linked_dir.joinpath("manifest.json"), output_dir)
+    if target in _SUBPROCESS_BUILD_TARGETS:
+        return _emit_target_subprocess(target, linked_dir.joinpath("manifest.json"), output_dir)
     if target == "ts" or target == "js":
         return _emit_ts(linked_dir.joinpath("manifest.json"), output_dir, strip_types=(target == "js"))
     if target == "nim":

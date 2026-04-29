@@ -43,10 +43,12 @@
 
 C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を ruby に変換し、変換された emitter が C++ コードを正しく生成できることを確認する。C++ emitter の source は selfhost-safe 化済み。
 
-1. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` で変換 + build を通す
+1. [x] [ID: P1-HOST-CPP-EMITTER-RUBY-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` で変換 + build を通す
    - 進捗: 2026-04-29 に実行し、変換前に FAIL。現在の `pytra-cli.py -build` の `--target` 一覧に `ruby` がなく、`unsupported target: ruby (available: cpp, go, rs, cs, java, scala, kotlin, ts, js, nim, swift, julia, powershell, zig)` で停止する。旧 toolchain1 Ruby emitter は変更禁止のため、target wiring / toolchain2 側の整備が先。
+   - 完了: 2026-04-29。Docker `python:3.12-slim` 隔離環境で `timeout 180s python src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/tmp/verify_pytra_20260429/host_cpp_ruby` を実行し、18 source / 30 linked modules / 22 Ruby files の生成まで PASS。`--target ruby` は `_BUILD_TARGETS` と subprocess dispatch へ接続済み。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_ruby.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
    - 進捗: 2026-04-29 に実行し、`.parity-results/selfhost_ruby.json` に `emit_targets.cpp.status = build_failed` を記録。runner の build 段階も `--target ruby` unsupported で停止する。
+   - 進捗: 2026-04-29。変換は PASS したが、生成 Ruby emitter を実行して Python 版 C++ emitter と diff する parity は未実施。次は `toolchain_emit_cpp_cli.rb` の runtime 実行 blocker を分類する。
 
 ### P1-EMITTER-SELFHOST-RUBY: emit/ruby/cli.py を単独で selfhost C++ build に通す
 
@@ -56,6 +58,7 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を ruby に変換
 
 1. [ ] [ID: P1-EMITTER-SELFHOST-RUBY-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/ruby/cli.py --target cpp -o work/selfhost/emit/ruby/` を実行し、変換が通るようにする
    - 進捗: 2026-04-29 に実行し、C++ 出力は途中まで進むが完走せず。`timeout 180s python3 src/pytra-cli.py -build src/toolchain/emit/ruby/cli.py --target cpp -o work/selfhost/emit/ruby/` は終了コード 124。停止時点で `work/selfhost/emit/ruby/` は 36 ファイルの部分出力（うち C++ 14 件）に留まり、selfhost emitter のエントリ一式生成まで到達しない。
+   - 進捗: 2026-04-29。Docker `python:3.12-slim` 隔離環境で再現確認。`timeout 60s python src/pytra-cli.py -build src/toolchain/emit/ruby/cli.py --target cpp -o work/tmp/verify_pytra_20260429/selfhost_emit_ruby_cpp_timeout60` は終了コード 124、partial output 5 files、stdout/stderr なし。
 2. [ ] [ID: P1-EMITTER-SELFHOST-RUBY-S2] 生成された C++ を `g++ -std=c++20 -O0` でコンパイルを通す（source 側の型注釈不整合を修正）
 3. [ ] [ID: P1-EMITTER-SELFHOST-RUBY-S3] コンパイル済み emitter で既存 fixture の manifest を処理し、Python 版 emitter と parity 一致を確認する
 
@@ -67,6 +70,9 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を ruby に変換
 対象: `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`(stdlib), `os_glob_extended`(stdlib)
 
 1. [ ] [ID: P0-RUBY-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）
+   - 進捗: 2026-04-29。Docker `python:3.12-slim` + container-local `apt-get install ruby`（Ruby 3.3.8）で focused fixture は 5/5 PASS: `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`。
+   - 進捗: 2026-04-29。`eo_extern_opaque_basic` は emit-only 対象だが parity runner では Python 実行段階で fail するため、emit-only harness で扱う必要がある。
+   - 進捗: 2026-04-29。stdlib focused parity は `math/math_extended` PASS、`os/os_glob_extended` は Ruby stdout mismatch。sample smoke parity `01_mandelbrot` も Ruby stdout mismatch。ただし `python src/pytra-cli.py -build sample/py/01_mandelbrot.py --target ruby` の emit は 2 files 生成まで PASS。
 
 ### P20-RUBY-SELFHOST: Ruby emitter で toolchain2 を Ruby に変換し実行できるようにする
 
