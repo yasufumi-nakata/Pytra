@@ -69,7 +69,7 @@ class ManifestModuleEntryDraft:
             source_path,
         )
 
-    def inject_cli_meta(self, east_doc: dict[str, JsonVal]) -> None:
+    def build_cli_meta(self, east_doc: dict[str, JsonVal]) -> dict[str, JsonVal]:
         meta_val: JsonVal = east_doc.get("meta")
         typed_meta: dict[str, JsonVal] = {}
         meta_obj = json.JsonValue(meta_val).as_obj()
@@ -82,7 +82,7 @@ class ManifestModuleEntryDraft:
         typed_meta["_cli_is_entry"] = self.is_entry
         if self.source_path != "":
             typed_meta["_cli_source_path"] = self.source_path
-        east_doc["meta"] = typed_meta
+        return typed_meta
 
 
 def _parse_args(argv: list[str]) -> tuple[str, str, str]:
@@ -169,7 +169,7 @@ def _load_linked_modules(manifest_path: Path) -> list[dict[str, JsonVal]]:
             index += 1
             continue
         typed_east: dict[str, JsonVal] = east_obj.raw
-        manifest_entry.inject_cli_meta(typed_east)
+        typed_east["meta"] = manifest_entry.build_cli_meta(typed_east)
         result.append(typed_east)
         index += 1
     return result

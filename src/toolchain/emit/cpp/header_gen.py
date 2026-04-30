@@ -61,7 +61,7 @@ def _hg_recursive_alias_lane_cpp(alias_name: str, lane: str) -> str:
 
 def _hg_emit_recursive_union_alias_decl(lines: list[str], node: dict[str, JsonVal]) -> bool:
     name = _hg_str(node, "name")
-    value = cpp_alias_union_expansion(name)
+    value: str = cpp_alias_union_expansion(name)
     if value == "":
         value = _hg_str(node, "value")
     if name == "" or value == "":
@@ -145,7 +145,7 @@ def build_cpp_header_from_east3(
     meta_dict: dict[str, JsonVal] = {}
     if meta_obj is not None:
         meta_dict = meta_obj.raw
-    dep_ids = collect_cpp_dependency_module_ids(module_id, meta_dict)
+    dep_ids: list[str] = collect_cpp_dependency_module_ids(module_id, meta_dict)
     guard = _hg_header_guard(rel_header_path)
     stmts = _hg_list(east_doc, "body")
 
@@ -201,15 +201,17 @@ def build_cpp_header_from_east3(
         elif name != "":
             class_names.append(name)
     if len(enum_names) > 0:
-        for name in enum_names:
-            lines.append("enum class " + name + " : int64;")
+        for enum_name in enum_names:
+            lines.append("enum class " + enum_name + " : int64;")
         lines.append("")
     if len(class_names) > 0:
-        for name in class_names:
-            lines.append("struct " + name + ";")
+        for class_name in class_names:
+            lines.append("struct " + class_name + ";")
         lines.append("")
     mutable_param_indexes: dict[str, set[int]] = {}
-    _hg_collect_function_mutable_param_indexes(stmts, mutable_param_indexes)
+    for stmt in stmts:
+        for name, indexes in _hg_collect_function_mutable_param_indexes(stmt).items():
+            mutable_param_indexes[name] = indexes
     for stmt in stmts:
         _hg_emit_decl(lines, stmt, mutable_param_indexes)
 
@@ -464,14 +466,16 @@ def _hg_function_param_is_mutated_via_call(
     return _walk(_hg_list(node, "body"))
 
 
-def _hg_collect_function_mutable_param_indexes(node: JsonVal, out: dict[str, set[int]]) -> None:
+def _hg_collect_function_mutable_param_indexes(node: JsonVal) -> dict[str, set[int]]:
+    out: dict[str, set[int]] = {}
     node_obj = json.JsonValue(node).as_obj()
     if node_obj is None:
         node_arr = json.JsonValue(node).as_arr()
         if node_arr is not None:
             for item in node_arr.raw:
-                _hg_collect_function_mutable_param_indexes(item, out)
-        return
+                for name, indexes in _hg_collect_function_mutable_param_indexes(item).items():
+                    out[name] = indexes
+        return out
     node_dict = node_obj.raw
     kind = _hg_str(node_dict, "kind")
     if kind in ("FunctionDef", "ClosureDef"):
@@ -504,7 +508,9 @@ def _hg_collect_function_mutable_param_indexes(node: JsonVal, out: dict[str, set
                 param_index += 1
             out[name] = indexes
     for child in node_dict.values():
-        _hg_collect_function_mutable_param_indexes(child, out)
+        for name, indexes in _hg_collect_function_mutable_param_indexes(child).items():
+            out[name] = indexes
+    return out
 
 
 def _hg_function_template_prefix(node: dict[str, JsonVal]) -> str:
@@ -876,7 +882,7 @@ def _hg_infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> 
                     if ret_type not in ("", "unknown", "object", "Any", "Callable", "callable"):
                         inferred_ret = ret_type
             for child in cur_dict.values():
-                child_pair_obj = visit(child, cur_dict, parent)
+                child_pair_obj: tuple[str, str] = visit(child, cur_dict, parent)
                 child_arg_obj = child_pair_obj[0]
                 child_ret_obj = child_pair_obj[1]
                 if inferred_arg == "":
@@ -887,7 +893,7 @@ def _hg_infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> 
         cur_arr = json.JsonValue(cur).as_arr()
         if cur_arr is not None:
             for child in cur_arr.raw:
-                child_pair_arr = visit(child, parent, grandparent)
+                child_pair_arr: tuple[str, str] = visit(child, parent, grandparent)
                 child_arg_arr = child_pair_arr[0]
                 child_ret_arr = child_pair_arr[1]
                 if inferred_arg == "":
@@ -900,7 +906,7 @@ def _hg_infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> 
     inferred_ret = ""
     body = _hg_list(node, "body")
     for stmt in body:
-        child_pair_body = visit(stmt, node, None)
+        child_pair_body: tuple[str, str] = visit(stmt, node, None)
         child_arg = child_pair_body[0]
         child_ret = child_pair_body[1]
         if inferred_arg == "":

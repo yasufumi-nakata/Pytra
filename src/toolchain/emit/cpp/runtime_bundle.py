@@ -160,9 +160,11 @@ def _rb_is_template_function_stmt(stmt: dict[str, JsonVal]) -> bool:
     for arg_type in arg_types.values():
         arg_type_text = _rb_json_str_value(arg_type)
         if arg_type_text != "":
-            if len(collect_cpp_type_vars(arg_type_text)) > 0:
+            arg_type_vars: list[str] = collect_cpp_type_vars(arg_type_text)
+            if len(arg_type_vars) > 0:
                 return True
-    return len(collect_cpp_type_vars(_rb_return_type(stmt))) > 0
+    return_type_vars: list[str] = collect_cpp_type_vars(_rb_return_type(stmt))
+    return len(return_type_vars) > 0
 
 
 def _rb_runtime_module_is_header_only_template_lane(east_doc: dict[str, JsonVal]) -> bool:

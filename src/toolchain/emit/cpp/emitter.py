@@ -38,7 +38,7 @@ from toolchain.emit.common.code_emitter import (
     RuntimeMapping, load_runtime_mapping, resolve_runtime_call,
     should_skip_module, build_import_alias_map, build_runtime_import_map, resolve_runtime_symbol_name,
 )
-from toolchain.emit.common.common_renderer import CommonRenderer
+from toolchain.emit.common.common_renderer import CommonRendererState
 from toolchain.emit.cpp.runtime_paths import collect_cpp_dependency_module_ids, cpp_include_for_module
 from toolchain.common.types import split_generic_types, select_union_member_type
 from toolchain.link.type_id import is_builtin_exception_type_name
@@ -86,7 +86,7 @@ class CppEmitContext:
 @dataclass
 class CppClassVarSpecDraft:
     type_name: str
-    value: JsonVal = None
+    value: JsonVal | None = None
 
     def to_jv(self) -> dict[str, JsonVal]:
         out: dict[str, JsonVal] = {}
@@ -253,16 +253,23 @@ def _module_needs_error_header(node: JsonVal) -> bool:
     return False
 
 
-class _CppStmtCommonRenderer(CommonRenderer):
+class _CppStmtCommonRenderer:
     ctx: CppEmitContext
+    state: CommonRendererState
     _mutation_count: int
 
     def __init__(self, ctx: CppEmitContext) -> None:
-        super().__init__("cpp")
         self.ctx = ctx
+        self.state = CommonRendererState(0, [], 0)
         self._mutation_count = 0
         self.state.lines = ctx.lines
         self.state.indent_level = ctx.indent_level
+
+    def _cr_str(self, node: dict[str, JsonVal], key: str) -> str:
+        return _str(node, key)
+
+    def _cr_list(self, node: dict[str, JsonVal], key: str) -> list[JsonVal]:
+        return _list(node, key)
 
     def render_name(self, node: dict[str, JsonVal]) -> str:
         return _emit_name(self.ctx, node)
@@ -310,7 +317,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
     def emit_assign_stmt(self, node: dict[str, JsonVal]) -> None:
         self._mutation_count += 1
         self.ctx.indent_level = self.state.indent_level + 0
-        kind: str = self._str(node, "kind")
+        kind: str = self._cr_str(node, "kind")
         if kind == "AnnAssign":
             _emit_ann_assign(self.ctx, node)
         else:
@@ -323,7 +330,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
         if node_obj is None:
             return
         node_dict = node_obj.raw
-        kind: str = self._str(node_dict, "kind")
+        kind: str = self._cr_str(node_dict, "kind")
         if kind == "Expr":
             self.emit_expr_stmt(node_dict)
         elif kind == "Return":
@@ -333,7 +340,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
         elif kind == "Pass":
             self._emit(";")
         elif kind == "comment":
-            text: str = self._str(node_dict, "text")
+            text: str = self._cr_str(node_dict, "text")
             if text != "":
                 self._emit("// " + text)
         elif kind == "blank":
@@ -343,10 +350,10 @@ class _CppStmtCommonRenderer(CommonRenderer):
             self._emit("if (" + _emit_condition_expr(self.ctx, node_dict.get("test")) + ") {")
             self.state.indent_level += 1
             self.ctx.indent_level = self.state.indent_level + 0
-            self.emit_body(self._list(node_dict, "body"))
+            self.emit_body(self._cr_list(node_dict, "body"))
             self.state.indent_level -= 1
             self.ctx.indent_level = self.state.indent_level + 0
-            orelse: list[JsonVal] = self._list(node_dict, "orelse")
+            orelse: list[JsonVal] = self._cr_list(node_dict, "orelse")
             if len(orelse) > 0:
                 self._emit("} else {")
                 self.state.indent_level += 1
@@ -360,7 +367,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
             self._emit("while (" + _emit_condition_expr(self.ctx, node_dict.get("test")) + ") {")
             self.state.indent_level += 1
             self.ctx.indent_level = self.state.indent_level + 0
-            self.emit_body(self._list(node_dict, "body"))
+            self.emit_body(self._cr_list(node_dict, "body"))
             self.state.indent_level -= 1
             self.ctx.indent_level = self.state.indent_level + 0
             self._emit("}")
@@ -397,7 +404,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
         return _render_except_open(self.ctx, handler)
 
     def emit_try_setup(self, node: dict[str, JsonVal]) -> None:
-        finalbody: list[JsonVal] = self._list(node, "finalbody")
+        finalbody: list[JsonVal] = self._cr_list(node, "finalbody")
         if len(finalbody) == 0:
             return
         finally_name = _next_temp(self.ctx, "__finally")
@@ -413,18 +420,18 @@ class _CppStmtCommonRenderer(CommonRenderer):
         self._emit("});")
 
     def emit_try_teardown(self, node: dict[str, JsonVal]) -> None:
-        if len(self._list(node, "finalbody")) == 0:
+        if len(self._cr_list(node, "finalbody")) == 0:
             return
         self.state.indent_level -= 1
         self.ctx.indent_level = self.state.indent_level + 0
         self._emit("}")
 
     def emit_try_stmt(self, node: dict[str, JsonVal]) -> None:
-        if len(self._list(node, "orelse")) > 0:
+        if len(self._cr_list(node, "orelse")) > 0:
             raise RuntimeError("try/except/else is not supported in common renderer")
-        body: list[JsonVal] = self._list(node, "body")
-        handlers: list[JsonVal] = self._list(node, "handlers")
-        if len(self._list(node, "finalbody")) > 0:
+        body: list[JsonVal] = self._cr_list(node, "body")
+        handlers: list[JsonVal] = self._cr_list(node, "handlers")
+        if len(self._cr_list(node, "finalbody")) > 0:
             for name, resolved_type in _collect_try_hoisted_ann_names(self.ctx, body):
                 if _is_local_visible(self.ctx, name):
                     continue
@@ -463,7 +470,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
         self.emit_try_teardown(node)
 
     def emit_try_handler_body(self, handler: dict[str, JsonVal]) -> None:
-        handler_name: str = self._str(handler, "name")
+        handler_name: str = self._cr_str(handler, "name")
         saved_type = ""
         had_saved_type = False
         if handler_name != "":
@@ -471,7 +478,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
             saved_type = self.ctx.var_types.get(handler_name, "")
             self.ctx.var_types[handler_name] = _handler_type_name(handler)
         self.ctx.indent_level = self.state.indent_level + 0
-        self.emit_body(self._list(handler, "body"))
+        self.emit_body(self._cr_list(handler, "body"))
         if handler_name != "":
             if had_saved_type:
                 self.ctx.var_types[handler_name] = saved_type
@@ -483,7 +490,7 @@ class _CppStmtCommonRenderer(CommonRenderer):
         # P3-CR-CPP-S1: C++ 固有ノードの直接ディスパッチ。
         # _emit_stmt を経由しないことで循環を回避する。
         self.ctx.indent_level = self.state.indent_level + 0
-        kind: str = self._str(node, "kind")
+        kind: str = self._cr_str(node, "kind")
         if kind == "AugAssign": _emit_aug_assign(self.ctx, node)
         elif kind == "ForCore": _emit_for_core(self.ctx, node)
         elif kind == "FunctionDef": _emit_function_def(self.ctx, node)
@@ -540,11 +547,10 @@ class _CppStmtCommonRenderer(CommonRenderer):
         self.state.indent_level = self.ctx.indent_level
 
 
-class _CppExprCommonRenderer(CommonRenderer):
+class _CppExprCommonRenderer:
     ctx: CppEmitContext
 
     def __init__(self, ctx: CppEmitContext) -> None:
-        super().__init__("cpp")
         self.ctx = ctx
 
     def render_name(self, node: dict[str, JsonVal]) -> str:
@@ -4885,15 +4891,15 @@ def _render_raise_value(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
     return _emit_expr(ctx, exc)
 
 
-def _emit_try(ctx: CppEmitContext, _: dict[str, JsonVal]) -> None:
+def _emit_try(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     renderer = _CppStmtCommonRenderer(ctx)
-    renderer.emit_try_stmt(_)
+    renderer.emit_try_stmt(node)
     ctx.indent_level = renderer.state.indent_level + 0
 
 
-def _emit_raise(ctx: CppEmitContext, _: dict[str, JsonVal]) -> None:
+def _emit_raise(ctx: CppEmitContext, node: dict[str, JsonVal]) -> None:
     renderer = _CppStmtCommonRenderer(ctx)
-    renderer.emit_raise_stmt(_)
+    renderer.emit_raise_stmt(node)
     ctx.indent_level = renderer.state.indent_level + 0
 
 
@@ -5315,7 +5321,7 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
     cache_key = ""
     if ctx is not None:
         cache_key = _function_param_meta_cache_key(node)
-        cached = ctx.function_param_meta_cache.get(cache_key, []) if cache_key != "" else []
+        cached: list[tuple[str, str, bool]] = ctx.function_param_meta_cache.get(cache_key, []) if cache_key != "" else []
         if len(cached) > 0:
             return cached
     arg_types = _dict(node, "arg_types")
@@ -5427,7 +5433,7 @@ def _infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> str
                     if ret_type not in ("", "unknown", "object", "Any", "Callable", "callable"):
                         inferred_ret = ret_type
             for child in cur_dict.values():
-                child_pair_obj = _visit(child, cur_dict, parent)
+                child_pair_obj: tuple[str, str] = _visit(child, cur_dict, parent)
                 child_arg_obj = child_pair_obj[0]
                 child_ret_obj = child_pair_obj[1]
                 if inferred_arg == "":
@@ -5438,7 +5444,7 @@ def _infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> str
         cur_arr = json.JsonValue(cur).as_arr()
         if cur_arr is not None:
             for child in cur_arr.raw:
-                child_pair_arr = _visit(child, parent, grandparent)
+                child_pair_arr: tuple[str, str] = _visit(child, parent, grandparent)
                 child_arg_arr = child_pair_arr[0]
                 child_ret_arr = child_pair_arr[1]
                 if inferred_arg == "":
@@ -5449,9 +5455,13 @@ def _infer_callable_param_type(node: dict[str, JsonVal], param_name: str) -> str
 
     inferred_arg = ""
     inferred_ret = ""
-    body_pair = _visit(_list(node, "body"))
-    inferred_arg = body_pair[0]
-    inferred_ret = body_pair[1]
+    body = _list(node, "body")
+    for stmt in body:
+        body_pair: tuple[str, str] = _visit(stmt, node, None)
+        if inferred_arg == "":
+            inferred_arg = body_pair[0]
+        if inferred_ret == "":
+            inferred_ret = body_pair[1]
     if inferred_arg != "" and inferred_ret != "":
         return "callable[[" + inferred_arg + "]," + inferred_ret + "]"
     return ""
@@ -5510,14 +5520,16 @@ def _function_self_mutates(node: dict[str, JsonVal]) -> bool:
     return _node_mutates_self_fields(_list(node, "body"))
 
 
-def _collect_function_mutable_param_indexes(node: JsonVal, out: dict[str, set[int]]) -> None:
+def _collect_function_mutable_param_indexes(node: JsonVal) -> dict[str, set[int]]:
+    out: dict[str, set[int]] = {}
     node_obj = json.JsonValue(node).as_obj()
     if node_obj is None:
         node_arr = json.JsonValue(node).as_arr()
         if node_arr is not None:
             for item in node_arr.raw:
-                _collect_function_mutable_param_indexes(item, out)
-        return
+                for name, indexes in _collect_function_mutable_param_indexes(item).items():
+                    out[name] = indexes
+        return out
     node_dict = node_obj.raw
     kind = _str(node_dict, "kind")
     if kind in ("FunctionDef", "ClosureDef"):
@@ -5531,7 +5543,9 @@ def _collect_function_mutable_param_indexes(node: JsonVal, out: dict[str, set[in
                     indexes.add(idx)
             out[name] = indexes
     for child in node_dict.values():
-        _collect_function_mutable_param_indexes(child, out)
+        for name, indexes in _collect_function_mutable_param_indexes(child).items():
+            out[name] = indexes
+    return out
 
 
 def _attribute_target_type(ctx: CppEmitContext, node: JsonVal) -> str:
@@ -6023,8 +6037,12 @@ def emit_cpp_module(
 
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")
-    _collect_function_mutable_param_indexes(body, ctx.function_mutable_param_indexes)
-    _collect_function_mutable_param_indexes(main_guard, ctx.function_mutable_param_indexes)
+    for stmt in body:
+        for name, indexes in _collect_function_mutable_param_indexes(stmt).items():
+            ctx.function_mutable_param_indexes[name] = indexes
+    for stmt in main_guard:
+        for name, indexes in _collect_function_mutable_param_indexes(stmt).items():
+            ctx.function_mutable_param_indexes[name] = indexes
 
     # Collect imports and class names
     ctx.import_aliases = build_import_alias_map(meta)
@@ -6078,7 +6096,7 @@ def emit_cpp_module(
                         var_type = _str(class_stmt_dict, "decl_type")
                         if var_type == "":
                             var_type = _str(class_stmt_dict, "annotation")
-                        class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=ann_value).to_jv()
+                        class_vars[var_name] = CppClassVarSpecDraft(var_type, ann_value).to_jv()
                     elif class_stmt_kind == "Assign" and not is_dataclass:
                         target = class_stmt_dict.get("target")
                         target_obj = json.JsonValue(target).as_obj()
@@ -6090,9 +6108,9 @@ def emit_cpp_module(
                         var_type = _str(class_stmt_dict, "decl_type")
                         if var_type == "" and value_obj is not None:
                             var_type = _str(value_obj.raw, "resolved_type")
-                        class_vars[var_name] = CppClassVarSpecDraft(type_name=var_type, value=assign_value).to_jv()
+                            class_vars[var_name] = CppClassVarSpecDraft(var_type, assign_value).to_jv()
     ctx.class_symbol_fqcns = _build_class_symbol_fqcn_map(meta, module_id, ctx.class_names, ctx.class_type_ids)
-    dep_ids = collect_cpp_dependency_module_ids(module_id, meta)
+    dep_ids: list[str] = collect_cpp_dependency_module_ids(module_id, meta)
 
     # Emit body
     _emit_body(ctx, body)
@@ -6171,7 +6189,7 @@ def emit_cpp_module(
     if _module_needs_error_header(body):
         header.append('#include "built_in/error.h"')
     if "functional" in ctx.includes_needed:
-        header.insert(6, "#include <functional>")
+        header.append("#include <functional>")
     if "built_in/format_ops.h" in ctx.includes_needed:
         header.append('#include "built_in/format_ops.h"')
     if "built_in/string_ops_fwd.h" in ctx.includes_needed:

@@ -209,19 +209,19 @@ def build_import_alias_map(meta: dict[str, JsonVal]) -> dict[str, str]:
                 local_raw = binding_obj.get_str("local_name")
                 if local_raw is None:
                     continue
-                local: str = local_raw
+                local: str = cast(str, local_raw)
                 if local == "":
                     continue
                 resolved_kind_raw = binding_obj.get_str("resolved_binding_kind")
                 if resolved_kind_raw is None:
                     continue
-                resolved_kind: str = resolved_kind_raw
+                resolved_kind: str = cast(str, resolved_kind_raw)
                 if resolved_kind != "module":
                     continue
                 runtime_module_id_raw = binding_obj.get_str("runtime_module_id")
                 if runtime_module_id_raw is None:
                     continue
-                runtime_module_id: str = runtime_module_id_raw
+                runtime_module_id: str = cast(str, runtime_module_id_raw)
                 if runtime_module_id != "":
                     alias_map[local] = runtime_module_id
 
@@ -245,7 +245,7 @@ def build_import_alias_map(meta: dict[str, JsonVal]) -> dict[str, str]:
             mod_raw = info_obj.get_str("module")
             if mod_raw is None:
                 continue
-            mod: str = mod_raw
+            mod: str = cast(str, mod_raw)
             if mod != "" and alias not in alias_map:
                 alias_map[alias] = mod
 
@@ -310,20 +310,20 @@ def build_runtime_import_map(
         binding_kind_raw = binding_obj.get_str("binding_kind")
         if binding_kind_raw is None:
             continue
-        binding_kind: str = binding_kind_raw
+        binding_kind: str = cast(str, binding_kind_raw)
         if binding_kind != "symbol":
             continue
         local_name_raw = binding_obj.get_str("local_name")
         if local_name_raw is None:
             continue
-        local_name: str = local_name_raw
+        local_name: str = cast(str, local_name_raw)
         if local_name == "":
             continue
         # Skip module-resolved bindings (e.g. "from pytra.std import glob" where glob is a
         # namespace, not a callable symbol). These are handled via import_alias_modules.
         resolved_binding_kind_raw = binding_obj.get_str("resolved_binding_kind")
         if resolved_binding_kind_raw is not None:
-            resolved_binding_kind: str = resolved_binding_kind_raw
+            resolved_binding_kind: str = cast(str, resolved_binding_kind_raw)
             if resolved_binding_kind == "module":
                 continue
 
@@ -334,7 +334,7 @@ def build_runtime_import_map(
             module_id_raw = binding_obj.get_str("module_id")
         if module_id_raw is None:
             continue
-        module_id: str = module_id_raw
+        module_id: str = cast(str, module_id_raw)
         if module_id == "":
             continue
 

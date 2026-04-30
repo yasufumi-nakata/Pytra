@@ -699,6 +699,7 @@ class ZigNativeEmitter:
         self._class_method_defaults: dict[str, dict[str, list[Any]]] = {}
         self._class_method_default_types: dict[str, dict[str, list[str]]] = {}
         self._class_method_arg_order: dict[str, dict[str, list[str]]] = {}
+        self._class_field_types: dict[str, dict[str, str]] = {}
         self._static_fields: dict[str, list[tuple[str, str, str]]] = {}  # cls -> [(field, type, default)]
         self._vtable_root: dict[str, str] = {}  # cls -> vtable root class
         self._vtable_methods: dict[str, list[str]] = {}  # root cls -> [method names]
@@ -736,6 +737,7 @@ class ZigNativeEmitter:
         self._catch_all_exception_types: set[str] = {
             name for name, mapped in self._runtime_mapping.types.items() if mapped == "pytra.PyObject"
         }
+        self._top_level_runtime_inits: list[tuple[str, str]] = []
 
     def _make_stmt_renderer(self) -> _ZigStmtCommonRenderer:
         renderer = _ZigStmtCommonRenderer(self)
@@ -1453,6 +1455,10 @@ class ZigNativeEmitter:
         zig_ty = self._zig_type(decl_type)
         value = self._render_expr(value_node) if isinstance(value_node, dict) else "undefined"
         prefix = "pub var " if self.is_submodule else "var "
+        if self.is_submodule and self._top_level_value_needs_runtime_init(value):
+            self._top_level_runtime_inits.append((target_name, value))
+            self._emit_line(prefix + target_name + ": " + zig_ty + " = undefined;")
+            return
         self._emit_line(prefix + target_name + ": " + zig_ty + " = " + value + ";")
 
     def transpile(self) -> str:
@@ -1485,6 +1491,7 @@ class ZigNativeEmitter:
         for stmt in body:
             if self._is_top_level_decl(stmt):
                 self._emit_stmt(stmt)
+        self._emit_top_level_runtime_init_func()
         # vtable を emit
         self._emit_vtables()
         # §8: 残りのステートメント + main_guard_body (is_entry のみ) を pub fn main() に入れる
@@ -1536,6 +1543,31 @@ class ZigNativeEmitter:
                 self.lines.insert(insert_idx, tl)
         return "\n".join(self.lines).rstrip() + "\n"
 
+    def _top_level_value_needs_runtime_init(self, value: str) -> bool:
+        return (
+            "pytra.list_from(" in value
+            or "pytra.make_str_dict(" in value
+            or "pytra.make_str_dict_from(" in value
+            or "__call_blk_" in value
+            or ".joinpath(" in value
+        )
+
+    def _emit_top_level_runtime_init_func(self) -> None:
+        if len(self._top_level_runtime_inits) == 0:
+            return
+        self._emit_line("pub fn __pytra_init_module() void {")
+        self.indent += 1
+        for name, value in self._top_level_runtime_inits:
+            if value == "":
+                self._emit_line("if (@hasDecl(@TypeOf(" + name.split(".", 1)[0] + "), \"__pytra_init_module\")) " + name + ";")
+                self._emit_line("if (__pytra_exc_type != null) return;")
+                continue
+            self._emit_line(name + " = " + value + ";")
+            self._emit_line("if (__pytra_exc_type != null) return;")
+        self.indent -= 1
+        self._emit_line("}")
+        self._emit_line("")
+
     def _fixup_unused_obj_vars(self) -> None:
         """後処理: 未使用 const に _ = を挿入、未 mutated var を const に降格。"""
         import re
@@ -1550,7 +1582,7 @@ class ZigNativeEmitter:
             # 2. var_name.field = （フィールド代入）
             # 3. var_name.put( / var_name.append( 等（メソッド mutation）
             pat_assign = _re_mut.compile(r'\b' + _re_mut.escape(var_name) + r'(\.\w+)?\s*(\+\=|\-\=|\*\=|/\=|\=(?!\=))')
-            pat_method = _re_mut.compile(r'\b' + _re_mut.escape(var_name) + r'\.(put|append|extend|pop)\s*\(')
+            pat_method = _re_mut.compile(r'\b' + _re_mut.escape(var_name) + r'\.(put|append|extend|pop|next)\s*\(')
             j = start
             while j < len(self.lines):
                 line = self.lines[j]
@@ -1689,9 +1721,16 @@ class ZigNativeEmitter:
     def _fixup_undeclared_simple_assignments(self) -> None:
         """後処理: 同一関数内で宣言漏れした単純代入を var 宣言に戻す。"""
         import re
-        decl_re = re.compile(r"^\s*(?:const|var)\s+([A-Za-z_]\w*|@\"[^\"]+\")\b")
+        decl_re = re.compile(r"^\s*(?:pub\s+)?(?:const|var)\s+([A-Za-z_]\w*|@\"[^\"]+\")\b")
         assign_re = re.compile(r"^(\s+)([A-Za-z_]\w*)\s*=\s*(.+);\s*$")
         fn_re = re.compile(r"^(?:pub fn|fn)\s+\w+\((.*)\)")
+        global_declared: set[str] = set()
+        for line in self.lines:
+            if line.startswith(" "):
+                continue
+            m_global = decl_re.match(line)
+            if m_global is not None:
+                global_declared.add(m_global.group(1))
         declared_stack: list[set[str]] = [set()]
         fixed: list[str] = []
         for line in self.lines:
@@ -1722,6 +1761,11 @@ class ZigNativeEmitter:
                     if stripped.endswith("{"):
                         declared_stack.append(set())
                     continue
+                if name in global_declared:
+                    fixed.append(line)
+                    if stripped.endswith("{"):
+                        declared_stack.append(set())
+                    continue
                 if not any(name in scope for scope in reversed(declared_stack)):
                     declared_stack[-1].add(name)
                     fixed.append(indent + "var " + name + " = " + value + ";")
@@ -1739,7 +1783,7 @@ class ZigNativeEmitter:
 
         def is_mutated(name: str, start: int, decl_indent_len: int) -> bool:
             pat_assign = re.compile(r'(?<!\.)\b' + re.escape(name) + r'(\.\w+)?\s*(\+\=|\-\=|\*\=|/\=|\=(?!\=))')
-            pat_method = re.compile(r'(?<!\.)\b' + re.escape(name) + r'\.(put|append|extend|pop)\s*\(')
+            pat_method = re.compile(r'(?<!\.)\b' + re.escape(name) + r'\.(put|append|extend|pop|next)\s*\(')
             j = start
             while j < len(self.lines):
                 line = self.lines[j]
@@ -1763,6 +1807,8 @@ class ZigNativeEmitter:
             else:
                 plain_name = name
             if plain_name == "_" or plain_name.startswith("__pytra_"):
+                continue
+            if ".iterator()" in line:
                 continue
             if not is_mutated(plain_name, idx + 1, len(m.group(1))):
                 self.lines[idx] = m.group(1) + "const " + name + m.group(3)
@@ -1796,7 +1842,7 @@ class ZigNativeEmitter:
         import re
         fixed: list[str] = []
         optional_obj_names: set[str] = set()
-        opt_obj_re = re.compile(r"\b(?:const|var)\s+(\w+)\s*:\s*\?\*JsonObj\b")
+        opt_obj_re = re.compile(r"\b(?:const|var)\s+(\w+)\s*:\s*\?\*(JsonObj|JsonArr|JsonValue)\b")
         for line in self.lines:
             m_opt = opt_obj_re.search(line)
             if m_opt is not None:
@@ -1805,8 +1851,12 @@ class ZigNativeEmitter:
             line = re.sub(r"pytra\.union_to_int\(pytra\.union_to_int\(([^()]+)\)\)", r"pytra.union_to_int(\1)", line)
             line = re.sub(r"pytra\.union_to_float\(pytra\.union_to_float\(([^()]+)\)\)", r"pytra.union_to_float(\1)", line)
             line = re.sub(r"pytra\.union_as_str\(pytra\.union_as_str\(([^()]+)\)\)", r"pytra.union_as_str(\1)", line)
+            line = re.sub(r"(?<![A-Za-z_0-9.])self\(", "self.call(", line)
+            line = line.replace("self.call(child, cur_dict, parent)", "self.call(child, pytra.union_wrap(cur_dict), parent)")
             for name in sorted(optional_obj_names):
                 line = line.replace(name + ".raw", name + ".?.raw")
+                line = line.replace(name + ".get_", name + ".?.get_")
+                line = line.replace(name + ".as_", name + ".?.as_")
             fixed.append(line)
         self.lines = fixed
 
@@ -2240,6 +2290,7 @@ class ZigNativeEmitter:
             if safe_mod not in emitted:
                 self._emit_line("const " + safe_mod + " = @import(\"" + import_path + "\");")
                 emitted.add(safe_mod)
+                self._top_level_runtime_inits.append((safe_mod + ".__pytra_init_module()", ""))
             if binding_kind == "module" and isinstance(local_name, str) and local_name != "":
                 safe_local = _safe_ident(local_name, "mod")
                 if safe_local != safe_mod and safe_local not in emitted:
@@ -2565,6 +2616,21 @@ class ZigNativeEmitter:
                     elif norm_var in _FLOAT_T and val_type in _INT_T and not self._expr_is_float_like(stmt.get("value")):
                         value = "@as(f64, @floatFromInt(" + value + "))"
                     value = self._coerce_value_to_zig_type(self._zig_type(var_type), stmt.get("value"), value)
+                elif td2.get("kind") == "Attribute":
+                    owner_node = td2.get("value")
+                    field_type = ""
+                    if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
+                        owner_name = _safe_ident(owner_node.get("id"), "")
+                        if owner_name == "self" and self._current_class_name != "":
+                            owner_type = self._current_class_name
+                        else:
+                            owner_type = self._normalize_type(self._current_type_map().get(owner_name, ""))
+                            if owner_type.startswith("*"):
+                                owner_type = owner_type[1:]
+                        field_name = _safe_ident(td2.get("attr"), "")
+                        field_type = self._class_field_types.get(owner_type, {}).get(field_name, "")
+                    if field_type != "":
+                        value = self._coerce_value_to_zig_type(self._zig_type(field_type), stmt.get("value"), value)
                 self._emit_line(target + " = " + value + ";")
                 return
             targets = stmt.get("targets")
@@ -3538,6 +3604,7 @@ class ZigNativeEmitter:
         if has_local_base:
             self._emit_line("_base: " + base_name + " = " + base_name + "{},")
         body = self._dict_list(stmt.get("body"))
+        class_field_types = self._class_field_types.setdefault(cls_name, {})
         # __init__ body から struct フィールドを抽出
         emitted_fields: set[str] = set()
         dataclass_fields: list[str] = []
@@ -3562,9 +3629,11 @@ class ZigNativeEmitter:
                             func_any = value_node.get("func")
                             if isinstance(func_any, dict) and func_any.get("kind") == "Name" and _safe_ident(func_any.get("id"), "") == "field":
                                 default_val = self._zig_zero_value(zig_ty)
+                        default_val = self._coerce_value_to_zig_type(zig_ty, value_node, default_val)
                         self._emit_line(field_name + ": " + zig_ty + " = " + default_val + ",")
                     else:
                         self._emit_line(field_name + ": " + zig_ty + ",")
+                    class_field_types[field_name] = decl_type
                     dataclass_fields.append(field_name)
                     emitted_fields.add(field_name)
         for sub in body:
@@ -3577,6 +3646,7 @@ class ZigNativeEmitter:
                     if field_name not in emitted_fields:
                         zig_ty = self._zig_type(field_type)
                         self._emit_line(field_name + ": " + zig_ty + " = undefined,")
+                        class_field_types[field_name] = field_type
                         emitted_fields.add(field_name)
                 break
         for sub in body:
@@ -3603,9 +3673,11 @@ class ZigNativeEmitter:
                         value_node = sub.get("value")
                         if isinstance(value_node, dict):
                             default_val = self._render_expr(value_node)
+                            default_val = self._coerce_value_to_zig_type(zig_ty, value_node, default_val)
                             self._emit_line(field_name + ": " + zig_ty + " = " + default_val + ",")
                         else:
                             self._emit_line(field_name + ": " + zig_ty + " = undefined,")
+                        class_field_types[field_name] = decl_type
                         emitted_fields.add(field_name)
         # 基底クラスの未 override メソッドの委譲関数を生成
         if has_local_base:
@@ -3927,6 +3999,8 @@ class ZigNativeEmitter:
             elif expr_type in {"bytearray", "bytes"}:
                 elem = "u8"
             return "(pytra.list_len(" + rendered + ", " + elem + ") > 0)"
+        if expr_type.startswith("dict["):
+            return "(" + rendered + ".count() > 0)"
         if expr_type == "str":
             return "(" + rendered + ".len > 0)"
         return rendered
@@ -5806,6 +5880,10 @@ class ZigNativeEmitter:
     def _coerce_value_to_zig_type(self, target_zig: str, value_node: Any, rendered: str) -> str:
         if target_zig == "" or not isinstance(value_node, dict):
             return rendered
+        if target_zig == "bool":
+            rendered = rendered.replace("@as(i64, false)", "false").replace("@as(i64, true)", "true")
+        if target_zig.startswith("?") and value_node.get("kind") == "Constant" and value_node.get("value") is None:
+            return "null"
         value_type = self._lookup_expr_type(value_node)
         if value_type == "":
             value_type = self._get_expr_type(value_node)
@@ -5817,12 +5895,18 @@ class ZigNativeEmitter:
             if inner_target == "f64" and value_zig == "anytype":
                 return "pytra._jv_as_float_any(" + rendered + ")"
         if value_zig.startswith("?") and value_zig[1:] == target_zig:
+            if self._is_union_storage_zig(target_zig):
+                return "(" + rendered + " orelse pytra.union_new_none())"
             return rendered + ".?"
         if value_type != "":
             stripped_value = self._strip_optional_type(value_type)
             if stripped_value != value_type and self._zig_type(stripped_value) == target_zig:
+                if self._is_union_storage_zig(target_zig):
+                    return "(" + rendered + " orelse pytra.union_new_none())"
                 return rendered + ".?"
         if self._is_union_storage_zig(target_zig) and value_zig != "" and not self._is_union_storage_zig(value_zig):
+            return "pytra.union_wrap(" + rendered + ")"
+        if self._is_union_storage_zig(target_zig) and value_node.get("kind") == "Name":
             return "pytra.union_wrap(" + rendered + ")"
         if self._is_union_storage_zig(target_zig) and value_zig == "" and value_node.get("kind") in {"Call", "Dict", "List", "Constant", "Name"}:
             return "pytra.union_wrap(" + rendered + ")"

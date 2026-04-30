@@ -822,9 +822,14 @@ pub fn contains(haystack: anytype, needle: anytype) bool {
         inline for (@typeInfo(HT).@"struct".fields) |field| {
             if (std.mem.startsWith(u8, field.name, "_")) {
                 const item = @field(haystack, field.name);
-                if (@TypeOf(needle) == []const u8) {
+                const NT = @TypeOf(needle);
+                const IT = @TypeOf(item);
+                if (NT == []const u8 and IT == []const u8) {
                     if (std.mem.eql(u8, item, needle)) return true;
-                } else if (std.meta.eql(item, needle)) return true;
+                } else if (NT == []const u8 and @typeInfo(IT) == .pointer and @typeInfo(IT).pointer.size == .one and @typeInfo(@typeInfo(IT).pointer.child) == .array and @typeInfo(@typeInfo(IT).pointer.child).array.child == u8) {
+                    const item_slice: []const u8 = item;
+                    if (std.mem.eql(u8, item_slice, needle)) return true;
+                } else if (IT == NT and std.meta.eql(item, needle)) return true;
             }
         }
     }
@@ -860,6 +865,7 @@ pub fn union_new_none() *UnionVal {
 pub fn union_wrap(value: anytype) *UnionVal {
     const T = @TypeOf(value);
     if (T == *UnionVal) return value;
+    if (T == ?*UnionVal) return value orelse union_new_none();
     if (T == bool) return unionAlloc(.{ .bool_ = value });
     if (T == i64 or T == i32 or T == i16 or T == i8 or T == comptime_int) {
         return unionAlloc(.{ .int_ = @as(i64, @intCast(value)) });
@@ -1502,7 +1508,6 @@ pub fn list_from(comptime T: type, items: []const T) Obj {
 
 /// list_from_any is no longer used; tuple-element lists are expanded to
 /// make_list + list_append sequences by the emitter.
-
 /// time.perf_counter() — seconds since arbitrary epoch.
 pub fn perf_counter() f64 {
     const ns = std.time.nanoTimestamp();
