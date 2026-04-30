@@ -2663,7 +2663,7 @@ def transpile_to_ruby(east3_doc: dict[str, JsonVal]) -> str:
         expand_cross_module_defaults([east3_doc])
 
     # Load runtime mapping
-    mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "ruby" / "mapping.json"
+    mapping_path = Path("src").joinpath("runtime").joinpath("ruby").joinpath("mapping.json")
     mapping = load_runtime_mapping(mapping_path)
 
     # Skip runtime modules
