@@ -34,7 +34,11 @@ class CommonRenderer:
 
     def __init__(self, language: str = "") -> None:
         self.language = language
-        self.profile = load_profile_doc(language) if language != "" else {}
+        if language != "":
+            self.profile = load_profile_doc(language)
+        else:
+            empty_profile: dict[str, JsonVal] = {}
+            self.profile = empty_profile
         self.state = CommonRendererState()
         self.state.lines = []
         self._op_prec_table: dict[str, int] = {}
@@ -1091,6 +1095,12 @@ class CommonRenderer:
         out.append((name, resolved_type))
 
     def _collect_with_walk(self, out: list[tuple[str, str]], seen: set[str], stmts: list[JsonVal]) -> None:
+        def add_name(name: str, resolved_type: str) -> None:
+            if name == "" or name in seen:
+                return
+            seen.add(name)
+            out.append((name, resolved_type))
+
         for raw_stmt in stmts:
             raw_stmt_obj = json.JsonValue(raw_stmt).as_obj()
             if raw_stmt_obj is None:
@@ -1101,7 +1111,7 @@ class CommonRenderer:
                 ann_target = raw_stmt_dict.get("target")
                 ann_target_obj = json.JsonValue(ann_target).as_obj()
                 if ann_target_obj is not None and self._str(ann_target_obj.raw, "kind") == "Name":
-                    self._collect_with_add_name(out, seen, self._str(ann_target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
+                    add_name(self._str(ann_target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
             elif kind == "Assign":
                 assign_target = raw_stmt_dict.get("target")
                 assign_target_obj = json.JsonValue(assign_target).as_obj()
@@ -1111,7 +1121,7 @@ class CommonRenderer:
                         assign_target = targets[0]
                         assign_target_obj = json.JsonValue(assign_target).as_obj()
                 if assign_target_obj is not None and self._str(assign_target_obj.raw, "kind") == "Name":
-                    self._collect_with_add_name(out, seen, self._str(assign_target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
+                    add_name(self._str(assign_target_obj.raw, "id"), self._str(raw_stmt_dict, "decl_type"))
             elif kind in ("If", "While", "Try", "With", "ForCore"):
                 self._collect_with_walk(out, seen, self._list(raw_stmt_dict, "body"))
                 self._collect_with_walk(out, seen, self._list(raw_stmt_dict, "orelse"))

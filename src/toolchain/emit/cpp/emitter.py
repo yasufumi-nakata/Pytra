@@ -5372,6 +5372,59 @@ def _function_param_is_mutated_via_call(
     return _walk(_list(node, "body"))
 
 
+def _function_param_is_mutated_directly(node: dict[str, JsonVal], arg_name: str) -> bool:
+    mutating_runtime_calls: set[str] = {
+        "list.append",
+        "list.extend",
+        "list.insert",
+        "list.pop",
+        "list.clear",
+        "list.reverse",
+        "list.sort",
+        "dict.pop",
+        "dict.setdefault",
+        "dict.update",
+        "dict.clear",
+        "set.add",
+        "set.discard",
+        "set.remove",
+        "set.clear",
+        "bytearray.append",
+        "bytearray.extend",
+        "bytearray.pop",
+        "bytearray.clear",
+    }
+
+    def _is_name(value: JsonVal, name: str) -> bool:
+        value_obj = json.JsonValue(value).as_obj()
+        return value_obj is not None and _str(value_obj.raw, "kind") == "Name" and _str(value_obj.raw, "id") == name
+
+    def _walk(value: JsonVal) -> bool:
+        value_obj = json.JsonValue(value).as_obj()
+        if value_obj is not None:
+            value_dict = value_obj.raw
+            if _str(value_dict, "kind") == "Call" and _str(value_dict, "runtime_call") in mutating_runtime_calls:
+                runtime_owner = value_dict.get("runtime_owner")
+                if _is_name(runtime_owner, arg_name):
+                    return True
+                func_obj = json.JsonValue(value_dict.get("func")).as_obj()
+                if func_obj is not None and _str(func_obj.raw, "kind") == "Attribute":
+                    if _is_name(func_obj.raw.get("value"), arg_name):
+                        return True
+            for child in value_dict.values():
+                if _walk(child):
+                    return True
+            return False
+        value_arr = json.JsonValue(value).as_arr()
+        if value_arr is not None:
+            for item in value_arr.raw:
+                if _walk(item):
+                    return True
+        return False
+
+    return _walk(_list(node, "body"))
+
+
 def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = None) -> list[tuple[str, str, bool]]:
     cache_key = ""
     if ctx is not None:
@@ -5404,6 +5457,7 @@ def _function_param_meta(node: dict[str, JsonVal], ctx: CppEmitContext | None = 
             arg_type_str = inferred
         is_mutable = (arg_name == "ctx"
                       or arg_usage.get(arg_name) == "reassigned"
+                      or _function_param_is_mutated_directly(node, arg_name)
                       or _function_param_is_mutated_via_call(node, arg_name, ctx)
                       or (_is_user_class_param_type(arg_type_str)
                           and arg_usage.get(arg_name) != "readonly"))

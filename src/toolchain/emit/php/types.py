@@ -7,7 +7,7 @@ from __future__ import annotations
 
 
 # EAST3 resolved_type → PHP type
-_TYPE_MAP: dict[str, str] = {
+_PHP_TYPE_MAP: dict[str, str] = {
     "int": "int",
     "byte": "int",
     "int8": "int",
@@ -118,8 +118,8 @@ def php_type(resolved_type: str, *, for_return: bool = False) -> str:
         return "mixed"
 
     # Direct mapping
-    if resolved_type in _TYPE_MAP:
-        mapped = _TYPE_MAP[resolved_type]
+    if resolved_type in _PHP_TYPE_MAP:
+        mapped = _PHP_TYPE_MAP[resolved_type]
         if resolved_type == "None" and not for_return:
             return "null"
         return mapped

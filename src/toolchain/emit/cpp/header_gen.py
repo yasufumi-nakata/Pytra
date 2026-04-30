@@ -466,6 +466,59 @@ def _hg_function_param_is_mutated_via_call(
     return _walk(_hg_list(node, "body"))
 
 
+def _hg_function_param_is_mutated_directly(node: dict[str, JsonVal], arg_name: str) -> bool:
+    mutating_runtime_calls: set[str] = {
+        "list.append",
+        "list.extend",
+        "list.insert",
+        "list.pop",
+        "list.clear",
+        "list.reverse",
+        "list.sort",
+        "dict.pop",
+        "dict.setdefault",
+        "dict.update",
+        "dict.clear",
+        "set.add",
+        "set.discard",
+        "set.remove",
+        "set.clear",
+        "bytearray.append",
+        "bytearray.extend",
+        "bytearray.pop",
+        "bytearray.clear",
+    }
+
+    def _is_name(value: JsonVal, name: str) -> bool:
+        value_obj = json.JsonValue(value).as_obj()
+        return value_obj is not None and _hg_str(value_obj.raw, "kind") == "Name" and _hg_str(value_obj.raw, "id") == name
+
+    def _walk(value: JsonVal) -> bool:
+        value_obj = json.JsonValue(value).as_obj()
+        if value_obj is not None:
+            value_dict = value_obj.raw
+            if _hg_str(value_dict, "kind") == "Call" and _hg_str(value_dict, "runtime_call") in mutating_runtime_calls:
+                runtime_owner = value_dict.get("runtime_owner")
+                if _is_name(runtime_owner, arg_name):
+                    return True
+                func_obj = json.JsonValue(value_dict.get("func")).as_obj()
+                if func_obj is not None and _hg_str(func_obj.raw, "kind") == "Attribute":
+                    if _is_name(func_obj.raw.get("value"), arg_name):
+                        return True
+            for child in value_dict.values():
+                if _walk(child):
+                    return True
+            return False
+        value_arr = json.JsonValue(value).as_arr()
+        if value_arr is not None:
+            for item in value_arr.raw:
+                if _walk(item):
+                    return True
+        return False
+
+    return _walk(_hg_list(node, "body"))
+
+
 def _hg_collect_function_mutable_param_indexes(node: JsonVal) -> dict[str, set[int]]:
     out: dict[str, set[int]] = {}
     node_obj = json.JsonValue(node).as_obj()
@@ -502,6 +555,7 @@ def _hg_collect_function_mutable_param_indexes(node: JsonVal) -> dict[str, set[i
                 if (
                     usage_text == "reassigned"
                     or arg_text == "ctx"
+                    or _hg_function_param_is_mutated_directly(node_dict, arg_text)
                     or (_hg_is_user_class_param_type(resolved_type) and usage_text != "readonly")
                 ):
                     indexes.add(param_index)

@@ -180,35 +180,56 @@ def parse_lowering_profile(doc: dict[str, JsonVal]) -> LoweringProfile:
     property_style = json.JsonValue(lowering.get("property_style")).as_str()
     swap_style = json.JsonValue(lowering.get("swap_style")).as_str()
     exception_style = json.JsonValue(lowering.get("exception_style")).as_str()
+    tuple_unpack_style_value: str = defaults.tuple_unpack_style
+    if tuple_unpack_style is not None:
+        tuple_unpack_style_value = tuple_unpack_style
+    container_covariance_value: bool = defaults.container_covariance
+    if container_covariance is not None:
+        container_covariance_value = container_covariance
+    closure_style_value: str = defaults.closure_style
+    if closure_style is not None:
+        closure_style_value = closure_style
+    with_style_value: str = defaults.with_style
+    if with_style is not None:
+        with_style_value = with_style
+    property_style_value: str = defaults.property_style
+    if property_style is not None:
+        property_style_value = property_style
+    swap_style_value: str = defaults.swap_style
+    if swap_style is not None:
+        swap_style_value = swap_style
+    exception_style_value: str = defaults.exception_style
+    if exception_style is not None:
+        exception_style_value = exception_style
     return LoweringProfile(
         _validate_enum(
-            tuple_unpack_style if tuple_unpack_style is not None else defaults.tuple_unpack_style,
+            tuple_unpack_style_value,
             _VALID_TUPLE_UNPACK_STYLES,
             "tuple_unpack_style",
         ),
-        container_covariance if container_covariance is not None else defaults.container_covariance,
+        container_covariance_value,
         _validate_enum(
-            closure_style if closure_style is not None else defaults.closure_style,
+            closure_style_value,
             _VALID_CLOSURE_STYLES,
             "closure_style",
         ),
         _validate_enum(
-            with_style if with_style is not None else defaults.with_style,
+            with_style_value,
             _VALID_WITH_STYLES,
             "with_style",
         ),
         _validate_enum(
-            property_style if property_style is not None else defaults.property_style,
+            property_style_value,
             _VALID_PROPERTY_STYLES,
             "property_style",
         ),
         _validate_enum(
-            swap_style if swap_style is not None else defaults.swap_style,
+            swap_style_value,
             _VALID_SWAP_STYLES,
             "swap_style",
         ),
         _validate_enum(
-            exception_style if exception_style is not None else defaults.exception_style,
+            exception_style_value,
             _VALID_EXCEPTION_STYLES,
             "exception_style",
         ),

@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import field
 
+from pytra.std import json
 from pytra.std.json import JsonVal
 from pytra.std.pathlib import Path
 
@@ -141,10 +142,18 @@ def _dict(node: dict[str, JsonVal], key: str) -> dict[str, JsonVal]:
     return {}
 
 
+def _jv_str(value: JsonVal) -> str:
+    value_str = json.JsonValue(value).as_str()
+    if value_str is not None:
+        return value_str
+    return ""
+
+
 def _php_symbol_name(ctx: EmitContext, name: str) -> str:
     """Convert a name to a PHP symbol, applying renames."""
     if name in ctx.renamed_symbols:
-        return _safe_php_ident(ctx.renamed_symbols[name])
+        renamed: str = ctx.renamed_symbols[name]
+        return _safe_php_ident(renamed)
     return _safe_php_ident(name)
 
 
@@ -156,7 +165,7 @@ def _php_var(name: str) -> str:
 
 
 def _is_module_constant_name(name: str) -> bool:
-    return name.startswith("_") and any(ch.isupper() for ch in name)
+    return name.startswith("_")
 
 
 def _php_string(value: str) -> str:
@@ -288,8 +297,9 @@ def _emit_constant(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         return "null"
     if isinstance(value, bool):
         return "true" if value else "false"
-    if isinstance(value, str):
-        return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t").replace("$", "\\$") + '"'
+    value_str = json.JsonValue(value).as_str()
+    if value_str is not None:
+        return '"' + value_str.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t").replace("$", "\\$") + '"'
     if isinstance(value, float):
         s = str(value)
         if s == "inf":
@@ -331,7 +341,7 @@ def _emit_name(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     if name in ("bytearray", "bytes"):
         return name
     if name in ctx.mapping.calls:
-        mapped = ctx.mapping.calls[name]
+        mapped: str = ctx.mapping.calls[name]
         if isinstance(mapped, str) and mapped != "":
             return mapped
     rt = _str(node, "resolved_type")
@@ -373,7 +383,7 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return "type(" + _emit_expr(ctx, args[0]) + ")->__name__"
     # Handle 'self.field' → '$this->field'
     if isinstance(owner_node, dict) and _str(owner_node, "id") == "self":
-        if attr in ctx.class_property_methods.get(owner_rt, set()):
+        if owner_rt in ctx.class_property_methods and attr in ctx.class_property_methods[owner_rt]:
             return "$this->" + attr + "()"
         return "$this->" + attr
     # Handle module constant access (e.g. math.pi, sys.argv)
@@ -384,16 +394,18 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if is_module:
             mod_id = _str(node, "runtime_module_id")
             if mod_id == "":
-                mod_id = ctx.import_alias_modules.get(owner_id, "")
+                if owner_id in ctx.import_alias_modules:
+                    mod_id = ctx.import_alias_modules[owner_id]
             if should_skip_module(mod_id, ctx.mapping):
                 runtime_symbol = _str(node, "runtime_symbol")
                 if runtime_symbol == "":
                     runtime_symbol = attr
                 # Try module-qualified key first
-                mod_short = mod_id.rsplit(".", 1)[-1]
+                mod_parts = mod_id.split(".")
+                mod_short = mod_parts[len(mod_parts) - 1]
                 qualified_key = mod_short + "." + runtime_symbol
                 if qualified_key in ctx.mapping.calls:
-                    resolved = ctx.mapping.calls[qualified_key]
+                    resolved: str = ctx.mapping.calls[qualified_key]
                     if resolved in ("__pytra_argv", "__pytra_path"):
                         return '$GLOBALS["' + resolved + '"]'
                     return resolved
@@ -406,14 +418,13 @@ def _emit_attribute(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         owner_id = _str(owner_node, "id")
         if owner_id in ctx.class_names:
             # Static property
-            static_methods = ctx.class_static_methods.get(owner_id, set())
-            if attr in static_methods:
+            if owner_id in ctx.class_static_methods and attr in ctx.class_static_methods[owner_id]:
                 return owner_id + "::" + attr
             return owner_id + "::$" + attr
     owner = _emit_expr(ctx, owner_node)
     if isinstance(owner_node, dict):
         owner_rt = _str(owner_node, "resolved_type")
-        if attr in ctx.class_property_methods.get(owner_rt, set()):
+        if owner_rt in ctx.class_property_methods and attr in ctx.class_property_methods[owner_rt]:
             return owner + "->" + attr + "()"
     # Check if owner is a class name (no $)
     if isinstance(owner_node, dict):
@@ -636,19 +647,30 @@ def _emit_lambda(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     body_code = _emit_expr(ctx, body_node)
     # Check for captures
     captures = _list(node, "captures")
+    capture_names: list[str] = []
     if len(captures) == 0:
-        param_names = {_safe_php_ident(a if isinstance(a, str) else "") for a in arg_order}
-        captures = [name for name in sorted(ctx.var_types.keys()) if name not in ("",) and name not in param_names]
-    use_clause = ""
-    if len(captures) > 0:
-        use_vars: list[str] = []
+        param_names: set[str] = set()
+        for a in arg_order:
+            param_names.add(_safe_php_ident(a if isinstance(a, str) else ""))
+        for name in sorted(ctx.var_types.keys()):
+            if name not in ("",) and name not in param_names:
+                capture_names.append(name)
+    else:
         for cap in captures:
-            if isinstance(cap, dict):
-                cap_name = _str(cap, "name")
+            cap_obj = json.JsonValue(cap).as_obj()
+            if cap_obj is not None:
+                cap_name = _str(cap_obj.raw, "name")
                 if cap_name != "":
-                    use_vars.append(_php_var(_safe_php_ident(cap_name)))
-            elif isinstance(cap, str) and cap != "":
-                use_vars.append(_php_var(_safe_php_ident(cap)))
+                    capture_names.append(cap_name)
+                continue
+            cap_str = json.JsonValue(cap).as_str()
+            if cap_str is not None and cap_str != "":
+                capture_names.append(cap_str)
+    use_clause = ""
+    if len(capture_names) > 0:
+        use_vars: list[str] = []
+        for cap_name in capture_names:
+            use_vars.append(_php_var(_safe_php_ident(cap_name)))
         if len(use_vars) > 0:
             use_clause = " use (" + ", ".join(use_vars) + ")"
     return "function(" + ", ".join(params) + ")" + use_clause + " { return " + body_code + "; }"
@@ -669,7 +691,15 @@ def _emit_isinstance(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     obj_code = _emit_expr(ctx, obj_node)
     type_names = _list(node, "type_names")
     if len(type_names) > 0:
-        checks = [_emit_isinstance(ctx, {"kind": "IsInstance", "value": obj_node, "expected_type_name": item}) for item in type_names if isinstance(item, str) and item != ""]
+        checks: list[str] = []
+        for item in type_names:
+            item_str = json.JsonValue(item).as_str()
+            if item_str is not None and item_str != "":
+                check_node: dict[str, JsonVal] = {}
+                check_node["kind"] = "IsInstance"
+                check_node["value"] = obj_node
+                check_node["expected_type_name"] = item_str
+                checks.append(_emit_isinstance(ctx, check_node))
         if len(checks) > 0:
             return "(" + " || ".join(checks) + ")"
     type_name = _str(node, "expected_type_name")
@@ -721,7 +751,7 @@ def _emit_range_expr(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
 # Comprehensions
 # ---------------------------------------------------------------------------
 
-def _comp_iter_code(ctx: EmitContext, gen: dict) -> str:
+def _comp_iter_code(ctx: EmitContext, gen: dict[str, JsonVal]) -> str:
     iter_node = gen.get("iter")
     if not isinstance(iter_node, dict):
         return "[]"
@@ -1009,8 +1039,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if fn_name == "__DICT_GET__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 key = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
-                default = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else "null"
-                return "(array_key_exists(" + key + ", " + owner + ") ? " + owner + "[" + key + "] : " + default + ")"
+                default_value = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else "null"
+                return "(array_key_exists(" + key + ", " + owner + ") ? " + owner + "[" + key + "] : " + default_value + ")"
             if fn_name == "__DICT_ITEMS__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 return "__pytra_dict_items(" + owner + ")"
@@ -1023,8 +1053,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if fn_name == "__DICT_POP__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 key = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "null"
-                default = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else "null"
-                return "__pytra_pop(" + owner + ", " + key + ", " + default + ")"
+                default_value = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else "null"
+                return "__pytra_pop(" + owner + ", " + key + ", " + default_value + ")"
             if fn_name == "__DICT_UPDATE__":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else "null"
                 other = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "[]"
@@ -1068,16 +1098,19 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if runtime_symbol == "str.replace":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
                 old = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else '""'
-                new = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else '""'
-                return "str_replace(" + old + ", " + new + ", " + owner + ")"
+                new_value = builtin_arg_strs[2] if len(builtin_arg_strs) >= 3 else '""'
+                return "str_replace(" + old + ", " + new_value + ", " + owner + ")"
             if runtime_symbol == "str.join":
                 owner = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
                 arg0 = builtin_arg_strs[1] if len(builtin_arg_strs) >= 2 else "[]"
                 return "implode(" + owner + ", " + arg0 + ")"
             if fn_name == "py_to_string" or runtime_symbol == "str":
                 value = builtin_arg_strs[0] if len(builtin_arg_strs) >= 1 else '""'
-                value_node = args[0] if len(args) >= 1 and isinstance(args[0], dict) else None
-                value_rt = _str(value_node, "resolved_type") if isinstance(value_node, dict) else ""
+                value_rt = ""
+                if len(args) >= 1:
+                    value_node_obj = json.JsonValue(args[0]).as_obj()
+                    if value_node_obj is not None:
+                        value_rt = _str(value_node_obj.raw, "resolved_type")
                 if value_rt != "":
                     return "py_to_string(" + value + ", " + _php_string(value_rt) + ")"
                 return "py_to_string(" + value + ")"
@@ -1125,8 +1158,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
         if isinstance(owner_val, dict):
             owner_id = _str(owner_val, "id")
             if owner_id in ctx.class_names:
-                static_methods = ctx.class_static_methods.get(owner_id, set())
-                if attr in static_methods:
+                if owner_id in ctx.class_static_methods and attr in ctx.class_static_methods[owner_id]:
                     return owner_id + "::" + _safe_php_ident(attr) + "(" + ", ".join(all_arg_strs) + ")"
 
     # Method call: obj.method(args) → $obj->method(args)
@@ -1159,7 +1191,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             if owner_rt == "module" or owner_id in ctx.import_alias_modules:
                 mod_id = _str(node, "runtime_module_id")
                 if mod_id == "":
-                    mod_id = ctx.import_alias_modules.get(owner_id, "")
+                    if owner_id in ctx.import_alias_modules:
+                        mod_id = ctx.import_alias_modules[owner_id]
                 runtime_symbol = _str(node, "runtime_symbol")
                 resolved_runtime_call = _str(node, "resolved_runtime_call")
                 if runtime_symbol == "":
@@ -1216,8 +1249,8 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
                 return "array_search(" + item + ", " + owner_args[0] + ", true)"
             if mapped_owner == "__DICT_GET__":
                 key = owner_args[1] if len(owner_args) >= 2 else "null"
-                default = owner_args[2] if len(owner_args) >= 3 else "null"
-                return "(array_key_exists(" + key + ", " + owner_args[0] + ") ? " + owner_args[0] + "[" + key + "] : " + default + ")"
+                default_value = owner_args[2] if len(owner_args) >= 3 else "null"
+                return "(array_key_exists(" + key + ", " + owner_args[0] + ") ? " + owner_args[0] + "[" + key + "] : " + default_value + ")"
             if mapped_owner == "__DICT_ITEMS__":
                 return "__pytra_dict_items(" + owner_args[0] + ")"
             if mapped_owner == "__DICT_KEYS__":
@@ -1332,8 +1365,11 @@ def _emit_compare(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
     parts: list[str] = []
     current_left = left
     for idx, comparator in enumerate(comparators):
-        op_obj = ops[idx] if idx < len(ops) else None
-        op_name = op_obj if isinstance(op_obj, str) else ""
+        op_name = ""
+        if idx < len(ops):
+            op_name_raw = json.JsonValue(ops[idx]).as_str()
+            if op_name_raw is not None:
+                op_name = op_name_raw
         comp_code = _emit_expr(ctx, comparator)
         # In/NotIn → special handling
         if op_name == "In":
@@ -1621,7 +1657,7 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             type_name = _str(handler_type, "id")
         php_exc_type = "\\Exception"
         if type_name != "":
-            mapped = php_type(type_name)
+            mapped: str = php_type(type_name)
             if mapped.startswith("\\"):
                 php_exc_type = mapped
             else:
@@ -1638,7 +1674,7 @@ def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         ctx.indent_level -= 1
         ctx.current_exc_var = saved_exc
         if saved_var_type is None:
-            ctx.var_types.pop(catch_var, None)
+            ctx.var_types[catch_var] = ""
         else:
             ctx.var_types[catch_var] = saved_var_type
     if len(finalbody) > 0:
@@ -1806,7 +1842,13 @@ def _emit_static_range_for_plan(
         kind = _str(sn, "kind")
         if kind == "Constant":
             v = sn.get("value")
-            return isinstance(v, (int, float)) and v < 0
+            v_int = json.JsonValue(v).as_int()
+            if v_int is not None:
+                return v_int < 0
+            v_float = json.JsonValue(v).as_float()
+            if v_float is not None:
+                return v_float < 0.0
+            return False
         if kind == "UnaryOp" and _str(sn, "op") == "USub":
             return True
         return False
@@ -2030,17 +2072,17 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
 
     # Skip extern declarations
     for d in decorators:
-        if isinstance(d, str) and d == "extern":
+        if _jv_str(d) == "extern":
             return
 
     is_staticmethod = False
     is_property = False
     for d in decorators:
-        if isinstance(d, str):
-            if d == "staticmethod":
-                is_staticmethod = True
-            elif d == "property":
-                is_property = True
+        d_str = _jv_str(d)
+        if d_str == "staticmethod":
+            is_staticmethod = True
+        elif d_str == "property":
+            is_property = True
 
     # Map Python special method names
     if name == "__init__" and ctx.current_class != "":
@@ -2119,16 +2161,20 @@ def _emit_function_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
             use_vars: list[str] = []
             use_vars.append("&" + _php_var(fn_name))
             for cap in captures:
-                if isinstance(cap, dict):
-                    cap_name = _str(cap, "name")
-                    mode = _str(cap, "mode")
+                cap_obj = json.JsonValue(cap).as_obj()
+                if cap_obj is not None:
+                    cap_name = _str(cap_obj.raw, "name")
+                    mode = _str(cap_obj.raw, "mode")
                     if cap_name != "":
                         prefix = "&" if mode == "mutable" else ""
                         cap_var = prefix + _php_var(_safe_php_ident(cap_name))
                         if cap_var not in use_vars:
                             use_vars.append(cap_var)
-                elif isinstance(cap, str) and cap != "":
-                    cap_var = _php_var(_safe_php_ident(cap))
+                else:
+                    cap_str = _jv_str(cap)
+                    if cap_str == "":
+                        continue
+                    cap_var = _php_var(_safe_php_ident(cap_str))
                     if cap_var not in use_vars:
                         use_vars.append(cap_var)
             use_clause = " use (" + ", ".join(use_vars) + ")"
@@ -2231,10 +2277,11 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     base_class = _str(node, "base")
     if base_class == "" and len(bases) > 0:
         first_base = bases[0]
-        if isinstance(first_base, dict):
-            base_class = _str(first_base, "id")
-        elif isinstance(first_base, str):
-            base_class = first_base
+        first_base_obj = json.JsonValue(first_base).as_obj()
+        if first_base_obj is not None:
+            base_class = _str(first_base_obj.raw, "id")
+        else:
+            base_class = _jv_str(first_base)
     if base_class in ("object",):
         base_class = ""
 
@@ -2260,7 +2307,9 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
     is_enum_like = base_class in ("Enum", "IntEnum", "IntFlag")
     if is_enum_like:
         fields = []
-    field_names = {fname for fname, _ in fields}
+    field_names: set[str] = set()
+    for fname, _field_type in fields:
+        field_names.add(fname)
     field_defaults: dict[str, JsonVal] = {}
     static_field_names: set[str] = set()
     for stmt in body:
@@ -2276,20 +2325,20 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                     field_defaults[tid] = stmt.get("value")
                     continue
                 static_field_names.add(tid)
-        elif isinstance(target, str) and target != "":
-            if target in field_names and isinstance(stmt.get("value"), dict):
-                field_defaults[target] = stmt.get("value")
-                continue
-            static_field_names.add(target)
+        else:
+            target_str = _jv_str(target)
+            if target_str != "":
+                if target_str in field_names and isinstance(stmt.get("value"), dict):
+                    field_defaults[target_str] = stmt.get("value")
+                    continue
+                static_field_names.add(target_str)
     for fname, ftype in fields:
         emit_name = fname
         if _class_extends_exception(ctx, name) and fname == "line":
             emit_name = "_pytra_line"
         if fname in static_field_names:
             continue
-        pt = php_type(ftype)
-        _emit(ctx, "public " + _php_var(emit_name) + ";")
-
+        _emit(ctx, "public " + _php_var(_safe_php_ident(emit_name)) + ";")
     if len(fields) > 0:
         _emit_blank(ctx)
 
@@ -2351,11 +2400,14 @@ def _emit_class_def(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
                         continue
                     val_code = _emit_expr(ctx, value)
                     _emit(ctx, "public static " + _php_var(_safe_php_ident(tid)) + " = " + val_code + ";")
-            elif isinstance(target, str) and value is not None:
-                if target in field_names:
+            else:
+                target_str = _jv_str(target)
+                if target_str == "" or value is None:
+                    continue
+                if target_str in field_names:
                     continue
                 val_code = _emit_expr(ctx, value)
-                _emit(ctx, "public static " + _php_var(_safe_php_ident(target)) + " = " + val_code + ";")
+                _emit(ctx, "public static " + _php_var(_safe_php_ident(target_str)) + " = " + val_code + ";")
             continue
         if kind == "FunctionDef" or kind == "ClosureDef":
             _emit_function_def(ctx, stmt)
@@ -2419,11 +2471,11 @@ def _collect_module_class_info(ctx: EmitContext, body: list[JsonVal]) -> None:
                 method_name = _str(method, "name")
                 decs = _list(method, "decorators")
                 for d in decs:
-                    if isinstance(d, str):
-                        if d == "staticmethod":
-                            static_methods.add(method_name)
-                        elif d == "property":
-                            property_methods.add(method_name)
+                    d_str = _jv_str(d)
+                    if d_str == "staticmethod":
+                        static_methods.add(method_name)
+                    elif d_str == "property":
+                        property_methods.add(method_name)
         ctx.class_static_methods[name] = static_methods
         ctx.class_property_methods[name] = property_methods
 
@@ -2439,8 +2491,8 @@ def _collect_module_globals(ctx: EmitContext, body: list[JsonVal]) -> None:
         name = ""
         if isinstance(target, dict) and _str(target, "kind") == "Name":
             name = _str(target, "id")
-        elif isinstance(target, str):
-            name = target
+        else:
+            name = _jv_str(target)
         if name != "":
             ctx.module_globals.add(_php_symbol_name(ctx, name))
 
@@ -2467,14 +2519,11 @@ def emit_php_module(east3_doc: dict[str, JsonVal]) -> str:
     if module_id == "":
         module_id = _str(meta, "module_id")
     lp = _dict(meta, "linked_program_v1")
-    if module_id == "" and lp:
+    if module_id == "" and len(lp) > 0:
         module_id = _str(lp, "module_id")
 
-    if module_id != "":
-        expand_cross_module_defaults([east3_doc])
-
     # Load runtime mapping
-    mapping_path = Path(__file__).resolve().parents[3] / "runtime" / "php" / "mapping.json"
+    mapping_path = Path("src").joinpath("runtime").joinpath("php").joinpath("mapping.json")
     mapping = load_runtime_mapping(mapping_path)
 
     # Skip runtime modules
@@ -2489,13 +2538,34 @@ def emit_php_module(east3_doc: dict[str, JsonVal]) -> str:
             if isinstance(orig, str) and isinstance(rn, str):
                 renamed_symbols[orig] = rn
 
-    ctx = EmitContext(
-        module_id=module_id,
-        source_path=_str(east3_doc, "source_path"),
-        is_entry=_bool(emit_ctx_meta, "is_entry") if emit_ctx_meta else False,
-        mapping=mapping,
-        renamed_symbols=renamed_symbols,
-    )
+    ctx = EmitContext()
+    ctx.module_id = module_id
+    ctx.source_path = _str(east3_doc, "source_path")
+    ctx.is_entry = _bool(emit_ctx_meta, "is_entry") if len(emit_ctx_meta) > 0 else False
+    ctx.indent_level = 0
+    ctx.lines = []
+    ctx.var_types = {}
+    ctx.current_return_type = ""
+    ctx.mapping = mapping
+    ctx.import_alias_modules = {}
+    ctx.runtime_imports = {}
+    ctx.class_names = set()
+    ctx.class_bases = {}
+    ctx.class_static_methods = {}
+    ctx.class_property_methods = {}
+    ctx.class_instance_methods = {}
+    ctx.class_fields = {}
+    ctx.current_class = ""
+    ctx.exception_type_ids = {}
+    ctx.class_type_ids = {}
+    ctx.renamed_symbols = renamed_symbols
+    ctx.temp_counter = 0
+    ctx.current_exc_var = ""
+    ctx.vararg_functions = set()
+    ctx.required_files = set()
+    ctx.function_names = set()
+    ctx.module_globals = set()
+    ctx.function_depth = 0
 
     body = _list(east3_doc, "body")
     main_guard = _list(east3_doc, "main_guard_body")
@@ -2532,11 +2602,11 @@ def emit_php_module(east3_doc: dict[str, JsonVal]) -> str:
         for binding in import_bindings:
             if not isinstance(binding, dict):
                 continue
-            mod_id = binding.get("module_id")
-            if not isinstance(mod_id, str):
+            mod_id = _jv_str(binding.get("module_id"))
+            if mod_id == "":
                 continue
-            runtime_mod_id = binding.get("runtime_module_id")
-            runtime_mod = runtime_mod_id if isinstance(runtime_mod_id, str) and runtime_mod_id != "" else mod_id
+            runtime_mod_id = _jv_str(binding.get("runtime_module_id"))
+            runtime_mod = runtime_mod_id if runtime_mod_id != "" else mod_id
             if runtime_mod in mapping.module_native_files:
                 native_file = mapping.module_native_files[runtime_mod]
                 if native_file not in ctx.required_files:
