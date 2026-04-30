@@ -349,10 +349,11 @@ def _emitter_host_cell_icon(doc: dict[str, object]) -> str:
 
 
 def _emitter_host_summary_cell(emitter_host_data: dict[str, dict[str, dict[str, object]]], lang: str) -> str:
-    hosted_docs = emitter_host_data.get(lang, {})
-    if not hosted_docs:
-        return "⬜<br>&nbsp;"
-    icons = [_emitter_host_cell_icon(hosted_docs.get(hosted_lang, {})) for hosted_lang in EMITTER_HOST_LANGS]
+    """Summary cell for a hosted emitter column: how many host languages can host this emitter?"""
+    icons: list[str] = []
+    for host_lang in EMITTER_HOST_LANGS:
+        host_docs = emitter_host_data.get(host_lang, {})
+        icons.append(_emitter_host_cell_icon(host_docs.get(lang, {})))
     tested = [ic for ic in icons if ic != "⬜"]
     if not tested:
         return "⬜<br>&nbsp;"
