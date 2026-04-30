@@ -3026,7 +3026,7 @@ class DartNativeEmitter:
             index = self._render_expr(index_node)
             # Dict subscript: no negative index adjustment
             if owner_type.startswith("dict["):
-                return owner + "[" + index + "]"
+                return owner + "[" + index + "]!"
             # If index is clearly non-numeric (string key), use direct access
             index_type = self._lookup_expr_type(index_node)
             if index_type == "str":
