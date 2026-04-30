@@ -38,6 +38,18 @@ class Path {
     return idx < 0 ? Path('.') : Path(_value.substring(0, idx));
   }
 
+  List<Path> get parents {
+    final out = <Path>[];
+    Path current = parent;
+    var last = '';
+    while (current._value != last) {
+      out.add(current);
+      last = current._value;
+      current = current.parent;
+    }
+    return out;
+  }
+
   bool exists() => File(_value).existsSync() || Directory(_value).existsSync();
 
   void mkdir([bool parents = false, bool existOk = false]) {

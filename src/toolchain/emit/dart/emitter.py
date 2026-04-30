@@ -540,6 +540,10 @@ class DartNativeEmitter:
         self._module_id: str = _module_id_from_meta(meta)
         self._root_rel_prefix: str = emit_ctx.get("root_rel_prefix", "./") if isinstance(emit_ctx.get("root_rel_prefix"), str) else "./"
         self._is_entry: bool = bool(emit_ctx.get("is_entry", False))
+        source_path_any = meta.get("_cli_source_path")
+        if not isinstance(source_path_any, str) or source_path_any == "":
+            source_path_any = emit_ctx.get("source_path")
+        self._source_path: str = source_path_any if isinstance(source_path_any, str) else ""
         self._has_extern_delegation: bool = False
 
     def _walk_nodes(self, root: Any) -> list[dict[str, Any]]:
@@ -1509,6 +1513,8 @@ class DartNativeEmitter:
 
     def _render_name_expr(self, expr_any: dict[str, Any]) -> str:
         ident = _safe_ident(expr_any.get("id"), "value")
+        if ident == "__file__":
+            return _dart_string(self._source_path)
         if ident == "self" and self.current_class_name != "":
             return "this"
         if ident == "main" and "__pytra_main" in self.function_names and "main" not in self.function_names:
