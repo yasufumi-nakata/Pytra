@@ -154,11 +154,10 @@ def _merge_profile_docs(base: dict[str, JsonVal], override: dict[str, JsonVal]) 
 
 
 def load_profile_with_includes(profile_path: Path) -> dict[str, JsonVal]:
-    path = profile_path
-    core_path = _profile_root() / "core.json"
-    core_doc = _read_profile_doc(core_path)
-    lang_doc = _read_profile_doc(path)
-    return _merge_profile_docs(core_doc, lang_doc)
+    return _merge_profile_docs(
+        _read_profile_doc(_profile_root().joinpath("core.json")),
+        _read_profile_doc(profile_path),
+    )
 
 
 
@@ -231,6 +230,5 @@ def load_profile_doc(language: str) -> dict[str, JsonVal]:
         raise RuntimeError("language must not be empty")
     if language in _PROFILE_DOC_CACHE:
         return _PROFILE_DOC_CACHE[language]
-    loaded: dict[str, JsonVal] = load_profile_with_includes(_profile_root() / (language + ".json"))
-    _PROFILE_DOC_CACHE[language] = loaded
-    return loaded
+    profile_path = _profile_root().joinpath(language + ".json")
+    return load_profile_with_includes(profile_path)

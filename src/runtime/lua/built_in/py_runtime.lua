@@ -107,6 +107,10 @@ function __pytra_repr(v)
     return "{" .. table.concat(parts, ", ") .. "}"
 end
 
+function py_repr(v)
+    return __pytra_repr(v)
+end
+
 function __pytra_repr_value(v)
     if type(v) == "string" then
         return "'" .. v:gsub("\\", "\\\\"):gsub("'", "\\'") .. "'"
@@ -1350,7 +1354,7 @@ local __pytra_json_value_mt = {}
 __pytra_json_value_mt.__index = __pytra_json_value_mt
 __pytra_json_value_mt.__tostring = function(self)
     if self.__is_nil then
-        return "nil"
+        return ""
     end
     return tostring(self.value)
 end
@@ -1591,11 +1595,12 @@ function __pytra_json_arr_mt:get_bool(index)
 end
 
 json.JsonValue = function(raw)
+    local is_nil = raw == nil or __pytra_json_is_null(raw)
     local table_raw = {}
-    if type(raw) == "table" then
+    if type(raw) == "table" and not is_nil then
         table_raw = raw
     end
-    return setmetatable({ raw = table_raw, value = raw, __is_nil = raw == nil }, __pytra_json_value_mt)
+    return setmetatable({ raw = table_raw, value = raw, __is_nil = is_nil }, __pytra_json_value_mt)
 end
 json.JsonObj = function(raw)
     return setmetatable({ raw = raw }, __pytra_json_obj_mt)
@@ -2172,6 +2177,24 @@ function __pytra_str_rfind(s, sub)
         i = found + 1
     end
     return last
+end
+string.startswith = function(s, prefix)
+    return __pytra_str_startswith(s, prefix)
+end
+string.endswith = function(s, suffix)
+    return __pytra_str_endswith(s, suffix)
+end
+string.strip = function(s)
+    return __pytra_str_strip(s)
+end
+string.lstrip = function(s)
+    return __pytra_str_lstrip(s)
+end
+string.rstrip = function(s)
+    return __pytra_str_rstrip(s)
+end
+string.replace = function(s, old, new)
+    return __pytra_str_replace(s, old, new)
 end
 function __pytra_str_split(s, sep)
     if sep == nil then sep = " " end

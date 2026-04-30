@@ -11,14 +11,14 @@ from __future__ import annotations
 
 
 # mapping.json "types" テーブルの注入先。emitter 起動時に init_types_mapping() で設定する。
-_g_types: dict[str, str] = {}
+G_TYPES: dict[str, str] = {}
 
 
 def init_types_mapping(types: dict[str, str]) -> None:
     """mapping.json の types テーブルを注入する。emit_module() 呼び出し前に一度だけ呼ぶ。"""
-    _g_types.clear()
+    G_TYPES.clear()
     for name, mapped in types.items():
-        _g_types[name] = mapped
+        G_TYPES[name] = mapped
 
 
 def _build_type_map() -> dict[str, str]:
@@ -203,7 +203,7 @@ def cpp_type_pref(resolved_type: str, prefer_value_container: bool = False) -> s
         return "auto"
 
     # mapping.json "types" テーブルを優先（P0-CPP-TYPEMAP-S3）
-    mapped = _g_types.get(normalized, "")
+    mapped = G_TYPES.get(normalized, "")
     if mapped == "":
         mapped = _TYPE_MAP.get(normalized, "")
     if mapped != "":

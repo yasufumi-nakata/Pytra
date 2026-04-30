@@ -490,9 +490,51 @@ class _CppStmtCommonRenderer(CommonRenderer):
         elif kind == "ClassDef": _emit_class_def(self.ctx, node)
         elif kind in ("ImportFrom", "Import", "TypeAlias"): pass
         elif kind == "VarDecl": _emit_var_decl(self.ctx, node)
-        elif kind == "TupleUnpack": _emit_tuple_unpack(self.ctx, node)
+        elif kind in ("TupleUnpack", "MultiAssign"): _emit_tuple_unpack(self.ctx, node)
         elif kind == "Swap": _emit_swap(self.ctx, node)
         elif kind == "With": _emit_with(self.ctx, node)
+        elif kind == "ErrorReturn":
+            value = node.get("value")
+            value_obj = json.JsonValue(value).as_obj()
+            if value_obj is not None:
+                _emit(self.ctx, "throw " + _emit_expr(self.ctx, value) + ";")
+            else:
+                _emit(self.ctx, "throw;")
+        elif kind == "ErrorCheck":
+            call = node.get("call")
+            ok_target = _dict(node, "ok_target")
+            name = _str(ok_target, "id")
+            expr = _emit_expr(self.ctx, call)
+            if name != "":
+                ok_type = _str(node, "ok_type")
+                if _is_local_visible(self.ctx, name):
+                    _emit(self.ctx, name + " = " + expr + ";")
+                else:
+                    decl_type = _decl_cpp_type(self.ctx, ok_type, name) if ok_type not in ("", "unknown") else "auto"
+                    _emit(self.ctx, decl_type + " " + name + " = " + expr + ";")
+                    _declare_local_visible(self.ctx, name)
+                    if ok_type not in ("", "unknown"):
+                        _register_local_storage(self.ctx, name, ok_type)
+            else:
+                _emit(self.ctx, "(void)(" + expr + ");")
+        elif kind == "ErrorCatch":
+            body = _list(node, "body")
+            finalbody = _list(node, "finalbody")
+            _emit(self.ctx, "try {")
+            self.state.indent_level += 1
+            self.ctx.indent_level = self.state.indent_level + 0
+            self.emit_body(body)
+            self.state.indent_level -= 1
+            self.ctx.indent_level = self.state.indent_level + 0
+            _emit(self.ctx, "} catch (...) {")
+            self.state.indent_level += 1
+            self.ctx.indent_level = self.state.indent_level + 0
+            self.emit_body(finalbody)
+            _emit(self.ctx, "throw;")
+            self.state.indent_level -= 1
+            self.ctx.indent_level = self.state.indent_level + 0
+            _emit(self.ctx, "}")
+            self.emit_body(finalbody)
         else: _emit_fail(self.ctx, "unsupported_stmt_kind", kind)
         self.state.indent_level = self.ctx.indent_level
 
@@ -1748,7 +1790,9 @@ def _build_class_symbol_fqcn_map(
     bindings_sources: list[JsonVal] = [meta.get("import_resolution"), meta.get("import_bindings")]
     for raw in bindings_sources:
         raw_obj = json.JsonValue(raw).as_obj()
-        bindings = _get(raw_obj.raw, "bindings") if raw_obj is not None else raw
+        bindings: JsonVal = raw
+        if raw_obj is not None:
+            bindings = _get(raw_obj.raw, "bindings")
         bindings_arr = json.JsonValue(bindings).as_arr()
         if bindings_arr is None:
             continue
@@ -1903,7 +1947,10 @@ def _emit_expr_extension(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
         return "str(py_to_string(" + value_expr + "))"
     if kind == "ObjLen": return "py_len(" + _emit_expr(ctx, node.get("value")) + ")"
     if kind == "ObjBool": return "py_bool(" + _emit_expr(ctx, node.get("value")) + ")"
-    _emit_fail(ctx, "unsupported_expr_kind", kind)
+    detail = kind
+    if detail == "":
+        detail = py_repr(node)
+    _emit_fail(ctx, "unsupported_expr_kind", detail)
     return ""
 
 
@@ -4033,7 +4080,9 @@ def _emit_issubclass(ctx: CppEmitContext, node: dict[str, JsonVal]) -> str:
 def _emit_slice_expr(ctx: CppEmitContext, node: dict[str, JsonVal], value_expr: str, slice_node: dict[str, JsonVal]) -> str:
     value_node = node.get("value")
     value_obj = json.JsonValue(value_node).as_obj()
-    value_type = _str(value_obj.raw, "resolved_type") if value_obj is not None else ""
+    value_type = ""
+    if value_obj is not None:
+        value_type = _str(value_obj.raw, "resolved_type")
     storage_type = _expr_storage_type(ctx, value_node)
     if (value_type in ("", "unknown", "tuple", "list", "dict", "set") or value_type == storage_type) and storage_type != "":
         value_type = storage_type
@@ -4046,8 +4095,12 @@ def _emit_slice_expr(ctx: CppEmitContext, node: dict[str, JsonVal], value_expr: 
     upper = slice_node.get("upper")
     lower_obj = json.JsonValue(lower).as_obj()
     upper_obj = json.JsonValue(upper).as_obj()
-    lo_expr = _emit_expr(ctx, lower) if lower_obj is not None else "0"
-    up_expr = _emit_expr(ctx, upper) if upper_obj is not None else "py_len(" + value_expr + ")"
+    lo_expr = "0"
+    if lower_obj is not None:
+        lo_expr = _emit_expr(ctx, lower)
+    up_expr = "py_len(" + value_expr + ")"
+    if upper_obj is not None:
+        up_expr = _emit_expr(ctx, upper)
     if value_type == "str":
         return "py_str_slice(" + value_expr + ", " + lo_expr + ", " + up_expr + ")"
     if value_type in ("", "unknown"):
