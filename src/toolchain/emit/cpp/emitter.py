@@ -1911,7 +1911,7 @@ def _normalize_cpp_boundary_expr(ctx: CppEmitContext, node: JsonVal) -> JsonVal:
         return node
     node_dict = node_obj.raw
     renderer = _CppExprCommonRenderer(ctx)
-    normalized = renderer._normalize_boundary_expr(node_dict)
+    normalized = renderer.normalize_boundary_expr(node_dict)
     return normalized
 
 

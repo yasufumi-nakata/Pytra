@@ -8,6 +8,8 @@ class Path {
   String _value;
   Path(dynamic value) : _value = (value is Path) ? value._value : value.toString();
 
+  static Path cwd() => Path(Directory.current.path);
+
   @override
   String toString() => _value;
 

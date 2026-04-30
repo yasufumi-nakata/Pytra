@@ -1125,6 +1125,15 @@ class DartNativeEmitter:
 
     def _render_cond_expr(self, test_any: Any) -> str:
         test = self._render_expr(test_any)
+        if isinstance(test_any, dict) and test_any.get("kind") == "Compare":
+            ops_any = test_any.get("ops")
+            comps_any = test_any.get("comparators")
+            ops = ops_any if isinstance(ops_any, list) else []
+            comps = comps_any if isinstance(comps_any, list) else []
+            if len(ops) > 0 and len(comps) > 0 and ops[0] in {"Is", "IsNot", "Eq", "NotEq"}:
+                comp0 = comps[0]
+                if isinstance(comp0, dict) and comp0.get("kind") == "Constant" and comp0.get("value") is None:
+                    return test
         if self._is_sequence_expr(test_any):
             return "pytraTruthy(" + test + ")"
         # Dynamic/unknown type: use pytraTruthy to handle Python truthiness
@@ -1301,8 +1310,11 @@ class DartNativeEmitter:
         # Emit main guard — only for entry modules (§8)
         if self._is_entry:
             self._emit_line("")
-            self._emit_line("void main() {")
+            self._emit_line("void main(List<String> args) {")
             self.indent += 1
+            sys_alias = self.relative_import_name_aliases.get("sys", "")
+            if sys_alias != "":
+                self._emit_line(sys_alias + ".set_argv([\"\", ...args]);")
             for stmt in main_guard:
                 self._emit_stmt(stmt)
             self.indent -= 1
@@ -1604,7 +1616,10 @@ class DartNativeEmitter:
                                 imported_module_paths[mod_canon] = mod_alias
                             mod_alias = imported_module_paths[mod_canon]
                             sym_safe = _safe_ident(sym, sym)
-                            alias_lines.append("var " + alias_txt + " = " + mod_alias + "." + sym_safe + ";")
+                            if len(sym_safe) > 0 and sym_safe[0].isupper():
+                                self.relative_import_name_aliases[alias_txt] = mod_alias + "." + sym_safe
+                            else:
+                                alias_lines.append("var " + alias_txt + " = " + mod_alias + "." + sym_safe + ";")
                         # Unresolved Python stdlib imports are skipped.
                         continue
                     resolved_kind = resolved.get("resolved_binding_kind", "")
@@ -2719,6 +2734,8 @@ class DartNativeEmitter:
             iter_type = self._lookup_expr_type(iter_expr_node)
             if iter_type == "str":
                 iter_expr = iter_expr + ".split('')"
+            elif iter_type.startswith("dict["):
+                iter_expr = iter_expr + ".keys"
             tuple_target = isinstance(target_plan, dict) and target_plan.get("kind") == "TupleTarget"
             if tuple_target and isinstance(target_plan, dict):
                 iter_name = self._next_tmp_name("__it")
@@ -2884,27 +2901,31 @@ class DartNativeEmitter:
             comps = ed.get("comparators")
             if not isinstance(ops, list) or not isinstance(comps, list) or len(ops) == 0 or len(comps) == 0:
                 return "false"
+            parts: list[str] = []
             left_node = ed.get("left")
-            right_node = comps[0]
-            left = self._render_expr(left_node)
-            right = self._render_expr(right_node)
-            op0 = str(ops[0])
-            if op0 == "In":
-                return "pytraContains(" + right + ", " + left + ")"
-            if op0 == "NotIn":
-                return "(!pytraContains(" + right + ", " + left + "))"
-            if op0 == "Is":
-                return "(" + left + " == " + right + ")"
-            if op0 == "IsNot":
-                return "(" + left + " != " + right + ")"
-            # String relational comparison: use compareTo() since Dart String lacks <, <=, >, >=
-            if op0 in {"Lt", "LtE", "Gt", "GtE"}:
-                left_t = self._lookup_expr_type(left_node)
-                right_t = self._lookup_expr_type(right_node)
-                if left_t == "str" or right_t == "str":
+            pair_count = min(len(ops), len(comps))
+            idx = 0
+            while idx < pair_count:
+                right_node = comps[idx]
+                left = self._render_expr(left_node)
+                right = self._render_expr(right_node)
+                op0 = str(ops[idx])
+                if op0 == "In":
+                    parts.append("pytraContains(" + right + ", " + left + ")")
+                elif op0 == "NotIn":
+                    parts.append("(!pytraContains(" + right + ", " + left + "))")
+                elif op0 == "Is":
+                    parts.append("(" + left + " == " + right + ")")
+                elif op0 == "IsNot":
+                    parts.append("(" + left + " != " + right + ")")
+                elif op0 in {"Lt", "LtE", "Gt", "GtE"} and (self._lookup_expr_type(left_node) == "str" or self._lookup_expr_type(right_node) == "str"):
                     sym = _cmp_symbol(op0)
-                    return "(" + left + ".compareTo(" + right + ") " + sym + " 0)"
-            return "(" + left + " " + _cmp_symbol(op0) + " " + right + ")"
+                    parts.append("(" + left + ".compareTo(" + right + ") " + sym + " 0)")
+                else:
+                    parts.append("(" + left + " " + _cmp_symbol(op0) + " " + right + ")")
+                left_node = right_node
+                idx += 1
+            return "(" + " && ".join(parts) + ")"
         if kind == "BoolOp":
             values_any = ed.get("values")
             values = values_any if isinstance(values_any, list) else []
@@ -2957,6 +2978,10 @@ class DartNativeEmitter:
         if kind == "List":
             elems_any = ed.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
+            if len(elems) == 0:
+                dart_t = self._dart_type(self._lookup_expr_type(ed))
+                if dart_t.startswith("List<"):
+                    return "<" + dart_t[5:-1] + ">[]"
             out: list[str] = []
             for e in elems:
                 out.append(self._render_expr(e))
@@ -2971,6 +2996,10 @@ class DartNativeEmitter:
         if kind == "Set":
             elems_any = ed.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
+            if len(elems) == 0:
+                dart_t = self._dart_type(self._lookup_expr_type(ed))
+                if dart_t.startswith("Set<"):
+                    return "pytraNewSet<" + dart_t[4:-1] + ">()"
             out: list[str] = []
             for e in elems:
                 out.append(self._render_expr(e))
@@ -2990,6 +3019,9 @@ class DartNativeEmitter:
                 entries_any = ed.get("entries")
                 entries = entries_any if isinstance(entries_any, list) else []
                 if len(entries) == 0:
+                    dart_t = self._dart_type(self._lookup_expr_type(ed))
+                    if dart_t.startswith("Map<") and dart_t.endswith(">"):
+                        return "<" + dart_t[4:-1] + ">{}"
                     return "{}"
                 pairs_from_entries: list[str] = []
                 i = 0
@@ -3103,10 +3135,10 @@ class DartNativeEmitter:
         if kind == "IsSubtype" or kind == "IsSubclass":
             return "false"
         if kind == "IfExp":
-            test = self._render_expr(ed.get("test"))
+            test = self._render_cond_expr(ed.get("test"))
             body = self._render_expr(ed.get("body"))
             orelse = self._render_expr(ed.get("orelse"))
-            return "(pytraTruthy(" + test + ") ? (" + body + ") : (" + orelse + "))"
+            return "(" + test + " ? (" + body + ") : (" + orelse + "))"
         if kind == "JoinedStr":
             values_any = ed.get("values")
             values = values_any if isinstance(values_any, list) else []
@@ -3202,7 +3234,14 @@ class DartNativeEmitter:
             if raw_fn_name == "cast" and len(args) == 2:
                 type_name = self._type_expr_name(args[0])
                 if type_name != "":
-                    return "(" + rendered_args[1] + " as " + self._dart_type(type_name) + ")"
+                    dart_t = self._dart_type(type_name)
+                    if dart_t.startswith("Map<"):
+                        return dart_t + ".from(" + rendered_args[1] + ")"
+                    if dart_t.startswith("List<"):
+                        return dart_t + ".from(" + rendered_args[1] + ")"
+                    if dart_t.startswith("Set<"):
+                        return dart_t + ".from(" + rendered_args[1] + ")"
+                    return "(" + rendered_args[1] + " as " + dart_t + ")"
             if raw_fn_name == "reversed" and len(rendered_args) == 1:
                 return "pytraReversed(" + rendered_args[0] + ")"
             if raw_fn_name == "isinstance" and len(args) == 2:
@@ -3224,6 +3263,10 @@ class DartNativeEmitter:
             mapped_name = self._mapping.calls.get(runtime_call, "")
             if mapped_name == "":
                 mapped_name = self._mapping.calls.get(raw_fn_name, "")
+            if mapped_name == "__SET_CTOR__" and len(rendered_args) == 0:
+                dart_t = self._dart_type(self._lookup_expr_type(expr))
+                if dart_t.startswith("Set<"):
+                    return "pytraNewSet<" + dart_t[4:-1] + ">()"
             mapped_expr = self._expand_mapped_call(mapped_name, rendered_args)
             if mapped_expr != "":
                 return mapped_expr
@@ -3247,6 +3290,10 @@ class DartNativeEmitter:
             owner_node = func_any.get("value")
             raw_attr = func_any.get("attr") if isinstance(func_any.get("attr"), str) else ""
             attr = _safe_ident(raw_attr, "call")
+            if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
+                owner_name = _safe_ident(owner_node.get("id"), "")
+                if owner_name in {"self", "self_"} and raw_attr in {"_str", "_list"}:
+                    return raw_attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
             if isinstance(owner_node, dict) and owner_node.get("kind") == "Call":
                 super_func = owner_node.get("func")
                 if isinstance(super_func, dict) and super_func.get("kind") == "Name":
@@ -3409,6 +3456,14 @@ class DartNativeEmitter:
     def _coerce_assignment_expr(self, target_any: Any, value_expr: str) -> str:
         if not isinstance(target_any, dict):
             return value_expr
+        target_type = self._lookup_expr_type(target_any)
+        dart_target_t = self._dart_type(target_type) if target_type != "" else ""
+        if dart_target_t.startswith("List<"):
+            return dart_target_t + ".from(" + value_expr + ")"
+        if dart_target_t.startswith("Map<"):
+            return dart_target_t + ".from(" + value_expr + ")"
+        if dart_target_t.startswith("Set<"):
+            return dart_target_t + ".from(" + value_expr + ")"
         if target_any.get("kind") == "Attribute":
             owner_any = target_any.get("value")
             if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":

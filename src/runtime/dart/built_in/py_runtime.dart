@@ -101,6 +101,12 @@ String pytraStr(dynamic v) {
   return _pytraRepr(v);
 }
 
+String repr(dynamic v) => _pytraRepr(v);
+String py_repr(dynamic v) => _pytraRepr(v);
+
+dynamic pytramin(dynamic a, dynamic b) => a < b ? a : b;
+dynamic pytramax(dynamic a, dynamic b) => a > b ? a : b;
+
 String pytraTupleStr(List<dynamic> v) {
   if (v.length == 1) return "(" + _pytraRepr(v[0]) + ",)";
   return "(" + v.map(_pytraRepr).join(", ") + ")";
@@ -251,20 +257,23 @@ int pytraDeepHash(dynamic value) {
   return value.hashCode;
 }
 
-LinkedHashSet<dynamic> pytraNewSet() {
-  return LinkedHashSet<dynamic>(equals: pytraDeepEquals, hashCode: pytraDeepHash);
+Set<T> pytraNewSet<T>() {
+  return LinkedHashSet<T>(
+    equals: (a, b) => pytraDeepEquals(a, b),
+    hashCode: (value) => pytraDeepHash(value),
+  );
 }
 
-LinkedHashSet<dynamic> pytraSetLiteral(List<dynamic> elements) {
-  final out = pytraNewSet();
+Set<dynamic> pytraSetLiteral(List<dynamic> elements) {
+  final out = pytraNewSet<dynamic>();
   out.addAll(elements);
   return out;
 }
 
-LinkedHashSet<dynamic> pytraSetFrom(dynamic iterable) {
-  final out = pytraNewSet();
+Set<T> pytraSetFrom<T>(dynamic iterable) {
+  final out = pytraNewSet<T>();
   if (iterable is Iterable) {
-    out.addAll(iterable);
+    out.addAll(iterable.cast<T>());
   }
   return out;
 }

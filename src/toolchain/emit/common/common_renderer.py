@@ -332,7 +332,7 @@ class CommonRenderer:
                 return target
         return self._str(node_raw, "resolved_type")
 
-    def _normalize_boundary_expr(self, node: JsonVal) -> JsonVal:
+    def normalize_boundary_expr(self, node: JsonVal) -> JsonVal:
         current = node
         current_obj = json.JsonValue(current).as_obj()
         while current_obj is not None:
@@ -351,6 +351,9 @@ class CommonRenderer:
             current = inner
             current_obj = json.JsonValue(current).as_obj()
         return current
+
+    def _normalize_boundary_expr(self, node: JsonVal) -> JsonVal:
+        return self.normalize_boundary_expr(node)
 
     def _format_condition(self, rendered: str) -> str:
         return "(" + rendered + ")" if self._condition_parens() else rendered
