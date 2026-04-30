@@ -1556,8 +1556,12 @@ def _emit_stmt(ctx: EmitContext, node: JsonVal) -> None:
         pass  # Ruby doesn't have type aliases
     elif kind == "Match":
         _emit_match(ctx, node)
-    elif kind in ("ErrorReturn", "ErrorCheck", "ErrorCatch"):
-        pass  # native_throw style: no-op
+    elif kind == "ErrorReturn":
+        _emit_error_return(ctx, node)
+    elif kind == "ErrorCheck":
+        _emit_error_check(ctx, node)
+    elif kind == "ErrorCatch":
+        _emit_error_catch(ctx, node)
     elif kind == "comment":
         text = _str(node, "text")
         if text != "":
@@ -2002,6 +2006,56 @@ def _emit_raise(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
         return
     exc_code = _emit_expr(ctx, exc)
     _emit(ctx, "raise " + exc_code)
+
+
+def _emit_error_return(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    value = node.get("value")
+    if isinstance(value, dict):
+        _emit(ctx, "raise " + _emit_expr(ctx, value))
+    elif ctx.current_exc_var != "":
+        _emit(ctx, "raise " + ctx.current_exc_var)
+    else:
+        _emit(ctx, "raise")
+
+
+def _emit_error_check(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    call_node = node.get("call")
+    if not isinstance(call_node, dict):
+        return
+    call_code = _emit_expr(ctx, call_node)
+    ok_target = node.get("ok_target")
+    if isinstance(ok_target, dict):
+        _emit(ctx, _emit_lvalue(ctx, ok_target) + " = " + call_code)
+    else:
+        _emit(ctx, call_code)
+
+
+def _emit_error_catch(ctx: EmitContext, node: dict[str, JsonVal]) -> None:
+    body = _list(node, "body")
+    finalbody = _list(node, "finalbody")
+    handlers = _list(node, "handlers")
+    _emit(ctx, "begin")
+    ctx.indent_level += 1
+    _emit_body(ctx, body)
+    ctx.indent_level -= 1
+    for handler in handlers:
+        handler_dict = handler if isinstance(handler, dict) else {}
+        name = _safe_ruby_ident(_str(handler_dict, "name"))
+        type_name = _str(handler_dict, "type_name")
+        rescue_type = type_name if type_name != "" else "StandardError"
+        if name != "":
+            _emit(ctx, "rescue " + rescue_type + " => " + name)
+        else:
+            _emit(ctx, "rescue " + rescue_type)
+        ctx.indent_level += 1
+        _emit_body(ctx, _list(handler_dict, "body"))
+        ctx.indent_level -= 1
+    if len(finalbody) > 0:
+        _emit(ctx, "ensure")
+        ctx.indent_level += 1
+        _emit_body(ctx, finalbody)
+        ctx.indent_level -= 1
+    _emit(ctx, "end")
 
 
 def _emit_try(ctx: EmitContext, node: dict[str, JsonVal]) -> None:

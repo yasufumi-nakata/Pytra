@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-29
+最終更新: 2026-04-30
 
 ## 運用ルール
 
@@ -46,8 +46,9 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を ruby に変換
 1. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S1] `python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` で変換 + build を通す
    - 進捗: 2026-04-30 に `pytra-cli.py -build` の target wiring を修正し、`--target ruby` が `toolchain.emit.ruby.cli` へ到達するようにした。`rm -rf work/selfhost/host-cpp/ruby && timeout 3600s python3 src/pytra-cli.py -build src/toolchain/emit/cpp/cli.py --target ruby -o work/selfhost/host-cpp/ruby/` は変換 PASS（22 files）。
    - 進捗: 2026-04-30 に C++ types の injected mapping を `G_TYPES` 定数化し、Ruby のトップレベルメソッド可視性問題を回避した。`ruby -c work/selfhost/host-cpp/ruby/toolchain_emit_cpp_cli.rb` は `Syntax OK`。実行は CommonRenderer 初期化まで進み、`toolchain_emit_common_profile_loader.rb` の `load_profile_doc` が `__comp_11` 未定義で停止する。原因は Ruby emitter が `ErrorCheck` lowering の `__comp_*` 代入を生成しないこと。
+   - 進捗: 2026-04-30 に Ruby emitter の `ErrorReturn`/`ErrorCheck`/`ErrorCatch` lowering、C++ emitter の helper 名衝突回避（`_emit_line`/`_cpp_indent`/`_cpp_emit_blank`）、`header_gen` の Ruby 可視定数化、`class_type_ids.keys()` 反復化を追加した。`ruby -c` は `Syntax OK`、Ruby host 実行は 33 files（`toolchain_emit_cpp_cli.cpp` まで）を書いた後、`toolchain.emit.cpp.emitter` 生成中に 1 時間 timeout（exit 124）。
 2. [ ] [ID: P1-HOST-CPP-EMITTER-RUBY-S2] C++ emitter host parity PASS を確認し、結果を `.parity-results/emitter_host_ruby.json` に書き込む（`gen_backend_progress.py` で emitter host マトリクスに反映される）
-   - 進捗: 2026-04-30 時点では S1 が Ruby 実行未 PASS のため未実行。emitter host 結果は `.parity-results/emitter_host_ruby.json` に build_failed として記録済み。
+   - 進捗: 2026-04-30 時点では S1 が Ruby 実行未 PASS のため未実行。emitter host 結果は `.parity-results/emitter_host_ruby.json` に `build_status=ok` / `parity_status=timeout` として記録済み。
 
 ### P1-EMITTER-SELFHOST-RUBY: emit/ruby/cli.py を単独で selfhost C++ build に通す
 

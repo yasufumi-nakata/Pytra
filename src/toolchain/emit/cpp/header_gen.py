@@ -777,7 +777,7 @@ def _hg_target_name(target: JsonVal) -> str:
     return ""
 
 
-_hg_CPP_RESERVED_WORDS: set[str] = {
+HG_CPP_RESERVED_WORDS: set[str] = {
     "alignas", "alignof", "and", "and_eq", "asm", "auto", "bitand", "bitor",
     "bool", "break", "case", "catch", "char", "class", "compl", "concept",
     "const", "consteval", "constexpr", "constinit", "const_cast", "continue",
@@ -806,7 +806,7 @@ def _hg_safe_cpp_ident(name: str) -> str:
     safe = "".join(parts)
     if safe != "" and safe[0].isdigit():
         safe = "_" + safe
-    if safe in _hg_CPP_RESERVED_WORDS:
+    if safe in HG_CPP_RESERVED_WORDS:
         safe += "_"
     return safe
 
