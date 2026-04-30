@@ -6,7 +6,7 @@
 
 > Domain-specific TODO. See [index.md](./index.md) for the full index.
 
-Last updated: 2026-04-04
+Last updated: 2026-05-01
 
 ## Operating Rules
 
@@ -41,8 +41,10 @@ Last updated: 2026-04-04
    - Completion note (2026-04-04): Updated `src/runtime/zig/built_in/py_runtime.zig` and the Zig runtime copier to align with the toolchain2 emitter's union/container/callable/exception/property/super lowering.
 5. [x] [ID: P1-ZIG-EMITTER-S5] Pass Zig run parity for fixtures (`zig build-exe -OReleaseFast`).
    - Completion note (2026-04-04): `python3 tools/check/runtime_parity_check_fast.py --targets zig` reports `SUMMARY cases=146 pass=146 fail=0`; fixture parity is complete.
-6. [ ] [ID: P1-ZIG-EMITTER-S6] Pass Zig parity for stdlib (`--case-root stdlib`)
-7. [ ] [ID: P1-ZIG-EMITTER-S7] Pass Zig parity for sample (`--case-root sample`)
+6. [x] [ID: P1-ZIG-EMITTER-S6] Pass Zig parity for stdlib (`--case-root stdlib`)
+   - Completion note (2026-05-01): `.parity-results/zig_stdlib.json` records all 16 stdlib cases as `ok`, and `python3 tools/gen/gen_backend_progress.py` reflects the PASS state.
+7. [x] [ID: P1-ZIG-EMITTER-S7] Pass Zig parity for sample (`--case-root sample`)
+   - Completion note (2026-05-01): `.parity-results/zig_sample.json` records all 18 sample cases as `ok`, and `python3 tools/gen/gen_backend_progress.py` reflects the PASS state.
 
 ### P2-ZIG-LINT: Resolve emitter hardcode lint violations for Zig
 
