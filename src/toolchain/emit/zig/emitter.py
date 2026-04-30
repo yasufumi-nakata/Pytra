@@ -6,6 +6,8 @@ import json
 from typing import Any
 from pathlib import Path
 
+from pytra.std.json import JsonVal
+from toolchain.emit.common.code_emitter import RuntimeMapping
 from toolchain.emit.common.code_emitter import build_import_alias_map
 from toolchain.emit.common.code_emitter import load_runtime_mapping
 from toolchain.emit.common.common_renderer import CommonRenderer
@@ -40,26 +42,30 @@ _COMPILETIME_STD_IMPORT_SYMBOLS = {"abi", "template", "extern"}
 _ZIG_ACTIVE_EXCEPTION_SLOTS = ("__pytra_exc_type", "__pytra_exc_msg", "__pytra_exc_line")
 _ZIG_CAUGHT_EXCEPTION_SLOTS = ("__pytra_caught_type", "__pytra_caught_msg", "__pytra_caught_line")
 _ZIG_BOUND_EXCEPTION_RECORD = "__PytraError"
-_RUNTIME_SYMBOL_INDEX_PATH = Path(__file__).resolve().parents[4] / "tools" / "runtime_symbol_index.json"
-_RUNTIME_SYMBOL_INDEX_CACHE: dict[str, Any] | None = None
+_RUNTIME_SYMBOL_INDEX_PATH = Path("tools").joinpath("runtime_symbol_index.json")
+_RUNTIME_SYMBOL_INDEX_CACHE: dict[str, JsonVal] = {}
+_RUNTIME_SYMBOL_INDEX_LOADED: bool = False
 
 
-def _load_runtime_symbol_index() -> dict[str, Any]:
+def _load_runtime_symbol_index() -> dict[str, JsonVal]:
     global _RUNTIME_SYMBOL_INDEX_CACHE
-    if _RUNTIME_SYMBOL_INDEX_CACHE is not None:
+    global _RUNTIME_SYMBOL_INDEX_LOADED
+    if _RUNTIME_SYMBOL_INDEX_LOADED:
         return _RUNTIME_SYMBOL_INDEX_CACHE
+    _RUNTIME_SYMBOL_INDEX_LOADED = True
     if not _RUNTIME_SYMBOL_INDEX_PATH.exists():
         _RUNTIME_SYMBOL_INDEX_CACHE = {}
         return _RUNTIME_SYMBOL_INDEX_CACHE
     try:
-        raw = json.loads(_RUNTIME_SYMBOL_INDEX_PATH.read_text())
-        _RUNTIME_SYMBOL_INDEX_CACHE = raw if isinstance(raw, dict) else {}
+        raw_obj = json.loads_obj(_RUNTIME_SYMBOL_INDEX_PATH.read_text())
+        if raw_obj is not None:
+            _RUNTIME_SYMBOL_INDEX_CACHE = raw_obj.raw
     except Exception:
         _RUNTIME_SYMBOL_INDEX_CACHE = {}
     return _RUNTIME_SYMBOL_INDEX_CACHE
 
 
-def _runtime_module_doc(module_id: str) -> dict[str, Any]:
+def _runtime_module_doc(module_id: str) -> dict[str, JsonVal]:
     modules = _load_runtime_symbol_index().get("modules")
     if not isinstance(modules, dict):
         return {}
@@ -104,12 +110,12 @@ def canonical_runtime_module_id(module_id: str) -> str:
     return mod
 
 
-def lookup_runtime_module_symbols(module_id: str) -> dict[str, Any]:
+def lookup_runtime_module_symbols(module_id: str) -> dict[str, JsonVal]:
     symbols = _runtime_module_doc(module_id).get("symbols")
     return symbols if isinstance(symbols, dict) else {}
 
 
-def lookup_runtime_symbol_doc(module_id: str, symbol_name: str) -> dict[str, Any]:
+def lookup_runtime_symbol_doc(module_id: str, symbol_name: str) -> dict[str, JsonVal]:
     mod = canonical_runtime_module_id(module_id.strip())
     if mod == "":
         return {}
@@ -144,15 +150,18 @@ def _safe_ident(name: Any, fallback: str = "value") -> str:
 
 
 def _relative_import_module_path(module_id: str) -> str:
+    rel = module_id
+    while rel.startswith("."):
+        rel = rel[1:]
     parts = [
         _safe_ident(part, "module")
-        for part in module_id.lstrip(".").split(".")
+        for part in rel.split(".")
         if part != ""
     ]
     return ".".join(parts)
 
 
-def _collect_relative_import_name_aliases(east_doc: dict[str, Any]) -> dict[str, str]:
+def _collect_relative_import_name_aliases(east_doc: dict[str, JsonVal]) -> dict[str, str]:
     aliases: dict[str, str] = {}
     body_any = east_doc.get("body")
     body = body_any if isinstance(body_any, list) else []
@@ -162,7 +171,7 @@ def _collect_relative_import_name_aliases(east_doc: dict[str, Any]) -> dict[str,
         if not isinstance(stmt, dict):
             i += 1
             continue
-        sd: dict[str, Any] = stmt
+        sd: dict[str, JsonVal] = stmt
         if sd.get("kind") != "ImportFrom":
             i += 1
             continue
@@ -192,7 +201,11 @@ def _collect_relative_import_name_aliases(east_doc: dict[str, Any]) -> dict[str,
                     "zig native emitter: unsupported relative import form: wildcard import"
                 )
             asname_any = ent.get("asname")
-            local_name = asname_any if isinstance(asname_any, str) and asname_any != "" else name
+            local_name = name
+            if isinstance(asname_any, str):
+                asname_value: str = asname_any
+                if asname_value != "":
+                    local_name = asname_value
             local_rendered = _safe_ident(local_name, "value")
             target_name = _safe_ident(name, "value")
             aliases[local_rendered] = (
@@ -211,7 +224,7 @@ def reject_backend_typed_vararg_signatures(doc: object, *, backend_name: str) ->
     return None
 
 
-def _scan_reassigned_names(node: Any, param_names: set[str], out: set[str]) -> None:
+def _scan_reassigned_names(node: JsonVal, param_names: set[str], out: set[str]) -> None:
     if isinstance(node, list):
         for item in node:
             _scan_reassigned_names(item, param_names, out)
@@ -245,13 +258,20 @@ def _scan_reassigned_names(node: Any, param_names: set[str], out: set[str]) -> N
             _scan_reassigned_names(value, param_names, out)
 
 
-def _collect_reassigned_params(func_def: dict[str, Any]) -> set[str]:
+def _collect_reassigned_params(func_def: dict[str, JsonVal]) -> set[str]:
     arg_order = func_def.get("arg_order")
     if not isinstance(arg_order, list) or len(arg_order) == 0:
-        return set()
-    param_names = {arg for arg in arg_order if isinstance(arg, str) and arg != ""}
+        empty_params: set[str] = set()
+        return empty_params
+    param_names: set[str] = set()
+    for arg in arg_order:
+        if isinstance(arg, str):
+            arg_name: str = arg
+            if arg_name != "":
+                param_names.add(arg_name)
     if len(param_names) == 0:
-        return set()
+        empty_params = set()
+        return empty_params
     reassigned: set[str] = set()
     _scan_reassigned_names(func_def.get("body"), param_names, reassigned)
     return reassigned
@@ -268,288 +288,6 @@ def _zig_string(text: str) -> str:
     out = out.replace("\r", "\\r")
     out = out.replace("\n", "\\n")
     return '"' + out + '"'
-
-
-class _ZigStmtCommonRenderer(CommonRenderer):
-    def __init__(self, owner: "ZigNativeEmitter") -> None:
-        self.owner = owner
-        super().__init__("zig")
-
-    def render_name(self, node: dict[str, Any]) -> str:
-        return self.owner._render_expr(node)
-
-    def render_constant(self, node: dict[str, Any]) -> str:
-        if node.get("value") is None:
-            return "pytra.union_new_none()"
-        return self.owner._render_expr(node)
-
-    def render_expr(self, node: Any) -> str:
-        return self.owner._render_expr(node)
-
-    def render_condition_expr(self, node: Any) -> str:
-        return self.owner._render_expr(node)
-
-    def _next_tmp(self, prefix: str) -> str:
-        self.owner.tmp_seq += 1
-        self._tmp_counter = self.owner.tmp_seq
-        self.state.tmp_counter = self.owner.tmp_seq
-        return prefix + "_" + str(self.owner.tmp_seq)
-
-    def render_attribute(self, node: dict[str, Any]) -> str:
-        return self.owner._render_expr(node)
-
-    def render_call(self, node: dict[str, Any]) -> str:
-        return self.owner._render_expr(node)
-
-    def render_assign_stmt(self, node: dict[str, Any]) -> str:
-        raise RuntimeError("zig common renderer assign string hook is not used directly")
-
-    def render_raise_value(self, node: dict[str, Any]) -> str:
-        raise RuntimeError("zig common renderer raise value hook is not used directly")
-
-    def render_except_open(self, handler: dict[str, Any]) -> str:
-        raise RuntimeError("zig common renderer except hook is not used directly")
-
-    def emit_assign_stmt(self, node: dict[str, Any]) -> None:
-        self.owner.indent = self.state.indent_level
-        self.owner._emit_stmt(node)
-        self.state.indent_level = self.owner.indent
-
-    def emit_expr_stmt(self, node: dict[str, Any]) -> None:
-        self.owner.indent = self.state.indent_level
-        self.owner._emit_stmt(node)
-        self.state.indent_level = self.owner.indent
-
-    def emit_stmt_extension(self, node: dict[str, Any]) -> None:
-        self.owner.indent = self.state.indent_level
-        self.owner._emit_stmt(node)
-        self.state.indent_level = self.owner.indent
-
-    def emit_bare_raise_stmt(self, node: dict[str, Any]) -> None:
-        self.owner.indent = self.state.indent_level
-        self.owner._emit_raise_stmt(node)
-        self.state.indent_level = self.owner.indent
-
-    def emit_raise_call_stmt(
-        self,
-        node: dict[str, Any],
-        call_node: dict[str, Any],
-        func_name: str,
-        args: list[Any],
-    ) -> None:
-        self.owner.indent = self.state.indent_level
-        self.owner._emit_raise_stmt(node)
-        self.state.indent_level = self.owner.indent
-
-    def emit_raise_value_stmt(self, node: dict[str, Any], value: Any) -> None:
-        self.owner.indent = self.state.indent_level
-        self.owner._emit_raise_stmt(node)
-        self.state.indent_level = self.owner.indent
-
-    def emit_try_stmt(self, node: dict[str, Any]) -> None:
-        body = self.owner._dict_list(node.get("body"))
-        handlers_any = node.get("handlers")
-        handlers = handlers_any if isinstance(handlers_any, list) else []
-        orelse = self.owner._dict_list(node.get("orelse"))
-        finalbody = self.owner._dict_list(node.get("finalbody"))
-        try_blk = self.next_try_block_name()
-        self.emit_backend_line(self.render_try_body_open(try_blk))
-        self.state.indent_level += 1
-        self.owner._try_depth += 1
-        self.owner._try_label_stack.append(try_blk)
-        for sub in body:
-            self.emit_stmt(sub)
-            self.emit_try_body_post_stmt(sub, try_blk)
-        self.owner._try_label_stack.pop()
-        self.owner._try_depth -= 1
-        self.state.indent_level -= 1
-        self.emit_backend_line(self.render_try_body_close(try_blk))
-        if len(handlers) > 0:
-            handled = self.next_exception_dispatch_state_name()
-            self.emit_exception_dispatch_handlers(self.active_exception_type_slot_name(), handled, handlers)
-        if len(orelse) > 0:
-            self.emit_backend_line(self.render_try_orelse_open())
-            self.state.indent_level += 1
-            self.emit_body(orelse)
-            self.state.indent_level -= 1
-            self.emit_backend_line(self.render_try_orelse_close())
-        if len(finalbody) > 0:
-            self.emit_body(finalbody)
-
-    def emit_exception_handler(self, handler: dict[str, Any]) -> None:
-        self.state.indent_level = self.owner.indent
-        super().emit_exception_handler(handler)
-        self.owner.indent = self.state.indent_level
-
-    def emit_backend_line(self, text: str) -> None:
-        self.owner.indent = self.state.indent_level
-        self.owner._emit_line(text)
-        self.state.indent_level = self.owner.indent
-
-    def active_exception_slot_names(self) -> tuple[str, str, str]:
-        self._require_exception_style("manual_exception_slot")
-        return _ZIG_ACTIVE_EXCEPTION_SLOTS
-
-    def caught_exception_slot_names(self) -> tuple[str, str, str]:
-        self._require_exception_style("manual_exception_slot")
-        return _ZIG_CAUGHT_EXCEPTION_SLOTS
-
-    def bound_exception_record_type_name(self) -> str:
-        self._require_exception_style("manual_exception_slot")
-        return _ZIG_BOUND_EXCEPTION_RECORD
-
-    def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
-        type_name = _safe_ident(self.exception_handler_type_name(handler), "")
-        return type_name in self.owner._catch_all_exception_types
-
-    def iter_exception_match_type_names(self, handler: dict[str, Any]) -> list[str]:
-        type_name = _safe_ident(self.exception_handler_type_name(handler), "")
-        if type_name == "":
-            return []
-        out: list[str] = [type_name]
-        current = self.owner._class_base.get(type_name, "")
-        while current != "":
-            out.append(current)
-            current = self.owner._class_base.get(current, "")
-        return out
-
-    def render_exception_match_condition(
-        self,
-        handler: dict[str, Any],
-        caught_type_expr: str,
-    ) -> str:
-        if self.is_catch_all_exception_handler(handler):
-            return "true"
-        type_name = _safe_ident(self.exception_handler_type_name(handler), "")
-        if type_name == "":
-            return "true"
-        return " or ".join(
-            "std.mem.eql(u8, " + caught_type_expr + ".?, " + _zig_string(current) + ")"
-            for current in self.iter_exception_match_type_names(handler)
-        )
-
-    def render_exception_dispatch_condition(self, caught_type_expr: str) -> str:
-        return caught_type_expr + " != null"
-
-    def render_exception_dispatch_state_init_stmt(self, handled_name: str) -> str:
-        return "var " + handled_name + " = false;"
-
-    def render_exception_handler_guard_condition(
-        self,
-        handler: dict[str, Any],
-        handled_name: str,
-        caught_type_expr: str,
-    ) -> str:
-        cond = self.render_exception_match_condition(handler, caught_type_expr)
-        return "!" + handled_name + " and (" + cond + ")"
-
-    def render_exception_handler_mark_handled_stmt(self, handled_name: str) -> str:
-        return handled_name + " = true;"
-
-    def render_try_body_post_stmt_stmt(self, stmt: dict[str, Any], try_label: str) -> str:
-        self._require_exception_style("manual_exception_slot")
-        if stmt.get("kind") in {"Return", "Raise", "Break", "Continue"}:
-            return ""
-        return "if (" + self.render_active_exception_check() + ") " + self.render_try_break(try_label)
-
-    def render_labeled_block_open(self, block_label: str) -> str:
-        return block_label + ": {"
-
-    def render_labeled_block_close(self, block_label: str) -> str:
-        del block_label
-        return "}"
-
-    def render_break_to_label(self, block_label: str) -> str:
-        return "break :" + block_label + ";"
-
-    def render_break_to_label_value(self, block_label: str, value_expr: str) -> str:
-        return "break :" + block_label + " " + value_expr + ";"
-
-    def render_raise_propagation_stmt(self, try_label: str, return_stmt: str) -> str:
-        if try_label != "":
-            return self.render_try_break(try_label)
-        return return_stmt
-
-    def emit_exception_handler_binding_prelude(self, handler: dict[str, Any]) -> None:
-        current_indent = self.owner.indent
-        hname = self.exception_handler_name(handler)
-        if isinstance(hname, str) and hname != "":
-            safe_hname = _safe_ident(hname, "err")
-            handler_body = self.exception_handler_body(handler)
-            if self.owner._body_uses_name_runtime(handler_body, safe_hname):
-                _, caught_msg, caught_line = self.caught_exception_slot_names()
-                self.owner._begin_exception_binding(
-                    safe_hname,
-                    self.render_bound_exception_value(caught_msg, caught_line),
-                )
-        self.owner.indent = current_indent
-
-    def emit_exception_handler_binding_teardown(self, handler: dict[str, Any]) -> None:
-        del handler
-        self.owner._end_pending_exception_binding()
-
-    def render_with_fallback_enter_stmt(self, target_name: str, target_type: str) -> str:
-        del target_type
-        return "_ = " + target_name + ".__enter__();"
-
-    def render_with_fallback_exit_stmt(self, target_name: str, target_type: str) -> str:
-        del target_type
-        return (
-            "_ = "
-            + target_name
-            + ".__exit__(pytra.union_new_none(), pytra.union_new_none(), pytra.union_new_none());"
-        )
-
-    def render_with_close_fallback_stmt(self, target_name: str, target_type: str) -> str:
-        del target_type
-        return "pytra.file_close(" + target_name + ");"
-
-    def render_with_context_bind_stmt(
-        self,
-        target_name: str,
-        source_name: str,
-        source_type: str,
-        declare: bool,
-    ) -> str:
-        del source_type
-        prefix = "var " if declare else ""
-        return prefix + target_name + " = " + source_name + ";"
-
-    def build_with_enter_assign(
-        self,
-        node: dict[str, Any],
-        enter_name: str,
-        enter_type: str,
-        value: Any,
-        bind_ref: bool = False,
-    ) -> dict[str, Any]:
-        assign_node: dict[str, Any] = {
-            "kind": "Assign",
-            "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
-            "value": value,
-            "declare": not (len(self.owner._local_var_stack) > 0 and enter_name in self.owner._current_local_vars()),
-            "decl_type": enter_type,
-        }
-        if bind_ref:
-            assign_node["bind_ref"] = True
-        return assign_node
-
-    def emit_with_enter_prelude(
-        self,
-        node: dict[str, Any],
-        enter_name: str,
-        enter_type: str,
-    ) -> None:
-        if enter_name == "" or len(self.owner._local_var_stack) == 0:
-            return
-        if enter_name in self.owner._current_local_vars():
-            return
-        self.owner.indent = self.state.indent_level
-        if enter_type != "":
-            self.owner._current_type_map()[enter_name] = enter_type
-        self.owner._current_local_vars().add(enter_name)
-        self.owner._emit_line("var " + enter_name + ": " + self.owner._zig_type(enter_type) + " = undefined;")
-        self.state.indent_level = self.owner.indent
 
 
 def _binop_precedence(op: str) -> int:
@@ -619,9 +357,13 @@ def _cmp_symbol(op: str) -> str:
     raise RuntimeError("lang=zig unsupported compare op: " + op)
 
 
-def _runtime_module_symbol_names(runtime_module_id: str) -> tuple[str, ...]:
+def _runtime_module_symbol_names(runtime_module_id: str) -> list[str]:
     symbols = lookup_runtime_module_symbols(runtime_module_id)
-    return tuple(name for name in symbols.keys() if isinstance(name, str))
+    names: list[str] = []
+    for name in symbols.keys():
+        if isinstance(name, str):
+            names.append(name)
+    return names
 
 
 def _runtime_symbol_call_adapter_kind(runtime_module_id: str, runtime_symbol: str) -> str:
@@ -664,7 +406,7 @@ def _runtime_symbol_alias_expr(runtime_module_id: str, runtime_symbol: str) -> s
 
 
 class ZigNativeEmitter:
-    def __init__(self, east_doc: dict[str, Any], is_submodule: bool = False) -> None:
+    def __init__(self, east_doc: dict[str, JsonVal], is_submodule: bool = False) -> None:
         if not isinstance(east_doc, dict):
             raise RuntimeError("lang=zig invalid east document: root must be dict")
         ed: dict[str, Any] = east_doc
@@ -673,7 +415,7 @@ class ZigNativeEmitter:
             raise RuntimeError("lang=zig invalid root kind: " + str(kind))
         if ed.get("east_stage") != 3:
             raise RuntimeError("lang=zig unsupported east_stage: " + str(ed.get("east_stage")))
-        self.east_doc = east_doc
+        self.east_doc: dict[str, JsonVal] = east_doc
         self.is_submodule = is_submodule
         self.lines: list[str] = []
         self.indent = 0
@@ -733,10 +475,12 @@ class ZigNativeEmitter:
         self._try_depth: int = 0
         self._try_label_stack: list[str] = []
         mapping_path = Path("src").joinpath("runtime").joinpath("zig").joinpath("mapping.json")
-        self._runtime_mapping = load_runtime_mapping(mapping_path)
-        self._catch_all_exception_types: set[str] = {
-            name for name, mapped in self._runtime_mapping.types.items() if mapped == "pytra.PyObject"
-        }
+        self._runtime_mapping: RuntimeMapping = load_runtime_mapping(mapping_path)
+        self._catch_all_exception_types: set[str] = set()
+        for name in self._runtime_mapping.types.keys():
+            mapped = self._runtime_mapping.types.get(name, "")
+            if mapped == "pytra.PyObject":
+                self._catch_all_exception_types.add(name)
         self._top_level_runtime_inits: list[tuple[str, str]] = []
         self._uses_pytra_std_sys: bool = False
 
@@ -2273,7 +2017,9 @@ class ZigNativeEmitter:
         native_file = self._runtime_mapping.module_native_files.get(module_id, "")
         if native_file != "":
             return self._root_rel_prefix() + native_file
-        rel = module_id.lstrip(".")
+        rel = module_id
+        while rel.startswith("."):
+            rel = rel[1:]
         return self._root_rel_prefix() + rel.replace(".", "_") + ".zig"
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
@@ -6930,17 +6676,300 @@ class ZigNativeEmitter:
         return "+="
 
 
+class _ZigStmtCommonRenderer(CommonRenderer):
+    def __init__(self, owner: "ZigNativeEmitter") -> None:
+        self.owner = owner
+        super().__init__("zig")
+
+    def render_name(self, node: dict[str, Any]) -> str:
+        return self.owner._render_expr(node)
+
+    def render_constant(self, node: dict[str, Any]) -> str:
+        if node.get("value") is None:
+            return "pytra.union_new_none()"
+        return self.owner._render_expr(node)
+
+    def render_expr(self, node: Any) -> str:
+        return self.owner._render_expr(node)
+
+    def render_condition_expr(self, node: Any) -> str:
+        return self.owner._render_expr(node)
+
+    def _next_tmp(self, prefix: str) -> str:
+        self.owner.tmp_seq += 1
+        self._tmp_counter = self.owner.tmp_seq
+        self.state.tmp_counter = self.owner.tmp_seq
+        return prefix + "_" + str(self.owner.tmp_seq)
+
+    def render_attribute(self, node: dict[str, Any]) -> str:
+        return self.owner._render_expr(node)
+
+    def render_call(self, node: dict[str, Any]) -> str:
+        return self.owner._render_expr(node)
+
+    def render_assign_stmt(self, node: dict[str, Any]) -> str:
+        raise RuntimeError("zig common renderer assign string hook is not used directly")
+
+    def render_raise_value(self, node: dict[str, Any]) -> str:
+        raise RuntimeError("zig common renderer raise value hook is not used directly")
+
+    def render_except_open(self, handler: dict[str, Any]) -> str:
+        raise RuntimeError("zig common renderer except hook is not used directly")
+
+    def emit_assign_stmt(self, node: dict[str, Any]) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_stmt(node)
+        self.state.indent_level = self.owner.indent
+
+    def emit_expr_stmt(self, node: dict[str, Any]) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_stmt(node)
+        self.state.indent_level = self.owner.indent
+
+    def emit_stmt_extension(self, node: dict[str, Any]) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_stmt(node)
+        self.state.indent_level = self.owner.indent
+
+    def emit_bare_raise_stmt(self, node: dict[str, Any]) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_raise_stmt(node)
+        self.state.indent_level = self.owner.indent
+
+    def emit_raise_call_stmt(
+        self,
+        node: dict[str, Any],
+        call_node: dict[str, Any],
+        func_name: str,
+        args: list[Any],
+    ) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_raise_stmt(node)
+        self.state.indent_level = self.owner.indent
+
+    def emit_raise_value_stmt(self, node: dict[str, Any], value: Any) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_raise_stmt(node)
+        self.state.indent_level = self.owner.indent
+
+    def emit_try_stmt(self, node: dict[str, Any]) -> None:
+        body = self.owner._dict_list(node.get("body"))
+        handlers_any = node.get("handlers")
+        handlers = handlers_any if isinstance(handlers_any, list) else []
+        orelse = self.owner._dict_list(node.get("orelse"))
+        finalbody = self.owner._dict_list(node.get("finalbody"))
+        try_blk = self.next_try_block_name()
+        self.emit_backend_line(self.render_try_body_open(try_blk))
+        self.state.indent_level += 1
+        self.owner._try_depth += 1
+        self.owner._try_label_stack.append(try_blk)
+        for sub in body:
+            self.emit_stmt(sub)
+            self.emit_try_body_post_stmt(sub, try_blk)
+        self.owner._try_label_stack.pop()
+        self.owner._try_depth -= 1
+        self.state.indent_level -= 1
+        self.emit_backend_line(self.render_try_body_close(try_blk))
+        if len(handlers) > 0:
+            handled = self.next_exception_dispatch_state_name()
+            self.emit_exception_dispatch_handlers(self.active_exception_type_slot_name(), handled, handlers)
+        if len(orelse) > 0:
+            self.emit_backend_line(self.render_try_orelse_open())
+            self.state.indent_level += 1
+            self.emit_body(orelse)
+            self.state.indent_level -= 1
+            self.emit_backend_line(self.render_try_orelse_close())
+        if len(finalbody) > 0:
+            self.emit_body(finalbody)
+
+    def emit_exception_handler(self, handler: dict[str, Any]) -> None:
+        self.state.indent_level = self.owner.indent
+        super().emit_exception_handler(handler)
+        self.owner.indent = self.state.indent_level
+
+    def emit_backend_line(self, text: str) -> None:
+        self.owner.indent = self.state.indent_level
+        self.owner._emit_line(text)
+        self.state.indent_level = self.owner.indent
+
+    def active_exception_slot_names(self) -> tuple[str, str, str]:
+        self._require_exception_style("manual_exception_slot")
+        return _ZIG_ACTIVE_EXCEPTION_SLOTS
+
+    def caught_exception_slot_names(self) -> tuple[str, str, str]:
+        self._require_exception_style("manual_exception_slot")
+        return _ZIG_CAUGHT_EXCEPTION_SLOTS
+
+    def bound_exception_record_type_name(self) -> str:
+        self._require_exception_style("manual_exception_slot")
+        return _ZIG_BOUND_EXCEPTION_RECORD
+
+    def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
+        type_name = _safe_ident(self.exception_handler_type_name(handler), "")
+        return type_name in self.owner._catch_all_exception_types
+
+    def iter_exception_match_type_names(self, handler: dict[str, Any]) -> list[str]:
+        type_name = _safe_ident(self.exception_handler_type_name(handler), "")
+        if type_name == "":
+            return []
+        out: list[str] = [type_name]
+        current = self.owner._class_base.get(type_name, "")
+        while current != "":
+            out.append(current)
+            current = self.owner._class_base.get(current, "")
+        return out
+
+    def render_exception_match_condition(
+        self,
+        handler: dict[str, Any],
+        caught_type_expr: str,
+    ) -> str:
+        if self.is_catch_all_exception_handler(handler):
+            return "true"
+        type_name = _safe_ident(self.exception_handler_type_name(handler), "")
+        if type_name == "":
+            return "true"
+        return " or ".join(
+            "std.mem.eql(u8, " + caught_type_expr + ".?, " + _zig_string(current) + ")"
+            for current in self.iter_exception_match_type_names(handler)
+        )
+
+    def render_exception_dispatch_condition(self, caught_type_expr: str) -> str:
+        return caught_type_expr + " != null"
+
+    def render_exception_dispatch_state_init_stmt(self, handled_name: str) -> str:
+        return "var " + handled_name + " = false;"
+
+    def render_exception_handler_guard_condition(
+        self,
+        handler: dict[str, Any],
+        handled_name: str,
+        caught_type_expr: str,
+    ) -> str:
+        cond = self.render_exception_match_condition(handler, caught_type_expr)
+        return "!" + handled_name + " and (" + cond + ")"
+
+    def render_exception_handler_mark_handled_stmt(self, handled_name: str) -> str:
+        return handled_name + " = true;"
+
+    def render_try_body_post_stmt_stmt(self, stmt: dict[str, Any], try_label: str) -> str:
+        self._require_exception_style("manual_exception_slot")
+        if stmt.get("kind") in {"Return", "Raise", "Break", "Continue"}:
+            return ""
+        return "if (" + self.render_active_exception_check() + ") " + self.render_try_break(try_label)
+
+    def render_labeled_block_open(self, block_label: str) -> str:
+        return block_label + ": {"
+
+    def render_labeled_block_close(self, block_label: str) -> str:
+        del block_label
+        return "}"
+
+    def render_break_to_label(self, block_label: str) -> str:
+        return "break :" + block_label + ";"
+
+    def render_break_to_label_value(self, block_label: str, value_expr: str) -> str:
+        return "break :" + block_label + " " + value_expr + ";"
+
+    def render_raise_propagation_stmt(self, try_label: str, return_stmt: str) -> str:
+        if try_label != "":
+            return self.render_try_break(try_label)
+        return return_stmt
+
+    def emit_exception_handler_binding_prelude(self, handler: dict[str, Any]) -> None:
+        current_indent = self.owner.indent
+        hname = self.exception_handler_name(handler)
+        if isinstance(hname, str) and hname != "":
+            safe_hname = _safe_ident(hname, "err")
+            handler_body = self.exception_handler_body(handler)
+            if self.owner._body_uses_name_runtime(handler_body, safe_hname):
+                _, caught_msg, caught_line = self.caught_exception_slot_names()
+                self.owner._begin_exception_binding(
+                    safe_hname,
+                    self.render_bound_exception_value(caught_msg, caught_line),
+                )
+        self.owner.indent = current_indent
+
+    def emit_exception_handler_binding_teardown(self, handler: dict[str, Any]) -> None:
+        del handler
+        self.owner._end_pending_exception_binding()
+
+    def render_with_fallback_enter_stmt(self, target_name: str, target_type: str) -> str:
+        del target_type
+        return "_ = " + target_name + ".__enter__();"
+
+    def render_with_fallback_exit_stmt(self, target_name: str, target_type: str) -> str:
+        del target_type
+        return (
+            "_ = "
+            + target_name
+            + ".__exit__(pytra.union_new_none(), pytra.union_new_none(), pytra.union_new_none());"
+        )
+
+    def render_with_close_fallback_stmt(self, target_name: str, target_type: str) -> str:
+        del target_type
+        return "pytra.file_close(" + target_name + ");"
+
+    def render_with_context_bind_stmt(
+        self,
+        target_name: str,
+        source_name: str,
+        source_type: str,
+        declare: bool,
+    ) -> str:
+        del source_type
+        prefix = "var " if declare else ""
+        return prefix + target_name + " = " + source_name + ";"
+
+    def build_with_enter_assign(
+        self,
+        node: dict[str, Any],
+        enter_name: str,
+        enter_type: str,
+        value: Any,
+        bind_ref: bool = False,
+    ) -> dict[str, Any]:
+        assign_node: dict[str, Any] = {
+            "kind": "Assign",
+            "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
+            "value": value,
+            "declare": not (len(self.owner._local_var_stack) > 0 and enter_name in self.owner._current_local_vars()),
+            "decl_type": enter_type,
+        }
+        if bind_ref:
+            assign_node["bind_ref"] = True
+        return assign_node
+
+    def emit_with_enter_prelude(
+        self,
+        node: dict[str, Any],
+        enter_name: str,
+        enter_type: str,
+    ) -> None:
+        if enter_name == "" or len(self.owner._local_var_stack) == 0:
+            return
+        if enter_name in self.owner._current_local_vars():
+            return
+        self.owner.indent = self.state.indent_level
+        if enter_type != "":
+            self.owner._current_type_map()[enter_name] = enter_type
+        self.owner._current_local_vars().add(enter_name)
+        self.owner._emit_line("var " + enter_name + ": " + self.owner._zig_type(enter_type) + " = undefined;")
+        self.state.indent_level = self.owner.indent
+
+
+
 def cls_name_init(cls_name: str, arg_strs: list[str]) -> str:
     return cls_name + ".init(" + ", ".join(arg_strs) + ")"
 
 
-def transpile_to_zig_native(east_doc: dict[str, Any], is_submodule: bool = False) -> str:
+def transpile_to_zig_native(east_doc: dict[str, JsonVal], is_submodule: bool = False) -> str:
     """EAST3 ドキュメントを Zig native ソースへ変換する。"""
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Zig backend")
     return ZigNativeEmitter(east_doc, is_submodule=is_submodule).transpile()
 
 
-def emit_zig_module(east3_doc: dict[str, Any]) -> str:
+def emit_zig_module(east3_doc: dict[str, JsonVal]) -> str:
     """Emit a single EAST3 module to Zig source."""
     meta = east3_doc.get("meta")
     emit_ctx = meta.get("emit_context") if isinstance(meta, dict) else None
