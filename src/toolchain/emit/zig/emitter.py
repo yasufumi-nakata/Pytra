@@ -646,25 +646,25 @@ class ZigNativeEmitter:
         mutated: set[str] = set()
         body = self._dict_list(body_any)
         for stmt in body:
-            kind = stmt.get("kind")
+            kind = self._dict_get_str(stmt, "kind", "")
             if kind == "AugAssign":
-                target = stmt.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
+                target = self._any_dict_to_any(stmt.get("target"))
+                if self._dict_get_str(target, "kind", "") == "Name":
                     mutated.add(_safe_ident(target.get("id"), ""))
             elif kind == "Assign":
                 # Subscript 代入: dict[key] = val / list[idx] = val → owner は mutated
-                target = stmt.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Subscript":
-                    sub_val = target.get("value")
-                    if isinstance(sub_val, dict) and sub_val.get("kind") == "Name":
+                target = self._any_dict_to_any(stmt.get("target"))
+                if self._dict_get_str(target, "kind", "") == "Subscript":
+                    sub_val = self._any_dict_to_any(target.get("value"))
+                    if self._dict_get_str(sub_val, "kind", "") == "Name":
                         mutated.add(_safe_ident(sub_val.get("id"), ""))
             elif kind == "Expr":
-                value = stmt.get("value")
-                if isinstance(value, dict) and value.get("kind") == "Call":
-                    func = value.get("func")
-                    if isinstance(func, dict) and func.get("kind") == "Attribute":
-                        owner = func.get("value")
-                        if isinstance(owner, dict) and owner.get("kind") == "Name":
+                value = self._any_dict_to_any(stmt.get("value"))
+                if self._dict_get_str(value, "kind", "") == "Call":
+                    func = self._any_dict_to_any(value.get("func"))
+                    if self._dict_get_str(func, "kind", "") == "Attribute":
+                        owner = self._any_dict_to_any(func.get("value"))
+                        if self._dict_get_str(owner, "kind", "") == "Name":
                             attr = _safe_ident(func.get("attr"), "")
                             if attr in {'clear', 'pop', 'setdefault', 'append', 'extend'}:
                                 mutated.add(_safe_ident(owner.get("id"), ""))
@@ -672,23 +672,23 @@ class ZigNativeEmitter:
                 mutated.update(self._scan_mutated_vars(stmt.get("body")))
                 mutated.update(self._scan_mutated_vars(stmt.get("orelse")))
             elif kind == "ForCore":
-                tp = stmt.get("target_plan")
-                if isinstance(tp, dict) and tp.get("kind") == "NameTarget":
+                tp = self._any_dict_to_any(stmt.get("target_plan"))
+                if self._dict_get_str(tp, "kind", "") == "NameTarget":
                     mutated.add(_safe_ident(tp.get("id"), ""))
                 mutated.update(self._scan_mutated_vars(stmt.get("body")))
             elif kind == "ForRange":
-                target = stmt.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
+                target = self._any_dict_to_any(stmt.get("target"))
+                if self._dict_get_str(target, "kind", "") == "Name":
                     mutated.add(_safe_ident(target.get("id"), ""))
                 mutated.update(self._scan_mutated_vars(stmt.get("body")))
             elif kind == "While":
                 mutated.update(self._scan_mutated_vars(stmt.get("body")))
             elif kind == "Swap":
-                left = stmt.get("left")
-                right = stmt.get("right")
-                if isinstance(left, dict) and left.get("kind") == "Name":
+                left = self._any_dict_to_any(stmt.get("left"))
+                right = self._any_dict_to_any(stmt.get("right"))
+                if self._dict_get_str(left, "kind", "") == "Name":
                     mutated.add(_safe_ident(left.get("id"), ""))
-                if isinstance(right, dict) and right.get("kind") == "Name":
+                if self._dict_get_str(right, "kind", "") == "Name":
                     mutated.add(_safe_ident(right.get("id"), ""))
             elif kind == "Try":
                 mutated.update(self._scan_mutated_vars(stmt.get("body")))
@@ -702,42 +702,42 @@ class ZigNativeEmitter:
         # トップレベルで宣言された変数を集め、ネスト内での再代入を検出
         declared: set[str] = set()
         for stmt in body:
-            kind = stmt.get("kind")
+            kind = self._dict_get_str(stmt, "kind", "")
             if kind in {"AnnAssign", "Assign"}:
                 target_any = stmt.get("target")
-                target_node: dict[str, JsonVal] = {}
+                target_node: dict[str, Any] = {}
                 has_target = False
                 if isinstance(target_any, dict):
-                    target_node = target_any
+                    target_node = self._any_dict_to_any(target_any)
                     has_target = True
                 else:
                     targets = stmt.get("targets")
                     if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
                         first_target = targets[0]
                         if isinstance(first_target, dict):
-                            target_node = first_target
+                            target_node = self._any_dict_to_any(first_target)
                             has_target = True
-                if has_target and target_node.get("kind") == "Name":
+                if has_target and self._dict_get_str(target_node, "kind", "") == "Name":
                     declared.add(_safe_ident(target_node.get("id"), ""))
         # 同一スコープ内の Assign 重複（2回目は再代入）+ ネスト内の再代入を検出
         assign_seen: set[str] = set()
         for stmt in body:
-            kind = stmt.get("kind")
+            kind = self._dict_get_str(stmt, "kind", "")
             if kind in {"Assign", "AnnAssign"}:
                 target_any = stmt.get("target")
-                target_node: dict[str, JsonVal] = {}
+                target_node: dict[str, Any] = {}
                 has_target = False
                 if isinstance(target_any, dict):
-                    target_node = target_any
+                    target_node = self._any_dict_to_any(target_any)
                     has_target = True
                 else:
                     targets = stmt.get("targets")
                     if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
                         first_target = targets[0]
                         if isinstance(first_target, dict):
-                            target_node = first_target
+                            target_node = self._any_dict_to_any(first_target)
                             has_target = True
-                if has_target and target_node.get("kind") == "Name":
+                if has_target and self._dict_get_str(target_node, "kind", "") == "Name":
                     n = _safe_ident(target_node.get("id"), "")
                     if n in assign_seen:
                         mutated.add(n)
@@ -796,23 +796,24 @@ class ZigNativeEmitter:
         """declared に含まれる変数名への Assign/AugAssign をネスト含めて検出する。"""
         body = self._dict_list(body_any)
         for stmt in body:
-            kind = stmt.get("kind")
+            kind = self._dict_get_str(stmt, "kind", "")
             if kind in {"Assign", "AnnAssign"}:
-                target = stmt.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
+                target = self._any_dict_to_any(stmt.get("target"))
+                if self._dict_get_str(target, "kind", "") == "Name":
                     n = _safe_ident(target.get("id"), "")
                     if n in declared:
                         mutated.add(n)
                 targets = stmt.get("targets")
                 if isinstance(targets, list):
                     for t in targets:
-                        if isinstance(t, dict) and t.get("kind") == "Name":
-                            n = _safe_ident(t.get("id"), "")
+                        td = self._any_dict_to_any(t)
+                        if self._dict_get_str(td, "kind", "") == "Name":
+                            n = _safe_ident(td.get("id"), "")
                             if n in declared:
                                 mutated.add(n)
             elif kind == "AugAssign":
-                target = stmt.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
+                target = self._any_dict_to_any(stmt.get("target"))
+                if self._dict_get_str(target, "kind", "") == "Name":
                     n = _safe_ident(target.get("id"), "")
                     if n in declared:
                         mutated.add(n)
@@ -1179,23 +1180,23 @@ class ZigNativeEmitter:
 
     def _is_top_level_decl(self, stmt: dict[str, Any]) -> bool:
         """トップレベル宣言（関数/クラス/import/型エイリアス）かどうか判定する。"""
-        kind = stmt.get("kind")
+        kind = self._dict_get_str(stmt, "kind", "")
         return kind in {"FunctionDef", "ClassDef", "Import", "ImportFrom", "TypeAlias"}
 
     def _is_top_level_var(self, stmt: dict[str, Any]) -> bool:
         """トップレベル変数宣言（Assign/AnnAssign で Name ターゲット）かどうか判定する。"""
-        kind = stmt.get("kind")
+        kind = self._dict_get_str(stmt, "kind", "")
         if kind == "AnnAssign":
-            target = stmt.get("target")
-            return isinstance(target, dict) and target.get("kind") == "Name"
+            target = self._any_dict_to_any(stmt.get("target"))
+            return self._dict_get_str(target, "kind", "") == "Name"
         if kind == "Assign":
-            target = stmt.get("target")
-            if isinstance(target, dict) and target.get("kind") == "Name":
+            target = self._any_dict_to_any(stmt.get("target"))
+            if self._dict_get_str(target, "kind", "") == "Name":
                 return True
             targets = stmt.get("targets")
             if isinstance(targets, list) and len(targets) > 0:
-                first_target = targets[0]
-                if isinstance(first_target, dict) and first_target.get("kind") == "Name":
+                first_target = self._any_dict_to_any(targets[0])
+                if self._dict_get_str(first_target, "kind", "") == "Name":
                     return True
         return False
 
@@ -1574,13 +1575,13 @@ class ZigNativeEmitter:
         self.lines.append(("    " * self.indent) + text)
 
     def _stmt_guarantees_local_exit(self, stmt: dict[str, Any]) -> bool:
-        kind = stmt.get("kind")
+        kind = self._dict_get_str(stmt, "kind", "")
         if kind in {"Return", "Raise", "Try", "Break", "Continue"}:
             return True
         if kind == "Expr":
-            value = stmt.get("value")
-            if isinstance(value, dict) and value.get("kind") == "Name":
-                loop_kw = str(value.get("id"))
+            value = self._any_dict_to_any(stmt.get("value"))
+            if self._dict_get_str(value, "kind", "") == "Name":
+                loop_kw = self._dict_get_str(value, "id", "")
                 if loop_kw in {"break", "continue"}:
                     return True
         return False
@@ -1770,7 +1771,8 @@ class ZigNativeEmitter:
                 # wrapper 関数と vtable instance
                 for m in methods:
                     impl_cls = self._find_method_impl(cls_name, m)
-                    ret_type = self._class_return_types.get(impl_cls, {}).get(m, "")
+                    impl_returns = self._class_return_types.get(impl_cls)
+                    ret_type = impl_returns.get(m, "") if impl_returns is not None else ""
                     if ret_type == "":
                         ret_type = self._find_method_return_type(root, m)
                     zig_ret = self._zig_type(ret_type)
@@ -2197,7 +2199,8 @@ class ZigNativeEmitter:
                     alias_name = _safe_ident(td2.get("id"), "")
                     if _starts_with_upper(alias_name):
                         value_any = stmt.get("value")
-                        if isinstance(value_any, dict) and value_any.get("kind") in {"Name", "Subscript"}:
+                        value_dict = self._any_dict_to_any(value_any)
+                        if self._dict_get_str(value_dict, "kind", "") in {"Name", "Subscript"}:
                             return
                 if td2.get("kind") == "Tuple":
                     self._emit_tuple_assign(target_any, assign_value_node)
@@ -2324,7 +2327,8 @@ class ZigNativeEmitter:
                             if owner_type.startswith("*"):
                                 owner_type = owner_type[1:]
                         field_name = _safe_ident(td2.get("attr"), "")
-                        field_type = self._class_field_types.get(owner_type, {}).get(field_name, "")
+                        owner_fields = self._class_field_types.get(owner_type)
+                        field_type = owner_fields.get(field_name, "") if owner_fields is not None else ""
                     if field_type != "":
                         value = self._coerce_value_to_zig_type(self._zig_type(field_type), assign_value_node, value)
                 self._emit_line(target + " = " + value + ";")
@@ -3355,7 +3359,10 @@ class ZigNativeEmitter:
         if has_local_base:
             self._emit_line("_base: " + base_name + " = " + base_name + "{},")
         body = self._dict_list(stmt.get("body"))
-        class_field_types = self._class_field_types.setdefault(cls_name, {})
+        if cls_name not in self._class_field_types:
+            empty_field_types: dict[str, str] = {}
+            self._class_field_types[cls_name] = empty_field_types
+        class_field_types = self._class_field_types[cls_name]
         # __init__ body から struct フィールドを抽出
         emitted_fields: set[str] = set()
         dataclass_fields: list[str] = []
@@ -3403,17 +3410,20 @@ class ZigNativeEmitter:
                         emitted_fields.add(field_name)
                 break
         for sub in body:
-            if sub.get("kind") == "AnnAssign" and bool(stmt.get("dataclass")):
+            sub_kind = self._dict_get_str(sub, "kind", "")
+            if sub_kind == "AnnAssign" and bool(stmt.get("dataclass")):
                 continue
-            if sub.get("kind") in {"FunctionDef", "ClosureDef"}:
+            if sub_kind in {"FunctionDef", "ClosureDef"}:
                 self._emit_class_method(cls_name, sub)
-            elif sub.get("kind") == "AnnAssign":
+            elif sub_kind == "AnnAssign":
                 target_any = sub.get("target")
-                if isinstance(target_any, dict) and target_any.get("kind") == "Name":
-                    field_name = _safe_ident(target_any.get("id"), "field")
+                target_dict = self._any_dict_to_any(target_any)
+                if self._dict_get_str(target_dict, "kind", "") == "Name":
+                    field_name = _safe_ident(target_dict.get("id"), "field")
                     # 静的フィールドはモジュールスコープに emit 済み → struct から除外
                     static_field_names: set[str] = set()
-                    for sf in self._static_fields.get(cls_name, []):
+                    empty_static_fields: list[list[str]] = []
+                    for sf in self._static_fields.get(cls_name, empty_static_fields):
                         if len(sf) > 0:
                             static_field_names.add(sf[0])
                     if field_name in static_field_names:
@@ -3442,7 +3452,8 @@ class ZigNativeEmitter:
             base_method_pairs = self._get_base_methods(cls_name)
             for method_name, origin_cls in base_method_pairs:
                 if method_name not in own_methods:
-                    ret_type = self._class_return_types.get(origin_cls, {}).get(method_name, "")
+                    origin_returns = self._class_return_types.get(origin_cls)
+                    ret_type = origin_returns.get(method_name, "") if origin_returns is not None else ""
                     zig_ret = self._zig_type(ret_type)
                     self._emit_line("pub fn " + method_name + "(self: *const " + cls_name + ") " + zig_ret + " {")
                     self.indent += 1
@@ -4048,11 +4059,12 @@ class ZigNativeEmitter:
         if kind == "ObjStr":
             inner = self._render_expr(ed.get("value"))
             return "pytra.to_str(" + inner + ")"
-        if kind == "ObjLen":
-            value_node = ed.get("value")
-            inner = self._render_expr(value_node)
-            if isinstance(value_node, dict) and value_node.get("kind") in {"Call", "Compare", "BoolOp", "BinOp", "IfExp", "Subscript", "Attribute"}:
-                inner = "(" + inner + ")"
+            if kind == "ObjLen":
+                value_node = ed.get("value")
+                inner = self._render_expr(value_node)
+                value_dict = self._any_dict_to_any(value_node)
+                if self._dict_get_str(value_dict, "kind", "") in {"Call", "Compare", "BoolOp", "BinOp", "IfExp", "Subscript", "Attribute"}:
+                    inner = "(" + inner + ")"
             inner_type = self._lookup_expr_type(value_node)
             elem = "i64"
             if inner_type.startswith("list[") and inner_type.endswith("]"):
@@ -4089,7 +4101,8 @@ class ZigNativeEmitter:
                         if sf_name == attr:
                             return "Module_" + owner + "_" + attr
             obj = self._render_expr(val_node)
-            if isinstance(val_node, dict) and val_node.get("kind") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
+            val_node_dict = self._any_dict_to_any(val_node)
+            if self._dict_get_str(val_node_dict, "kind", "") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
                 obj = "(" + obj + ")"
             elif ": {" in obj:
                 obj = "(" + obj + ")"
@@ -5212,6 +5225,8 @@ class ZigNativeEmitter:
                     method_orders: dict[str, list[str]] = self._class_method_arg_order.get(fname, empty_order_map)
                     empty_order: list[str] = []
                     init_order: list[str] = method_orders.get("__init__", empty_order)
+                    empty_defaults: list[Any] = []
+                    empty_default_types: list[str] = []
                     if len(init_order) > 1:
                         init_params: list[str] = []
                         p = 1
@@ -5222,8 +5237,8 @@ class ZigNativeEmitter:
                             node,
                             arg_strs,
                             init_params,
-                            self._class_init_defaults.get(fname, []),
-                            self._class_init_default_types.get(fname, []),
+                            self._class_init_defaults.get(fname, empty_defaults),
+                            self._class_init_default_types.get(fname, empty_default_types),
                         )
                     # Imported class: use Type.init(args)
                     return "pytra.make_object(" + fname + ", " + fname + ".init(" + ", ".join(arg_strs) + "))"
@@ -5234,6 +5249,8 @@ class ZigNativeEmitter:
                         empty_order: list[str] = []
                         init_order: list[str] = method_orders.get("__init__", empty_order)
                         init_params: list[str] = []
+                        empty_defaults: list[Any] = []
+                        empty_default_types: list[str] = []
                         if len(init_order) > 1:
                             p = 1
                             while p < len(init_order):
@@ -5243,8 +5260,8 @@ class ZigNativeEmitter:
                             node,
                             arg_strs,
                             init_params,
-                            self._class_init_defaults.get(fname, []),
-                            self._class_init_default_types.get(fname, []),
+                            self._class_init_defaults.get(fname, empty_defaults),
+                            self._class_init_default_types.get(fname, empty_default_types),
                         )
                     if self._has_vtable(fname):
                         vt_inst = "&" + fname + "_vt"
@@ -5254,7 +5271,8 @@ class ZigNativeEmitter:
                             return make_fn + "(" + fname + ", " + fname + ".init(" + ", ".join(arg_strs) + "), @ptrCast(" + vt_inst + "), " + drop_arg + ")"
                         return make_fn + "(" + fname + ", " + fname + "{}, @ptrCast(" + vt_inst + "), " + drop_arg + ")"
                     if fname in self._dataclass_names:
-                        fields = self._dataclass_fields.get(fname, [])
+                        empty_dataclass_fields: list[str] = []
+                        fields = self._dataclass_fields.get(fname, empty_dataclass_fields)
                         field_inits: list[str] = []
                         j = 0
                         while j < len(fields) and j < len(arg_strs):
@@ -5286,7 +5304,8 @@ class ZigNativeEmitter:
                             return "self._base." + attr + "(" + ", ".join(arg_strs) + ")"
                 obj = self._render_expr(obj_node_for_attr)
                 attr_renderer: _ZigStmtCommonRenderer = self._make_stmt_renderer()
-                if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
+                obj_node_for_attr_dict = self._any_dict_to_any(obj_node_for_attr)
+                if self._dict_get_str(obj_node_for_attr_dict, "kind", "") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
                     obj = "(" + obj + ")"
                 elif ": {" in obj:
                     obj = "(" + obj + ")"
