@@ -73,6 +73,9 @@ _BUILTIN_EXCEPTION_TYPE_NAMES: set[str] = {
     "OverflowError",
 }
 
+_RUNTIME_SYMBOL_INDEX_CACHE: dict[str, JsonVal] = {}
+_RUNTIME_SYMBOL_INDEX_LOADED: bool = False
+
 _BUILTIN_EXCEPTION_MODULE_ID = "pytra.built_in.error"
 
 
@@ -301,16 +304,22 @@ class ResolveContext:
     # Source file path
     source_file: str = ""
     def load_runtime_index(self) -> dict[str, JsonVal]:
+        global _RUNTIME_SYMBOL_INDEX_CACHE
+        global _RUNTIME_SYMBOL_INDEX_LOADED
+        if _RUNTIME_SYMBOL_INDEX_LOADED:
+            return _RUNTIME_SYMBOL_INDEX_CACHE
+        _RUNTIME_SYMBOL_INDEX_LOADED = True
         try:
             idx_path: Path = _repo_root_from_cwd().joinpath("tools").joinpath("runtime_symbol_index.json")
             if idx_path.exists():
                 text: str = idx_path.read_text(encoding="utf-8")
                 raw: JsonVal = json.loads(text).raw
-                return _jv_obj(raw)
+                _RUNTIME_SYMBOL_INDEX_CACHE = _jv_obj(raw)
+                return _RUNTIME_SYMBOL_INDEX_CACHE
         except Exception:
             pass
-        empty: dict[str, JsonVal] = {}
-        return empty
+        _RUNTIME_SYMBOL_INDEX_CACHE = {}
+        return _RUNTIME_SYMBOL_INDEX_CACHE
 
     def lookup_runtime_module_group(self, module_id: str) -> str:
         idx: dict[str, JsonVal] = self.load_runtime_index()
