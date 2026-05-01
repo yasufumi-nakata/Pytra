@@ -2301,15 +2301,15 @@ class ZigNativeEmitter:
                         if is_lambda_value and len(self._lambda_local_stack) > 0:
                             self._add_current_lambda_local(target_name)
                         zig_ty = self._zig_type(decl_type)
-                        optional_dict_get = self._render_optional_dict_get(stmt.get("value"), decl_type)
+                        optional_dict_get = self._render_optional_dict_get(assign_value_node, decl_type)
                         if optional_dict_get != "":
                             value = optional_dict_get
                         # PyObject fallback → 値の型推論で型を補正
-                        if zig_ty == "pytra.PyObject" and isinstance(stmt.get("value"), dict):
-                            val_zig = self._infer_value_zig_type(stmt.get("value"))
+                        if zig_ty == "pytra.PyObject" and isinstance(assign_value_node, dict):
+                            val_zig = self._infer_value_zig_type(assign_value_node)
                             if val_zig != "pytra.PyObject":
                                 zig_ty = val_zig
-                                decl_type = self._lookup_expr_type(stmt.get("value"))
+                                decl_type = self._lookup_expr_type(assign_value_node)
                                 self._current_type_map()[target_name] = self._merge_decl_type(
                                     self._current_type_map().get(target_name, ""),
                                     decl_type,
@@ -2320,12 +2320,12 @@ class ZigNativeEmitter:
                             self._emit_line(decl_kw + " " + target + " = " + value + ";")
                             self._record_decl_line(target_name)
                             return
-                        value = self._coerce_value_to_zig_type(zig_ty, stmt.get("value"), value)
+                        value = self._coerce_value_to_zig_type(zig_ty, assign_value_node, value)
                         self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
                         self._record_decl_line(target_name)
                         return
                     self._mark_decl_mutable(target_name)
-                    value = self._coerce_value_to_zig_type(self._zig_type(self._current_type_map().get(target_name, "")), stmt.get("value"), value)
+                    value = self._coerce_value_to_zig_type(self._zig_type(self._current_type_map().get(target_name, "")), assign_value_node, value)
                 self._emit_line(target + " = " + value + ";")
                 return
             raise RuntimeError("lang=zig unsupported assign shape")
@@ -2368,12 +2368,12 @@ class ZigNativeEmitter:
             self._emit_raise_stmt(stmt)
             return
         if kind == "Try":
-            renderer = self._make_stmt_renderer()
-            renderer.emit_try_stmt(stmt)
-            self._sync_from_stmt_renderer(renderer)
+            try_renderer = self._make_stmt_renderer()
+            try_renderer.emit_try_stmt(stmt)
+            self._sync_from_stmt_renderer(try_renderer)
             return
         if kind == "With":
-            renderer = self._make_stmt_renderer()
+            with_renderer = self._make_stmt_renderer()
             items = stmt.get("items")
             if isinstance(items, list) and len(items) > 1:
                 context_expr = stmt.get("context_expr")
@@ -2381,8 +2381,8 @@ class ZigNativeEmitter:
                 enter_type = str(stmt.get("with_enter_type", ""))
                 var_name_any = stmt.get("var_name")
                 var_name = _safe_ident(var_name_any, "ctx") if isinstance(var_name_any, str) and var_name_any != "" else ""
-                ctx_name = renderer.next_with_context_name()
-                with_blk = renderer.next_with_block_name()
+                ctx_name = with_renderer.next_with_context_name()
+                with_blk = with_renderer.next_with_block_name()
                 ctx_type = self._lookup_expr_type(context_expr) if isinstance(context_expr, dict) else ""
                 ctx_expr = self._render_expr(context_expr)
                 self._emit_line("const " + ctx_name + " = " + ctx_expr + ";")
@@ -2391,63 +2391,44 @@ class ZigNativeEmitter:
                     already_declared = len(self._local_var_stack) > 0 and var_name in self._current_local_vars()
                     if enter_type == "TextIOWrapper":
                         if already_declared:
-                            renderer.state.indent_level = self.indent
-                            renderer.emit_with_context_bind(var_name, ctx_name, enter_type, False)
+                            with_renderer.state.indent_level = self.indent
+                            with_renderer.emit_with_context_bind(var_name, ctx_name, enter_type, False)
                         else:
-                            renderer.state.indent_level = self.indent
-                            renderer.emit_with_enter_binding(
-                                stmt,
-                                var_name,
-                                enter_type,
-                                {"kind": "Name", "id": ctx_name, "resolved_type": ctx_type},
-                                bind_ref=True,
-                            )
+                            zig_enter_type = self._zig_type(enter_type) if enter_type != "" else "pytra.PyObject"
+                            self._emit_line("var " + var_name + ": " + zig_enter_type + " = " + ctx_name + ";")
                     else:
-                        renderer.state.indent_level = self.indent
-                        renderer.emit_with_enter_binding(
-                            stmt,
-                            var_name,
-                            enter_type,
-                            {
-                                "kind": "Call",
-                                "func": {
-                                    "kind": "Attribute",
-                                    "value": {"kind": "Name", "id": ctx_name, "resolved_type": ctx_type},
-                                    "attr": "__enter__",
-                                    "resolved_type": "callable",
-                                },
-                                "args": [],
-                                "keywords": [],
-                                "resolved_type": enter_type,
-                            },
-                        )
+                        zig_enter_type = self._zig_type(enter_type) if enter_type != "" else "pytra.PyObject"
+                        if already_declared:
+                            self._emit_line(var_name + " = " + ctx_name + ".__enter__();")
+                        else:
+                            self._emit_line("var " + var_name + ": " + zig_enter_type + " = " + ctx_name + ".__enter__();")
                     if not already_declared and len(self._local_var_stack) > 0:
                         self._add_current_local_var(var_name)
                 elif enter_type != "TextIOWrapper":
-                    renderer.state.indent_level = self.indent
-                    renderer.emit_with_fallback_enter(ctx_name, enter_type)
-                self._emit_line(renderer.render_try_body_open(with_blk))
+                    with_renderer.state.indent_level = self.indent
+                    with_renderer.emit_with_fallback_enter(ctx_name, enter_type)
+                self._emit_line(with_renderer.render_try_body_open(with_blk))
                 self.indent += 1
                 self._try_depth += 1
                 self._try_label_stack.append(with_blk)
                 for sub in body:
                     self._emit_stmt(sub)
-                    post_stmt = renderer.render_try_body_post_stmt_stmt(sub, with_blk)
+                    post_stmt = with_renderer.render_try_body_post_stmt_stmt(sub, with_blk)
                     if post_stmt != "":
                         self._emit_line(post_stmt)
                 self._try_label_stack.pop()
                 self._try_depth -= 1
                 self.indent -= 1
-                self._emit_line(renderer.render_try_body_close(with_blk))
+                self._emit_line(with_renderer.render_try_body_close(with_blk))
                 if enter_type == "TextIOWrapper":
-                    renderer.state.indent_level = self.indent
-                    renderer.emit_with_close_fallback(ctx_name, enter_type)
+                    with_renderer.state.indent_level = self.indent
+                    with_renderer.emit_with_close_fallback(ctx_name, enter_type)
                 else:
-                    renderer.state.indent_level = self.indent
-                    renderer.emit_with_fallback_exit(ctx_name, enter_type)
+                    with_renderer.state.indent_level = self.indent
+                    with_renderer.emit_with_fallback_exit(ctx_name, enter_type)
             else:
-                renderer.emit_with_stmt(stmt)
-            self._sync_from_stmt_renderer(renderer)
+                with_renderer.emit_with_stmt(stmt)
+            self._sync_from_stmt_renderer(with_renderer)
             return
         if kind == "If":
             self._emit_if(stmt)
@@ -6803,7 +6784,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner.indent = self.state.indent_level
         if enter_type != "":
             self.owner._current_type_map()[enter_name] = enter_type
-        self.owner._current_local_vars().add(enter_name)
+        self.owner._add_current_local_var(enter_name)
         self.owner._emit_line("var " + enter_name + ": " + self.owner._zig_type(enter_type) + " = undefined;")
         self.state.indent_level = self.owner.indent
 
