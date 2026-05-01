@@ -235,37 +235,35 @@ def reject_backend_typed_vararg_signatures(doc: object, *, backend_name: str) ->
 
 def _scan_reassigned_names(node: Any, param_names: set[str], out: set[str]) -> None:
     if isinstance(node, list):
-        for item in node:
+        node_list: list[Any] = node
+        for item in node_list:
             _scan_reassigned_names(item, param_names, out)
         return
     if not isinstance(node, dict):
         return
-    kind = node.get("kind", "")
+    nd: dict[str, Any] = node
+    kind_any = nd.get("kind")
+    kind = kind_any if isinstance(kind_any, str) else ""
     if kind == "Assign" or kind == "AnnAssign" or kind == "AugAssign":
-        target = node.get("target")
+        target = nd.get("target")
         if isinstance(target, dict):
-            if target.get("kind") == "Name":
-                name = _safe_ident(target.get("id"), "")
+            target_dict: dict[str, Any] = target
+            if target_dict.get("kind") == "Name":
+                name = _safe_ident(target_dict.get("id"), "")
                 if name in param_names:
                     out.add(name)
-            elif target.get("kind") == "Tuple":
-                elements = target.get("elements")
-                if isinstance(elements, list):
-                    for elem in elements:
-                        if isinstance(elem, dict) and elem.get("kind") == "Name":
-                            name = _safe_ident(elem.get("id"), "")
-                            if name in param_names:
-                                out.add(name)
     if kind == "ForCore":
-        target_plan = node.get("target_plan")
-        if isinstance(target_plan, dict) and target_plan.get("kind") == "NameTarget":
-            name = _safe_ident(target_plan.get("id"), "")
-            if name in param_names:
-                out.add(name)
-    body = node.get("body")
+        target_plan = nd.get("target_plan")
+        if isinstance(target_plan, dict):
+            target_plan_dict: dict[str, Any] = target_plan
+            if target_plan_dict.get("kind") == "NameTarget":
+                name = _safe_ident(target_plan_dict.get("id"), "")
+                if name in param_names:
+                    out.add(name)
+    body = nd.get("body")
     if isinstance(body, list):
         _scan_reassigned_names(body, param_names, out)
-    orelse = node.get("orelse")
+    orelse = nd.get("orelse")
     if isinstance(orelse, list):
         _scan_reassigned_names(orelse, param_names, out)
 
@@ -275,8 +273,9 @@ def _collect_reassigned_params(func_def: dict[str, Any]) -> set[str]:
     if not isinstance(arg_order, list) or len(arg_order) == 0:
         empty_params: set[str] = set()
         return empty_params
+    arg_order_list: list[Any] = arg_order
     param_names: set[str] = set()
-    for arg in arg_order:
+    for arg in arg_order_list:
         if isinstance(arg, str):
             arg_name: str = arg
             if arg_name != "":
@@ -879,7 +878,8 @@ class ZigNativeEmitter:
                     return True
             return False
         if isinstance(node, list):
-            for item in node:
+            node_list: list[Any] = node
+            for item in node_list:
                 if self._node_uses_name(item, name):
                     return True
         return False
@@ -901,7 +901,8 @@ class ZigNativeEmitter:
                     return True
             return False
         if isinstance(node, list):
-            for item in node:
+            node_list: list[Any] = node
+            for item in node_list:
                 if self._node_uses_name_runtime(item, name):
                     return True
         return False
@@ -1260,8 +1261,13 @@ class ZigNativeEmitter:
         self.lines.append("const std = @import(\"std\");")
         rt_path = self._root_rel_prefix() + "built_in/py_runtime.zig"
         self.lines.append("const pytra = @import(\"" + rt_path + "\");")
-        self.lines.extend(renderer.exception_support_decl_lines())
-        self.lines.extend(renderer.exception_slot_decl_lines())
+        self.lines.append("const __PytraCaughtException = struct { msg: []const u8, line: i64 };")
+        self.lines.append("var __pytra_exc_type: ?[]const u8 = null;")
+        self.lines.append("var __pytra_exc_msg: ?[]const u8 = null;")
+        self.lines.append("var __pytra_exc_line: i64 = 0;")
+        self.lines.append("var __pytra_caught_exc_type: ?[]const u8 = null;")
+        self.lines.append("var __pytra_caught_exc_msg: ?[]const u8 = null;")
+        self.lines.append("var __pytra_caught_exc_line: i64 = 0;")
         body = self._json_dict_list(self.east_doc.get("body"))
         main_guard = self._json_dict_list(self.east_doc.get("main_guard_body"))
         self._scan_module_symbols(body)
@@ -1500,24 +1506,28 @@ class ZigNativeEmitter:
     def _any_dict_to_any(self, value: Any) -> dict[str, Any]:
         out: dict[str, Any] = {}
         if isinstance(value, dict):
-            for key, item in value.items():
-                out[str(key)] = self._json_to_any(item)
+            value_dict: dict[str, Any] = value
+            for key, item in value_dict.items():
+                out[str(key)] = item
         return out
 
     def _any_list_to_any(self, value: Any) -> list[Any]:
         out: list[Any] = []
         if isinstance(value, list):
-            for item in value:
-                out.append(self._json_to_any(item))
+            value_list: list[Any] = value
+            for item in value_list:
+                out.append(item)
         return out
 
     def _dict_list(self, value: Any) -> list[dict[str, Any]]:
         if not isinstance(value, list):
             return []
         out: list[dict[str, Any]] = []
-        for item in value:
+        value_list: list[Any] = value
+        for item in value_list:
             if isinstance(item, dict):
-                out.append(self._any_dict_to_any(item))
+                item_dict = self._any_dict_to_any(item)
+                out.append(item_dict)
         return out
 
     def _json_dict_list(self, value: JsonVal) -> list[dict[str, Any]]:
@@ -2425,21 +2435,23 @@ class ZigNativeEmitter:
             return
         if kind == "Expr":
             value_any = stmt.get("value")
-            if isinstance(value_any, dict) and value_any.get("kind") == "Constant":
-                if isinstance(value_any.get("value"), str):
+            value_node = self._any_dict_to_any(value_any)
+            value_kind = self._dict_get_str(value_node, "kind", "")
+            if value_kind == "Constant":
+                if isinstance(value_node.get("value"), str):
                     return
-            if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-                loop_kw = str(value_any.get("id"))
+            if value_kind == "Name":
+                loop_kw = str(value_node.get("id"))
                 if loop_kw == "break":
                     self._emit_line("break;")
                     return
                 if loop_kw == "continue":
                     self._emit_line("continue;")
                     return
-            expr_text = self._render_expr(value_any)
+            expr_text = self._render_expr(value_node)
             if expr_text == "":
                 return
-            if isinstance(value_any, dict) and value_any.get("kind") == "Call":
+            if value_kind == "Call":
                 if " = " in expr_text and not expr_text.lstrip().startswith("__call_blk_"):
                     self._emit_line(expr_text + ";")
                 else:
@@ -2744,7 +2756,8 @@ class ZigNativeEmitter:
         arg_order_any = stmt.get("arg_order")
         args: list[Any] = []
         if isinstance(arg_order_any, list):
-            for item in arg_order_any:
+            arg_order_list: list[Any] = arg_order_any
+            for item in arg_order_list:
                 args.append(item)
         vararg_name_raw = stmt.get("vararg_name")
         vararg_name = vararg_name_raw if isinstance(vararg_name_raw, str) and vararg_name_raw != "" else ""
@@ -2760,10 +2773,10 @@ class ZigNativeEmitter:
         arg_types_any = stmt.get("arg_types")
         arg_types: dict[str, Any] = {}
         if isinstance(arg_types_any, dict):
-            arg_types = self._json_dict_to_any(arg_types_any)
+            arg_types = self._any_dict_to_any(arg_types_any)
         arg_usage = stmt.get("arg_usage")
         if isinstance(arg_usage, dict):
-            arg_usage = self._json_dict_to_any(arg_usage)
+            arg_usage = self._any_dict_to_any(arg_usage)
         else:
             arg_usage = {}
         module_id = self._current_module_id()
@@ -2873,12 +2886,13 @@ class ZigNativeEmitter:
         arg_order_any = stmt.get("arg_order")
         args: list[Any] = []
         if isinstance(arg_order_any, list):
-            for item in arg_order_any:
+            arg_order_list: list[Any] = arg_order_any
+            for item in arg_order_list:
                 args.append(item)
         arg_types_any = stmt.get("arg_types")
         arg_types: dict[str, Any] = {}
         if isinstance(arg_types_any, dict):
-            arg_types = self._json_dict_to_any(arg_types_any)
+            arg_types = self._any_dict_to_any(arg_types_any)
         ret_type = self._dict_get_str(stmt, "return_type", "None").strip()
         if ret_type == "":
             ret_type = "None"
