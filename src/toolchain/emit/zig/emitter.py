@@ -768,20 +768,20 @@ class ZigNativeEmitter:
 
         if not isinstance(node, list):
             return counts
-        for cur in node:
-            if not isinstance(cur, dict):
-                continue
-            kind = str(cur.get("kind") or "")
+        body = self._dict_list(node)
+        for cur in body:
+            kind = self._dict_get_str(cur, "kind", "")
             if kind in {"Assign", "AnnAssign", "AugAssign"}:
-                target = cur.get("target")
-                if not isinstance(target, dict):
+                target = self._any_dict_to_any(cur.get("target"))
+                if len(target) == 0:
                     targets = cur.get("targets")
                     if isinstance(targets, list):
-                        for item in targets:
-                            if isinstance(item, dict) and item.get("kind") == "Name":
-                                add(_safe_ident(item.get("id"), ""))
-                    target = None
-                if isinstance(target, dict) and target.get("kind") == "Name":
+                        targets_list: list[Any] = targets
+                        for item in targets_list:
+                            item_dict = self._any_dict_to_any(item)
+                            if self._dict_get_str(item_dict, "kind", "") == "Name":
+                                add(_safe_ident(item_dict.get("id"), ""))
+                if self._dict_get_str(target, "kind", "") == "Name":
                     add(_safe_ident(target.get("id"), ""))
             if kind == "With":
                 var_name_any = cur.get("var_name")
@@ -980,7 +980,7 @@ class ZigNativeEmitter:
         arg_types_any = stmt.get("arg_types")
         arg_types: dict[str, Any] = {}
         if isinstance(arg_types_any, dict):
-            arg_types = self._json_dict_to_any(arg_types_any)
+            arg_types = self._any_dict_to_any(arg_types_any)
         i = 0
         while i < len(arg_names):
             safe_name = arg_names[i]
@@ -1018,37 +1018,40 @@ class ZigNativeEmitter:
     def _collect_branch_assigned_names(self, node: Any, nested: bool = False) -> set[str]:
         names: set[str] = set()
         if isinstance(node, list):
-            for item in node:
+            node_list: list[Any] = node
+            for item in node_list:
                 names.update(self._collect_branch_assigned_names(item, nested))
             return names
         if not isinstance(node, dict):
             return names
-        kind = str(node.get("kind") or "")
+        nd: dict[str, Any] = node
+        kind = self._dict_get_str(nd, "kind", "")
         if kind == "Assign":
-            target = node.get("target")
-            if not isinstance(target, dict):
-                targets = node.get("targets")
-                if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
-                    target = targets[0]
-            if nested and isinstance(target, dict) and target.get("kind") == "Name":
-                value = node.get("value")
+            target = self._any_dict_to_any(nd.get("target"))
+            if len(target) == 0:
+                targets = nd.get("targets")
+                if isinstance(targets, list) and len(targets) > 0:
+                    targets_list: list[Any] = targets
+                    target = self._any_dict_to_any(targets_list[0])
+            if nested and self._dict_get_str(target, "kind", "") == "Name":
+                value = nd.get("value")
                 skip_tuple_temp = False
-                if isinstance(value, dict) and value.get("kind") == "Subscript":
-                    owner = value.get("value")
-                    if isinstance(owner, dict):
-                        owner_id = owner.get("id")
-                        if isinstance(owner_id, str) and owner_id.startswith("__tte_"):
-                            skip_tuple_temp = True
+                value_dict = self._any_dict_to_any(value)
+                if self._dict_get_str(value_dict, "kind", "") == "Subscript":
+                    owner = self._any_dict_to_any(value_dict.get("value"))
+                    owner_id = owner.get("id")
+                    if isinstance(owner_id, str) and owner_id.startswith("__tte_"):
+                        skip_tuple_temp = True
                 if not skip_tuple_temp:
                     names.add(_safe_ident(target.get("id"), "value"))
             return names
         if kind == "AnnAssign":
-            target = node.get("target")
-            if nested and isinstance(target, dict) and target.get("kind") == "Name":
+            target = self._any_dict_to_any(nd.get("target"))
+            if nested and self._dict_get_str(target, "kind", "") == "Name":
                 names.add(_safe_ident(target.get("id"), "value"))
             return names
         child_nested = nested or kind in {"If", "Try", "ExceptHandler", "With", "While", "ForCore", "ForRange"}
-        for key, value in node.items():
+        for key, value in nd.items():
             if key in {"repr", "source_span", "resolved_type", "semantic_tag",
                        "runtime_call", "resolved_runtime_call", "runtime_module_id",
                        "runtime_symbol", "escape_summary", "type_expr_summary_v1"}:
@@ -1059,35 +1062,36 @@ class ZigNativeEmitter:
     def _collect_existing_vardecl_names(self, node: Any) -> set[str]:
         names: set[str] = set()
         if isinstance(node, list):
-            for item in node:
+            node_list: list[Any] = node
+            for item in node_list:
                 names.update(self._collect_existing_vardecl_names(item))
             return names
         if not isinstance(node, dict):
             return names
-        if str(node.get("kind") or "") == "VarDecl":
-            names.add(_safe_ident(node.get("name"), "var_"))
-        for value in node.values():
+        nd: dict[str, Any] = node
+        if self._dict_get_str(nd, "kind", "") == "VarDecl":
+            names.add(_safe_ident(nd.get("name"), "var_"))
+        for value in nd.values():
             names.update(self._collect_existing_vardecl_names(value))
         return names
 
     def _collect_top_level_assigned_names(self, body_any: Any) -> set[str]:
         names: set[str] = set()
-        body = body_any if isinstance(body_any, list) else []
+        body = self._dict_list(body_any)
         for stmt in body:
-            if not isinstance(stmt, dict):
-                continue
-            kind = str(stmt.get("kind") or "")
+            kind = self._dict_get_str(stmt, "kind", "")
             if kind == "Assign":
-                target = stmt.get("target")
-                if not isinstance(target, dict):
+                target = self._any_dict_to_any(stmt.get("target"))
+                if len(target) == 0:
                     targets = stmt.get("targets")
-                    if isinstance(targets, list) and len(targets) > 0 and isinstance(targets[0], dict):
-                        target = targets[0]
-                if isinstance(target, dict) and target.get("kind") == "Name":
+                    if isinstance(targets, list) and len(targets) > 0:
+                        targets_list: list[Any] = targets
+                        target = self._any_dict_to_any(targets_list[0])
+                if self._dict_get_str(target, "kind", "") == "Name":
                     names.add(_safe_ident(target.get("id"), "value"))
             if kind == "AnnAssign":
-                target = stmt.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Name":
+                target = self._any_dict_to_any(stmt.get("target"))
+                if self._dict_get_str(target, "kind", "") == "Name":
                     names.add(_safe_ident(target.get("id"), "value"))
         return names
 
@@ -2988,7 +2992,7 @@ class ZigNativeEmitter:
         test_node = stmt.get("test")
         # Skip dead branches only for explicit constant false.
         if isinstance(test_node, dict):
-            test_dict = self._json_dict_to_any(test_node)
+            test_dict = self._any_dict_to_any(test_node)
             test_value = test_dict.get("value")
             if test_dict.get("kind") == "Constant" and isinstance(test_value, bool) and not test_value:
                 orelse = self._dict_list(stmt.get("orelse"))
@@ -3834,11 +3838,12 @@ class ZigNativeEmitter:
                 return "false"
         if kind == "Call":
             func_any = ed.get("func")
-            if isinstance(func_any, dict) and func_any.get("kind") == "Name":
-                fname = _safe_ident(func_any.get("id"), "")
+            func_node = self._any_dict_to_any(func_any)
+            if self._dict_get_str(func_node, "kind", "") == "Name":
+                fname = _safe_ident(func_node.get("id"), "")
                 if fname == "__pytra_truthy":
                     args_any = ed.get("args")
-                    args = args_any if isinstance(args_any, list) else []
+                    args = self._any_list_to_any(args_any)
                     if len(args) > 0:
                         return "pytra.truthy(" + self._render_expr(args[0]) + ")"
         rendered = self._render_expr(expr_any)
@@ -4603,13 +4608,14 @@ class ZigNativeEmitter:
     def _render_compare(self, node: dict[str, Any]) -> str:
         left = self._render_expr(node.get("left"))
         ops_any = node.get("ops")
-        ops = ops_any if isinstance(ops_any, list) else []
+        ops = self._any_list_to_any(ops_any)
         comparators_any = node.get("comparators")
         comparators: list[Any] = []
         if isinstance(comparators_any, list):
-            for comparator in comparators_any:
+            comparators_list: list[Any] = comparators_any
+            for comparator in comparators_list:
                 if isinstance(comparator, dict):
-                    comparators.append(self._json_dict_to_any(comparator))
+                    comparators.append(self._any_dict_to_any(comparator))
                 else:
                     comparators.append(comparator)
         if len(ops) == 0 or len(comparators) == 0:
