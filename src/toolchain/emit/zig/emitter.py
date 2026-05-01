@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from typing import Any
+from typing import cast
 from pathlib import Path
 
 from pytra.std import json as pytra_json
@@ -244,7 +245,7 @@ def _scan_reassigned_names(node: Any, param_names: set[str], out: set[str]) -> N
         target = node.get("target")
         if isinstance(target, dict):
             if target.get("kind") == "Name":
-                name = target.get("id", "")
+                name = _safe_ident(target.get("id"), "")
                 if name in param_names:
                     out.add(name)
             elif target.get("kind") == "Tuple":
@@ -252,13 +253,13 @@ def _scan_reassigned_names(node: Any, param_names: set[str], out: set[str]) -> N
                 if isinstance(elements, list):
                     for elem in elements:
                         if isinstance(elem, dict) and elem.get("kind") == "Name":
-                            name = elem.get("id", "")
+                            name = _safe_ident(elem.get("id"), "")
                             if name in param_names:
                                 out.add(name)
     if kind == "ForCore":
         target_plan = node.get("target_plan")
         if isinstance(target_plan, dict) and target_plan.get("kind") == "NameTarget":
-            name = target_plan.get("id", "")
+            name = _safe_ident(target_plan.get("id"), "")
             if name in param_names:
                 out.add(name)
     body = node.get("body")
@@ -417,15 +418,16 @@ def _runtime_symbol_alias_expr(runtime_module_id: str, runtime_symbol: str) -> s
 
 
 class ZigNativeEmitter:
-    def __init__(self, east_doc: dict[str, JsonVal], is_submodule: bool = False) -> None:
+    def __init__(self, east_doc: dict[str, JsonVal] = {}, is_submodule: bool = False) -> None:
         if not isinstance(east_doc, dict):
             raise RuntimeError("lang=zig invalid east document: root must be dict")
         ed: dict[str, JsonVal] = east_doc
-        kind = ed.get("kind")
-        if kind != "Module":
-            raise RuntimeError("lang=zig invalid root kind: " + str(kind))
-        if ed.get("east_stage") != 3:
-            raise RuntimeError("lang=zig unsupported east_stage: " + str(ed.get("east_stage")))
+        if len(ed) > 0:
+            kind = ed.get("kind")
+            if kind != "Module":
+                raise RuntimeError("lang=zig invalid root kind: " + str(kind))
+            if ed.get("east_stage") != 3:
+                raise RuntimeError("lang=zig unsupported east_stage: " + str(ed.get("east_stage")))
         self.east_doc: dict[str, JsonVal] = east_doc
         self.is_submodule = is_submodule
         self.lines: list[str] = []
@@ -866,10 +868,11 @@ class ZigNativeEmitter:
             if nd.get("kind") == "Name" and nd.get("id") == name:
                 return True
             for key, val in nd.items():
+                key_str = str(key)
                 # Skip non-structural fields
-                if key in {"repr", "source_span", "resolved_type", "semantic_tag",
-                           "runtime_call", "resolved_runtime_call", "runtime_module_id",
-                           "runtime_symbol", "escape_summary", "type_expr_summary_v1"}:
+                if key_str in {"repr", "source_span", "resolved_type", "semantic_tag",
+                               "runtime_call", "resolved_runtime_call", "runtime_module_id",
+                               "runtime_symbol", "escape_summary", "type_expr_summary_v1"}:
                     continue
                 if self._node_uses_name(val, name):
                     return True
@@ -886,11 +889,12 @@ class ZigNativeEmitter:
             if nd.get("kind") == "Name" and nd.get("id") == name:
                 return True
             for key, val in nd.items():
-                if key in {"repr", "source_span", "resolved_type", "semantic_tag",
-                           "runtime_call", "resolved_runtime_call", "runtime_module_id",
-                           "runtime_symbol", "escape_summary", "type_expr_summary_v1"}:
+                key_str = str(key)
+                if key_str in {"repr", "source_span", "resolved_type", "semantic_tag",
+                               "runtime_call", "resolved_runtime_call", "runtime_module_id",
+                               "runtime_symbol", "escape_summary", "type_expr_summary_v1"}:
                     continue
-                if nd.get("kind") == "Raise" and key == "cause":
+                if nd.get("kind") == "Raise" and key_str == "cause":
                     continue
                 if self._node_uses_name_runtime(val, name):
                     return True
@@ -1457,6 +1461,38 @@ class ZigNativeEmitter:
         out: dict[str, Any] = {}
         for key, item in value.items():
             out[key] = self._json_to_any(item)
+        return out
+
+    def _any_to_json(self, value: Any) -> JsonVal:
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            bool_value: bool = cast(bool, value)
+            return bool_value
+        if isinstance(value, int):
+            int_value: int = cast(int, value)
+            return int_value
+        if isinstance(value, float):
+            float_value: float = cast(float, value)
+            return float_value
+        if isinstance(value, str):
+            str_value: str = cast(str, value)
+            return str_value
+        if isinstance(value, list):
+            out_list: list[JsonVal] = []
+            list_value = self._any_list_to_any(value)
+            for item in list_value:
+                out_list.append(self._any_to_json(item))
+            return out_list
+        if isinstance(value, dict):
+            return self._any_dict_to_json(value)
+        return None
+
+    def _any_dict_to_json(self, value: Any) -> dict[str, JsonVal]:
+        out: dict[str, JsonVal] = {}
+        if isinstance(value, dict):
+            for key, item in value.items():
+                out[str(key)] = self._any_to_json(item)
         return out
 
     def _any_dict_to_any(self, value: Any) -> dict[str, Any]:
@@ -2391,7 +2427,7 @@ class ZigNativeEmitter:
             return
         if kind == "Try":
             try_renderer: _ZigStmtCommonRenderer = self._make_stmt_renderer()
-            try_renderer.emit_try_stmt(stmt)
+            try_renderer.emit_try_stmt(self._any_dict_to_json(stmt))
             self._sync_from_stmt_renderer(try_renderer)
             return
         if kind == "With":
@@ -2435,7 +2471,7 @@ class ZigNativeEmitter:
                 self._try_label_stack.append(with_blk)
                 for sub in body:
                     self._emit_stmt(sub)
-                    post_stmt = with_renderer.render_try_body_post_stmt_stmt(sub, with_blk)
+                    post_stmt = with_renderer.render_try_body_post_stmt_stmt(self._any_dict_to_json(sub), with_blk)
                     if post_stmt != "":
                         self._emit_line(post_stmt)
                 self._try_label_stack.pop()
@@ -5856,8 +5892,10 @@ class ZigNativeEmitter:
         ifs = self._any_list_to_any(ifs_any)
         if not isinstance(target, dict) or target.get("kind") not in {"Name", "Tuple"} or not isinstance(iter_node, dict):
             return "pytra.empty_list()"
+        target_dict = self._any_dict_to_any(target)
+        iter_dict = self._any_dict_to_any(iter_node)
         target_name = _safe_ident(target.get("id"), "item") if target.get("kind") == "Name" else self._make_stmt_renderer().next_tuple_target_name("__set_tuple")
-        iter_expr, iter_elem_type, unpack_lines, name_types = self._comp_iter_parts(iter_node, target_name, target)
+        iter_expr, iter_elem_type, unpack_lines, name_types = self._comp_iter_parts(iter_dict, target_name, target_dict)
         set_elem_type = iter_elem_type
         result_type = self._get_expr_type(node)
         if result_type.startswith("set[") and result_type.endswith("]"):
@@ -5899,8 +5937,10 @@ class ZigNativeEmitter:
         ifs = self._any_list_to_any(ifs_any)
         if not isinstance(target, dict) or target.get("kind") not in {"Name", "Tuple"} or not isinstance(iter_node, dict):
             return "pytra.empty_list()"
+        target_dict = self._any_dict_to_any(target)
+        iter_dict = self._any_dict_to_any(iter_node)
         target_name = _safe_ident(target.get("id"), "item") if target.get("kind") == "Name" else self._make_stmt_renderer().next_tuple_target_name("__list_tuple")
-        iter_expr, iter_elem_type, unpack_lines, name_types = self._comp_iter_parts(iter_node, target_name, target)
+        iter_expr, iter_elem_type, unpack_lines, name_types = self._comp_iter_parts(iter_dict, target_name, target_dict)
         result_type = self._get_expr_type(node)
         result_elem_type = "i64"
         declared_elem_type = ""
@@ -5954,7 +5994,9 @@ class ZigNativeEmitter:
         name_types: dict[str, str] = {}
         if target.get("kind") == "Tuple":
             elements = target.get("elements")
-            tuple_parts = self._split_generic(iter_type[11:-1]) if iter_type.startswith("list[tuple[") and iter_type.endswith("]]") else []
+            tuple_parts: list[str] = []
+            if iter_type.startswith("list[tuple[") and iter_type.endswith("]]"):
+                tuple_parts = self._split_generic(iter_type[11:-1])
             if isinstance(elements, list):
                 i = 0
                 while i < len(elements):
@@ -6257,8 +6299,10 @@ class ZigNativeEmitter:
         if inferred != "" and "unknown" not in inferred:
             return inferred
         node = value_node
-        while isinstance(node, dict) and node.get("kind") in {"Box", "Unbox"}:
-            node = node.get("value")
+        node_dict = self._any_dict_to_any(node)
+        while self._dict_get_str(node_dict, "kind", "") in {"Box", "Unbox"}:
+            node = node_dict.get("value")
+            node_dict = self._any_dict_to_any(node)
         inferred = self._lookup_expr_type(node)
         if inferred != "" and "unknown" not in inferred:
             return inferred
@@ -6292,7 +6336,7 @@ class ZigNativeEmitter:
         renderer: _ZigStmtCommonRenderer = self._make_stmt_renderer()
         blk, len_name, real_name = renderer.next_bounds_checked_index_names()
         zero = self._zig_zero_value(result_zig_type)
-        rendered = renderer.render_guarded_block_expr(
+        rendered: str = renderer.render_guarded_block_expr(
             blk,
             "const "
             + len_name
@@ -6395,8 +6439,10 @@ class ZigNativeEmitter:
 
     def _unwrap_box_unbox(self, node: Any) -> Any:
         cur = node
-        while isinstance(cur, dict) and cur.get("kind") in {"Box", "Unbox"}:
-            cur = cur.get("value")
+        cur_dict = self._any_dict_to_any(cur)
+        while self._dict_get_str(cur_dict, "kind", "") in {"Box", "Unbox"}:
+            cur = cur_dict.get("value")
+            cur_dict = self._any_dict_to_any(cur)
         return cur
 
     def _split_generic(self, inner: str) -> list[str]:
@@ -6567,7 +6613,7 @@ class ZigNativeEmitter:
         if kind == "Name":
             name = _safe_ident(ed.get("id"), "value")
             current = self._current_type_map().get(name, "")
-            module_fn = self._module_function_types.get(name, "")
+            module_fn: str = self._module_function_types.get(name, "")
             resolved = self._get_expr_type(ed)
             if self._is_optional_callable_type(current):
                 return current
@@ -6707,19 +6753,27 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.owner = owner
         super().__init__("zig")
 
-    def render_name(self, node: dict[str, Any]) -> str:
-        return self.owner._render_expr(node)
+    def render_name(self, node: dict[str, JsonVal]) -> str:
+        owner = self.owner
+        node_any = owner._json_dict_to_any(node)
+        return owner._render_expr(node_any)
 
-    def render_constant(self, node: dict[str, Any]) -> str:
+    def render_constant(self, node: dict[str, JsonVal]) -> str:
         if node.get("value") is None:
             return "pytra.union_new_none()"
-        return self.owner._render_expr(node)
+        owner = self.owner
+        node_any = owner._json_dict_to_any(node)
+        return owner._render_expr(node_any)
 
-    def render_expr(self, node: Any) -> str:
-        return self.owner._render_expr(node)
+    def render_expr(self, node: JsonVal) -> str:
+        owner = self.owner
+        node_any = owner._json_to_any(node)
+        return owner._render_expr(node_any)
 
-    def render_condition_expr(self, node: Any) -> str:
-        return self.owner._render_expr(node)
+    def render_condition_expr(self, node: JsonVal) -> str:
+        owner = self.owner
+        node_any = owner._json_to_any(node)
+        return owner._render_expr(node_any)
 
     def _next_tmp(self, prefix: str) -> str:
         self.owner.tmp_seq += 1
@@ -6727,72 +6781,78 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self.state.tmp_counter = self.owner.tmp_seq
         return prefix + "_" + str(self.owner.tmp_seq)
 
-    def render_attribute(self, node: dict[str, Any]) -> str:
-        return self.owner._render_expr(node)
+    def render_attribute(self, node: dict[str, JsonVal]) -> str:
+        owner = self.owner
+        node_any = owner._json_dict_to_any(node)
+        return owner._render_expr(node_any)
 
-    def render_call(self, node: dict[str, Any]) -> str:
-        return self.owner._render_expr(node)
+    def render_call(self, node: dict[str, JsonVal]) -> str:
+        owner = self.owner
+        node_any = owner._json_dict_to_any(node)
+        return owner._render_expr(node_any)
 
-    def render_assign_stmt(self, node: dict[str, Any]) -> str:
+    def render_assign_stmt(self, node: dict[str, JsonVal]) -> str:
         raise RuntimeError("zig common renderer assign string hook is not used directly")
 
-    def render_raise_value(self, node: dict[str, Any]) -> str:
+    def render_raise_value(self, node: dict[str, JsonVal]) -> str:
         raise RuntimeError("zig common renderer raise value hook is not used directly")
 
-    def render_except_open(self, handler: dict[str, Any]) -> str:
+    def render_except_open(self, handler: dict[str, JsonVal]) -> str:
         raise RuntimeError("zig common renderer except hook is not used directly")
 
-    def emit_assign_stmt(self, node: dict[str, Any]) -> None:
+    def emit_assign_stmt(self, node: dict[str, JsonVal]) -> None:
         self.owner.indent = self.state.indent_level
-        self.owner._emit_stmt(node)
+        self.owner._emit_stmt(self.owner._json_dict_to_any(node))
         self.state.indent_level = self.owner.indent
 
-    def emit_expr_stmt(self, node: dict[str, Any]) -> None:
+    def emit_expr_stmt(self, node: dict[str, JsonVal]) -> None:
         self.owner.indent = self.state.indent_level
-        self.owner._emit_stmt(node)
+        self.owner._emit_stmt(self.owner._json_dict_to_any(node))
         self.state.indent_level = self.owner.indent
 
-    def emit_stmt_extension(self, node: dict[str, Any]) -> None:
+    def emit_stmt_extension(self, node: dict[str, JsonVal]) -> None:
         self.owner.indent = self.state.indent_level
-        self.owner._emit_stmt(node)
+        self.owner._emit_stmt(self.owner._json_dict_to_any(node))
         self.state.indent_level = self.owner.indent
 
-    def emit_bare_raise_stmt(self, node: dict[str, Any]) -> None:
+    def emit_bare_raise_stmt(self, node: dict[str, JsonVal]) -> None:
         self.owner.indent = self.state.indent_level
-        self.owner._emit_raise_stmt(node)
+        self.owner._emit_raise_stmt(self.owner._json_dict_to_any(node))
         self.state.indent_level = self.owner.indent
 
     def emit_raise_call_stmt(
         self,
-        node: dict[str, Any],
-        call_node: dict[str, Any],
+        node: dict[str, JsonVal],
+        call_node: dict[str, JsonVal],
         func_name: str,
-        args: list[Any],
+        args: list[JsonVal],
     ) -> None:
         self.owner.indent = self.state.indent_level
-        self.owner._emit_raise_stmt(node)
+        self.owner._emit_raise_stmt(self.owner._json_dict_to_any(node))
         self.state.indent_level = self.owner.indent
 
-    def emit_raise_value_stmt(self, node: dict[str, Any], value: Any) -> None:
+    def emit_raise_value_stmt(self, node: dict[str, JsonVal], value: JsonVal) -> None:
         self.owner.indent = self.state.indent_level
-        self.owner._emit_raise_stmt(node)
+        self.owner._emit_raise_stmt(self.owner._json_dict_to_any(node))
         self.state.indent_level = self.owner.indent
 
-    def emit_try_stmt(self, node: dict[str, Any]) -> None:
-        body = self.owner._dict_list(node.get("body"))
-        handlers_any = node.get("handlers")
-        handlers = handlers_any if isinstance(handlers_any, list) else []
-        orelse = self.owner._dict_list(node.get("orelse"))
-        finalbody = self.owner._dict_list(node.get("finalbody"))
+    def emit_try_stmt(self, node: dict[str, JsonVal]) -> None:
+        body = self._list(node, "body")
+        handlers = self._list(node, "handlers")
+        orelse = self._list(node, "orelse")
+        finalbody = self._list(node, "finalbody")
         try_blk = self.next_try_block_name()
         self.emit_backend_line(self.render_try_body_open(try_blk))
         self.state.indent_level += 1
         self.owner._try_depth += 1
-        self.owner._try_label_stack.append(try_blk)
+        labels = self.owner._try_label_stack
+        labels.append(try_blk)
+        self.owner._try_label_stack = labels
         for sub in body:
             self.emit_stmt(sub)
-            self.emit_try_body_post_stmt(sub, try_blk)
-        self.owner._try_label_stack.pop()
+            sub_obj = pytra_json.JsonValue(sub).as_obj()
+            if sub_obj is not None:
+                self.emit_try_body_post_stmt(sub_obj.raw, try_blk)
         self.owner._try_depth -= 1
         self.state.indent_level -= 1
         self.emit_backend_line(self.render_try_body_close(try_blk))
@@ -6808,7 +6868,8 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         if len(finalbody) > 0:
             self.emit_body(finalbody)
 
-    def emit_exception_handler(self, handler: dict[str, Any]) -> None:
+    def emit_exception_handler(self, handler: dict[str, JsonVal]) -> None:
+        self._tmp_counter = self._tmp_counter
         self.state.indent_level = self.owner.indent
         super().emit_exception_handler(handler)
         self.owner.indent = self.state.indent_level
@@ -6830,11 +6891,11 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         self._require_exception_style("manual_exception_slot")
         return _ZIG_BOUND_EXCEPTION_RECORD
 
-    def is_catch_all_exception_handler(self, handler: dict[str, Any]) -> bool:
+    def is_catch_all_exception_handler(self, handler: dict[str, JsonVal]) -> bool:
         type_name = _safe_ident(self.exception_handler_type_name(handler), "")
         return type_name in self.owner._catch_all_exception_types
 
-    def iter_exception_match_type_names(self, handler: dict[str, Any]) -> list[str]:
+    def iter_exception_match_type_names(self, handler: dict[str, JsonVal]) -> list[str]:
         type_name = _safe_ident(self.exception_handler_type_name(handler), "")
         if type_name == "":
             return []
@@ -6847,7 +6908,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def render_exception_match_condition(
         self,
-        handler: dict[str, Any],
+        handler: dict[str, JsonVal],
         caught_type_expr: str,
     ) -> str:
         if self.is_catch_all_exception_handler(handler):
@@ -6868,7 +6929,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def render_exception_handler_guard_condition(
         self,
-        handler: dict[str, Any],
+        handler: dict[str, JsonVal],
         handled_name: str,
         caught_type_expr: str,
     ) -> str:
@@ -6878,9 +6939,10 @@ class _ZigStmtCommonRenderer(CommonRenderer):
     def render_exception_handler_mark_handled_stmt(self, handled_name: str) -> str:
         return handled_name + " = true;"
 
-    def render_try_body_post_stmt_stmt(self, stmt: dict[str, Any], try_label: str) -> str:
+    def render_try_body_post_stmt_stmt(self, stmt: dict[str, JsonVal], try_label: str) -> str:
         self._require_exception_style("manual_exception_slot")
-        if stmt.get("kind") in {"Return", "Raise", "Break", "Continue"}:
+        kind = pytra_json.JsonValue(stmt.get("kind")).as_str()
+        if kind in {"Return", "Raise", "Break", "Continue"}:
             return ""
         return "if (" + self.render_active_exception_check() + ") " + self.render_try_break(try_label)
 
@@ -6888,7 +6950,6 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         return block_label + ": {"
 
     def render_labeled_block_close(self, block_label: str) -> str:
-        del block_label
         return "}"
 
     def render_break_to_label(self, block_label: str) -> str:
@@ -6902,13 +6963,14 @@ class _ZigStmtCommonRenderer(CommonRenderer):
             return self.render_try_break(try_label)
         return return_stmt
 
-    def emit_exception_handler_binding_prelude(self, handler: dict[str, Any]) -> None:
+    def emit_exception_handler_binding_prelude(self, handler: dict[str, JsonVal]) -> None:
         current_indent = self.owner.indent
         hname = self.exception_handler_name(handler)
         if isinstance(hname, str) and hname != "":
             safe_hname = _safe_ident(hname, "err")
             handler_body = self.exception_handler_body(handler)
-            if self.owner._body_uses_name_runtime(handler_body, safe_hname):
+            handler_body_any = self.owner._any_list_to_any(handler_body)
+            if self.owner._body_uses_name_runtime(handler_body_any, safe_hname):
                 _, caught_msg, caught_line = self.caught_exception_slot_names()
                 self.owner._begin_exception_binding(
                     safe_hname,
@@ -6916,16 +6978,13 @@ class _ZigStmtCommonRenderer(CommonRenderer):
                 )
         self.owner.indent = current_indent
 
-    def emit_exception_handler_binding_teardown(self, handler: dict[str, Any]) -> None:
-        del handler
+    def emit_exception_handler_binding_teardown(self, handler: dict[str, JsonVal]) -> None:
         self.owner._end_pending_exception_binding()
 
     def render_with_fallback_enter_stmt(self, target_name: str, target_type: str) -> str:
-        del target_type
         return "_ = " + target_name + ".__enter__();"
 
     def render_with_fallback_exit_stmt(self, target_name: str, target_type: str) -> str:
-        del target_type
         return (
             "_ = "
             + target_name
@@ -6933,7 +6992,6 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         )
 
     def render_with_close_fallback_stmt(self, target_name: str, target_type: str) -> str:
-        del target_type
         return "pytra.file_close(" + target_name + ");"
 
     def render_with_context_bind_stmt(
@@ -6943,23 +7001,23 @@ class _ZigStmtCommonRenderer(CommonRenderer):
         source_type: str,
         declare: bool,
     ) -> str:
-        del source_type
         prefix = "var " if declare else ""
         return prefix + target_name + " = " + source_name + ";"
 
     def build_with_enter_assign(
         self,
-        node: dict[str, Any],
+        node: dict[str, JsonVal],
         enter_name: str,
         enter_type: str,
-        value: Any,
+        value: JsonVal,
         bind_ref: bool = False,
-    ) -> dict[str, Any]:
-        assign_node: dict[str, Any] = {
+    ) -> dict[str, JsonVal]:
+        declare = not (len(self.owner._local_var_stack) > 0 and enter_name in self.owner._current_local_vars())
+        assign_node: dict[str, JsonVal] = {
             "kind": "Assign",
             "target": {"kind": "Name", "id": enter_name, "resolved_type": enter_type},
             "value": value,
-            "declare": not (len(self.owner._local_var_stack) > 0 and enter_name in self.owner._current_local_vars()),
+            "declare": declare,
             "decl_type": enter_type,
         }
         if bind_ref:
@@ -6968,7 +7026,7 @@ class _ZigStmtCommonRenderer(CommonRenderer):
 
     def emit_with_enter_prelude(
         self,
-        node: dict[str, Any],
+        node: dict[str, JsonVal],
         enter_name: str,
         enter_type: str,
     ) -> None:
@@ -7001,11 +7059,13 @@ def transpile_to_zig_native(east_doc: dict[str, JsonVal], is_submodule: bool = F
 
 def emit_zig_module(east3_doc: dict[str, JsonVal]) -> str:
     """Emit a single EAST3 module to Zig source."""
-    meta = east3_doc.get("meta")
-    emit_ctx = meta.get("emit_context") if isinstance(meta, dict) else None
+    meta = pytra_json.JsonValue(east3_doc.get("meta")).as_obj()
     is_entry = False
-    if isinstance(emit_ctx, dict):
-        is_entry = bool(emit_ctx.get("is_entry"))
+    if meta is not None:
+        emit_ctx = meta.get_obj("emit_context")
+        if emit_ctx is not None:
+            is_entry_raw = emit_ctx.get_bool("is_entry")
+            is_entry = bool(is_entry_raw) if is_entry_raw is not None else False
     return transpile_to_zig_native(east3_doc, is_submodule=not is_entry)
 
 
