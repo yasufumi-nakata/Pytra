@@ -1465,15 +1465,6 @@ class ZigNativeEmitter:
             out[key] = self._json_to_any(item)
         return out
 
-    def _json_to_shallow_any(self, value: JsonVal) -> Any:
-        return value
-
-    def _json_dict_to_shallow_any(self, value: dict[str, JsonVal]) -> dict[str, Any]:
-        out: dict[str, Any] = {}
-        for key, item in value.items():
-            out[key] = self._json_to_shallow_any(item)
-        return out
-
     def _any_to_json(self, value: Any) -> JsonVal:
         if value is None:
             return None
@@ -1537,7 +1528,7 @@ class ZigNativeEmitter:
         for item in arr.raw:
             obj = pytra_json.JsonValue(item).as_obj()
             if obj is not None:
-                out.append(self._json_dict_to_shallow_any(obj.raw))
+                out.append(self._json_dict_to_any(obj.raw))
         return out
 
     def _block_has_return_stmt(self, body_any: Any) -> bool:
