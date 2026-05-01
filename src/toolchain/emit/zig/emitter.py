@@ -1459,6 +1459,20 @@ class ZigNativeEmitter:
             out[key] = self._json_to_any(item)
         return out
 
+    def _any_dict_to_any(self, value: Any) -> dict[str, Any]:
+        out: dict[str, Any] = {}
+        if isinstance(value, dict):
+            for key, item in value.items():
+                out[str(key)] = self._json_to_any(item)
+        return out
+
+    def _any_list_to_any(self, value: Any) -> list[Any]:
+        out: list[Any] = []
+        if isinstance(value, list):
+            for item in value:
+                out.append(self._json_to_any(item))
+        return out
+
     def _dict_list(self, value: Any) -> list[dict[str, Any]]:
         if not isinstance(value, list):
             return []
@@ -4282,34 +4296,33 @@ class ZigNativeEmitter:
             if isinstance(spec_node, str):
                 spec = spec_node
             if isinstance(spec_node, dict):
-                spec_dict = self._json_dict_to_any(spec_node)
+                spec_dict = self._any_dict_to_any(spec_node)
                 if self._dict_get_str(spec_dict, "kind", "") == "Constant" and isinstance(spec_dict.get("value"), str):
                     spec = str(spec_dict.get("value"))
                 elif self._dict_get_str(spec_dict, "kind", "") == "JoinedStr":
-                    values_any = spec_dict.get("values")
-                    values: list[Any] = values_any if isinstance(values_any, list) else []
-                    if len(values) == 1 and isinstance(values[0], dict):
-                        first_value = self._json_dict_to_any(values[0])
+                    spec_values = self._dict_list(spec_dict.get("values"))
+                    if len(spec_values) == 1:
+                        first_value = spec_values[0]
                         if self._dict_get_str(first_value, "kind", "") == "Constant" and isinstance(first_value.get("value"), str):
                             spec = str(first_value.get("value"))
             if spec.endswith("d") and spec[:-1].isdigit():
-                width = spec[:-1].lstrip("0")
-                if width == "":
-                    width = "0"
+                width = spec[:-1]
+                while width.startswith("0") and len(width) > 1:
+                    width = width[1:]
                 if spec[:-1].startswith("0") and len(spec[:-1]) > 1:
                     return "pytra.format_int_zero_width(" + value_expr + ", " + width + ")"
                 return "pytra.format_int_width(" + value_expr + ", " + width + ")"
             if spec == "+d":
                 return "pytra.format_int_sign(" + value_expr + ")"
             if spec.endswith("x") and spec[:-1].isdigit():
-                width = spec[:-1].lstrip("0")
-                if width == "":
-                    width = "0"
+                width = spec[:-1]
+                while width.startswith("0") and len(width) > 1:
+                    width = width[1:]
                 return "pytra.format_int_hex_width(" + value_expr + ", " + width + ", false)"
             if spec.endswith("X") and spec[:-1].isdigit():
-                width = spec[:-1].lstrip("0")
-                if width == "":
-                    width = "0"
+                width = spec[:-1]
+                while width.startswith("0") and len(width) > 1:
+                    width = width[1:]
                 return "pytra.format_int_hex_width(" + value_expr + ", " + width + ", true)"
             if spec == ",d":
                 return "pytra.format_int_grouped(" + value_expr + ")"
@@ -4329,7 +4342,7 @@ class ZigNativeEmitter:
             args = arg_order_any if isinstance(arg_order_any, list) else []
             arg_names = [_safe_ident(a, "arg") for a in args]
             arg_types_any = ed.get("arg_types")
-            arg_types = self._json_dict_to_any(arg_types_any) if isinstance(arg_types_any, dict) else {}
+            arg_types = self._any_dict_to_any(arg_types_any)
             capture_names = self._collect_lambda_captures(ed.get("body"), arg_names)
             capture_fields: list[str] = []
             capture_inits: list[str] = []
@@ -4542,11 +4555,15 @@ class ZigNativeEmitter:
             else:
                 # 文字列比較は std.mem.eql を使う
                 effective_prev_node = prev_node
-                if isinstance(effective_prev_node, dict) and effective_prev_node.get("kind") == "Unbox" and isinstance(effective_prev_node.get("value"), dict):
-                    effective_prev_node = effective_prev_node.get("value")
+                if isinstance(effective_prev_node, dict):
+                    effective_prev_dict = self._json_dict_to_any(effective_prev_node)
+                    if self._dict_get_str(effective_prev_dict, "kind", "") == "Unbox" and isinstance(effective_prev_dict.get("value"), dict):
+                        effective_prev_node = effective_prev_dict.get("value")
                 effective_cmp_node = comparators[i]
-                if isinstance(effective_cmp_node, dict) and effective_cmp_node.get("kind") == "Unbox" and isinstance(effective_cmp_node.get("value"), dict):
-                    effective_cmp_node = effective_cmp_node.get("value")
+                if isinstance(effective_cmp_node, dict):
+                    effective_cmp_dict = self._json_dict_to_any(effective_cmp_node)
+                    if self._dict_get_str(effective_cmp_dict, "kind", "") == "Unbox" and isinstance(effective_cmp_dict.get("value"), dict):
+                        effective_cmp_node = effective_cmp_dict.get("value")
                 left_type = self._lookup_expr_type(effective_prev_node) if isinstance(effective_prev_node, dict) else ""
                 right_type = self._lookup_expr_type(effective_cmp_node) if isinstance(effective_cmp_node, dict) else ""
                 if (right == "null" or prev == "null") and op_str in ("Is", "IsNot", "Eq", "NotEq"):
@@ -4714,30 +4731,39 @@ class ZigNativeEmitter:
         return "!" + expr if negate else expr
 
     def _render_call(self, node: dict[str, Any]) -> str:
-        func_any = node.get("func")
+        func_any_raw = node.get("func")
+        func_any = self._any_dict_to_any(func_any_raw)
         args_any = node.get("args")
-        args = args_any if isinstance(args_any, list) else []
+        args = self._any_list_to_any(args_any)
         arg_strs = [self._render_expr(a) for a in args]
+        first_arg: dict[str, Any] = {}
+        if len(args) > 0:
+            first_arg = self._any_dict_to_any(args[0])
+        first_arg_kind = self._dict_get_str(first_arg, "kind", "")
         i = 0
         while i < len(args):
-            arg_node = args[i]
-            if isinstance(arg_node, dict) and arg_node.get("kind") == "Name":
+            arg_node_any = args[i]
+            arg_node = self._any_dict_to_any(arg_node_any)
+            arg_kind = self._dict_get_str(arg_node, "kind", "")
+            if arg_kind == "Name":
                 arg_name = _safe_ident(arg_node.get("id"), "")
                 if arg_name in self._current_exception_vars():
                     arg_strs[i] = arg_name + ".msg"
-            if isinstance(arg_node, dict) and arg_node.get("kind") == "Call":
-                inner_func = arg_node.get("func")
+            if arg_kind == "Call":
+                inner_func_any = arg_node.get("func")
+                inner_func = self._any_dict_to_any(inner_func_any)
                 inner_args_any = arg_node.get("args")
-                inner_args = inner_args_any if isinstance(inner_args_any, list) else []
+                inner_args = self._any_list_to_any(inner_args_any)
+                first_inner_arg: dict[str, Any] = {}
+                if len(inner_args) == 1:
+                    first_inner_arg = self._any_dict_to_any(inner_args[0])
                 if (
-                    isinstance(inner_func, dict)
-                    and inner_func.get("kind") == "Name"
-                    and inner_func.get("id") == "str"
+                    self._dict_get_str(inner_func, "kind", "") == "Name"
+                    and self._dict_get_str(inner_func, "id", "") == "str"
                     and len(inner_args) == 1
-                    and isinstance(inner_args[0], dict)
-                    and inner_args[0].get("kind") == "Name"
+                    and self._dict_get_str(first_inner_arg, "kind", "") == "Name"
                 ):
-                    arg_name = _safe_ident(inner_args[0].get("id"), "")
+                    arg_name = _safe_ident(first_inner_arg.get("id"), "")
                     if arg_name in self._current_exception_vars():
                         arg_strs[i] = arg_name + ".msg"
             arg_text = arg_strs[i]
@@ -4773,8 +4799,8 @@ class ZigNativeEmitter:
                         if arg_t.startswith("list[") and arg_t.endswith("]"):
                             elem_t = self._zig_type(arg_t[5:-1].strip())
                             return "pytra.print_list(" + elem_t + ", " + arg_strs[0] + ")"
-                    if len(args) == 1 and isinstance(args[0], dict) and args[0].get("kind") == "Name":
-                        arg_name = _safe_ident(args[0].get("id"), "")
+                    if len(args) == 1 and first_arg_kind == "Name":
+                        arg_name = _safe_ident(first_arg.get("id"), "")
                         if arg_name in self._current_exception_vars():
                             return "pytra.print(" + arg_name + ".msg)"
                     if len(arg_strs) == 1:
@@ -4789,10 +4815,10 @@ class ZigNativeEmitter:
                 if fname == "len":
                     if len(args) > 0:
                         len_arg = arg_strs[0]
-                        if isinstance(args[0], dict) and args[0].get("kind") in {"Call", "Compare", "BoolOp", "BinOp", "IfExp", "Subscript", "Attribute"}:
+                        if first_arg_kind in {"Call", "Compare", "BoolOp", "BinOp", "IfExp", "Subscript", "Attribute"}:
                             len_arg = "(" + len_arg + ")"
                         arg_t = self._get_expr_type(args[0])
-                        if hasattr(self, "_import_alias_map") and arg_t in self._import_alias_map:
+                        if arg_t in self._import_alias_map:
                             return len_arg + ".__len__()"
                         if arg_t.startswith("dict["):
                             return "@as(i64, @intCast(" + len_arg + ".count()))"
@@ -4806,7 +4832,7 @@ class ZigNativeEmitter:
                             return "pytra.list_len(" + len_arg + ", " + elem + ")"
                     if len(arg_strs) > 0:
                         len_arg = arg_strs[0]
-                        if len(args) > 0 and isinstance(args[0], dict) and args[0].get("kind") in {"Call", "Compare", "BoolOp", "BinOp", "IfExp", "Subscript", "Attribute"}:
+                        if len(args) > 0 and first_arg_kind in {"Call", "Compare", "BoolOp", "BinOp", "IfExp", "Subscript", "Attribute"}:
                             len_arg = "(" + len_arg + ")"
                         return "@as(i64, @intCast(" + len_arg + ".len))"
                     return "0"
@@ -4847,18 +4873,20 @@ class ZigNativeEmitter:
                     if len(arg_strs) > 0:
                         if len(args) > 0 and isinstance(args[0], dict):
                             raw_arg = self._unwrap_box_unbox(args[0])
-                            if isinstance(raw_arg, dict) and raw_arg.get("kind") == "List":
-                                elts_any = raw_arg.get("elts")
+                            raw_arg_dict = self._any_dict_to_any(raw_arg)
+                            raw_arg_kind = self._dict_get_str(raw_arg_dict, "kind", "")
+                            if raw_arg_kind == "List":
+                                elts_any = raw_arg_dict.get("elts")
                                 if not isinstance(elts_any, list):
-                                    elts_any = raw_arg.get("elements")
+                                    elts_any = raw_arg_dict.get("elements")
                                 if isinstance(elts_any, list) and len(elts_any) == 0:
                                     return "\"[]\""
-                            if isinstance(raw_arg, dict) and raw_arg.get("kind") == "Dict":
-                                entries_any = raw_arg.get("entries")
+                            if raw_arg_kind == "Dict":
+                                entries_any = raw_arg_dict.get("entries")
                                 if isinstance(entries_any, list) and len(entries_any) == 0:
                                     return "\"{}\""
-                        if len(args) > 0 and isinstance(args[0], dict) and args[0].get("kind") == "Name":
-                            arg_name = _safe_ident(args[0].get("id"), "")
+                        if len(args) > 0 and first_arg_kind == "Name":
+                            arg_name = _safe_ident(first_arg.get("id"), "")
                             if arg_name in self._current_exception_vars():
                                 return arg_name + ".msg"
                         arg_t = self._lookup_expr_type(args[0]) if len(args) > 0 else ""
@@ -4922,8 +4950,8 @@ class ZigNativeEmitter:
                     # cast(T, value) is a Python type narrowing hint.
                     if len(args) >= 2 and isinstance(args[0], dict) and isinstance(args[1], dict):
                         type_name = ""
-                        type_arg = args[0]
-                        if type_arg.get("kind") == "Name":
+                        type_arg: dict[str, Any] = args[0]
+                        if self._dict_get_str(type_arg, "kind", "") == "Name":
                             type_name = self._normalize_type(_safe_ident(type_arg.get("id"), ""))
                         value_type = self._lookup_expr_type(args[1])
                         stripped_value = self._strip_optional_type(value_type) if value_type != "" else ""
@@ -5099,19 +5127,20 @@ class ZigNativeEmitter:
                         return "@max(" + arg_strs[0] + ", " + arg_strs[1] + ")"
                 if fname == "isinstance":
                     if len(args) >= 2 and isinstance(args[0], dict) and isinstance(args[1], dict):
-                        type_node = args[1]
-                        if type_node.get("kind") == "Tuple":
+                        type_node: dict[str, Any] = args[1]
+                        type_node_kind = self._dict_get_str(type_node, "kind", "")
+                        if type_node_kind == "Tuple":
                             checks: list[str] = []
                             elements_any = type_node.get("elements")
-                            elements = elements_any if isinstance(elements_any, list) else []
+                            elements = self._any_list_to_any(elements_any)
                             for elem in elements:
-                                if not isinstance(elem, dict):
-                                    continue
+                                elem_dict = self._any_dict_to_any(elem)
                                 elem_target = ""
-                                if elem.get("kind") == "Name":
-                                    elem_target = str(elem.get("id", ""))
-                                elif elem.get("kind") == "Attribute":
-                                    elem_target = str(elem.get("attr", ""))
+                                elem_kind = self._dict_get_str(elem_dict, "kind", "")
+                                if elem_kind == "Name":
+                                    elem_target = str(elem_dict.get("id", ""))
+                                elif elem_kind == "Attribute":
+                                    elem_target = str(elem_dict.get("attr", ""))
                                 if elem_target != "":
                                     checks.append(self._render_isinstance({
                                         "kind": "IsInstance",
@@ -5120,9 +5149,9 @@ class ZigNativeEmitter:
                                     }))
                             return "(" + " or ".join(checks) + ")" if len(checks) > 0 else "false"
                         target = ""
-                        if type_node.get("kind") == "Name":
+                        if type_node_kind == "Name":
                             target = str(type_node.get("id", ""))
-                        elif type_node.get("kind") == "Attribute":
+                        elif type_node_kind == "Attribute":
                             target = str(type_node.get("attr", ""))
                         if target != "":
                             return self._render_isinstance({
@@ -5138,17 +5167,24 @@ class ZigNativeEmitter:
                 is_local_class = fname in self.class_names
                 is_imported_class = (
                     not is_local_class
-                    and hasattr(self, "_import_alias_map")
                     and fname in self._import_alias_map
                     and (call_resolved == fname or (isinstance(func_any, dict) and func_any.get("resolved_type") == "type"))
                 )
                 if is_imported_class:
-                    init_order = self._class_method_arg_order.get(fname, {}).get("__init__", [])
+                    empty_order_map: dict[str, list[str]] = {}
+                    method_orders: dict[str, list[str]] = self._class_method_arg_order.get(fname, empty_order_map)
+                    empty_order: list[str] = []
+                    init_order: list[str] = method_orders.get("__init__", empty_order)
                     if len(init_order) > 1:
+                        init_params: list[str] = []
+                        p = 1
+                        while p < len(init_order):
+                            init_params.append(init_order[p])
+                            p += 1
                         arg_strs = self._fill_args_with_keywords(
                             node,
                             arg_strs,
-                            init_order[1:],
+                            init_params,
                             self._class_init_defaults.get(fname, []),
                             self._class_init_default_types.get(fname, []),
                         )
@@ -5156,11 +5192,20 @@ class ZigNativeEmitter:
                     return "pytra.make_object(" + fname + ", " + fname + ".init(" + ", ".join(arg_strs) + "))"
                 if is_local_class:
                     if fname in self._classes_with_init:
-                        init_order = self._class_method_arg_order.get(fname, {}).get("__init__", [])
+                        empty_order_map: dict[str, list[str]] = {}
+                        method_orders: dict[str, list[str]] = self._class_method_arg_order.get(fname, empty_order_map)
+                        empty_order: list[str] = []
+                        init_order: list[str] = method_orders.get("__init__", empty_order)
+                        init_params: list[str] = []
+                        if len(init_order) > 1:
+                            p = 1
+                            while p < len(init_order):
+                                init_params.append(init_order[p])
+                                p += 1
                         arg_strs = self._fill_args_with_keywords(
                             node,
                             arg_strs,
-                            init_order[1:] if len(init_order) > 1 else [],
+                            init_params,
                             self._class_init_defaults.get(fname, []),
                             self._class_init_default_types.get(fname, []),
                         )
@@ -5203,6 +5248,7 @@ class ZigNativeEmitter:
                                 return "self._base = " + base + ".init(" + ", ".join(arg_strs) + ")"
                             return "self._base." + attr + "(" + ", ".join(arg_strs) + ")"
                 obj = self._render_expr(obj_node_for_attr)
+                attr_renderer: _ZigStmtCommonRenderer = self._make_stmt_renderer()
                 if isinstance(obj_node_for_attr, dict) and obj_node_for_attr.get("kind") in {"Subscript", "Call", "Compare", "BoolOp", "BinOp", "IfExp", "IsInstance"}:
                     obj = "(" + obj + ")"
                 elif ": {" in obj:
@@ -5214,12 +5260,11 @@ class ZigNativeEmitter:
                         filled[i] = arg_strs[i]
                         i += 1
                     keywords_any = node.get("keywords")
-                    keywords = keywords_any if isinstance(keywords_any, list) else []
+                    keywords = self._any_list_to_any(keywords_any)
                     for kw in keywords:
-                        if not isinstance(kw, dict):
-                            continue
-                        kw_arg = kw.get("arg")
-                        kw_val = kw.get("value")
+                        kw_dict = self._any_dict_to_any(kw)
+                        kw_arg = self._dict_get_str(kw_dict, "arg", "")
+                        kw_val = kw_dict.get("value")
                         if not isinstance(kw_arg, str) or not isinstance(kw_val, dict):
                             continue
                         rendered_kw = self._render_expr(kw_val)
@@ -5235,7 +5280,10 @@ class ZigNativeEmitter:
                 obj_type = self._lookup_expr_type(obj_node_for_attr)
                 if obj_type in self._class_method_defaults and attr in self._class_method_defaults[obj_type]:
                     defaults = self._class_method_defaults[obj_type].get(attr, [])
-                    default_types = self._class_method_default_types.get(obj_type, {}).get(attr, [])
+                    empty_default_type_map: dict[str, list[str]] = {}
+                    default_type_map: dict[str, list[str]] = self._class_method_default_types.get(obj_type, empty_default_type_map)
+                    empty_default_types: list[str] = []
+                    default_types = default_type_map.get(attr, empty_default_types)
                     filled_args = list(arg_strs)
                     i = len(filled_args)
                     while i < len(defaults):
@@ -5285,9 +5333,8 @@ class ZigNativeEmitter:
                 if attr == "isspace":
                     return "pytra.str_isspace(" + obj + ")"
                 if attr == "splitext" and len(arg_strs) > 0:
-                    renderer: _ZigStmtCommonRenderer = self._make_stmt_renderer()
-                    blk, tmp = renderer.next_splitext_names()
-                    return renderer.render_simple_block_expr(
+                    blk, tmp = attr_renderer.next_splitext_names()
+                    return attr_renderer.render_simple_block_expr(
                         blk,
                         "const " + tmp + " = " + obj + ".splitext(" + arg_strs[0] + ");",
                         ".{ ._0 = " + tmp + "._0, ._1 = " + tmp + "._1 }",
@@ -5296,12 +5343,11 @@ class ZigNativeEmitter:
                     filled_args = list(arg_strs)
                     exist_ok_arg = ""
                     keywords_any = node.get("keywords")
-                    keywords = keywords_any if isinstance(keywords_any, list) else []
+                    keywords = self._any_list_to_any(keywords_any)
                     for kw in keywords:
-                        if not isinstance(kw, dict):
-                            continue
-                        if kw.get("arg") == "exist_ok" and isinstance(kw.get("value"), dict):
-                            exist_ok_arg = self._render_expr(kw.get("value"))
+                        kw_dict = self._any_dict_to_any(kw)
+                        if self._dict_get_str(kw_dict, "arg", "") == "exist_ok" and isinstance(kw_dict.get("value"), dict):
+                            exist_ok_arg = self._render_expr(kw_dict.get("value"))
                     if len(filled_args) == 1:
                         filled_args.append(exist_ok_arg if exist_ok_arg != "" else "false")
                     return obj + ".makedirs(" + ", ".join(filled_args) + ")"
@@ -5332,9 +5378,8 @@ class ZigNativeEmitter:
                 if attr == "index" and len(arg_strs) > 0:
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     if obj_type == "str":
-                        renderer: _ZigStmtCommonRenderer = self._make_stmt_renderer()
-                        blk, val_name = renderer.next_str_index_names()
-                        return renderer.render_guarded_block_expr(
+                        blk, val_name = attr_renderer.next_str_index_names()
+                        return attr_renderer.render_guarded_block_expr(
                             blk,
                             "const "
                             + val_name
@@ -5593,16 +5638,16 @@ class ZigNativeEmitter:
         if self._is_optional_callable_type(fn_type):
             local_init = fn_expr + " orelse unreachable"
         block_renderer: _ZigStmtCommonRenderer = self._make_stmt_renderer()
-        rendered = block_renderer.render_simple_block_expr(
+        rendered: str = block_renderer.render_simple_block_expr(
             blk_label,
             "const " + fn_local + " = " + local_init + ";",
             "switch (@typeInfo(@TypeOf(" + fn_local + "))) { "
             + ".@\"struct\", .@\"union\", .@\"enum\", .@\"opaque\" => if (@hasDecl(@TypeOf(" + fn_local + "), \"call\")) "
-            + method_call.replace(fn_expr, fn_local, 1)
+            + method_call.replace(fn_expr, fn_local)
             + " else "
-            + direct_call.replace(fn_expr, fn_local, 1)
+            + direct_call.replace(fn_expr, fn_local)
             + ", else => "
-            + direct_call.replace(fn_expr, fn_local, 1)
+            + direct_call.replace(fn_expr, fn_local)
             + ", }",
         )
         self._sync_from_stmt_renderer(block_renderer)
@@ -5628,7 +5673,18 @@ class ZigNativeEmitter:
             elem_zig = param_zig_types[vararg_index]
             if elem_zig.startswith("[]const "):
                 elem_zig = elem_zig[len("[]const "):]
-            out = out[:vararg_index] + ["&[_]" + elem_zig + "{ " + ", ".join(out[vararg_index:]) + " }"]
+            prefix_args: list[str] = []
+            p = 0
+            while p < vararg_index:
+                prefix_args.append(out[p])
+                p += 1
+            vararg_items: list[str] = []
+            p = vararg_index
+            while p < len(out):
+                vararg_items.append(out[p])
+                p += 1
+            packed_arg = "&[_]" + elem_zig + "{ " + ", ".join(vararg_items) + " }"
+            out = prefix_args + [packed_arg]
         i = 0
         while i < len(out) and i < len(param_zig_types) and i < len(args):
             expected_zig = param_zig_types[i]
@@ -6463,7 +6519,7 @@ class ZigNativeEmitter:
                 return "pytra.Obj"
             return "*" + t
         # Imported class: known via import_alias_map → *ClassName
-        if hasattr(self, "_import_alias_map") and t in self._import_alias_map:
+        if t in self._import_alias_map:
             return "*" + t
         if t in self._known_imported_nominals:
             return "*" + t
