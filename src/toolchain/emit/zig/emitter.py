@@ -2944,15 +2944,21 @@ class ZigNativeEmitter:
             self._emit_static_range_for(stmt, target_name, iter_plan)
             return
         if iter_plan.get("kind") == "RuntimeIterForPlan":
-            iter_expr_node = iter_plan.get("iter_expr")
-            if isinstance(iter_expr_node, dict):
+            iter_expr_node_raw = iter_plan.get("iter_expr")
+            iter_expr_node: dict[str, Any] = {}
+            if isinstance(iter_expr_node_raw, dict):
+                iter_expr_node = self._json_dict_to_any(iter_expr_node_raw)
+            if len(iter_expr_node) > 0:
+                func_node_raw = iter_expr_node.get("func")
+                func_node: dict[str, Any] = {}
+                if isinstance(func_node_raw, dict):
+                    func_node = self._json_dict_to_any(func_node_raw)
                 if (
                     iter_expr_node.get("kind") == "Call"
-                    and isinstance(iter_expr_node.get("func"), dict)
-                    and iter_expr_node["func"].get("kind") == "Attribute"
-                    and iter_expr_node["func"].get("attr") == "items"
+                    and func_node.get("kind") == "Attribute"
+                    and func_node.get("attr") == "items"
                 ):
-                    owner_node = iter_expr_node["func"].get("value")
+                    owner_node = func_node.get("value")
                     owner_type = self._lookup_expr_type(owner_node)
                     if (owner_type.startswith("dict[") or "dict[" in owner_type) and len(tuple_unpack_names) == 2:
                         owner_expr = self._render_expr(owner_node)
@@ -3036,10 +3042,16 @@ class ZigNativeEmitter:
                 self.indent -= 1
                 self._emit_line("}")
                 return
-        iter_any = stmt.get("iter")
+        iter_any_raw = stmt.get("iter")
+        iter_any: Any = iter_any_raw
+        if isinstance(iter_any_raw, dict):
+            iter_any = self._json_dict_to_any(iter_any_raw)
         if isinstance(iter_any, dict) and iter_any.get("kind") == "Call":
-            func_any = iter_any.get("func")
-            if isinstance(func_any, dict) and func_any.get("kind") == "Name":
+            func_any_raw = iter_any.get("func")
+            func_any: dict[str, Any] = {}
+            if isinstance(func_any_raw, dict):
+                func_any = self._json_dict_to_any(func_any_raw)
+            if func_any.get("kind") == "Name":
                 fname = str(func_any.get("id"))
                 if fname == "range":
                     self._emit_range_for_from_call(stmt, target_name, iter_any)
@@ -3095,7 +3107,7 @@ class ZigNativeEmitter:
         i = 0
         while i < len(names):
             n = names[i]
-            if live_body and not self._body_uses_name(live_body, n):
+            if len(live_body) > 0 and not self._body_uses_name(live_body, n):
                 i += 1
                 continue
             decl_kw = "var" if self._is_var_mutated(n) else "const"
