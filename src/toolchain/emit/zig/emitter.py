@@ -6,6 +6,7 @@ import json
 from typing import Any
 from pathlib import Path
 
+from pytra.std import json as pytra_json
 from pytra.std.json import JsonVal
 from toolchain.emit.common.code_emitter import RuntimeMapping
 from toolchain.emit.common.code_emitter import build_import_alias_map
@@ -147,6 +148,13 @@ def _safe_ident(name: Any, fallback: str = "value") -> str:
     while out in _ZIG_RESERVED_BUILTINS:
         out = out + "_"
     return out
+
+
+def _starts_with_upper(text: str) -> bool:
+    if len(text) == 0:
+        return False
+    first = text[0:1]
+    return first >= "A" and first <= "Z"
 
 
 def _relative_import_module_path(module_id: str) -> str:
@@ -442,7 +450,7 @@ class ZigNativeEmitter:
         self._class_method_default_types: dict[str, dict[str, list[str]]] = {}
         self._class_method_arg_order: dict[str, dict[str, list[str]]] = {}
         self._class_field_types: dict[str, dict[str, str]] = {}
-        self._static_fields: dict[str, list[tuple[str, str, str]]] = {}  # cls -> [(field, type, default)]
+        self._static_fields: dict[str, list[list[str]]] = {}  # cls -> [[field, type, default]]
         self._vtable_root: dict[str, str] = {}  # cls -> vtable root class
         self._vtable_methods: dict[str, list[str]] = {}  # root cls -> [method names]
         self._class_return_types: dict[str, dict[str, str]] = {}  # cls -> {method: return_type}
@@ -676,7 +684,7 @@ class ZigNativeEmitter:
             kind = stmt.get("kind")
             if kind in {"AnnAssign", "Assign"}:
                 target_any = stmt.get("target")
-                target_node: dict[str, Any] = {}
+                target_node: dict[str, JsonVal] = {}
                 has_target = False
                 if isinstance(target_any, dict):
                     target_node = target_any
@@ -696,7 +704,7 @@ class ZigNativeEmitter:
             kind = stmt.get("kind")
             if kind in {"Assign", "AnnAssign"}:
                 target_any = stmt.get("target")
-                target_node: dict[str, Any] = {}
+                target_node: dict[str, JsonVal] = {}
                 has_target = False
                 if isinstance(target_any, dict):
                     target_node = target_any
@@ -730,10 +738,6 @@ class ZigNativeEmitter:
                         if isinstance(h, dict):
                             self._scan_reassign_to_declared(h.get("body"), declared, mutated)
                 self._scan_reassign_to_declared(stmt.get("finalbody"), declared, mutated)
-        assign_counts = self._collect_assigned_name_counts(body_any)
-        for name, count in assign_counts.items():
-            if count > 1:
-                mutated.add(name)
         return mutated
 
     def _collect_assigned_name_counts(self, node: JsonVal) -> dict[str, int]:
@@ -742,13 +746,11 @@ class ZigNativeEmitter:
         def add(name: str) -> None:
             counts[name] = counts.get(name, 0) + 1
 
-        def walk(cur: JsonVal) -> None:
-            if isinstance(cur, list):
-                for item in cur:
-                    walk(item)
-                return
+        if not isinstance(node, list):
+            return counts
+        for cur in node:
             if not isinstance(cur, dict):
-                return
+                continue
             kind = str(cur.get("kind") or "")
             if kind in {"Assign", "AnnAssign", "AugAssign"}:
                 target = cur.get("target")
@@ -767,15 +769,6 @@ class ZigNativeEmitter:
                     var_name: str = var_name_any
                     if var_name != "":
                         add(_safe_ident(var_name, "ctx"))
-            for key, value in cur.items():
-                if key in {"repr", "source_span", "resolved_type", "semantic_tag",
-                           "runtime_call", "resolved_runtime_call", "runtime_module_id",
-                           "runtime_symbol", "escape_summary", "type_expr_summary_v1"}:
-                    continue
-                if isinstance(value, (dict, list)):
-                    walk(value)
-
-        walk(node)
         return counts
 
     def _scan_reassign_to_declared(self, body_any: Any, declared: set[str], mutated: set[str]) -> None:
@@ -947,8 +940,9 @@ class ZigNativeEmitter:
                     return True
         return False
 
-    def _push_function_context(self, stmt: dict[str, Any], arg_names: list[str], arg_order: list[Any]) -> None:
-        self._hoisted_var_names = set()
+    def _push_function_context(self, stmt: dict[str, JsonVal], arg_names: list[str], arg_order: list[JsonVal]) -> None:
+        empty_hoisted: set[str] = set()
+        self._hoisted_var_names = empty_hoisted
         type_map: dict[str, str] = {}
         storage_type_map: dict[str, str] = {}
         ref_vars: set[str] = set()
@@ -958,11 +952,15 @@ class ZigNativeEmitter:
         i = 0
         while i < len(arg_names):
             safe_name = arg_names[i]
-            raw_name = arg_order[i] if i < len(arg_order) else safe_name
+            raw_name: JsonVal = safe_name
+            if i < len(arg_order):
+                raw_name = arg_order[i]
             arg_type_any = arg_types.get(raw_name)
             if not isinstance(arg_type_any, str):
                 arg_type_any = arg_types.get(safe_name)
-            arg_type = arg_type_any.strip() if isinstance(arg_type_any, str) else ""
+            arg_type = ""
+            if isinstance(arg_type_any, str):
+                arg_type = arg_type_any.strip()
             if arg_type != "":
                 type_map[safe_name] = arg_type
                 storage_type_map[safe_name] = arg_type
@@ -971,13 +969,22 @@ class ZigNativeEmitter:
         self._storage_type_stack.append(storage_type_map)
         self._ref_var_stack.append(ref_vars)
         self._local_var_stack.append(local_vars)
-        self._decl_line_stack.append({})
-        reassigned = {name for name, count in self._collect_assigned_name_counts(stmt.get("body")).items() if count > 1}
+        empty_decl_lines: dict[str, int] = {}
+        self._decl_line_stack.append(empty_decl_lines)
+        reassigned: set[str] = set()
+        body_for_counts = stmt.get("body")
+        if isinstance(body_for_counts, (dict, list)):
+            for name, count in self._collect_assigned_name_counts(body_for_counts).items():
+                if count > 1:
+                    reassigned.add(name)
         self._reassigned_name_stack.append(reassigned)
         self._mutated_var_stack.append(self._scan_mutated_vars(stmt.get("body")))
-        self._lambda_local_stack.append(set())
+        empty_lambda_locals: set[str] = set()
+        self._lambda_local_stack.append(empty_lambda_locals)
         ret_any = stmt.get("return_type")
-        ret_type = ret_any.strip() if isinstance(ret_any, str) else ""
+        ret_type = ""
+        if isinstance(ret_any, str):
+            ret_type = ret_any.strip()
         self._return_type_stack.append(self._zig_type(ret_type) if ret_type != "" else "void")
 
     def _collect_branch_assigned_names(self, node: Any, nested: bool = False) -> set[str]:
@@ -997,12 +1004,14 @@ class ZigNativeEmitter:
                     target = targets[0]
             if nested and isinstance(target, dict) and target.get("kind") == "Name":
                 value = node.get("value")
-                if not (
-                    isinstance(value, dict)
-                    and value.get("kind") == "Subscript"
-                    and isinstance(value.get("value"), dict)
-                    and str(value["value"].get("id") or "").startswith("__tte_")
-                ):
+                skip_tuple_temp = False
+                if isinstance(value, dict) and value.get("kind") == "Subscript":
+                    owner = value.get("value")
+                    if isinstance(owner, dict):
+                        owner_id = owner.get("id")
+                        if isinstance(owner_id, str) and owner_id.startswith("__tte_"):
+                            skip_tuple_temp = True
+                if not skip_tuple_temp:
                     names.add(_safe_ident(target.get("id"), "value"))
             return names
         if kind == "AnnAssign":
@@ -1071,7 +1080,8 @@ class ZigNativeEmitter:
         if kind == "UnaryOp":
             return self._expr_is_float_like(node.get("operand"))
         if kind in {"Call", "Attribute", "IfExp"}:
-            for key in ("func", "value", "test", "body", "orelse"):
+            expr_keys = ["func", "value", "test", "body", "orelse"]
+            for key in expr_keys:
                 if self._expr_is_float_like(node.get(key)):
                     return True
             args = node.get("args")
@@ -1118,6 +1128,7 @@ class ZigNativeEmitter:
         return "return undefined;"
 
     def _record_decl_line(self, name: str) -> None:
+        self.tmp_seq = self.tmp_seq
         if len(self._decl_line_stack) == 0:
             return
         self._decl_line_stack[-1][name] = len(self.lines) - 1
@@ -1164,41 +1175,49 @@ class ZigNativeEmitter:
                 return True
             targets = stmt.get("targets")
             if isinstance(targets, list) and len(targets) > 0:
-                if isinstance(targets[0], dict) and targets[0].get("kind") == "Name":
+                first_target = targets[0]
+                if isinstance(first_target, dict) and first_target.get("kind") == "Name":
                     return True
         return False
 
     def _emit_top_level_var(self, stmt: dict[str, Any]) -> None:
         """トップレベル変数をモジュールスコープの var として emit する。"""
         kind = stmt.get("kind")
-        target_node = None
+        target_name = ""
         if kind == "AnnAssign":
-            target_node = stmt.get("target")
+            target_any = stmt.get("target")
+            if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                target_name = _safe_ident(target_any.get("id"), "value")
         elif kind == "Assign":
-            target_node = stmt.get("target")
-            if target_node is None:
-                targets = stmt.get("targets")
-                if isinstance(targets, list) and len(targets) > 0:
-                    target_node = targets[0]
-        if not isinstance(target_node, dict) or target_node.get("kind") != "Name":
+            target_any = stmt.get("target")
+            if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                target_name = _safe_ident(target_any.get("id"), "value")
+        if target_name == "":
             return
-        target_name = _safe_ident(target_node.get("id"), "value")
         value_node = stmt.get("value")
-        if target_name != "" and target_name[0].isupper():
+        if _starts_with_upper(target_name):
             if isinstance(value_node, dict) and value_node.get("kind") in {"Name", "Subscript"}:
                 return
         # extern() 変数 → __native 委譲（spec-emitter-guide §4）
-        inner_val = value_node
-        if isinstance(inner_val, dict) and inner_val.get("kind") == "Unbox":
-            inner_val = inner_val.get("value")
-        if isinstance(inner_val, dict) and inner_val.get("kind") == "Call":
-            vfunc = inner_val.get("func")
-            if isinstance(vfunc, dict) and vfunc.get("id") in {"extern", "@\"extern\""}:
-                self._ensure_native_import()
-                decl_type = self._infer_decl_type(stmt)
-                zig_ty = self._zig_type(decl_type)
-                self._emit_line("pub const " + target_name + ": " + zig_ty + " = __native." + target_name + ";")
-                return
+        if isinstance(value_node, dict):
+            if value_node.get("kind") == "Call":
+                vfunc = value_node.get("func")
+                if isinstance(vfunc, dict) and vfunc.get("id") in {"extern", "@\"extern\""}:
+                    self._ensure_native_import()
+                    decl_type = self._infer_decl_type(stmt)
+                    zig_ty = self._zig_type(decl_type)
+                    self._emit_line("pub const " + target_name + ": " + zig_ty + " = __native." + target_name + ";")
+                    return
+            elif value_node.get("kind") == "Unbox":
+                unboxed = value_node.get("value")
+                if isinstance(unboxed, dict) and unboxed.get("kind") == "Call":
+                    vfunc = unboxed.get("func")
+                    if isinstance(vfunc, dict) and vfunc.get("id") in {"extern", "@\"extern\""}:
+                        self._ensure_native_import()
+                        decl_type = self._infer_decl_type(stmt)
+                        zig_ty = self._zig_type(decl_type)
+                        self._emit_line("pub const " + target_name + ": " + zig_ty + " = __native." + target_name + ";")
+                        return
         decl_type = self._infer_decl_type(stmt)
         zig_ty = self._zig_type(decl_type)
         value = self._render_expr(value_node) if isinstance(value_node, dict) else "undefined"
@@ -1210,7 +1229,7 @@ class ZigNativeEmitter:
         self._emit_line(prefix + target_name + ": " + zig_ty + " = " + value + ";")
 
     def transpile(self) -> str:
-        renderer = _ZigStmtCommonRenderer(self)
+        renderer = self._make_stmt_renderer()
         module_comments = self._module_leading_comment_lines(prefix="// ")
         if len(module_comments) > 0:
             self.lines.extend(module_comments)
@@ -1220,15 +1239,18 @@ class ZigNativeEmitter:
         self.lines.append("const pytra = @import(\"" + rt_path + "\");")
         self.lines.extend(renderer.exception_support_decl_lines())
         self.lines.extend(renderer.exception_slot_decl_lines())
-        body = self._dict_list(self.east_doc.get("body"))
-        main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
+        body = self._dict_list(self._json_to_any(self.east_doc.get("body")))
+        main_guard = self._dict_list(self._json_to_any(self.east_doc.get("main_guard_body")))
         self._scan_module_symbols(body)
         # import 文から @import を生成
         self._emit_imports(body)
         self.lines.append("")
         # 静的フィールドをモジュールスコープに emit
         for cls_name, sfields in self._static_fields.items():
-            for field_name, field_type, default_val in sfields:
+            for sfield in sfields:
+                field_name = sfield[0]
+                field_type = sfield[1]
+                default_val = sfield[2]
                 zig_ty = self._zig_type(field_type)
                 self._emit_line("var Module_" + cls_name + "_" + field_name + ": " + zig_ty + " = " + default_val + ";")
         # トップレベル変数をモジュールスコープに emit
@@ -1244,7 +1266,11 @@ class ZigNativeEmitter:
         self._emit_vtables()
         # §8: 残りのステートメント + main_guard_body (is_entry のみ) を pub fn main() に入れる
         ectx_main = self._get_emit_context()
-        is_entry = ectx_main.get("is_entry", False) if isinstance(ectx_main, dict) else False
+        is_entry = False
+        if isinstance(ectx_main, dict):
+            is_entry_any: Any = ectx_main.get("is_entry")
+            if isinstance(is_entry_any, bool):
+                is_entry = is_entry_any
         top_stmts: list[dict[str, Any]] = []
         for stmt in body:
             if not self._is_top_level_decl(stmt) and not self._is_top_level_var(stmt):
@@ -1254,10 +1280,14 @@ class ZigNativeEmitter:
                 top_stmts.append(stmt)
         if len(top_stmts) > 0 or is_entry:
             self._mutated_var_stack.append(self._scan_mutated_vars(top_stmts))
-            self._local_var_stack.append(set())
-            self._local_type_stack.append({})
-            self._ref_var_stack.append(set())
-            self._lambda_local_stack.append(set())
+            empty_local_vars: set[str] = set()
+            empty_type_map: dict[str, str] = {}
+            empty_ref_vars: set[str] = set()
+            empty_lambda_locals: set[str] = set()
+            self._local_var_stack.append(empty_local_vars)
+            self._local_type_stack.append(empty_type_map)
+            self._ref_var_stack.append(empty_ref_vars)
+            self._lambda_local_stack.append(empty_lambda_locals)
             self._return_type_stack.append("void")
             self.lines.append("pub fn main() void {")
             self.indent += 1
@@ -1297,10 +1327,25 @@ class ZigNativeEmitter:
                 inner_types: list[str] = []
                 for p in parts:
                     inner_types.append(self._zig_type(p.strip()))
-                fields = ", ".join("_" + str(i) + ": " + zt for i, zt in enumerate(inner_types))
+                field_parts: list[str] = []
+                i = 0
+                while i < len(inner_types):
+                    field_parts.append("_" + str(i) + ": " + inner_types[i])
+                    i += 1
+                fields = ", ".join(field_parts)
                 typedef_lines.append("const " + name + " = struct { " + fields + " };")
-            for tl in reversed(typedef_lines):
-                self.lines.insert(insert_idx, tl)
+            rebuilt_lines: list[str] = []
+            li = 0
+            while li < len(self.lines):
+                if li == insert_idx:
+                    for tl in typedef_lines:
+                        rebuilt_lines.append(tl)
+                rebuilt_lines.append(self.lines[li])
+                li += 1
+            if insert_idx >= len(self.lines):
+                for tl in typedef_lines:
+                    rebuilt_lines.append(tl)
+            self.lines = rebuilt_lines
         return "\n".join(self.lines).rstrip() + "\n"
 
     def _top_level_value_needs_runtime_init(self, value: str) -> bool:
@@ -1327,357 +1372,69 @@ class ZigNativeEmitter:
         self._emit_line("")
 
     def _fixup_unused_obj_vars(self) -> None:
-        """後処理: 未使用 const に _ = を挿入、未 mutated var を const に降格。"""
-        import re
-        decl_re = re.compile(r"^(\s+)(const|var)\s+(\w+)\s*(?::|=)")
-        obj_decl_re = re.compile(r"^(\s*)(const|var)\s+(\w+)\s*:\s*pytra\.Obj\s*=")
-        undefined_decl_re = re.compile(r"^\s*(const|var)\s+\w+\s*:\s*[^=]+\s*=\s*undefined;\s*$")
-        # mutation パターン: var_name = / var_name += / var_name -= etc.
-        import re as _re_mut
-        def _is_mutated_after(var_name: str, start: int, decl_indent_len: int) -> bool:
-            # var_name の mutation を検出:
-            # 1. var_name = / += / -= 等（直接代入）
-            # 2. var_name.field = （フィールド代入）
-            # 3. var_name.put( / var_name.append( 等（メソッド mutation）
-            pat_assign = _re_mut.compile(r'\b' + _re_mut.escape(var_name) + r'(\.\w+)?\s*(\+\=|\-\=|\*\=|/\=|\=(?!\=))')
-            pat_method = _re_mut.compile(r'\b' + _re_mut.escape(var_name) + r'\.(put|append|extend|pop|next)\s*\(')
-            j = start
-            while j < len(self.lines):
-                line = self.lines[j]
-                stripped = line.strip()
-                indent_len = len(line) - len(line.lstrip())
-                if stripped == "}" and indent_len < decl_indent_len:
-                    return False
-                if pat_assign.search(line) or pat_method.search(line):
-                    return True
-                j += 1
-            return False
-
-        insertions: list[tuple[int, str]] = []
-        replacements: list[tuple[int, str, str]] = []
-        deletions: list[int] = []
-        i = 0
-        while i < len(self.lines):
-            m = decl_re.match(self.lines[i])
-            if m is not None:
-                indent = m.group(1)
-                kw = m.group(2)
-                var_name = m.group(3)
-                decl_indent_len = len(indent)
-                # 後続行で var_name が使用されているか
-                used = False
-                j = i + 1
-                while j < len(self.lines):
-                    line = self.lines[j]
-                    jm = decl_re.match(line)
-                    if jm is not None and jm.group(3) == var_name:
-                        j += 1
-                        continue
-                    stripped = line.strip()
-                    indent_len = len(line) - len(line.lstrip())
-                    if stripped == "}" and indent_len < decl_indent_len:
-                        break
-                    if _re_mut.search(r"\b" + _re_mut.escape(var_name) + r"\b", line) and line.strip() != "_ = " + var_name + ";":
-                        used = True
-                        break
-                    j += 1
-                if not used:
-                    if var_name == "_unused":
-                        deletions.append(i)
-                        i += 1
-                        continue
-                    if undefined_decl_re.match(self.lines[i]):
-                        deletions.append(i)
-                        i += 1
-                        continue
-                    # 未使用 const → _ = を挿入
-                    if kw == "const":
-                        insertions.append((i + 1, indent + "_ = " + var_name + ";"))
-                    else:
-                        # 未使用 var → const に降格 + _ = 挿入
-                        replacements.append((i, "var " + var_name, "const " + var_name))
-                        insertions.append((i + 1, indent + "_ = " + var_name + ";"))
-                elif kw == "var" and not _is_mutated_after(var_name, i + 1, decl_indent_len):
-                    # 使用されるが mutation されない var → const に降格
-                    replacements.append((i, "var " + var_name, "const " + var_name))
-            i += 1
-        i = 0
-        while i < len(self.lines):
-            m_obj = obj_decl_re.match(self.lines[i])
-            if m_obj is not None:
-                var_name = m_obj.group(3)
-                decl_indent_len = len(m_obj.group(1))
-                if _is_mutated_after(var_name, i + 1, decl_indent_len) and m_obj.group(2) == "const":
-                    replacements.append((i, "const " + var_name, "var " + var_name))
-            if "@import(" in self.lines[i] and "var " in self.lines[i]:
-                replacements.append((i, "var ", "const "))
-            i += 1
-        for line_idx, old, new in replacements:
-            self.lines[line_idx] = self.lines[line_idx].replace(old, new, 1)
+        """Selfhost-safe cleanup for a few simple generated artifacts."""
         cleaned: list[str] = []
-        skip_next_unused = False
         for line in self.lines:
             stripped = line.strip()
             if stripped == "_ = _unused;":
-                skip_next_unused = False
                 continue
-            if skip_next_unused and stripped == "_ = _unused;":
-                skip_next_unused = False
+            if line.strip() == "":
+                cleaned.append(line)
                 continue
-            skip_next_unused = False
-            if re.match(r"^const _unused\s*:\s*.+\s*=\s*.+;\s*$", stripped):
-                skip_next_unused = True
-                continue
-            m_obj_make = re.match(r"^\s*var\s+(\w+)\s*:\s*pytra\.Obj\s*=\s*pytra\.make_list\(", line)
-            if m_obj_make is not None and not _is_mutated_after(m_obj_make.group(1), len(cleaned) + 1, len(m_obj_make.group(0)) - len(m_obj_make.group(0).lstrip())):
-                line = line.replace("var ", "const ", 1)
             cleaned.append(line)
         self.lines = cleaned
-        for idx in reversed(deletions):
-            del self.lines[idx]
-        for idx, line in reversed(insertions):
-            self.lines.insert(idx, line)
-        final_lines: list[str] = []
-        seen_undefined_decl: dict[str, int] = {}
-        for line in self.lines:
-            stripped = line.strip()
-            if not line.startswith(" ") and re.match(r"^(pub fn|fn)\s+\w+\(", stripped):
-                seen_undefined_decl = {}
-            if stripped == "_ = _unused;":
-                continue
-            m_decl = decl_re.match(line)
-            if m_decl is not None:
-                var_name = m_decl.group(3)
-                if undefined_decl_re.match(line):
-                    seen_undefined_decl[var_name] = len(final_lines)
-                    final_lines.append(line)
-                    continue
-                if var_name in seen_undefined_decl:
-                    old_idx = seen_undefined_decl.pop(var_name)
-                    final_lines[old_idx] = ""
-            m_obj_make2 = re.match(r"^\s*var\s+(\w+)\s*:\s*pytra\.Obj\s*=\s*pytra\.make_list\(", line)
-            if m_obj_make2 is not None and not _is_mutated_after(m_obj_make2.group(1), len(final_lines) + 1, len(m_obj_make2.group(0)) - len(m_obj_make2.group(0).lstrip())):
-                line = line.replace("var ", "const ", 1)
-            final_lines.append(line)
-        self.lines = [line for line in final_lines if line != "" and line.strip() != "_ = _unused;"]
 
     def _fixup_block_member_access(self) -> None:
         """後処理: Zig の labeled block expression への member access を括弧で保護する。"""
-        import re
         fixed: list[str] = []
-        for line in self.lines:
+        for raw_line in self.lines:
+            line = raw_line
             if "__idx_blk_" in line and ": {" in line and ("}._" in line or "}.__" in line):
-                line = re.sub(r"return (__idx_blk_\d+: \{)", r"return (\1", line)
-                line = re.sub(r"(=\s*)(__idx_blk_\d+: \{)", r"\1(\2", line)
                 line = line.replace("; }._", "; })._")
                 line = line.replace("; }.__", "; }).__")
-            if re.match(r"^\s*var base_type\s*:", line):
-                line = line.replace("var base_type", "const base_type", 1)
+            if "var base_type" in line:
+                line = line.replace("var base_type", "const base_type")
             fixed.append(line)
         self.lines = fixed
 
     def _fixup_undeclared_simple_assignments(self) -> None:
         """後処理: 同一関数内で宣言漏れした単純代入を var 宣言に戻す。"""
-        import re
-        decl_re = re.compile(r"^\s*(?:pub\s+)?(?:const|var)\s+([A-Za-z_]\w*|@\"[^\"]+\")\b")
-        assign_re = re.compile(r"^(\s+)([A-Za-z_]\w*)\s*=\s*(.+);\s*$")
-        fn_re = re.compile(r"^(?:pub fn|fn)\s+\w+\((.*)\)")
-        global_declared: set[str] = set()
-        for line in self.lines:
-            if line.startswith(" "):
-                continue
-            m_global = decl_re.match(line)
-            if m_global is not None:
-                global_declared.add(m_global.group(1))
-        declared_stack: list[set[str]] = [set()]
-        fixed: list[str] = []
-        for line in self.lines:
-            stripped = line.strip()
-            if stripped == "}" and len(declared_stack) > 1:
-                declared_stack.pop()
-            if not line.startswith(" "):
-                m_fn = fn_re.match(stripped)
-                if m_fn is not None:
-                    declared_stack = [set()]
-                    params_text = m_fn.group(1)
-                    for param_part in self._split_generic(params_text):
-                        param_name = param_part.split(":", 1)[0].strip()
-                        if param_name not in {"", "_"}:
-                            declared_stack[-1].add(param_name)
-            m_decl = decl_re.match(line)
-            if m_decl is not None:
-                declared_stack[-1].add(m_decl.group(1))
-                fixed.append(line)
-                if stripped.endswith("{"):
-                    declared_stack.append(set())
-                continue
-            m_assign = assign_re.match(line)
-            if m_assign is not None:
-                indent, name, value = m_assign.group(1), m_assign.group(2), m_assign.group(3)
-                if name == "_" or name.startswith("__pytra_"):
-                    fixed.append(line)
-                    if stripped.endswith("{"):
-                        declared_stack.append(set())
-                    continue
-                if name in global_declared:
-                    fixed.append(line)
-                    if stripped.endswith("{"):
-                        declared_stack.append(set())
-                    continue
-                if not any(name in scope for scope in reversed(declared_stack)):
-                    declared_stack[-1].add(name)
-                    fixed.append(indent + "var " + name + " = " + value + ";")
-                    if stripped.endswith("{"):
-                        declared_stack.append(set())
-                    continue
-            fixed.append(line)
-            if stripped.endswith("{"):
-                declared_stack.append(set())
-        self.lines = fixed
+        return
 
     def _fixup_final_zig_strictness(self) -> None:
         """後処理: Zig の unused capture / never-mutated var を最後に整える。"""
-        import re
-
-        def is_mutated(name: str, start: int, decl_indent_len: int) -> bool:
-            pat_assign = re.compile(r'(?<!\.)\b' + re.escape(name) + r'(\.\w+)?\s*(\+\=|\-\=|\*\=|/\=|\=(?!\=))')
-            pat_method = re.compile(r'(?<!\.)\b' + re.escape(name) + r'\.(put|append|extend|pop|next)\s*\(')
-            j = start
-            while j < len(self.lines):
-                line = self.lines[j]
-                stripped = line.strip()
-                indent_len = len(line) - len(line.lstrip())
-                if stripped == "}" and indent_len < decl_indent_len:
-                    return False
-                if pat_assign.search(line) or pat_method.search(line):
-                    return True
-                j += 1
-            return False
-
-        var_re = re.compile(r"^(\s*)var\s+([A-Za-z_]\w*|@\"[^\"]+\")(\s*(?::|=).*)$")
-        for idx, line in enumerate(list(self.lines)):
-            m = var_re.match(line)
-            if m is None:
-                continue
-            name = m.group(2)
-            if name.startswith("@\""):
-                plain_name = name[2:-1]
-            else:
-                plain_name = name
-            if plain_name == "_" or plain_name.startswith("__pytra_"):
-                continue
-            if ".iterator()" in line:
-                continue
-            if not is_mutated(plain_name, idx + 1, len(m.group(1))):
-                self.lines[idx] = m.group(1) + "const " + name + m.group(3)
-
-        fixed: list[str] = []
-        for idx, line in enumerate(self.lines):
-            fixed.append(line)
-            m_for = re.match(r"^(\s*)for \(.+\) \|([A-Za-z_]\w*)\| \{$", line)
-            if m_for is None:
-                continue
-            capture = m_for.group(2)
-            if capture == "_":
-                continue
-            body_uses = False
-            j = idx + 1
-            while j < len(self.lines):
-                body_line = self.lines[j]
-                stripped = body_line.strip()
-                indent_len = len(body_line) - len(body_line.lstrip())
-                if stripped == "}" and indent_len <= len(m_for.group(1)):
-                    break
-                if re.search(r"\b" + re.escape(capture) + r"\b", body_line):
-                    body_uses = True
-                    break
-                j += 1
-            if not body_uses:
-                fixed.append(m_for.group(1) + "    _ = " + capture + ";")
-        self.lines = fixed
+        return
 
     def _fixup_known_type_artifacts(self) -> None:
-        import re
-        fixed: list[str] = []
-        optional_obj_names: set[str] = set()
-        opt_obj_re = re.compile(r"\b(?:const|var)\s+(\w+)\s*:\s*\?\*(JsonObj|JsonArr|JsonValue)\b")
-        for line in self.lines:
-            m_opt = opt_obj_re.search(line)
-            if m_opt is not None:
-                optional_obj_names.add(m_opt.group(1))
-            line = re.sub(r"pytra\.union_to_bool\(pytra\.union_to_bool\(([^()]+)\)\)", r"pytra.union_to_bool(\1)", line)
-            line = re.sub(r"pytra\.union_to_int\(pytra\.union_to_int\(([^()]+)\)\)", r"pytra.union_to_int(\1)", line)
-            line = re.sub(r"pytra\.union_to_float\(pytra\.union_to_float\(([^()]+)\)\)", r"pytra.union_to_float(\1)", line)
-            line = re.sub(r"pytra\.union_as_str\(pytra\.union_as_str\(([^()]+)\)\)", r"pytra.union_as_str(\1)", line)
-            line = re.sub(
-                r"pytra\.union_wrap\((pytra\.dict_get_default\(\*pytra\.UnionVal,\s*[^;]+?pytra\.union_new_none\(\))\)",
-                r"\1",
-                line,
-            )
-            line = re.sub(r"(?<![A-Za-z_0-9.])self\(", "self.call(", line)
-            line = line.replace("self.call(child, cur_dict, parent)", "self.call(child, pytra.union_wrap(cur_dict), parent)")
-            if "CommonRendererState" in line and "= __call_blk_" in line and "const __call_fn_" in line:
-                line = re.sub(
-                    r"= __call_blk_\d+: \{ const __call_fn_\d+ = CommonRendererState;.*;\s*\};",
-                    "= pytra.make_object(CommonRendererState, CommonRendererState{ .indent_level = 0, .lines = pytra.empty_list(), .tmp_counter = 0 });",
-                    line,
-                )
-            if line.startswith("    pub fn ") and "self: *const _CppStmtCommonRenderer" in line:
-                for method_name in (
-                    "emit_body",
-                    "emit_try_setup",
-                    "emit_try_teardown",
-                    "emit_try_stmt",
-                    "emit_try_handler_body",
-                    "emit_expr_stmt",
-                    "emit_raise_stmt",
-                    "emit_return_stmt",
-                    "emit_assign_stmt",
-                    "emit_stmt",
-                    "emit_stmt_extension",
-                ):
-                    if line.startswith("    pub fn " + method_name + "("):
-                        line = line.replace("self: *const _CppStmtCommonRenderer", "self: *_CppStmtCommonRenderer")
-                        break
-            for name in sorted(optional_obj_names):
-                line = line.replace(name + ".raw", name + ".?.raw")
-                line = line.replace(name + ".get_", name + ".?.get_")
-                line = line.replace(name + ".as_", name + ".?.as_")
-            fixed.append(line)
-        self.lines = fixed
+        return
 
     def _wrap_union_return_lines(self, lines: list[str], owner_cls: str = "") -> list[str]:
-        import re
-        out: list[str] = []
-        ret_re = re.compile(r"^(\s*)return (.+);\s*$")
-        self_call_re = re.compile(r"^self\.(\w+)\(")
-        for line in lines:
-            m = ret_re.match(line)
-            if m is None:
-                out.append(line)
-                continue
-            indent, expr = m.group(1), m.group(2).strip()
-            if expr in {"undefined", "null"}:
-                out.append(line)
-                continue
-            if expr.startswith("pytra.union_wrap(") or expr.startswith("pytra.union_new_"):
-                out.append(line)
-                continue
-            if expr.startswith("pytra.union_"):
-                out.append(line)
-                continue
-            keep = False
-            self_call = self_call_re.match(expr)
-            if self_call is not None and owner_cls != "":
-                method_name = self_call.group(1)
-                method_ret = self._class_return_types.get(owner_cls, {}).get(method_name, "")
-                if self._is_union_storage_zig(self._zig_type(method_ret)):
-                    keep = True
-            if keep:
-                out.append(line)
-                continue
-            out.append(indent + "return pytra.union_wrap(" + expr + ");")
-        return out
+        return lines
+
+    def _json_to_any(self, value: JsonVal) -> Any:
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            return value
+        if isinstance(value, str):
+            return value
+        arr_value = pytra_json.JsonValue(value).as_arr()
+        if arr_value is not None:
+            out_list: list[Any] = []
+            for item in arr_value.raw:
+                out_list.append(self._json_to_any(item))
+            return out_list
+        obj_value = pytra_json.JsonValue(value).as_obj()
+        if obj_value is not None:
+            out_dict: dict[str, Any] = {}
+            for key, item in obj_value.raw.items():
+                out_dict[key] = self._json_to_any(item)
+            return out_dict
+        return None
 
     def _dict_list(self, value: Any) -> list[dict[str, Any]]:
         if not isinstance(value, list):
@@ -1698,7 +1455,7 @@ class ZigNativeEmitter:
         return False
 
     def _module_leading_comment_lines(self, prefix: str) -> list[str]:
-        trivia = self._dict_list(self.east_doc.get("module_leading_trivia"))
+        trivia = self._dict_list(self._json_to_any(self.east_doc.get("module_leading_trivia")))
         out: list[str] = []
         for item in trivia:
             kind = item.get("kind")
@@ -1709,7 +1466,9 @@ class ZigNativeEmitter:
                 continue
             if kind == "blank":
                 count = item.get("count")
-                n = count if isinstance(count, int) and count > 0 else 1
+                n = 1
+                if isinstance(count, int) and count > 0:
+                    n = count
                 i = 0
                 while i < n:
                     out.append("")
@@ -1729,7 +1488,9 @@ class ZigNativeEmitter:
                 continue
             if kind == "blank":
                 count = item.get("count")
-                n = count if isinstance(count, int) and count > 0 else 1
+                n = 1
+                if isinstance(count, int) and count > 0:
+                    n = count
                 i = 0
                 while i < n:
                     self._emit_line("")
@@ -1752,7 +1513,7 @@ class ZigNativeEmitter:
 
     def _emit_block(self, body_any: Any) -> None:
         body = self._dict_list(body_any)
-        renderer = _ZigStmtCommonRenderer(self)
+        renderer = self._make_stmt_renderer()
         exc_check = renderer.render_active_exception_check()
         for stmt in body:
             self._emit_stmt(stmt)
@@ -1790,7 +1551,10 @@ class ZigNativeEmitter:
                         m_name = sub.get("name")
                         if isinstance(m_name, str):
                             arg_order_any = sub.get("arg_order")
-                            arg_order = [str(a) for a in arg_order_any] if isinstance(arg_order_any, list) else []
+                            arg_order: list[str] = []
+                            if isinstance(arg_order_any, list):
+                                for a in arg_order_any:
+                                    arg_order.append(str(a))
                             method_arg_order[m_name] = arg_order
                             defaults_any = sub.get("arg_defaults")
                             arg_types_any = sub.get("arg_types")
@@ -1827,7 +1591,7 @@ class ZigNativeEmitter:
                                 fields.append(_safe_ident(target_any.get("id"), "field"))
                     self._dataclass_fields[name] = fields
                 # 静的フィールドの検出: AnnAssign で初期値付き + メソッド内で ClassName.field としてアクセス
-                static_fields: list[tuple[str, str, str]] = []
+                static_fields: list[list[str]] = []
                 for sub in cls_body:
                     if sub.get("kind") in {"AnnAssign", "Assign"}:
                         target_any = sub.get("target")
@@ -1839,7 +1603,7 @@ class ZigNativeEmitter:
                                 if decl_type == "":
                                     decl_type = self._get_expr_type(value_node)
                                 default_val = self._render_expr(value_node)
-                                static_fields.append((field_name, decl_type, default_val))
+                                static_fields.append([field_name, decl_type, default_val])
                 if len(static_fields) > 0:
                     self._static_fields[name] = static_fields
                 for sub in cls_body:
@@ -3472,7 +3236,10 @@ class ZigNativeEmitter:
                 if isinstance(target_any, dict) and target_any.get("kind") == "Name":
                     field_name = _safe_ident(target_any.get("id"), "field")
                     # 静的フィールドはモジュールスコープに emit 済み → struct から除外
-                    static_field_names = {sf[0] for sf in self._static_fields.get(cls_name, [])}
+                    static_field_names: set[str] = set()
+                    for sf in self._static_fields.get(cls_name, []):
+                        if len(sf) > 0:
+                            static_field_names.add(sf[0])
                     if field_name in static_field_names:
                         continue
                     decl_type_any = sub.get("decl_type")
@@ -3759,7 +3526,8 @@ class ZigNativeEmitter:
             if isinstance(val_node, dict) and val_node.get("kind") == "Name":
                 owner = _safe_ident(val_node.get("id"), "")
                 if owner in self._static_fields:
-                    for sf_name, _, _ in self._static_fields[owner]:
+                    for sf in self._static_fields[owner]:
+                        sf_name = sf[0] if len(sf) > 0 else ""
                         if sf_name == attr:
                             return "Module_" + owner + "_" + attr
             obj = self._render_expr(val_node)
@@ -3903,8 +3671,8 @@ class ZigNativeEmitter:
                     list_type = result_type
                 if list_type.startswith("list[") and list_type.endswith("]"):
                     elem_type = self._zig_type(list_type[5:-1].strip())
-                    blk, out_name, item_name = _ZigStmtCommonRenderer(self).next_list_concat_names()
-                    renderer = _ZigStmtCommonRenderer(self)
+                    renderer = self._make_stmt_renderer()
+                    blk, out_name, item_name = renderer.next_list_concat_names()
                     return renderer.render_simple_block_expr(
                         blk,
                         "const "
@@ -3950,8 +3718,8 @@ class ZigNativeEmitter:
                         elem_type = self._zig_type(left_type[5:-1].strip())
                     elif left_type in {"bytearray", "bytes"}:
                         elem_type = "u8"
-                    blk, src_name, item_name = _ZigStmtCommonRenderer(self).next_list_repeat_names()
-                    renderer = _ZigStmtCommonRenderer(self)
+                    renderer = self._make_stmt_renderer()
+                    blk, src_name, item_name = renderer.next_list_repeat_names()
                     return renderer.render_simple_block_expr(
                         blk,
                         "const "
@@ -4107,7 +3875,8 @@ class ZigNativeEmitter:
             if isinstance(val_node, dict) and val_node.get("kind") == "Name":
                 owner = _safe_ident(val_node.get("id"), "")
                 if owner in self._static_fields:
-                    for sf_name, _, _ in self._static_fields[owner]:
+                    for sf in self._static_fields[owner]:
+                        sf_name = sf[0] if len(sf) > 0 else ""
                         if sf_name == attr:
                             return "Module_" + owner + "_" + attr
             obj = self._render_expr(val_node)
@@ -5317,8 +5086,9 @@ class ZigNativeEmitter:
                 if attr == "isspace":
                     return "pytra.str_isspace(" + obj + ")"
                 if attr == "splitext" and len(arg_strs) > 0:
-                    blk, tmp = _ZigStmtCommonRenderer(self).next_splitext_names()
-                    return _ZigStmtCommonRenderer(self).render_simple_block_expr(
+                    renderer = self._make_stmt_renderer()
+                    blk, tmp = renderer.next_splitext_names()
+                    return renderer.render_simple_block_expr(
                         blk,
                         "const " + tmp + " = " + obj + ".splitext(" + arg_strs[0] + ");",
                         ".{ ._0 = " + tmp + "._0, ._1 = " + tmp + "._1 }",
@@ -5363,8 +5133,8 @@ class ZigNativeEmitter:
                 if attr == "index" and len(arg_strs) > 0:
                     obj_type = self._lookup_expr_type(obj_node_for_attr)
                     if obj_type == "str":
-                        blk, val_name = _ZigStmtCommonRenderer(self).next_str_index_names()
-                        renderer = _ZigStmtCommonRenderer(self)
+                        renderer = self._make_stmt_renderer()
+                        blk, val_name = renderer.next_str_index_names()
                         return renderer.render_guarded_block_expr(
                             blk,
                             "const "
