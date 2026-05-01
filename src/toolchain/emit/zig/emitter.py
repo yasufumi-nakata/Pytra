@@ -6671,7 +6671,8 @@ class ZigNativeEmitter:
         """EAST3 式ノードの resolved_type を正規化して返す。"""
         if not isinstance(expr_any, dict):
             return ""
-        resolved = expr_any.get("resolved_type")
+        ed: dict[str, Any] = expr_any
+        resolved = ed.get("resolved_type")
         if isinstance(resolved, str) and resolved.strip() != "" and resolved.strip() != "unknown":
             return self._normalize_type(resolved.strip())
         return ""
