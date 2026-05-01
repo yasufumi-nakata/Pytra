@@ -853,13 +853,21 @@ class ZigNativeEmitter:
         """body 内で指定した名前が Name ノードの id として参照されているか判定する。"""
         if not isinstance(body_any, list):
             return False
-        return self._node_uses_name(body_any, name)
+        body = self._dict_list(body_any)
+        for stmt in body:
+            if self._node_uses_name(stmt, name):
+                return True
+        return False
 
     def _body_uses_name_runtime(self, body_any: Any, name: str) -> bool:
         """body 内で実行時コードに残る名前参照だけを判定する。"""
         if not isinstance(body_any, list):
             return False
-        return self._node_uses_name_runtime(body_any, name)
+        body = self._dict_list(body_any)
+        for stmt in body:
+            if self._node_uses_name_runtime(stmt, name):
+                return True
+        return False
 
     def _node_uses_name(self, node: Any, name: str) -> bool:
         """AST ノードツリー内で Name.id == name の参照を検索する。"""
