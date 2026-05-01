@@ -1096,30 +1096,32 @@ class ZigNativeEmitter:
         return names
 
     def _expr_is_float_like(self, node: Any) -> bool:
-        if not isinstance(node, dict):
+        node_dict = self._any_dict_to_any(node)
+        if len(node_dict) == 0:
             return False
-        node_type = self._lookup_expr_type(node) or self._get_expr_type(node)
+        node_type = self._lookup_expr_type(node_dict) or self._get_expr_type(node_dict)
         if node_type in {"float", "float32", "float64"}:
             return True
-        kind = str(node.get("kind") or "")
+        kind = self._dict_get_str(node_dict, "kind", "")
         if kind == "Constant":
-            value = node.get("value")
+            value = node_dict.get("value")
             return isinstance(value, float)
         if kind == "BinOp":
-            if str(node.get("op") or "") == "Div":
+            if str(node_dict.get("op") or "") == "Div":
                 return True
-            return self._expr_is_float_like(node.get("left")) or self._expr_is_float_like(node.get("right"))
+            return self._expr_is_float_like(self._any_dict_to_any(node_dict.get("left"))) or self._expr_is_float_like(self._any_dict_to_any(node_dict.get("right")))
         if kind == "UnaryOp":
-            return self._expr_is_float_like(node.get("operand"))
+            return self._expr_is_float_like(self._any_dict_to_any(node_dict.get("operand")))
         if kind in {"Call", "Attribute", "IfExp"}:
             expr_keys = ["func", "value", "test", "body", "orelse"]
             for key in expr_keys:
-                if self._expr_is_float_like(node.get(key)):
+                if self._expr_is_float_like(self._any_dict_to_any(node_dict.get(key))):
                     return True
-            args = node.get("args")
-            if isinstance(args, list):
-                for arg in args:
-                    if self._expr_is_float_like(arg):
+            args = node_dict.get("args")
+            args_list = self._any_list_to_any(args)
+            if len(args_list) > 0:
+                for arg in args_list:
+                    if self._expr_is_float_like(self._any_dict_to_any(arg)):
                         return True
         return False
 
@@ -1554,8 +1556,8 @@ class ZigNativeEmitter:
         out: list[dict[str, Any]] = []
         value_list: list[Any] = value
         for item in value_list:
-            if isinstance(item, dict):
-                item_dict = self._any_dict_to_any(item)
+            item_dict = self._any_dict_to_any(item)
+            if len(item_dict) > 0:
                 out.append(item_dict)
         return out
 
@@ -2106,7 +2108,11 @@ class ZigNativeEmitter:
             self._emit_closure_def(stmt)
             return
         if kind == "Return":
-            val = self._render_expr(stmt.get("value"))
+            return_value_node = self._any_dict_to_any(stmt.get("value"))
+            if len(return_value_node) > 0:
+                val = self._render_expr(return_value_node)
+            else:
+                val = self._render_expr(stmt.get("value"))
             if val == "null":
                 ret_type = self._return_type_stack[-1] if len(self._return_type_stack) > 0 else "void"
                 if ret_type.startswith("?"):
@@ -2118,19 +2124,18 @@ class ZigNativeEmitter:
             else:
                 ret_type = self._return_type_stack[-1] if len(self._return_type_stack) > 0 else ""
                 orig_val = val
-                value_node = stmt.get("value")
-                value_type = self._lookup_expr_type(value_node) if isinstance(value_node, dict) else ""
+                value_type = self._lookup_expr_type(return_value_node) if len(return_value_node) > 0 else ""
                 stripped_value = self._strip_optional_type(value_type) if value_type != "" else ""
-                if isinstance(value_node, dict) and value_node.get("kind") == "Name":
-                    name_type = self._current_type_map().get(_safe_ident(value_node.get("id"), "value"), "")
+                if len(return_value_node) > 0 and return_value_node.get("kind") == "Name":
+                    name_type = self._current_type_map().get(_safe_ident(return_value_node.get("id"), "value"), "")
                     stripped_name = self._strip_optional_type(name_type)
                     if stripped_name != "" and self._zig_type(stripped_name) == ret_type:
                         val = val + ".?"
                 if stripped_value != "" and self._zig_type(stripped_value) == ret_type:
                     val = val + ".?"
-                val = self._coerce_value_to_zig_type(ret_type, value_node, val)
-                if self._is_union_storage_zig(ret_type) and val == orig_val and isinstance(value_node, dict):
-                    value_zig = self._zig_type(value_type) if value_type != "" else self._infer_value_zig_type(value_node)
+                val = self._coerce_value_to_zig_type(ret_type, return_value_node, val)
+                if self._is_union_storage_zig(ret_type) and val == orig_val and len(return_value_node) > 0:
+                    value_zig = self._zig_type(value_type) if value_type != "" else self._infer_value_zig_type(return_value_node)
                     if value_zig != "" and not self._is_union_storage_zig(value_zig):
                         val = "pytra.union_wrap(" + val + ")"
                 self._emit_line("return " + val + ";")
@@ -3896,11 +3901,12 @@ class ZigNativeEmitter:
         if not isinstance(expr_any, dict):
             return str(expr_any)
         ed: dict[str, Any] = expr_any
-        kind = ed.get("kind")
+        kind = self._dict_get_str(ed, "kind", "")
         if kind == "Constant":
             return self._render_constant(ed)
         if kind == "Name":
-            name = _safe_ident(ed.get("id"), "value")
+            raw_name_text = self._dict_get_str(ed, "id", "")
+            name = raw_name_text if raw_name_text != "" else "value"
             if name == "True":
                 return "true"
             if name == "False":
@@ -3941,22 +3947,24 @@ class ZigNativeEmitter:
                     return "pytra.union_to_bool(" + name + ")"
             return name
         if kind == "BinOp":
-            left = self._render_expr(ed.get("left"))
-            right = self._render_expr(ed.get("right"))
+            binop_left_node = self._any_dict_to_any(ed.get("left"))
+            binop_right_node = self._any_dict_to_any(ed.get("right"))
+            left = self._render_expr(binop_left_node)
+            right = self._render_expr(binop_right_node)
             op = str(ed.get("op"))
             # BinOp の子は常に括弧で囲む（浮動小数点の演算順序を Python と完全一致させる）
-            left_type = self._lookup_expr_type(ed.get("left"))
-            right_type = self._lookup_expr_type(ed.get("right"))
+            left_type = self._lookup_expr_type(binop_left_node)
+            right_type = self._lookup_expr_type(binop_right_node)
             # Fallback: check resolved_type if _lookup_expr_type returns empty
             if left_type == "":
-                left_type = self._get_expr_type(ed.get("left"))
+                left_type = self._get_expr_type(binop_left_node)
             if right_type == "":
-                right_type = self._get_expr_type(ed.get("right"))
+                right_type = self._get_expr_type(binop_right_node)
             # int/float 混合演算: int 側を @floatFromInt でラップ
             _INT_TYPES = {"int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"}
             _FLOAT_TYPES = {"float64", "float32", "float"}
-            left_float_like = self._expr_is_float_like(ed.get("left"))
-            right_float_like = self._expr_is_float_like(ed.get("right"))
+            left_float_like = self._expr_is_float_like(binop_left_node)
+            right_float_like = self._expr_is_float_like(binop_right_node)
             if op not in {"LShift", "RShift", "BitOr", "BitXor", "BitAnd", "FloorDiv"}:
                 if left_type in _INT_TYPES and (right_type in _FLOAT_TYPES or right_float_like):
                     if not left_float_like:
@@ -3968,6 +3976,10 @@ class ZigNativeEmitter:
             if op == "Add":
                 if left_type == "str" or right_type == "str":
                     return "pytra.str_concat(" + left + ", " + right + ")"
+                if left_type in _INT_TYPES and right_type in _INT_TYPES:
+                    return "(" + left + " + " + right + ")"
+                if (left_type in _FLOAT_TYPES or left_float_like) or (right_type in _FLOAT_TYPES or right_float_like):
+                    return "(" + left + " + " + right + ")"
                 list_type = ""
                 result_type = self._get_expr_type(ed)
                 if left_type.startswith("list[") and right_type.startswith("list["):
@@ -4352,42 +4364,54 @@ class ZigNativeEmitter:
                 )
             return obj + "[@intCast(" + idx + ")]"
         if kind == "List":
-            elts_any = ed.get("elts")
-            if not isinstance(elts_any, list):
-                elts_any = ed.get("elements")
-            elts = elts_any if isinstance(elts_any, list) else []
-            items = [self._render_expr(e) for e in elts]
+            list_elts_any = ed.get("elts")
+            if not isinstance(list_elts_any, list):
+                list_elts_any = ed.get("elements")
+            list_elts = self._any_list_to_any(list_elts_any)
+            list_items: list[str] = []
+            for list_elt in list_elts:
+                list_elt_node = self._any_dict_to_any(list_elt)
+                if len(list_elt_node) > 0:
+                    list_items.append(self._render_expr(list_elt_node))
+                else:
+                    list_items.append(self._render_expr(list_elt))
             resolved = self._get_expr_type(ed)
             if resolved.startswith("list["):
                 inner = resolved[5:-1].strip() if resolved.endswith("]") else ""
                 zig_elem = self._zig_type(inner) if inner != "" else "i64"
                 if self._is_union_storage_zig(zig_elem):
-                    items = ["pytra.union_wrap(" + item + ")" for item in items]
+                    list_items = ["pytra.union_wrap(" + item + ")" for item in list_items]
                 # タプル型要素の list はブロック式で make_list + append に展開
                 if inner.startswith("tuple["):
-                    if len(items) == 0:
+                    if len(list_items) == 0:
                         return "pytra.make_list(" + zig_elem + ")"
                     blk_label, list_name = self._make_stmt_renderer().next_tuple_list_literal_names()
                     parts: list[str] = []
                     parts.append("const " + list_name + " = pytra.make_list(" + zig_elem + ");")
-                    for item in items:
+                    for item in list_items:
                         parts.append(" pytra.list_append(" + list_name + ", " + zig_elem + ", " + item + ");")
                     return self._make_stmt_renderer().render_simple_block_expr(blk_label, "".join(parts), list_name)
-                return "pytra.list_from(" + zig_elem + ", &[_]" + zig_elem + "{ " + ", ".join(items) + " })"
-            if len(items) == 0:
+                return "pytra.list_from(" + zig_elem + ", &[_]" + zig_elem + "{ " + ", ".join(list_items) + " })"
+            if len(list_items) == 0:
                 return "pytra.list_from(i64, &[_]i64{})"
-            return "&.{ " + ", ".join(items) + " }"
+            return "&.{ " + ", ".join(list_items) + " }"
         if kind == "Tuple":
-            elts_any = ed.get("elts")
-            if not isinstance(elts_any, list):
-                elts_any = ed.get("elements")
-            elts = elts_any if isinstance(elts_any, list) else []
-            items = [self._render_expr(e) for e in elts]
+            tuple_elts_any = ed.get("elts")
+            if not isinstance(tuple_elts_any, list):
+                tuple_elts_any = ed.get("elements")
+            tuple_elts = self._any_list_to_any(tuple_elts_any)
+            tuple_items: list[str] = []
+            for tuple_elt in tuple_elts:
+                tuple_elt_node = self._any_dict_to_any(tuple_elt)
+                if len(tuple_elt_node) > 0:
+                    tuple_items.append(self._render_expr(tuple_elt_node))
+                else:
+                    tuple_items.append(self._render_expr(tuple_elt))
             # 名前付きフィールドの struct リテラルを生成 (._0, ._1, ...)
             field_inits: list[str] = []
             j = 0
-            while j < len(items):
-                field_inits.append("._" + str(j) + " = " + items[j])
+            while j < len(tuple_items):
+                field_inits.append("._" + str(j) + " = " + tuple_items[j])
                 j += 1
             return ".{ " + ", ".join(field_inits) + " }"
         if kind == "Set":
@@ -4869,7 +4893,13 @@ class ZigNativeEmitter:
         func_any = self._any_dict_to_any(func_any_raw)
         args_any = node.get("args")
         args = self._any_list_to_any(args_any)
-        arg_strs = [self._render_expr(a) for a in args]
+        arg_strs: list[str] = []
+        for arg in args:
+            arg_node = self._any_dict_to_any(arg)
+            if len(arg_node) > 0:
+                arg_strs.append(self._render_expr(arg_node))
+            else:
+                arg_strs.append(self._render_expr(arg))
         first_arg: dict[str, Any] = {}
         if len(args) > 0:
             first_arg = self._any_dict_to_any(args[0])
@@ -4905,13 +4935,13 @@ class ZigNativeEmitter:
                 if arg_text == "pytra.to_str(" + exc_name + ")":
                     arg_strs[i] = exc_name + ".msg"
             i += 1
-        if isinstance(func_any, dict):
-            fkind = func_any.get("kind")
+        if len(func_any) > 0:
+            fkind = self._dict_get_str(func_any, "kind", "")
             if fkind == "Attribute":
                 attr_name = _safe_ident(func_any.get("attr"), "")
-                owner_node = func_any.get("value")
+                owner_node = self._any_dict_to_any(func_any.get("value"))
                 owner_name = ""
-                if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
+                if self._dict_get_str(owner_node, "kind", "") == "Name":
                     owner_name = _safe_ident(owner_node.get("id"), "")
                 if owner_name in {"json", "pytra_std_json"} and attr_name == "JsonValue":
                     arg0 = arg_strs[0] if len(arg_strs) > 0 else "null"
