@@ -907,25 +907,21 @@ class ZigNativeEmitter:
 
     def _strip_dead_branches(self, body_any: Any) -> list[dict[str, Any]]:
         """body から明らかな dead branch (if false) だけを除去したリストを返す。"""
-        if not isinstance(body_any, list):
-            return []
+        body = self._dict_list(body_any)
         result: list[dict[str, Any]] = []
-        for stmt in body_any:
-            if not isinstance(stmt, dict):
-                continue
+        for stmt in body:
             if stmt.get("kind") == "If":
                 test = stmt.get("test")
-                if isinstance(test, dict):
-                    test_kind = test.get("kind")
-                    test_value = test.get("value")
+                test_dict = self._any_dict_to_any(test)
+                if len(test_dict) > 0:
+                    test_kind = self._dict_get_str(test_dict, "kind", "")
+                    test_value = test_dict.get("value")
                     is_false_const = False
                     if test_kind == "Constant" and isinstance(test_value, bool):
                         is_false_const = not test_value
                     if is_false_const:
                         # Dead branch: skip body, include only orelse
-                        orelse = stmt.get("orelse")
-                        if isinstance(orelse, list):
-                            result.extend(self._strip_dead_branches(orelse))
+                        result.extend(self._strip_dead_branches(stmt.get("orelse")))
                         continue
             result.append(stmt)
         return result
@@ -934,12 +930,13 @@ class ZigNativeEmitter:
         """body 内で self のフィールドに代入があるか判定する。"""
         body = self._dict_list(body_any)
         for stmt in body:
-            kind = stmt.get("kind")
+            kind = self._dict_get_str(stmt, "kind", "")
             if kind in {"Assign", "AnnAssign", "AugAssign"}:
                 target = stmt.get("target")
-                if isinstance(target, dict) and target.get("kind") == "Attribute":
-                    val = target.get("value")
-                    if isinstance(val, dict) and val.get("kind") == "Name" and val.get("id") == "self":
+                target_dict = self._any_dict_to_any(target)
+                if self._dict_get_str(target_dict, "kind", "") == "Attribute":
+                    val_dict = self._any_dict_to_any(target_dict.get("value"))
+                    if self._dict_get_str(val_dict, "kind", "") == "Name" and self._dict_get_str(val_dict, "id", "") == "self":
                         return True
         return False
 
@@ -1159,7 +1156,8 @@ class ZigNativeEmitter:
         if len(self._decl_line_stack) > 0:
             line_idx = self._decl_line_stack[-1].get(name)
             if isinstance(line_idx, int):
-                candidates.append(line_idx)
+                line_idx_int: int = cast(int, line_idx)
+                candidates.append(line_idx_int)
         i = len(self.lines) - 1
         while i >= 0:
             candidates.append(i)
@@ -1217,13 +1215,15 @@ class ZigNativeEmitter:
             return
         value_node = stmt.get("value")
         if _starts_with_upper(target_name):
-            if isinstance(value_node, dict) and value_node.get("kind") in {"Name", "Subscript"}:
+            value_node_dict = self._any_dict_to_any(value_node)
+            if self._dict_get_str(value_node_dict, "kind", "") in {"Name", "Subscript"}:
                 return
         # extern() 変数 → __native 委譲（spec-emitter-guide §4）
         if isinstance(value_node, dict):
             if value_node.get("kind") == "Call":
                 vfunc = value_node.get("func")
-                if isinstance(vfunc, dict) and vfunc.get("id") in {"extern", "@\"extern\""}:
+                vfunc_dict = self._any_dict_to_any(vfunc)
+                if self._dict_get_str(vfunc_dict, "id", "") in {"extern", "@\"extern\""}:
                     self._ensure_native_import()
                     decl_type = self._infer_decl_type(stmt)
                     zig_ty = self._zig_type(decl_type)
@@ -1233,7 +1233,8 @@ class ZigNativeEmitter:
                 unboxed = value_node.get("value")
                 if isinstance(unboxed, dict) and unboxed.get("kind") == "Call":
                     vfunc = unboxed.get("func")
-                    if isinstance(vfunc, dict) and vfunc.get("id") in {"extern", "@\"extern\""}:
+                    vfunc_dict = self._any_dict_to_any(vfunc)
+                    if self._dict_get_str(vfunc_dict, "id", "") in {"extern", "@\"extern\""}:
                         self._ensure_native_import()
                         decl_type = self._infer_decl_type(stmt)
                         zig_ty = self._zig_type(decl_type)
@@ -1515,7 +1516,7 @@ class ZigNativeEmitter:
         out: list[dict[str, Any]] = []
         for item in value:
             if isinstance(item, dict):
-                out.append(item)
+                out.append(self._any_dict_to_any(item))
         return out
 
     def _block_has_return_stmt(self, body_any: Any) -> bool:
