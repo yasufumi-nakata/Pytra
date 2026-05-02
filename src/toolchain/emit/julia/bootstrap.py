@@ -215,7 +215,7 @@ class JuliaBootstrapRewriter:
             class_name = _bs_str(value_any, "id")
             if class_name != "":
                 global_name = self.static_attr_globals.get(class_name + "." + attr_any)
-                if global_name != "":
+                if isinstance(global_name, str) and global_name != "":
                     out_node: dict[str, JsonVal] = {}
                     out_node["kind"] = "Name"
                     out_node["id"] = global_name

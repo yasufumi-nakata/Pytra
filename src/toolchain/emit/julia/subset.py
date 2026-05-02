@@ -205,7 +205,7 @@ def _dataclass_ctor_fields(node: dict[str, JsonVal]) -> list[tuple[str, bool, Js
         if isinstance(value, dict):
             fields.append((name, True, value))
         else:
-            fields.append((name, False, JsonVal()))
+            fields.append((name, False, None))
     return fields
 
 
@@ -443,6 +443,40 @@ def _ident(name: str) -> str:
     if name in _JULIA_RESERVED_NAMES:
         return name + "_py"
     return name
+
+
+def _flat_module_file(module_id: str) -> str:
+    return module_id.replace(".", "_") + ".jl"
+
+
+def _is_type_expr_node(node: JsonVal) -> bool:
+    if not isinstance(node, dict):
+        return False
+    kind = _str(node, "kind")
+    if kind == "Name":
+        return _str(node, "type_object_of") != ""
+    if kind == "Subscript":
+        return _is_type_expr_node(node.get("value"))
+    if kind == "Tuple":
+        for item in _list(node, "elements"):
+            if not _is_type_expr_node(item):
+                return False
+        return True
+    if kind == "Attribute":
+        return _str(node, "type_object_of") != ""
+    return False
+
+
+def _is_dict_type_text(type_text: str) -> bool:
+    stripped = type_text.strip()
+    if stripped.startswith("list[") or stripped.startswith("set[") or stripped.startswith("tuple["):
+        return False
+    if stripped.startswith("dict["):
+        return True
+    for part in stripped.split("|"):
+        if part.strip().startswith("dict["):
+            return True
+    return False
 
 
 def _owner_type_runtime_prefix(owner_type: str) -> str:
@@ -897,6 +931,15 @@ class JuliaSubsetRenderer:
             return
         self._emit(_ident(local_name) + " = " + expr)
 
+    def _emit_flat_module_include(self, module_id: str) -> None:
+        if module_id == "" or should_skip_module(module_id, self.mapping):
+            return
+        include_file = _flat_module_file(module_id)
+        if include_file in self.emitted_native_files:
+            return
+        self.emitted_native_files.add(include_file)
+        self._emit("include(joinpath(@__DIR__, " + _quote_string(include_file) + "))")
+
     def _resolve_subset_runtime_call(self, runtime_call: str, adapter_kind: str, builtin_name: str) -> str:
         mapped_runtime = ""
         if runtime_call in self.mapping.calls:
@@ -1026,6 +1069,8 @@ class JuliaSubsetRenderer:
             return "collect(values(" + args[0] + "))"
         if mapped == "__DICT_SETDEFAULT__" and len(args) == 3:
             return "get!(" + args[0] + ", " + args[1] + ", " + args[2] + ")"
+        if mapped == "__JSONARR_GET__" and len(args) == 2:
+            return args[0] + "[__pytra_int(" + args[1] + ") + 1]"
         if mapped == "__SET_ADD__" and len(args) == 2:
             return "push!(" + args[0] + ", " + args[1] + ")"
         if mapped == "__SET_UPDATE__" and len(args) == 2:
@@ -1194,6 +1239,8 @@ class JuliaSubsetRenderer:
             super_call = self._render_super_method_call(owner_type, attr, args)
             if super_call != "":
                 return super_call
+        if owner_name == "Path" and attr == "cwd" and len(args) == 0 and len(keywords) == 0:
+            return "Path(__OsNative.getcwd())"
         if _is_io_owner_type(owner_type):
             if attr == "__enter__" and len(args) == 0:
                 return "__py_io_enter(" + owner + ")"
@@ -1211,6 +1258,16 @@ class JuliaSubsetRenderer:
         mapped_method = self._render_mapped_method_call(node, owner, args)
         if mapped_method != "":
             return mapped_method
+        if attr == "startswith" and len(args) == 1 and len(keywords) == 0:
+            return "startswith(" + owner + ", " + args[0] + ")"
+        if attr == "endswith" and len(args) == 1 and len(keywords) == 0:
+            return "endswith(" + owner + ", " + args[0] + ")"
+        if attr == "strip" and len(args) == 0 and len(keywords) == 0:
+            return "strip(" + owner + ")"
+        if attr == "lstrip" and len(args) == 0 and len(keywords) == 0:
+            return "lstrip(" + owner + ")"
+        if attr == "rstrip" and len(args) == 0 and len(keywords) == 0:
+            return "rstrip(" + owner + ")"
         runtime_call = _str(node, "resolved_runtime_call")
         if runtime_call == "":
             runtime_call = _str(node, "runtime_call")
@@ -1258,6 +1315,26 @@ class JuliaSubsetRenderer:
         use_mapped_runtime: str,
         source_type: str,
     ) -> str:
+        if func == "dict":
+            if len(args) == 0:
+                return "Dict()"
+            return "Dict(" + ", ".join(args) + ")"
+        if func == "list":
+            if len(args) == 0:
+                return "[]"
+            if len(args) == 1:
+                return "collect(" + args[0] + ")"
+            return "collect((" + ", ".join(args) + "))"
+        if func == "set":
+            if len(args) == 0:
+                return "Set()"
+            return "Set(" + ", ".join(args) + ")"
+        if func == "tuple":
+            if len(args) == 0:
+                return "()"
+            if len(args) == 1:
+                return "Tuple(" + args[0] + ")"
+            return "(" + ", ".join(args) + ")"
         if use_mapped_runtime != "":
             mapped_expr = self._render_mapped_runtime_call(
                 use_mapped_runtime,
@@ -1353,12 +1430,7 @@ class JuliaSubsetRenderer:
                 return owner + "[(" + lower_text + " + 1):end]"
             return owner + "[(" + lower_text + " + 1):" + upper_text + "]"
         index = self._render_expr(slice_node)
-        has_dict_lane = owner_type.startswith("dict[")
-        if not has_dict_lane:
-            for part in owner_type.split("|"):
-                if part.strip().startswith("dict["):
-                    has_dict_lane = True
-        if has_dict_lane:
+        if _is_dict_type_text(owner_type):
             return owner + "[" + index + "]"
         if owner_type == "str":
             return "string(" + owner + "[__pytra_idx(__pytra_int(" + index + "), length(" + owner + "))])"
@@ -1447,6 +1519,10 @@ class JuliaSubsetRenderer:
                 right_node = node.get("right")
                 lhs_resolved = _str(left_node, "resolved_type") if isinstance(left_node, dict) else ""
                 rhs_resolved = _str(right_node, "resolved_type") if isinstance(right_node, dict) else ""
+                if lhs_resolved == "str":
+                    return "repeat(" + left + ", " + right + ")"
+                if rhs_resolved == "str":
+                    return "repeat(" + right + ", " + left + ")"
                 if lhs_resolved.startswith("list[") or rhs_resolved.startswith("list["):
                     return "repeat(" + left + ", " + right + ")"
             return "(" + left + " " + _BINOP_TEXT[op] + " " + right + ")"
@@ -1468,6 +1544,16 @@ class JuliaSubsetRenderer:
             left = self._render_expr(node.get("left"))
             comparators = _list(node, "comparators")
             ops = _list(node, "ops")
+            if len(comparators) > 1:
+                rendered_terms: list[str] = []
+                current_left = left
+                for index, comparator in enumerate(comparators):
+                    op_raw = ops[index]
+                    op = op_raw if isinstance(op_raw, str) else _str(op_raw, "kind")
+                    right = self._render_expr(comparator)
+                    rendered_terms.append("(" + current_left + " " + _CMP_TEXT[op] + " " + right + ")")
+                    current_left = right
+                return "(" + " && ".join(rendered_terms) + ")"
             op_raw = ops[0]
             op = op_raw if isinstance(op_raw, str) else _str(op_raw, "kind")
             right = self._render_expr(comparators[0])
@@ -1571,6 +1657,10 @@ class JuliaSubsetRenderer:
                     "value": args0[0],
                     "expected_type_id": args0[1],
                 })
+        if isinstance(func_node, dict) and _str(func_node, "kind") == "Name" and _str(func_node, "id") == "cast":
+            cast_args = _list(node, "args")
+            if len(cast_args) >= 2:
+                return self._render_expr(cast_args[1])
         func = self._render_expr(func_node)
         args: list[str] = []
         for arg in _list(node, "args"):
@@ -1672,6 +1762,9 @@ class JuliaSubsetRenderer:
             owner = self._render_expr(owner_node)
             owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             index = self._render_expr(target.get("slice"))
+            if _is_dict_type_text(owner_type):
+                self._emit(owner + "[" + index + "] = " + value_expr)
+                return
             index_expr = "__pytra_int(" + index + ")"
             if owner_type == "bytearray":
                 self._emit(owner + "[__pytra_idx(" + index_expr + ", length(" + owner + "))] = " + value_expr)
@@ -1731,6 +1824,8 @@ class JuliaSubsetRenderer:
         names = _list(node, "names")
         if should_skip_module(module_name, self.mapping):
             self._emit_native_module_include(module_name)
+        else:
+            self._emit_flat_module_include(module_name)
         for item in names:
             if not isinstance(item, dict):
                 continue
@@ -1746,6 +1841,8 @@ class JuliaSubsetRenderer:
 
     def _emit_assign_stmt(self, node: dict[str, JsonVal]) -> None:
         target = node.get("target")
+        if isinstance(target, dict) and _str(target, "kind") == "Name" and _is_type_expr_node(node.get("value")):
+            return
         if isinstance(target, dict) and _str(target, "kind") == "Attribute":
             owner = self._render_expr(target.get("value"))
             attr = _str(target, "attr")
@@ -1754,9 +1851,13 @@ class JuliaSubsetRenderer:
         if isinstance(target, dict) and _str(target, "kind") == "Subscript":
             owner_node = target.get("value")
             owner = self._render_expr(owner_node)
+            owner_type = _str(owner_node, "resolved_type") if isinstance(owner_node, dict) else ""
             index = self._render_expr(target.get("slice"))
-            index_expr = "__pytra_int(" + index + ")"
             value = self._render_expr(node.get("value"))
+            if _is_dict_type_text(owner_type):
+                self._emit(owner + "[" + index + "] = " + value)
+                return
+            index_expr = "__pytra_int(" + index + ")"
             self._emit(owner + "[__pytra_idx(" + index_expr + ", length(" + owner + "))] = " + value)
             return
         if isinstance(target, dict) and _str(target, "kind") in {"Tuple", "List"}:
@@ -1992,6 +2093,39 @@ class JuliaSubsetRenderer:
         self._emit("return " + impl_fn_name + "(" + ", ".join(call_args) + ")")
         self._emit_function_end()
 
+    def _render_field_default_expr(self, value_node: JsonVal) -> str:
+        node = value_node
+        if isinstance(node, dict) and _str(node, "kind") == "Unbox":
+            inner = node.get("value")
+            if isinstance(inner, dict):
+                node = inner
+        if not isinstance(node, dict) or _str(node, "kind") != "Call":
+            return self._render_expr(node)
+        func = node.get("func")
+        if not isinstance(func, dict) or _str(func, "kind") != "Name" or _str(func, "id") != "field":
+            return self._render_expr(node)
+        factory: JsonVal = None
+        args = _list(node, "args")
+        if len(args) > 0:
+            factory = args[0]
+        for kw in _list(node, "keywords"):
+            if isinstance(kw, dict) and _str(kw, "arg") == "default_factory":
+                factory = kw.get("value")
+                break
+        if isinstance(factory, dict) and _str(factory, "kind") == "Name":
+            name = _str(factory, "type_object_of")
+            if name == "":
+                name = _str(factory, "id")
+            if name == "list":
+                return "[]"
+            if name == "set":
+                return "Set()"
+            if name == "dict":
+                return "Dict()"
+            if name != "":
+                return "__pytra_new_" + _ident(name) + "()"
+        return "nothing"
+
     def _emit_class_ctor(self, node: dict[str, JsonVal], class_name: str, impl_name: str, field_names: list[str]) -> None:
         init_fn = _find_init_function(node)
         if init_fn is None and _bool(node, "dataclass"):
@@ -1999,7 +2133,7 @@ class JuliaSubsetRenderer:
             ctor_args: list[str] = []
             for field_name, has_default, default_value in dataclass_fields:
                 if has_default:
-                    ctor_args.append(_ident(field_name) + "=" + self._render_expr(default_value))
+                    ctor_args.append(_ident(field_name) + "=" + self._render_field_default_expr(default_value))
                 else:
                     ctor_args.append(_ident(field_name))
             self._emit_new_ctor_header(class_name, ctor_args)

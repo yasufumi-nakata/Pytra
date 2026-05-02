@@ -28,6 +28,12 @@
     "ArgumentParser.add_argument": "add_argument",
     "ArgumentParser.parse_args": "parse_args",
     "JsonValue.as_str": "as_str",
+    "JsonObj.get": "__DICT_GET__",
+    "JsonObj.get_arr": "__DICT_GET__",
+    "JsonObj.get_obj": "__DICT_GET__",
+    "JsonObj.get_str": "__DICT_GET__",
+    "JsonArr.get_int": "__JSONARR_GET__",
+    "JsonArr.get_str": "__JSONARR_GET__",
     "Path.exists": "exists",
     "Path.joinpath": "joinpath",
     "Path.mkdir": "mkdir",
@@ -116,11 +122,11 @@
     "pytra.utils.assertions": "built_in/py_runtime.jl"
   },
   "module_namespace_exprs": {
-    "json": "(dumps=dumps, loads=loads, loads_arr=loads_arr)",
+    "json": "(dumps=dumps, loads=loads, loads_arr=loads_arr, loads_obj=loads_obj, JsonValue=__PytraJsonValue)",
     "math": "(ceil=__MathNative.ceil, cos=__MathNative.cos, e=__MathNative.e, exp=__MathNative.exp, fabs=__MathNative.fabs, floor=__MathNative.floor, log=__MathNative.log, log10=__MathNative.log10, pi=__MathNative.pi, pow=__MathNative.pow, sin=__MathNative.sin, sqrt=__MathNative.sqrt, tan=__MathNative.tan)",
     "pytra.std.env": "(target=\"julia\",)",
     "pytra.std.glob": "(glob=__GlobNative.glob,)",
-    "pytra.std.json": "(dumps=dumps, loads=loads, loads_arr=loads_arr)",
+    "pytra.std.json": "(dumps=dumps, loads=loads, loads_arr=loads_arr, loads_obj=loads_obj, JsonValue=__PytraJsonValue)",
     "pytra.std.os": "(getcwd=__OsNative.getcwd, makedirs=__OsNative.makedirs, mkdir=__OsNative.mkdir, path=(join=__OsPathNative.join, splitext=__OsPathNative.splitext, basename=__OsPathNative.basename, dirname=__OsPathNative.dirname, exists=__OsPathNative.exists, abspath=__OsPathNative.abspath))",
     "pytra.std.pathlib": "(Path=Path,)",
     "pytra.utils.png": "(_adler32=_adler32, _chunk=_chunk, _crc32=_crc32, _png_append_list=_png_append_list, _png_u16le=_png_u16le, _png_u32be=_png_u32be, _zlib_deflate_store=_zlib_deflate_store, write_rgb_png=write_rgb_png)"

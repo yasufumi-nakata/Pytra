@@ -1,4 +1,4 @@
-argv = Any[]
+argv = Any[PROGRAM_FILE; ARGS]
 path = Any[]
 
 mutable struct __PytraSysModule

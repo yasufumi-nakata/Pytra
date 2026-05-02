@@ -247,6 +247,18 @@ function __pytra_float_from_str(v)
     return parse(Float64, strip(string(v)))
 end
 
+function __pytra_ord(v)
+    text = string(v)
+    if length(text) == 0
+        throw(__pytra_type_error("ord() expected a character"))
+    end
+    return Int(first(text))
+end
+
+function __pytra_chr(v)
+    return string(Char(Int(v)))
+end
+
 function __pytra_idx(index::Integer, len::Integer)
     if index < 0
         return len + index + 1

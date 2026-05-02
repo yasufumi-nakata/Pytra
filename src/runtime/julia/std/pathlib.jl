@@ -12,6 +12,10 @@ function Path(value)
     return p
 end
 
+function cwd()
+    return Path(__OsNative.getcwd())
+end
+
 Base.show(io::IO, p::Path) = print(io, p._value)
 Base.showerror(io::IO, p::Path) = print(io, p._value)
 
@@ -63,6 +67,17 @@ function write_text(self::Path, text)
     return nothing
 end
 
+function write_text(self::Path, text; encoding="utf-8")
+    open(self._value, "w") do io
+        write(io, string(text))
+    end
+    return nothing
+end
+
 function read_text(self::Path)
+    return read(self._value, String)
+end
+
+function read_text(self::Path; encoding="utf-8")
     return read(self._value, String)
 end
