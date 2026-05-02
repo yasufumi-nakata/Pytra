@@ -6,7 +6,7 @@
 
 > 領域別 TODO。全体索引は [index.md](./index.md) を参照。
 
-最終更新: 2026-04-29
+最終更新: 2026-05-03
 
 ## 運用ルール
 
@@ -67,4 +67,5 @@ C++ emitter（`toolchain.emit.cpp.cli`、16 モジュール）を powershell に
 
 対象: `bytes_copy_semantics`, `negative_index_comprehensive`, `negative_index_out_of_range`, `callable_optional_none`, `str_find_index`, `eo_extern_opaque_basic`(emit-only), `math_extended`(stdlib), `os_glob_extended`(stdlib)
 
-1. [ ] [ID: P0-PS1-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）
+1. [x] [ID: P0-PS1-NEWFIX-S1] 上記 fixture/stdlib の parity を確認する（対象 fixture のみ実行）
+   - 完了: 2026-05-03 に PowerShell emitter の module 属性解決を `runtime_module_id` / full module key 優先へ修正し、`math.pi/e` と `os.path.*` の stdlib parity を回復。Docker Python 3.12 環境で `runtime_parity_check_fast.py --targets ruby,ps1 --case-root fixture bytes_copy_semantics negative_index_comprehensive negative_index_out_of_range callable_optional_none str_find_index eo_extern_opaque_basic --cmd-timeout-sec 600` が `SUMMARY cases=6 pass=6 fail=0`、`--case-root stdlib math_extended os_glob_extended` が `SUMMARY cases=2 pass=2 fail=0` を確認。

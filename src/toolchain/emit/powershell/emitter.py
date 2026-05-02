@@ -402,6 +402,11 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
         value_node = expr.get("value")
         value = _render_expr(ctx, value_node)
         attr = _gs(expr, "attr")
+        runtime_module_id = _gs(expr, "runtime_module_id")
+        if runtime_module_id != "":
+            mapped_runtime_attr_expr = ctx.mapping.calls.get(runtime_module_id + "." + attr, "")
+            if mapped_runtime_attr_expr != "":
+                return mapped_runtime_attr_expr
         # type(v).__name__ → $v["__type__"]
         if attr == "__name__" and isinstance(value_node, dict) and _gs(value_node, "kind") == "Call":
             type_func_n = value_node.get("func")
@@ -420,8 +425,13 @@ def _render_expr(ctx: EmitContext, expr: JsonVal) -> str:
                 mod_full_ia = ctx.import_alias_map.get(vname, vname)
                 mod_short_ia = mod_full_ia.rsplit(".", 1)[-1] if "." in mod_full_ia else mod_full_ia
                 qualified_key_ia = mod_short_ia + "." + attr
-                if qualified_key_ia in ctx.mapping.calls:
-                    return ctx.mapping.calls[qualified_key_ia]
+                full_qualified_key_ia = mod_full_ia + "." + attr
+                mapped_import_attr = ctx.mapping.calls.get(
+                    full_qualified_key_ia,
+                    ctx.mapping.calls.get(qualified_key_ia, ""),
+                )
+                if mapped_import_attr != "":
+                    return mapped_import_attr
                 return "$" + _safe(attr, "_f")
             if vname in ctx.class_names:
                 return "$script:" + _safe(attr, "_cv")
@@ -998,6 +1008,14 @@ def _render_call(ctx: EmitContext, expr: dict[str, JsonVal]) -> str:
                     mapped_runtime_attr = maybe
                     break
             if mapped_runtime_attr != "":
+                if owner_type == "module":
+                    if mapped_runtime_attr.startswith("[Math]::"):
+                        if mapped_runtime_attr.endswith("::PI") or mapped_runtime_attr.endswith("::E"):
+                            return "(" + mapped_runtime_attr + ")"
+                        return "(" + mapped_runtime_attr + "(" + ", ".join(rendered_args) + "))"
+                    if len(rendered_args) == 0:
+                        return "(" + mapped_runtime_attr + ")"
+                    return "(" + mapped_runtime_attr + " " + " ".join(rendered_args) + ")"
                 if owner_name in ctx.import_alias_map:
                     if mapped_runtime_attr.startswith("[Math]::"):
                         if mapped_runtime_attr.endswith("::PI") or mapped_runtime_attr.endswith("::E"):
