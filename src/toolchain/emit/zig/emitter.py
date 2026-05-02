@@ -1961,7 +1961,9 @@ class ZigNativeEmitter:
         rel = module_id
         while rel.startswith("."):
             rel = rel[1:]
-        return self._root_rel_prefix() + rel.replace(".", "_") + ".zig"
+        if rel.startswith("pytra."):
+            rel = rel[len("pytra.") :]
+        return self._root_rel_prefix() + rel.replace(".", "/") + ".zig"
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
         """import_bindings から Zig の @import を生成（§3: linker 解決済み情報を使用）。"""
@@ -2046,7 +2048,10 @@ class ZigNativeEmitter:
                 if not candidate_module.startswith("pytra.") and not candidate_module.startswith(".") and not candidate_module.startswith("toolchain."):
                     continue
                 import_path = self._module_id_to_import_path(imported_module)
-                safe_mod = _safe_ident(imported_module.replace(".", "_"), "mod")
+                if imported_module.startswith("pytra.") and imported_module != "pytra.std.sys":
+                    safe_mod = _safe_ident(imported_module.split(".")[-1], "mod")
+                else:
+                    safe_mod = _safe_ident(imported_module.replace(".", "_"), "mod")
             if safe_mod not in emitted:
                 self._emit_line("const " + safe_mod + " = @import(\"" + import_path + "\");")
                 emitted.add(safe_mod)

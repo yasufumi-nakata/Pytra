@@ -379,8 +379,6 @@ def _dart_string(text: str) -> str:
 
 def _module_id_to_import_path(module_id: str, ext: str, root_rel_prefix: str) -> str:
     """module_id から機械的にインポートパスを生成する (§3)."""
-    if not _has_handwritten_runtime(module_id):
-        return root_rel_prefix + module_id.replace(".", "_") + ext
     parts = module_id.split(".")
     rel_parts = parts[1:] if len(parts) >= 2 and parts[0] == "pytra" else parts
     rel = ".".join(rel_parts)

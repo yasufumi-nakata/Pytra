@@ -13,6 +13,8 @@
 - Node.js / npm / TypeScript compiler
 - Go
 - Rust / Cargo
+- Dart SDK
+- Zig
 - .NET SDK 8.0
 - PowerShell
 - Ruby
