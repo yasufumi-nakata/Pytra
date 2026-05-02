@@ -2153,8 +2153,9 @@ class ZigNativeEmitter:
                 orig_val = val
                 value_type = self._lookup_expr_type(return_value_node) if len(return_value_node) > 0 else ""
                 stripped_value = self._strip_optional_type(value_type) if value_type != "" else ""
-                if len(return_value_node) > 0 and return_value_node.get("kind") == "Name":
-                    name_type = self._current_type_map().get(_safe_ident(return_value_node.get("id"), "value"), "")
+                return_value_kind = self._dict_get_str(return_value_node, "kind", "") if len(return_value_node) > 0 else ""
+                if return_value_kind == "Name":
+                    name_type = self._current_type_map().get(_safe_ident(self._dict_get_str(return_value_node, "id", ""), "value"), "")
                     stripped_name = self._strip_optional_type(name_type)
                     if stripped_name != "" and self._zig_type(stripped_name) == ret_type:
                         val = val + ".?"
@@ -2174,8 +2175,10 @@ class ZigNativeEmitter:
             value_node_raw = self._dict_get_any(stmt, "value")
             value_node_dict = self._any_dict_to_any(value_node_raw)
             value_node: Any = value_node_raw
+            value_node_as_dict: dict[str, Any] = {}
             if len(value_node_dict) > 0:
                 value_node = value_node_dict
+                value_node_as_dict = value_node_dict
             annotation_type_expr = self._dict_get_any(stmt, "annotation_type_expr")
             # extern() 変数 → __native 委譲（spec-emitter-guide §4）
             # Unbox ラッパーを透過
@@ -2200,18 +2203,23 @@ class ZigNativeEmitter:
                             self._emit_line("pub const " + target + ": " + zig_ty + " = __native." + target + ";")
                             return
             value = self._render_expr(value_node) if isinstance(value_node, dict) else "undefined"
-            raw_core_value_node = self._unwrap_box_unbox(value_node)
-            core_value_node: Any = raw_core_value_node
-            if isinstance(raw_core_value_node, dict):
-                core_value_node = self._any_dict_to_any(raw_core_value_node)
+            core_value_node: dict[str, Any] = value_node_as_dict
+            core_value_kind = self._dict_get_str(core_value_node, "kind", "")
+            while core_value_kind == "Box" or core_value_kind == "Unbox":
+                next_core_node = self._any_dict_to_any(self._dict_get_any(core_value_node, "value"))
+                if len(next_core_node) == 0:
+                    break
+                core_value_node = next_core_node
+                core_value_kind = self._dict_get_str(core_value_node, "kind", "")
+            value_node_kind = self._dict_get_str(value_node, "kind", "") if isinstance(value_node, dict) else ""
             if isinstance(target_node, dict) and self._dict_get_str(target_node, "kind", "") == "Name":
                 target_name = _safe_ident(self._dict_get_str(target_node, "id", ""), "value")
                 decl_type = self._infer_decl_type(stmt)
                 decl_type = self._refine_unknown_decl_type(decl_type, value_node)
                 decl_type = self._runtime_decl_type(decl_type, value_node)
-                if isinstance(core_value_node, dict) and core_value_node.get("kind") == "Dict" and decl_type.startswith("dict["):
+                if core_value_kind == "Dict" and decl_type.startswith("dict["):
                     value = self._render_dict_with_decl_type(core_value_node, decl_type)
-                if isinstance(core_value_node, dict) and core_value_node.get("kind") == "List" and decl_type.startswith("list["):
+                if core_value_kind == "List" and decl_type.startswith("list["):
                     value = self._render_list_with_decl_type(core_value_node, decl_type)
                 typed_empty = self._render_typed_empty_container(core_value_node, decl_type)
                 if typed_empty != "":
@@ -2225,12 +2233,12 @@ class ZigNativeEmitter:
                         else annotation_type_expr,
                     )
                     self._storage_type_setdefault(target_name, decl_type)
-                is_lambda_value = isinstance(value_node, dict) and value_node.get("kind") == "Lambda"
+                is_lambda_value = value_node_kind == "Lambda"
                 is_callable_decl = self._is_callable_type(decl_type)
                 if is_lambda_value and len(self._lambda_local_stack) > 0:
                     self._add_current_lambda_local(target_name)
                 zig_ty = self._zig_type(decl_type)
-                if isinstance(core_value_node, dict) and core_value_node.get("kind") == "Dict" and zig_ty == "std.StringHashMap(" + self._union_storage_zig() + ")":
+                if core_value_kind == "Dict" and zig_ty == "std.StringHashMap(" + self._union_storage_zig() + ")":
                     value = self._render_union_dict_literal(core_value_node)
                 optional_dict_get = self._render_optional_dict_get(core_value_node, decl_type)
                 if optional_dict_get != "":
@@ -2240,7 +2248,7 @@ class ZigNativeEmitter:
                     val_zig = self._preferred_value_zig_type(decl_type, value_node)
                     if val_zig != "pytra.PyObject":
                         zig_ty = val_zig
-                if self._is_union_storage_zig(zig_ty) and isinstance(value_node, dict) and value_node.get("kind") == "Unbox" and isinstance(core_value_node, dict):
+                if self._is_union_storage_zig(zig_ty) and value_node_kind == "Unbox" and isinstance(core_value_node, dict):
                     value = self._render_expr(core_value_node)
                 # VarDecl で既に宣言済みなら再代入
                 already_declared = len(self._local_var_stack) > 0 and target_name in self._current_local_vars()
@@ -2259,9 +2267,9 @@ class ZigNativeEmitter:
                         self._record_decl_line(target_name)
                         return
                     # 空 dict リテラル: decl_type の値型で初期化
-                    if isinstance(value_node, dict) and value_node.get("kind") == "Dict":
-                        entries = value_node.get("entries")
-                        if (entries is None or (isinstance(entries, list) and len(entries) == 0)):
+                    if value_node_kind == "Dict":
+                        entries = self._any_list_to_any(self._dict_get_any(value_node, "entries"))
+                        if len(entries) == 0:
                             if decl_type.startswith("dict[") and decl_type.endswith("]"):
                                 parts = self._split_generic(decl_type[5:-1])
                                 if len(parts) == 2:
@@ -5955,9 +5963,11 @@ class ZigNativeEmitter:
     def _coerce_value_to_zig_type(self, target_zig: str, value_node: Any, rendered: str) -> str:
         if target_zig == "" or not isinstance(value_node, dict):
             return rendered
+        value_node_dict = self._any_dict_to_any(value_node)
+        value_kind = self._dict_get_str(value_node_dict, "kind", "")
         if target_zig == "bool":
             rendered = rendered.replace("@as(i64, false)", "false").replace("@as(i64, true)", "true")
-        if target_zig.startswith("?") and value_node.get("kind") == "Constant" and value_node.get("value") is None:
+        if target_zig.startswith("?") and value_kind == "Constant" and self._dict_get_any(value_node_dict, "value") is None:
             return "null"
         value_type = self._lookup_expr_type(value_node)
         if value_type == "":
@@ -5981,8 +5991,6 @@ class ZigNativeEmitter:
                 return rendered + ".?"
         if self._is_union_storage_zig(target_zig) and value_zig != "" and not self._is_union_storage_zig(value_zig):
             return "pytra.union_wrap(" + rendered + ")"
-        value_node_dict = self._any_dict_to_any(value_node)
-        value_kind = self._dict_get_str(value_node_dict, "kind", "")
         if self._is_union_storage_zig(target_zig) and value_kind == "Name":
             return "pytra.union_wrap(" + rendered + ")"
         if self._is_union_storage_zig(target_zig) and value_zig == "" and value_kind in {"Call", "Dict", "List", "Constant", "Name"}:
@@ -6030,12 +6038,12 @@ class ZigNativeEmitter:
         return filled
 
     def _render_dict(self, node: dict[str, Any]) -> str:
-        entries_any = node.get("entries")
+        entries_any = self._any_list_to_any(self._dict_get_any(node, "entries"))
         entries: list[dict[str, Any]] = []
-        if isinstance(entries_any, list):
-            for e in entries_any:
-                if isinstance(e, dict):
-                    entries.append(self._any_dict_to_any(e))
+        for e in entries_any:
+            entry_dict = self._any_dict_to_any(e)
+            if len(entry_dict) > 0:
+                entries.append(entry_dict)
         if len(entries) == 0:
             # 空 dict
             resolved = self._get_expr_type(node)
@@ -6048,9 +6056,9 @@ class ZigNativeEmitter:
         val_parts: list[str] = []
         key_parts: list[str] = []
         for entry in entries:
-            key_expr = self._render_expr(entry.get("key"))
+            key_expr = self._render_expr(self._any_dict_to_any(self._dict_get_any(entry, "key")))
             key_parts.append(key_expr)
-            val_parts.append(self._render_expr(entry.get("value")))
+            val_parts.append(self._render_expr(self._any_dict_to_any(self._dict_get_any(entry, "value"))))
         resolved = self._get_expr_type(node)
         val_zig = "i64"
         key_is_str = True
@@ -6592,23 +6600,23 @@ class ZigNativeEmitter:
         return (val_zig, key_is_str, stringify_values)
 
     def _render_dict_with_decl_type(self, node: dict[str, Any], decl_type: str) -> str:
-        entries_any = node.get("entries")
+        entries_any = self._any_list_to_any(self._dict_get_any(node, "entries"))
         entries: list[dict[str, Any]] = []
-        if isinstance(entries_any, list):
-            for e in entries_any:
-                if isinstance(e, dict):
-                    entries.append(self._any_dict_to_any(e))
+        for e in entries_any:
+            entry_dict = self._any_dict_to_any(e)
+            if len(entry_dict) > 0:
+                entries.append(entry_dict)
         val_zig, key_is_str, stringify_values = self._dict_storage_spec(decl_type)
         if len(entries) == 0:
             return "pytra.make_str_dict(" + val_zig + ")"
         key_parts: list[str] = []
         val_parts: list[str] = []
         for entry in entries:
-            key_expr = self._render_expr(entry.get("key"))
+            key_expr = self._render_expr(self._any_dict_to_any(self._dict_get_any(entry, "key")))
             if not key_is_str:
                 key_expr = "pytra.to_str(" + key_expr + ")"
             key_parts.append(key_expr)
-            value_expr = self._render_expr(entry.get("value"))
+            value_expr = self._render_expr(self._any_dict_to_any(self._dict_get_any(entry, "value")))
             if stringify_values:
                 value_expr = "pytra.to_str(" + value_expr + ")"
             elif self._is_union_storage_zig(val_zig):
@@ -6617,19 +6625,19 @@ class ZigNativeEmitter:
         return "pytra.make_str_dict_from(" + val_zig + ", " + "&[_][]const u8{ " + ", ".join(key_parts) + " }, " + "&[_]" + val_zig + "{ " + ", ".join(val_parts) + " })"
 
     def _render_union_dict_literal(self, node: dict[str, Any]) -> str:
-        entries_any = node.get("entries")
+        entries_any = self._any_list_to_any(self._dict_get_any(node, "entries"))
         entries: list[dict[str, Any]] = []
-        if isinstance(entries_any, list):
-            for e in entries_any:
-                if isinstance(e, dict):
-                    entries.append(self._any_dict_to_any(e))
+        for e in entries_any:
+            entry_dict = self._any_dict_to_any(e)
+            if len(entry_dict) > 0:
+                entries.append(entry_dict)
         if len(entries) == 0:
             return "pytra.make_str_dict(" + self._union_storage_zig() + ")"
         key_parts: list[str] = []
         val_parts: list[str] = []
         for entry in entries:
-            key_parts.append(self._render_expr(entry.get("key")))
-            val_parts.append("pytra.union_wrap(" + self._render_expr(entry.get("value")) + ")")
+            key_parts.append(self._render_expr(self._any_dict_to_any(self._dict_get_any(entry, "key"))))
+            val_parts.append("pytra.union_wrap(" + self._render_expr(self._any_dict_to_any(self._dict_get_any(entry, "value"))) + ")")
         return "pytra.make_str_dict_from(" + self._union_storage_zig() + ", " + "&[_][]const u8{ " + ", ".join(key_parts) + " }, " + "&[_]" + self._union_storage_zig() + "{ " + ", ".join(val_parts) + " })"
 
     def _render_list_with_decl_type(self, node: dict[str, Any], decl_type: str) -> str:
@@ -6648,7 +6656,7 @@ class ZigNativeEmitter:
         cur = node
         cur_dict = self._any_dict_to_any(cur)
         while self._dict_get_str(cur_dict, "kind", "") in {"Box", "Unbox"}:
-            cur = cur_dict.get("value")
+            cur = self._dict_get_any(cur_dict, "value")
             cur_dict = self._any_dict_to_any(cur)
         return cur
 
