@@ -1940,7 +1940,16 @@ def _emit_binop(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             right_code = _wrapper_container_storage_expr(ctx, right_node, right_code)
             return "py_concat_slice(" + left_code + ", " + right_code + ")"
 
-    # Integer division
+    # Python "/" is true division. Cast integer operands before Go division.
+    if op == "Div":
+        target_gt_div = "float32" if rt == "float32" else "float64"
+        if left_rt in int_like_for_float_promote:
+            left_code = target_gt_div + "(" + left_code + ")"
+        if right_rt in int_like_for_float_promote:
+            right_code = target_gt_div + "(" + right_code + ")"
+        return "(" + left_code + " / " + right_code + ")"
+
+    # Legacy guarded path; FloorDiv handles Python integer division.
     if op == "Div" and rt in ("int64", "int32", "int", "int8", "int16", "uint8"):
         return "(" + left_code + " / " + right_code + ")"
     if op == "Div" and rt in ("float", "float64", "float32"):
@@ -2136,6 +2145,14 @@ def _infer_call_return_type(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             return "float64"
         if fn_name in ("sqrt", "sin", "cos", "tan", "floor", "ceil", "exp", "log", "log10", "pow", "fabs"):
             return "float64"
+        if fn_name == "min" or fn_name == "max":
+            args = _list(node, "args")
+            inferred = "int64"
+            for arg in args:
+                arg_rt = _effective_resolved_type(ctx, arg)
+                if arg_rt in ("float", "float64", "float32"):
+                    inferred = "float64"
+            return inferred
         if fn_name == "sum":
             args = _list(node, "args")
             if len(args) >= 1:
@@ -3911,7 +3928,7 @@ def _emit_call(ctx: EmitContext, node: dict[str, JsonVal]) -> str:
             helper_name = go_types_helpers.get(fn_name, "")
             if helper_name != "":
                 return helper_name + "(" + ", ".join(call_arg_strs) + ")"
-            if fn_name in ("int", "float", "bool", "str", "ord", "chr", "list", "reversed", "enumerate", "sorted", "range", "sum", "zip"):
+            if fn_name in ("int", "float", "bool", "str", "ord", "chr", "list", "reversed", "enumerate", "sorted", "range", "sum", "zip", "min", "max"):
                 builtin_like: dict[str, JsonVal] = {}
                 builtin_like["kind"] = _str(node, "kind")
                 builtin_like["func"] = func
