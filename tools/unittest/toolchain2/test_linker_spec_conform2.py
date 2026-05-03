@@ -227,6 +227,39 @@ class Toolchain2LinkerSpecConform2Tests(unittest.TestCase):
 
             self.assertEqual(result.manifest["entry_modules"], ["app.main"])
 
+    def test_type_id_external_imported_base_falls_back_to_object(self) -> None:
+        modules = [
+            LinkedModule(
+                module_id="toolchain.emit.go.emitter",
+                input_path="toolchain/emit/go/emitter.east3.json",
+                source_path="src/toolchain/emit/go/emitter.py",
+                is_entry=True,
+                module_kind="user",
+                east_doc=_module_doc(
+                    "toolchain.emit.go.emitter",
+                    source_path="src/toolchain/emit/go/emitter.py",
+                    meta_extra={
+                        "import_symbols": {
+                            "CommonRenderer": {
+                                "module": "toolchain.emit.common.common_renderer",
+                                "name": "CommonRenderer",
+                            },
+                        },
+                    },
+                    body=[
+                        _class_def("_GoStmtCommonRenderer", bases=["CommonRenderer"]),
+                    ],
+                ),
+            ),
+        ]
+
+        type_id_table, type_id_base_map, type_info_table = build_type_id_table(modules)
+
+        fqcn = "toolchain.emit.go.emitter._GoStmtCommonRenderer"
+        self.assertIn(fqcn, type_id_table)
+        self.assertIn(fqcn, type_info_table)
+        self.assertEqual(type_id_base_map[fqcn], type_id_table["object"])
+
     def test_link_modules_keeps_isinstance_node_for_java_native_dispatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             entry_path = Path(tmp) / "app.main.east3.json"
